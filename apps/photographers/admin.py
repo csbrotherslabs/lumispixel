@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# No admin registrations are required for this foundation-only app yet.
