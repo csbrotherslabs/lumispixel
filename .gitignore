@@ -1,0 +1,23 @@
+# Virtual Environment
+env_lumispixel/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment
+.env
+
+# Django
+db.sqlite3
+media/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Static build
+staticfiles/
