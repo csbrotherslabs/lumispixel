@@ -23,3 +23,13 @@ media/
 staticfiles/
 
 kimono_main/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Mac / IDE
+.DS_Store
+.vscode/
+.idea/
