@@ -1,10 +1,21 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("apps.core.urls")),
+    path("accounts/", include("apps.accounts.urls")),
+    path("photographers/", include("apps.photographers.urls")),
+    path("clients/", include("apps.clients.urls")),
+    path("galleries/", include("apps.galleries.urls")),
+    path("broker/", include("apps.broker.urls")),
+    path("marketplace/", include("apps.marketplace.urls")),
+    path("billing/", include("apps.billing.urls")),
+    path("notifications/", include("apps.notifications.urls")),
+    path("dashboard/", include("apps.dashboard.urls")),
+    path("api/", include("apps.api.urls")),
 ]
 
 if settings.DEBUG:
