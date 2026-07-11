@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class GalleriesConfig(AppConfig):
+class NotificationsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.galleries"
+    name = "apps.notifications"
