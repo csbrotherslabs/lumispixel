@@ -1,7 +1,13 @@
-
+{% extends "base.html" %}
 {% load static %}
+
+{% block title %}
+LumisPixel | Photography Made Discoverable
+{% endblock %}
+
+
 <!-- Main Wrapper-->
-<main class="wrapper">
+{% block content %}
     <!-- Slider Section -->
     <section class="wptb-slider style3">
         <div class="swiper-container wptb-swiper-slider-three">    
@@ -1398,4 +1404,4 @@
             </a>
         </div>
     </div>
-</main>
+{% endblock %}
