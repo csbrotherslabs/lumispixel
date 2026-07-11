@@ -21,3 +21,5 @@ media/
 
 # Static build
 staticfiles/
+
+kimono_main/
