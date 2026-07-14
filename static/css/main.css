@@ -25,16 +25,16 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Sora:wght@100..800&display=swap');
 @import url("../fonts/bootstrap-icons-1.1/font/bootstrap-icons.css");
 @import url("bootstrap.min.css");
-@import url("../../plugins/jquery_ui/style.css");
+@import url("../plugins/jquery_ui/style.css");
 @import url("animation.css");
-@import url("../../plugins/wow/animate.css");
-@import url("../../plugins/swiper/swiper-bundle.min.css");
-@import url("../../plugins/swiper/swiper-gl.min.css");
-@import url("../../plugins/odometer/odometer-theme-default.css");
-@import url("../../plugins/fancybox/jquery.fancybox.css");
-@import url("../../plugins/flatpickr/flatpickr.css");
-@import url("../../plugins/nice-select/nice-select.css");
-@import url("../../plugins/cursor-effect/cursor-effect.css");
+@import url("../plugins/wow/animate.css");
+@import url("../plugins/swiper/swiper-bundle.min.css");
+@import url("../plugins/swiper/swiper-gl.min.css");
+@import url("../plugins/odometer/odometer-theme-default.css");
+@import url("../plugins/fancybox/jquery.fancybox.css");
+@import url("../plugins/flatpickr/flatpickr.css");
+@import url("../plugins/nice-select/nice-select.css");
+@import url("../plugins/cursor-effect/cursor-effect.css");
 
 @import url("global.css");
 @import url("header.css");
