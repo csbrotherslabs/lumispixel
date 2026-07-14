@@ -2189,3 +2189,186 @@ body.theme-style--olive {
         font-size: 14px;
     }
 }
+
+/* LumisPixel connected platform audience cards */
+.lumis-audiences {
+    position: relative;
+    overflow: hidden;
+    padding-bottom: 110px;
+}
+
+.lumis-audiences .wptb-heading {
+    max-width: 900px;
+    margin-right: auto;
+    margin-left: auto;
+    margin-bottom: 42px;
+}
+
+.lumis-audiences__intro {
+    max-width: 720px;
+    margin: 14px auto 0;
+    color: var(--color-light);
+    font-size: 18px;
+    line-height: 1.55;
+}
+
+.lumis-audiences__grid {
+    align-items: stretch;
+}
+
+.lumis-audience-card {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+    border: 1px solid rgba(var(--color-white-rgb), 0.08);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(31, 31, 31, 0.72), rgba(8, 8, 8, 0.95));
+    box-shadow: 0 24px 70px rgba(var(--color-black-fixed-rgb), 0.2);
+    transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.lumis-audience-card:hover,
+.lumis-audience-card:focus-within {
+    transform: translateY(-8px);
+    border-color: rgba(var(--color-one-rgb), 0.38);
+    box-shadow: 0 30px 90px rgba(var(--color-black-fixed-rgb), 0.34);
+}
+
+.lumis-audience-card__image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1.58 / 1;
+    background: rgba(var(--color-white-rgb), 0.04);
+}
+
+.lumis-audience-card__image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(var(--color-black-fixed-rgb), 0) 25%, rgba(var(--color-black-fixed-rgb), 0.58) 100%);
+    pointer-events: none;
+}
+
+.lumis-audience-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.01);
+    transition: transform 450ms ease;
+}
+
+.lumis-audience-card:hover .lumis-audience-card__image img,
+.lumis-audience-card:focus-within .lumis-audience-card__image img {
+    transform: scale(1.06);
+}
+
+.lumis-audience-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 26px 26px 28px;
+}
+
+.lumis-audience-card__kicker {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 26px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 5px 10px;
+    border: 1px solid rgba(var(--color-one-rgb), 0.36);
+    border-radius: 999px;
+    background: rgba(var(--color-one-rgb), 0.1);
+    color: var(--color-one);
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.lumis-audience-card h2 {
+    margin-bottom: 10px;
+    color: var(--color-white);
+    font-size: clamp(25px, 2vw, 32px);
+    line-height: 1.12;
+}
+
+.lumis-audience-card p {
+    margin-bottom: 18px;
+    color: var(--color-light);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.lumis-audience-card__link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    margin-top: auto;
+    color: var(--color-white);
+    font-size: 13px;
+    font-weight: var(--fw-medium);
+    gap: 8px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.lumis-audience-card__link:hover,
+.lumis-audience-card__link:focus-visible {
+    color: var(--color-one);
+    outline: 2px solid var(--color-one);
+    outline-offset: 4px;
+}
+
+@media screen and (max-width: 991px) {
+    .lumis-audiences {
+        padding-bottom: 92px;
+    }
+
+    .lumis-audiences__intro {
+        font-size: 16px;
+    }
+
+    .lumis-audience-card__body {
+        padding: 24px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .lumis-audiences {
+        padding-bottom: 76px;
+    }
+
+    .lumis-audiences .wptb-heading {
+        margin-bottom: 30px;
+    }
+
+    .lumis-audience-card {
+        max-width: 520px;
+        margin-right: auto;
+        margin-left: auto;
+        border-radius: 18px;
+    }
+
+    .lumis-audience-card__image {
+        aspect-ratio: 1.72 / 1;
+    }
+}
+
+@media screen and (max-width: 430px) {
+    .lumis-audiences {
+        padding-right: 4px;
+        padding-left: 4px;
+    }
+
+    .lumis-audiences__intro,
+    .lumis-audience-card p {
+        font-size: 14px;
+    }
+
+    .lumis-audience-card__body {
+        padding: 22px 20px 24px;
+    }
+}
