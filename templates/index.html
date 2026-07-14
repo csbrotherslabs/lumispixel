@@ -955,42 +955,42 @@ LumisPixel | Photography Made Discoverable
 
                     <div class="lumis-ai-features__tabs" role="tablist" aria-label="AI workflow capabilities">
                         <button class="lumis-ai-feature-tab active" type="button" role="tab" id="ai-feature-tab-culling" aria-selected="true" aria-controls="ai-feature-panel-culling" data-ai-feature="culling">
-                            <span class="lumis-ai-feature-tab__index">01</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">01</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">AI Culling</span>
                                 <span class="lumis-ai-feature-tab__description">Surface stronger images and reduce repetitive review work.</span>
                             </span>
                         </button>
                         <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-quality" aria-selected="false" aria-controls="ai-feature-panel-quality" data-ai-feature="quality" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index">02</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">02</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">Blur &amp; Quality Detection</span>
                                 <span class="lumis-ai-feature-tab__description">Flag soft, blurry, or low-quality shots before delivery.</span>
                             </span>
                         </button>
                         <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-duplicates" aria-selected="false" aria-controls="ai-feature-panel-duplicates" data-ai-feature="duplicates" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index">03</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">03</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">Duplicate Detection</span>
                                 <span class="lumis-ai-feature-tab__description">Group near-identical images and simplify final selection.</span>
                             </span>
                         </button>
                         <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-faces" aria-selected="false" aria-controls="ai-feature-panel-faces" data-ai-feature="faces" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index">04</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">04</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">Face Recognition</span>
                                 <span class="lumis-ai-feature-tab__description">Organize event photos and help clients find their matches.</span>
                             </span>
                         </button>
                         <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-search" aria-selected="false" aria-controls="ai-feature-panel-search" data-ai-feature="search" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index">05</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">05</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">Semantic Search</span>
                                 <span class="lumis-ai-feature-tab__description">Search galleries using natural language, subjects, or scene descriptions.</span>
                             </span>
                         </button>
                         <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-tags" aria-selected="false" aria-controls="ai-feature-panel-tags" data-ai-feature="tags" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index">06</span>
+                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">06</span>
                             <span class="lumis-ai-feature-tab__copy">
                                 <span class="lumis-ai-feature-tab__title">Auto Tagging</span>
                                 <span class="lumis-ai-feature-tab__description">Add useful tags for people, events, locations, and visual content.</span>
@@ -999,7 +999,7 @@ LumisPixel | Photography Made Discoverable
                     </div>
 
                     <div class="wptb-item--button lumis-ai-features__cta">
-                        <!-- Future named URL: ai_tools:index -->
+                        <!-- Future Django named URL: ai_tools:index -->
                         <a class="btn btn-three text-uppercase" href="#">
                             <span class="btn-wrap">
                                 <span class="text-first">Explore AI Tools →</span>
@@ -1010,181 +1010,59 @@ LumisPixel | Photography Made Discoverable
                 </div>
 
                 <div class="lumis-ai-features__preview" aria-label="AI workflow preview">
-                    <div class="lumis-ai-preview-card">
-                        <div class="lumis-ai-preview-card__header">
-                            <span>AI workflow preview</span>
-                            <span class="lumis-ai-preview-card__status">Presentational</span>
+                    <div class="lumis-ai-product-panel">
+                        <div class="lumis-ai-product-panel__toolbar">
+                            <span class="lumis-ai-product-panel__dot"></span>
+                            <span class="lumis-ai-product-panel__dot"></span>
+                            <span class="lumis-ai-product-panel__dot"></span>
+                            <span class="lumis-ai-product-panel__toolbar-label">Gallery intelligence</span>
+                            <span class="lumis-ai-product-panel__badge">Presentational</span>
                         </div>
-                        <div class="lumis-ai-preview-card__image-wrap">
-                            <img src="{% static 'img/projects/6/1.jpg' %}" alt="Wedding gallery preview with AI workflow overlays">
-                            <span class="lumis-ai-preview-card__marker lumis-ai-preview-card__marker--one">Match group</span>
-                            <span class="lumis-ai-preview-card__marker lumis-ai-preview-card__marker--two">Quality flag</span>
-                        </div>
-                        <div class="lumis-ai-preview-card__panels">
-                            <article class="lumis-ai-preview-panel active" id="ai-feature-panel-culling" role="tabpanel" aria-labelledby="ai-feature-tab-culling" data-ai-panel="culling">
-                                <h3>AI Culling</h3>
-                                <p>Review queues highlight promising frames for faster selections.</p>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-quality" role="tabpanel" aria-labelledby="ai-feature-tab-quality" data-ai-panel="quality" hidden>
-                                <h3>Blur &amp; Quality Detection</h3>
-                                <p>Soft images are marked before a client gallery is prepared.</p>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-duplicates" role="tabpanel" aria-labelledby="ai-feature-tab-duplicates" data-ai-panel="duplicates" hidden>
-                                <h3>Duplicate Detection</h3>
-                                <p>Near-matching shots stay grouped so final picks are easier.</p>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-faces" role="tabpanel" aria-labelledby="ai-feature-tab-faces" data-ai-panel="faces" hidden>
-                                <h3>Face Recognition</h3>
-                                <p>Event galleries can be organized around people and matches.</p>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-search" role="tabpanel" aria-labelledby="ai-feature-tab-search" data-ai-panel="search" hidden>
-                                <h3>Semantic Search</h3>
-                                <p>Natural search prompts help people find scenes and subjects.</p>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-tags" role="tabpanel" aria-labelledby="ai-feature-tab-tags" data-ai-panel="tags" hidden>
-                                <h3>Auto Tagging</h3>
-                                <p>Useful labels keep galleries easier to sort and discover.</p>
-                            </article>
-                        </div>
-                        <div class="lumis-ai-preview-card__tags" aria-label="Example workflow labels">
-                            <span>sharp</span>
-                            <span>ceremony</span>
-                            <span>family</span>
-                            <span>favorites</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Testimonial -->
-    <section class="wptb-testimonial-one bg-image" style='background-image: url("{% static "img/background/bg-2.jpg" %}");'>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-7">
-                    <div class="swiper-container swiper-testimonial">    
-                        <!-- swiper slides -->
-                        <div class="swiper-wrapper">
-                            <div class="swiper-slide">
-                                <div class="wptb-testimonial1">
-                                    <div class="wptb-item--inner">
-                                        <div class="wptb-item--holder">
-                                            <div class="d-flex align-items-center justify-content-between mr-bottom-25">
-                                                <div class="wptb-item--meta-rating">
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                </div>
-                                                
-                                                <div class="wptb-item--icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="57" height="45" viewBox="0 0 57 45" fill="none">
-                                                        <path d="M51.5137 38.5537C56.8209 32.7938 56.2866 25.3969 56.2697 25.3125V2.8125C56.2697 2.06658 55.9734 1.35121 55.4459 0.823763C54.9185 0.296317 54.2031 0 53.4572 0H36.5822C33.48 0 30.9572 2.52281 30.9572 5.625V25.3125C30.9572 26.0584 31.2535 26.7738 31.781 27.3012C32.3084 27.8287 33.0238 28.125 33.7697 28.125H42.4266C42.3671 29.5155 41.9517 30.8674 41.22 32.0513C39.7913 34.3041 37.0997 35.8425 33.2156 36.6188L30.9572 37.0688V45H33.7697C41.5969 45 47.5678 42.8316 51.5137 38.5537ZM20.5566 38.5537C25.8666 32.7938 25.3294 25.3969 25.3125 25.3125V2.8125C25.3125 2.06658 25.0162 1.35121 24.4887 0.823763C23.9613 0.296317 23.2459 0 22.5 0H5.625C2.52281 0 0 2.52281 0 5.625V25.3125C0 26.0584 0.296316 26.7738 0.823762 27.3012C1.35121 27.8287 2.06658 28.125 2.8125 28.125H11.4694C11.41 29.5155 10.9945 30.8674 10.2628 32.0513C8.83406 34.3041 6.1425 35.8425 2.25844 36.6188L0 37.0688V45H2.8125C10.6397 45 16.6106 42.8316 20.5566 38.5537Z" fill="#D70006"/>
-                                                    </svg>
-                                                </div>
-                                            </div>
-
-                                            <p class="wptb-item--description"> “I have an amazing photography session with team
-                                                kimono photography agency, highly recommended.
-                                                They have amazing atmosphere in their studio. Iw’d
-                                                love to visit again”</p>
-                                            <div class="wptb-item--meta">
-                                                <div class="wptb-item--image">
-                                                    <img src="{% static 'img/testimonial/1.jpg' %}" alt="img">
-                                                </div>
-                                                <div class="wptb-item--meta-left">
-                                                    <h4 class="wptb-item--title">Rachel Jackson</h4>
-                                                    <h6 class="wptb-item--designation">New York</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="lumis-ai-product-panel__workspace">
+                            <div class="lumis-ai-product-panel__main-image" aria-hidden="true">
+                                <span class="lumis-ai-product-panel__image-label">Selected image</span>
+                                <span class="lumis-ai-product-panel__focus-chip" data-ai-selected-chip>Strong frame</span>
                             </div>
-
-                            <div class="swiper-slide">
-                                <div class="wptb-testimonial1">
-                                    <div class="wptb-item--inner">
-                                        <div class="wptb-item--holder">
-                                            <div class="d-flex align-items-center justify-content-between mr-bottom-25">
-                                                <div class="wptb-item--meta-rating">
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                </div>
-                                                
-                                                <div class="wptb-item--icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="57" height="45" viewBox="0 0 57 45" fill="none">
-                                                        <path d="M51.5137 38.5537C56.8209 32.7938 56.2866 25.3969 56.2697 25.3125V2.8125C56.2697 2.06658 55.9734 1.35121 55.4459 0.823763C54.9185 0.296317 54.2031 0 53.4572 0H36.5822C33.48 0 30.9572 2.52281 30.9572 5.625V25.3125C30.9572 26.0584 31.2535 26.7738 31.781 27.3012C32.3084 27.8287 33.0238 28.125 33.7697 28.125H42.4266C42.3671 29.5155 41.9517 30.8674 41.22 32.0513C39.7913 34.3041 37.0997 35.8425 33.2156 36.6188L30.9572 37.0688V45H33.7697C41.5969 45 47.5678 42.8316 51.5137 38.5537ZM20.5566 38.5537C25.8666 32.7938 25.3294 25.3969 25.3125 25.3125V2.8125C25.3125 2.06658 25.0162 1.35121 24.4887 0.823763C23.9613 0.296317 23.2459 0 22.5 0H5.625C2.52281 0 0 2.52281 0 5.625V25.3125C0 26.0584 0.296316 26.7738 0.823762 27.3012C1.35121 27.8287 2.06658 28.125 2.8125 28.125H11.4694C11.41 29.5155 10.9945 30.8674 10.2628 32.0513C8.83406 34.3041 6.1425 35.8425 2.25844 36.6188L0 37.0688V45H2.8125C10.6397 45 16.6106 42.8316 20.5566 38.5537Z" fill="#D70006"/>
-                                                    </svg>
-                                                </div>
-                                            </div>
-
-                                            <p class="wptb-item--description"> “I have an amazing photography session with team
-                                                kimono photography agency, highly recommended.
-                                                They have amazing atmosphere in their studio. Iw’d
-                                                love to visit again”</p>
-                                            <div class="wptb-item--meta">
-                                                <div class="wptb-item--image">
-                                                    <img src="{% static 'img/testimonial/2.jpg' %}" alt="img">
-                                                </div>
-                                                <div class="wptb-item--meta-left">
-                                                    <h4 class="wptb-item--title">Helen Jordan</h4>
-                                                    <h6 class="wptb-item--designation">Chicago</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="swiper-slide">
-                                <div class="wptb-testimonial1">
-                                    <div class="wptb-item--inner">
-                                        <div class="wptb-item--holder">
-                                            <div class="d-flex align-items-center justify-content-between mr-bottom-25">
-                                                <div class="wptb-item--meta-rating">
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                    <i class="bi bi-star-fill"></i>
-                                                </div>
-                                                
-                                                <div class="wptb-item--icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="57" height="45" viewBox="0 0 57 45" fill="none">
-                                                        <path d="M51.5137 38.5537C56.8209 32.7938 56.2866 25.3969 56.2697 25.3125V2.8125C56.2697 2.06658 55.9734 1.35121 55.4459 0.823763C54.9185 0.296317 54.2031 0 53.4572 0H36.5822C33.48 0 30.9572 2.52281 30.9572 5.625V25.3125C30.9572 26.0584 31.2535 26.7738 31.781 27.3012C32.3084 27.8287 33.0238 28.125 33.7697 28.125H42.4266C42.3671 29.5155 41.9517 30.8674 41.22 32.0513C39.7913 34.3041 37.0997 35.8425 33.2156 36.6188L30.9572 37.0688V45H33.7697C41.5969 45 47.5678 42.8316 51.5137 38.5537ZM20.5566 38.5537C25.8666 32.7938 25.3294 25.3969 25.3125 25.3125V2.8125C25.3125 2.06658 25.0162 1.35121 24.4887 0.823763C23.9613 0.296317 23.2459 0 22.5 0H5.625C2.52281 0 0 2.52281 0 5.625V25.3125C0 26.0584 0.296316 26.7738 0.823762 27.3012C1.35121 27.8287 2.06658 28.125 2.8125 28.125H11.4694C11.41 29.5155 10.9945 30.8674 10.2628 32.0513C8.83406 34.3041 6.1425 35.8425 2.25844 36.6188L0 37.0688V45H2.8125C10.6397 45 16.6106 42.8316 20.5566 38.5537Z" fill="#D70006"/>
-                                                    </svg>
-                                                </div>
-                                            </div>
-
-                                            <p class="wptb-item--description"> “I have an amazing photography session with team
-                                                kimono photography agency, highly recommended.
-                                                They have amazing atmosphere in their studio. Iw’d
-                                                love to visit again”</p>
-                                            <div class="wptb-item--meta">
-                                                <div class="wptb-item--image">
-                                                    <img src="{% static 'img/testimonial/3.jpg' %}" alt="img">
-                                                </div>
-                                                <div class="wptb-item--meta-left">
-                                                    <h4 class="wptb-item--title">Helen Jordan</h4>
-                                                    <h6 class="wptb-item--designation">New York</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="lumis-ai-product-panel__thumbs" aria-label="Example image review queue">
+                                <span class="lumis-ai-thumb is-selected"><span data-ai-thumb-one>Strong frame</span></span>
+                                <span class="lumis-ai-thumb"><span data-ai-thumb-two>Review</span></span>
+                                <span class="lumis-ai-thumb"><span data-ai-thumb-three>Similar shot</span></span>
+                                <span class="lumis-ai-thumb"><span data-ai-thumb-four>Review</span></span>
                             </div>
                         </div>
 
-                        <!-- Swiper Navigation -->
-                        <div class="wptb-swiper-navigation style1">                      
-                            <div class="wptb-swiper-arrow swiper-button-prev"></div>
-                            <div class="wptb-swiper-arrow swiper-button-next"></div>
+                        <div class="lumis-ai-product-panel__panels" aria-live="polite">
+                            <article class="lumis-ai-preview-panel active" id="ai-feature-panel-culling" role="tabpanel" aria-labelledby="ai-feature-tab-culling" data-ai-panel="culling" data-chip="Strong frame" data-labels="Strong frame|Review|Similar shot|Review">
+                                <p class="lumis-ai-preview-panel__eyebrow">AI Culling</p>
+                                <h3>Shortlist stronger frames before final review.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Strong frame</span><span>Review</span><span>Similar shot</span></div>
+                            </article>
+                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-quality" role="tabpanel" aria-labelledby="ai-feature-tab-quality" data-ai-panel="quality" data-chip="Soft focus" data-labels="Soft focus|Review sharpness|Delivery check|Review" hidden>
+                                <p class="lumis-ai-preview-panel__eyebrow">Blur &amp; Quality Detection</p>
+                                <h3>Flag images that need sharpness review.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Soft focus</span><span>Review sharpness</span></div>
+                            </article>
+                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-duplicates" role="tabpanel" aria-labelledby="ai-feature-tab-duplicates" data-ai-panel="duplicates" data-chip="Keep selected" data-labels="Similar group|Keep selected|Compare|Near match" hidden>
+                                <p class="lumis-ai-preview-panel__eyebrow">Duplicate Detection</p>
+                                <h3>Group similar shots and keep the best pick visible.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Similar group</span><span>Keep selected</span></div>
+                            </article>
+                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-faces" role="tabpanel" aria-labelledby="ai-feature-tab-faces" data-ai-panel="faces" data-chip="Match group" data-labels="Match group|Client search|Guest set|Review" hidden>
+                                <p class="lumis-ai-preview-panel__eyebrow">Face Recognition</p>
+                                <h3>Organize event images around people and matches.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Match group</span><span>Client search</span></div>
+                            </article>
+                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-search" role="tabpanel" aria-labelledby="ai-feature-tab-search" data-ai-panel="search" data-chip="Search phrase" data-labels="Search phrase|Matching scenes|Outdoor vows|Reception" hidden>
+                                <p class="lumis-ai-preview-panel__eyebrow">Semantic Search</p>
+                                <h3>Find scenes with natural language gallery search.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Search phrase</span><span>Matching scenes</span></div>
+                            </article>
+                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-tags" role="tabpanel" aria-labelledby="ai-feature-tab-tags" data-ai-panel="tags" data-chip="Auto tags" data-labels="Event|Portrait|Outdoor|Details" hidden>
+                                <p class="lumis-ai-preview-panel__eyebrow">Auto Tagging</p>
+                                <h3>Add useful labels for faster sorting and discovery.</h3>
+                                <div class="lumis-ai-preview-panel__chips"><span>Event</span><span>Portrait</span><span>Outdoor</span></div>
+                            </article>
                         </div>
                     </div>
                 </div>

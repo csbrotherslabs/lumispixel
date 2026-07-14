@@ -1110,6 +1110,12 @@ Description: Kimono - Photography Agency
         // LumisPixel AI features accessible tabs
         $('.lumis-ai-features').each(function(){
             var $section = $(this);
+
+            if ($section.data('aiTabsInitialized')) {
+                return;
+            }
+
+            $section.data('aiTabsInitialized', true);
             var $tabs = $section.find('[role="tab"]');
             var $panels = $section.find('[role="tabpanel"]');
 
@@ -1120,7 +1126,18 @@ Description: Kimono - Photography Agency
                 $tab.addClass('active').attr({'aria-selected': 'true', 'tabindex': '0'});
 
                 $panels.removeClass('active').attr('hidden', true);
-                $('#' + panelId).addClass('active').removeAttr('hidden');
+                var $activePanel = $('#' + panelId).addClass('active').removeAttr('hidden');
+
+                var labels = ($activePanel.data('labels') || '').split('|');
+                var $thumbLabels = $section.find('.lumis-ai-thumb span');
+                var selectedChip = $activePanel.data('chip') || labels[0] || '';
+
+                $section.find('[data-ai-selected-chip]').text(selectedChip);
+                $thumbLabels.each(function(index){
+                    if (labels[index]) {
+                        $(this).text(labels[index]);
+                    }
+                });
 
                 if (setFocus) {
                     $tab.trigger('focus');
