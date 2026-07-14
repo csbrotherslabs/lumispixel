@@ -6608,3 +6608,95 @@ svg.radial-progress {
     background-color: var(--color-one);
     color: var(--color-white);
 }
+/* LumisPixel hero refinement */
+.wptb-slider.style3 .wptb-heading .wptb-hero-subheadline {
+    max-width: 760px;
+    margin: 24px 0 0;
+}
+
+.wptb-slider.style3 .wptb-hero-feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 28px 0 36px;
+}
+
+.wptb-slider.style3 .wptb-hero-feature-pills span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-white-fixed);
+    font-size: 14px;
+    font-weight: var(--fw-medium);
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(8px);
+}
+
+.wptb-slider.style3 .wptb-item--button {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.wptb-slider.style3 .wptb-item--button .btn {
+    margin: 0;
+}
+
+.wptb-slider.style3 .wptb-hero-text-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-white-fixed);
+    font-size: 16px;
+    font-weight: var(--fw-medium);
+    line-height: 1.4;
+    text-decoration: none;
+}
+
+.wptb-slider.style3 .wptb-hero-text-link:hover,
+.wptb-slider.style3 .wptb-hero-text-link:focus {
+    color: var(--color-one);
+}
+
+@media screen and (max-width: 767px) {
+    .wptb-slider.style3 .wptb-heading .wptb-hero-subheadline {
+        margin-top: 18px;
+    }
+
+    .wptb-slider.style3 .wptb-hero-feature-pills {
+        gap: 10px;
+        margin: 22px 0 30px;
+    }
+
+    .wptb-slider.style3 .wptb-hero-feature-pills span {
+        min-height: 34px;
+        padding: 7px 13px;
+        font-size: 13px;
+    }
+
+    .wptb-slider.style3 .wptb-item--button {
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+}
+
+@media screen and (max-width: 430px) {
+    .wptb-slider.style3 .wptb-item--button {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .wptb-slider.style3 .wptb-item--button .btn {
+        width: 100%;
+    }
+
+    .wptb-slider.style3 .wptb-hero-feature-pills span {
+        font-size: 12px;
+    }
+}
