@@ -1,51 +1,38 @@
-
-
 {% load static %}
 
 <!-- Mobile Responsive Menu -->
 <div class="mr_menu" data-lenis-prevent>
-    <button type="button" class="mr_menu_close"><i class="bi bi-x-lg"></i></button>
-    <div class="logo"></div> <!-- Keep this div empty. Logo will come here by JavaScript -->
-    
+    <button type="button" class="mr_menu_close" aria-label="Close mobile navigation"><i class="bi bi-x-lg"></i></button>
+    <div class="logo"></div>
+
+    <div class="mobile-account-panel">
+        {% if request.user.is_authenticated %}
+            <div class="mobile-user-summary">
+                <img src="{% static 'img/default-avatar.svg' %}" class="mobile-avatar" alt="Avatar for {{ request.user.get_full_name|default:request.user.username }}">
+                <div>
+                    <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
+                    <span>{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
+                </div>
+            </div>
+            <a class="mobile-dashboard-link" href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index -->
+        {% else %}
+            <p>Manage, find, and deliver photos with LumisPixel.</p>
+            <div class="mobile-auth-actions">
+                <a href="#" data-placeholder-link>Sign In</a><!-- Future named route: accounts:login -->
+                <a href="#" data-placeholder-link>Start Free</a><!-- Future named route: accounts:signup -->
+            </div>
+        {% endif %}
+    </div>
+
     <h6>Menu</h6>
-    <div class="mr_navmenu"></div> <!-- Keep this div empty. Menu will come here by JavaScript -->
+    <div class="mr_navmenu"></div>
 
-    <h6>Contact Us</h6>
-    <div class="wptb-icon-box1 style2">
-        <div class="wptb-item--inner flex-start">
-            <div class="wptb-item--icon"><i class="bi bi-envelope"></i></div>
-            <div class="wptb-item--holder">
-                <p class="wptb-item--description"><a href="mailto:kimocare@gmail.com">kimocare@gmail.com</a></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="wptb-icon-box1 style2">
-        <div class="wptb-item--inner flex-start">
-            <div class="wptb-item--icon"><i class="bi bi-geo-alt"></i></div>
-            <div class="wptb-item--holder">
-                <p class="wptb-item--description"><a href="contact-1.html">28 Street, New York, USA</a></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="wptb-icon-box1 style2">
-        <div class="wptb-item--inner flex-start">
-            <div class="wptb-item--icon"><i class="bi bi-envelope"></i></div>
-            <div class="wptb-item--holder">
-                <p class="wptb-item--description"><a href="tel:+98765432122811">(+987) 654 321 228 11</a></p>
-            </div>
-        </div>
-    </div>
-
-    <h6>Find Our Page</h6>
-    <div class="social-box">
-        <ul>
-            <li><a href="https://www.facebook.com/"><i class="bi bi-facebook"></i></a></li>
-            <li><a href="https://www.instagram.com/"><i class="bi bi-instagram"></i></a></li>
-            <li><a href="https://www.linkedin.com/"><i class="bi bi-linkedin"></i></a></li>
-            <li><a href="https://www.behance.com/"><i class="bi bi-behance"></i></a></li>
-            <li><a href="https://www.youtube.com/"><i class="bi bi-youtube"></i></a></li>
+    {% if request.user.is_authenticated %}
+        <h6>Account</h6>
+        <ul class="mobile-account-links">
+            <li><a href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index --></li>
+            <li><a href="#" data-placeholder-link>Settings</a><!-- Future named route: accounts:settings --></li>
+            <li><a href="#" data-placeholder-link>Sign Out</a><!-- Future named route: accounts:logout --></li>
         </ul>
-    </div>
+    {% endif %}
 </div>
