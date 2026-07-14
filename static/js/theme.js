@@ -896,8 +896,8 @@ Description: Kimono - Photography Agency
                 delay: 3000,
             },
             speed: 1500,
-            slidesPerView: 2,
-            spaceBetween: 50,            
+            slidesPerView: 1,
+            spaceBetween: 28,
             navigation: {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
@@ -907,14 +907,21 @@ Description: Kimono - Photography Agency
                 clickable: true
             },
             breakpoints: {
-                500: {
-                    slidesPerView: 3,
+                576: {
+                    slidesPerView: 2,
+                    spaceBetween: 30,
                 },
                 768: {
-                  slidesPerView: 4,
+                  slidesPerView: 2,
+                  spaceBetween: 36,
                 },
-                992: {
-                  slidesPerView: 5,
+                1024: {
+                  slidesPerView: 3,
+                  spaceBetween: 42,
+                },
+                1366: {
+                  slidesPerView: 4,
+                  spaceBetween: 50,
                 },
             }
         });

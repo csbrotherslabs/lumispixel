@@ -723,178 +723,81 @@ LumisPixel | Photography Made Discoverable
 
     <div class="divider-line-hr"></div>
 
-    <!-- Team -->
-    <section class="wptb-team-one">
+    <!-- Photographer Marketplace Preview -->
+    <section class="wptb-team-one lumis-photographer-discovery" aria-labelledby="lumis-photographer-discovery-title">
         <div class="container">
             <div class="wptb-heading">
                 <div class="wptb-item--inner">
-                    <div class="row">
+                    <div class="row align-items-end">
                         <div class="col-lg-6">
-                            <h6 class="wptb-item--subtitle"><span>05 //</span> Our Team</h6>
-                            <h1 class="wptb-item--title mb-lg-0">Our Core Team of<br>
-                                <span>Photographers</span></h1>
+                            <h6 class="wptb-item--subtitle"><span>05 //</span> DISCOVER PHOTOGRAPHERS</h6>
+                            <h1 class="wptb-item--title mb-lg-0" id="lumis-photographer-discovery-title">Find the Right Photographer for Any Occasion.</h1>
                         </div>
 
                         <div class="col-lg-6">
-                            <p class="wptb-item--description">we’re deeply passionate <span>catch your lovely memories in cameras</span>
-                                and Convey your love for every moment of life as a whole.</p>
-                            
+                            <p class="wptb-item--description lumis-photographer-discovery__intro">Explore talented professionals by specialty, location, and style—all in one place.</p>
+                            <div class="lumis-photographer-discovery__actions">
+                                <div class="lumis-photographer-discovery__chips" aria-label="Presentational photographer categories">
+                                    <span>All</span>
+                                    <span>Weddings</span>
+                                    <span>Sports &amp; Events</span>
+                                    <span>Portraits</span>
+                                    <span>Corporate</span>
+                                    <span>Graduations</span>
+                                </div>
+
+                                <!-- Future named URL: photographers:directory -->
+                                <a class="lumis-photographer-discovery__browse" href="#">Browse All Photographers <span aria-hidden="true">→</span></a>
+                            </div>
 
                             <!-- Swiper Navigation -->
                             <div class="wptb-swiper-navigation style1">                      
-                                <div class="wptb-swiper-arrow swiper-button-prev"></div>
-                                <div class="wptb-swiper-arrow swiper-button-next"></div>
+                                <div class="wptb-swiper-arrow swiper-button-prev" aria-label="Previous photographer profiles"></div>
+                                <div class="wptb-swiper-arrow swiper-button-next" aria-label="Next photographer profiles"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="swiper-container swiper-team">
+            <div class="swiper-container swiper-team lumis-photographer-discovery__carousel">
                 <div class="swiper-wrapper">                            
-                    <!-- Team Block -->
+                    <!-- Temporary presentation labels pending real account and marketplace data. -->
+                    <!-- Placeholder photographer profiles below must be replaced with real database-backed photographer profiles before launch. -->
                     <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
+                        <article class="wptb-team-grid1 lumis-photographer-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/1.jpg' %}" alt="img">
+                                    <img src="{% static 'img/team/1.jpg' %}" alt="Wedding and engagement photographer Maya Carter">
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Maxim Alexhander</h5>
-                                        <p class="wptb-item--position">CEO, Kimono Agency</p>
+                                        <h2 class="wptb-item--title">Maya Carter</h2>
+                                        <p class="wptb-item--position">Wedding &amp; Engagement</p>
+                                        <p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> Kansas City, MO</p>
+                                        <p class="lumis-photographer-card__status"><i class="bi bi-patch-check" aria-hidden="true"></i> Verified Photographer</p>
                                     </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
+                                    <!-- Future named URL: photographers:profile -->
+                                    <a class="lumis-photographer-card__link" href="#" aria-label="View Maya Carter profile">View Profile <span aria-hidden="true">→</span></a>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     </div>
 
-                    <!-- Team Block -->
                     <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/2.jpg' %}" alt="img">
-                                </div>
-
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Nelson Jameson</h5>
-                                        <p class="wptb-item--position">Photographer</p>
-                                    </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <article class="wptb-team-grid1 lumis-photographer-card">
+                            <div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/2.jpg' %}" alt="Sports and events photographer Daniel Brooks"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Daniel Brooks</h2><p class="wptb-item--position">Sports &amp; Events</p><p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> Overland Park, KS</p><p class="lumis-photographer-card__status"><i class="bi bi-calendar-check" aria-hidden="true"></i> Available for Booking</p></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Daniel Brooks profile">View Profile <span aria-hidden="true">→</span></a></div></div>
+                        </article>
                     </div>
 
-                    <!-- Team Block -->
-                    <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/3.jpg' %}" alt="img">
-                                </div>
+                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/3.jpg' %}" alt="Portrait and lifestyle photographer Sofia Bennett"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Sofia Bennett</h2><p class="wptb-item--position">Portrait &amp; Lifestyle</p><p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> Chicago, IL</p><p class="lumis-photographer-card__status"><i class="bi bi-stars" aria-hidden="true"></i> New on LumisPixel</p></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Sofia Bennett profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
 
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Ellie Duncan</h5>
-                                        <p class="wptb-item--position">Photographer</p>
-                                    </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/4.jpg' %}" alt="Corporate and commercial photographer Marcus Reed"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Marcus Reed</h2><p class="wptb-item--position">Corporate &amp; Commercial</p><p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> Dallas, TX</p><p class="lumis-photographer-card__status"><i class="bi bi-patch-check" aria-hidden="true"></i> Verified Photographer</p></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Marcus Reed profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
 
-                    <!-- Team Block -->
-                    <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/4.jpg' %}" alt="img">
-                                </div>
+                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/5.jpg' %}" alt="Graduation and family photographer Ava Thompson"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Ava Thompson</h2><p class="wptb-item--position">Graduation &amp; Family</p><p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> Atlanta, GA</p><p class="lumis-photographer-card__status"><i class="bi bi-calendar-check" aria-hidden="true"></i> Available for Booking</p></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Ava Thompson profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
 
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Harold Earls</h5>
-                                        <p class="wptb-item--position">Photographer</p>
-                                    </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Team Block -->
-                    <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/2.jpg' %}" alt="img">
-                                </div>
-
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Nelson Jameson</h5>
-                                        <p class="wptb-item--position">Photographer</p>
-                                    </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Team Block -->
-                    <div class="swiper-slide">
-                        <div class="wptb-team-grid1">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/3.jpg' %}" alt="img">
-                                </div>
-
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h5 class="wptb-item--title">Ellie Duncan</h5>
-                                        <p class="wptb-item--position">Photographer</p>
-                                    </div>
-                                    <div class="wptb-item--social">
-                                        <a href="#">FB</a>
-                                        <a href="#">IG</a>
-                                        <a href="#">YT</a>
-                                        <a href="#">DR</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/6.jpg' %}" alt="Street and event photographer Jordan Lee"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Jordan Lee</h2><p class="wptb-item--position">Street &amp; Event Photography</p><p class="lumis-photographer-card__location"><i class="bi bi-geo-alt" aria-hidden="true"></i> New York, NY</p><p class="lumis-photographer-card__status"><i class="bi bi-stars" aria-hidden="true"></i> New on LumisPixel</p></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Jordan Lee profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
                 </div>
             </div>
         </div>
