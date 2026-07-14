@@ -259,93 +259,91 @@ LumisPixel | Photography Made Discoverable
 
     </section>
 
-    <!-- Services -->
-    <section class="wptb-services-one">
-        <div class="wptb-item-layer wptb-item-layer-one both-version">
-            <img src="{% static 'img/more/texture-2.png' %}" alt="img">
-            <img src="{% static 'img/more/texture-2-light.png' %}" alt="img">
+    <!-- Photo Matching Preview -->
+    <section class="wptb-services-one lumis-photo-match" aria-labelledby="photo-match-title">
+        <div class="wptb-item-layer wptb-item-layer-one both-version" aria-hidden="true">
+            <img src="{% static 'img/more/texture-2.png' %}" alt="">
+            <img src="{% static 'img/more/texture-2-light.png' %}" alt="">
         </div>
         <div class="container">
-            <div class="wptb-heading">
-                <div class="wptb-item--inner">
-                    <div class="row align-items-center">
-                        <div class="col-lg-6">
-                            <h6 class="wptb-item--subtitle"><span>01 //</span> Services</h6>
-                            <h1 class="wptb-item--title">Our Photography <br>
-                                <span>Services</span></h1>
-                        </div>
-
-                        <div class="col-lg-6">
-                            <p class="wptb-item--description">we’re deeply passionate <span>catch your lovely memories in cameras</span>
-                                and Convey your love for every moment of life as a whole.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="row">
-                <!-- Iconbox -->
-                <div class="col-lg-3 col-md-6 col-sm-6 ps-0 wow fadeInLeft">
-                    <div class="wptb-icon-box5 mb-3">
-                        <div class="wptb-item--inner">
-                            <div class="wptb-item--icon">
-                                <img src="{% static 'img/services/icon-1-2.svg' %}" alt="img" class="default-icon">
-                                <img src="{% static 'img/services/icon-1-3.svg' %}" alt="img" class="hover-icon">
-                            </div>
-                            <div class="wptb-item--holder">
-                                <p class="wptb-item--description">01</p>
-                                <h4 class="wptb-item--title mb-0">Wedding Photography</h4>
+            <div class="row align-items-center g-5">
+                <div class="col-xl-6 col-lg-6">
+                    <div class="lumis-photo-match__content wow fadeInLeft">
+                        <div class="wptb-heading mb-0">
+                            <div class="wptb-item--inner">
+                                <h6 class="wptb-item--subtitle"><span>01 //</span> FIND YOUR PHOTOS</h6>
+                                <h1 class="wptb-item--title" id="photo-match-title">Your Photos. <span>Found in Seconds.</span></h1>
+                                <p class="wptb-item--description">Skip the endless scrolling. Upload a selfie and LumisPixel can securely match you with your photos from participating events and galleries.</p>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Iconbox -->
-                <div class="col-lg-3 col-md-6 col-sm-6 ps-0 wow fadeInLeft">
-                    <div class="wptb-icon-box5 mb-3">
-                        <div class="wptb-item--inner">
-                            <div class="wptb-item--icon">
-                                <img src="{% static 'img/services/icon-2-2.svg' %}" alt="img" class="default-icon">
-                                <img src="{% static 'img/services/icon-2-3.svg' %}" alt="img" class="hover-icon">
-                            </div>
-                            <div class="wptb-item--holder">
-                                <p class="wptb-item--description">02</p>
-                                <h4 class="wptb-item--title mb-0">Drone Cinematography</h4>
-                            </div>
-                        </div>
+                        <ol class="lumis-photo-match__steps" aria-label="How photo matching works">
+                            <li>
+                                <span class="lumis-photo-match__step-number">01</span>
+                                <div>
+                                    <h3>Upload a Selfie</h3>
+                                    <p>Use a clear selfie, taken or uploaded from your device.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="lumis-photo-match__step-number">02</span>
+                                <div>
+                                    <h3>Let AI Search</h3>
+                                    <p>LumisPixel compares your face with photos in the selected event gallery.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="lumis-photo-match__step-number">03</span>
+                                <div>
+                                    <h3>View Your Matches</h3>
+                                    <p>Review, favorite, purchase, or download the photos made available to you.</p>
+                                </div>
+                            </li>
+                        </ol>
+
+                        <a class="lumis-photo-match__link" href="#" aria-label="Learn how photo matching works">How Photo Matching Works →</a>
                     </div>
                 </div>
 
-                <!-- Iconbox -->
-                <div class="col-lg-3 col-md-6 col-sm-6 ps-0 wow fadeInLeft">
-                    <div class="wptb-icon-box5 mb-3">
-                        <div class="wptb-item--inner">
-                            <div class="wptb-item--icon">
-                                <img src="{% static 'img/services/icon-3-2.svg' %}" alt="img" class="default-icon">
-                                <img src="{% static 'img/services/icon-3-3.svg' %}" alt="img" class="hover-icon">
-                            </div>
-                            <div class="wptb-item--holder">
-                                <p class="wptb-item--description">03</p>
-                                <h4 class="wptb-item--title mb-0">Wedding Cinematography</h4>
-                            </div>
+                <div class="col-xl-6 col-lg-6">
+                    <div class="lumis-photo-match__panel wow fadeInRight" aria-label="Feature preview of selfie photo matching">
+                        <div class="lumis-photo-match__panel-header">
+                            <span class="lumis-photo-match__preview-label">Feature preview</span>
+                            <span class="lumis-photo-match__status"><span aria-hidden="true"></span> Preview only</span>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Iconbox -->
-                <div class="col-lg-3 col-md-6 col-sm-6 ps-0 wow fadeInLeft">
-                    <div class="wptb-icon-box5 mb-3">
-                        <div class="wptb-item--inner">
-                            <div class="wptb-item--icon">
-                                <img src="{% static 'img/services/icon-4-2.svg' %}" alt="img" class="default-icon">
-                                <img src="{% static 'img/services/icon-4-3.svg' %}" alt="img" class="hover-icon">
+                        <div class="lumis-photo-match__upload" aria-label="Nonfunctional selfie upload preview">
+                            <div class="lumis-photo-match__upload-icon" aria-hidden="true">
+                                <i class="bi bi-cloud-arrow-up"></i>
                             </div>
-                            <div class="wptb-item--holder">
-                                <p class="wptb-item--description">04</p>
-                                <h4 class="wptb-item--title mb-0">Personal Portfolio Shoot</h4>
-                            </div>
+                            <h3>Upload a Selfie</h3>
+                            <p>JPG, PNG, or HEIC preview</p>
                         </div>
+
+                        <div class="lumis-photo-match__search-card">
+                            <div>
+                                <span>Searching selected gallery</span>
+                                <strong>AI match preview</strong>
+                            </div>
+                            <div class="lumis-photo-match__progress" aria-hidden="true"><span></span></div>
+                        </div>
+
+                        <div class="lumis-photo-match__grid" aria-label="Preview grid of matching event photos">
+                            <img src="{% static 'img/slider/21.jpg' %}" alt="Preview match from an event gallery">
+                            <img src="{% static 'img/slider/30.jpg' %}" alt="Preview match from an event gallery">
+                            <img src="{% static 'img/slider/36.jpg' %}" alt="Preview match from an event gallery">
+                            <img src="{% static 'img/slider/43.jpg' %}" alt="Preview match from an event gallery">
+                        </div>
+
+                        <p class="lumis-photo-match__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i> Your selfie is used only to search the selected gallery.</p>
+
+                        <!-- Future named URL: photo_matching_demo -->
+                        <a class="btn btn-two white-opacity creative text-uppercase" href="#" aria-label="Try the nonfunctional photo matching demo preview">
+                            <span class="btn-wrap">
+                                <span class="text-first">Try the Demo</span>
+                                <span class="text-second">Try the Demo</span>
+                            </span>
+                        </a>
                     </div>
                 </div>
             </div>
