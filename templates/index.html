@@ -569,47 +569,49 @@ LumisPixel | Photography Made Discoverable
         </div>
     </section>
 
-    <!-- Why Choose -->
-    <section class="pt-0 overflow-hidden">
+    <!-- How It Works -->
+    <section class="pt-0 overflow-hidden lumis-how-it-works" aria-labelledby="lumis-how-it-works-title">
         <div class="container">
             <div class="wptb-heading">
                 <div class="wptb-item--inner">
-                    <h6 class="wptb-item--subtitle"><span>04 //</span> Our Features</h6>
-                    <h1 class="wptb-item--title mb-0">Why choose Us</h1>
+                    <h6 class="wptb-item--subtitle">HOW IT WORKS</h6>
+                    <h1 class="wptb-item--title mb-0" id="lumis-how-it-works-title">From Camera to Client, All in One Flow.</h1>
+                    <p class="wptb-item--description lumis-how-it-works__intro">Upload your photos, let LumisPixel organize and enhance the workflow, then deliver a polished experience your clients can access instantly.</p>
                 </div>
             </div>
 
-            <ol class="wptb-features">
+            <ol class="wptb-features lumis-how-it-works__steps" aria-label="LumisPixel photographer workflow steps">
                 <li class="wptb-item active highlight">
                     <div class="wptb-item--inner">
                         <div class="wptb-item--features-holder">
                             <div class="wptb-item--title">
-                                <a href="#">20+ Years Experience</a>
+                                <a href="#lumis-workflow-upload"><span class="lumis-how-it-works__step-number">01</span> Upload</a>
                             </div>
                         </div>
-                        <div class="wptb-item--image">
-                            <img src="{% static 'img/more/8.jpg' %}" alt="img">
+                        <div class="wptb-item--image" id="lumis-workflow-upload">
+                            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer workspace for adding a new photo gallery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo">
-                                        <a href="index.html" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
-                                        <a href="index.html" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="logo"></a>
+                                    <div class="logo" aria-hidden="true">
+                                        <span class="light_logo"><img src="{% static 'img/logo.svg' %}" alt=""></span>
+                                        <span class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt=""></span>
                                     </div>
                                     <div class="wptb-item--description">
-                                        Kimono have 20+ years of experence of photography & videography, which makes us the pioneers in this profession. We are having so muh fun doing this.
+                                        Add photos from a shoot, event, or gallery.
                                     </div>
                                     <div class="wptb-item--button">
-                                        <a href="project-details.html" class="btn">Read More <i class="bi bi-arrow-right"></i></a>
+                                        <!-- Future named URL: photographers:workflow -->
+                                        <a href="#" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                                     </div>
                                 </div>
 
-                                <div class="wptb-counter--box">
+                                <div class="wptb-counter--box" aria-label="Workflow overview">
                                     <div class="wptb-counter2">
                                         <div class="wptb-item--inner">
                                             <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="50"></span><span class="suffix">+</span></div>
-                                                <div class="wptb-item--text">Photographers</div>
+                                                <div class="wptb-item--value"><span class="odometer" data-count="5"></span><span class="suffix"></span></div>
+                                                <div class="wptb-item--text">Workflow Steps</div>
                                             </div>
                                         </div>
                                     </div>
@@ -617,8 +619,8 @@ LumisPixel | Photography Made Discoverable
                                     <div class="wptb-counter2">
                                         <div class="wptb-item--inner">
                                             <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="300"></span><span class="suffix"></span></div>
-                                                <div class="wptb-item--text">Events Covered</div>
+                                                <div class="wptb-item--value"><span class="odometer" data-count="1"></span><span class="suffix"></span></div>
+                                                <div class="wptb-item--text">Connected Workspace</div>
                                             </div>
                                         </div>
                                     </div>
@@ -632,43 +634,33 @@ LumisPixel | Photography Made Discoverable
                     <div class="wptb-item--inner">
                         <div class="wptb-item--features-holder">
                             <div class="wptb-item--title">
-                                <a href="#">Creative Shoot Ideas</a>
+                                <a href="#lumis-workflow-organize"><span class="lumis-how-it-works__step-number">02</span> Organize</a>
                             </div>
                         </div>
-                        <div class="wptb-item--image">
-                            <img src="{% static 'img/more/9.jpg' %}" alt="img">
+                        <div class="wptb-item--image" id="lumis-workflow-organize">
+                            <img src="{% static 'img/slider/21.jpg' %}" alt="Client photo gallery organized for quick browsing and face-based discovery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo">
-                                        <a href="index.html" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
-                                        <a href="index.html" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="logo"></a>
+                                    <div class="logo" aria-hidden="true">
+                                        <span class="light_logo"><img src="{% static 'img/logo.svg' %}" alt=""></span>
+                                        <span class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt=""></span>
                                     </div>
                                     <div class="wptb-item--description">
-                                        Kimono have 20+ years of experence of photography & videography, which makes us the pioneers in this profession. We are having so muh fun doing this.
+                                        LumisPixel groups images, detects faces, and helps identify the strongest shots.
                                     </div>
                                     <div class="wptb-item--button">
-                                        <a href="project-details.html" class="btn">Read More <i class="bi bi-arrow-right"></i></a>
+                                        <!-- Future named URL: photographers:workflow -->
+                                        <a href="#" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                                     </div>
                                 </div>
 
-                                <div class="wptb-counter--box">
+                                <div class="wptb-counter--box" aria-label="Workflow overview">
                                     <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="30"></span><span class="suffix">+</span></div>
-                                                <div class="wptb-item--text">Wedding Photos</div>
-                                            </div>
-                                        </div>
+                                        <div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div>
                                     </div>
-        
                                     <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="100"></span><span class="suffix">+</span></div>
-                                                <div class="wptb-item--text">Fashion photos</div>
-                                            </div>
-                                        </div>
+                                        <div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div>
                                     </div>
                                 </div>
                             </div>
@@ -680,45 +672,19 @@ LumisPixel | Photography Made Discoverable
                     <div class="wptb-item--inner">
                         <div class="wptb-item--features-holder">
                             <div class="wptb-item--title">
-                                <a href="#">Globally Awarded</a>
+                                <a href="#lumis-workflow-refine"><span class="lumis-how-it-works__step-number">03</span> Refine</a>
                             </div>
                         </div>
-                        <div class="wptb-item--image">
-                            <img src="{% static 'img/more/10.jpg' %}" alt="img">
+                        <div class="wptb-item--image" id="lumis-workflow-refine">
+                            <img src="{% static 'img/more/8.jpg' %}" alt="Photographer refining selected images before client delivery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo">
-                                        <a href="index.html" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
-                                        <a href="index.html" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="logo"></a>
-                                    </div>
-                                    <div class="wptb-item--description">
-                                        Kimono have 20+ years of experence of photography & videography, which makes us the pioneers in this profession. We are having so muh fun doing this.
-                                    </div>
-                                    <div class="wptb-item--button">
-                                        <a href="project-details.html" class="btn">Read More <i class="bi bi-arrow-right"></i></a>
-                                    </div>
+                                    <div class="logo" aria-hidden="true"><span class="light_logo"><img src="{% static 'img/logo.svg' %}" alt=""></span><span class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt=""></span></div>
+                                    <div class="wptb-item--description">Use AI-assisted culling and editing tools to speed up post-production.</div>
+                                    <div class="wptb-item--button"><!-- Future named URL: photographers:workflow --><a href="#" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
                                 </div>
-
-                                <div class="wptb-counter--box">
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="20"></span><span class="suffix">+</span></div>
-                                                <div class="wptb-item--text">Global Awards</div>
-                                            </div>
-                                        </div>
-                                    </div>
-        
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="10"></span><span class="suffix"></span></div>
-                                                <div class="wptb-item--text">Local Awards</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div>
                             </div>
                         </div>
                     </div>
@@ -728,46 +694,26 @@ LumisPixel | Photography Made Discoverable
                     <div class="wptb-item--inner">
                         <div class="wptb-item--features-holder">
                             <div class="wptb-item--title">
-                                <a href="#">Best Quality Photos</a>
+                                <a href="#lumis-workflow-deliver"><span class="lumis-how-it-works__step-number">04</span> Deliver</a>
                             </div>
                         </div>
-                        <div class="wptb-item--image">
-                            <img src="{% static 'img/more/11.jpg' %}" alt="img">
+                        <div class="wptb-item--image" id="lumis-workflow-deliver">
+                            <img src="{% static 'img/projects/gallery/5.jpg' %}" alt="Secure branded gallery prepared for client delivery">
+                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="light_logo"><img src="{% static 'img/logo.svg' %}" alt=""></span><span class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt=""></span></div><div class="wptb-item--description">Publish a secure, branded gallery for clients.</div><div class="wptb-item--button"><!-- Future named URL: photographers:workflow --><a href="#" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div></div></div></div>
+                        </div>
+                    </div>
+                </li>
 
-                            <div class="wptb-item--features-bottom">
-                                <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo">
-                                        <a href="index.html" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
-                                        <a href="index.html" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="logo"></a>
-                                    </div>
-                                    <div class="wptb-item--description">
-                                        Kimono have 20+ years of experence of photography & videography, which makes us the pioneers in this profession. We are having so muh fun doing this.
-                                    </div>
-                                    <div class="wptb-item--button">
-                                        <a href="project-details.html" class="btn">Read More <i class="bi bi-arrow-right"></i></a>
-                                    </div>
-                                </div>
-
-                                <div class="wptb-counter--box">
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="100"></span><span class="suffix">%</span></div>
-                                                <div class="wptb-item--text">HD Photos</div>
-                                            </div>
-                                        </div>
-                                    </div>
-        
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="100%"></span><span class="suffix">%</span></div>
-                                                <div class="wptb-item--text">Clients Satisfaction</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                <li class="wptb-item">
+                    <div class="wptb-item--inner">
+                        <div class="wptb-item--features-holder">
+                            <div class="wptb-item--title">
+                                <a href="#lumis-workflow-sell-share"><span class="lumis-how-it-works__step-number">05</span> Sell &amp; Share</a>
                             </div>
+                        </div>
+                        <div class="wptb-item--image" id="lumis-workflow-sell-share">
+                            <img src="{% static 'img/more/10.jpg' %}" alt="Event photography experience ready for clients to view purchase download and share">
+                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="light_logo"><img src="{% static 'img/logo.svg' %}" alt=""></span><span class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt=""></span></div><div class="wptb-item--description">Let clients favorite, purchase, download, and share their photos.</div><div class="wptb-item--button"><!-- Future named URL: photographers:workflow --><a href="#" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div></div>
                         </div>
                     </div>
                 </li>
