@@ -1,98 +1,44 @@
-
-
 {% load static %}
 
 <div class="aside_info_wrapper" data-lenis-prevent>
     <button class="aside_close">Close <i class="bi bi-x-lg"></i></button>
 
     <div class="aside_logo logo">
-        <a href="index.html" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
-        <a href="index.html" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="logo"></a>
+        <a href="{% url 'core:index' %}" class="light_logo"><img src="{% static 'img/logo.svg' %}" alt="LumisPixel"></a>
+        <a href="{% url 'core:index' %}" class="dark_logo"><img src="{% static 'img/logo-dark.svg' %}" alt="LumisPixel"></a>
     </div>
 
-    <div class="aside_info_inner">
+    <div class="aside_info_inner nav-sidebar-content">
+        <h6>// LumisPixel Platform</h6>
+        <p class="nav-sidebar-intro">AI-powered photo delivery, discovery, and marketplace tools for photographers, clients, and event teams.</p>
 
-        <h6>// Instagram</h6>
-        <div class="insta-logo">
-            <i class="bi bi-instagram"></i> studio_kimono
+        <div class="nav-sidebar-actions">
+            <a href="#" data-placeholder-link>Find My Photos</a><!-- Future named route: clients:find_photos -->
+            <a href="#" data-placeholder-link>Hire a Photographer</a><!-- Future named route: marketplace:photographer_search -->
+            <a href="#" data-placeholder-link>Pricing</a><!-- Future named route: billing:pricing -->
         </div>
-        <div class="wptb-instagram--gallery">
-            <div class="wptb-item--inner d-flex align-items-center justify-content-center flex-wrap">
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/6.jpg' %}" alt="img">
-                    </div>
-                </div>
 
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/7.jpg' %}" alt="img">
-                    </div>
-                </div>
-
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/8.jpg' %}" alt="img">
-                    </div>
-                </div>
-
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/9.jpg' %}" alt="img">
-                    </div>
-                </div>
-
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/10.jpg' %}" alt="img">
-                    </div>
-                </div>
-                
-                <div class="wptb-item">
-                    <div class="wptb-item--image">
-                        <img src="{% static 'img/instagram/11.jpg' %}" alt="img">
-                    </div>
+        <h6>// Account</h6>
+        {% if request.user.is_authenticated %}
+            <div class="mobile-user-summary sidebar-user-summary">
+                <img src="{% static 'img/default-avatar.svg' %}" class="mobile-avatar" alt="Avatar for {{ request.user.get_full_name|default:request.user.username }}">
+                <div>
+                    <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
+                    <span>{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
                 </div>
             </div>
-        </div>
-
-
-        <div class="wptb-icon-box1 style2">
-            <div class="wptb-item--inner flex-start">
-                <div class="wptb-item--icon"><i class="bi bi-envelope"></i></div>
-                <div class="wptb-item--holder">
-                    <p class="wptb-item--description"><a href="mailto:kimocare@gmail.com">kimocare@gmail.com</a></p>
-                </div>
-            </div>
-        </div>
-
-        <div class="wptb-icon-box1 style2">
-            <div class="wptb-item--inner flex-start">
-                <div class="wptb-item--icon"><i class="bi bi-geo-alt"></i></div>
-                <div class="wptb-item--holder">
-                    <p class="wptb-item--description"><a href="contact-1.html">28 Street, New York, USA</a></p>
-                </div>
-            </div>
-        </div>
-
-        <div class="wptb-icon-box1 style2">
-            <div class="wptb-item--inner flex-start">
-                <div class="wptb-item--icon"><i class="bi bi-envelope"></i></div>
-                <div class="wptb-item--holder">
-                    <p class="wptb-item--description"><a href="tel:+98765432122811">(+987) 654 321 228 11</a></p>
-                </div>
-            </div>
-        </div>
-
-        <h6>// Follow Us</h6>
-        <div class="social-box style-square">
-            <ul>
-                <li><a href="https://www.facebook.com/"><i class="bi bi-facebook"></i></a></li>
-                <li><a href="https://www.instagram.com/"><i class="bi bi-instagram"></i></a></li>
-                <li><a href="https://www.linkedin.com/"><i class="bi bi-linkedin"></i></a></li>
-                <li><a href="https://www.behance.com/"><i class="bi bi-behance"></i></a></li>
-                <li><a href="https://www.youtube.com/"><i class="bi bi-youtube"></i></a></li>
+            <ul class="mobile-account-links sidebar-account-links">
+                <li><a href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index --></li>
+                <li><a href="#" data-placeholder-link>Account Settings</a><!-- Future named route: accounts:settings --></li>
+                <li><a href="#" data-placeholder-link>Help Center</a><!-- Future named route: core:help_center --></li>
+                <li><a href="#" data-placeholder-link>Sign Out</a><!-- Future named route: accounts:logout --></li>
             </ul>
-        </div>
+        {% else %}
+            <p class="nav-sidebar-intro">Sign in to manage galleries, find your photos, or start delivering client-ready collections.</p>
+            <div class="mobile-auth-actions sidebar-auth-actions">
+                <a href="#" data-placeholder-link>Sign In</a><!-- Future named route: accounts:login -->
+                <a href="#" data-placeholder-link>Start Free</a><!-- Future named route: accounts:signup -->
+            </div>
+        {% endif %}
     </div>
 </div>
