@@ -494,3 +494,395 @@
 @media (max-width: 767px) { .lumis-final-cta { min-height: 600px; padding: 64px 0; } .lumis-final-cta__overlay { background: linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.78) 54%, rgba(0,0,0,.7) 100%), radial-gradient(circle at 30% 36%, rgba(215,0,6,.24), transparent 34%); } .lumis-final-cta__panel { padding: 28px 22px; border-radius: 24px; } .lumis-final-cta__title { font-size: clamp(36px, 10vw, 46px); } .lumis-final-cta__actions { align-items: stretch; flex-direction: column; } .lumis-final-cta__button, .lumis-final-cta__link { width: 100%; min-height: 54px; padding-left: 18px; padding-right: 18px; border: 1px solid rgba(255,255,255,.42); } .lumis-final-cta__link { background: rgba(255,255,255,.08); } }
 @media (max-width: 430px) { .lumis-final-cta { min-height: 620px; padding: 56px 0; } .lumis-final-cta__media img { object-position: 62% center; } .lumis-final-cta__panel::before { top: 24px; height: 70px; } .lumis-final-cta__copy { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .lumis-final-cta__button, .lumis-final-cta__link, .lumis-final-cta__media img { transition: none; transform: none; } }
+
+/* LumisPixel homepage design-system polish pass */
+:root {
+  --lumis-home-red: var(--color-one);
+  --lumis-home-red-hover: #c90006;
+  --lumis-home-ink: #181818;
+  --lumis-home-muted: #5e5a55;
+  --lumis-home-border: rgba(24, 24, 24, 0.12);
+  --lumis-home-border-inverse: rgba(255, 255, 255, 0.14);
+  --lumis-home-card-radius: 22px;
+  --lumis-home-button-radius: 12px;
+  --lumis-home-card-shadow: 0 18px 44px rgba(16, 24, 40, 0.10);
+  --lumis-home-card-shadow-hover: 0 24px 58px rgba(16, 24, 40, 0.15);
+  --lumis-home-dark-card-shadow: 0 24px 62px rgba(0, 0, 0, 0.24);
+  --lumis-home-transition: 260ms ease;
+}
+
+.wptb-slider.style3,
+.lumis-photo-match,
+.lumis-photographer-workflow,
+.lumis-audiences,
+.lumis-how-it-works,
+.lumis-ai-features,
+.lumis-photographer-marketplace,
+.lumis-pricing-section,
+.lumis-final-cta {
+  scroll-margin-top: 90px;
+}
+
+.lumis-photo-match,
+.lumis-photographer-workflow,
+.lumis-audiences,
+.lumis-how-it-works,
+.lumis-ai-features,
+.lumis-photographer-marketplace,
+.lumis-pricing-section {
+  padding-top: clamp(76px, 7vw, 112px);
+  padding-bottom: clamp(76px, 7vw, 112px);
+}
+
+.lumis-photographer-workflow .wptb-heading,
+.lumis-audiences .wptb-heading,
+.lumis-how-it-works .wptb-heading,
+.lumis-ai-features__heading,
+.lumis-photographer-discovery__header,
+.lumis-photographer-marketplace__content,
+.lumis-pricing-content {
+  margin-bottom: clamp(30px, 3vw, 44px);
+}
+
+.wptb-slider.style3 .wptb-item--subtitle,
+.lumis-feature-card__eyebrow,
+.lumis-audience-card__kicker,
+.lumis-photographer-discovery__eyebrow,
+.lumis-ai-preview-panel__eyebrow,
+.lumis-photographer-marketplace__eyebrow,
+.lumis-pricing-content__eyebrow,
+.lumis-final-cta__eyebrow,
+.lumis-photo-match__preview-label,
+.lumis-marketplace-panel__badge,
+.lumis-pricing-card__badge {
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.wptb-slider.style3 .wptb-item--title {
+  max-width: 760px;
+  font-size: clamp(54px, 5.2vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.lumis-photographer-workflow .wptb-item--title,
+.lumis-audiences .wptb-item--title,
+.lumis-how-it-works .wptb-item--title,
+.lumis-ai-features__heading .wptb-item--title,
+.lumis-photographer-discovery__title,
+.lumis-photographer-marketplace__title,
+.lumis-pricing-content__title,
+.lumis-final-cta__title {
+  font-size: clamp(40px, 4vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+
+.wptb-hero-subheadline,
+.lumis-photo-match__content .wptb-item--description,
+.lumis-photographer-workflow__intro,
+.lumis-audiences__intro,
+.lumis-how-it-works__intro,
+.lumis-ai-features__heading .wptb-item--description,
+.lumis-photographer-discovery__intro,
+.lumis-photographer-marketplace__intro,
+.lumis-pricing-content__intro,
+.lumis-final-cta__copy {
+  font-size: clamp(16px, 1.12vw, 18px);
+  line-height: 1.6;
+}
+
+.wptb-slider.style3 .wptb-item--button,
+.lumis-ai-features__cta,
+.lumis-photographer-marketplace__actions,
+.lumis-final-cta__actions {
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.wptb-slider.style3 .btn,
+.lumis-photo-match__panel .btn,
+.lumis-ai-features__cta .btn,
+.lumis-photographer-marketplace__actions .btn,
+.lumis-photographer-marketplace__secondary,
+.photographer-card__button,
+.lumis-photographer-discovery__browse,
+.lumis-pricing-card__cta,
+.lumis-final-cta__button,
+.lumis-marketplace-panel__button {
+  min-height: 52px;
+  border-radius: var(--lumis-home-button-radius);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  transition: color var(--lumis-home-transition), background-color var(--lumis-home-transition), border-color var(--lumis-home-transition), box-shadow var(--lumis-home-transition), transform var(--lumis-home-transition);
+}
+
+.wptb-slider.style3 .btn.btn-two.white,
+.lumis-photo-match__panel .btn,
+.lumis-ai-features__cta .btn,
+.lumis-photographer-marketplace__actions .btn,
+.lumis-photographer-discovery__browse,
+.lumis-pricing-card__cta--primary,
+.lumis-final-cta__button--primary,
+.lumis-marketplace-panel__button {
+  border-color: var(--lumis-home-red);
+  background: var(--lumis-home-red);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(215, 0, 6, 0.22);
+}
+
+.wptb-slider.style3 .btn.btn-two.white:hover,
+.lumis-photo-match__panel .btn:hover,
+.lumis-ai-features__cta .btn:hover,
+.lumis-photographer-marketplace__actions .btn:hover,
+.lumis-photographer-discovery__browse:hover,
+.lumis-pricing-card__cta--primary:hover,
+.lumis-final-cta__button--primary:hover {
+  background: var(--lumis-home-red-hover);
+  border-color: var(--lumis-home-red-hover);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(215, 0, 6, 0.28);
+}
+
+.wptb-slider.style3 .btn.btn-two.creative,
+.photographer-card__button,
+.lumis-pricing-card__cta:not(.lumis-pricing-card__cta--primary),
+.lumis-final-cta__button--secondary {
+  border: 1px solid rgba(24, 24, 24, 0.16);
+  background: #fff;
+  color: var(--lumis-home-ink);
+  box-shadow: none;
+}
+
+.wptb-slider.style3 .btn.btn-two.creative:hover,
+.photographer-card__button:hover,
+.lumis-pricing-card__cta:not(.lumis-pricing-card__cta--primary):hover,
+.lumis-final-cta__button--secondary:hover {
+  border-color: rgba(24, 24, 24, 0.28);
+  background: #f8f8f8;
+  color: var(--lumis-home-ink);
+  transform: translateY(-2px);
+}
+
+.wptb-hero-text-link,
+.lumis-feature-card__link,
+.lumis-audience-card__link,
+.lumis-photo-match__link,
+.lumis-photographer-marketplace__secondary,
+.lumis-pricing-compare,
+.lumis-final-cta__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: color var(--lumis-home-transition), transform var(--lumis-home-transition), border-color var(--lumis-home-transition), background-color var(--lumis-home-transition);
+}
+
+.wptb-hero-text-link:hover,
+.lumis-feature-card__link:hover,
+.lumis-audience-card__link:hover,
+.lumis-photo-match__link:hover,
+.lumis-pricing-compare:hover,
+.lumis-final-cta__link:hover {
+  color: var(--lumis-home-red);
+  transform: translateX(3px);
+}
+
+.lumis-photo-match__panel,
+.lumis-feature-card .wptb-item--inner,
+.lumis-audience-card,
+.lumis-ai-product-panel,
+.lumis-photographer-marketplace__step,
+.lumis-marketplace-panel,
+.lumis-pricing-card,
+.lumis-final-cta__panel,
+.photographer-card {
+  border-radius: var(--lumis-home-card-radius);
+  transition: border-color var(--lumis-home-transition), box-shadow var(--lumis-home-transition), transform var(--lumis-home-transition), background-color var(--lumis-home-transition);
+}
+
+.lumis-photo-match__panel,
+.lumis-feature-card .wptb-item--inner,
+.lumis-audience-card,
+.lumis-marketplace-panel,
+.lumis-final-cta__panel {
+  border-color: var(--lumis-home-border-inverse);
+  box-shadow: var(--lumis-home-dark-card-shadow);
+}
+
+.lumis-ai-product-panel,
+.lumis-pricing-card,
+.photographer-card {
+  border-color: var(--lumis-home-border);
+  box-shadow: var(--lumis-home-card-shadow);
+}
+
+.lumis-audience-card:hover,
+.lumis-audience-card:focus-within,
+.lumis-pricing-card:hover,
+.photographer-card:hover,
+.lumis-photographer-marketplace__step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--lumis-home-card-shadow-hover);
+}
+
+.lumis-feature-card .wptb-item--image img,
+.lumis-audience-card__image img,
+.lumis-photo-match__grid img,
+.lumis-how-it-works .wptb-item--image img,
+.lumis-pricing-visual figure,
+.photographer-card__image-wrap {
+  border-radius: calc(var(--lumis-home-card-radius) - 4px);
+}
+
+.lumis-feature-card .wptb-item--image img,
+.lumis-audience-card__image img,
+.lumis-photo-match__grid img,
+.lumis-pricing-visual img,
+.photographer-card__image-wrap img,
+.lumis-final-cta__media img {
+  filter: saturate(0.96) contrast(1.03);
+}
+
+.lumis-photo-match__upload-icon,
+.lumis-photo-match__step-number,
+.lumis-photographer-marketplace__step-number,
+.photographer-card__meta-icon,
+.lumis-how-it-works__step-number,
+.lumis-pricing-card__features li::before {
+  color: var(--lumis-home-red);
+}
+
+.lumis-photo-match__upload-icon,
+.lumis-photo-match__step-number,
+.lumis-photographer-marketplace__step-number {
+  background: rgba(215, 0, 6, 0.12);
+  border: 1px solid rgba(215, 0, 6, 0.20);
+}
+
+.lumis-photo-match__upload-icon i,
+.lumis-photo-match__step-number,
+.lumis-photographer-marketplace__step-number {
+  color: var(--lumis-home-red);
+}
+
+.lumis-photo-match__privacy i,
+.photographer-card__meta-icon i,
+.lumis-how-it-works .wptb-item--button .btn i {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.lumis-ai-feature-tab,
+.lumis-pricing-toggle__option,
+.lumis-photographer-discovery__filter {
+  transition: color var(--lumis-home-transition), background-color var(--lumis-home-transition), border-color var(--lumis-home-transition), box-shadow var(--lumis-home-transition), transform var(--lumis-home-transition);
+}
+
+.lumis-ai-feature-tab:hover,
+.lumis-pricing-toggle__option:hover,
+.lumis-photographer-discovery__filter:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1199px) {
+  .lumis-photo-match,
+  .lumis-photographer-workflow,
+  .lumis-audiences,
+  .lumis-how-it-works,
+  .lumis-ai-features,
+  .lumis-photographer-marketplace,
+  .lumis-pricing-section {
+    padding-top: 88px;
+    padding-bottom: 88px;
+  }
+}
+
+@media (max-width: 767px) {
+  .lumis-photo-match,
+  .lumis-photographer-workflow,
+  .lumis-audiences,
+  .lumis-how-it-works,
+  .lumis-ai-features,
+  .lumis-photographer-marketplace,
+  .lumis-pricing-section {
+    padding-top: 68px;
+    padding-bottom: 68px;
+  }
+
+  .wptb-slider.style3 .wptb-item--title,
+  .lumis-photographer-workflow .wptb-item--title,
+  .lumis-audiences .wptb-item--title,
+  .lumis-how-it-works .wptb-item--title,
+  .lumis-ai-features__heading .wptb-item--title,
+  .lumis-photographer-discovery__title,
+  .lumis-photographer-marketplace__title,
+  .lumis-pricing-content__title,
+  .lumis-final-cta__title {
+    font-size: clamp(32px, 9vw, 42px);
+    letter-spacing: -0.035em;
+  }
+
+  .wptb-slider.style3 .wptb-item--button,
+  .lumis-ai-features__cta,
+  .lumis-photographer-marketplace__actions,
+  .lumis-final-cta__actions {
+    gap: 10px;
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 430px) {
+  .wptb-slider.style3 .btn,
+  .lumis-photo-match__panel .btn,
+  .lumis-ai-features__cta .btn,
+  .lumis-photographer-marketplace__actions .btn,
+  .lumis-photographer-marketplace__secondary,
+  .photographer-card__button,
+  .lumis-photographer-discovery__browse,
+  .lumis-pricing-card__cta,
+  .lumis-final-cta__button,
+  .lumis-final-cta__link {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wptb-slider.style3 .btn,
+  .lumis-photo-match__panel .btn,
+  .lumis-ai-features__cta .btn,
+  .lumis-photographer-marketplace__actions .btn,
+  .lumis-photographer-marketplace__secondary,
+  .photographer-card__button,
+  .lumis-photographer-discovery__browse,
+  .lumis-pricing-card__cta,
+  .lumis-final-cta__button,
+  .lumis-final-cta__link,
+  .lumis-photo-match__panel,
+  .lumis-feature-card .wptb-item--inner,
+  .lumis-audience-card,
+  .lumis-ai-product-panel,
+  .lumis-photographer-marketplace__step,
+  .lumis-marketplace-panel,
+  .lumis-pricing-card,
+  .lumis-final-cta__panel,
+  .photographer-card,
+  .lumis-feature-card .wptb-item--image img,
+  .lumis-audience-card__image img {
+    transition: none;
+    transform: none;
+  }
+}
