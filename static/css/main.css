@@ -400,3 +400,59 @@
   .lumis-photographer-marketplace__step,
   .lumis-photographer-marketplace__secondary { transition: none; }
 }
+
+/* LumisPixel Pricing preview */
+.lumis-pricing-section {
+  position: relative;
+  overflow: hidden;
+  padding: 104px 0 96px;
+  background: linear-gradient(135deg, #fffaf6 0%, #f5eee8 52%, #efe4dc 100%);
+}
+.lumis-pricing-section::before { content: ""; position: absolute; inset: 12% -8% auto auto; width: 310px; height: 310px; border: 1px dashed rgba(215,0,6,.18); border-radius: 50%; pointer-events: none; }
+.lumis-pricing-section::after { content: ""; position: absolute; inset: auto auto -18% -10%; width: 360px; height: 360px; border-radius: 50%; background: rgba(215,0,6,.06); pointer-events: none; }
+.lumis-pricing-shell { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(340px, .78fr) minmax(0, 1.02fr); gap: clamp(34px, 5vw, 72px); align-items: center; }
+.lumis-pricing-visual { position: relative; min-height: 590px; }
+.lumis-pricing-visual__accent { position: absolute; top: 34px; left: -16px; width: 84px; height: 84px; border-radius: 999px; background: var(--color-one); box-shadow: 0 22px 44px rgba(215,0,6,.2); }
+.lumis-pricing-visual__accent::after { content: "AFFORDABLE ENTRY"; position: absolute; left: 44px; top: 29px; min-width: 160px; color: #181818; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.lumis-pricing-visual figure { margin: 0; overflow: hidden; background: #ddd; }
+.lumis-pricing-visual img { width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.94) contrast(1.02); }
+.lumis-pricing-visual__primary { position: absolute; inset: 72px 78px 58px 0; border-radius: 28px; box-shadow: 0 28px 70px rgba(35,26,20,.18); }
+.lumis-pricing-visual__secondary { position: absolute; right: 0; bottom: 16px; width: 52%; aspect-ratio: 1.42; border: 10px solid #fffaf6; border-radius: 22px; box-shadow: 0 24px 54px rgba(35,26,20,.2); }
+.lumis-pricing-visual__callout { position: absolute; left: 28px; bottom: 0; max-width: 290px; padding: 18px 20px; border: 1px solid rgba(255,255,255,.62); border-radius: 18px; background: rgba(24,24,24,.84); box-shadow: 0 22px 44px rgba(0,0,0,.18); backdrop-filter: blur(10px); }
+.lumis-pricing-visual__callout span,
+.lumis-pricing-visual__callout strong { display: block; color: #fff; font-size: 18px; line-height: 1.25; }
+.lumis-pricing-visual__callout strong { color: #ffd9d9; font-weight: 800; }
+.lumis-pricing-content__eyebrow { margin: 0 0 10px; color: var(--color-one); font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.lumis-pricing-content__title { max-width: 690px; margin: 0; color: #181818; font-size: clamp(40px, 4vw, 64px); line-height: 1.03; letter-spacing: -.045em; }
+.lumis-pricing-content__intro { max-width: 650px; margin: 16px 0 0; color: #5f5750; font-size: 16px; line-height: 1.6; }
+.lumis-pricing-toggle { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; padding: 6px; border: 1px solid #e6d8ce; border-radius: 999px; background: rgba(255,255,255,.78); box-shadow: 0 10px 30px rgba(48,35,27,.07); }
+.lumis-pricing-toggle__option { min-height: 42px; padding: 0 17px; border: 0; border-radius: 999px; background: transparent; color: #4b433d; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 900; cursor: pointer; }
+.lumis-pricing-toggle__option span { color: #776d65; font-size: 11px; font-weight: 800; }
+.lumis-pricing-toggle__option.is-active { background: #181818; color: #fff; box-shadow: 0 8px 18px rgba(0,0,0,.14); }
+.lumis-pricing-toggle__option.is-active::before { content: "✓"; color: var(--color-one); font-weight: 900; }
+.lumis-pricing-toggle__option:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
+.lumis-pricing-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+.lumis-pricing-card { position: relative; min-width: 0; padding: 20px 18px 18px; border: 1px solid #eaded5; border-radius: 20px; background: rgba(255,255,255,.86); box-shadow: 0 14px 34px rgba(48,35,27,.07); transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
+.lumis-pricing-card:hover { transform: translateY(-3px); border-color: #dccbc0; box-shadow: 0 18px 42px rgba(48,35,27,.1); }
+.lumis-pricing-card--featured { border-color: rgba(215,0,6,.34); background: linear-gradient(180deg, #fff6f3 0%, #fff 72%); }
+.lumis-pricing-card__badge { display: inline-flex; min-height: 28px; margin-bottom: 12px; padding: 0 10px; border-radius: 999px; background: rgba(215,0,6,.1); color: #b70005; align-items: center; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.lumis-pricing-card__header h3 { margin: 0; color: #181818; font-size: 22px; line-height: 1.15; }
+.lumis-pricing-card__header p { min-height: 42px; margin: 7px 0 0; color: #655c55; font-size: 13px; line-height: 1.45; }
+.lumis-pricing-card__price { margin: 14px 0; color: #181818; font-size: 25px; font-weight: 900; line-height: 1.1; letter-spacing: -.02em; }
+.lumis-pricing-card__features { display: grid; gap: 8px; min-height: 166px; margin: 0 0 16px; padding: 0; list-style: none; }
+.lumis-pricing-card__features li { position: relative; padding-left: 18px; color: #4e4842; font-size: 13px; line-height: 1.35; }
+.lumis-pricing-card__features li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--color-one); }
+.lumis-pricing-card__cta { width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid #ded0c7; border-radius: 12px; color: #181818; background: #fff; display: inline-flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1.1; }
+.lumis-pricing-card__cta:hover { color: #fff; border-color: #181818; background: #181818; }
+.lumis-pricing-card__cta--primary { color: #fff; border-color: var(--color-one); background: var(--color-one); }
+.lumis-pricing-card__cta:focus-visible,
+.lumis-pricing-compare:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
+.lumis-pricing-note { margin: 18px 0 0; color: #5f5750; font-size: 13px; line-height: 1.45; }
+.lumis-pricing-compare { display: inline-flex; margin-top: 12px; color: #181818; font-size: 14px; font-weight: 900; gap: 8px; }
+.lumis-pricing-compare:hover { color: var(--color-one); }
+@media (max-width: 1365px) { .lumis-pricing-section { padding: 92px 0 86px; } .lumis-pricing-shell { grid-template-columns: minmax(310px, .72fr) minmax(0, 1.08fr); gap: 36px; } .lumis-pricing-visual { min-height: 540px; } .lumis-pricing-card { padding: 18px 15px 16px; } }
+@media (max-width: 1199px) { .lumis-pricing-shell { grid-template-columns: 1fr; } .lumis-pricing-visual { max-width: 720px; width: 100%; min-height: 500px; } .lumis-pricing-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 991px) { .lumis-pricing-plans { grid-template-columns: 1fr; max-width: 680px; } .lumis-pricing-card__header p, .lumis-pricing-card__features { min-height: 0; } }
+@media (max-width: 767px) { .lumis-pricing-section { padding: 70px 0; } .lumis-pricing-content__title { font-size: clamp(34px, 9vw, 44px); } .lumis-pricing-visual { min-height: 420px; } .lumis-pricing-visual__primary { inset: 54px 42px 86px 0; border-radius: 22px; } .lumis-pricing-visual__secondary { width: 58%; right: 0; bottom: 38px; border-width: 7px; border-radius: 18px; } .lumis-pricing-visual__callout { left: 14px; right: 14px; bottom: 0; max-width: none; padding: 14px 16px; } .lumis-pricing-visual__callout span, .lumis-pricing-visual__callout strong { font-size: 16px; } .lumis-pricing-toggle { width: 100%; border-radius: 20px; } .lumis-pricing-toggle__option { flex: 1 1 100%; justify-content: center; border-radius: 15px; } }
+@media (max-width: 430px) { .lumis-pricing-visual { min-height: 360px; } .lumis-pricing-visual__accent { width: 66px; height: 66px; left: -8px; top: 24px; } .lumis-pricing-visual__accent::after { left: 34px; top: 23px; min-width: 132px; font-size: 9px; } .lumis-pricing-visual__primary { inset: 48px 24px 92px 0; } .lumis-pricing-visual__secondary { width: 64%; bottom: 48px; } .lumis-pricing-card { border-radius: 18px; } }
+@media (prefers-reduced-motion: reduce) { .lumis-pricing-card { transition: none; } }
