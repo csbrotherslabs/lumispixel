@@ -897,10 +897,10 @@ Description: Kimono - Photography Agency
             },
             speed: 1500,
             slidesPerView: 1,
-            spaceBetween: 28,
+            spaceBetween: 22,
             navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
+                nextEl: '.lumis-photographer-discovery .swiper-button-next',
+                prevEl: '.lumis-photographer-discovery .swiper-button-prev',
             },
             pagination: {
                 el: '.swiper-pagination',
@@ -909,19 +909,15 @@ Description: Kimono - Photography Agency
             breakpoints: {
                 576: {
                     slidesPerView: 2,
-                    spaceBetween: 30,
-                },
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 36,
+                    spaceBetween: 22,
                 },
                 1024: {
                   slidesPerView: 3,
-                  spaceBetween: 42,
+                  spaceBetween: 24,
                 },
-                1366: {
+                1600: {
                   slidesPerView: 4,
-                  spaceBetween: 50,
+                  spaceBetween: 26,
                 },
             }
         });
