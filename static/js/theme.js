@@ -906,18 +906,20 @@ Description: Kimono - Photography Agency
                 el: '.swiper-pagination',
                 clickable: true
             },
+            centeredSlides: false,
+            watchOverflow: true,
             breakpoints: {
-                576: {
+                768: {
                     slidesPerView: 2,
                     spaceBetween: 22,
                 },
                 1024: {
-                  slidesPerView: 3,
-                  spaceBetween: 24,
+                    slidesPerView: 3,
+                    spaceBetween: 24,
                 },
                 1600: {
-                  slidesPerView: 4,
-                  spaceBetween: 26,
+                    slidesPerView: 4,
+                    spaceBetween: 24,
                 },
             }
         });

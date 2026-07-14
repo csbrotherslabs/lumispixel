@@ -727,75 +727,207 @@ LumisPixel | Photography Made Discoverable
     <!-- Photographer Marketplace Preview -->
     <section class="wptb-team-one lumis-photographer-discovery" aria-labelledby="lumis-photographer-discovery-title">
         <div class="container">
-            <div class="wptb-heading">
-                <div class="wptb-item--inner">
-                    <div class="row align-items-center lumis-photographer-discovery__header-row">
-                        <div class="col-lg-5 lumis-photographer-discovery__heading-col">
-                            <h6 class="wptb-item--subtitle"><span>05 //</span> DISCOVER PHOTOGRAPHERS</h6>
-                            <h1 class="wptb-item--title mb-lg-0" id="lumis-photographer-discovery-title">Find the Right Photographer for Any Occasion.</h1>
-                        </div>
+            <div class="lumis-photographer-discovery__header">
+                <div class="lumis-photographer-discovery__header-copy">
+                    <p class="lumis-photographer-discovery__eyebrow">DISCOVER PHOTOGRAPHERS</p>
+                    <h2 class="lumis-photographer-discovery__title" id="lumis-photographer-discovery-title">Find the Right Photographer for Any Occasion.</h2>
+                    <p class="lumis-photographer-discovery__intro">Explore talented professionals by specialty, location, and style—all in one place.</p>
+                </div>
 
-                        <div class="col-lg-7 lumis-photographer-discovery__controls-col">
-                            <p class="wptb-item--description lumis-photographer-discovery__intro">Explore talented professionals by specialty, location, and style—all in one place.</p>
-                            <div class="lumis-photographer-discovery__actions">
-                                <div class="lumis-photographer-discovery__chips" aria-label="Presentational photographer categories">
-                                    <span>All</span>
-                                    <span>Weddings</span>
-                                    <span>Sports &amp; Events</span>
-                                    <span>Portraits</span>
-                                    <span>Corporate</span>
-                                    <span>Graduations</span>
-                                </div>
-                            </div>
+                <div class="lumis-photographer-discovery__toolbar">
+                    <div class="lumis-photographer-discovery__filters" aria-label="Presentational photographer categories">
+                        <button class="lumis-photographer-discovery__filter is-active" type="button">All</button>
+                        <button class="lumis-photographer-discovery__filter" type="button">Weddings</button>
+                        <button class="lumis-photographer-discovery__filter" type="button">Sports &amp; Events</button>
+                        <button class="lumis-photographer-discovery__filter" type="button">Portraits</button>
+                        <button class="lumis-photographer-discovery__filter" type="button">Corporate</button>
+                        <button class="lumis-photographer-discovery__filter" type="button">Graduations</button>
+                    </div>
 
-                            <!-- Swiper Navigation -->
-                            <div class="wptb-swiper-navigation style1">                      
-                                <div class="wptb-swiper-arrow swiper-button-prev" aria-label="Previous photographer profiles"></div>
-                                <div class="wptb-swiper-arrow swiper-button-next" aria-label="Next photographer profiles"></div>
-                            </div>
-                        </div>
+                    <div class="wptb-swiper-navigation style1 lumis-photographer-discovery__nav" aria-label="Photographer carousel navigation">
+                        <button class="wptb-swiper-arrow swiper-button-prev" type="button" aria-label="Previous photographer profiles"></button>
+                        <button class="wptb-swiper-arrow swiper-button-next" type="button" aria-label="Next photographer profiles"></button>
                     </div>
                 </div>
             </div>
 
-            <div class="swiper-container swiper-team lumis-photographer-discovery__carousel">
-                <div class="swiper-wrapper">                            
-                    <!-- Temporary presentation labels pending real account and marketplace data. -->
-                    <!-- Placeholder photographer profiles below must be replaced with real database-backed photographer profiles before launch. -->
+            <div class="swiper-container swiper-team lumis-photographer-discovery__carousel" aria-label="Featured photographer marketplace preview">
+                <div class="swiper-wrapper">
+                    <!-- Placeholder presentation data pending database-backed photographer profiles. -->
                     <div class="swiper-slide">
-                        <article class="wptb-team-grid1 lumis-photographer-card">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <img src="{% static 'img/team/1.jpg' %}" alt="Wedding and engagement photographer Maya Carter">
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/1.jpg' %}" alt="Wedding and engagement photographer Maya Carter">
+                            </div>
+
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Maya Carter</h3>
+                                <p class="photographer-card__specialty">Wedding &amp; Engagement</p>
+
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Kansas City, MO</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-patch-check" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Verified Photographer</span>
+                                    </div>
                                 </div>
 
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--meta">
-                                        <h2 class="wptb-item--title">Maya Carter</h2>
-                                        <p class="wptb-item--position">Wedding &amp; Engagement</p>
-                                        <div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">Kansas City, MO</span></div>
-                                        <div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-patch-check" aria-hidden="true"></i></span><span class="photographer-meta-text">Verified Photographer</span></div>
-                                    </div>
-                                    <!-- Future named URL: photographers:profile -->
-                                    <a class="lumis-photographer-card__link" href="#" aria-label="View Maya Carter profile">View Profile <span aria-hidden="true">→</span></a>
-                                </div>
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Maya Carter profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
                             </div>
                         </article>
                     </div>
-
                     <div class="swiper-slide">
-                        <article class="wptb-team-grid1 lumis-photographer-card">
-                            <div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/2.jpg' %}" alt="Sports and events photographer Daniel Brooks"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Daniel Brooks</h2><p class="wptb-item--position">Sports &amp; Events</p><div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">Overland Park, KS</span></div><div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span><span class="photographer-meta-text">Available for Booking</span></div></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Daniel Brooks profile">View Profile <span aria-hidden="true">→</span></a></div></div>
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/2.jpg' %}" alt="Sports and events photographer Daniel Brooks">
+                            </div>
+
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Daniel Brooks</h3>
+                                <p class="photographer-card__specialty">Sports &amp; Events</p>
+
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Overland Park, KS</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Available for Booking</span>
+                                    </div>
+                                </div>
+
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Daniel Brooks profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
                         </article>
                     </div>
+                    <div class="swiper-slide">
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/3.jpg' %}" alt="Portrait and lifestyle photographer Sofia Bennett">
+                            </div>
 
-                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/3.jpg' %}" alt="Portrait and lifestyle photographer Sofia Bennett"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Sofia Bennett</h2><p class="wptb-item--position">Portrait &amp; Lifestyle</p><div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">Chicago, IL</span></div><div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><span class="photographer-meta-text">New on LumisPixel</span></div></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Sofia Bennett profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Sofia Bennett</h3>
+                                <p class="photographer-card__specialty">Portrait &amp; Lifestyle</p>
 
-                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/4.jpg' %}" alt="Corporate and commercial photographer Marcus Reed"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Marcus Reed</h2><p class="wptb-item--position">Corporate &amp; Commercial</p><div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">Dallas, TX</span></div><div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-patch-check" aria-hidden="true"></i></span><span class="photographer-meta-text">Verified Photographer</span></div></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Marcus Reed profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Chicago, IL</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-stars" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">New on LumisPixel</span>
+                                    </div>
+                                </div>
 
-                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/5.jpg' %}" alt="Graduation and family photographer Ava Thompson"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Ava Thompson</h2><p class="wptb-item--position">Graduation &amp; Family</p><div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">Atlanta, GA</span></div><div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span><span class="photographer-meta-text">Available for Booking</span></div></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Ava Thompson profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Sofia Bennett profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="swiper-slide">
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/4.jpg' %}" alt="Corporate and commercial photographer Marcus Reed">
+                            </div>
 
-                    <div class="swiper-slide"><article class="wptb-team-grid1 lumis-photographer-card"><div class="wptb-item--inner"><div class="wptb-item--image"><img src="{% static 'img/team/6.jpg' %}" alt="Street and event photographer Jordan Lee"></div><div class="wptb-item--holder"><div class="wptb-item--meta"><h2 class="wptb-item--title">Jordan Lee</h2><p class="wptb-item--position">Street &amp; Event Photography</p><div class="photographer-meta-row lumis-photographer-card__location"><span class="photographer-meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span><span class="photographer-meta-text">New York, NY</span></div><div class="photographer-meta-row lumis-photographer-card__status"><span class="photographer-meta-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><span class="photographer-meta-text">New on LumisPixel</span></div></div><!-- Future named URL: photographers:profile --><a class="lumis-photographer-card__link" href="#" aria-label="View Jordan Lee profile">View Profile <span aria-hidden="true">→</span></a></div></div></article></div>
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Marcus Reed</h3>
+                                <p class="photographer-card__specialty">Corporate &amp; Commercial</p>
+
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Dallas, TX</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-patch-check" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Verified Photographer</span>
+                                    </div>
+                                </div>
+
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Marcus Reed profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="swiper-slide">
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/5.jpg' %}" alt="Graduation and family photographer Ava Thompson">
+                            </div>
+
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Ava Thompson</h3>
+                                <p class="photographer-card__specialty">Graduation &amp; Family</p>
+
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Atlanta, GA</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">Available for Booking</span>
+                                    </div>
+                                </div>
+
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Ava Thompson profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="swiper-slide">
+                        <article class="photographer-card">
+                            <div class="photographer-card__image-wrap">
+                                <img src="{% static 'img/team/6.jpg' %}" alt="Street and event photographer Jordan Lee">
+                            </div>
+
+                            <div class="photographer-card__body">
+                                <h3 class="photographer-card__name">Jordan Lee</h3>
+                                <p class="photographer-card__specialty">Street &amp; Event Photography</p>
+
+                                <div class="photographer-card__meta">
+                                    <div class="photographer-card__meta-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">New York, NY</span>
+                                    </div>
+                                    <div class="photographer-card__meta-row photographer-card__status-row">
+                                        <span class="photographer-card__meta-icon"><i class="bi bi-stars" aria-hidden="true"></i></span>
+                                        <span class="photographer-card__meta-text">New on LumisPixel</span>
+                                    </div>
+                                </div>
+
+                                <!-- Future named URL: photographers:profile -->
+                                <a class="photographer-card__button" href="#" aria-label="View Jordan Lee profile">
+                                    View Profile
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </div>
+                        </article>
+                    </div>
                 </div>
             </div>
 
@@ -806,9 +938,6 @@ LumisPixel | Photography Made Discoverable
         </div>
     </section>
 
-    <div class="divider-line-hr"></div>
-
-    <!-- Our Projects -->
     <section class="wptb-project">
         <div class="container">
             <div class="wptb-project--inner">
