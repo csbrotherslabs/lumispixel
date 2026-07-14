@@ -1107,6 +1107,51 @@ Description: Kimono - Photography Agency
         });
 
 
+        // LumisPixel AI features accessible tabs
+        $('.lumis-ai-features').each(function(){
+            var $section = $(this);
+            var $tabs = $section.find('[role="tab"]');
+            var $panels = $section.find('[role="tabpanel"]');
+
+            function activateFeature($tab, setFocus) {
+                var panelId = $tab.attr('aria-controls');
+
+                $tabs.removeClass('active').attr({'aria-selected': 'false', 'tabindex': '-1'});
+                $tab.addClass('active').attr({'aria-selected': 'true', 'tabindex': '0'});
+
+                $panels.removeClass('active').attr('hidden', true);
+                $('#' + panelId).addClass('active').removeAttr('hidden');
+
+                if (setFocus) {
+                    $tab.trigger('focus');
+                }
+            }
+
+            $tabs.on('click', function(){
+                activateFeature($(this), false);
+            });
+
+            $tabs.on('keydown', function(event){
+                var currentIndex = $tabs.index(this);
+                var nextIndex = currentIndex;
+
+                if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                    nextIndex = (currentIndex + 1) % $tabs.length;
+                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                    nextIndex = (currentIndex - 1 + $tabs.length) % $tabs.length;
+                } else if (event.key === 'Home') {
+                    nextIndex = 0;
+                } else if (event.key === 'End') {
+                    nextIndex = $tabs.length - 1;
+                } else {
+                    return;
+                }
+
+                event.preventDefault();
+                activateFeature($tabs.eq(nextIndex), true);
+            });
+        });
+
         // accordion
         $(".wptb-accordion").on("click",".wptb-item-title", function () {
             $(this).next().slideDown();
