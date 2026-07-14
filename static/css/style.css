@@ -2573,12 +2573,19 @@ body.theme-style--olive {
 .photographer-card__meta-icon i { line-height: 1; }
 .photographer-card__meta-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .photographer-card__status-row { align-self: flex-start; max-width: 100%; padding: 3px 8px 3px 0; color: var(--color-dark); font-size: 12px; }
-.photographer-card__button { width: 100%; min-height: 46px; margin-top: auto; padding: 0 18px; border: 1px solid #d9d9d9; border-radius: 12px; background: var(--color-white); color: var(--color-dark); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 700; line-height: 1; text-align: center; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+.photographer-card__button { width: 100%; min-height: 46px; margin-top: auto; padding: 0 18px; border: 1px solid #d9d9d9; border-radius: 12px; background: #ffffff; color: #111111; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 700; line-height: 1; text-align: center; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
 .photographer-card__meta + .photographer-card__button { margin-top: 16px; }
-.photographer-card__button span { color: var(--color-one); transition: transform .2s ease; }
-.photographer-card__button:hover { background: #fff7f7; border-color: #cfcfcf; color: var(--color-dark); }
-.photographer-card__button:hover span { transform: translateX(3px); }
-.photographer-card__button:focus-visible { outline: 2px solid var(--color-one); outline-offset: 4px; }
+.photographer-card__button span { color: var(--color-one); transition: transform .2s ease, color .2s ease; }
+.photographer-card__button:visited { color: #111111; }
+.photographer-card__button:visited span { color: var(--color-one); }
+.photographer-card__button:hover { background: #f7f7f7; border-color: #bdbdbd; color: #111111; }
+.photographer-card__button:hover span { color: var(--color-one); transform: translateX(3px); }
+.photographer-card__button:focus,
+.photographer-card__button:focus-visible { background: #ffffff; border-color: #bdbdbd; color: #111111; outline: 2px solid var(--color-one); outline-offset: 4px; }
+.photographer-card__button:focus span,
+.photographer-card__button:focus-visible span { color: var(--color-one); }
+.photographer-card__button:active { background: #eeeeee; border-color: #a8a8a8; color: #111111; }
+.photographer-card__button:active span { color: var(--color-one); transform: translateX(3px); }
 .lumis-photographer-discovery__cta-wrap { display: flex; justify-content: center; margin-top: 34px; }
 .lumis-photographer-discovery__browse { width: min(100%, 280px); min-height: 52px; padding: 0 26px; border-radius: 12px; background: var(--color-one); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 800; line-height: 1; transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease; }
 .lumis-photographer-discovery__browse:hover { color: var(--color-white); background: #d71919; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(233,40,40,.24); }
