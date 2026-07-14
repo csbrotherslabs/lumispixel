@@ -1095,6 +1095,13 @@ Description: Kimono - Photography Agency
             $('.wptb-image-box1.highlight, .wptb-image-box2.highlight, .wptb-blog-grid1.highlight, .wptb-packages1.highlight, .wptb-icon-box2.highlight, .wptb-icon-box5.highlight, .wptb-icon-box7.highlight, .wptb-award-list .wptb-item.highlight, .wptb-features .wptb-item.highlight').addClass('active');     
         });
 
+        // Keyboard parity for the LumisPixel workflow feature reveal
+        $('.lumis-how-it-works .wptb-features .wptb-item').on('focusin', function(){
+            $('.lumis-how-it-works .wptb-features .wptb-item').removeClass('active');
+            $(this).addClass('active');
+        });
+
+
         // accordion
         $(".wptb-accordion").on("click",".wptb-item-title", function () {
             $(this).next().slideDown();
