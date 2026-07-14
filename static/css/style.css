@@ -2391,6 +2391,11 @@ body.theme-style--olive {
     min-height: 575px;
 }
 
+.lumis-how-it-works .wptb-item .wptb-item--image {
+    top: 0;
+    bottom: auto;
+}
+
 .lumis-how-it-works .wptb-item--features-holder a {
     display: inline-flex;
     align-items: baseline;
