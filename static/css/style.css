@@ -1978,3 +1978,172 @@ body.theme-style--olive {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* LumisPixel photographer workflow carousel */
+.lumis-photographer-workflow {
+    position: relative;
+    overflow: hidden;
+}
+
+.lumis-photographer-workflow .wptb-heading {
+    max-width: 920px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.lumis-photographer-workflow__intro {
+    max-width: 660px;
+    margin: 18px auto 0;
+    color: var(--color-light);
+    font-size: 18px;
+    line-height: 1.55;
+}
+
+.lumis-photographer-workflow__carousel {
+    padding-bottom: 22px;
+}
+
+.lumis-feature-card .wptb-item--inner {
+    border: 1px solid rgba(var(--color-white-rgb), 0.08);
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(31, 31, 31, 0.72), rgba(8, 8, 8, 0.94));
+}
+
+.lumis-feature-card .wptb-item--image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(var(--color-black-fixed-rgb), 0.04) 0%, rgba(var(--color-black-fixed-rgb), 0.48) 54%, rgba(var(--color-black-fixed-rgb), 0.9) 100%);
+    pointer-events: none;
+}
+
+.lumis-feature-card .wptb-item--image img {
+    aspect-ratio: 1.42 / 1;
+    object-fit: cover;
+}
+
+.lumis-feature-card .wptb-item--meta {
+    max-width: 430px;
+}
+
+.lumis-feature-card__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    border: 1px solid rgba(var(--color-one-rgb), 0.42);
+    border-radius: 999px;
+    background: rgba(var(--color-one-rgb), 0.12);
+    color: var(--color-one);
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.lumis-feature-card .wptb-item--meta h4 {
+    margin-bottom: 10px;
+}
+
+.lumis-feature-card .wptb-item--meta p {
+    max-width: 390px;
+    margin-bottom: 14px;
+    color: var(--color-light);
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.lumis-feature-card__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--color-white);
+    font-size: 13px;
+    font-weight: var(--fw-medium);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.lumis-feature-card__link:hover,
+.lumis-feature-card__link:focus-visible,
+.lumis-feature-card .wptb-item--meta h4 a:focus-visible,
+.lumis-feature-card .wptb-item--link:focus-visible,
+.lumis-photographer-workflow .wptb-swiper-arrow:focus-visible {
+    color: var(--color-one);
+    outline: 2px solid var(--color-one);
+    outline-offset: 4px;
+}
+
+.lumis-photographer-workflow__dots {
+    position: relative;
+    z-index: 2;
+    margin-top: -56px;
+    text-align: center;
+}
+
+.lumis-photographer-workflow .swiper-pagination-bullet {
+    width: 12px;
+    height: 12px;
+    border: 1px solid rgba(var(--color-white-rgb), 0.55);
+    background: transparent;
+    opacity: 1;
+}
+
+.lumis-photographer-workflow .swiper-pagination-bullet-active {
+    width: 28px;
+    border-radius: 999px;
+    border-color: var(--color-one);
+    background: var(--color-one);
+}
+
+@media screen and (max-width: 991px) {
+    .lumis-photographer-workflow__intro {
+        font-size: 16px;
+    }
+
+    .lumis-feature-card .wptb-item--meta {
+        max-width: 360px;
+    }
+}
+
+@media screen and (max-width: 650px) {
+    .lumis-photographer-workflow {
+        padding-left: 18px;
+        padding-right: 18px;
+        padding-bottom: 140px;
+    }
+
+    .lumis-photographer-workflow .swiper-gallery-two .swiper-wrapper {
+        padding-top: 32px;
+        padding-bottom: 84px;
+    }
+
+    .lumis-photographer-workflow .wptb-swiper-navigation.style2 {
+        bottom: 26px;
+        width: 100%;
+    }
+
+    .lumis-photographer-workflow .wptb-swiper-arrow {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .lumis-photographer-workflow__dots {
+        margin-top: -42px;
+    }
+
+    .lumis-feature-card .wptb-item--image img {
+        aspect-ratio: 0.94 / 1;
+    }
+
+    .lumis-feature-card .wptb-item--meta h4 {
+        font-size: 24px;
+    }
+
+    .lumis-feature-card .wptb-item--meta p {
+        font-size: 14px;
+    }
+}
