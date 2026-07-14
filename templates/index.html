@@ -937,83 +937,94 @@ LumisPixel | Photography Made Discoverable
         </div>
     </section>
 
-    <!-- Blog Grid -->
-    <section class="wptb-blog-grid-one pb-0">
+    <!-- LumisPixel Pricing Preview -->
+    <section class="lumis-pricing-section" aria-labelledby="lumis-pricing-title" data-lumis-pricing>
         <div class="container">
-            <div class="wptb-heading">
-                <div class="wptb-item--inner">
-                    <div class="row align-items-center">
-                        <div class="col-lg-6">
-                            <h6 class="wptb-item--subtitle"><span>07 //</span> Latest News</h6>
-                            <h1 class="wptb-item--title mb-0">Our Photography<br>
-                                <span>Related Blog</span></h1>
-                        </div>
-
-                        <div class="col-lg-6">
-                            <p class="wptb-item--description">we’re deeply passionate <span>catch your lovely memories in cameras</span>
-                                and Convey your love for every moment of life as a whole.</p>
-                        </div>
+            <div class="lumis-pricing-shell">
+                <div class="lumis-pricing-visual wow fadeInLeft">
+                    <div class="lumis-pricing-visual__accent" aria-hidden="true"></div>
+                    <figure class="lumis-pricing-visual__primary">
+                        <img src="{% static 'img/pricing/1.jpg' %}" alt="Photographer reviewing a client gallery workflow">
+                    </figure>
+                    <figure class="lumis-pricing-visual__secondary">
+                        <img src="{% static 'img/more/9.jpg' %}" alt="Client photo gallery preview on a photography workstation">
+                    </figure>
+                    <div class="lumis-pricing-visual__callout">
+                        <span>More time behind the camera.</span>
+                        <strong>Less time managing the workflow.</strong>
                     </div>
                 </div>
-            </div>
-            
-            <div class="wptb-blog--inner">    
-                <div class="row">
-                    <div class="col-lg-4 col-sm-6">
-                        <div class="wptb-blog-grid1 active highlight wow fadeInLeft">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <a href="blog-details.html" class="wptb-item-link"><img src="{% static 'img/blog/1.jpg' %}" alt="img"></a>
-                                </div>
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--date">25 Sep 2023</div>
-                                    <h4 class="wptb-item--title"><a href="blog-details.html">Beginners guide to start your photography journey</a></h4>
-                                    
-                                    <div class="wptb-item--meta">
-                                        <div class="wptb-item--author">By <a href="#">Ashton William</a></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
+                <div class="lumis-pricing-content wow fadeInRight">
+                    <p class="lumis-pricing-content__eyebrow">SIMPLE PRICING</p>
+                    <h2 class="lumis-pricing-content__title" id="lumis-pricing-title">Start Free. Grow When You’re Ready.</h2>
+                    <p class="lumis-pricing-content__intro">Begin with the essentials, then upgrade as your galleries, clients, and photography business grow.</p>
+
+                    <div class="lumis-pricing-toggle" role="group" aria-label="Billing frequency">
+                        <button class="lumis-pricing-toggle__option is-active" type="button" aria-pressed="true" data-billing-option="monthly">Monthly</button>
+                        <button class="lumis-pricing-toggle__option" type="button" aria-pressed="false" data-billing-option="annual">Annual <span>Save with annual billing</span></button>
                     </div>
 
-                    <div class="col-lg-4 col-sm-6">
-                        <div class="wptb-blog-grid1 wow fadeInLeft">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <a href="blog-details.html" class="wptb-item-link"><img src="{% static 'img/blog/2.jpg' %}" alt="img"></a>
-                                </div>
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--date">22 Sep 2023</div>
-                                    <h4 class="wptb-item--title"><a href="blog-details.html">Twenty photography tips to
-                                        make photos amazing</a></h4>
-                                    
-                                    <div class="wptb-item--meta">
-                                        <div class="wptb-item--author">By <a href="#">Olivia Rose</a></div>
-                                    </div>
-                                </div>
+                    <div class="lumis-pricing-plans" aria-label="Pricing plan previews">
+                        <article class="lumis-pricing-card">
+                            <div class="lumis-pricing-card__header">
+                                <h3>Starter</h3>
+                                <p>For photographers getting started.</p>
                             </div>
-                        </div>
+                            <p class="lumis-pricing-card__price" data-monthly-price="Free" data-annual-price="Free">Free</p>
+                            <ul class="lumis-pricing-card__features">
+                                <li>Essential client galleries</li>
+                                <li>Basic photo delivery</li>
+                                <li>Limited storage</li>
+                                <li>Photographer profile</li>
+                                <li>Marketplace visibility</li>
+                            </ul>
+                            <!-- Future named URL: accounts:signup -->
+                            <a class="lumis-pricing-card__cta" href="#">Start Free</a>
+                        </article>
+
+                        <article class="lumis-pricing-card lumis-pricing-card--featured">
+                            <div class="lumis-pricing-card__badge">Most Popular</div>
+                            <div class="lumis-pricing-card__header">
+                                <h3>Professional</h3>
+                                <p>For active photographers managing regular clients.</p>
+                            </div>
+                            <p class="lumis-pricing-card__price" data-monthly-price="$29 / month" data-annual-price="$29 / month billed annually">$29 / month</p>
+                            <ul class="lumis-pricing-card__features">
+                                <li>Everything in Starter</li>
+                                <li>AI-assisted culling</li>
+                                <li>Face-powered photo discovery</li>
+                                <li>Online photo sales</li>
+                                <li>Expanded storage</li>
+                                <li>Custom gallery branding</li>
+                            </ul>
+                            <!-- Future named URL: accounts:signup -->
+                            <a class="lumis-pricing-card__cta lumis-pricing-card__cta--primary" href="#">Choose Professional</a>
+                        </article>
+
+                        <article class="lumis-pricing-card">
+                            <div class="lumis-pricing-card__header">
+                                <h3>Studio</h3>
+                                <p>For teams and growing photography businesses.</p>
+                            </div>
+                            <p class="lumis-pricing-card__price" data-monthly-price="$79 / month" data-annual-price="$79 / month billed annually">$79 / month</p>
+                            <ul class="lumis-pricing-card__features">
+                                <li>Everything in Professional</li>
+                                <li>Multiple team members</li>
+                                <li>Advanced gallery controls</li>
+                                <li>Higher storage limits</li>
+                                <li>Business performance dashboard</li>
+                                <li>Priority support</li>
+                            </ul>
+                            <!-- Future named URL: accounts:signup -->
+                            <a class="lumis-pricing-card__cta" href="#">Choose Studio</a>
+                        </article>
                     </div>
 
-                    <div class="col-lg-4 col-sm-6">
-                        <div class="wptb-blog-grid1 wow fadeInLeft">
-                            <div class="wptb-item--inner">
-                                <div class="wptb-item--image">
-                                    <a href="blog-details.html" class="wptb-item-link"><img src="{% static 'img/blog/3.jpg' %}" alt="img"></a>
-                                </div>
-                                <div class="wptb-item--holder">
-                                    <div class="wptb-item--date">22 Sep 2023</div>
-                                    <h4 class="wptb-item--title"><a href="blog-details.html">What Norway is best spots
-                                        For Photography</a></h4>
-                                    
-                                    <div class="wptb-item--meta">
-                                        <div class="wptb-item--author">By <a href="#">Justin Burke</a></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Pricing must become database- or configuration-driven before launch. These provisional marketing examples must not be treated as live billing values. -->
+                    <p class="lumis-pricing-note">Introductory pricing shown for preview. Final plans may change before launch.</p>
+                    <!-- Future named URL: pricing:compare -->
+                    <a class="lumis-pricing-compare" href="#">Compare All Features <span aria-hidden="true">→</span></a>
                 </div>
             </div>
         </div>

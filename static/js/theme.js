@@ -129,6 +129,21 @@ Description: Kimono - Photography Agency
             }
         });
 
+        // LumisPixel pricing preview billing toggle (presentational only; no checkout or persistence).
+        $('[data-lumis-pricing] [data-billing-option]').on('click', function() {
+            var $button = $(this);
+            var billing = $button.data('billing-option');
+            var $section = $button.closest('[data-lumis-pricing]');
+
+            $section.find('[data-billing-option]').removeClass('is-active').attr('aria-pressed', 'false');
+            $button.addClass('is-active').attr('aria-pressed', 'true');
+
+            $section.find('[data-monthly-price]').each(function() {
+                var $price = $(this);
+                $price.text(billing === 'annual' ? $price.data('annual-price') : $price.data('monthly-price'));
+            });
+        });
+
         // Aside info bar
         $('.aside_open').on("click", function(e) {
             e.preventDefault();
