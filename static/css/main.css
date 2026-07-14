@@ -637,6 +637,156 @@
   box-shadow: 0 14px 30px rgba(215, 0, 6, 0.22);
 }
 
+
+
+/* Keep the How It Works workflow labels subordinate to the section heading. */
+.lumis-how-it-works .wptb-item .wptb-item--features-holder {
+  align-items: center;
+  gap: 24px;
+  padding: 18px 0;
+  min-height: 78px;
+}
+
+.lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title {
+  font-size: 34px;
+  line-height: 1.12;
+}
+
+.lumis-how-it-works .wptb-item.active .wptb-item--features-holder,
+.lumis-how-it-works .wptb-item:hover .wptb-item--features-holder,
+.lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder,
+.lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title,
+.lumis-how-it-works .wptb-item:hover .wptb-item--features-holder .wptb-item--title,
+.lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder .wptb-item--title {
+  font-size: 38px;
+  line-height: 1.08;
+}
+
+.lumis-how-it-works .wptb-item .wptb-item--features-holder::before {
+  flex: 0 0 auto;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.lumis-how-it-works .wptb-item--features-holder a {
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  line-height: inherit;
+}
+
+.lumis-how-it-works__step-number {
+  flex: 0 0 auto;
+  font-size: 15px;
+  line-height: 1;
+}
+
+@media (max-width: 1365px) {
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder {
+    gap: 22px;
+    padding: 16px 0;
+    min-height: 72px;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title {
+    font-size: 32px;
+    line-height: 1.14;
+  }
+
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder .wptb-item--title {
+    font-size: 36px;
+    line-height: 1.1;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder::before {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder {
+    gap: 20px;
+    min-height: 68px;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title {
+    font-size: 30px;
+    line-height: 1.15;
+  }
+
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder .wptb-item--title {
+    font-size: 34px;
+    line-height: 1.12;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder::before {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder {
+    gap: 16px;
+    padding: 12px 0;
+    min-height: 58px;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title {
+    font-size: 24px;
+    line-height: 1.18;
+  }
+
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder .wptb-item--title {
+    font-size: 28px;
+    line-height: 1.14;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder::before {
+    font-size: 18px;
+  }
+
+  .lumis-how-it-works .wptb-item--features-holder a {
+    gap: 10px;
+  }
+
+  .lumis-how-it-works__step-number {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder {
+    gap: 14px;
+  }
+
+  .lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title {
+    font-size: 22px;
+  }
+
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder,
+  .lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:hover .wptb-item--features-holder .wptb-item--title,
+  .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-holder .wptb-item--title {
+    font-size: 26px;
+  }
+}
 .wptb-slider.style3 .btn.btn-two.white:hover,
 .lumis-photo-match__panel .btn:hover,
 .lumis-ai-features__cta .btn:hover,
