@@ -287,3 +287,116 @@
 @media (prefers-reduced-motion: reduce) {
   .lumis-ai-feature-tab { transition: none; }
 }
+
+/* Photographer Marketplace preview */
+.lumis-photographer-marketplace {
+  position: relative;
+  overflow: hidden;
+  padding: 110px 0;
+}
+
+.lumis-photographer-marketplace::before {
+  content: "";
+  position: absolute;
+  inset: 7% auto auto -8%;
+  width: 260px;
+  height: 260px;
+  border: 1px dashed rgba(255,255,255,.16);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lumis-photographer-marketplace__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(360px, .78fr);
+  gap: clamp(34px, 5vw, 76px);
+  align-items: center;
+}
+
+.lumis-photographer-marketplace__content { max-width: 760px; }
+.lumis-photographer-marketplace__eyebrow { margin: 0 0 10px; color: var(--color-one); font-size: 12px; font-weight: 800; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; }
+.lumis-photographer-marketplace__title { max-width: 760px; margin: 0; color: var(--color-white); font-size: clamp(42px, 3.5vw, 62px); line-height: 1.05; letter-spacing: -.04em; }
+.lumis-photographer-marketplace__intro { max-width: 640px; margin: 16px 0 0; color: rgba(255,255,255,.74); font-size: 16px; line-height: 1.6; }
+
+.lumis-photographer-marketplace__steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: marketplace-step;
+}
+
+.lumis-photographer-marketplace__step {
+  position: relative;
+  min-height: 116px;
+  padding: 18px 18px 17px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  background: rgba(255,255,255,.045);
+  display: flex;
+  gap: 13px;
+  transition: transform .22s ease, border-color .22s ease, background-color .22s ease;
+}
+
+.lumis-photographer-marketplace__step:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.07); }
+.lumis-photographer-marketplace__step-number { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; background: var(--color-one); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; line-height: 1; }
+.lumis-photographer-marketplace__step-copy { min-width: 0; display: grid; gap: 5px; }
+.lumis-photographer-marketplace__step-copy strong { color: var(--color-white); font-size: 17px; font-weight: 700; line-height: 1.25; }
+.lumis-photographer-marketplace__step-copy span { color: rgba(255,255,255,.68); font-size: 14px; line-height: 1.45; }
+.lumis-photographer-marketplace__reassurance { margin: 18px 0 0; color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.5; }
+
+.lumis-photographer-marketplace__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 28px; }
+.lumis-photographer-marketplace__secondary { min-height: 52px; padding: 0 22px; border: 1px solid rgba(255,255,255,.2); border-radius: 12px; color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 800; line-height: 1; transition: background-color .2s ease, border-color .2s ease, transform .2s ease; }
+.lumis-photographer-marketplace__secondary:hover { color: var(--color-white); border-color: rgba(255,255,255,.38); background: rgba(255,255,255,.07); transform: translateY(-2px); }
+.lumis-photographer-marketplace__secondary:focus-visible { outline: 2px solid var(--color-one); outline-offset: 4px; }
+
+.lumis-photographer-marketplace__preview { position: relative; }
+.lumis-marketplace-panel { position: relative; padding: 22px; border: 1px solid rgba(255,255,255,.16); border-radius: 26px; background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.045)); box-shadow: 0 28px 60px rgba(0,0,0,.24); backdrop-filter: blur(16px); }
+.lumis-marketplace-panel::after { content: ""; position: absolute; inset: 12px; z-index: -1; border: 1px dashed rgba(255,255,255,.12); border-radius: 20px; pointer-events: none; }
+.lumis-marketplace-panel__topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.lumis-marketplace-panel__label { color: var(--color-white); font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lumis-marketplace-panel__badge { padding: 7px 10px; border-radius: 999px; background: rgba(233,40,40,.16); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.lumis-marketplace-panel__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.lumis-marketplace-field { min-height: 78px; padding: 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; background: rgba(10,10,10,.34); display: grid; align-content: center; gap: 6px; }
+.lumis-marketplace-field--wide { grid-column: 1 / -1; min-height: 96px; }
+.lumis-marketplace-field span { color: rgba(255,255,255,.58); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.lumis-marketplace-field strong { color: var(--color-white); font-size: 15px; font-weight: 700; line-height: 1.35; }
+.lumis-marketplace-panel__button { width: 100%; min-height: 52px; margin-top: 16px; border: 0; border-radius: 14px; background: var(--color-one); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; cursor: default; }
+.lumis-marketplace-panel__note { margin: 12px 0 0; color: rgba(255,255,255,.62); font-size: 13px; line-height: 1.45; text-align: center; }
+
+@media (max-width: 1365px) {
+  .lumis-photographer-marketplace { padding: 96px 0; }
+  .lumis-photographer-marketplace__title { font-size: clamp(40px, 3.9vw, 52px); }
+}
+
+@media (max-width: 1199px) {
+  .lumis-photographer-marketplace__grid { grid-template-columns: 1fr; }
+  .lumis-photographer-marketplace__content { max-width: none; }
+  .lumis-photographer-marketplace__preview { max-width: 720px; width: 100%; }
+}
+
+@media (max-width: 767px) {
+  .lumis-photographer-marketplace { padding: 72px 0; }
+  .lumis-photographer-marketplace__title { font-size: clamp(32px, 8.5vw, 40px); }
+  .lumis-photographer-marketplace__steps,
+  .lumis-marketplace-panel__fields { grid-template-columns: 1fr; }
+  .lumis-photographer-marketplace__step { min-height: 0; }
+  .lumis-photographer-marketplace__actions { align-items: stretch; flex-direction: column; }
+  .lumis-photographer-marketplace__actions .btn,
+  .lumis-photographer-marketplace__secondary { width: 100%; min-height: 52px; }
+  .lumis-marketplace-panel { padding: 18px; border-radius: 22px; }
+  .lumis-marketplace-panel__topline { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 430px) {
+  .lumis-photographer-marketplace__step { padding: 15px; gap: 11px; }
+  .lumis-marketplace-panel { padding: 15px; }
+  .lumis-marketplace-field { padding: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumis-photographer-marketplace__step,
+  .lumis-photographer-marketplace__secondary { transition: none; }
+}
