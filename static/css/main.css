@@ -534,6 +534,54 @@
   padding-bottom: clamp(76px, 7vw, 112px);
 }
 
+/* LumisPixel homepage: contain the photographer workflow carousel before the audiences section. */
+.lumis-photographer-workflow {
+  overflow: visible;
+  padding-bottom: clamp(96px, 8vw, 132px);
+}
+
+.lumis-photographer-workflow__carousel {
+  position: relative;
+  margin-bottom: 0;
+  padding-bottom: clamp(34px, 3.4vw, 58px);
+}
+
+.lumis-photographer-workflow__dots {
+  margin-top: 0;
+}
+
+.lumis-audiences.pt-0 {
+  padding-top: clamp(40px, 4.5vw, 72px) !important;
+}
+
+@media (max-width: 1199px) {
+  .lumis-photographer-workflow {
+    padding-bottom: 104px;
+  }
+
+  .lumis-photographer-workflow__carousel {
+    padding-bottom: 44px;
+  }
+
+  .lumis-audiences.pt-0 {
+    padding-top: 60px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .lumis-photographer-workflow {
+    padding-bottom: 82px;
+  }
+
+  .lumis-photographer-workflow__carousel {
+    padding-bottom: 34px;
+  }
+
+  .lumis-audiences.pt-0 {
+    padding-top: 48px !important;
+  }
+}
+
 .lumis-photographer-workflow .wptb-heading,
 .lumis-audiences .wptb-heading,
 .lumis-how-it-works .wptb-heading,
