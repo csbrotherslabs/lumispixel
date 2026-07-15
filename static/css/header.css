@@ -1235,12 +1235,12 @@ body.overlay_menu_active .wptb-overlay-contact {
 .header .mainnav ul.main-menu > li + li { margin-left: 34px; }
 .header .mainnav ul.main-menu li a[data-placeholder-link] { cursor: pointer; }
 .nav-account { gap: 18px; margin-right: 22px; }
-.nav-signin { background: transparent; border: 0; color: var(--color-white); font-size: 13px; font-weight: var(--fw-medium); letter-spacing: 1px; line-height: 1; text-transform: uppercase; transition: color 300ms ease, opacity 300ms ease, outline-color 300ms ease; }
-.nav-signin:hover, .nav-signin:focus { color: var(--color-white); opacity: .82; }
+.header .nav-signin, .header.navbar--transparent .nav-signin, .header.navbar--sticky .nav-signin, .header .nav-signin:visited { background: transparent; border: 0; color: #FFFFFF; display: inline-block; font-size: 13px; font-weight: var(--fw-medium); letter-spacing: 1px; line-height: 1; opacity: 1; text-transform: uppercase; transition: color 300ms ease, opacity 300ms ease, outline-color 300ms ease; visibility: visible; }
+.header .nav-signin:hover, .header .nav-signin:focus, .header .nav-signin:active, .header.navbar--sticky .nav-signin:hover, .header.navbar--sticky .nav-signin:focus, .header.navbar--sticky .nav-signin:active { background: transparent; color: #FFFFFF; opacity: 1; visibility: visible; }
 .nav-start-free { align-items: center; background: transparent; border: 1px solid var(--color-white); border-radius: 999px; color: var(--color-white); display: inline-flex; font-size: 12px; font-weight: var(--fw-semibold); justify-content: center; letter-spacing: 1px; min-height: 42px; padding: 0 20px; text-transform: uppercase; transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, opacity 300ms ease; }
 .nav-start-free:hover, .nav-start-free:focus { background: rgba(var(--color-white-rgb), 0.12); border-color: var(--color-white); color: var(--color-white); }
-.navbar--sticky .nav-signin { color: var(--color-white); font-weight: var(--fw-medium); opacity: 1; }
-.navbar--sticky .nav-signin:hover, .navbar--sticky .nav-signin:focus { color: var(--color-white); opacity: .86; }
+.navbar--sticky .nav-signin { color: #FFFFFF; font-weight: var(--fw-medium); opacity: 1; }
+.navbar--sticky .nav-signin:hover, .navbar--sticky .nav-signin:focus { color: #FFFFFF; opacity: 1; }
 .navbar--sticky .nav-start-free { background: var(--color-one); border-color: var(--color-one); color: var(--color-white); }
 .navbar--sticky .nav-start-free:hover, .navbar--sticky .nav-start-free:focus { background: #930606; border-color: #930606; color: var(--color-white); opacity: 1; }
 .nav-signin:focus-visible, .nav-start-free:focus-visible, .mr_menu_toggle:focus-visible, .aside_open:focus-visible { outline: 2px solid var(--color-one); outline-offset: 4px; }
