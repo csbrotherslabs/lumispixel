@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found | LumisPixel{% endblock %}
+{% block content %}
+<section class="lumis-error-page" aria-labelledby="error-title">
+  <div class="container">
+    <p class="lumis-error-page__eyebrow">404</p>
+    <h1 id="error-title">This page is out of frame.</h1>
+    <p>The LumisPixel page you requested could not be found. Return home to continue exploring AI-powered photo galleries and discovery tools.</p>
+    <a class="btn" href="{% url 'core:index' %}">Back to homepage</a>
+  </div>
+</section>
+{% endblock %}

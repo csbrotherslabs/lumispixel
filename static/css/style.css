@@ -282,7 +282,7 @@
 }
 @media screen and (min-width: 992px) {
     .wptb-work-process-one--inner::before {
-        content: url('../img/line.png');
+        content: "";
         position: absolute;
         top: 25%;
         left: 50%;
@@ -1229,7 +1229,7 @@
     letter-spacing: -0.24px;
 }
 .wptb-product-list .widget-title::before {
-    content: url(../img/more/divider.svg);
+    content: "";
 }
 .wptb-product-list .widget-title::after {
     display: none;
