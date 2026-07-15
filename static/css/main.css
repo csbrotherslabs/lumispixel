@@ -1121,3 +1121,19 @@
 .lumis-audiences .lumis-audience-card__link span {
   color: var(--lumis-home-red);
 }
+
+/* --------------------------------------------------------------------------
+   Reusable Template Components
+   -------------------------------------------------------------------------- */
+.lumis-component-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.lumis-component-badge--neutral { background: rgba(24, 24, 24, .08); color: #181818; }
+.lumis-component-badge--accent { background: rgba(215, 0, 6, .1); color: #b70005; }
+.lumis-component-badge--outline { border: 1px solid currentColor; background: transparent; }
+.lumis-component-badge--success { background: rgba(37, 161, 92, .12); color: #1d7f49; }
