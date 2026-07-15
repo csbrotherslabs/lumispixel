@@ -1,0 +1,7 @@
+{% if not disabled %}<a class="{% if variant == 'primary' %}btn btn-two white{% elif variant == 'secondary' %}btn btn-two creative{% elif variant == 'outline' %}btn btn-two white-opacity creative text-uppercase{% elif variant == 'solid' %}btn btn-three text-uppercase{% else %}btn btn-two{% endif %}{% if extra_class %} {{ extra_class }}{% endif %}" href="{{ href|default:'#' }}"{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{% if target %} target="{{ target }}"{% if target == '_blank' %} rel="noopener noreferrer"{% endif %}{% endif %}{% if placeholder %} data-placeholder-link{% endif %}>
+    <span class="btn-wrap">
+        <span class="text-first">{{ label }}</span>{% if show_second %}<span class="text-second">{% if second_label %}{{ second_label }}{% else %} <i class="bi {{ icon|default:'bi-arrow-up-right' }}"></i> <i class="bi {{ icon|default:'bi-arrow-up-right' }}"></i> {% endif %}</span>{% endif %}
+    </span>
+</a>{% else %}<span class="{% if variant == 'primary' %}btn btn-two white{% elif variant == 'secondary' %}btn btn-two creative{% elif variant == 'outline' %}btn btn-two white-opacity creative text-uppercase{% elif variant == 'solid' %}btn btn-three text-uppercase{% else %}btn btn-two{% endif %}{% if extra_class %} {{ extra_class }}{% endif %}" aria-disabled="true">
+    <span class="btn-wrap"><span class="text-first">{{ label }}</span></span>
+</span>{% endif %}

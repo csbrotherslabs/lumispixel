@@ -1,0 +1,7 @@
+<div class="{% if wrapper_class %}{{ wrapper_class }}{% else %}wptb-heading{% endif %}{% if extra_class %} {{ extra_class }}{% endif %}">
+    <div class="wptb-item--inner{% if alignment %} text-{{ alignment }}{% endif %}">
+        {% if eyebrow %}<h6 class="wptb-item--subtitle">{% if section_number %}<span>{{ section_number }}</span> {% endif %}{{ eyebrow }}</h6>{% endif %}
+        {% if title %}<h1 class="wptb-item--title{% if title_class %} {{ title_class }}{% endif %}"{% if title_id %} id="{{ title_id }}"{% endif %}>{{ title|safe }}</h1>{% endif %}
+        {% if copy %}<p class="wptb-item--description{% if copy_class %} {{ copy_class }}{% endif %}">{{ copy }}</p>{% endif %}
+    </div>
+</div>

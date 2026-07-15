@@ -1,0 +1,18 @@
+<article class="lumis-pricing-card{% if highlighted %} lumis-pricing-card--featured{% endif %}">
+    {% if badge_text %}<div class="lumis-pricing-card__badge">{{ badge_text }}</div>{% endif %}
+    <div class="lumis-pricing-card__header">
+        <h3>{{ plan_name }}</h3>
+        <p>{{ audience }}</p>
+    </div>
+    <p class="lumis-pricing-card__price" data-monthly-price="{{ monthly_price }}" data-annual-price="{{ annual_price|default:monthly_price }}">{{ price }}</p>
+    <ul class="lumis-pricing-card__features">
+        {% if feature_1 %}<li>{{ feature_1 }}</li>{% endif %}
+        {% if feature_2 %}<li>{{ feature_2 }}</li>{% endif %}
+        {% if feature_3 %}<li>{{ feature_3 }}</li>{% endif %}
+        {% if feature_4 %}<li>{{ feature_4 }}</li>{% endif %}
+        {% if feature_5 %}<li>{{ feature_5 }}</li>{% endif %}
+        {% if feature_6 %}<li>{{ feature_6 }}</li>{% endif %}
+    </ul>
+    <a class="lumis-pricing-card__cta{% if highlighted %} lumis-pricing-card__cta--primary{% endif %}" href="{{ cta_url|default:'#' }}">{{ cta_label }}</a>
+    {% if disclaimer %}<p class="lumis-pricing-card__disclaimer">{{ disclaimer }}</p>{% endif %}
+</article>

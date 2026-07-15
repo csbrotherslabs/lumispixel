@@ -35,21 +35,11 @@ LumisPixel | Photography Made Discoverable
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    <a class="btn btn-two white" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Start Free</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Start Free" href="#" variant="primary" show_second=True %}
     
-                                                    <a class="btn btn-two creative" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Find My Photos</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
-                                                <a class="wptb-hero-text-link" href="#">Hire a Photographer →</a>
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -92,21 +82,11 @@ LumisPixel | Photography Made Discoverable
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    <a class="btn btn-two white" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Start Free</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Start Free" href="#" variant="primary" show_second=True %}
     
-                                                    <a class="btn btn-two creative" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Find My Photos</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
-                                                <a class="wptb-hero-text-link" href="#">Hire a Photographer →</a>
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -149,21 +129,11 @@ LumisPixel | Photography Made Discoverable
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    <a class="btn btn-two white" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Start Free</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Start Free" href="#" variant="primary" show_second=True %}
     
-                                                    <a class="btn btn-two creative" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Find My Photos</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
-                                                <a class="wptb-hero-text-link" href="#">Hire a Photographer →</a>
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -206,21 +176,11 @@ LumisPixel | Photography Made Discoverable
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    <a class="btn btn-two white" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Start Free</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Start Free" href="#" variant="primary" show_second=True %}
     
-                                                    <a class="btn btn-two creative" href="#">
-                                                        <span class="btn-wrap">
-                                                            <span class="text-first">Find My Photos</span>
-                                                            <span class="text-second"> <i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i> </span>
-                                                        </span>
-                                                    </a>
+                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
-                                                <a class="wptb-hero-text-link" href="#">Hire a Photographer →</a>
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -251,10 +211,7 @@ LumisPixel | Photography Made Discoverable
             </div>
 
             <!-- Swiper Navigation -->
-            <div class="wptb-swiper-navigation style3">                      
-                <div class="wptb-swiper-arrow swiper-button-prev"></div>
-                <div class="wptb-swiper-arrow swiper-button-next"></div>
-            </div>
+            {% include "components/carousel_controls.html" with style="style3" %}
         </div>
 
     </section>
@@ -269,13 +226,7 @@ LumisPixel | Photography Made Discoverable
             <div class="row align-items-center g-4 g-xl-5">
                 <div class="col-xl-7 col-lg-7">
                     <div class="lumis-photo-match__content wow fadeInLeft">
-                        <div class="wptb-heading mb-0">
-                            <div class="wptb-item--inner">
-                                <h6 class="wptb-item--subtitle"><span>01 //</span> FIND YOUR PHOTOS</h6>
-                                <h1 class="wptb-item--title" id="photo-match-title">Your Photos. <span>Found in Seconds.</span></h1>
-                                <p class="wptb-item--description">Upload a selfie and quickly find your photos from participating events and galleries.</p>
-                            </div>
-                        </div>
+                        {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." %}
 
                         <ol class="lumis-photo-match__steps" aria-label="How photo matching works">
                             <li>
@@ -335,11 +286,7 @@ LumisPixel | Photography Made Discoverable
                         <p class="lumis-photo-match__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i> Selfie used only for this gallery search.</p>
 
                         <!-- Future named URL: photo_matching_demo -->
-                        <a class="btn btn-two white-opacity creative text-uppercase" href="#" aria-label="Try the nonfunctional photo matching demo preview">
-                            <span class="btn-wrap">
-                                <span class="text-first">Try the Demo</span>
-                            </span>
-                        </a>
+                        {% include "components/button.html" with label="Try the Demo" href="#" variant="outline" aria_label="Try the nonfunctional photo matching demo preview" %}
                     </div>
                 </div>
             </div>
@@ -494,10 +441,7 @@ LumisPixel | Photography Made Discoverable
                 </div>
 
                 <!-- Swiper Navigation -->
-                <div class="wptb-swiper-navigation style2">                      
-                    <div class="wptb-swiper-arrow swiper-button-prev" aria-label="Show previous LumisPixel feature" role="button" tabindex="0"></div>
-                    <div class="wptb-swiper-arrow swiper-button-next" aria-label="Show next LumisPixel feature" role="button" tabindex="0"></div>
-                </div>
+                {% include "components/carousel_controls.html" with style="style2" previous_label="Show previous LumisPixel feature" next_label="Show next LumisPixel feature" %}
 
                 <div class="wptb-swiper-dots style2 lumis-photographer-workflow__dots">
                     <div class="swiper-pagination" aria-label="LumisPixel feature slides"></div>
@@ -777,12 +721,7 @@ LumisPixel | Photography Made Discoverable
 
                     <div class="wptb-item--button lumis-ai-features__cta">
                         <!-- Future Django named URL: ai_tools:index -->
-                        <a class="btn btn-three text-uppercase" href="#">
-                            <span class="btn-wrap">
-                                <span class="text-first">Explore AI Tools →</span>
-                                <span class="text-second">Explore AI Tools →</span>
-                            </span>
-                        </a>
+                        {% include "components/button.html" with label="Explore AI Tools →" href="#" variant="solid" show_second=True second_label="Explore AI Tools →" %}
                     </div>
                 </div>
 
@@ -893,9 +832,7 @@ LumisPixel | Photography Made Discoverable
 
                     <div class="lumis-photographer-marketplace__actions">
                         <!-- Future named URL: marketplace:photographer_search -->
-                        <a class="btn btn-three text-uppercase" href="#">
-                            <span class="btn-wrap"><span class="text-first">Find a Photographer</span><span class="text-second">Find a Photographer</span></span>
-                        </a>
+                        {% include "components/button.html" with label="Find a Photographer" href="#" variant="solid" show_second=True second_label="Find a Photographer" %}
                         <!-- Future named URL: photographers:signup -->
                         <a class="lumis-photographer-marketplace__secondary" href="#">Join as a Photographer <span aria-hidden="true">→</span></a>
                     </div>
@@ -905,7 +842,7 @@ LumisPixel | Photography Made Discoverable
                     <div class="lumis-marketplace-panel" role="group" aria-labelledby="lumis-marketplace-panel-title" aria-describedby="lumis-marketplace-panel-note">
                         <div class="lumis-marketplace-panel__topline">
                             <span class="lumis-marketplace-panel__label" id="lumis-marketplace-panel-title">Marketplace preview</span>
-                            <span class="lumis-marketplace-panel__badge">Visual only</span>
+                            {% include "components/badge.html" with label="Visual only" class_name="lumis-marketplace-panel__badge" %}
                         </div>
                         <div class="lumis-marketplace-panel__fields">
                             <div class="lumis-marketplace-field">
@@ -966,59 +903,11 @@ LumisPixel | Photography Made Discoverable
                     </div>
 
                     <div class="lumis-pricing-plans" aria-label="Pricing plan previews">
-                        <article class="lumis-pricing-card">
-                            <div class="lumis-pricing-card__header">
-                                <h3>Starter</h3>
-                                <p>For photographers getting started.</p>
-                            </div>
-                            <p class="lumis-pricing-card__price" data-monthly-price="Free" data-annual-price="Free">Free</p>
-                            <ul class="lumis-pricing-card__features">
-                                <li>Essential client galleries</li>
-                                <li>Basic photo delivery</li>
-                                <li>Limited storage</li>
-                                <li>Photographer profile</li>
-                                <li>Marketplace visibility</li>
-                            </ul>
-                            <!-- Future named URL: accounts:signup -->
-                            <a class="lumis-pricing-card__cta" href="#">Start Free</a>
-                        </article>
+                        {% include "components/pricing_card.html" with plan_name="Starter" audience="For photographers getting started." price="Free" monthly_price="Free" annual_price="Free" feature_1="Essential client galleries" feature_2="Basic photo delivery" feature_3="Limited storage" feature_4="Photographer profile" feature_5="Marketplace visibility" cta_label="Start Free" cta_url="#" %}
 
-                        <article class="lumis-pricing-card lumis-pricing-card--featured">
-                            <div class="lumis-pricing-card__badge">Most Popular</div>
-                            <div class="lumis-pricing-card__header">
-                                <h3>Professional</h3>
-                                <p>For active photographers managing regular clients.</p>
-                            </div>
-                            <p class="lumis-pricing-card__price" data-monthly-price="$29 / month" data-annual-price="$29 / month billed annually">$29 / month</p>
-                            <ul class="lumis-pricing-card__features">
-                                <li>Everything in Starter</li>
-                                <li>AI-assisted culling</li>
-                                <li>Face-powered photo discovery</li>
-                                <li>Online photo sales</li>
-                                <li>Expanded storage</li>
-                                <li>Custom gallery branding</li>
-                            </ul>
-                            <!-- Future named URL: accounts:signup -->
-                            <a class="lumis-pricing-card__cta lumis-pricing-card__cta--primary" href="#">Choose Professional</a>
-                        </article>
+                        {% include "components/pricing_card.html" with plan_name="Professional" audience="For active photographers managing regular clients." price="$29 / month" monthly_price="$29 / month" annual_price="$29 / month billed annually" feature_1="Everything in Starter" feature_2="AI-assisted culling" feature_3="Face-powered photo discovery" feature_4="Online photo sales" feature_5="Expanded storage" feature_6="Custom gallery branding" cta_label="Choose Professional" cta_url="#" highlighted=True badge_text="Most Popular" %}
 
-                        <article class="lumis-pricing-card">
-                            <div class="lumis-pricing-card__header">
-                                <h3>Studio</h3>
-                                <p>For teams and growing photography businesses.</p>
-                            </div>
-                            <p class="lumis-pricing-card__price" data-monthly-price="$79 / month" data-annual-price="$79 / month billed annually">$79 / month</p>
-                            <ul class="lumis-pricing-card__features">
-                                <li>Everything in Professional</li>
-                                <li>Multiple team members</li>
-                                <li>Advanced gallery controls</li>
-                                <li>Higher storage limits</li>
-                                <li>Business performance dashboard</li>
-                                <li>Priority support</li>
-                            </ul>
-                            <!-- Future named URL: accounts:signup -->
-                            <a class="lumis-pricing-card__cta" href="#">Choose Studio</a>
-                        </article>
+                        {% include "components/pricing_card.html" with plan_name="Studio" audience="For teams and growing photography businesses." price="$79 / month" monthly_price="$79 / month" annual_price="$79 / month billed annually" feature_1="Everything in Professional" feature_2="Multiple team members" feature_3="Advanced gallery controls" feature_4="Higher storage limits" feature_5="Business performance dashboard" feature_6="Priority support" cta_label="Choose Studio" cta_url="#" %}
                     </div>
 
                     <!-- Pricing must become database- or configuration-driven before launch. These provisional marketing examples must not be treated as live billing values. -->
@@ -1095,12 +984,7 @@ LumisPixel | Photography Made Discoverable
             </div>
         </div>
         <div class="wptb-item--button">
-            <a class="btn btn-two" href="#">
-                <span class="btn-wrap">
-                    <span class="text-first">Follow Us on Instagram</span>
-                    <span class="text-second"> <i class="bi bi-instagram"></i> <i class="bi bi-instagram"></i> </span>
-                </span>
-            </a>
+            {% include "components/button.html" with label="Follow Us on Instagram" href="#" show_second=True icon="bi-instagram" %}
         </div>
     </div>
 {% endblock %}
