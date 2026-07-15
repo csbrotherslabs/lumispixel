@@ -25,7 +25,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Sora:wght@100..800&display=swap');
 @import url("../fonts/bootstrap-icons-1.1/font/bootstrap-icons.css");
 @import url("bootstrap.min.css");
-@import url("../plugins/jquery_ui/style.css");
 @import url("animation.css");
 @import url("../plugins/wow/animate.css");
 @import url("../plugins/swiper/swiper-bundle.min.css");
@@ -42,7 +41,6 @@
 @import url("preloader.css");
 @import url("shop.css");
 @import url("components.css");
-@import url("contact.css");
 @import url("blog.css");
 @import url("sidebar.css");
 @import url("portfolio.css");
@@ -1223,3 +1221,58 @@
 .lumis-component-badge--accent { background: rgba(215, 0, 6, .1); color: #b70005; }
 .lumis-component-badge--outline { border: 1px solid currentColor; background: transparent; }
 .lumis-component-badge--success { background: rgba(37, 161, 92, .12); color: #1d7f49; }
+
+
+/* Launch-readiness accessibility and browser-compatibility fixes. */
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 10000;
+  transform: translateY(-160%);
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: #d70006;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 12px 30px rgba(0,0,0,.2);
+  transition: transform 160ms ease;
+}
+.skip-link:focus, .skip-link:focus-visible { transform: translateY(0); color: #fff; outline: 3px solid rgba(255,255,255,.9); outline-offset: 3px; }
+#main-content:focus { outline: none; }
+
+button, a, [role="button"] { -webkit-tap-highlight-color: rgba(215, 0, 6, .2); }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px solid rgba(215, 0, 6, .45); outline-offset: 3px; }
+
+.lumis-marketplace-panel, .lumis-pricing-visual__callout, .lumis-final-cta__panel {
+  -webkit-backdrop-filter: blur(10px);
+}
+.lumis-marketplace-panel { -webkit-backdrop-filter: blur(16px); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lumis-marketplace-panel { background: rgba(34, 28, 24, .94); }
+  .lumis-pricing-visual__callout { background: rgba(24,24,24,.94); }
+  .lumis-final-cta__panel { background: rgba(10,10,10,.86); }
+}
+
+html, body { max-width: 100%; overflow-x: clip; }
+img, svg, video { max-width: 100%; height: auto; }
+
+@media (max-width: 575.98px) {
+  .wptb-item--button, .lumis-final-cta__actions, .mobile-auth-actions, .sidebar-auth-actions { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .wptb-item--button .btn, .lumis-final-cta__actions .btn { width: 100%; justify-content: center; min-height: 44px; }
+  .lumis-ai-features__tabs { grid-template-columns: 1fr; }
+  .lumis-ai-product-panel__workspace { grid-template-columns: 1fr; }
+  .lumis-ai-product-panel { min-height: 0; }
+}
+
+@media (max-width: 991.98px) {
+  .lumis-ai-features__inner { grid-template-columns: 1fr; }
+  .lumis-ai-features__preview { padding-top: 0; justify-content: flex-start; }
+}
+.aside_open { border: 0; background: transparent; }
+.aside_open .aside-open--inner { pointer-events: none; }
+.mr_menu ul.main-menu li .submenu_opener { border: 0; background: transparent; }
+.lumis-error-page { min-height: 68vh; display: grid; place-items: center; padding: 150px 0 90px; text-align: center; background: #f8f6f3; }
+.lumis-error-page h1 { margin: 0 auto 18px; max-width: 760px; color: #151515; font-size: clamp(42px, 8vw, 92px); line-height: .95; }
+.lumis-error-page p { max-width: 650px; margin: 0 auto 26px; color: #555; }
+.lumis-error-page__eyebrow { color: #d70006; font-weight: 900; letter-spacing: .24em; text-transform: uppercase; }
