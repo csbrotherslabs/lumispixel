@@ -1223,3 +1223,56 @@
 .lumis-component-badge--accent { background: rgba(215, 0, 6, .1); color: #b70005; }
 .lumis-component-badge--outline { border: 1px solid currentColor; background: transparent; }
 .lumis-component-badge--success { background: rgba(37, 161, 92, .12); color: #1d7f49; }
+
+/* LumisPixel launch-readiness accessibility and browser-compatibility fixes. */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100000;
+  transform: translateY(-140%);
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #181818;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 12px 30px rgba(0,0,0,.24);
+  transition: transform .2s ease;
+}
+.skip-link:focus { transform: translateY(0); color: #fff; }
+:focus-visible { outline: 3px solid #ff4d4d; outline-offset: 3px; }
+main:focus { outline: none; }
+.wptb-swiper-arrow { border: 0; appearance: none; -webkit-appearance: none; }
+.lumis-marketplace-panel { -webkit-backdrop-filter: blur(16px); background-color: rgba(28,28,28,.78); }
+.lumis-pricing-visual__callout,
+.lumis-final-cta__panel { -webkit-backdrop-filter: blur(10px); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lumis-marketplace-panel { background: rgba(28,28,28,.94); }
+  .lumis-pricing-visual__callout { background: rgba(24,24,24,.96); }
+  .lumis-final-cta__panel { background: rgba(10,10,10,.9); }
+}
+@media (max-width: 1399.98px) {
+  .header .aside_open { display: none; }
+}
+@media (max-width: 767.98px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  .wptb-item--button, .lumis-final-cta__actions { flex-wrap: wrap; }
+  .wptb-item--button .btn, .lumis-final-cta__actions .btn { width: 100%; justify-content: center; }
+  .lumis-photo-match,
+  .lumis-ai-features,
+  .lumis-marketplace,
+  .lumis-pricing,
+  .lumis-final-cta { overflow-x: clip; }
+  .lumis-ai-features__tabs { grid-template-columns: 1fr; }
+  .lumis-pricing-grid { grid-template-columns: 1fr; }
+  .mr_menu { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+}
+.aside_open { background: transparent; border: 0; padding: 0; }
+.submenu_opener { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: inherit; }
+@media (min-width: 1400px) {
+  .mr_menu_toggle { display: none !important; }
+}
+.lumis-error-page { min-height: 70vh; display: grid; place-items: center; padding: 140px 0 90px; text-align: center; background: #f8f6f3; }
+.lumis-error-page h1 { margin-bottom: 18px; font-size: clamp(42px, 8vw, 86px); }
+.lumis-error-page p { max-width: 560px; margin: 0 auto 28px; color: #57514c; }
+.lumis-error-page__eyebrow { color: #c62828; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }

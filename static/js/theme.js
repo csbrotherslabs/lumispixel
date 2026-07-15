@@ -48,11 +48,12 @@ Description: Kimono - Photography Agency
         var mobileMenuContent = $('.mainnav').html();
 		$('.mr_menu .logo').append(mobileLogoContent);
 		$('.mr_menu .mr_navmenu').append(mobileMenuContent);
-        $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<span class='submenu_opener'><i class='bi bi-chevron-right'></i></span>" ) );
+        $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<button type='button' class='submenu_opener' aria-label='Open submenu' aria-expanded='false'><i class='bi bi-chevron-right' aria-hidden='true'></i></button>" ) );
 
         // Sub-Menu Open On-Click
         $('.mr_menu ul.main-menu li.menu-item-has-children .submenu_opener').on("click", function(e){
-            $(this).parent().toggleClass('nav_open');
+            var isOpen = $(this).parent().toggleClass('nav_open').hasClass('nav_open');
+            $(this).attr('aria-expanded', String(isOpen));
             $(this).siblings('ul').slideToggle();
             e.stopPropagation();
             e.preventDefault();
@@ -72,11 +73,12 @@ Description: Kimono - Photography Agency
 
         // Overlay Navigation
         $('.overlay_menu .overlay_navmenu').append(mobileMenuContent);
-        $('.overlay_menu .overlay_navmenu ul.main-menu li.menu-item-has-children').append( $( "<span class='submenu_opener'><i class='bi bi-chevron-right'></i></span>" ) );
+        $('.overlay_menu .overlay_navmenu ul.main-menu li.menu-item-has-children').append( $( "<button type='button' class='submenu_opener' aria-label='Open submenu' aria-expanded='false'><i class='bi bi-chevron-right' aria-hidden='true'></i></button>" ) );
 
         // Sub-Menu Open On-Click
         $('.overlay_menu ul.main-menu li.menu-item-has-children .submenu_opener').on("click", function(e){
-            $(this).parent().toggleClass('nav_open');
+            var isOpen = $(this).parent().toggleClass('nav_open').hasClass('nav_open');
+            $(this).attr('aria-expanded', String(isOpen));
             $(this).siblings('ul').slideToggle();
             e.stopPropagation();
             e.preventDefault();
@@ -125,7 +127,10 @@ Description: Kimono - Photography Agency
 
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape') {
-                $('.nav-user-menu').removeClass('is-open').find('.nav-user-trigger').attr('aria-expanded', 'false').trigger('focus');
+                $('.nav-user-menu').removeClass('is-open').find('.nav-user-trigger').attr('aria-expanded', 'false');
+                $('body').removeClass('mr_menu_active overlay_menu_active');
+                $('.aside_open').removeClass('close');
+                $('.aside_info_wrapper').removeClass('show');
             }
         });
 

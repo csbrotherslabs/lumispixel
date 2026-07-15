@@ -1,4 +1,4 @@
 <div class="wptb-swiper-navigation {{ style|default:'style2' }}{% if wrapper_class %} {{ wrapper_class }}{% endif %}">                      
-    <div class="wptb-swiper-arrow swiper-button-prev{% if previous_class %} {{ previous_class }}{% endif %}"{% if previous_label %} aria-label="{{ previous_label }}" role="button" tabindex="0"{% endif %}></div>
-    <div class="wptb-swiper-arrow swiper-button-next{% if next_class %} {{ next_class }}{% endif %}"{% if next_label %} aria-label="{{ next_label }}" role="button" tabindex="0"{% endif %}></div>
+    <button type="button" class="wptb-swiper-arrow swiper-button-prev{% if previous_class %} {{ previous_class }}{% endif %}" aria-label="{{ previous_label|default:'Previous slide' }}"></button>
+    <button type="button" class="wptb-swiper-arrow swiper-button-next{% if next_class %} {{ next_class }}{% endif %}" aria-label="{{ next_label|default:'Next slide' }}"></button>
 </div>
