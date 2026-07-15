@@ -6,5 +6,4 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("robots.txt", views.robots_txt, name="robots_txt"),
 ]
