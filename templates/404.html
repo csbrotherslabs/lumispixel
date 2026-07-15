@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found | LumisPixel{% endblock %}
+{% block content %}
+<section class="lumis-error-page" aria-labelledby="error-title">
+  <div class="container">
+    <p class="lumis-error-page__eyebrow">404</p>
+    <h1 id="error-title">Page not found</h1>
+    <p>The page you requested is unavailable or may have moved.</p>
+    <a class="btn" href="{% url 'core:index' %}"><span class="btn-wrap"><span class="text-first">Return Home</span><span class="text-second">Return Home</span></span></a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Server Error | LumisPixel{% endblock %}
+{% block content %}
+<section class="lumis-error-page" aria-labelledby="error-title">
+  <div class="container">
+    <p class="lumis-error-page__eyebrow">500</p>
+    <h1 id="error-title">Something went wrong</h1>
+    <p>We could not complete this request. Please try again shortly.</p>
+    <a class="btn" href="{% url 'core:index' %}"><span class="btn-wrap"><span class="text-first">Return Home</span><span class="text-second">Return Home</span></span></a>
+  </div>
+</section>
+{% endblock %}

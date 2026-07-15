@@ -282,10 +282,13 @@
 }
 @media screen and (min-width: 992px) {
     .wptb-work-process-one--inner::before {
-        content: url('../img/line.png');
+        content: '';
         position: absolute;
         top: 25%;
         left: 50%;
+        width: min(72%, 760px);
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(215, 0, 6, 0.32), transparent);
         transform: translateX(-50%);
     }
 }
