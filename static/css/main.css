@@ -495,20 +495,106 @@
 @media (max-width: 430px) { .lumis-final-cta { min-height: 620px; padding: 56px 0; } .lumis-final-cta__media img { object-position: 62% center; } .lumis-final-cta__panel::before { top: 24px; height: 70px; } .lumis-final-cta__copy { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .lumis-final-cta__button, .lumis-final-cta__link, .lumis-final-cta__media img { transition: none; transform: none; } }
 
-/* LumisPixel homepage design-system polish pass */
+/* LumisPixel homepage design-system tokens */
 :root {
-  --lumis-home-red: var(--color-one);
-  --lumis-home-red-hover: #c90006;
-  --lumis-home-ink: #181818;
-  --lumis-home-muted: #5e5a55;
+  /* Brand colors */
+  --color-brand-primary: #d70006;
+  --color-brand-primary-hover: #c90006;
+  --color-brand-primary-active: #b70005;
+  --color-brand-primary-soft: #fff1ef;
+  --color-brand-primary-tint: rgba(215, 0, 6, 0.10);
+
+  /* Text colors */
+  --color-text-primary: #181818;
+  --color-text-heading: #151515;
+  --color-text-secondary: #4d4a47;
+  --color-text-muted: #5e5a55;
+  --color-text-subtle: #6c665f;
+  --color-text-inverse: #ffffff;
+
+  /* Surface colors */
+  --color-surface-page: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-alt: #f8f6f3;
+  --color-surface-warm: #fbf8f5;
+  --color-surface-soft: #f2eee9;
+  --color-surface-dark: #101010;
+  --color-surface-dark-card: rgba(10, 10, 10, 0.58);
+
+  /* Borders and focus */
+  --color-border-light: #eee9e4;
+  --color-border-medium: #ded8d1;
+  --color-border-warm: #eaded5;
+  --color-border-inverse: rgba(255, 255, 255, 0.14);
+  --color-focus: rgba(215, 0, 6, 0.28);
+  --color-status-success: #1d7f49;
+
+  /* Typography */
+  --font-display: var(--font-family-base);
+  --font-heading: var(--font-family-base);
+  --font-body: var(--font-family-base);
+  --font-editorial: var(--font-family-two);
+  --font-supporting: var(--font-family-three);
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 80px;
+  --space-10: 96px;
+  --space-11: 120px;
+
+  /* Containers and layout */
+  --container-standard: 1300px;
+  --container-wide: 1920px;
+  --gutter-desktop: 15px;
+  --gutter-tablet: 15px;
+  --gutter-mobile: 15px;
+  --grid-gap: 24px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 26px;
+  --radius-panel: 30px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* Shadows and elevation */
+  --shadow-none: none;
+  --shadow-subtle: 0 10px 24px rgba(26, 20, 16, 0.04);
+  --shadow-card: 0 18px 44px rgba(16, 24, 40, 0.10);
+  --shadow-card-hover: 0 24px 58px rgba(16, 24, 40, 0.15);
+  --shadow-floating: 0 24px 60px rgba(29, 24, 20, 0.12);
+  --shadow-dark-floating: 0 24px 62px rgba(0, 0, 0, 0.24);
+
+  /* Motion */
+  --motion-fast: 180ms ease;
+  --motion-default: 260ms ease;
+  --motion-card: 220ms ease;
+  --motion-slow: 600ms ease;
+  --motion-hover-lift: -3px;
+
+  /* Homepage compatibility aliases */
+  --lumis-home-red: var(--color-brand-primary);
+  --lumis-home-red-hover: var(--color-brand-primary-hover);
+  --lumis-home-ink: var(--color-text-primary);
+  --lumis-home-muted: var(--color-text-muted);
   --lumis-home-border: rgba(24, 24, 24, 0.12);
-  --lumis-home-border-inverse: rgba(255, 255, 255, 0.14);
-  --lumis-home-card-radius: 22px;
-  --lumis-home-button-radius: 12px;
-  --lumis-home-card-shadow: 0 18px 44px rgba(16, 24, 40, 0.10);
-  --lumis-home-card-shadow-hover: 0 24px 58px rgba(16, 24, 40, 0.15);
-  --lumis-home-dark-card-shadow: 0 24px 62px rgba(0, 0, 0, 0.24);
-  --lumis-home-transition: 260ms ease;
+  --lumis-home-border-inverse: var(--color-border-inverse);
+  --lumis-home-card-radius: var(--radius-xl);
+  --lumis-home-button-radius: var(--radius-md);
+  --lumis-home-card-shadow: var(--shadow-card);
+  --lumis-home-card-shadow-hover: var(--shadow-card-hover);
+  --lumis-home-dark-card-shadow: var(--shadow-dark-floating);
+  --lumis-home-transition: var(--motion-default);
 }
 
 .wptb-slider.style3,
