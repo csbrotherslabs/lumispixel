@@ -5,9 +5,10 @@
   right: 0;
   width: 100%;
   background-color: transparent;
+  border-bottom: 1px solid transparent;
   padding: 13px 100px;
   z-index: 12;
-  transition: var(--transition-base);
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
 }
 
 .header .header-inner {
@@ -184,7 +185,7 @@
   color: rgba(var(--color-white-rgb), 0.7);
   letter-spacing: 1px;
   padding: 25px 0px;
-  transition: var(--transition-base);
+  transition: color 300ms ease, opacity 300ms ease;
 }
 
 .header .mainnav ul.main-menu > li.active > a,
@@ -1083,7 +1084,8 @@ body.overlay_menu_active .wptb-overlay-contact {
   transform: perspective(300px) rotateX(0deg);
   transform-origin: top;
   position: fixed !important;
-  background-color: rgba(var(--color-black-rgb), 0.8);
+  background-color: rgba(var(--color-black-rgb), 0.92);
+  border-bottom-color: rgba(var(--color-white-rgb), 0.12);
 }
 
 .header.sticky .header-top {
@@ -1121,7 +1123,8 @@ body.overlay_menu_active .wptb-overlay-contact {
 
 /* Fixed Color */
 .header.color-fixed.sticky {
-  background-color: rgba(var(--color-black-fixed-rgb), 0.8);
+  background-color: rgba(var(--color-black-fixed-rgb), 0.92);
+  border-bottom-color: rgba(var(--color-white-rgb), 0.12);
 }
 
 .header.color-fixed .mainnav ul.main-menu > li > a,
@@ -1232,10 +1235,16 @@ body.overlay_menu_active .wptb-overlay-contact {
 .header .mainnav ul.main-menu > li + li { margin-left: 34px; }
 .header .mainnav ul.main-menu li a[data-placeholder-link] { cursor: pointer; }
 .nav-account { gap: 18px; margin-right: 22px; }
-.nav-signin { color: rgba(var(--color-white-rgb), 0.78); font-size: 13px; font-weight: var(--fw-medium); letter-spacing: 1px; line-height: 1; text-transform: uppercase; }
-.nav-signin:hover, .nav-signin:focus { color: rgba(var(--color-white-rgb), 1); }
-.nav-start-free { align-items: center; border: 1px solid rgba(var(--color-white-rgb), 0.45); border-radius: 999px; color: var(--color-white); display: inline-flex; font-size: 12px; font-weight: var(--fw-semibold); justify-content: center; letter-spacing: 1px; min-height: 42px; padding: 0 20px; text-transform: uppercase; }
-.nav-start-free:hover, .nav-start-free:focus { background: var(--color-white); color: var(--color-black); }
+.nav-signin { background: transparent; border: 0; color: var(--color-white); font-size: 13px; font-weight: var(--fw-medium); letter-spacing: 1px; line-height: 1; text-transform: uppercase; transition: color 300ms ease, opacity 300ms ease, outline-color 300ms ease; }
+.nav-signin:hover, .nav-signin:focus { color: var(--color-white); opacity: .82; }
+.nav-start-free { align-items: center; background: transparent; border: 1px solid var(--color-white); border-radius: 999px; color: var(--color-white); display: inline-flex; font-size: 12px; font-weight: var(--fw-semibold); justify-content: center; letter-spacing: 1px; min-height: 42px; padding: 0 20px; text-transform: uppercase; transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, opacity 300ms ease; }
+.nav-start-free:hover, .nav-start-free:focus { background: rgba(var(--color-white-rgb), 0.12); border-color: var(--color-white); color: var(--color-white); }
+.navbar--sticky .nav-signin { color: var(--color-white); font-weight: var(--fw-medium); opacity: 1; }
+.navbar--sticky .nav-signin:hover, .navbar--sticky .nav-signin:focus { color: var(--color-white); opacity: .86; }
+.navbar--sticky .nav-start-free { background: var(--color-one); border-color: var(--color-one); color: var(--color-white); }
+.navbar--sticky .nav-start-free:hover, .navbar--sticky .nav-start-free:focus { background: #930606; border-color: #930606; color: var(--color-white); opacity: 1; }
+.nav-signin:focus-visible, .nav-start-free:focus-visible, .mr_menu_toggle:focus-visible, .aside_open:focus-visible { outline: 2px solid var(--color-one); outline-offset: 4px; }
+.nav-start-free:active, .navbar--sticky .nav-start-free:active { background: #7f0505; border-color: #7f0505; color: var(--color-white); }
 .nav-user-menu { position: relative; }
 .nav-user-trigger { align-items: center; background: rgba(var(--color-white-rgb), 0.06); border: 1px solid rgba(var(--color-white-rgb), 0.18); border-radius: 999px; color: var(--color-white); display: inline-flex; gap: 10px; min-height: 46px; padding: 4px 12px 4px 5px; transition: var(--transition-base); }
 .nav-user-trigger:hover, .nav-user-trigger:focus { border-color: rgba(var(--color-white-rgb), 0.55); outline: none; }

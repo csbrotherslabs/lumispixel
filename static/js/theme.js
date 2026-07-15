@@ -163,15 +163,17 @@ Description: Kimono - Photography Agency
 
         // Sticky Header
         var header = $("header");
-        $(window).scroll(function() {
+        function setNavbarState() {
             var scroll = $(window).scrollTop();
 
             if (scroll >= 50) {
-                header.addClass("sticky");
+                header.addClass("sticky navbar--sticky").removeClass("navbar--transparent");
             } else {
-                header.removeClass("sticky");
+                header.removeClass("sticky navbar--sticky").addClass("navbar--transparent");
             }
-        });
+        }
+        setNavbarState();
+        $(window).scroll(setNavbarState);
 
 
         // WOW Init
