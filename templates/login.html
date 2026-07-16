@@ -2,16 +2,102 @@
 {% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
-<section class="login-hero" aria-label="LumisPixel photography platform">
-  <img
-    src="{% static 'img/background/page-header-bg-10.jpg' %}"
-    alt="LumisPixel photography studio workspace"
-    class="login-hero__image"
-  >
-  <div class="login-hero__overlay">
-    <div class="login-hero__copy">
-      <p class="wptb-item--description login-hero__text">The modern platform for photographers and their clients.</p>
-      <p class="lumis-auth-copy login-hero__text">AI-powered photo discovery, secure gallery delivery, photographer marketplaces, editing workflows, and business tools—all in one place.</p>
+<section class="login-feature-carousel-section" aria-labelledby="login-feature-carousel-title">
+  <div class="login-feature-carousel-section__heading visually-hidden">
+    <h1 id="login-feature-carousel-title">LumisPixel workflow features</h1>
+  </div>
+
+  <div class="swiper-container swiper-gallery-two has-radius workflow-carousel workflow-carousel--login login-feature-carousel" aria-label="LumisPixel login feature carousel">
+    <div class="swiper-wrapper">
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing images on a professional workstation">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Workflow</span>
+            <h2 class="login-feature-slide__title">AI Culling</h2>
+            <p class="login-feature-slide__description">Quickly identify the strongest images and reduce repetitive review work.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about AI Culling"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/projects/gallery/4.jpg' %}" alt="Event portraits organized for AI photo discovery">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Discovery</span>
+            <h2 class="login-feature-slide__title">Find Photos with AI</h2>
+            <p class="login-feature-slide__description">Clients can use a selfie, gallery code, or invitation to discover the photographs that belong to them.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about AI Photo Search"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/projects/gallery/3.jpg' %}" alt="Beautiful client gallery delivered as a polished photo collection">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Galleries</span>
+            <h2 class="login-feature-slide__title">Deliver Beautiful Client Galleries</h2>
+            <p class="login-feature-slide__description">Create secure galleries where clients can view, favorite, purchase, and download their photographs.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about Smart Gallery Delivery"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/background/page-header-bg-10.jpg' %}" alt="Photographer and client planning a professional photography session">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Marketplace</span>
+            <h2 class="login-feature-slide__title">Connect Clients with Photographers</h2>
+            <p class="login-feature-slide__description">Help clients find trusted photographers while professionals receive relevant booking opportunities.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about Photographer Marketplace"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/projects/gallery/2.jpg' %}" alt="Photo editing workstation with a refined portrait preview">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Editing</span>
+            <h2 class="login-feature-slide__title">Work Faster with AI</h2>
+            <p class="login-feature-slide__description">Use editing assistance, blur detection, duplicate detection, tagging, and quality scoring.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about AI Editing"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+
+      <div class="swiper-slide">
+        <article class="login-feature-slide">
+          <img class="login-feature-slide__image" src="{% static 'img/projects/gallery/5.jpg' %}" alt="Photography sales workspace for orders bookings and payments">
+          <div class="login-feature-slide__overlay"></div>
+          <div class="login-feature-slide__content">
+            <span class="login-feature-slide__eyebrow">Business</span>
+            <h2 class="login-feature-slide__title">Sell Photos and Services</h2>
+            <p class="login-feature-slide__description">Manage pricing, orders, bookings, payments, client activity, and photographer payouts in one workspace.</p>
+            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+          </div>
+          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about Sales and Business Tools"><span aria-hidden="true">›</span></a>
+        </article>
+      </div>
+    </div>
+
+    {% include "components/carousel_controls.html" with style="style2" wrapper_class="login-feature-carousel__nav" previous_label="Show previous login feature" next_label="Show next login feature" %}
+
+    <div class="wptb-swiper-dots style2 login-feature-carousel__dots">
+      <div class="swiper-pagination" aria-label="Login feature slides"></div>
     </div>
   </div>
 </section>
