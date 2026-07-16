@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from django.contrib.messages import get_messages
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -6,7 +9,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
-from apps.accounts.services import email_verification_token
+from apps.accounts.services import EmailDeliveryError, email_verification_token
 
 
 VALID = {
@@ -105,6 +108,25 @@ class EntrySignupVerificationTests(TestCase):
         user.mark_email_verified()
         self.client.post(reverse("accounts:resend-verification"))
         self.assertEqual(len(mail.outbox), 2)
+
+    def test_resend_email_delivery_failure_does_not_error_or_start_cooldown(self):
+        self.client.post(reverse("accounts:client-signup"), VALID | {"email": "resendfailure@example.com"})
+        with patch("apps.accounts.views.send_verification_email", side_effect=EmailDeliveryError):
+            response = self.client.post(reverse("accounts:resend-verification"))
+        self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+        self.assertIn("We could not send the verification email right now. Please check the site email settings and try again.", messages)
+
+        self.client.post(reverse("accounts:resend-verification"))
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_signup_email_delivery_failure_still_shows_pending_page(self):
+        with patch("apps.accounts.views.send_verification_email", side_effect=EmailDeliveryError):
+            response = self.client.post(reverse("accounts:client-signup"), VALID | {"email": "signupfailure@example.com"})
+        self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
+        self.assertTrue(User.objects.filter(email="signupfailure@example.com").exists())
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+        self.assertIn("We could not send the verification email right now. Please check the site email settings and try again.", messages)
 
     def test_authenticated_signup_redirects_without_new_user(self):
         user = User.objects.create_user(email="existing@example.com", password="StrongPass123!", email_verified=True, account_status=User.AccountStatus.ACTIVE)
