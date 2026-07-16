@@ -2,21 +2,25 @@
 {% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
+<section class="login-hero" aria-label="LumisPixel photography platform">
+  <img src="{% static 'img/background/page-header-bg-10.jpg' %}" alt="LumisPixel photography studio workspace">
+  <div class="login-hero__overlay">
+    <div class="login-hero__message">
+      <p>The modern platform for photographers and their clients.</p>
+      <p>AI-powered photo discovery, secure gallery delivery, photographer marketplaces, editing workflows, and business tools—all in one place.</p>
+    </div>
+  </div>
+</section>
+
 <section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="login-title">
   <div class="container">
     <div class="wptb-login-form lumis-auth-form">
       <div class="wptb-form--wrapper">
         <div class="row">
           <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
-            <div class="login-visual">
-              <img src="{% static 'img/background/page-header-bg-10.jpg' %}" alt="LumisPixel photography studio workspace">
-            </div>
-
             <div class="wptb-heading">
               <div class="wptb-item--inner text-center">
                 <h1 class="wptb-item--title" id="login-title">Sign in to LumisPixel</h1>
-                <p class="wptb-item--description">The modern platform for photographers and their clients.</p>
-                <p class="lumis-auth-copy">AI-powered photo discovery, secure gallery delivery, photographer marketplaces, editing workflows, and business tools—all in one place.</p>
               </div>
             </div>
 
@@ -58,13 +62,9 @@
                 </div>
               </div>
             </form>
-            <div class="lumis-auth-actions" aria-label="Account signup options">
+            <div class="lumis-auth-actions lumis-auth-actions--single" aria-label="Account signup options">
               <p>New to LumisPixel?</p>
-              <div class="auth-action-row">
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
-              </div>
+              <a class="btn lumis-auth-secondary button-auth-primary" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span><span class="button-auth-primary__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span></span></a>
             </div>
           </div>
         </div>
