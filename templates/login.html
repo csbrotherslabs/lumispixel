@@ -2,69 +2,16 @@
 {% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
-<section class="login-feature-carousel" aria-label="LumisPixel platform features">
-  <div class="swiper-container swiper-gallery-two has-radius lumis-photographer-workflow__carousel workflow-carousel workflow-carousel--login" data-login-feature-carousel>
-    <div class="swiper-wrapper">
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/gallery/4.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Find Photos with AI</h2>
-            <p class="wptb-item--description login-feature-slide__text">Clients can use a selfie, gallery code, or invitation to quickly discover the photographs that belong to them.</p>
-          </div>
-        </article>
-      </div>
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/gallery/3.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Deliver Beautiful Client Galleries</h2>
-            <p class="wptb-item--description login-feature-slide__text">Create secure galleries where clients can view, favorite, purchase, and download their photographs.</p>
-          </div>
-        </article>
-      </div>
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/2/5.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Connect Clients with Photographers</h2>
-            <p class="wptb-item--description login-feature-slide__text">Clients can request photography services while verified photographers receive relevant booking opportunities.</p>
-          </div>
-        </article>
-      </div>
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/gallery/2.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Work Faster with AI</h2>
-            <p class="wptb-item--description login-feature-slide__text">Use intelligent culling, blur detection, duplicate detection, editing assistance, tagging, and quality scoring.</p>
-          </div>
-        </article>
-      </div>
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/gallery/5.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Sell Photos and Services</h2>
-            <p class="wptb-item--description login-feature-slide__text">Manage pricing, digital downloads, bookings, orders, deposits, payments, and photographer payouts.</p>
-          </div>
-        </article>
-      </div>
-      <div class="swiper-slide">
-        <article class="login-feature-slide">
-          <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="" class="login-feature-slide__image">
-          <div class="login-feature-slide__content">
-            <h2 class="wptb-item--title login-feature-slide__title">Run Your Photography Business</h2>
-            <p class="wptb-item--description login-feature-slide__text">Manage clients, galleries, bookings, performance, and business activity from one photographer workspace.</p>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    {% include "components/carousel_controls.html" with style="style2" previous_label="Show previous login feature" next_label="Show next login feature" %}
-
-    <div class="wptb-swiper-dots style2 lumis-photographer-workflow__dots login-feature-carousel__dots">
-      <div class="swiper-pagination" aria-label="Login feature slides"></div>
+<section class="login-hero" aria-label="LumisPixel photography platform">
+  <img
+    src="{% static 'img/background/page-header-bg-10.jpg' %}"
+    alt="LumisPixel photography studio workspace"
+    class="login-hero__image"
+  >
+  <div class="login-hero__overlay">
+    <div class="login-hero__copy">
+      <p class="wptb-item--description login-hero__text">The modern platform for photographers and their clients.</p>
+      <p class="lumis-auth-copy login-hero__text">AI-powered photo discovery, secure gallery delivery, photographer marketplaces, editing workflows, and business tools—all in one place.</p>
     </div>
   </div>
 </section>
