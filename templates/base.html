@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="theme-style--light">
+<body class="theme-style--light {% block body_class %}page-inner{% endblock %}">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% include "partials/preloader.html" %}
 

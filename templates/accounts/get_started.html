@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Get Started | LumisPixel{% endblock %}
 {% block content %}
 <section class="wptb-about-one bg-image-2 lumis-get-started" aria-labelledby="get-started-title">
@@ -12,39 +13,45 @@
     <div class="row lumis-get-started__grid">
       <div class="col-lg-4 col-md-6 mb-4">
         <article class="lumis-get-started-card">
+          <div class="lumis-get-started-card__media">
+            <img src="{% static 'img/services/details.jpg' %}" alt="Photographer preparing a professional shoot">
+          </div>
           <div class="lumis-get-started-card__content">
-            <span class="lumis-get-started-card__icon" aria-hidden="true"><i class="bi bi-camera"></i></span>
             <h2>I’m a Photographer</h2>
             <p>Upload, organize, deliver, sell, and intelligently manage your photographs.</p>
           </div>
-          <a class="lumis-get-started-card__button" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
-            <span>Start as a photographer</span>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
+            <span class="text-first">Create Photographer Account</span>
             <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
           </a>
         </article>
       </div>
       <div class="col-lg-4 col-md-6 mb-4">
         <article class="lumis-get-started-card">
+          <div class="lumis-get-started-card__media">
+            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Client gallery photo preview">
+          </div>
           <div class="lumis-get-started-card__content">
-            <span class="lumis-get-started-card__icon" aria-hidden="true"><i class="bi bi-image-alt"></i></span>
             <h2>I’m Looking for My Photos</h2>
             <p>Use a selfie, gallery code, invitation, or event link to securely find your photographs.</p>
           </div>
-          <a class="lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&next={{ next|urlencode }}{% endif %}">
-            <span>Find my photos</span>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&next={{ next|urlencode }}{% endif %}">
+            <span class="text-first">Find My Photos</span>
             <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
           </a>
         </article>
       </div>
       <div class="col-lg-4 col-md-6 mb-4">
         <article class="lumis-get-started-card">
+          <div class="lumis-get-started-card__media">
+            <img src="{% static 'img/services/details-2.jpg' %}" alt="Photographer documenting an event">
+          </div>
           <div class="lumis-get-started-card__content">
-            <span class="lumis-get-started-card__icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
             <h2>I Need a Photographer</h2>
             <p>Tell us what you need and connect with photographers who match your request.</p>
           </div>
-          <a class="lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&next={{ next|urlencode }}{% endif %}">
-            <span>Hire a photographer</span>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&next={{ next|urlencode }}{% endif %}">
+            <span class="text-first">Find a Photographer</span>
             <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
           </a>
         </article>
