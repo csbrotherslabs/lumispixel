@@ -450,6 +450,12 @@
                                             </div>
                                         </div>
                                     </form>
+                                    <p class="text-center mt-4">
+                                        New to LumiPixel?
+                                        <a href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Get started</a> ·
+                                        <a href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Client signup</a> ·
+                                        <a href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Photographer signup</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>

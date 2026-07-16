@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Get Started | LumisPixel{% endblock %}
+{% block content %}
+<section class="wptb-about-one bg-image-2" style="padding: 120px 0;">
+  <div class="container">
+    <div class="wptb-heading"><div class="wptb-item--inner text-center"><h1 class="wptb-item--title">How would you like to get started?</h1><p class="wptb-item--description">Choose the LumiPixel path that fits what you need today.</p></div></div>
+    <div class="row">
+      <div class="col-lg-4 col-md-6 mb-4"><a class="lumis-pricing-card h-100 d-block" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><h2>I’m a Photographer</h2><p>Upload, organize, deliver, sell, and intelligently manage your photographs.</p><span>Start as a photographer →</span></a></div>
+      <div class="col-lg-4 col-md-6 mb-4"><a class="lumis-pricing-card h-100 d-block" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&next={{ next|urlencode }}{% endif %}"><h2>I’m Looking for My Photos</h2><p>Use a selfie, gallery code, invitation, or event link to securely find your photographs.</p><span>Find my photos →</span></a></div>
+      <div class="col-lg-4 col-md-6 mb-4"><a class="lumis-pricing-card h-100 d-block" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&next={{ next|urlencode }}{% endif %}"><h2>I Need a Photographer</h2><p>Tell us what you need and connect with photographers who match your request.</p><span>Hire a photographer →</span></a></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
