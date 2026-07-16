@@ -1368,7 +1368,7 @@ img, svg, video { max-width: 100%; height: auto; }
 
 /* Authentication page polish */
 .lumis-auth-section {
-  padding: 96px 0 88px;
+  padding: 0px 0 88px;
 }
 
 .lumis-auth-form .wptb-heading {
@@ -1455,7 +1455,7 @@ img, svg, video { max-width: 100%; height: auto; }
 
 @media (max-width: 767px) {
   .lumis-auth-section {
-    padding: 76px 0 70px;
+    padding: 0px 0 88px;
   }
 
   .lumis-auth-actions .btn,
@@ -1673,8 +1673,8 @@ img, svg, video { max-width: 100%; height: auto; }
   --auth-accent-red: var(--color-one, #d73d35);
   position: relative;
   width: 100%;
-  margin-top: 114px;
-  padding: clamp(38px, 5vw, 76px) 0 clamp(28px, 4vw, 58px);
+  margin-top: 65px;
+  padding: clamp(38px, 5vw, 76px) 0 0px;
   overflow: hidden;
   background: #fff;
 }
