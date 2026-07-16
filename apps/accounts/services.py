@@ -101,8 +101,8 @@ def build_verification_url(request, user):
 
 def send_verification_email(request, user):
     verification_url = build_verification_url(request, user)
-    context = {"user": user, "verification_url": verification_url, "brand_name": "LumiPixel"}
-    subject = "Verify your LumiPixel email address"
+    context = {"user": user, "verification_url": verification_url, "brand_name": "LumisPixel"}
+    subject = "Verify your LumisPixel email address"
     text_body = render_to_string("accounts/email/verify_email.txt", context)
     html_body = render_to_string("accounts/email/verify_email.html", context)
     message = EmailMultiAlternatives(subject, text_body, to=[user.email])

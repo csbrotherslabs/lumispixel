@@ -50,7 +50,7 @@ class UserAdmin(DjangoUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")} ),
         ("Personal info", {"fields": ("first_name", "last_name")} ),
-        ("LumiPixel account", {"fields": ("primary_role", "last_active_workspace", "account_status", "email_verified", "email_verified_at", "onboarding_completed", "required_password_reset", "terms_accepted_at", "privacy_policy_accepted_at")} ),
+        ("LumisPixel account", {"fields": ("primary_role", "last_active_workspace", "account_status", "email_verified", "email_verified_at", "onboarding_completed", "required_password_reset", "terms_accepted_at", "privacy_policy_accepted_at")} ),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")} ),
         ("Important dates", {"fields": ("last_login", "date_joined", "updated_at")} ),
     )
