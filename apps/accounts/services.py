@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from smtplib import SMTPException
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -20,6 +21,10 @@ User = get_user_model()
 
 class DuplicateEmailError(Exception):
     pass
+
+
+class EmailDeliveryError(Exception):
+    """Raised when a verification email cannot be handed off to the email backend."""
 
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
@@ -107,4 +112,7 @@ def send_verification_email(request, user):
     html_body = render_to_string("accounts/email/verify_email.html", context)
     message = EmailMultiAlternatives(subject, text_body, to=[user.email])
     message.attach_alternative(html_body, "text/html")
-    message.send()
+    try:
+        message.send()
+    except (OSError, SMTPException) as exc:
+        raise EmailDeliveryError from exc

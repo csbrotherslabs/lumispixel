@@ -11,7 +11,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from .decorators import safe_next_url
 from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignupForm
 from .models import User
-from .services import email_verification_token, normalize_signup_intent, send_verification_email
+from .services import EmailDeliveryError, email_verification_token, normalize_signup_intent, send_verification_email
 
 SIGNUP_INTENT_SESSION_KEY = "signup_intent"
 AUTH_NEXT_SESSION_KEY = "auth_next_url"
@@ -121,8 +121,12 @@ def _signup_view(request, form_class, template_name, account_type):
         user = form.save()
         if user:
             _remember_pending_user(request, user)
-            send_verification_email(request, user)
-            messages.success(request, "We sent a verification email. Please check your inbox to continue.")
+            try:
+                send_verification_email(request, user)
+            except EmailDeliveryError:
+                messages.warning(request, "We could not send the verification email right now. Please check the site email settings and try again.")
+            else:
+                messages.success(request, "We sent a verification email. Please check your inbox to continue.")
             return redirect("accounts:verification-pending")
     return render(request, template_name, {"form": form, "intent": intent, "next": next_url})
 
@@ -168,8 +172,12 @@ def resend_verification(request):
     if user and not user.email_verified:
         key = f"email-verification-resend:{user.pk}"
         if not cache.get(key):
-            send_verification_email(request, user)
-            cache.set(key, True, 60)
+            try:
+                send_verification_email(request, user)
+            except EmailDeliveryError:
+                messages.warning(request, "We could not send the verification email right now. Please check the site email settings and try again.")
+            else:
+                cache.set(key, True, 60)
     messages.success(request, "If a verification email can be sent, it will arrive shortly.")
     return redirect("accounts:verification-pending")
 
