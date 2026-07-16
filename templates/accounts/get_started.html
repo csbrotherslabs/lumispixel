@@ -20,10 +20,7 @@
             <h2>I’m a Photographer</h2>
             <p>Upload, organize, deliver, sell, and intelligently manage your photographs.</p>
           </div>
-          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
-            <span class="text-first">Create Photographer Account</span>
-            <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
-          </a>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
         </article>
       </div>
       <div class="col-lg-4 col-md-6 mb-4">
@@ -35,10 +32,7 @@
             <h2>I’m Looking for My Photos</h2>
             <p>Use a selfie, gallery code, invitation, or event link to securely find your photographs.</p>
           </div>
-          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&next={{ next|urlencode }}{% endif %}">
-            <span class="text-first">Find My Photos</span>
-            <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
-          </a>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Find My Photos</span></span></a>
         </article>
       </div>
       <div class="col-lg-4 col-md-6 mb-4">
@@ -50,10 +44,7 @@
             <h2>I Need a Photographer</h2>
             <p>Tell us what you need and connect with photographers who match your request.</p>
           </div>
-          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&next={{ next|urlencode }}{% endif %}">
-            <span class="text-first">Find a Photographer</span>
-            <span class="lumis-get-started-card__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
-          </a>
+          <a class="btn lumis-auth-secondary lumis-get-started-card__button" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Find a Photographer</span></span></a>
         </article>
       </div>
     </div>
