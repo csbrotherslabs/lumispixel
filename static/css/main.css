@@ -1341,42 +1341,6 @@ img, svg, video { max-width: 100%; height: auto; }
 
 .lumis-get-started-card__button {
   margin-top: auto;
-  min-height: 50px;
-  padding: 0 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  border: 1px solid #ded0c7;
-  border-radius: 14px;
-  color: #181818;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.2;
-}
-
-.lumis-get-started-card__button:hover,
-.lumis-get-started-card__button:focus-visible {
-  color: #fff;
-  border-color: #181818;
-  background: #181818;
-}
-
-.lumis-get-started-card__button:focus-visible {
-  outline: 3px solid var(--lumis-home-red, var(--color-one, #d70006));
-  outline-offset: 3px;
-}
-
-.lumis-get-started-card__arrow {
-  flex: 0 0 auto;
-  color: var(--lumis-home-red, var(--color-one, #d70006));
-  transition: transform .2s ease;
-}
-
-.lumis-get-started-card__button:hover .lumis-get-started-card__arrow,
-.lumis-get-started-card__button:focus-visible .lumis-get-started-card__arrow {
-  transform: translateX(4px);
 }
 
 @media (max-width: 767px) {
@@ -1397,8 +1361,7 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lumis-get-started-card,
-  .lumis-get-started-card__arrow {
+  .lumis-get-started-card {
     transition: none;
   }
 }
@@ -1506,8 +1469,7 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .lumis-auth-primary,
   .lumis-auth-secondary,
-  .lumis-get-started-card__button,
-  .lumis-login-get-started__arrow {
+  .lumis-get-started-card__button {
     transition: none;
   }
 }
@@ -1531,7 +1493,7 @@ img, svg, video { max-width: 100%; height: auto; }
   color: var(--color-white-fixed);
 }
 
-.page-inner .header .aside_open span {
+.page-inner .header .aside_open .aside-open--inner > span {
   background: var(--color-white-fixed);
 }
 
@@ -1616,21 +1578,6 @@ img, svg, video { max-width: 100%; height: auto; }
 
 .lumis-login-get-started {
   min-width: min(100%, 220px);
-  justify-content: space-between;
-  gap: 14px;
-  border-radius: 14px;
-  font-weight: 900;
-}
-
-.lumis-login-get-started__arrow {
-  flex: 0 0 auto;
-  color: var(--lumis-home-red, var(--color-one, #d70006));
-  transition: transform .2s ease;
-}
-
-.lumis-login-get-started:hover .lumis-login-get-started__arrow,
-.lumis-login-get-started:focus-visible .lumis-login-get-started__arrow {
-  transform: translateX(4px);
 }
 
 .login-new-user-actions {
@@ -1679,17 +1626,6 @@ img, svg, video { max-width: 100%; height: auto; }
   min-height: 48px;
   padding: 0 20px;
   justify-content: center;
-  gap: 12px;
-  border-radius: 14px;
-}
-
-.lumis-get-started-card__arrow {
-  color: var(--lumis-home-red, var(--color-one, #d70006));
-}
-
-.lumis-get-started-card .lumis-get-started-card__button:hover .lumis-get-started-card__arrow,
-.lumis-get-started-card .lumis-get-started-card__button:focus-visible .lumis-get-started-card__arrow {
-  color: var(--lumis-home-red, var(--color-one, #d70006));
 }
 
 @media (max-width: 991px) {
@@ -1723,7 +1659,7 @@ img, svg, video { max-width: 100%; height: auto; }
   }
 
   .lumis-get-started-card .lumis-get-started-card__button {
-    width: auto;
+    width: calc(100% - 44px);
     margin: auto 22px 22px;
   }
 }

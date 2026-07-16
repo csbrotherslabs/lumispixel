@@ -429,7 +429,7 @@
   align-items: end;
 }
 
-.aside_open span {
+.aside_open .aside-open--inner > span {
   display: block;
   background: var(--color-white);
   width: 42px;
@@ -437,16 +437,16 @@
   transition: var(--transition-base);
 }
 
-.aside_open span:not(:last-child) {
+.aside_open .aside-open--inner > span:not(:last-child) {
   margin-bottom: 6px;
 }
 
-.aside_open span:nth-child(3) {
+.aside_open .aside-open--inner > span:nth-child(3) {
   width: 16px;
 }
 
-.aside_open:hover span:nth-child(3),
-.aside_open.close span:nth-child(3) {
+.aside_open:hover .aside-open--inner > span:nth-child(3),
+.aside_open.close .aside-open--inner > span:nth-child(3) {
   width: 42px;
 }
 
@@ -1137,7 +1137,7 @@ body.overlay_menu_active .wptb-overlay-contact {
   background-color: var(--color-white-fixed);
 }
 
-.header.color-fixed .aside_open span {
+.header.color-fixed .aside_open .aside-open--inner > span {
   background: var(--color-white-fixed);
 }
 

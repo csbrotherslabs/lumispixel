@@ -134,7 +134,7 @@ Description: Kimono - Photography Agency
                     $('.mr_menu_toggle').trigger('focus');
                 }
                 if ($('.aside_info_wrapper').hasClass('show')) {
-                    $('.aside_open').removeClass('close').trigger('focus');
+                    $('.aside_open').removeClass('close').attr('aria-expanded', 'false').trigger('focus');
                     $('.aside_info_wrapper').removeClass('show');
                 }
             }
@@ -158,13 +158,13 @@ Description: Kimono - Photography Agency
         // Aside info bar
         $('.aside_open').on("click", function(e) {
             e.preventDefault();
-            $(this).addClass('close');
+            $(this).addClass('close').attr('aria-expanded', 'true');
             $('.aside_info_wrapper').addClass('show');
             $('.aside_close').trigger('focus');
         });
         $('.aside_close').on("click", function(e) {
             e.preventDefault();
-            $('.aside_open').removeClass('close').trigger('focus');
+            $('.aside_open').removeClass('close').attr('aria-expanded', 'false').trigger('focus');
             $('.aside_info_wrapper').removeClass('show');
         });
 

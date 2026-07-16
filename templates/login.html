@@ -69,10 +69,7 @@
             <div class="lumis-auth-actions" aria-label="Account signup options">
               <div class="login-new-user-row">
                 <p class="login-new-user-row__label">New to LumisPixel?</p>
-                <a class="btn lumis-auth-secondary lumis-login-get-started" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
-                  <span class="text-first">Get Started</span>
-                  <span class="lumis-login-get-started__arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
-                </a>
+                <a class="btn lumis-auth-secondary lumis-login-get-started" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
               </div>
               <div class="login-new-user-actions">
                 <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
