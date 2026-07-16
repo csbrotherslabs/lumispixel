@@ -1,0 +1,12 @@
+{% csrf_token %}
+<input type="hidden" name="intent" value="{{ intent }}"><input type="hidden" name="next" value="{{ next }}">
+{% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+<div class="row">
+{% for field in form %}
+  <div class="col-lg-12 col-md-12 mb-4"><div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.errors %}<div class="alert alert-danger" role="alert">{{ field.errors|striptags }}</div>{% endif %}
+  </div></div>
+{% endfor %}
+</div>

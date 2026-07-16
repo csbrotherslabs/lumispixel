@@ -1,18 +1,70 @@
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods, require_POST
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .decorators import safe_next_url
-from .forms import EmailAuthenticationForm
+from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignupForm
 from .models import User
+from .services import email_verification_token, normalize_signup_intent, send_verification_email
+
+SIGNUP_INTENT_SESSION_KEY = "signup_intent"
+AUTH_NEXT_SESSION_KEY = "auth_next_url"
+PENDING_USER_SESSION_KEY = "pending_verification_user_id"
 
 
 def _post_login_url(request, next_url=""):
     url = reverse("accounts:post-login-redirect")
     safe = safe_next_url(request, next_url)
     return f"{url}?next={safe}" if safe else url
+
+
+def _store_auth_flow(request, *, intent="general", next_url=""):
+    request.session[SIGNUP_INTENT_SESSION_KEY] = normalize_signup_intent(intent)
+    safe = safe_next_url(request, next_url)
+    if safe:
+        request.session[AUTH_NEXT_SESSION_KEY] = safe
+    else:
+        request.session.pop(AUTH_NEXT_SESSION_KEY, None)
+    return safe
+
+
+def _pending_user(request):
+    if request.user.is_authenticated:
+        return request.user
+    user_id = request.session.get(PENDING_USER_SESSION_KEY)
+    if not user_id:
+        return None
+    return User.objects.filter(pk=user_id).first()
+
+
+def _remember_pending_user(request, user):
+    request.session[PENDING_USER_SESSION_KEY] = str(user.pk)
+
+
+def _clear_auth_flow(request):
+    for key in (SIGNUP_INTENT_SESSION_KEY, AUTH_NEXT_SESSION_KEY, PENDING_USER_SESSION_KEY):
+        request.session.pop(key, None)
+
+
+def _post_verification_redirect(request, user):
+    next_url = safe_next_url(request, request.session.get(AUTH_NEXT_SESSION_KEY, ""))
+    intent = normalize_signup_intent(request.session.get(SIGNUP_INTENT_SESSION_KEY, "general"))
+    _clear_auth_flow(request)
+    if next_url:
+        return next_url
+    if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
+        return reverse("accounts:photographer-onboarding")
+    if intent == "find_photos":
+        return reverse("accounts:find-photos-placeholder")
+    if intent == "marketplace":
+        return reverse("accounts:marketplace-request-placeholder")
+    return reverse("accounts:client-dashboard")
 
 
 @require_http_methods(["GET", "POST"])
@@ -23,7 +75,13 @@ def login_view(request):
         return redirect(_post_login_url(request, next_url))
     form = EmailAuthenticationForm(request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        login(request, form.get_user())
+        user = form.get_user()
+        if not user.email_verified:
+            _remember_pending_user(request, user)
+            _store_auth_flow(request, next_url=next_url, intent=request.session.get(SIGNUP_INTENT_SESSION_KEY, "general"))
+            messages.info(request, "Please verify your email address before continuing.")
+            return redirect("accounts:verification-pending")
+        login(request, user)
         if not form.cleaned_data.get("remember"):
             request.session.set_expiry(0)
         return redirect(_post_login_url(request, next_url))
@@ -36,6 +94,86 @@ def logout_view(request):
     return redirect("core:index")
 
 
+@require_GET
+def get_started(request):
+    safe = _store_auth_flow(request, next_url=request.GET.get("next", ""), intent=request.GET.get("intent", "general"))
+    return render(request, "accounts/get_started.html", {"next": safe})
+
+
+def _authenticated_signup_redirect(request, account_type):
+    next_url = safe_next_url(request, request.GET.get("next", ""))
+    if next_url:
+        return redirect(next_url)
+    if account_type == "photographer" and not request.user.has_photographer_profile:
+        return redirect("accounts:enable-photographer-workspace")
+    if request.user.primary_role == User.PrimaryRole.PHOTOGRAPHER or request.user.has_photographer_profile:
+        return redirect("accounts:photographer-onboarding")
+    return redirect("accounts:client-dashboard")
+
+
+def _signup_view(request, form_class, template_name, account_type):
+    intent = normalize_signup_intent(request.GET.get("intent") or request.POST.get("intent") or "general")
+    next_url = _store_auth_flow(request, intent=intent, next_url=request.GET.get("next") or request.POST.get("next") or "")
+    if request.user.is_authenticated:
+        return _authenticated_signup_redirect(request, account_type)
+    form = form_class(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        if user:
+            _remember_pending_user(request, user)
+            send_verification_email(request, user)
+            messages.success(request, "We sent a verification email. Please check your inbox to continue.")
+            return redirect("accounts:verification-pending")
+    return render(request, template_name, {"form": form, "intent": intent, "next": next_url})
+
+
+@require_http_methods(["GET", "POST"])
+def client_signup(request):
+    return _signup_view(request, ClientSignupForm, "accounts/signup_client.html", "client")
+
+
+@require_http_methods(["GET", "POST"])
+def photographer_signup(request):
+    return _signup_view(request, PhotographerSignupForm, "accounts/signup_photographer.html", "photographer")
+
+
+@require_GET
+def verification_pending(request):
+    user = _pending_user(request)
+    email = user.email if user else ""
+    return render(request, "accounts/verification_pending.html", {"pending_email": email, "can_resend": bool(user and not user.email_verified)})
+
+
+@require_GET
+def verify_email(request, uidb64, token):
+    user = None
+    try:
+        user = User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)))
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user and user.email_verified:
+        messages.info(request, "Your email address is already verified.")
+        return redirect(_post_verification_redirect(request, user))
+    if user and email_verification_token.check_token(user, token):
+        user.mark_email_verified()
+        login(request, user)
+        messages.success(request, "Your email address has been verified.")
+        return redirect(_post_verification_redirect(request, user))
+    return render(request, "accounts/verification_result.html", {"success": False}, status=400)
+
+
+@require_POST
+def resend_verification(request):
+    user = _pending_user(request)
+    if user and not user.email_verified:
+        key = f"email-verification-resend:{user.pk}"
+        if not cache.get(key):
+            send_verification_email(request, user)
+            cache.set(key, True, 60)
+    messages.success(request, "If a verification email can be sent, it will arrive shortly.")
+    return redirect("accounts:verification-pending")
+
+
 @login_required
 def post_login_redirect(request):
     next_url = safe_next_url(request, request.GET.get("next", ""))
@@ -45,6 +183,7 @@ def post_login_redirect(request):
     if user.required_password_reset:
         return redirect("accounts:password-reset-required")
     if not user.email_verified:
+        _remember_pending_user(request, user)
         return redirect("accounts:email-verification-required")
     if not user.onboarding_completed:
         if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
