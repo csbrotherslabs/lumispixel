@@ -2,17 +2,67 @@
 {% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
-<section class="login-hero" aria-label="LumisPixel photography platform">
-  <img
-    src="{% static 'img/background/page-header-bg-10.jpg' %}"
-    alt="LumisPixel photography studio workspace"
-    class="login-hero__image"
-  >
-  <div class="login-hero__overlay">
-    <div class="login-hero__copy">
-      <p class="wptb-item--description login-hero__text">The modern platform for photographers and their clients.</p>
-      <p class="lumis-auth-copy login-hero__text">AI-powered photo discovery, secure gallery delivery, photographer marketplaces, editing workflows, and business tools—all in one place.</p>
+<section class="login-hero" aria-label="LumisPixel photography platform highlights">
+  <div class="swiper-container login-hero__carousel">
+    <div class="swiper-wrapper">
+      <div class="swiper-slide login-hero__slide">
+        <img
+          src="{% static 'img/projects/gallery/1.jpg' %}"
+          alt="Photographer reviewing a curated image gallery"
+          class="login-hero__image"
+        >
+        <div class="login-hero__overlay">
+          <div class="login-hero__copy">
+            <p class="login-hero__eyebrow">AI Workflow</p>
+            <h1 class="login-hero__headline">Cull Faster with AI</h1>
+            <p class="lumis-auth-copy login-hero__text">Surface the strongest images quickly and reduce repetitive review work before delivery.</p>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-slide login-hero__slide">
+        <img
+          src="{% static 'img/projects/gallery/3.jpg' %}"
+          alt="Private client gallery displayed as polished image cards"
+          class="login-hero__image"
+        >
+        <div class="login-hero__overlay">
+          <div class="login-hero__copy">
+            <p class="login-hero__eyebrow">Secure Delivery</p>
+            <h1 class="login-hero__headline">Smart Client Galleries</h1>
+            <p class="lumis-auth-copy login-hero__text">Publish private, branded galleries clients can browse, favorite, download, and share.</p>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-slide login-hero__slide">
+        <img
+          src="{% static 'img/projects/gallery/4.jpg' %}"
+          alt="Client using search to find favorite event photos"
+          class="login-hero__image"
+        >
+        <div class="login-hero__overlay">
+          <div class="login-hero__copy">
+            <p class="login-hero__eyebrow">Photo Discovery</p>
+            <h1 class="login-hero__headline">Find Photos Instantly</h1>
+            <p class="lumis-auth-copy login-hero__text">Help clients discover the moments that matter with intuitive AI-powered photo search.</p>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-slide login-hero__slide">
+        <img
+          src="{% static 'img/projects/gallery/5.jpg' %}"
+          alt="Photographer marketplace profile and booking preview"
+          class="login-hero__image"
+        >
+        <div class="login-hero__overlay">
+          <div class="login-hero__copy">
+            <p class="login-hero__eyebrow">Business Growth</p>
+            <h1 class="login-hero__headline">Marketplace Tools</h1>
+            <p class="lumis-auth-copy login-hero__text">Connect with clients, showcase your services, and manage your photography business in one place.</p>
+          </div>
+        </div>
+      </div>
     </div>
+    <div class="swiper-pagination login-hero__pagination" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -82,4 +132,25 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.Swiper) {
+      new Swiper('.login-hero__carousel', {
+        loop: true,
+        autoplay: { delay: 3500, disableOnInteraction: false },
+        effect: 'fade',
+        fadeEffect: { crossFade: true },
+        speed: 1200,
+        slidesPerView: 1,
+        pagination: {
+          el: '.login-hero__pagination',
+          clickable: true
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
