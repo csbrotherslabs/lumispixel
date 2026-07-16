@@ -1,3 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Verify your email | LumisPixel{% endblock %}
-{% block content %}<section class="wptb-about-one bg-image-2" style="padding: 120px 0;"><div class="container"><div class="wptb-heading"><div class="wptb-item--inner text-center"><h1 class="wptb-item--title">Verify your email</h1><p class="wptb-item--description">We sent a verification email{% if pending_email %} to {{ pending_email }}{% endif %}. Check your inbox and spam or junk folders.</p></div></div><div class="text-center">{% if can_resend %}<form method="post" action="{% url 'accounts:resend-verification' %}">{% csrf_token %}<button class="btn" type="submit"><span class="btn-wrap"><span class="text-first">Resend verification email</span></span></button></form>{% endif %}<p class="mt-4"><a href="{% url 'accounts:login' %}">Return to login</a></p></div></div></section>{% endblock %}
+{% block title %}Verify Your Email | LumisPixel{% endblock %}
+{% block content %}
+<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="verify-email-title">
+  <div class="container">
+    <div class="wptb-heading">
+      <div class="wptb-item--inner text-center">
+        <h1 class="wptb-item--title" id="verify-email-title">Verify your email</h1>
+        <p class="wptb-item--description">We sent a LumisPixel verification email{% if pending_email %} to {{ pending_email }}{% endif %}. Check your inbox and spam or junk folders.</p>
+      </div>
+    </div>
+    <div class="text-center lumis-auth-actions lumis-auth-actions--centered">
+      {% if can_resend %}
+        <form method="post" action="{% url 'accounts:resend-verification' %}">
+          {% csrf_token %}
+          <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Resend Verification Email</span></span></button>
+        </form>
+      {% endif %}
+      <a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}"><span class="btn-wrap"><span class="text-first">Return to Sign In</span></span></a>
+    </div>
+  </div>
+</section>
+{% endblock %}
