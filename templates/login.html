@@ -16,11 +16,11 @@
         <link href="../assets/img/apple-touch-icon-144x144.png" rel="apple-touch-icon" sizes="144x144">
 
         <!-- Page Title -->
-        <title>Kimono - Photography Agency</title>    
-        
+        <title>Kimono - Photography Agency</title>
+
         <!-- Styles Include -->
         <link rel="stylesheet" href="../assets/css/main.css">
-        
+
     </head>
 
 
@@ -33,16 +33,16 @@
                     <img src="../assets/img/preloader-logo.svg" alt="img">
                     <img src="../assets/img/preloader-wheel.svg" alt="img" class="wheel">
                 </div>
-				
+
 			</div>
 		</div>
 
-        
+
         <!-- pointer start -->
 		<div class="pointer bnz-pointer" id="bnz-pointer"></div>
-        
-         
-        
+
+
+
         <!-- Main Header -->
         <header class="header">
             <!-- Lower Bar -->
@@ -144,7 +144,7 @@
                                             <li class="menu-item"><a href="project-details.html">Project Details</a></li>
                                             <li class="menu-item"><a href="project-details-2.html">Project Details Two</a></li>
                                         </ul>
-                                    </li>  
+                                    </li>
                                     <li class="menu-item"><a href="about.html">About Us</a></li>
                                     <li class="menu-item menu-item-has-children"><a href="#">Pages</a>
                                         <ul class="sub-menu" data-lenis-prevent>
@@ -154,7 +154,7 @@
                                                     <li class="menu-item"><a href="service-details.html">Service Details</a></li>
                                                     <li class="menu-item"><a href="service-details-2.html">Service Details Two</a></li>
                                                 </ul>
-                                            </li> 
+                                            </li>
                                             <li class="menu-item menu-item-has-children"><a href="#">Our Team</a>
                                                 <ul class="sub-menu" data-lenis-prevent>
                                                     <li class="menu-item"><a href="team-1.html">Team Grid</a></li>
@@ -187,13 +187,13 @@
                                             <li class="menu-item"><a href="contact-1.html">Contact One</a></li>
                                             <li class="menu-item"><a href="contact-2.html">Contact Two</a></li>
                                         </ul>
-                                    </li>                         
+                                    </li>
                                     <li class="menu-item menu-item-has-children"><a href="#">Blog</a>
                                         <ul class="sub-menu" data-lenis-prevent>
                                             <li class="menu-item"><a href="blog-grid.html">Blog Grid</a></li>
                                             <li class="menu-item"><a href="blog-details.html">Blog Details</a></li>
                                         </ul>
-                                    </li> 
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -220,13 +220,13 @@
                 </div>
 			</div>
 		</header>
-        <!-- End Main Header -->			
+        <!-- End Main Header -->
 
         <!-- Mobile Responsive Menu -->
 		<div class="mr_menu" data-lenis-prevent>
 			<button type="button" class="mr_menu_close"><i class="bi bi-x-lg"></i></button>
             <div class="logo"></div> <!-- Keep this div empty. Logo will come here by JavaScript -->
-			
+
             <h6>Menu</h6>
             <div class="mr_navmenu"></div> <!-- Keep this div empty. Menu will come here by JavaScript -->
 
@@ -291,31 +291,31 @@
                                 <img src="../assets/img/instagram/6.jpg" alt="img">
                             </div>
                         </div>
-    
+
                         <div class="wptb-item">
                             <div class="wptb-item--image">
                                 <img src="../assets/img/instagram/7.jpg" alt="img">
                             </div>
                         </div>
-    
+
                         <div class="wptb-item">
                             <div class="wptb-item--image">
                                 <img src="../assets/img/instagram/8.jpg" alt="img">
                             </div>
                         </div>
-    
+
                         <div class="wptb-item">
                             <div class="wptb-item--image">
                                 <img src="../assets/img/instagram/9.jpg" alt="img">
                             </div>
                         </div>
-    
+
                         <div class="wptb-item">
                             <div class="wptb-item--image">
                                 <img src="../assets/img/instagram/10.jpg" alt="img">
                             </div>
                         </div>
-                        
+
                         <div class="wptb-item">
                             <div class="wptb-item--image">
                                 <img src="../assets/img/instagram/11.jpg" alt="img">
@@ -364,7 +364,7 @@
                 </div>
 			</div>
 		</div>
-        
+
         <!-- Modal Search -->
 		<div class="search-modal">
 			<div class="modal fade" id="modalSearch">
@@ -384,7 +384,7 @@
 				</div>
 			</div>
 		</div>
-        
+
         <!-- Main Wrapper-->
         <main class="wrapper">
             <!-- Page Header -->
@@ -412,32 +412,38 @@
                                         </div>
                                     </div>
 
-                                    <form class="wptb-form" action="contact.php" method="post">
-                                        <div class="wptb-form--inner">        
+                                    <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ next }}">
+                                        <div class="wptb-form--inner">
+                                            {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+                                            {% if form.email.errors %}<div class="alert alert-danger" role="alert">{{ form.email.errors|striptags }}</div>{% endif %}
+                                            {% if form.password.errors %}<div class="alert alert-danger" role="alert">{{ form.password.errors|striptags }}</div>{% endif %}
+
                                             <div class="row">
                                                 <div class="col-lg-12 col-md-12 mb-4">
                                                     <div class="form-group">
-                                                        <input type="text" name="name" class="form-control" placeholder="User Name or E-mail Address" required>
+                                                        <input type="text" name="email" class="form-control" placeholder="User Name or E-mail Address" value="{{ form.email.value|default_if_none:'' }}" required>
                                                     </div>
                                                 </div>
-        
+
                                                 <div class="col-lg-12 col-md-12 mb-4">
                                                     <div class="form-group">
                                                         <input type="password" name="password" class="form-control" placeholder="Password">
                                                     </div>
                                                 </div>
-        
+
                                                 <div class="col-md-12 col-lg-12">
                                                     <div class="form-group text-center">
-                                                        <input type="checkbox" name="remmeber">
-                                                        <label for="remmeber" class="text-capitalize">Remmeber Password</label>
+                                                        <input type="checkbox" name="remember" id="remember">
+                                                        <label for="remember" class="text-capitalize">Remmeber Password</label>
                                                     </div>
-                                                    
-                                                    <div class="wptb-item--button text-center mt-4"> 
+
+                                                    <div class="wptb-item--button text-center mt-4">
                                                         <button class="btn" type="submit">
                                                             <div class="btn-wrap">
-                                                                <span class="text-first"> LOG IN </span> 
-                                                            </div> 
+                                                                <span class="text-first"> LOG IN </span>
+                                                            </div>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -447,11 +453,11 @@
                                 </div>
                             </div>
                         </div>
-                    </div>					
+                    </div>
 				</div>
 			</section>
 
-            
+
 
         </main>
 
@@ -538,14 +544,14 @@
         <div class="totop">
             <a href="#"><i class="bi bi-chevron-up"></i></a>
         </div>
-        
+
 
         <!-- Core JS -->
         <script src="../assets/js/jquery-3.6.0.min.js"></script>
 
         <!-- Framework -->
         <script src="../assets/js/bootstrap.min.js"></script>
-        
+
         <!-- WOW Scroll Effect -->
         <script src="../plugins/wow/wow.min.js"></script>
 
@@ -566,7 +572,7 @@
         <!-- Nice Select -->
         <script src="../plugins/nice-select/jquery.nice-select.min.js"></script>
 
-        
+
 
         <!-- Cursor Effect -->
         <script src="../plugins/cursor-effect/cursor-effect.js"></script>
