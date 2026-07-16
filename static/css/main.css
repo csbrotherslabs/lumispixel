@@ -1513,9 +1513,10 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-hero {
   position: relative;
   width: 100%;
+  margin-top: 114px;
   height: clamp(220px, 29vw, 420px);
   overflow: hidden;
-  background: #181818;
+  background: transparent;
 }
 
 .login-hero::before {
@@ -1532,6 +1533,9 @@ img, svg, video { max-width: 100%; height: auto; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  transform: scale(1.02);
+  transform-origin: center center;
 }
 
 .login-hero__overlay {
