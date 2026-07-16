@@ -18,8 +18,8 @@
         {% else %}
             <p>Manage, find, and deliver photos with LumisPixel.</p>
             <div class="mobile-auth-actions">
-                <a href="#" data-placeholder-link>Sign In</a><!-- Future named route: accounts:login -->
-                <a href="#" data-placeholder-link>Start Free</a><!-- Future named route: accounts:signup -->
+                <a href="{% url 'accounts:login' %}">Sign In</a>
+                <a href="{% url 'accounts:get-started' %}">Start Free</a>
             </div>
         {% endif %}
     </div>

@@ -36,8 +36,8 @@
         {% else %}
             <p class="nav-sidebar-intro">Sign in to manage galleries, find your photos, or start delivering client-ready collections.</p>
             <div class="mobile-auth-actions sidebar-auth-actions">
-                <a href="#" data-placeholder-link>Sign In</a><!-- Future named route: accounts:login -->
-                <a href="#" data-placeholder-link>Start Free</a><!-- Future named route: accounts:signup -->
+                <a href="{% url 'accounts:login' %}">Sign In</a>
+                <a href="{% url 'accounts:get-started' %}">Start Free</a>
             </div>
         {% endif %}
     </div>

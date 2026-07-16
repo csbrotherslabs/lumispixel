@@ -70,8 +70,8 @@
                                 </ul>
                             </div>
                         {% else %}
-                            <a class="nav-signin" href="#" data-placeholder-link>Sign In</a><!-- Future named route: accounts:login -->
-                            <a class="nav-start-free" href="#" data-placeholder-link>Start Free</a><!-- Future named route: accounts:signup -->
+                            <a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a>
+                            <a class="nav-start-free" href="{% url 'accounts:get-started' %}">Start Free</a>
                         {% endif %}
                     </div>
 
