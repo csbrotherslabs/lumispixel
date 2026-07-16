@@ -62,14 +62,13 @@ Description: Kimono - Photography Agency
         // Active Mobile Responsive Menu : Add Class in body tag
         $('.mr_menu_toggle').on('click', function(e) {
             $('body').addClass('mr_menu_active');
-            $('.mr_menu_toggle').addClass('close').attr('aria-expanded', 'true');
             $('.mr_menu_close').trigger('focus');
             e.stopPropagation();
             e.preventDefault();
         });
         $('.mr_menu_close').on('click', function(e) {
             $('body').removeClass('mr_menu_active');
-            $('.mr_menu_toggle').removeClass('close').attr('aria-expanded', 'false').trigger('focus');
+            $('.mr_menu_toggle').trigger('focus');
             e.stopPropagation();
             e.preventDefault();
         });
@@ -132,7 +131,7 @@ Description: Kimono - Photography Agency
                 $('.nav-user-menu').removeClass('is-open').find('.nav-user-trigger').attr('aria-expanded', 'false').trigger('focus');
                 if ($('body').hasClass('mr_menu_active')) {
                     $('body').removeClass('mr_menu_active');
-                    $('.mr_menu_toggle').removeClass('close').attr('aria-expanded', 'false').trigger('focus');
+                    $('.mr_menu_toggle').trigger('focus');
                 }
                 if ($('.aside_info_wrapper').hasClass('show')) {
                     $('.aside_open').removeClass('close').trigger('focus');
