@@ -1045,34 +1045,85 @@ Description: Kimono - Photography Agency
         });
         
         // Gallery
-        var SwiperGalleryTwo = new Swiper('.swiper-gallery-two', {
-            loop: true,
-            // autoplay: {
-            //     delay: 3000,
-            // },
-            speed: 1500,
-            slidesPerView: 1,
-            spaceBetween: 30,
-            centeredSlides: false,       
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true
-            },
-            breakpoints: {
-                992: {
-                  slidesPerView: 2,
-                  spaceBetween: 30,
-                  centeredSlides: false, 
+        $('.swiper-gallery-two').each(function () {
+            var $gallery = $(this);
+            var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var isLoginWorkflow = $gallery.hasClass('workflow-carousel--login');
+            var galleryOptions = isLoginWorkflow ? {
+                loop: true,
+                speed: prefersReducedMotion ? 0 : 900,
+                slidesPerView: 'auto',
+                spaceBetween: 24,
+                centeredSlides: true,
+                grabCursor: true,
+                watchSlidesProgress: true,
+                keyboard: {
+                    enabled: true,
                 },
-                1200: {
-                    slidesPerView: 2,
-                    spaceBetween: 85,
-                    centeredSlides: true, 
-                  },
+                autoplay: prefersReducedMotion ? false : {
+                    delay: 6500,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true,
+                },
+                navigation: {
+                    nextEl: $gallery.find('.swiper-button-next')[0],
+                    prevEl: $gallery.find('.swiper-button-prev')[0],
+                },
+                pagination: {
+                    el: $gallery.find('.swiper-pagination')[0],
+                    clickable: true
+                },
+                breakpoints: {
+                    768: {
+                        spaceBetween: 28,
+                    },
+                    1200: {
+                        spaceBetween: 68,
+                    },
+                }
+            } : {
+                loop: true,
+                // autoplay: {
+                //     delay: 3000,
+                // },
+                speed: 1500,
+                slidesPerView: 1,
+                spaceBetween: 30,
+                centeredSlides: false,
+                navigation: {
+                    nextEl: $gallery.find('.swiper-button-next')[0],
+                    prevEl: $gallery.find('.swiper-button-prev')[0],
+                },
+                pagination: {
+                    el: $gallery.find('.swiper-pagination')[0],
+                    clickable: true
+                },
+                breakpoints: {
+                    992: {
+                      slidesPerView: 2,
+                      spaceBetween: 30,
+                      centeredSlides: false,
+                    },
+                    1200: {
+                        slidesPerView: 2,
+                        spaceBetween: 85,
+                        centeredSlides: true,
+                      },
+                }
+            };
+
+            var gallerySwiper = new Swiper(this, galleryOptions);
+
+            if (isLoginWorkflow && gallerySwiper.autoplay) {
+                $gallery.on('focusin', function () {
+                    gallerySwiper.autoplay.stop();
+                });
+
+                $gallery.on('focusout', function () {
+                    if (!prefersReducedMotion) {
+                        gallerySwiper.autoplay.start();
+                    }
+                });
             }
         });
 
