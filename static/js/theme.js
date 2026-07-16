@@ -180,6 +180,8 @@ Description: Kimono - Photography Agency
 
             if (scroll >= 50) {
                 header.addClass("sticky navbar--sticky").removeClass("navbar--transparent");
+            } else if ($("body").hasClass("page-inner")) {
+                header.addClass("navbar--sticky").removeClass("navbar--transparent");
             } else {
                 header.removeClass("sticky navbar--sticky").addClass("navbar--transparent");
             }

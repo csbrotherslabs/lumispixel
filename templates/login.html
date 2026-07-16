@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
 <section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="login-title">
@@ -7,6 +8,10 @@
       <div class="wptb-form--wrapper">
         <div class="row">
           <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
+            <div class="login-visual">
+              <img src="{% static 'img/background/page-header-bg-10.jpg' %}" alt="LumisPixel photography studio workspace">
+            </div>
+
             <div class="wptb-heading">
               <div class="wptb-item--inner text-center">
                 <h1 class="wptb-item--title" id="login-title">Sign in to LumisPixel</h1>
@@ -55,9 +60,11 @@
             </form>
             <div class="lumis-auth-actions" aria-label="Account signup options">
               <p>New to LumisPixel?</p>
+              <div class="auth-action-row">
               <a class="btn lumis-auth-secondary" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
               <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
               <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
+              </div>
             </div>
           </div>
         </div>
