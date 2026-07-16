@@ -1476,7 +1476,7 @@ img, svg, video { max-width: 100%; height: auto; }
   text-align: center;
 }
 
-.lumis-auth-actions p {
+.lumis-auth-actions > p {
   flex: 0 0 100%;
   margin-bottom: 2px;
   color: #5f5750;
@@ -1506,7 +1506,8 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .lumis-auth-primary,
   .lumis-auth-secondary,
-  .lumis-get-started-card__button {
+  .lumis-get-started-card__button,
+  .lumis-login-get-started__arrow {
     transition: none;
   }
 }
@@ -1547,30 +1548,100 @@ img, svg, video { max-width: 100%; height: auto; }
   color: var(--color-white);
 }
 
-.login-visual {
-  margin: 0 auto 30px;
+.login-hero {
+  position: relative;
+  width: 100%;
+  height: clamp(220px, 29vw, 420px);
   overflow: hidden;
-  border-radius: 22px;
-  box-shadow: 0 16px 38px rgba(48, 35, 27, .08);
+  background: #181818;
 }
 
-.login-visual img {
+.login-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .42), rgba(0, 0, 0, .2));
+  pointer-events: none;
+}
+
+.login-hero__image {
   display: block;
   width: 100%;
-  max-height: 260px;
-  height: auto;
-  aspect-ratio: 16 / 7;
+  height: 100%;
   object-fit: cover;
 }
 
-.auth-action-row {
+.login-hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
-  align-items: stretch;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  text-align: center;
+}
+
+.login-hero__copy {
+  max-width: 900px;
+}
+
+.login-hero__text,
+.login-hero__text.lumis-auth-copy {
+  color: var(--color-white-fixed, #fff);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .58);
+}
+
+.login-hero__text {
+  margin: 0 auto;
+}
+
+.login-hero__text + .login-hero__text {
+  margin-top: 10px;
+}
+
+.login-new-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
 }
 
-.auth-action-row > a {
+.login-new-user-row__label {
+  margin: 0;
+  color: #5f5750;
+}
+
+.lumis-login-get-started {
+  min-width: min(100%, 220px);
+  justify-content: space-between;
+  gap: 14px;
+  border-radius: 14px;
+  font-weight: 900;
+}
+
+.lumis-login-get-started__arrow {
+  flex: 0 0 auto;
+  color: var(--lumis-home-red, var(--color-one, #d70006));
+  transition: transform .2s ease;
+}
+
+.lumis-login-get-started:hover .lumis-login-get-started__arrow,
+.lumis-login-get-started:focus-visible .lumis-login-get-started__arrow {
+  transform: translateX(4px);
+}
+
+.login-new-user-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.login-new-user-actions > a {
   flex: 1 1 0;
   min-width: 0;
   display: inline-flex;
@@ -1622,28 +1693,28 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 @media (max-width: 991px) {
-  .auth-action-row {
+  .login-new-user-row,
+  .login-new-user-actions {
     gap: 10px;
   }
 
-  .auth-action-row > a {
+  .login-new-user-actions > a {
     padding-inline: 14px;
     font-size: 13px;
   }
 }
 
 @media (max-width: 767px) {
-  .login-visual {
-    margin-bottom: 24px;
-    border-radius: 18px;
+  .login-hero {
+    height: clamp(220px, 58vw, 320px);
   }
 
-  .login-visual img {
-    max-height: 180px;
-    aspect-ratio: 16 / 9;
+  .login-new-user-row {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .auth-action-row {
+  .login-new-user-actions {
     flex-direction: column;
   }
 
