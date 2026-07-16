@@ -1045,61 +1045,34 @@ Description: Kimono - Photography Agency
         });
         
         // Gallery
-        $('.swiper-gallery-two').each(function () {
-            var $gallery = $(this);
-            var isLoginFeatureCarousel = $gallery.hasClass('workflow-carousel--login');
-            var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            var swiperOptions = {
-                loop: true,
-                speed: prefersReducedMotion ? 0 : 1500,
-                slidesPerView: 1,
-                spaceBetween: isLoginFeatureCarousel ? 0 : 30,
-                centeredSlides: false,
-                navigation: {
-                    nextEl: $gallery.find('.swiper-button-next')[0],
-                    prevEl: $gallery.find('.swiper-button-prev')[0],
+        var SwiperGalleryTwo = new Swiper('.swiper-gallery-two', {
+            loop: true,
+            // autoplay: {
+            //     delay: 3000,
+            // },
+            speed: 1500,
+            slidesPerView: 1,
+            spaceBetween: 30,
+            centeredSlides: false,       
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true
+            },
+            breakpoints: {
+                992: {
+                  slidesPerView: 2,
+                  spaceBetween: 30,
+                  centeredSlides: false, 
                 },
-                pagination: {
-                    el: $gallery.find('.swiper-pagination')[0],
-                    clickable: true
-                },
-                keyboard: {
-                    enabled: true,
-                    onlyInViewport: true,
-                },
-                breakpoints: isLoginFeatureCarousel ? {} : {
-                    992: {
-                      slidesPerView: 2,
-                      spaceBetween: 30,
-                      centeredSlides: false,
-                    },
-                    1200: {
-                        slidesPerView: 2,
-                        spaceBetween: 85,
-                        centeredSlides: true,
-                      },
-                }
-            };
-
-            if (isLoginFeatureCarousel && !prefersReducedMotion) {
-                swiperOptions.autoplay = {
-                    delay: 6000,
-                    disableOnInteraction: false,
-                    pauseOnMouseEnter: true,
-                };
-            }
-
-            var gallerySwiper = new Swiper(this, swiperOptions);
-
-            if (isLoginFeatureCarousel && gallerySwiper.autoplay) {
-                $gallery.on('focusin mouseenter', function () {
-                    gallerySwiper.autoplay.stop();
-                });
-                $gallery.on('focusout mouseleave', function () {
-                    if (!prefersReducedMotion) {
-                        gallerySwiper.autoplay.start();
-                    }
-                });
+                1200: {
+                    slidesPerView: 2,
+                    spaceBetween: 85,
+                    centeredSlides: true, 
+                  },
             }
         });
 
