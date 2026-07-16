@@ -1372,6 +1372,7 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .lumis-auth-form .wptb-heading {
+  margin-top: 134px;
   margin-bottom: 30px;
 }
 
