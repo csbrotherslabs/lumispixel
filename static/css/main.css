@@ -1523,29 +1523,8 @@ img, svg, video { max-width: 100%; height: auto; }
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 3;
-  background: linear-gradient(180deg, rgba(0, 0, 0, .42), rgba(0, 0, 0, .2));
-  pointer-events: none;
-}
-
-.login-hero__carousel,
-.login-hero__carousel .swiper-wrapper,
-.login-hero__slide {
-  width: 100%;
-  height: 100%;
-}
-
-.login-hero__slide {
-  position: relative;
-  overflow: hidden;
-}
-
-.login-hero__slide::after {
-  content: "";
-  position: absolute;
-  inset: 0;
   z-index: 1;
-  background: linear-gradient(90deg, rgba(0, 0, 0, .68), rgba(0, 0, 0, .28) 48%, rgba(0, 0, 0, .58));
+  background: linear-gradient(180deg, rgba(0, 0, 0, .42), rgba(0, 0, 0, .2));
   pointer-events: none;
 }
 
@@ -1574,33 +1553,6 @@ img, svg, video { max-width: 100%; height: auto; }
   max-width: 900px;
 }
 
-.login-hero__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 0 10px;
-  padding: 7px 16px;
-  border: 1px solid rgba(255, 255, 255, .32);
-  border-radius: 999px;
-  color: var(--color-white-fixed, #fff);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .16em;
-  line-height: 1;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, .12);
-  backdrop-filter: blur(12px);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, .58);
-}
-
-.login-hero__headline {
-  margin: 0 auto 10px;
-  color: var(--color-white-fixed, #fff);
-  font-size: clamp(2rem, 5vw, 4.5rem);
-  line-height: .98;
-  text-shadow: 0 2px 22px rgba(0, 0, 0, .6);
-}
-
 .login-hero__text,
 .login-hero__text.lumis-auth-copy {
   color: var(--color-white-fixed, #fff);
@@ -1608,25 +1560,11 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .login-hero__text {
-  max-width: 720px;
   margin: 0 auto;
 }
 
-.login-hero__pagination {
-  z-index: 4;
-  bottom: 22px !important;
-}
-
-.login-hero__pagination .swiper-pagination-bullet {
-  width: 34px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .62);
-  opacity: 1;
-}
-
-.login-hero__pagination .swiper-pagination-bullet-active {
-  background: var(--color-white-fixed, #fff);
+.login-hero__text + .login-hero__text {
+  margin-top: 10px;
 }
 
 .login-new-user-row {
