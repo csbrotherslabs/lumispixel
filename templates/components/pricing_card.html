@@ -13,6 +13,8 @@
         {% if feature_5 %}<li>{{ feature_5 }}</li>{% endif %}
         {% if feature_6 %}<li>{{ feature_6 }}</li>{% endif %}
     </ul>
-    <a class="lumis-pricing-card__cta{% if highlighted %} lumis-pricing-card__cta--primary{% endif %}" href="{{ cta_url|default:'#' }}">{{ cta_label }}</a>
+    {% if show_cta is not False %}
+        <a class="lumis-pricing-card__cta{% if highlighted %} lumis-pricing-card__cta--primary{% endif %}" href="{{ cta_url|default:'#' }}">{{ cta_label }}</a>
+    {% endif %}
     {% if disclaimer %}<p class="lumis-pricing-card__disclaimer">{{ disclaimer }}</p>{% endif %}
 </article>

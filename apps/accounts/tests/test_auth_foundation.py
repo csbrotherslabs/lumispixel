@@ -148,6 +148,19 @@ class LoginTests(TestCase):
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
 
 
+    def test_logout_requires_post(self):
+        user = make_user(email="logout-get@example.com")
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(reverse("accounts:logout")).status_code, 405)
+
+    def test_logout_post_redirects_home_and_clears_session(self):
+        user = make_user(email="logout-post@example.com")
+        self.client.force_login(user)
+        response = self.client.post(reverse("accounts:logout"))
+        self.assertRedirects(response, reverse("core:index"), fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+
 from django.http import HttpResponse
 from django.urls import path
 

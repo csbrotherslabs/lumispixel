@@ -32,7 +32,12 @@
         <ul class="mobile-account-links">
             <li><a href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index --></li>
             <li><a href="#" data-placeholder-link>Settings</a><!-- Future named route: accounts:settings --></li>
-            <li><a href="#" data-placeholder-link>Sign Out</a><!-- Future named route: accounts:logout --></li>
+            <li>
+                <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-logout-button">Sign Out</button>
+                </form>
+            </li>
         </ul>
     {% endif %}
 </div>
