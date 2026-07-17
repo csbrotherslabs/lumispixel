@@ -35,7 +35,9 @@
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% if not request.user.is_authenticated %}
+                                                        {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% endif %}
     
                                                     {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
@@ -82,7 +84,9 @@
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% if not request.user.is_authenticated %}
+                                                        {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% endif %}
     
                                                     {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
@@ -129,7 +133,9 @@
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% if not request.user.is_authenticated %}
+                                                        {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% endif %}
     
                                                     {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
@@ -176,7 +182,9 @@
                                                 </div>
                                                 
                                                 <div class="wptb-item--button">
-                                                    {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% if not request.user.is_authenticated %}
+                                                        {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
+                                                    {% endif %}
     
                                                     {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
                                                 </div>
@@ -903,7 +911,7 @@
                     </div>
 
                     <div class="lumis-pricing-plans" aria-label="Pricing plan previews">
-                        {% include "components/pricing_card.html" with plan_name="Starter" audience="For photographers getting started." price="Free" monthly_price="Free" annual_price="Free" feature_1="Essential client galleries" feature_2="Basic photo delivery" feature_3="Limited storage" feature_4="Photographer profile" feature_5="Marketplace visibility" cta_label="Start Free" cta_url=start_free_url %}
+                        {% include "components/pricing_card.html" with plan_name="Starter" audience="For photographers getting started." price="Free" monthly_price="Free" annual_price="Free" feature_1="Essential client galleries" feature_2="Basic photo delivery" feature_3="Limited storage" feature_4="Photographer profile" feature_5="Marketplace visibility" cta_label="Start Free" cta_url=start_free_url show_cta=request.user.is_anonymous %}
 
                         {% include "components/pricing_card.html" with plan_name="Professional" audience="For active photographers managing regular clients." price="$29 / month" monthly_price="$29 / month" annual_price="$29 / month billed annually" feature_1="Everything in Starter" feature_2="AI-assisted culling" feature_3="Face-powered photo discovery" feature_4="Online photo sales" feature_5="Expanded storage" feature_6="Custom gallery branding" cta_label="Choose Professional" cta_url="#" highlighted=True badge_text="Most Popular" %}
 
