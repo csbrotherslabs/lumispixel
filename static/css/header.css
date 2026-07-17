@@ -1251,8 +1251,8 @@ body.overlay_menu_active .wptb-overlay-contact {
 .nav-user-trigger:focus-visible, .nav-user-dropdown a:focus-visible, .mobile-auth-actions a:focus-visible, .mobile-dashboard-link:focus-visible, .mobile-account-links a:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
 .nav-avatar { border-radius: 50%; height: 38px; object-fit: cover; width: 38px; }
 .nav-user-copy { display: grid; line-height: 1.1; text-align: left; }
-.nav-user-name { font-size: 13px; font-weight: var(--fw-semibold); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav-user-role { color: rgba(var(--color-white-rgb), 0.6); font-size: 10px; letter-spacing: 1px; margin-top: 2px; text-transform: uppercase; }
+.nav-user-name { font-size: 13px; font-weight: var(--fw-semibold); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-white-fixed);}
+.nav-user-role { color: rgba(var(--color-black-rgb), 0.6); font-size: 10px; letter-spacing: 1px; margin-top: 2px; text-transform: uppercase; }
 .nav-user-dropdown { background: var(--color-black); border-radius: 6px; box-shadow: 0 18px 45px rgba(0,0,0,.28); list-style: none; margin: 12px 0 0; min-width: 230px; opacity: 0; padding: 14px 20px; position: absolute; right: 0; top: 100%; transform: translate3d(10px,0,0); transition: var(--transition-base); visibility: hidden; z-index: 8; }
 .nav-user-menu.is-open .nav-user-dropdown { opacity: 1; transform: translate3d(0,0,0); visibility: visible; }
 .nav-user-dropdown a { color: rgba(var(--color-white-rgb), 0.68); display: block; font-size: 12px; font-weight: var(--fw-medium); letter-spacing: 1px; padding: 10px 0; text-transform: uppercase; }
