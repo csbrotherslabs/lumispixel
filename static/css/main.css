@@ -1987,3 +1987,20 @@ img, svg, video { max-width: 100%; height: auto; }
     transition: none;
   }
 }
+
+.lumis-auth-field-help {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.lumis-auth-field-help a {
+  color: #5f5750;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lumis-auth-field-help a:hover,
+.lumis-auth-field-help a:focus-visible {
+  color: var(--lumis-home-red, var(--color-one, #d70006));
+}

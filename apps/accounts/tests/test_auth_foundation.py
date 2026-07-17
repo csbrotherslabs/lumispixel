@@ -211,3 +211,28 @@ class PermissionTests(TestCase):
         user = make_user(email="noaccess@example.com")
         self.client.force_login(user)
         self.assertEqual(self.client.get("/photo/").status_code, 403)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class PasswordResetTests(TestCase):
+    def test_login_page_links_to_password_reset(self):
+        response = self.client.get(reverse("accounts:login"))
+        self.assertContains(response, reverse("accounts:password-reset"))
+        self.assertContains(response, "Forgot password?")
+
+    def test_password_reset_sends_email_for_email_login_user(self):
+        from django.core import mail
+
+        make_user(email="reset@example.com", password="OldPass123!")
+        response = self.client.post(reverse("accounts:password-reset"), {"email": "reset@example.com"})
+        self.assertRedirects(response, reverse("accounts:password-reset-done"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("LumisPixel", mail.outbox[0].subject)
+        self.assertRegex(mail.outbox[0].body, r"/accounts/reset/[A-Za-z0-9_-]+/[A-Za-z0-9:._-]+/")
+
+    def test_password_reset_response_does_not_reveal_missing_account(self):
+        from django.core import mail
+
+        response = self.client.post(reverse("accounts:password-reset"), {"email": "missing@example.com"})
+        self.assertRedirects(response, reverse("accounts:password-reset-done"))
+        self.assertEqual(len(mail.outbox), 0)
