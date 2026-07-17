@@ -1,1 +1,12 @@
-<!doctype html><html><body><h1>LumisPixel</h1><p>Hi {{ user.first_name|default:"there" }},</p><p>Please verify your email address to continue setting up your LumisPixel account.</p><p><a href="{{ verification_url }}">Verify your email address</a></p><p>Plain-text link: {{ verification_url }}</p><p>If you did not create this account, you can ignore this email.</p></body></html>
+<!doctype html>
+<html>
+    <body>
+        <h1>LumisPixel</h1>
+        <p>Hi {{ user.first_name|default:"there" }},</p>
+        <p>Please verify your email address to continue setting up your LumisPixel account.</p>
+        <p><a href="{{ verification_url }}">Verify your email address</a></p>
+        <p>Plain-text link: {{ verification_url }}</p>
+        <p>If you did not create this account, you can ignore this email.</p>
+    </body>
+</html>
+ 

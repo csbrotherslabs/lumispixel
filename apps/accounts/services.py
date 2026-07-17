@@ -8,10 +8,14 @@ from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.core import mail
+from django.conf import settings
 
 from .models import ClientProfile, PhotographerProfile
+from config import settings
 
 SIGNUP_INTENTS = {"find_photos", "marketplace", "general"}
 PHOTOGRAPHER_FIRST_ONBOARDING_STEP = "business_information"
@@ -105,14 +109,35 @@ def build_verification_url(request, user):
 
 
 def send_verification_email(request, user):
+
+    email_connection = mail.get_connection(
+        username=settings.EMAIL_HOST_USER,
+        password=settings.EMAIL_HOST_PASSWORD,
+        fail_silently=False,
+    )
+    email_connection.open()
+    
     verification_url = build_verification_url(request, user)
-    context = {"user": user, "verification_url": verification_url, "brand_name": "LumisPixel"}
+    context = {
+        "user": user, 
+        "verification_url": verification_url, 
+        "brand_name": "LumisPixel"
+    }
     subject = "Verify your LumisPixel email address"
     text_body = render_to_string("accounts/email/verify_email.txt", context)
     html_body = render_to_string("accounts/email/verify_email.html", context)
-    message = EmailMultiAlternatives(subject, text_body, to=[user.email])
+    text_content = strip_tags(html_body)
+
+    message = mail.EmailMultiAlternatives(subject, 
+                                          text_content, 
+                                          from_email=settings.EMAIL_HOST_USER,
+                                          to=[user.email],
+                                          connection = email_connection,)
     message.attach_alternative(html_body, "text/html")
     try:
         message.send()
+        print("here")
     except (OSError, SMTPException) as exc:
+        print("141")
+        print(exc)
         raise EmailDeliveryError from exc
