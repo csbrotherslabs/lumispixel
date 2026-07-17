@@ -1511,6 +1511,38 @@ img, svg, video { max-width: 100%; height: auto; }
   color: var(--color-white);
 }
 
+.page-inner .header .nav-user-trigger {
+  background: rgba(var(--color-white-fixed-rgb), 0.08);
+  border-color: rgba(var(--color-white-fixed-rgb), 0.34);
+  color: var(--color-white-fixed);
+}
+
+.page-inner .header .nav-user-trigger:hover,
+.page-inner .header .nav-user-trigger:focus,
+.page-inner .header .nav-user-menu.is-open .nav-user-trigger {
+  background: rgba(var(--color-white-fixed-rgb), 0.13);
+  border-color: rgba(var(--color-white-fixed-rgb), 0.58);
+  color: var(--color-white-fixed);
+}
+
+.page-inner .header .nav-user-trigger:focus-visible {
+  box-shadow: 0 0 0 4px rgba(var(--color-white-fixed-rgb), 0.16);
+}
+
+.page-inner .header .nav-avatar {
+  border: 1px solid rgba(var(--color-white-fixed-rgb), 0.62);
+  box-shadow: 0 0 0 3px rgba(var(--color-white-fixed-rgb), 0.08);
+}
+
+.page-inner .header .nav-user-name,
+.page-inner .header .nav-user-trigger .bi {
+  color: var(--color-white-fixed);
+}
+
+.page-inner .header .nav-user-role {
+  color: rgba(var(--color-white-fixed-rgb), 0.72);
+}
+
 .login-hero {
   position: relative;
   width: 100%;
