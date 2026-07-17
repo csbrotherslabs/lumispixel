@@ -1534,13 +1534,23 @@ img, svg, video { max-width: 100%; height: auto; }
   box-shadow: 0 0 0 3px rgba(var(--color-white-fixed-rgb), 0.08);
 }
 
-.page-inner .header .nav-user-name,
+.page-inner .header .nav-user-trigger,
+.page-inner .header .nav-user-trigger .nav-user-copy,
+.page-inner .header .nav-user-trigger .nav-user-name,
+.page-inner .header .nav-user-trigger .nav-user-role,
 .page-inner .header .nav-user-trigger .bi {
-  color: var(--color-white-fixed);
+  color: #ffffff;
 }
 
-.page-inner .header .nav-user-role {
-  color: rgba(var(--color-white-fixed-rgb), 0.72);
+.page-inner .header .nav-user-trigger i,
+.page-inner .header .nav-user-trigger span,
+.page-inner .header .nav-user-trigger svg {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.page-inner .header .nav-user-trigger .nav-avatar {
+  filter: brightness(0) invert(1);
 }
 
 .login-hero {
