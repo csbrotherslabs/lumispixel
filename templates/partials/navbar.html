@@ -53,7 +53,7 @@
                         {% if request.user.is_authenticated %}
                             <div class="nav-user-menu">
                                 <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
-                                    <img src="{% static 'img/default-avatar.svg' %}" class="nav-avatar" alt="Avatar for {{ request.user.get_full_name|default:request.user.username }}">
+                                    <img src="{% static 'img/default-avatar.svg' %}" class="nav-avatar" alt="" aria-hidden="true">
                                     <span class="nav-user-copy">
                                         <span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span>
                                         <span class="nav-user-role">{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
