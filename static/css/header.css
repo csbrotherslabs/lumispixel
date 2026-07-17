@@ -1229,7 +1229,7 @@ body.overlay_menu_active .wptb-overlay-contact {
   .wptb-overlay-contact {
     margin-top: 50px;
   }
-  
+
 }
 /* LumisPixel platform navigation */
 .header .mainnav ul.main-menu > li + li { margin-left: 34px; }
@@ -1246,7 +1246,7 @@ body.overlay_menu_active .wptb-overlay-contact {
 .nav-signin:focus-visible, .nav-start-free:focus-visible, .mr_menu_toggle:focus-visible, .aside_open:focus-visible { outline: 2px solid var(--color-one); outline-offset: 4px; }
 .nav-start-free:active, .navbar--sticky .nav-start-free:active { background: #7f0505; border-color: #7f0505; color: var(--color-white); }
 .nav-user-menu { position: relative; }
-.nav-user-trigger { align-items: center; background: rgba(var(--color-white-rgb), 0.06); border: 1px solid rgba(var(--color-white-rgb), 0.18); border-radius: 999px; color: var(--color-white); display: inline-flex; gap: 10px; min-height: 46px; padding: 4px 12px 4px 5px; transition: var(--transition-base); }
+.nav-user-trigger { align-items: center; background: rgb(107 107 107 / 44%); border: 1px solid rgba(var(--color-white-rgb), 0.18); border-radius: 999px; color: var(--color-black); display: inline-flex; gap: 10px; min-height: 46px; padding: 4px 12px 4px 5px; transition: var(--transition-base); }
 .nav-user-trigger:hover, .nav-user-trigger:focus { border-color: rgba(var(--color-white-rgb), 0.55); outline: none; }
 .nav-user-trigger:focus-visible, .nav-user-dropdown a:focus-visible, .mobile-auth-actions a:focus-visible, .mobile-dashboard-link:focus-visible, .mobile-account-links a:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
 .nav-avatar { border-radius: 50%; height: 38px; object-fit: cover; width: 38px; }
