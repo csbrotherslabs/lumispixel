@@ -134,6 +134,9 @@
                     <div class="form-group">
                       <label class="visually-hidden" for="id_password">Password</label>
                       <input id="id_password" type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
+                      <div class="lumis-auth-field-help">
+                        <a href="{% url 'accounts:password-reset' %}">Forgot password?</a>
+                      </div>
                     </div>
                   </div>
 
