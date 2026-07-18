@@ -1,0 +1,5 @@
+{% for panel in theme_panels %}<div class="lumis-theme-panel" id="panel-{{ panel.key }}" data-theme-panel="{{ panel.key }}" hidden>
+  <h3>{{ panel.name }} content</h3>
+  <div class="lumis-theme-config-grid">{% for field in panel.fields %}<div class="lumis-theme-field {% if field.name == 'hero_image' %}lumis-theme-field--full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label|default:field.name|title }}</label>{{ field }}{% if field.name == 'hero_image' and website.hero_image %}<p><img src="{{ website.hero_image.url }}" alt="Current hero image" loading="lazy" style="max-width:180px"></p>{% endif %}{{ field.errors }}</div>{% endfor %}</div>
+  {% if panel.key == 'portfolio_editorial' %}<h4>Featured homepage projects</h4>{% for i in '012' %}<div class="lumis-theme-project"><label>Project {{ forloop.counter }} title<input class="form-control" name="project_{{ i }}_title"></label><label>Description<textarea class="form-control" name="project_{{ i }}_description"></textarea></label><label>Cover image<input class="form-control" type="file" name="project_{{ i }}_cover_image" accept="image/*"></label></div>{% endfor %}{% endif %}
+</div>{% endfor %}
