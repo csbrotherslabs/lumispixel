@@ -10,7 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .decorators import safe_next_url
 from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignupForm
-from .models import User
+from .models import ClientProfile, User
 from .services import EmailDeliveryError, email_verification_token, normalize_signup_intent, send_verification_email
 
 SIGNUP_INTENT_SESSION_KEY = "signup_intent"
@@ -52,6 +52,23 @@ def _clear_auth_flow(request):
         request.session.pop(key, None)
 
 
+def _is_client_account(user):
+    return user.primary_role == User.PrimaryRole.CLIENT
+
+
+def _client_onboarding_redirect_name(profile):
+    return "clients:onboarding-welcome"
+
+
+def _client_destination_url(request, user, fallback_route="accounts:client-dashboard"):
+    if not _is_client_account(user):
+        return None
+    profile, _ = ClientProfile.objects.get_or_create(user=user)
+    if not profile.onboarding_completed:
+        return reverse(_client_onboarding_redirect_name(profile))
+    return reverse(fallback_route)
+
+
 def _post_verification_redirect(request, user):
     next_url = safe_next_url(request, request.session.get(AUTH_NEXT_SESSION_KEY, ""))
     intent = normalize_signup_intent(request.session.get(SIGNUP_INTENT_SESSION_KEY, "general"))
@@ -61,10 +78,12 @@ def _post_verification_redirect(request, user):
     if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
         return reverse("accounts:photographer-onboarding")
     if intent == "find_photos":
-        return reverse("accounts:find-photos-placeholder")
-    if intent == "marketplace":
-        return reverse("accounts:marketplace-request-placeholder")
-    return reverse("accounts:client-dashboard")
+        existing_client_destination = "accounts:find-photos-placeholder"
+    elif intent == "marketplace":
+        existing_client_destination = "accounts:marketplace-request-placeholder"
+    else:
+        existing_client_destination = "accounts:client-dashboard"
+    return _client_destination_url(request, user, existing_client_destination) or reverse(existing_client_destination)
 
 
 @require_http_methods(["GET", "POST"])
@@ -108,6 +127,9 @@ def _authenticated_signup_redirect(request, account_type):
         return redirect("accounts:enable-photographer-workspace")
     if request.user.primary_role == User.PrimaryRole.PHOTOGRAPHER or request.user.has_photographer_profile:
         return redirect("accounts:photographer-onboarding")
+    client_destination = _client_destination_url(request, request.user)
+    if client_destination:
+        return redirect(client_destination)
     return redirect("accounts:client-dashboard")
 
 
@@ -193,9 +215,8 @@ def post_login_redirect(request):
     if not user.email_verified:
         _remember_pending_user(request, user)
         return redirect("accounts:email-verification-required")
-    if not user.onboarding_completed:
-        if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
-            return redirect("accounts:photographer-onboarding")
+    if user.primary_role == User.PrimaryRole.PHOTOGRAPHER and not user.onboarding_completed:
+        return redirect("accounts:photographer-onboarding")
     workspace_routes = {
         User.Workspace.CLIENT: "accounts:client-dashboard",
         User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
@@ -204,10 +225,24 @@ def post_login_redirect(request):
     }
     route = workspace_routes.get(user.last_active_workspace)
     if route:
+        client_destination = _client_destination_url(request, user, route)
+        if client_destination:
+            return redirect(client_destination)
         return redirect(route)
     if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
         return redirect("accounts:photographer-dashboard")
+    client_destination = _client_destination_url(request, user)
+    if client_destination:
+        return redirect(client_destination)
     return redirect("accounts:client-dashboard")
+
+
+@login_required
+def client_dashboard(request):
+    client_destination = _client_destination_url(request, request.user)
+    if client_destination and client_destination != request.path:
+        return redirect(client_destination)
+    return render(request, "accounts/placeholder.html", {"title": "Client dashboard"})
 
 
 @login_required
