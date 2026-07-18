@@ -145,7 +145,7 @@ class LoginTests(TestCase):
     def test_role_aware_redirect(self):
         user = make_user(email="photo-role@example.com", primary_role=User.PrimaryRole.PHOTOGRAPHER, last_active_workspace=User.Workspace.PHOTOGRAPHER)
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
 
     def test_client_without_profile_gets_profile_and_onboarding_redirect(self):
         user = make_user(email="missing-client-profile@example.com", onboarding_completed=False)
@@ -174,7 +174,7 @@ class LoginTests(TestCase):
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         PhotographerProfile.objects.create(user=user, slug="photo-not-client-onboarding")
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
 
     def test_photographer_with_client_workspace_does_not_enter_client_routing(self):
         user = make_user(
@@ -185,7 +185,7 @@ class LoginTests(TestCase):
         )
         self.client.force_login(user)
 
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
         self.assertFalse(ClientProfile.objects.filter(user=user).exists())
 
     def test_navbar_uses_stored_role_label(self):

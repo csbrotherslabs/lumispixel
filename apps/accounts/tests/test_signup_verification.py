@@ -95,7 +95,7 @@ class EntrySignupVerificationTests(TestCase):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = email_verification_token.make_token(user)
         response = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(response, reverse("accounts:photographer-onboarding"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
 
     def test_resend_post_only_cooldown_and_verified_skip(self):
         self.client.post(reverse("accounts:client-signup"), VALID | {"email": "resend@example.com"})
@@ -134,5 +134,5 @@ class EntrySignupVerificationTests(TestCase):
         ClientProfile.objects.create(user=user)
         self.client.force_login(user)
         before = User.objects.count()
-        self.assertRedirects(self.client.get(reverse("accounts:photographer-signup")), reverse("accounts:enable-photographer-workspace"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:photographer-signup")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
         self.assertEqual(User.objects.count(), before)

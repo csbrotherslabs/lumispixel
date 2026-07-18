@@ -10,7 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from .decorators import safe_next_url
 from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignupForm
-from .models import ClientProfile, User
+from .models import ClientProfile, PhotographerProfile, User
 from .services import EmailDeliveryError, email_verification_token, normalize_signup_intent, send_verification_email
 
 SIGNUP_INTENT_SESSION_KEY = "signup_intent"
@@ -73,14 +73,48 @@ def _client_destination_url(request, user, fallback_route="clients:dashboard"):
     return reverse(fallback_route)
 
 
+def _photographer_destination_url(request, user, fallback_route="accounts:photographer-dashboard"):
+    if not _is_photographer_account(user):
+        return None
+    profile, _ = PhotographerProfile.objects.get_or_create(user=user)
+    if not profile.onboarding_completed:
+        return reverse("photographers:onboarding-welcome")
+    return reverse(fallback_route)
+
+
+def _authenticated_destination_url(request, user):
+    if user.required_password_reset:
+        return reverse("accounts:password-reset-required")
+    if not user.email_verified:
+        _remember_pending_user(request, user)
+        return reverse("accounts:email-verification-required")
+    photographer_destination = _photographer_destination_url(request, user)
+    if photographer_destination:
+        return photographer_destination
+    client_destination = _client_destination_url(request, user)
+    if client_destination:
+        return client_destination
+    workspace_routes = {
+        User.Workspace.CLIENT: "clients:dashboard",
+        User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
+        User.Workspace.MARKETPLACE: "accounts:marketplace-dashboard",
+        User.Workspace.OPERATIONS: "accounts:operations-dashboard",
+    }
+    route = workspace_routes.get(user.last_active_workspace)
+    if route:
+        return reverse(route)
+    return reverse("accounts:post-login-redirect")
+
+
 def _post_verification_redirect(request, user):
     next_url = safe_next_url(request, request.session.get(AUTH_NEXT_SESSION_KEY, ""))
     intent = normalize_signup_intent(request.session.get(SIGNUP_INTENT_SESSION_KEY, "general"))
     _clear_auth_flow(request)
     if next_url:
         return next_url
-    if _is_photographer_account(user):
-        return reverse("accounts:photographer-onboarding")
+    destination = _authenticated_destination_url(request, user)
+    if destination:
+        return destination
     client_destination = _client_destination_url(request, user)
     if client_destination:
         return client_destination
@@ -126,14 +160,7 @@ def _authenticated_signup_redirect(request, account_type):
     next_url = safe_next_url(request, request.GET.get("next", ""))
     if next_url:
         return redirect(next_url)
-    if account_type == "photographer" and not request.user.has_photographer_profile:
-        return redirect("accounts:enable-photographer-workspace")
-    if request.user.is_photographer:
-        return redirect("accounts:photographer-onboarding")
-    client_destination = _client_destination_url(request, request.user)
-    if client_destination:
-        return redirect(client_destination)
-    return redirect("clients:dashboard")
+    return redirect(_authenticated_destination_url(request, request.user))
 
 
 def _signup_view(request, form_class, template_name, account_type):
@@ -212,31 +239,12 @@ def post_login_redirect(request):
     next_url = safe_next_url(request, request.GET.get("next", ""))
     if next_url:
         return redirect(next_url)
-    user = request.user
-    if user.required_password_reset:
-        return redirect("accounts:password-reset-required")
-    if not user.email_verified:
-        _remember_pending_user(request, user)
-        return redirect("accounts:email-verification-required")
-    if user.is_client:
-        client_destination = _client_destination_url(request, user)
-        if client_destination:
-            return redirect(client_destination)
-        return redirect("clients:dashboard")
-    if user.is_photographer:
-        if not user.onboarding_completed:
-            return redirect("accounts:photographer-onboarding")
-        return redirect("accounts:photographer-dashboard")
-    workspace_routes = {
-        User.Workspace.CLIENT: "clients:dashboard",
-        User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
-        User.Workspace.MARKETPLACE: "accounts:marketplace-dashboard",
-        User.Workspace.OPERATIONS: "accounts:operations-dashboard",
-    }
-    route = workspace_routes.get(user.last_active_workspace)
-    if route:
-        return redirect(route)
-    return redirect("clients:dashboard")
+    return redirect(_authenticated_destination_url(request, request.user))
+
+
+@login_required
+def photographer_onboarding_entry(request):
+    return redirect(_authenticated_destination_url(request, request.user))
 
 
 @login_required
