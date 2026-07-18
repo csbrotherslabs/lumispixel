@@ -200,6 +200,53 @@ class LoginTests(TestCase):
         response = self.client.get(reverse("clients:onboarding-welcome"))
         self.assertEqual(response.status_code, 200)
 
+    def test_finish_setup_marks_client_onboarding_complete(self):
+        user = make_user(email="finish-client@example.com")
+        profile = ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("clients:onboarding-how-it-works"))
+
+        self.assertRedirects(response, reverse("accounts:client-dashboard"), fetch_redirect_response=False)
+        profile.refresh_from_db()
+        self.assertTrue(profile.onboarding_completed)
+
+    def test_completed_client_onboarding_steps_redirect_to_client_destination(self):
+        user = make_user(email="completed-onboarding-direct@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=True)
+        self.client.force_login(user)
+
+        for name in ("clients:onboarding-welcome", "clients:onboarding-profile", "clients:onboarding-how-it-works"):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertRedirects(response, reverse("accounts:client-dashboard"), fetch_redirect_response=False)
+
+    def test_finish_setup_requires_post(self):
+        user = make_user(email="finish-get-client@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("clients:onboarding-how-it-works"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Finish Setup")
+
+    def test_photographer_cannot_complete_client_onboarding(self):
+        user = make_user(
+            email="photo-cannot-finish-client@example.com",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            last_active_workspace=User.Workspace.PHOTOGRAPHER,
+        )
+        profile = ClientProfile.objects.create(user=user, onboarding_completed=False)
+        PhotographerProfile.objects.create(user=user, slug="photo-cannot-finish-client")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("clients:onboarding-how-it-works"))
+
+        self.assertEqual(response.status_code, 403)
+        profile.refresh_from_db()
+        self.assertFalse(profile.onboarding_completed)
+
 
 from django.http import HttpResponse
 from django.urls import path

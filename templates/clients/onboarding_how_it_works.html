@@ -13,6 +13,9 @@
 </div>
 <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
   <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
-  <a class="btn lumis-auth-primary" href="{% url 'accounts:client-dashboard' %}"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></a>
+  <form method="post" action="{% url 'clients:onboarding-how-it-works' %}">
+    {% csrf_token %}
+    <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button>
+  </form>
 </div>
 {% endblock %}
