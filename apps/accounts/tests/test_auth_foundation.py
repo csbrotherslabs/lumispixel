@@ -145,19 +145,19 @@ class LoginTests(TestCase):
     def test_role_aware_redirect(self):
         user = make_user(email="photo-role@example.com", primary_role=User.PrimaryRole.PHOTOGRAPHER, last_active_workspace=User.Workspace.PHOTOGRAPHER)
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
 
     def test_client_without_profile_gets_profile_and_onboarding_redirect(self):
         user = make_user(email="missing-client-profile@example.com", onboarding_completed=False)
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
         self.assertTrue(ClientProfile.objects.filter(user=user).exists())
 
     def test_incomplete_client_profile_redirects_to_onboarding(self):
         user = make_user(email="incomplete-client@example.com")
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
     def test_completed_client_profile_redirects_to_client_dashboard(self):
         user = make_user(email="completed-client@example.com")
@@ -174,7 +174,7 @@ class LoginTests(TestCase):
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         PhotographerProfile.objects.create(user=user, slug="photo-not-client-onboarding")
         self.client.force_login(user)
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
 
     def test_photographer_with_client_workspace_does_not_enter_client_routing(self):
         user = make_user(
@@ -185,7 +185,7 @@ class LoginTests(TestCase):
         )
         self.client.force_login(user)
 
-        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
         self.assertFalse(ClientProfile.objects.filter(user=user).exists())
 
     def test_navbar_uses_stored_role_label(self):
@@ -225,7 +225,7 @@ class LoginTests(TestCase):
         user = make_user(email="onboarding-direct@example.com")
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         self.client.force_login(user)
-        response = self.client.get(reverse("clients:onboarding-welcome"))
+        response = self.client.get(reverse("clients:setup-dashboard"))
         self.assertEqual(response.status_code, 200)
 
     def test_finish_setup_marks_client_onboarding_complete(self):
@@ -254,7 +254,7 @@ class LoginTests(TestCase):
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         self.client.force_login(user)
 
-        self.assertRedirects(self.client.get(reverse("clients:dashboard")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("clients:dashboard")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
     def test_photographer_cannot_access_client_dashboard(self):
         user = make_user(

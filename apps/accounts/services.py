@@ -18,7 +18,7 @@ from .models import ClientProfile, PhotographerProfile
 from config import settings
 
 SIGNUP_INTENTS = {"find_photos", "marketplace", "general"}
-PHOTOGRAPHER_FIRST_ONBOARDING_STEP = "business_information"
+PHOTOGRAPHER_FIRST_ONBOARDING_STEP = 1
 
 User = get_user_model()
 

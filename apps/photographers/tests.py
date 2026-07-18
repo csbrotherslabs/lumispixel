@@ -26,14 +26,14 @@ class PhotographerOnboardingTests(TestCase):
         self.sports = PhotographerSpecialty.objects.get(slug="sports")
 
     def test_anonymous_user_redirects_to_login(self):
-        response = self.client.get(reverse("photographers:onboarding-welcome"))
+        response = self.client.get(reverse("photographers:setup-dashboard"))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response["Location"])
 
     def test_client_is_redirected_from_photographer_onboarding(self):
         self.client.force_login(self.client_user)
-        response = self.client.get(reverse("photographers:onboarding-welcome"))
-        self.assertRedirects(response, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        response = self.client.get(reverse("photographers:setup-dashboard"))
+        self.assertRedirects(response, reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
     def test_photographer_can_access_all_steps(self):
         self.client.force_login(self.user)
@@ -104,6 +104,6 @@ class PhotographerOnboardingTests(TestCase):
 
         response = self.client.get(reverse("accounts:post-login-redirect"))
 
-        self.assertRedirects(response, reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
         self.assertTrue(PhotographerProfile.objects.filter(user=self.user).exists())
         self.assertFalse(ClientProfile.objects.filter(user=self.user).exists())
