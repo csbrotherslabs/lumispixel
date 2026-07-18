@@ -16,8 +16,8 @@
     {% include "photographers/_business_form_field.html" with field=form.business_type %}
     {% include "photographers/_business_form_field.html" with field=form.years_of_experience %}
     {% include "photographers/_business_form_field.html" with field=form.default_currency %}
-    {% include "photographers/_business_form_field.html" with field=form.travel_radius travel_dependent=True %}
     {% include "photographers/_business_form_field.html" with field=form.willing_to_travel group_label="Travel preference" %}
+    {% include "photographers/_business_form_field.html" with field=form.travel_radius travel_dependent=True %}
     {% include "photographers/_business_form_field.html" with field=form.destination_photographer group_label="Destination availability" travel_dependent=True %}
     {% include "photographers/_business_form_field.html" with field=form.available_nationally group_label="National availability" travel_dependent=True %}
     {% include "photographers/_business_form_field.html" with field=form.available_internationally group_label="International availability" travel_dependent=True %}
