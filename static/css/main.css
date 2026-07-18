@@ -2114,13 +2114,23 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding__check-row {
   align-items: center;
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.lumis-onboarding__check-row label {
+  align-items: center;
+  display: flex;
+  line-height: 1;
+  margin: 0;
 }
 
 .lumis-onboarding__checkbox {
   accent-color: var(--color-one);
-  height: 20px;
-  width: 20px;
+  flex: 0 0 18px;
+  height: 18px;
+  margin: 0;
+  width: 18px;
 }
 
 .lumis-onboarding__help,
@@ -2408,10 +2418,7 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .lumis-onboarding-choice--business {
-  align-items: center;
   box-sizing: border-box;
-  flex-direction: row;
-  flex-wrap: nowrap;
   min-height: 48px;
   padding: 12px 14px;
   width: 100%;
@@ -2422,9 +2429,9 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding__theme-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 28px; }
 .lumis-onboarding-choice,
 .lumis-onboarding-theme { border: 1px solid #eadfd8; cursor: pointer; display: flex; gap: 12px; padding: 18px; }
-.lumis-onboarding-choice { align-items: center; min-height: 56px; padding: 14px 16px; }
-.lumis-onboarding-choice input[type="checkbox"] { align-self: center; flex: 0 0 18px; height: 18px; margin: 0; width: 18px; }
-.lumis-onboarding-choice__label { align-self: center; display: inline-flex; line-height: 1.3; min-width: 0; }
+.lumis-onboarding-choice { align-items: center; flex-direction: row; flex-wrap: nowrap; gap: 10px; margin: 0; min-height: 56px; padding: 14px 16px; }
+.lumis-onboarding-choice input[type="checkbox"] { flex: 0 0 18px; height: 18px; margin: 0; width: 18px; }
+.lumis-onboarding-choice__label { align-items: center; display: flex; line-height: 1; margin: 0; min-width: 0; }
 .lumis-onboarding-choice:focus-within,
 .lumis-onboarding-theme:focus-within { border-color: var(--color-one); box-shadow: 0 0 0 3px rgba(var(--color-one-rgb), .18); outline: 2px solid transparent; }
 .lumis-onboarding-choice:has(input:checked),
