@@ -2448,3 +2448,20 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-setup-preview-card::after { color: var(--color-one); content: "Locked"; font-size: 12px; font-weight: 700; letter-spacing: 1px; position: absolute; right: 18px; text-transform: uppercase; top: 18px; }
 .lumis-setup-dashboard a:focus-visible, .lumis-setup-dashboard button:focus-visible { outline: 3px solid rgba(var(--color-one-rgb), .5); outline-offset: 4px; }
 @media (max-width: 767px) { .lumis-setup-dashboard .lumis-client-dashboard__quick-actions, .lumis-setup-dashboard .lumis-client-dashboard__quick-actions .btn { width: 100%; } }
+
+.lumis-onboarding__location-summary {
+  align-items: center;
+  background: #fff8f5;
+  border: 1px solid #eadfd8;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 16px 18px;
+}
+.lumis-onboarding__location-label { color: #181818; font-weight: var(--fw-medium); margin-bottom: 4px; }
+.lumis-onboarding__location-value { margin-bottom: 0; }
+.lumis-onboarding__location-edit { color: var(--color-one); font-weight: var(--fw-medium); white-space: nowrap; }
+.lumis-onboarding__business-field.is-disabled { opacity: .58; }
+.lumis-onboarding__business-field.is-disabled .lumis-onboarding-choice { cursor: not-allowed; }
+@media (max-width: 767px) { .lumis-onboarding__location-summary { align-items: flex-start; flex-direction: column; } }

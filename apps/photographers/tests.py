@@ -72,15 +72,122 @@ class PhotographerOnboardingTests(TestCase):
         self.client.force_login(self.user)
         self.client.post(reverse("photographers:onboarding-specialties"), {"specialties": [self.wedding.pk, self.sports.pk]})
         self.assertEqual(set(self.profile.specialties.values_list("slug", flat=True)), {"wedding", "sports"})
-        self.client.post(reverse("photographers:onboarding-business"), {"business_type": PhotographerProfile.BusinessType.STUDIO, "years_of_experience": 7, "service_area": "Bay Area", "willing_to_travel": "on", "default_currency": "usd", "instagram_url": "https://instagram.com/lumis", "facebook_url": "", "tiktok_url": "", "linkedin_url": "", "youtube_url": ""})
+        self.client.post(reverse("photographers:onboarding-business"), {"business_type": PhotographerProfile.BusinessType.STUDIO, "years_of_experience": 7, "travel_radius": "50", "willing_to_travel": "on", "destination_photographer": "on", "available_nationally": "on", "available_internationally": "on", "default_currency": "usd", "instagram_url": "https://instagram.com/lumis", "facebook_url": "", "tiktok_url": "", "linkedin_url": "", "youtube_url": ""})
         self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.SPORTS})
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.business_type, PhotographerProfile.BusinessType.STUDIO)
         self.assertEqual(self.profile.default_currency, "USD")
         self.assertTrue(self.profile.willing_to_travel)
+        self.assertEqual(self.profile.travel_radius, 50)
+        self.assertTrue(self.profile.destination_photographer)
+        self.assertTrue(self.profile.available_nationally)
+        self.assertTrue(self.profile.available_internationally)
         self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.SPORTS)
         self.assertTrue(self.profile.onboarding_completed)
-        self.assertRedirects(self.client.get(reverse("photographers:onboarding-theme")), reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("photographers:onboarding-theme")), reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
+
+
+    def test_business_step_clears_travel_coverage_when_not_willing_to_travel(self):
+        self.profile.service_area = "Legacy Bay Area"
+        self.profile.travel_radius = 100
+        self.profile.destination_photographer = True
+        self.profile.available_nationally = True
+        self.profile.available_internationally = True
+        self.profile.onboarding_step = 4
+        self.profile.save()
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("photographers:onboarding-business"), {
+            "business_type": PhotographerProfile.BusinessType.INDIVIDUAL,
+            "years_of_experience": 4,
+            "default_currency": "usd",
+            "travel_radius": "100",
+            "instagram_url": "https://instagram.com/lumis",
+            "facebook_url": "https://facebook.com/lumis",
+            "tiktok_url": "https://tiktok.com/@lumis",
+            "linkedin_url": "https://linkedin.com/company/lumis",
+            "youtube_url": "https://youtube.com/@lumis",
+        })
+
+        self.assertRedirects(response, reverse("photographers:onboarding-theme"), fetch_redirect_response=False)
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.willing_to_travel)
+        self.assertIsNone(self.profile.travel_radius)
+        self.assertFalse(self.profile.destination_photographer)
+        self.assertFalse(self.profile.available_nationally)
+        self.assertFalse(self.profile.available_internationally)
+        self.assertEqual(self.profile.service_area, "Legacy Bay Area")
+        self.assertEqual(self.profile.instagram_url, "https://instagram.com/lumis")
+        self.assertEqual(self.profile.facebook_url, "https://facebook.com/lumis")
+        self.assertEqual(self.profile.tiktok_url, "https://tiktok.com/@lumis")
+        self.assertEqual(self.profile.linkedin_url, "https://linkedin.com/company/lumis")
+        self.assertEqual(self.profile.youtube_url, "https://youtube.com/@lumis")
+
+    def test_business_step_requires_radius_or_broad_availability_when_traveling(self):
+        self.profile.onboarding_step = 4
+        self.profile.save(update_fields=["onboarding_step", "updated_at"])
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("photographers:onboarding-business"), {
+            "business_type": PhotographerProfile.BusinessType.STUDIO,
+            "years_of_experience": 7,
+            "willing_to_travel": "on",
+            "default_currency": "usd",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select a travel radius or indicate national/international availability.")
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.onboarding_step, 4)
+
+    def test_broad_or_destination_availability_implies_willing_to_travel(self):
+        self.client.force_login(self.user)
+        for field in ("available_nationally", "available_internationally", "destination_photographer"):
+            with self.subTest(field=field):
+                self.profile.willing_to_travel = False
+                self.profile.travel_radius = None
+                self.profile.available_nationally = False
+                self.profile.available_internationally = False
+                self.profile.destination_photographer = False
+                self.profile.save()
+
+                payload = {
+                    "business_type": PhotographerProfile.BusinessType.STUDIO,
+                    "years_of_experience": 7,
+                    "default_currency": "usd",
+                    field: "on",
+                }
+                if field == "destination_photographer":
+                    payload["travel_radius"] = "25"
+                response = self.client.post(reverse("photographers:onboarding-business"), payload)
+
+                self.assertRedirects(response, reverse("photographers:onboarding-theme"), fetch_redirect_response=False)
+                self.profile.refresh_from_db()
+                self.assertTrue(self.profile.willing_to_travel)
+                self.assertTrue(getattr(self.profile, field))
+
+    def test_business_step_location_summary_and_edit_link(self):
+        self.profile.city = "Oakland"
+        self.profile.state = "CA"
+        self.profile.country = "United States"
+        self.profile.save()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("photographers:onboarding-business"))
+
+        self.assertContains(response, "Primary business location:")
+        self.assertContains(response, "Oakland, CA, United States")
+        self.assertContains(response, reverse("photographers:onboarding-profile"))
+        self.assertContains(response, "lumis-onboarding__business-grid")
+        self.assertContains(response, "lumis-onboarding-choice lumis-onboarding-choice--business")
+        self.assertContains(response, "data-travel-toggle")
+
+    def test_business_step_incomplete_location_summary(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("photographers:onboarding-business"))
+
+        self.assertContains(response, "Primary business location not completed.")
 
     def test_validation_errors_are_inline(self):
         self.client.force_login(self.user)
@@ -102,7 +209,7 @@ class PhotographerOnboardingTests(TestCase):
         ):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name))
-                self.assertRedirects(response, reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
+                self.assertRedirects(response, reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
 
     def test_client_profile_is_not_created_for_photographer_routing(self):
         PhotographerProfile.objects.filter(user=self.user).delete()
