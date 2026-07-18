@@ -27,8 +27,8 @@ WORKSPACE_MODULES = [
 MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 THEMES = {
     PhotographerProfile.WebsiteTheme.ELEGANT: ("Elegant", "A refined visual direction for weddings, portraits, family, and fine-art work.", "elegant"),
-    PhotographerProfile.WebsiteTheme.MODERN: ("Modern Studio", "A clean studio presentation for commercial, branding, product, and headshot work.", "modern"),
-    PhotographerProfile.WebsiteTheme.SPORTS: ("Sports & Events", "A high-energy direction for sports, schools, events, and high-volume photography.", "sports"),
+    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: ("Modern Studio", "A clean studio presentation for commercial, branding, product, and headshot work.", "modern"),
+    PhotographerProfile.WebsiteTheme.SPORTS_EVENTS: ("Sports & Events", "A high-energy direction for sports, schools, events, and high-volume photography.", "sports"),
 }
 
 
