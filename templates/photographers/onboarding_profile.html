@@ -1,0 +1,19 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Personal and Business Profile | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center">
+  <h1 class="wptb-item--title" id="photographer-onboarding-profile-title">Personal and Business Profile</h1>
+  <p class="wptb-item--description mx-auto">Tell clients who you are and where your studio works.</p>
+</div>
+<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div class="row">{% include "photographers/_form_fields.html" %}</div>
+  {% if profile.profile_photo %}<p class="lumis-onboarding__help">Current profile photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>{% endif %}
+  {% if profile.business_logo %}<p class="lumis-onboarding__help">Current business logo: <a href="{{ profile.business_logo.url }}">{{ profile.business_logo.name }}</a></p>{% endif %}
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
+    <a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-welcome' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
+    <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button>
+  </div>
+</form>
+{% endblock %}

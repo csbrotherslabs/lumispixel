@@ -1,0 +1,19 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Choose Your Client Experience | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">Choose Your Client Experience</h1><p class="wptb-item--description mx-auto">Pick a starting visual direction. Full public website tools will come later.</p></div>
+<form class="wptb-form lumis-onboarding__form" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
+  <fieldset class="lumis-onboarding__theme-grid"><legend class="sr-only">Website theme</legend>
+    {% for theme in theme_options %}
+      <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}">
+        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
+        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small>{{ theme.description }}</small><a href="#theme-{{ theme.value }}" aria-label="Preview {{ theme.name }} theme">Preview</a></span>
+      </label>
+    {% endfor %}
+  </fieldset>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button></div>
+</form>
+{% endblock %}

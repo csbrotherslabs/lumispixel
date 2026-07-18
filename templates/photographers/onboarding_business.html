@@ -1,0 +1,11 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Business Preferences | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-business-title">Business Preferences</h1><p class="wptb-item--description mx-auto">Set defaults that shape your photographer workspace and future client experience.</p></div>
+<form class="wptb-form lumis-onboarding__form" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div class="row">{% include "photographers/_form_fields.html" %}</div>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-specialties' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button></div>
+</form>
+{% endblock %}

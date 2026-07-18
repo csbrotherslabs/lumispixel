@@ -1,0 +1,13 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Photography Specialties | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-specialties-title">Photography Specialties</h1><p class="wptb-item--description mx-auto">Choose every specialty that fits your work.</p></div>
+<form class="wptb-form lumis-onboarding__form" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.specialties.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.specialties.errors|striptags }}</div>{% endif %}
+  <fieldset class="lumis-onboarding__choice-grid"><legend class="sr-only">Photography specialties</legend>
+    {% for choice in form.specialties %}<label class="lumis-onboarding-choice" for="{{ choice.id_for_label }}">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}
+  </fieldset>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button></div>
+</form>
+{% endblock %}
