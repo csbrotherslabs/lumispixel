@@ -53,7 +53,11 @@ def _clear_auth_flow(request):
 
 
 def _is_client_account(user):
-    return user.primary_role == User.PrimaryRole.CLIENT
+    return user.is_client
+
+
+def _is_photographer_account(user):
+    return user.is_photographer
 
 
 def _client_onboarding_redirect_name(profile):
@@ -75,7 +79,7 @@ def _post_verification_redirect(request, user):
     _clear_auth_flow(request)
     if next_url:
         return next_url
-    if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
+    if _is_photographer_account(user):
         return reverse("accounts:photographer-onboarding")
     if intent == "find_photos":
         existing_client_destination = "accounts:find-photos-placeholder"
@@ -125,7 +129,7 @@ def _authenticated_signup_redirect(request, account_type):
         return redirect(next_url)
     if account_type == "photographer" and not request.user.has_photographer_profile:
         return redirect("accounts:enable-photographer-workspace")
-    if request.user.primary_role == User.PrimaryRole.PHOTOGRAPHER or request.user.has_photographer_profile:
+    if request.user.is_photographer:
         return redirect("accounts:photographer-onboarding")
     client_destination = _client_destination_url(request, request.user)
     if client_destination:
@@ -215,8 +219,15 @@ def post_login_redirect(request):
     if not user.email_verified:
         _remember_pending_user(request, user)
         return redirect("accounts:email-verification-required")
-    if user.primary_role == User.PrimaryRole.PHOTOGRAPHER and not user.onboarding_completed:
-        return redirect("accounts:photographer-onboarding")
+    if user.is_client:
+        client_destination = _client_destination_url(request, user)
+        if client_destination:
+            return redirect(client_destination)
+        return redirect("accounts:client-dashboard")
+    if user.is_photographer:
+        if not user.onboarding_completed:
+            return redirect("accounts:photographer-onboarding")
+        return redirect("accounts:photographer-dashboard")
     workspace_routes = {
         User.Workspace.CLIENT: "accounts:client-dashboard",
         User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
@@ -225,15 +236,7 @@ def post_login_redirect(request):
     }
     route = workspace_routes.get(user.last_active_workspace)
     if route:
-        client_destination = _client_destination_url(request, user, route)
-        if client_destination:
-            return redirect(client_destination)
         return redirect(route)
-    if user.primary_role == User.PrimaryRole.PHOTOGRAPHER:
-        return redirect("accounts:photographer-dashboard")
-    client_destination = _client_destination_url(request, user)
-    if client_destination:
-        return redirect(client_destination)
     return redirect("accounts:client-dashboard")
 
 

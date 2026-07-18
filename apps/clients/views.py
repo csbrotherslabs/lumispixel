@@ -23,7 +23,7 @@ def _completed_client_destination(profile):
 
 
 def _client_onboarding_profile_or_response(request):
-    if request.user.primary_role != User.PrimaryRole.CLIENT:
+    if not request.user.is_client:
         raise PermissionDenied("Only client accounts can complete client onboarding.")
     profile = _client_profile(request.user)
     completed_response = _completed_client_destination(profile)

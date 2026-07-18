@@ -174,6 +174,32 @@ class LoginTests(TestCase):
         self.client.force_login(user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
 
+    def test_photographer_with_client_workspace_does_not_enter_client_routing(self):
+        user = make_user(
+            email="photo-client-workspace@example.com",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            last_active_workspace=User.Workspace.CLIENT,
+            onboarding_completed=True,
+        )
+        self.client.force_login(user)
+
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
+        self.assertFalse(ClientProfile.objects.filter(user=user).exists())
+
+    def test_navbar_uses_stored_role_label(self):
+        user = make_user(
+            email="photo-nav@example.com",
+            first_name="Photo",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            last_active_workspace=User.Workspace.PHOTOGRAPHER,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("core:index"))
+
+        self.assertContains(response, "Photographer")
+        self.assertNotContains(response, '<span class="nav-user-role">Client</span>', html=True)
+
 
     def test_logout_requires_post(self):
         user = make_user(email="logout-get@example.com")
