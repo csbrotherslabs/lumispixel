@@ -1,0 +1,7 @@
+<article class="lpw-dashboard-card lpw-workspace-card">
+  <i class="bi {{ module.icon }}" aria-hidden="true"></i>
+  <h3>{{ module.title }}</h3>
+  <p>{{ module.description }}</p>
+  {% if module.coming_soon %}<span class="lpw-badge">Coming Soon</span>{% endif %}
+  <a href="{{ module.url }}">{{ action_label|default:"Open" }}</a>
+</article>
