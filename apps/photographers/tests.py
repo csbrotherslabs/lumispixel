@@ -30,10 +30,10 @@ class PhotographerOnboardingTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response["Location"])
 
-    def test_client_is_denied_photographer_onboarding(self):
+    def test_client_is_redirected_from_photographer_onboarding(self):
         self.client.force_login(self.client_user)
         response = self.client.get(reverse("photographers:onboarding-welcome"))
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
 
     def test_photographer_can_access_all_steps(self):
         self.client.force_login(self.user)
@@ -73,11 +73,37 @@ class PhotographerOnboardingTests(TestCase):
         self.assertEqual(self.profile.default_currency, "USD")
         self.assertTrue(self.profile.willing_to_travel)
         self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.SPORTS)
-        self.assertFalse(self.profile.onboarding_completed)
-        self.assertContains(self.client.get(reverse("photographers:onboarding-theme")), "checked")
+        self.assertTrue(self.profile.onboarding_completed)
+        self.assertRedirects(self.client.get(reverse("photographers:onboarding-theme")), reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
 
     def test_validation_errors_are_inline(self):
         self.client.force_login(self.user)
         response = self.client.post(reverse("photographers:onboarding-profile"), {"first_name": "", "last_name": "", "website": "not-a-url"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "lumis-onboarding__error")
+
+    def test_finished_photographer_redirects_from_all_onboarding_steps(self):
+        self.profile.onboarding_completed = True
+        self.profile.save(update_fields=["onboarding_completed", "updated_at"])
+        self.client.force_login(self.user)
+
+        for name in (
+            "photographers:onboarding-welcome",
+            "photographers:onboarding-profile",
+            "photographers:onboarding-specialties",
+            "photographers:onboarding-business",
+            "photographers:onboarding-theme",
+        ):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertRedirects(response, reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
+
+    def test_client_profile_is_not_created_for_photographer_routing(self):
+        PhotographerProfile.objects.filter(user=self.user).delete()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("accounts:post-login-redirect"))
+
+        self.assertRedirects(response, reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertTrue(PhotographerProfile.objects.filter(user=self.user).exists())
+        self.assertFalse(ClientProfile.objects.filter(user=self.user).exists())

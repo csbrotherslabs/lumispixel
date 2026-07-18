@@ -1,9 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.accounts.models import PhotographerProfile
+from apps.accounts.views import _authenticated_destination_url
 
 from .forms import (
     PhotographerBusinessPreferencesForm,
@@ -24,10 +24,13 @@ def _photographer_profile(user):
     return profile
 
 
-def _photographer_onboarding_profile(request):
+def _photographer_onboarding_profile_or_response(request):
     if not request.user.is_photographer:
-        raise PermissionDenied("Only photographer accounts can complete photographer onboarding.")
-    return _photographer_profile(request.user)
+        return None, redirect(_authenticated_destination_url(request, request.user))
+    profile = _photographer_profile(request.user)
+    if profile.onboarding_completed:
+        return None, redirect("accounts:photographer-dashboard")
+    return profile, None
 
 
 def _context(step, title_id, **extra):
@@ -39,14 +42,18 @@ def _context(step, title_id, **extra):
 @login_required
 @require_GET
 def onboarding_welcome(request):
-    _photographer_onboarding_profile(request)
+    _, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
     return render(request, "photographers/onboarding_welcome.html", _context(1, "photographer-onboarding-welcome-title"))
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def onboarding_profile(request):
-    profile = _photographer_onboarding_profile(request)
+    profile, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
     form = PhotographerOnboardingProfileForm(request.POST or None, request.FILES or None, instance=profile, user=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -57,7 +64,9 @@ def onboarding_profile(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def onboarding_specialties(request):
-    profile = _photographer_onboarding_profile(request)
+    profile, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
     form = PhotographerSpecialtiesForm(request.POST or None, instance=profile)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -68,7 +77,9 @@ def onboarding_specialties(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def onboarding_business(request):
-    profile = _photographer_onboarding_profile(request)
+    profile, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
     form = PhotographerBusinessPreferencesForm(request.POST or None, instance=profile)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -79,9 +90,14 @@ def onboarding_business(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def onboarding_theme(request):
-    profile = _photographer_onboarding_profile(request)
+    profile, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
     form = PhotographerThemeForm(request.POST or None, instance=profile)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        return redirect("accounts:photographer-onboarding")
+        profile = form.save(commit=False)
+        profile.onboarding_completed = True
+        profile.save()
+        form.save_m2m()
+        return redirect("accounts:photographer-dashboard")
     return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, theme_options=THEME_OPTIONS))
