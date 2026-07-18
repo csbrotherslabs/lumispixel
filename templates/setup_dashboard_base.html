@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block body_class %}page-inner lumis-setup-dashboard-page{% endblock %}
+{% block content %}
+<section class="wptb-about-one bg-image-2 lumis-client-dashboard lumis-setup-dashboard" aria-labelledby="setup-dashboard-title">
+  <div class="container">
+    <div class="lumis-client-dashboard__hero">
+      <p class="lumis-client-dashboard__eyebrow">Setup dashboard</p>
+      <h1 class="wptb-item--title" id="setup-dashboard-title">{% block setup_title %}Welcome to LumisPixel{% endblock %}</h1>
+      <p class="wptb-item--description">{% block setup_description %}{% endblock %}</p>
+    </div>
+
+    <section class="lumis-client-dashboard__section" aria-labelledby="setup-progress-title">
+      <div class="lumis-client-dashboard__section-heading">
+        <p class="lumis-client-dashboard__eyebrow">Setup progress</p>
+        <h2 id="setup-progress-title">{% block progress_heading %}Your account setup is not complete.{% endblock %}</h2>
+      </div>
+      <div class="lumis-setup-progress" role="group" aria-label="Setup progress: step {{ current_step }} of {{ total_steps }}">
+        <div class="lumis-setup-progress__bar" aria-hidden="true"><span style="width: {{ progress_percent }}%"></span></div>
+        <p>Step {{ current_step }} of {{ total_steps }}</p>
+      </div>
+      <div class="lumis-client-dashboard__quick-actions" aria-label="Setup actions">
+        <a class="btn lumis-auth-primary" href="{{ continue_url }}" aria-label="Continue {{ setup_role }} setup"><span class="btn-wrap"><span class="text-first">Continue Setup</span></span></a>
+        <a class="btn lumis-auth-secondary" href="{{ review_url }}" aria-label="Review {{ setup_role }} setup from the beginning"><span class="btn-wrap"><span class="text-first">Review Setup</span></span></a>
+      </div>
+    </section>
+
+    <section class="lumis-client-dashboard__section" aria-labelledby="preview-title">
+      <div class="lumis-client-dashboard__section-heading">
+        <p class="lumis-client-dashboard__eyebrow">Preview</p>
+        <h2 id="preview-title">{% block preview_heading %}Features unlock as setup is completed.{% endblock %}</h2>
+      </div>
+      <div class="lumis-client-summary-grid lumis-setup-preview-grid">
+        {% for card in feature_cards %}
+          <article class="lumis-client-summary-card lumis-setup-preview-card" aria-disabled="true">
+            <h3>{{ card }}</h3>
+            <p>Locked until setup is complete.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</section>
+{% endblock %}

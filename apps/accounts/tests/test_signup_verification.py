@@ -65,7 +65,7 @@ class EntrySignupVerificationTests(TestCase):
         self.assertFalse(ClientProfile.objects.filter(user=user).exists())
         profile = PhotographerProfile.objects.get(user=user)
         self.assertEqual(profile.verification_status, PhotographerProfile.VerificationStatus.NOT_STARTED)
-        self.assertEqual(profile.onboarding_step, "business_information")
+        self.assertEqual(profile.onboarding_step, 1)
         self.assertFalse(profile.onboarding_completed)
 
     def test_verification_success_single_use_and_redirects(self):
@@ -74,12 +74,12 @@ class EntrySignupVerificationTests(TestCase):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = email_verification_token.make_token(user)
         response = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(response, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("clients:setup-dashboard"), fetch_redirect_response=False)
         user.refresh_from_db()
         self.assertTrue(user.email_verified)
         self.assertFalse(email_verification_token.check_token(user, token))
         invalid = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(invalid, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(invalid, reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
     def test_invalid_token_fails_safely(self):
         user = User.objects.create_user(email="badtoken@example.com", password="StrongPass123!")
@@ -95,7 +95,7 @@ class EntrySignupVerificationTests(TestCase):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = email_verification_token.make_token(user)
         response = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(response, reverse("photographers:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
 
     def test_resend_post_only_cooldown_and_verified_skip(self):
         self.client.post(reverse("accounts:client-signup"), VALID | {"email": "resend@example.com"})
@@ -134,5 +134,5 @@ class EntrySignupVerificationTests(TestCase):
         ClientProfile.objects.create(user=user)
         self.client.force_login(user)
         before = User.objects.count()
-        self.assertRedirects(self.client.get(reverse("accounts:photographer-signup")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("accounts:photographer-signup")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
         self.assertEqual(User.objects.count(), before)

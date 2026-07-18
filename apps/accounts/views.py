@@ -60,16 +60,12 @@ def _is_photographer_account(user):
     return user.is_photographer
 
 
-def _client_onboarding_redirect_name(profile):
-    return "clients:onboarding-welcome"
-
-
 def _client_destination_url(request, user, fallback_route="clients:dashboard"):
     if not _is_client_account(user):
         return None
     profile, _ = ClientProfile.objects.get_or_create(user=user)
     if not profile.onboarding_completed:
-        return reverse(_client_onboarding_redirect_name(profile))
+        return reverse("clients:setup-dashboard")
     return reverse(fallback_route)
 
 
@@ -78,7 +74,7 @@ def _photographer_destination_url(request, user, fallback_route="accounts:photog
         return None
     profile, _ = PhotographerProfile.objects.get_or_create(user=user)
     if not profile.onboarding_completed:
-        return reverse("photographers:onboarding-welcome")
+        return reverse("photographers:setup-dashboard")
     return reverse(fallback_route)
 
 

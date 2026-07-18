@@ -2369,3 +2369,13 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding-theme__body small { color: #5f5750; }
 @media (max-width: 991px) { .lumis-onboarding__steps--five, .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 767px) { .lumis-onboarding__steps--five, .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: 1fr; } }
+
+/* Setup dashboards */
+.lumis-setup-dashboard .lumis-client-dashboard__quick-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-start; }
+.lumis-setup-progress { display: grid; gap: 12px; margin-top: 20px; }
+.lumis-setup-progress__bar { background: #f3e7df; border-radius: 999px; height: 14px; overflow: hidden; }
+.lumis-setup-progress__bar span { background: var(--color-one); border-radius: inherit; display: block; height: 100%; min-width: 8px; }
+.lumis-setup-preview-card { opacity: .72; position: relative; }
+.lumis-setup-preview-card::after { color: var(--color-one); content: "Locked"; font-size: 12px; font-weight: 700; letter-spacing: 1px; position: absolute; right: 18px; text-transform: uppercase; top: 18px; }
+.lumis-setup-dashboard a:focus-visible, .lumis-setup-dashboard button:focus-visible { outline: 3px solid rgba(var(--color-one-rgb), .5); outline-offset: 4px; }
+@media (max-width: 767px) { .lumis-setup-dashboard .lumis-client-dashboard__quick-actions, .lumis-setup-dashboard .lumis-client-dashboard__quick-actions .btn { width: 100%; } }
