@@ -12,7 +12,7 @@
 .lpw-identity img,.lpw-identity span,.lpw-account{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#2a2928;color:#fff;object-fit:cover;font-weight:700}
 .lpw-identity small{display:block;color:#bbb}
 .lpw-nav{display:grid;gap:4px}
-.lpw-nav a{display:flex;align-items:center;gap:12px;color:#e7e1dc;text-decoration:none;padding:11px 12px;border-radius:14px}
+.lpw-nav a{display:flex;align-items:center;gap:12px;color:#e7e1dc;text-decoration:none;padding:11px 12px}
 .lpw-nav a:hover,.lpw-nav a:focus-visible,.lpw-nav a.is-active{background:#fff;color:#151515;outline:none}
 .lpw-nav em{margin-left:auto;font-size:11px;color:#d70006;font-style:normal}
 .lpw-main-wrap{min-width:0;flex:1}
@@ -24,10 +24,10 @@
 .lpw-icon-btn,.lpw-signout,.lpw-menu-button,.lpw-drawer-close{border:1px solid var(--lpw-border);background:#fff;border-radius:0;min-height:42px;padding:0 14px;font-weight:400}
 .lpw-account{text-decoration:none}
 .lpw-main{display:flex;flex-direction:column;justify-content:flex-start;gap:var(--lpw-space-section);width:100%;max-width:none;margin:0;padding:var(--lpw-space-page-top) 28px var(--lpw-space-page-bottom)}
-.lpw-hero,.lpw-panel,.lpw-placeholder,.lpw-card,.lpw-metric{background:var(--lpw-card);border:1px solid var(--lpw-border);border-radius:28px;box-shadow:var(--lpw-shadow)}
+.lpw-hero,.lpw-panel,.lpw-placeholder,.lpw-card,.lpw-metric{background:var(--lpw-card);border:1px solid var(--lpw-border);box-shadow:var(--lpw-shadow)}
 .lpw-hero{display:flex;justify-content:space-between;gap:24px;padding:34px;margin:0}
 .lpw-hero h2,.lpw-placeholder h2{font-size:clamp(30px,4vw,54px);line-height:1.05;margin:5px 0 10px}
-.lpw-avatar img,.lpw-avatar span{width:195px;height:195px;border-radius:28px;display:grid;place-items:center;object-fit:cover;background:#151515;color:#fff;font-size:34px;font-weight:800}
+.lpw-avatar img,.lpw-avatar span{width:195px;height:195px;display:grid;place-items:center;object-fit:cover;background:#151515;color:#fff;font-size:34px;font-weight:800}
 .lpw-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
 .lpw-btn,.lpw-card a,.lpw-panel a{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid var(--lpw-border);border-radius:0;padding:10px 18px;background:#fff;color:#151515;text-decoration:none;font-weight:400}
 .lpw-btn-primary{background:#151515;color:#fff}
@@ -48,7 +48,7 @@
 .lpw-metric small,.lpw-card p,.lpw-panel p,.lpw-placeholder p{color:var(--workspace-text-muted)}
 .lpw-card{position:relative}
 .lpw-card h3{margin:10px 0 6px}
-.lpw-badge{display:inline-flex;border-radius:999px;background:#fff1f1;color:#a40005;font-size:12px;font-weight:800;padding:5px 9px;margin:4px 0}
+.lpw-badge{display:inline-flex;background:#fff1f1;color:#a40005;font-size:12px;font-weight:800;padding:5px 9px;margin:4px 0}
 .lpw-two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}
 .lpw-panel{padding:24px}
 .lpw-theme{height:160px;border-radius:22px;border:1px solid var(--lpw-border);margin:14px 0;background:linear-gradient(135deg,#efe7dd,#fff 48%,#151515)}
@@ -103,7 +103,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lpw-dashboard-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .lpw-dashboard-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .lpw-dashboard-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.lpw-dashboard-card{height:100%;min-width:0;background:var(--lpw-card);border:1px solid var(--lpw-border);border-radius:24px;box-shadow:var(--lpw-shadow);padding:var(--workspace-card-padding);text-decoration:none;color:var(--workspace-text-primary);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.lpw-dashboard-card{height:100%;min-width:0;background:var(--lpw-card);border:1px solid var(--lpw-border);box-shadow:var(--lpw-shadow);padding:var(--workspace-card-padding);text-decoration:none;color:var(--workspace-text-primary);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .lpw-dashboard-card:hover,.lpw-dashboard-card:focus-visible{transform:translateY(-2px);border-color:rgba(215,0,6,.28);box-shadow:0 22px 54px rgba(25,18,14,.11);outline:none}
 .lpw-checklist-card,.lpw-workspace-card{display:flex;flex-direction:column;gap:14px;min-height:210px}
 .lpw-checklist-card__top{display:flex;align-items:center;gap:12px}
