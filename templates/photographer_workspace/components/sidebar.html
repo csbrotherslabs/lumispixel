@@ -1,6 +1,6 @@
 {% load static %}
 <aside class="lpw-sidebar" data-workspace-sidebar aria-label="Photographer Workspace navigation">
-  <div class="lpw-brand"><img src="{% static 'img/logo-orange.svg' %}" alt="LumisPixel"><button class="lpw-drawer-close" type="button" data-workspace-close aria-label="Close navigation">×</button></div>
+  <div class="lpw-brand"><a href="{% url 'core:index' %}" aria-label="LumisPixel home"><img src="{% static 'img/logo-orange.svg' %}" alt="LumisPixel"></a><button class="lpw-drawer-close" type="button" data-workspace-close aria-label="Close navigation">×</button></div>
   <div class="lpw-identity">
     {% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span aria-hidden="true">{{ identity.initials }}</span>{% endif %}
     <div><strong>{{ identity.name }}</strong><small>Photographer Workspace</small></div>
