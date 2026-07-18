@@ -6,7 +6,7 @@
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
-  <fieldset class="lumis-onboarding__theme-grid"><legend class="sr-only">Choose a photographer homepage theme</legend>
+  <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
     {% for theme in theme_options %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
         <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %} aria-controls="panel-{{ theme.value }}">
