@@ -16,16 +16,18 @@
   {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Quick actions" title="Move around your workspace" section_id="quick-actions-title" only %}
   <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-card-grid">{% for module in modules|slice:":7" %}{% include "photographer_workspace/components/cards/workspace_card.html" with module=module action_label="Open" only %}{% endfor %}</div>
 </section>
-<div class="lpw-two-col">
-  <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="recent-activity-title">
-    {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Recent activity" title="Recent Activity" section_id="recent-activity-title" only %}
-    {% include "photographer_workspace/components/empty_states/empty_state.html" with icon="bi-clock-history" title="No recent activity yet." description="Activity will appear here as you upload photos, create galleries, invite clients, receive orders, and use LumisPixel tools." only %}
-  </section>
-  <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="website-preview-title">
-    {% url 'photographer_workspace:website' as website_url %}{% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Your website preview" title="Your Website Preview" action_label="Manage Website" action_url=website_url section_id="website-preview-title" only %}
-    <article class="lpw-dashboard-card lpw-preview-card"><div class="lpw-theme {{ theme_preview.preview_class }}" aria-hidden="true"></div><h3>{{ theme_preview.name }}</h3><p>{{ theme_preview.description }}</p></article>
-  </section>
-</div>
+<section class="lpw-dashboard-section" aria-labelledby="workspace-modules-title">
+  <div class="lpw-two-col">
+    <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="recent-activity-title">
+      {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Recent activity" title="Recent Activity" section_id="recent-activity-title" only %}
+      {% include "photographer_workspace/components/empty_states/empty_state.html" with icon="bi-clock-history" title="No recent activity yet." description="Activity will appear here as you upload photos, create galleries, invite clients, receive orders, and use LumisPixel tools." only %}
+    </section>
+    <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="website-preview-title">
+      {% url 'photographer_workspace:website' as website_url %}{% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Your website preview" title="Your Website Preview" action_label="Manage Website" action_url=website_url section_id="website-preview-title" only %}
+      <article class="lpw-dashboard-card lpw-preview-card"><div class="lpw-theme {{ theme_preview.preview_class }}" aria-hidden="true"></div><h3>{{ theme_preview.name }}</h3><p>{{ theme_preview.description }}</p></article>
+    </section>
+  </div>
+</section>
 <section class="lpw-dashboard-section" aria-labelledby="workspace-modules-title">
   {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Workspace modules" title="Explore modules" section_id="workspace-modules-title" only %}
   <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-card-grid">{% for module in modules %}{% include "photographer_workspace/components/cards/workspace_card.html" with module=module action_label="Open "|add:module.title only %}{% endfor %}</div>

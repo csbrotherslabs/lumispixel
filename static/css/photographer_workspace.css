@@ -17,7 +17,7 @@
 .lpw-nav em{margin-left:auto;font-size:11px;color:#d70006;font-style:normal}
 .lpw-main-wrap{min-width:0;flex:1}
 .lpw-topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 30px;background:rgba(248,246,243,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--lpw-border)}
-.lpw-topbar h1{font-size:25px;margin:0}
+.lpw-topbar h1{font-size:25px;margin:0;color:var(--lpw-text);}
 .lpw-breadcrumb,.lpw-kicker{margin:0 0 3px;color:var(--lpw-accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
 .lpw-menu-button{display:none}
 .lpw-top-actions{display:flex;gap:10px;align-items:center}
@@ -113,7 +113,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lpw-metric-card strong{font-size:32px;line-height:1.05}
 .lpw-metric-card span{font-weight:800}
 .lpw-metric-card small{align-self:end;color:var(--lpw-muted);line-height:1.45}
-.lpw-empty-state{display:flex;flex-direction:column;gap:12px;min-height:100%}
+.lpw-empty-state{display:flex;flex-direction:column;gap:12px;}
 .lpw-preview-card{display:flex;flex-direction:column;gap:12px}
 .lpw-preview-card .lpw-theme{margin:0 0 2px}
 .lpw-two-col{gap:var(--lpw-space-grid-gap);margin:0;align-items:stretch}
