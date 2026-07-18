@@ -2399,7 +2399,7 @@ img, svg, video { max-width: 100%; height: auto; }
   min-width: 0;
 }
 
-.lumis-onboarding__business-field label:not(.lumis-onboarding-choice) {
+.lumis-onboarding__business-field label:not(.checkbox-option) {
   display: block;
   margin-bottom: 7px;
 }
@@ -2417,11 +2417,23 @@ img, svg, video { max-width: 100%; height: auto; }
   margin-bottom: 7px;
 }
 
-.lumis-onboarding-choice--business {
-  box-sizing: border-box;
-  min-height: 48px;
-  padding: 12px 14px;
-  width: 100%;
+.checkbox-option {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.checkbox-option input[type="checkbox"] {
+  flex-shrink: 0;
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.checkbox-option__label {
+  line-height: 1;
+  margin: 0;
 }
 
 .lumis-onboarding__steps--five { grid-template-columns: repeat(5, 1fr); }
@@ -2475,5 +2487,5 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding__location-value { margin-bottom: 0; }
 .lumis-onboarding__location-edit { color: var(--color-one); font-weight: var(--fw-medium); white-space: nowrap; }
 .lumis-onboarding__business-field.is-disabled { opacity: .58; }
-.lumis-onboarding__business-field.is-disabled .lumis-onboarding-choice { cursor: not-allowed; }
+.lumis-onboarding__business-field.is-disabled .checkbox-option { cursor: not-allowed; }
 @media (max-width: 767px) { .lumis-onboarding__location-summary { align-items: flex-start; flex-direction: column; } }
