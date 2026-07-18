@@ -2092,7 +2092,7 @@ img, svg, video { max-width: 100%; height: auto; }
 
 .lumis-onboarding__form label {
   color: #181818;
-  display: inline-block;
+  display: inline-flex;
   margin-bottom: 8px;
 }
 
@@ -2430,7 +2430,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding-choice,
 .lumis-onboarding-theme { border: 1px solid #eadfd8; cursor: pointer; display: flex; gap: 12px; padding: 18px; }
 .lumis-onboarding-choice { align-items: center; flex-direction: row; flex-wrap: nowrap; gap: 10px; margin: 0; min-height: 56px; padding: 14px 16px; }
-.lumis-onboarding-choice input[type="checkbox"] { flex: 0 0 18px; height: 18px; margin: 0; width: 18px; }
+.lumis-onboarding-choice input[type="checkbox"] { flex: 0 0 18px; height: 22px; margin: 0; width: 18px; }
 .lumis-onboarding-choice__label { align-items: center; display: flex; line-height: 1; margin: 0; min-width: 0; }
 .lumis-onboarding-choice:focus-within,
 .lumis-onboarding-theme:focus-within { border-color: var(--color-one); box-shadow: 0 0 0 3px rgba(var(--color-one-rgb), .18); outline: 2px solid transparent; }
