@@ -8,9 +8,20 @@
 <form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-  <div class="row">{% include "photographers/_form_fields.html" %}</div>
-  {% if profile.profile_photo %}<p class="lumis-onboarding__help">Current profile photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>{% endif %}
-  {% if profile.business_logo %}<p class="lumis-onboarding__help">Current business logo: <a href="{{ profile.business_logo.url }}">{{ profile.business_logo.name }}</a></p>{% endif %}
+  <div class="lumis-onboarding__profile-grid">
+    {% include "photographers/_profile_form_field.html" with field=form.display_name %}
+    {% include "photographers/_profile_form_field.html" with field=form.business_name %}
+    {% include "photographers/_profile_form_field.html" with field=form.first_name %}
+    {% include "photographers/_profile_form_field.html" with field=form.last_name %}
+    {% include "photographers/_profile_form_field.html" with field=form.phone_number %}
+    {% include "photographers/_profile_form_field.html" with field=form.website %}
+    {% include "photographers/_profile_form_field.html" with field=form.country %}
+    {% include "photographers/_profile_form_field.html" with field=form.state %}
+    {% include "photographers/_profile_form_field.html" with field=form.city %}
+    {% include "photographers/_profile_form_field.html" with field=form.timezone %}
+    {% include "photographers/_profile_form_field.html" with field=form.business_logo full_width=True current_file=profile.business_logo current_label="Current business logo" %}
+    {% include "photographers/_profile_form_field.html" with field=form.profile_photo full_width=True current_file=profile.profile_photo current_label="Current profile photo" %}
+  </div>
   <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
     <a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-welcome' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
     <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button>
