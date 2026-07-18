@@ -14,7 +14,7 @@
                     <span>{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
                 </div>
             </div>
-            <a class="mobile-dashboard-link" href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index -->
+            <a class="mobile-dashboard-link" href="{% url 'photographer_workspace:dashboard' %}">Work Space</a>
         {% else %}
             <p>Manage, find, and deliver photos with LumisPixel.</p>
             <div class="mobile-auth-actions">
@@ -30,7 +30,7 @@
     {% if request.user.is_authenticated %}
         <h6>Account</h6>
         <ul class="mobile-account-links">
-            <li><a href="#" data-placeholder-link>Dashboard</a><!-- Future named route: dashboard:index --></li>
+            <li><a href="{% url 'photographer_workspace:dashboard' %}">Work Space</a></li>
             <li><a href="#" data-placeholder-link>Settings</a><!-- Future named route: accounts:settings --></li>
             <li>
                 <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">

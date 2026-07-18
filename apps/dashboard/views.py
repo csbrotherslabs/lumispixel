@@ -10,7 +10,7 @@ from django.views.decorators.http import require_GET
 from apps.accounts.models import PhotographerProfile, User
 
 WORKSPACE_MODULES = [
-    {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
+    {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Work Space", "description": "Your business command center.", "coming_soon": False},
     {"key": "galleries", "url_name": "galleries", "icon": "bi-images", "title": "Galleries", "description": "Organize, publish, and deliver photography collections.", "coming_soon": True, "planned": ["Gallery organization", "Publishing controls", "Client delivery"]},
     {"key": "clients", "url_name": "clients", "icon": "bi-people", "title": "Clients", "description": "Manage client relationships, invitations, and gallery access.", "coming_soon": True, "planned": ["Client records", "Invitations", "Gallery access"]},
     {"key": "events", "url_name": "events", "icon": "bi-calendar-event", "title": "Events", "description": "Manage photography events and event-code photo discovery.", "coming_soon": True, "planned": ["Event setup", "Event codes", "Photo discovery"]},
