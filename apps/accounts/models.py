@@ -161,9 +161,12 @@ class PhotographerProfile(models.Model):
         STUDIO = "studio", "Studio"
 
     class WebsiteTheme(models.TextChoices):
+        BASIC = "basic", "Basic"
         ELEGANT = "elegant", "Elegant"
-        MODERN = "modern", "Modern"
-        SPORTS = "sports", "Sports"
+        MODERN_STUDIO = "modern_studio", "Modern Studio"
+        CINEMATIC = "cinematic", "Cinematic"
+        PORTFOLIO_EDITORIAL = "portfolio_editorial", "Portfolio Editorial"
+        SPORTS_EVENTS = "sports_events", "Sports & Events"
 
     class VerificationStatus(models.TextChoices):
         NOT_STARTED = "not_started", "Not started"
@@ -210,7 +213,7 @@ class PhotographerProfile(models.Model):
     tiktok_url = models.URLField(blank=True)
     linkedin_url = models.URLField(blank=True)
     youtube_url = models.URLField(blank=True)
-    website_theme = models.CharField(max_length=20, choices=WebsiteTheme.choices, default=WebsiteTheme.ELEGANT)
+    website_theme = models.CharField(max_length=32, choices=WebsiteTheme.choices, default=WebsiteTheme.BASIC)
     specialties = models.ManyToManyField("PhotographerSpecialty", related_name="photographer_profiles", blank=True)
     biography = models.TextField(blank=True)
     cover_image = models.ImageField(upload_to="photographer-covers/", blank=True, null=True)
@@ -256,6 +259,52 @@ class PhotographerProfile(models.Model):
     @property
     def can_receive_payouts(self):
         return self.is_verified and self.payout_setup_completed
+
+
+def photographer_website_upload_path(instance, filename):
+    photographer_id = instance.photographer_website.photographer_profile_id if hasattr(instance, "photographer_website") else instance.photographer_profile_id
+    folder = getattr(instance, "upload_folder", "projects")
+    return f"photographer_websites/{photographer_id}/{folder}/{filename}"
+
+
+def photographer_website_hero_upload_path(instance, filename):
+    return f"photographer_websites/{instance.photographer_profile_id}/hero/{filename}"
+
+
+def photographer_website_project_upload_path(instance, filename):
+    return f"photographer_websites/{instance.photographer_website.photographer_profile_id}/projects/{filename}"
+
+
+class PhotographerWebsiteProfile(models.Model):
+    photographer_profile = models.OneToOneField(PhotographerProfile, on_delete=models.CASCADE, related_name="website_profile")
+    hero_image = models.ImageField(upload_to=photographer_website_hero_upload_path, blank=True, null=True)
+    theme_content = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def selected_theme(self):
+        return self.photographer_profile.website_theme
+
+    def __str__(self):
+        return f"Website profile for {self.photographer_profile}"
+
+
+class PhotographerWebsiteProject(models.Model):
+    photographer_website = models.ForeignKey(PhotographerWebsiteProfile, on_delete=models.CASCADE, related_name="projects")
+    title = models.CharField(max_length=120, blank=True)
+    description = models.TextField(blank=True)
+    cover_image = models.ImageField(upload_to=photographer_website_project_upload_path, blank=True, null=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return self.title or f"Project {self.display_order + 1}"
 
 
 class PhotographerSpecialty(models.Model):
