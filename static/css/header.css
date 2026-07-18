@@ -1275,6 +1275,7 @@ body.overlay_menu_active .wptb-overlay-contact {
 .mobile-account-links a:hover, .mobile-account-links button:hover { color: var(--color-white); }
 .nav-sidebar-actions a { justify-content: flex-start; padding-left: 18px; }
 .sidebar-user-summary { margin-bottom: 16px; }
+.sidebar-account-links a { text-align: left; }
 .sidebar-auth-actions { grid-template-columns: 1fr; }
 @media (min-width: 1400px) and (max-width: 1699px) { .header .mainnav ul.main-menu > li + li { margin-left: 22px; } .header .mainnav ul.main-menu li a { font-size: 12px; letter-spacing: .7px; } .nav-account { gap: 12px; margin-right: 14px; } }
 @media (max-width: 1399px) { .header .header_search, .header .aside_open { display: none; } .mr_menu { overflow-y: auto; } }
