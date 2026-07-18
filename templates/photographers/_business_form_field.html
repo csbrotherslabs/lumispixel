@@ -1,9 +1,9 @@
 <div class="form-group lumis-onboarding__business-field{% if travel_dependent %} lumis-onboarding__travel-dependent{% endif %}">
   {% if field.field.widget.input_type == 'checkbox' %}
     <span class="lumis-onboarding__business-group-label">{{ group_label|default:field.label }}</span>
-    <label class="checkbox-option" for="{{ field.id_for_label }}">
+    <label class="lumis-onboarding-choice lumis-onboarding-choice--business" for="{{ field.id_for_label }}">
       {{ field }}
-      <span class="checkbox-option__label">{{ field.label }}</span>
+      <span class="lumis-onboarding-choice__label">{{ field.label }}</span>
     </label>
   {% else %}
     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
