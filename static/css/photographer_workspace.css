@@ -51,7 +51,7 @@
 .lpw-badge{display:inline-flex;background:#fff1f1;color:#a40005;font-size:12px;font-weight:800;padding:5px 9px;margin:4px 0}
 .lpw-two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}
 .lpw-panel{padding:24px}
-.lpw-theme{height:160px;border-radius:22px;border:1px solid var(--lpw-border);margin:14px 0;background:linear-gradient(135deg,#efe7dd,#fff 48%,#151515)}
+.lpw-theme{height:160px;border:1px solid var(--lpw-border);margin:14px 0;background:linear-gradient(135deg,#efe7dd,#fff 48%,#151515)}
 .lpw-theme.modern{background:linear-gradient(135deg,#151515,#f7f7f7 52%,#d70006)}
 .lpw-theme.sports{background:linear-gradient(135deg,#111,#d70006 52%,#f8f6f3)}
 .lpw-resource-list{display:grid;gap:10px}
