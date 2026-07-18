@@ -67,11 +67,11 @@ class ClientProfileAdmin(admin.ModelAdmin):
 
 @admin.register(PhotographerProfile)
 class PhotographerProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "display_name", "business_name", "verification_status", "onboarding_completed", "accepts_marketplace_requests", "public_profile_enabled", "payout_setup_completed")
-    list_filter = ("verification_status", "onboarding_completed", "accepts_marketplace_requests", "public_profile_enabled", "payout_setup_completed", "state")
-    search_fields = ("user__email", "display_name", "business_name", "city", "state")
+    list_display = ("user", "display_name", "business_name", "business_type", "website_theme", "onboarding_completed", "public_profile_enabled")
+    list_filter = ("business_type", "website_theme", "onboarding_completed", "willing_to_travel", "public_profile_enabled", "country", "state")
+    search_fields = ("user__email", "user__first_name", "user__last_name", "display_name", "business_name", "city", "state", "country")
     prepopulated_fields = {"slug": ("display_name",)}
-    filter_horizontal = ()
+    filter_horizontal = ("specialties",)
 
 
 @admin.register(PhotographerSpecialty)
