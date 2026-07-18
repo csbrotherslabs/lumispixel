@@ -69,7 +69,7 @@ def _client_destination_url(request, user, fallback_route="clients:dashboard"):
     return reverse(fallback_route)
 
 
-def _photographer_destination_url(request, user, fallback_route="accounts:photographer-dashboard"):
+def _photographer_destination_url(request, user, fallback_route="photographer_workspace:dashboard"):
     if not _is_photographer_account(user):
         return None
     profile, _ = PhotographerProfile.objects.get_or_create(user=user)
@@ -92,7 +92,7 @@ def _authenticated_destination_url(request, user):
         return client_destination
     workspace_routes = {
         User.Workspace.CLIENT: "clients:dashboard",
-        User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
+        User.Workspace.PHOTOGRAPHER: "photographer_workspace:dashboard",
         User.Workspace.MARKETPLACE: "accounts:marketplace-dashboard",
         User.Workspace.OPERATIONS: "accounts:operations-dashboard",
     }

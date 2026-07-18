@@ -37,7 +37,7 @@ class SetupDashboardTests(TestCase):
 
         photo_user.photographer_profile.onboarding_completed = True
         photo_user.photographer_profile.save(update_fields=["onboarding_completed", "updated_at"])
-        self.assertRedirects(self.client.get(reverse("photographers:setup-dashboard")), reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse("photographers:setup-dashboard")), reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
 
     def test_skip_preserves_data_and_incomplete_state(self):
         user = make_user("skip-client@example.com")
