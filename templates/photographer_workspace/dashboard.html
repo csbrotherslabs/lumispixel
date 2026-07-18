@@ -9,7 +9,7 @@
   <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-checklist-grid">{% for item in getting_started %}{% include "photographer_workspace/components/checklist/checklist_card.html" with item=item only %}{% endfor %}</div>
 </section>
 <section class="lpw-dashboard-section" aria-labelledby="business-overview-title">
-  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Business overview" title="Business Overview" subtitle="Current Workspace Metrics" section_id="business-overview-title" only %}
+  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Business overview" title="Business Overview" action_label="Current Workspace Metrics" section_id="business-overview-title" only %}
   <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-metric-grid">{% for card in overview_cards %}{% include "photographer_workspace/components/metrics/metric_card.html" with card=card only %}{% endfor %}</div>
 </section>
 <section class="lpw-dashboard-section" aria-labelledby="quick-actions-title">
