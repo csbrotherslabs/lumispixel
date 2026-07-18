@@ -1,18 +1,22 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 
-from apps.accounts.models import PhotographerProfile
+from apps.accounts.models import PhotographerProfile, PhotographerWebsiteProfile, PhotographerWebsiteProject
 from apps.accounts.onboarding import get_photographer_onboarding_resume_url
 from apps.accounts.views import _authenticated_destination_url
 
-from .forms import PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerThemeForm
+from .forms import PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
 
 THEME_OPTIONS = [
-    {"value": PhotographerProfile.WebsiteTheme.ELEGANT, "name": "Elegant", "description": "Best for wedding, family, portrait, and fine-art photography.", "preview_class": "is-elegant"},
-    {"value": PhotographerProfile.WebsiteTheme.MODERN, "name": "Modern Studio", "description": "Best for corporate, commercial, branding, product, and headshot work.", "preview_class": "is-modern"},
-    {"value": PhotographerProfile.WebsiteTheme.SPORTS, "name": "Sports & Events", "description": "Best for sports, schools, events, and high-volume photography.", "preview_class": "is-sports"},
+    {"value": PhotographerProfile.WebsiteTheme.BASIC, "slug": "basic", "name": "Basic", "best_for": "Simple landing page", "description": "Uses your existing profile details only.", "required_summary": "No additional information required.", "preview_class": "is-basic", "url_name": "photographers:photographer_onboarding_theme_preview_basic"},
+    {"value": PhotographerProfile.WebsiteTheme.ELEGANT, "slug": "elegant", "name": "Elegant", "best_for": "Weddings, portraits, families, fine art", "description": "Romantic full-width imagery with story, galleries, testimonial, and booking CTA.", "required_summary": "Hero, about, featured gallery, booking CTA.", "preview_class": "is-elegant", "url_name": "photographers:photographer_onboarding_theme_preview_elegant"},
+    {"value": PhotographerProfile.WebsiteTheme.MODERN_STUDIO, "slug": "modern-studio", "name": "Modern Studio", "best_for": "Corporate, branding, commercial, product, headshots", "description": "Clean split-screen presentation with service cards and consultation CTA.", "required_summary": "Hero, studio intro, services intro, consultation CTA.", "preview_class": "is-modern", "url_name": "photographers:photographer_onboarding_theme_preview_modern_studio"},
+    {"value": PhotographerProfile.WebsiteTheme.CINEMATIC, "slug": "cinematic", "name": "Cinematic", "best_for": "Wedding films, events, fashion, lifestyle", "description": "Dark immersive video-forward homepage with story and reel sections.", "required_summary": "Media type, hero, story, contact CTA.", "preview_class": "is-cinematic", "url_name": "photographers:photographer_onboarding_theme_preview_cinematic"},
+    {"value": PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL, "slug": "portfolio-editorial", "name": "Portfolio Editorial", "best_for": "Fashion, editorial, fine art, street, creative portraits", "description": "Magazine typography and asymmetrical project showcase.", "required_summary": "Editorial heading, artist statement, project heading, contact statement.", "preview_class": "is-editorial", "url_name": "photographers:photographer_onboarding_theme_preview_portfolio_editorial"},
+    {"value": PhotographerProfile.WebsiteTheme.SPORTS_EVENTS, "slug": "sports-events", "name": "Sports & Events", "best_for": "Sports, schools, high-volume and public events", "description": "Action-led design with Find My Photos and event code CTAs.", "required_summary": "Hero, find photos, recent events, booking CTA.", "preview_class": "is-sports", "url_name": "photographers:photographer_onboarding_theme_preview_sports_events"},
 ]
 PHOTOGRAPHER_TOTAL_STEPS = 5
 
@@ -127,16 +131,61 @@ def onboarding_theme(request):
     profile, response = _photographer_onboarding_profile_or_response(request)
     if response:
         return response
-    form = PhotographerThemeForm(request.POST or None, instance=profile)
+    website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+    action = request.POST.get("action", "finish_setup") if request.method == "POST" else None
+    form = PhotographerWebsiteThemeForm(request.POST or None, request.FILES or None, instance=profile, website_profile=website, draft=(action == "save_draft"))
     if request.method == "POST" and form.is_valid():
-        profile = form.save(commit=False)
+        profile, website = form.save_theme()
+        _save_project_drafts(request, website)
+        if action == "save_draft":
+            messages.success(request, "Your website theme draft has been saved. You can complete it anytime.")
+            return redirect("photographers:setup-dashboard")
         profile.onboarding_completed = True
         profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
-        profile.save()
-        form.save_m2m()
+        profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
         return redirect("photographer_workspace:dashboard")
-    return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, theme_options=THEME_OPTIONS))
+    return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, profile=profile, website=website, projects=list(website.projects.all()[:3]), theme_options=THEME_OPTIONS, theme_panels=_theme_panels(form), theme_field_config=THEME_FIELD_CONFIG))
 
+
+def _theme_panels(form):
+    panels = []
+    for option in THEME_OPTIONS:
+        key = option["value"]
+        if key == PhotographerProfile.WebsiteTheme.BASIC:
+            continue
+        names = ["hero_image"] + THEME_FIELD_CONFIG[key]["required"] + THEME_FIELD_CONFIG[key]["optional"]
+        panels.append({"key": key, "name": option["name"], "fields": [form[name] for name in names if name in form.fields]})
+    return panels
+
+
+def _save_project_drafts(request, website):
+    if website.selected_theme != PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL:
+        return
+    website.projects.all().delete()
+    for index in range(3):
+        title = request.POST.get(f"project_{index}_title", "").strip()
+        description = request.POST.get(f"project_{index}_description", "").strip()
+        image = request.FILES.get(f"project_{index}_cover_image")
+        if not (title or description or image):
+            continue
+        project = PhotographerWebsiteProject(photographer_website=website, title=title, description=description, display_order=index)
+        if image:
+            project.cover_image = image
+        project.save()
+
+
+@login_required
+@require_GET
+def theme_preview(request, theme_slug):
+    profile, response = _photographer_onboarding_profile_or_response(request)
+    if response:
+        return response
+    theme = next((item for item in THEME_OPTIONS if item["slug"] == theme_slug), None)
+    if not theme:
+        return redirect("photographers:onboarding-theme")
+    website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+    template = f"photographers/theme_previews/{theme_slug}.html"
+    return render(request, template, {"profile": profile, "website": website, "projects": website.projects.all()[:3], "theme": theme, "sample_label": "Sample preview content"})
 
 @login_required
 @require_GET
