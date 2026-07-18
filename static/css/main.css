@@ -2376,6 +2376,42 @@ img, svg, video { max-width: 100%; height: auto; }
   width: 100%;
 }
 
+
+.lumis-onboarding__business-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 22px;
+}
+
+.lumis-onboarding__business-field {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.lumis-onboarding__business-field label:not(.lumis-onboarding-choice) {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.lumis-onboarding__business-field input:not([type="checkbox"]),
+.lumis-onboarding__business-field select,
+.lumis-onboarding__business-field textarea {
+  width: 100%;
+}
+
+.lumis-onboarding__business-group-label {
+  color: #181818;
+  display: block;
+  font-weight: var(--fw-medium);
+  margin-bottom: 7px;
+}
+
+.lumis-onboarding-choice--business {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
 .lumis-onboarding__steps--five { grid-template-columns: repeat(5, 1fr); }
 .lumis-onboarding__choice-grid,
 .lumis-onboarding__theme-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 28px; }
@@ -2401,7 +2437,7 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 991px) { .lumis-onboarding__steps--five, .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 767px) { .lumis-onboarding__steps--five { grid-template-columns: 1fr; } }
 @media (max-width: 575px) { .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: 1fr; } }
-@media (max-width: 767px) { .lumis-onboarding__profile-grid { grid-template-columns: 1fr; } .lumis-onboarding__profile-field--full { grid-column: auto; } }
+@media (max-width: 767px) { .lumis-onboarding__profile-grid, .lumis-onboarding__business-grid { grid-template-columns: 1fr; } .lumis-onboarding__profile-field--full { grid-column: auto; } }
 
 /* Setup dashboards */
 .lumis-setup-dashboard .lumis-client-dashboard__quick-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-start; }
