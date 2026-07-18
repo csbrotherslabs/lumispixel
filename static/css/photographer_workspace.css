@@ -18,7 +18,7 @@
 .lpw-main-wrap{min-width:0;flex:1}
 .lpw-topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 30px;background:rgba(248,246,243,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--lpw-border)}
 .lpw-topbar h1{font-size:clamp(28px,3vw,32px);margin:0;color:var(--workspace-text-primary);font-weight:800;line-height:1.05;letter-spacing:-.02em}
-.lpw-breadcrumb,.lpw-kicker{margin:0;color:var(--lpw-accent);font-size:12px;line-height:1.15;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+.lpw-breadcrumb,.lpw-kicker{margin:0;color:var(--lpw-accent);font-size:12px;line-height:2.15;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
 .lpw-menu-button{display:none}
 .lpw-top-actions{display:flex;gap:10px;align-items:center}
 .lpw-icon-btn,.lpw-signout,.lpw-menu-button,.lpw-drawer-close{border:1px solid var(--lpw-border);background:#fff;border-radius:0;min-height:42px;padding:0 14px;font-weight:400}
