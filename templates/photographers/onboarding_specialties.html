@@ -6,7 +6,7 @@
   {% csrf_token %}
   {% if form.specialties.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.specialties.errors|striptags }}</div>{% endif %}
   <fieldset class="lumis-onboarding__choice-grid"><legend class="sr-only">Photography specialties</legend>
-    {% for choice in form.specialties %}<label class="lumis-onboarding-choice" for="{{ choice.id_for_label }}">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}
+    {% for choice in form.specialties %}<label class="lumis-onboarding-choice" for="{{ choice.id_for_label }}">{{ choice.tag }}<span class="lumis-onboarding-choice__label">{{ choice.choice_label }}</span></label>{% endfor %}
   </fieldset>
   <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button></div>
 </form>
