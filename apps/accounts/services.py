@@ -85,9 +85,6 @@ def create_photographer_account(payload):
             if User.objects.filter(email__iexact=payload.email).exists():
                 raise DuplicateEmailError
             user = _create_base_user(payload, User.PrimaryRole.PHOTOGRAPHER)
-            # Photographer accounts also receive a client profile so they can buy photos
-            # and hire other photographers without a second account.
-            ClientProfile.objects.get_or_create(user=user)
             PhotographerProfile.objects.get_or_create(
                 user=user,
                 defaults={

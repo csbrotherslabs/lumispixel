@@ -89,6 +89,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.full_name or self.email
 
     @property
+    def is_client(self):
+        return self.primary_role == self.PrimaryRole.CLIENT
+
+    @property
+    def is_photographer(self):
+        return self.primary_role == self.PrimaryRole.PHOTOGRAPHER
+
+    @property
     def has_client_profile(self):
         return hasattr(self, "client_profile")
 

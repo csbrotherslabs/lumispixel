@@ -56,12 +56,13 @@ class EntrySignupVerificationTests(TestCase):
         missing = VALID.copy(); missing.pop("accept_terms")
         self.assertContains(self.client.post(reverse("accounts:client-signup"), missing), "accept the terms")
 
-    def test_photographer_signup_creates_photographer_and_client_capability(self):
+    def test_photographer_signup_creates_photographer_without_client_profile(self):
         response = self.client.post(reverse("accounts:photographer-signup"), VALID | {"email": "photo@example.com"})
         self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
         user = User.objects.get(email="photo@example.com")
         self.assertEqual(user.primary_role, User.PrimaryRole.PHOTOGRAPHER)
-        self.assertTrue(ClientProfile.objects.filter(user=user).exists())
+        self.assertEqual(user.last_active_workspace, User.Workspace.PHOTOGRAPHER)
+        self.assertFalse(ClientProfile.objects.filter(user=user).exists())
         profile = PhotographerProfile.objects.get(user=user)
         self.assertEqual(profile.verification_status, PhotographerProfile.VerificationStatus.NOT_STARTED)
         self.assertEqual(profile.onboarding_step, "business_information")
