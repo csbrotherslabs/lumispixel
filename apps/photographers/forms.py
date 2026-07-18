@@ -1,6 +1,7 @@
 from zoneinfo import available_timezones
 
 from django import forms
+from django.db.models import Case, IntegerField, Value, When
 
 from apps.accounts.models import PhotographerProfile, PhotographerSpecialty
 from apps.clients.forms import COMMON_TIMEZONES, timezone_choices
@@ -83,7 +84,17 @@ class PhotographerSpecialtiesForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["specialties"].queryset = PhotographerSpecialty.objects.filter(is_active=True)
+        self.fields["specialties"].queryset = (
+            PhotographerSpecialty.objects.filter(is_active=True)
+            .annotate(
+                _other_sort=Case(
+                    When(slug="other", then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("_other_sort", "name")
+        )
 
 
 class PhotographerBusinessPreferencesForm(forms.ModelForm):

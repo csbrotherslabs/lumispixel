@@ -4,6 +4,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, PhotographerSpecialty
+from apps.photographers.forms import PhotographerSpecialtiesForm
 
 User = get_user_model()
 
@@ -61,6 +62,11 @@ class PhotographerOnboardingTests(TestCase):
         self.assertEqual(self.profile.display_name, "Pat Pixel")
         self.assertTrue(self.profile.profile_photo)
         self.assertTrue(self.profile.business_logo)
+
+    def test_specialties_form_lists_other_last(self):
+        form = PhotographerSpecialtiesForm(instance=self.profile)
+
+        self.assertEqual(form.fields["specialties"].queryset.last().slug, "other")
 
     def test_specialties_business_and_theme_save_and_reload(self):
         self.client.force_login(self.user)
