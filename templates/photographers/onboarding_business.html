@@ -36,7 +36,7 @@
   if (!toggle || !dependents.length) return;
   function syncTravelControls() {
     dependents.forEach((control) => {
-      control.disabled = !toggle.checked;
+      control.setAttribute('aria-disabled', String(!toggle.checked));
       const field = control.closest('.lumis-onboarding__business-field');
       if (field) field.classList.toggle('is-disabled', !toggle.checked);
     });

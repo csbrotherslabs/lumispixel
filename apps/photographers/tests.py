@@ -181,6 +181,9 @@ class PhotographerOnboardingTests(TestCase):
         self.assertContains(response, "lumis-onboarding__business-grid")
         self.assertContains(response, "lumis-onboarding-choice lumis-onboarding-choice--business")
         self.assertContains(response, "data-travel-toggle")
+        self.assertContains(response, "<option value=\"10\">10 miles</option>", html=True)
+        self.assertContains(response, "<option value=\"250\">250 miles</option>", html=True)
+        self.assertNotContains(response, "control.disabled")
 
     def test_business_step_incomplete_location_summary(self):
         self.client.force_login(self.user)
