@@ -190,8 +190,20 @@ class PhotographerProfile(models.Model):
     timezone = models.CharField(max_length=64, blank=True)
     business_type = models.CharField(max_length=20, choices=BusinessType.choices, default=BusinessType.INDIVIDUAL)
     years_of_experience = models.PositiveSmallIntegerField(blank=True, null=True)
-    service_area = models.CharField(max_length=255, blank=True)
-    willing_to_travel = models.BooleanField(default=False)
+    # Legacy free-text coverage field retained temporarily to preserve historical onboarding data.
+    service_area = models.CharField(max_length=255, blank=True, help_text="Legacy free-text service area retained for historical review; new onboarding uses structured travel fields.")
+    TRAVEL_RADIUS_CHOICES = [
+        (10, "10 miles"),
+        (25, "25 miles"),
+        (50, "50 miles"),
+        (100, "100 miles"),
+        (250, "250 miles"),
+    ]
+    travel_radius = models.PositiveIntegerField(choices=TRAVEL_RADIUS_CHOICES, null=True, blank=True, help_text="Maximum routine travel distance from the primary business location, in miles.")
+    willing_to_travel = models.BooleanField(default=False, help_text="Whether this photographer accepts assignments beyond their primary city/service base.")
+    available_nationally = models.BooleanField(default=False, help_text="Available for assignments throughout the photographer's home country.")
+    available_internationally = models.BooleanField(default=False, help_text="Available for assignments outside the photographer's home country.")
+    destination_photographer = models.BooleanField(default=False, help_text="Accepts assignments that require travel outside the normal service area.")
     default_currency = models.CharField(max_length=3, default="USD")
     instagram_url = models.URLField(blank=True)
     facebook_url = models.URLField(blank=True)
