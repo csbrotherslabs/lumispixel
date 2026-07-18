@@ -114,7 +114,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def can_use_marketplace_as_client(self):
-        return self.can_login and self.has_client_profile and self.client_profile.marketplace_enabled
+        return self.can_login and self.has_client_profile
 
     @property
     def can_use_photographer_workspace(self):
@@ -131,16 +131,19 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class ClientProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="client_profile")
-    profile_image = models.ImageField(upload_to="client-profiles/", blank=True, null=True)
-    phone_number = models.CharField(max_length=32, blank=True, validators=[phone_validator])
-    city = models.CharField(max_length=100, blank=True)
+    display_name = models.CharField(max_length=150, blank=True)
+    profile_photo = models.ImageField(upload_to="client-profiles/", blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
-    marketplace_enabled = models.BooleanField(default=True)
+    city = models.CharField(max_length=100, blank=True)
+    timezone = models.CharField(max_length=64, blank=True)
+    marketing_emails = models.BooleanField(default=False)
+    onboarding_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Client profile for {self.user.display_name}"
+        return self.display_name or f"Client profile for {self.user.display_name}"
 
 
 class PhotographerProfile(models.Model):
