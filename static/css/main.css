@@ -2483,7 +2483,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-theme-preview-link {
   align-self: flex-start;
   border: 1px solid #d8c8be;
-  border-radius: 999px;
+  border-radius: 0;
   color: var(--color-one);
   font-weight: 400;
   margin-top: auto;
