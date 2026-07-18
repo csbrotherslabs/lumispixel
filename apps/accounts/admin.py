@@ -60,9 +60,9 @@ class UserAdmin(DjangoUserAdmin):
 
 @admin.register(ClientProfile)
 class ClientProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "city", "state", "marketplace_enabled", "created_at")
-    list_filter = ("marketplace_enabled", "state")
-    search_fields = ("user__email", "user__first_name", "user__last_name", "city", "state")
+    list_display = ("user", "display_name", "city", "state", "country", "onboarding_completed", "marketing_emails", "created_at")
+    list_filter = ("onboarding_completed", "marketing_emails", "country", "state")
+    search_fields = ("user__email", "user__first_name", "user__last_name", "display_name", "city", "state", "country")
 
 
 @admin.register(PhotographerProfile)
