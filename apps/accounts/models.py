@@ -155,6 +155,15 @@ class ClientProfile(models.Model):
 
 
 class PhotographerProfile(models.Model):
+    class BusinessType(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual"
+        STUDIO = "studio", "Studio"
+
+    class WebsiteTheme(models.TextChoices):
+        ELEGANT = "elegant", "Elegant"
+        MODERN = "modern", "Modern"
+        SPORTS = "sports", "Sports"
+
     class VerificationStatus(models.TextChoices):
         NOT_STARTED = "not_started", "Not started"
         DRAFT = "draft", "Draft"
@@ -167,18 +176,31 @@ class PhotographerProfile(models.Model):
         EXPIRED = "expired", "Expired"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="photographer_profile")
-    business_name = models.CharField(max_length=150, blank=True)
     display_name = models.CharField(max_length=150, blank=True)
+    business_name = models.CharField(max_length=150, blank=True)
     slug = models.SlugField(max_length=180, unique=True)
-    profile_image = models.ImageField(upload_to="photographer-profiles/", blank=True, null=True)
-    cover_image = models.ImageField(upload_to="photographer-covers/", blank=True, null=True)
-    biography = models.TextField(blank=True)
+    profile_photo = models.ImageField(upload_to="photographer_profiles/photos/", blank=True, null=True)
+    business_logo = models.ImageField(upload_to="photographer_profiles/logos/", blank=True, null=True)
     phone_number = models.CharField(max_length=32, blank=True, validators=[phone_validator])
-    city = models.CharField(max_length=100, blank=True)
+    website = models.URLField(blank=True)
+    country = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
-    service_area = models.CharField(max_length=255, blank=True)
-    website_url = models.URLField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    timezone = models.CharField(max_length=64, blank=True)
+    business_type = models.CharField(max_length=20, choices=BusinessType.choices, default=BusinessType.INDIVIDUAL)
     years_of_experience = models.PositiveSmallIntegerField(blank=True, null=True)
+    service_area = models.CharField(max_length=255, blank=True)
+    willing_to_travel = models.BooleanField(default=False)
+    default_currency = models.CharField(max_length=3, default="USD")
+    instagram_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    tiktok_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    youtube_url = models.URLField(blank=True)
+    website_theme = models.CharField(max_length=20, choices=WebsiteTheme.choices, default=WebsiteTheme.ELEGANT)
+    specialties = models.ManyToManyField("PhotographerSpecialty", related_name="photographer_profiles", blank=True)
+    biography = models.TextField(blank=True)
+    cover_image = models.ImageField(upload_to="photographer-covers/", blank=True, null=True)
     accepts_marketplace_requests = models.BooleanField(default=False)
     verification_status = models.CharField(max_length=45, choices=VerificationStatus.choices, default=VerificationStatus.NOT_STARTED)
     verification_submitted_at = models.DateTimeField(blank=True, null=True)
@@ -227,7 +249,6 @@ class PhotographerSpecialty(models.Model):
     name = models.CharField(max_length=80, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
-    photographers = models.ManyToManyField(PhotographerProfile, related_name="specialties", blank=True)
 
     class Meta:
         ordering = ["name"]
