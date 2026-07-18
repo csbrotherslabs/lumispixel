@@ -1,0 +1,12 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Welcome to LumisPixel | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center">
+  <h1 class="wptb-item--title" id="photographer-onboarding-welcome-title">Welcome to LumisPixel</h1>
+  <p class="wptb-item--description mx-auto">Set up a workspace where you can manage galleries, deliver client photos, use AI-powered tools, and build a polished client-facing presence for your photography brand.</p>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
+    <a class="btn lumis-auth-primary" href="{% url 'photographers:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Set Up My Workspace</span></span></a>
+    <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-onboarding' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>
+  </div>
+</div>
+{% endblock %}
