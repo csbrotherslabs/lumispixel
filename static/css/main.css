@@ -2348,6 +2348,34 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 /* Photographer onboarding wizard */
+
+.lumis-onboarding__profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 22px;
+}
+
+.lumis-onboarding__profile-field {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.lumis-onboarding__profile-field--full {
+  grid-column: 1 / -1;
+}
+
+.lumis-onboarding__profile-field label {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.lumis-onboarding__profile-field input,
+.lumis-onboarding__profile-field select,
+.lumis-onboarding__profile-field textarea {
+  width: 100%;
+}
+
 .lumis-onboarding__steps--five { grid-template-columns: repeat(5, 1fr); }
 .lumis-onboarding__choice-grid,
 .lumis-onboarding__theme-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); margin-top: 28px; }
@@ -2369,6 +2397,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-onboarding-theme__body small { color: #5f5750; }
 @media (max-width: 991px) { .lumis-onboarding__steps--five, .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 767px) { .lumis-onboarding__steps--five, .lumis-onboarding__choice-grid, .lumis-onboarding__theme-grid { grid-template-columns: 1fr; } }
+@media (max-width: 767px) { .lumis-onboarding__profile-grid { grid-template-columns: 1fr; } .lumis-onboarding__profile-field--full { grid-column: auto; } }
 
 /* Setup dashboards */
 .lumis-setup-dashboard .lumis-client-dashboard__quick-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-start; }
