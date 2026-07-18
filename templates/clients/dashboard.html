@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Client Dashboard | LumisPixel{% endblock %}
+{% block body_class %}page-inner lumis-client-dashboard-page{% endblock %}
+
+{% block content %}
+<section class="wptb-about-one bg-image-2 lumis-client-dashboard" aria-labelledby="client-dashboard-title">
+  <div class="container">
+    <div class="lumis-client-dashboard__hero">
+      <p class="lumis-client-dashboard__eyebrow">Client dashboard</p>
+      <h1 class="wptb-item--title" id="client-dashboard-title">Welcome back, {{ display_name }}</h1>
+      <p class="wptb-item--description">Find, save, and access your photos from one place.</p>
+    </div>
+
+    <section class="lumis-client-dashboard__section" aria-labelledby="find-my-photos-title">
+      <div class="lumis-client-dashboard__section-heading">
+        <p class="lumis-client-dashboard__eyebrow">Find My Photos</p>
+        <h2 id="find-my-photos-title">Start with a selfie or event code.</h2>
+      </div>
+      <div class="lumis-client-dashboard__action-grid">
+        <article class="lumis-client-action-card">
+          <div class="lumis-client-action-card__icon" aria-hidden="true"><i class="bi bi-person-bounding-box"></i></div>
+          <h3>Selfie Search</h3>
+          <p>Upload a selfie and let LumisPixel find matching photos.</p>
+          <a class="btn lumis-auth-primary" href="{{ find_photos_url }}" aria-label="Upload a selfie to find matching photos"><span class="btn-wrap"><span class="text-first">Upload Selfie</span></span></a>
+          <p class="lumis-client-dashboard__placeholder-note">Selfie search is coming soon.</p>
+        </article>
+
+        <article class="lumis-client-action-card">
+          <div class="lumis-client-action-card__icon" aria-hidden="true"><i class="bi bi-upc-scan"></i></div>
+          <h3>Event Code</h3>
+          <p>Enter the code provided by your photographer.</p>
+          <form class="lumis-client-event-form" action="{{ find_photos_url }}" method="get">
+            <label for="event-code">Event code</label>
+            <div class="lumis-client-event-form__row">
+              <input class="form-control" id="event-code" name="event_code" type="text" autocomplete="off" placeholder="Enter event code">
+              <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Find Photos</span></span></button>
+            </div>
+          </form>
+          <p class="lumis-client-dashboard__placeholder-note">Gallery lookup is not active yet.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="lumis-client-dashboard__section" aria-labelledby="dashboard-summary-title">
+      <div class="lumis-client-dashboard__section-heading">
+        <p class="lumis-client-dashboard__eyebrow">Your activity</p>
+        <h2 id="dashboard-summary-title">Dashboard summary</h2>
+      </div>
+      <div class="lumis-client-summary-grid">
+        <article class="lumis-client-summary-card"><h3>Recent Galleries</h3><p>No recent galleries yet.</p></article>
+        <article class="lumis-client-summary-card" id="saved-photos"><h3>Saved Photos</h3><p>You have not saved any photos yet.</p></article>
+        <article class="lumis-client-summary-card"><h3>Purchases or Downloads</h3><p>No purchases or downloads yet.</p></article>
+        <article class="lumis-client-summary-card"><h3>Notifications</h3><p>You’re all caught up.</p></article>
+      </div>
+    </section>
+
+    <nav class="lumis-client-dashboard__quick-actions" aria-label="Client quick actions">
+      <a href="#find-my-photos-title">Find My Photos</a>
+      <a href="{{ saved_photos_url }}">View Saved Photos</a>
+      <button type="button" disabled>Manage Profile (coming soon)</button>
+    </nav>
+  </div>
+</section>
+{% endblock %}
