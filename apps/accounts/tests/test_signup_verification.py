@@ -73,12 +73,12 @@ class EntrySignupVerificationTests(TestCase):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = email_verification_token.make_token(user)
         response = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(response, reverse("accounts:marketplace-request-placeholder"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
         user.refresh_from_db()
         self.assertTrue(user.email_verified)
         self.assertFalse(email_verification_token.check_token(user, token))
         invalid = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
-        self.assertRedirects(invalid, reverse("accounts:client-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(invalid, reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
 
     def test_invalid_token_fails_safely(self):
         user = User.objects.create_user(email="badtoken@example.com", password="StrongPass123!")

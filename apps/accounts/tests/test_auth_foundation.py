@@ -147,6 +147,33 @@ class LoginTests(TestCase):
         self.client.force_login(user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
 
+    def test_client_without_profile_gets_profile_and_onboarding_redirect(self):
+        user = make_user(email="missing-client-profile@example.com", onboarding_completed=False)
+        self.client.force_login(user)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+        self.assertTrue(ClientProfile.objects.filter(user=user).exists())
+
+    def test_incomplete_client_profile_redirects_to_onboarding(self):
+        user = make_user(email="incomplete-client@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+
+    def test_completed_client_profile_keeps_existing_placeholder_destination(self):
+        user = make_user(email="completed-client@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("accounts:client-dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This authenticated destination is ready for the next authentication milestone.")
+
+    def test_photographer_with_client_profile_does_not_enter_client_onboarding(self):
+        user = make_user(email="photo-not-client-onboarding@example.com", primary_role=User.PrimaryRole.PHOTOGRAPHER, last_active_workspace=User.Workspace.PHOTOGRAPHER)
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        PhotographerProfile.objects.create(user=user, slug="photo-not-client-onboarding")
+        self.client.force_login(user)
+        self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("accounts:photographer-dashboard"))
+
 
     def test_logout_requires_post(self):
         user = make_user(email="logout-get@example.com")
@@ -159,6 +186,19 @@ class LoginTests(TestCase):
         response = self.client.post(reverse("accounts:logout"))
         self.assertRedirects(response, reverse("core:index"), fetch_redirect_response=False)
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_anonymous_onboarding_urls_redirect_to_login(self):
+        for name in ("clients:onboarding-welcome", "clients:onboarding-profile", "clients:onboarding-how-it-works"):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse(name)}", fetch_redirect_response=False)
+
+    def test_authenticated_client_can_access_onboarding_without_loop(self):
+        user = make_user(email="onboarding-direct@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+        response = self.client.get(reverse("clients:onboarding-welcome"))
+        self.assertEqual(response.status_code, 200)
 
 
 from django.http import HttpResponse
