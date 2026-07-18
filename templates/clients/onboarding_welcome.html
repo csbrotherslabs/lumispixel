@@ -1,0 +1,12 @@
+{% extends "clients/onboarding_base.html" %}
+{% block title %}Welcome to LumisPixel | Client Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center">
+  <h1 class="wptb-item--title" id="client-onboarding-welcome-title">Welcome to LumisPixel</h1>
+  <p class="wptb-item--description">LumisPixel helps you find photos from events using a selfie or an event code, then save favorites and purchase downloads when galleries are ready.</p>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
+    <a class="btn lumis-auth-primary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
+    <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-dashboard' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>
+  </div>
+</div>
+{% endblock %}

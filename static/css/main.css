@@ -2004,3 +2004,186 @@ img, svg, video { max-width: 100%; height: auto; }
 .lumis-auth-field-help a:focus-visible {
   color: var(--lumis-home-red, var(--color-one, #d70006));
 }
+
+/* Client onboarding wizard */
+.lumis-onboarding {
+  padding-top: 72px;
+}
+
+.lumis-onboarding__shell {
+  max-width: 920px;
+  margin: 90px auto 0;
+}
+
+.lumis-onboarding__panel {
+  background: #fff;
+  border: 1px solid #eadfd8;
+  box-shadow: 0 24px 70px rgba(24, 24, 24, .08);
+  padding: 42px;
+}
+
+.lumis-onboarding__progress {
+  margin-bottom: 34px;
+}
+
+.lumis-onboarding__step-label {
+  color: var(--color-one);
+  font-weight: var(--fw-semibold);
+  letter-spacing: .08em;
+  margin-bottom: 14px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.lumis-onboarding__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lumis-onboarding__steps li {
+  align-items: center;
+  border: 1px solid #eadfd8;
+  color: #6b625c;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px 10px;
+}
+
+.lumis-onboarding__steps span {
+  align-items: center;
+  background: #f7efeb;
+  border-radius: 50%;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.lumis-onboarding__steps .is-active {
+  border-color: rgba(var(--color-one-rgb), .42);
+  color: #181818;
+}
+
+.lumis-onboarding__steps .is-active span {
+  background: var(--color-one);
+  color: #fff;
+}
+
+.lumis-onboarding__intro .wptb-item--title {
+  color: #181818;
+  line-height: 1.18;
+  margin: 0 0 16px;
+}
+
+.lumis-onboarding__intro .wptb-item--description {
+  color: #5f5750;
+  max-width: 680px;
+}
+
+.lumis-onboarding__form {
+  margin-top: 28px;
+}
+
+.lumis-onboarding__form label {
+  color: #181818;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.lumis-onboarding__form .form-control {
+  background: #fbf8f6;
+  border-color: #ded0c7;
+  color: #181818;
+}
+
+.lumis-onboarding__form .form-control:focus,
+.lumis-onboarding__checkbox:focus-visible,
+.lumis-onboarding a:focus-visible,
+.lumis-onboarding button:focus-visible {
+  border-color: var(--color-one);
+  box-shadow: 0 0 0 3px rgba(var(--color-one-rgb), .18);
+  outline: 3px solid transparent;
+}
+
+.lumis-onboarding__check-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.lumis-onboarding__checkbox {
+  accent-color: var(--color-one);
+  height: 20px;
+  width: 20px;
+}
+
+.lumis-onboarding__help,
+.lumis-onboarding__error {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.lumis-onboarding__error {
+  color: var(--color-one);
+  font-weight: var(--fw-medium);
+}
+
+.lumis-onboarding__cards {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 32px;
+}
+
+.lumis-onboarding-card {
+  border: 1px solid #eadfd8;
+  padding: 24px 20px;
+}
+
+.lumis-onboarding-card i {
+  color: var(--color-one);
+  display: inline-block;
+  font-size: 32px;
+  margin-bottom: 18px;
+}
+
+.lumis-onboarding-card h2 {
+  color: #181818;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.lumis-onboarding-card p {
+  color: #5f5750;
+  margin-bottom: 0;
+}
+
+@media (max-width: 991px) {
+  .lumis-onboarding__cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .lumis-onboarding__shell {
+    margin-top: 48px;
+  }
+
+  .lumis-onboarding__panel {
+    padding: 28px 18px;
+  }
+
+  .lumis-onboarding__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .lumis-onboarding__cards {
+    grid-template-columns: 1fr;
+  }
+}

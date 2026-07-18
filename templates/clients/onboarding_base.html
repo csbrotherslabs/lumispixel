@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body_class %}page-inner lumis-onboarding-page{% endblock %}
+{% block content %}
+<section class="wptb-about-one bg-image-2 lumis-auth-section lumis-onboarding" aria-labelledby="{{ title_id }}">
+  <div class="container">
+    <div class="lumis-onboarding__shell">
+      <div class="lumis-onboarding__panel">
+        <nav class="lumis-onboarding__progress" aria-label="Onboarding progress">
+          <p class="lumis-onboarding__step-label">Step {{ current_step }} of 3</p>
+          <ol class="lumis-onboarding__steps">
+            <li class="{% if current_step >= 1 %}is-active{% endif %}"><span>1</span><small>Welcome</small></li>
+            <li class="{% if current_step >= 2 %}is-active{% endif %}"><span>2</span><small>Profile</small></li>
+            <li class="{% if current_step >= 3 %}is-active{% endif %}"><span>3</span><small>Find Photos</small></li>
+          </ol>
+        </nav>
+        {% block onboarding_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
