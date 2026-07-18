@@ -39,6 +39,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Modern Studio")
         self.assertContains(response, "Total Galleries")
         self.assertContains(response, "0")
+        self.assertContains(response, f'href="{reverse("core:index")}" aria-label="LumisPixel home"')
 
     def test_missing_images_and_invalid_theme_fallback_do_not_error(self):
         user, profile = self.make_photographer(True, email="fallback@example.com", slug="fallback", display_name="Fallback Photo")
