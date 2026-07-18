@@ -1,0 +1,14 @@
+<div class="form-group lumis-onboarding__business-field">
+  {% if field.field.widget.input_type == 'checkbox' %}
+    <span class="lumis-onboarding__business-group-label">{{ group_label|default:field.label }}</span>
+    <label class="lumis-onboarding-choice lumis-onboarding-choice--business" for="{{ field.id_for_label }}">
+      {{ field }}
+      <span class="lumis-onboarding-choice__label">{{ field.label }}</span>
+    </label>
+  {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+  {% endif %}
+  {% if field.help_text %}<div class="lumis-onboarding__help">{{ field.help_text }}</div>{% endif %}
+  {% if field.errors %}<div class="lumis-onboarding__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors|striptags }}</div>{% endif %}
+</div>

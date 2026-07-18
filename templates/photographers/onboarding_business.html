@@ -5,7 +5,18 @@
 <form class="wptb-form lumis-onboarding__form" method="post" novalidate>
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-  <div class="row">{% include "photographers/_form_fields.html" %}</div>
+  <div class="lumis-onboarding__business-grid">
+    {% include "photographers/_business_form_field.html" with field=form.business_type %}
+    {% include "photographers/_business_form_field.html" with field=form.years_of_experience %}
+    {% include "photographers/_business_form_field.html" with field=form.service_area %}
+    {% include "photographers/_business_form_field.html" with field=form.default_currency %}
+    {% include "photographers/_business_form_field.html" with field=form.instagram_url %}
+    {% include "photographers/_business_form_field.html" with field=form.facebook_url %}
+    {% include "photographers/_business_form_field.html" with field=form.tiktok_url %}
+    {% include "photographers/_business_form_field.html" with field=form.linkedin_url %}
+    {% include "photographers/_business_form_field.html" with field=form.youtube_url %}
+    {% include "photographers/_business_form_field.html" with field=form.willing_to_travel group_label="Travel preference" %}
+  </div>
   <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-specialties' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button></div>
 </form>
 {% endblock %}
