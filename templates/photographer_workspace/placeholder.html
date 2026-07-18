@@ -1,0 +1,12 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<section class="lpw-placeholder">
+  <div class="lpw-placeholder-icon"><i class="bi {{ module.icon }}" aria-hidden="true"></i></div>
+  <p class="lpw-kicker">Photographer Workspace</p>
+  <h2>{{ module.title }}</h2>
+  {% if module.coming_soon %}<span class="lpw-badge">Coming Soon</span>{% endif %}
+  <p>{{ module.description }}</p>
+  {% if module.planned %}<h3>Planned capabilities</h3><ul>{% for item in module.planned %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+  <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:dashboard' %}">Back to Dashboard</a>
+</section>
+{% endblock %}

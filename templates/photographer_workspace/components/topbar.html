@@ -1,0 +1,5 @@
+<header class="lpw-topbar">
+  <button class="lpw-menu-button" type="button" data-workspace-open aria-controls="workspace-sidebar" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
+  <div><p class="lpw-breadcrumb">Photographer Workspace</p><h1 id="workspace-page-title">{{ page_title }}</h1></div>
+  <div class="lpw-top-actions"><button type="button" class="lpw-icon-btn" aria-label="Notifications coming soon"><i class="bi bi-bell" aria-hidden="true"></i></button><a class="lpw-account" href="{% url 'photographer_workspace:profile' %}">{{ identity.initials }}</a><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="lpw-signout">Sign out</button></form></div>
+</header>

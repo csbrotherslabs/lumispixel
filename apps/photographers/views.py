@@ -27,7 +27,7 @@ def _photographer_onboarding_profile_or_response(request):
         return None, redirect("clients:setup-dashboard" if request.user.is_client else _authenticated_destination_url(request, request.user))
     profile = _photographer_profile(request.user)
     if profile.onboarding_completed:
-        return None, redirect("accounts:photographer-dashboard")
+        return None, redirect("photographer_workspace:dashboard")
     return profile, None
 
 
@@ -52,7 +52,7 @@ def setup_dashboard(request):
         return redirect("accounts:post-login-redirect")
     profile = _photographer_profile(request.user)
     if profile.onboarding_completed:
-        return redirect("accounts:photographer-dashboard")
+        return redirect("photographer_workspace:dashboard")
     step = profile.onboarding_step if profile.onboarding_step in range(1, PHOTOGRAPHER_TOTAL_STEPS + 1) else 1
     context = {
         "setup_role": "photographer",
@@ -131,7 +131,7 @@ def onboarding_theme(request):
         profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
         profile.save()
         form.save_m2m()
-        return redirect("accounts:photographer-dashboard")
+        return redirect("photographer_workspace:dashboard")
     return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, theme_options=THEME_OPTIONS))
 
 

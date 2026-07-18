@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ page_title }} | Photographer Workspace | LumisPixel{% endblock %}</title>
+  <link href="{% static 'img/favicon.png' %}" rel="icon" type="image/png">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/photographer_workspace.css' %}">
+</head>
+<body class="lumis-workspace-body">
+<a class="skip-link" href="#workspace-main">Skip to main content</a>
+<div class="lpw-mobile-scrim" data-workspace-scrim hidden></div>
+<div class="lpw-shell">
+  {% include "photographer_workspace/components/sidebar.html" %}
+  <div class="lpw-main-wrap">
+    {% include "photographer_workspace/components/topbar.html" %}
+    <main id="workspace-main" class="lpw-main" tabindex="-1" aria-labelledby="workspace-page-title">
+      {% block workspace_content %}{% endblock %}
+    </main>
+  </div>
+</div>
+<script src="{% static 'js/photographer_workspace.js' %}"></script>
+</body>
+</html>
