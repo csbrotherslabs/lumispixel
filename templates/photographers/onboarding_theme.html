@@ -1,19 +1,27 @@
 {% extends "photographers/onboarding_base.html" %}
 {% block title %}Choose Your Client Experience | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">Choose Your Client Experience</h1><p class="wptb-item--description mx-auto">Pick a starting visual direction. Full public website tools will come later.</p></div>
-<form class="wptb-form lumis-onboarding__form" method="post" novalidate>
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">Choose Your Client Experience</h1><p class="wptb-item--description mx-auto">Pick, preview, and customize your photographer homepage draft. Public publishing comes later.</p></div>
+<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate data-theme-form>
   {% csrf_token %}
+  {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
   <fieldset class="lumis-onboarding__theme-grid"><legend class="sr-only">Website theme</legend>
     {% for theme in theme_options %}
-      <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}">
-        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
+      <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
+        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %} aria-controls="panel-{{ theme.value }}">
         <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small>{{ theme.description }}</small><a href="#theme-{{ theme.value }}" aria-label="Preview {{ theme.name }} theme">Preview</a></span>
+        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Requires:</b> {{ theme.required_summary }}</small><a class="lumis-theme-preview-link" href="{% url theme.url_name %}" aria-label="Preview {{ theme.name }} theme">Preview</a><span class="lumis-theme-selected" aria-live="polite">Selected theme</span></span>
       </label>
     {% endfor %}
   </fieldset>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button></div>
+  <section class="lumis-theme-config" aria-live="polite"><h2>Customize This Theme</h2><p data-empty-theme>Choose a theme to see its configuration fields.</p>
+    <div class="lumis-theme-panel" id="panel-basic" data-theme-panel="basic"><p>This theme uses the information already provided in the previous setup steps. No additional information is required.</p></div>
+    {% include "photographers/theme_config_panels.html" %}
+  </section>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a><button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button><button class="btn lumis-auth-primary" type="submit" name="action" value="finish_setup"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button></div>
 </form>
+<script>
+(function(){function sync(){var checked=document.querySelector('input[name="website_theme"]:checked');document.querySelectorAll('[data-theme-panel]').forEach(function(p){p.hidden=!checked||p.dataset.themePanel!==checked.value});var empty=document.querySelector('[data-empty-theme]'); if(empty) empty.hidden=!!checked;}document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',sync)});sync();})();
+</script>
 {% endblock %}

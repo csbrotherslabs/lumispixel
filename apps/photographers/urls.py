@@ -13,4 +13,10 @@ urlpatterns = [
     path("onboarding/specialties/", views.onboarding_specialties, name="onboarding-specialties"),
     path("onboarding/business/", views.onboarding_business, name="onboarding-business"),
     path("onboarding/theme/", views.onboarding_theme, name="onboarding-theme"),
+    path("onboarding/theme-preview/basic/", views.theme_preview, {"theme_slug": "basic"}, name="photographer_onboarding_theme_preview_basic"),
+    path("onboarding/theme-preview/elegant/", views.theme_preview, {"theme_slug": "elegant"}, name="photographer_onboarding_theme_preview_elegant"),
+    path("onboarding/theme-preview/modern-studio/", views.theme_preview, {"theme_slug": "modern-studio"}, name="photographer_onboarding_theme_preview_modern_studio"),
+    path("onboarding/theme-preview/cinematic/", views.theme_preview, {"theme_slug": "cinematic"}, name="photographer_onboarding_theme_preview_cinematic"),
+    path("onboarding/theme-preview/portfolio-editorial/", views.theme_preview, {"theme_slug": "portfolio-editorial"}, name="photographer_onboarding_theme_preview_portfolio_editorial"),
+    path("onboarding/theme-preview/sports-events/", views.theme_preview, {"theme_slug": "sports-events"}, name="photographer_onboarding_theme_preview_sports_events"),
 ]
