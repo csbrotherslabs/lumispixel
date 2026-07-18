@@ -103,22 +103,48 @@ class PhotographerBusinessPreferencesForm(forms.ModelForm):
         fields = [
             "business_type",
             "years_of_experience",
-            "service_area",
-            "willing_to_travel",
             "default_currency",
+            "travel_radius",
+            "willing_to_travel",
+            "destination_photographer",
+            "available_nationally",
+            "available_internationally",
             "instagram_url",
             "facebook_url",
             "tiktok_url",
             "linkedin_url",
             "youtube_url",
         ]
-        labels = {"business_type": "Business type", "years_of_experience": "Years of experience", "service_area": "Service area", "willing_to_travel": "Willing to travel", "default_currency": "Default currency", "instagram_url": "Instagram URL", "facebook_url": "Facebook URL", "tiktok_url": "TikTok URL", "linkedin_url": "LinkedIn URL", "youtube_url": "YouTube URL"}
+        labels = {
+            "business_type": "Business type",
+            "years_of_experience": "Years of experience",
+            "default_currency": "Default currency",
+            "travel_radius": "Travel radius",
+            "willing_to_travel": "Willing to travel",
+            "destination_photographer": "Destination photographer",
+            "available_nationally": "Available nationally",
+            "available_internationally": "Available internationally",
+            "instagram_url": "Instagram URL",
+            "facebook_url": "Facebook URL",
+            "tiktok_url": "TikTok URL",
+            "linkedin_url": "LinkedIn URL",
+            "youtube_url": "YouTube URL",
+        }
+        help_texts = {
+            "travel_radius": "Choose the local radius you routinely serve when traveling.",
+            "destination_photographer": "Select this if you accept assignments that require travel outside your normal service area.",
+            "available_nationally": "Available for assignments throughout your home country.",
+            "available_internationally": "Available for assignments outside your home country.",
+        }
         widgets = {
             "business_type": forms.Select(attrs={"class": "form-control"}),
             "years_of_experience": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
-            "service_area": forms.TextInput(attrs={"class": "form-control"}),
-            "willing_to_travel": forms.CheckboxInput(attrs={"class": "lumis-onboarding__checkbox"}),
             "default_currency": forms.TextInput(attrs={"class": "form-control", "maxlength": "3", "placeholder": "USD"}),
+            "travel_radius": forms.Select(attrs={"class": "form-control", "data-travel-dependent": "true"}),
+            "willing_to_travel": forms.CheckboxInput(attrs={"class": "lumis-onboarding__checkbox", "data-travel-toggle": "true"}),
+            "destination_photographer": forms.CheckboxInput(attrs={"class": "lumis-onboarding__checkbox", "data-travel-dependent": "true"}),
+            "available_nationally": forms.CheckboxInput(attrs={"class": "lumis-onboarding__checkbox", "data-travel-dependent": "true"}),
+            "available_internationally": forms.CheckboxInput(attrs={"class": "lumis-onboarding__checkbox", "data-travel-dependent": "true"}),
             "instagram_url": forms.URLInput(attrs={"class": "form-control"}),
             "facebook_url": forms.URLInput(attrs={"class": "form-control"}),
             "tiktok_url": forms.URLInput(attrs={"class": "form-control"}),
@@ -128,6 +154,28 @@ class PhotographerBusinessPreferencesForm(forms.ModelForm):
 
     def clean_default_currency(self):
         return self.cleaned_data["default_currency"].upper()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        willing = cleaned_data.get("willing_to_travel")
+        destination = cleaned_data.get("destination_photographer")
+        nationally = cleaned_data.get("available_nationally")
+        internationally = cleaned_data.get("available_internationally")
+        radius = cleaned_data.get("travel_radius")
+
+        if destination or nationally or internationally:
+            willing = True
+            cleaned_data["willing_to_travel"] = True
+
+        if not willing:
+            cleaned_data["travel_radius"] = None
+            cleaned_data["destination_photographer"] = False
+            cleaned_data["available_nationally"] = False
+            cleaned_data["available_internationally"] = False
+        elif not radius and not nationally and not internationally:
+            self.add_error("travel_radius", "Select a travel radius or indicate national/international availability.")
+
+        return cleaned_data
 
 
 class PhotographerThemeForm(forms.ModelForm):
