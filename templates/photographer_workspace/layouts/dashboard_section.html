@@ -1,0 +1,6 @@
+<section class="lpw-dashboard-section {{ section_class }}" aria-labelledby="{{ section_id }}">
+  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow=eyebrow title=title subtitle=subtitle action_label=action_label action_url=action_url section_id=section_id only %}
+  <div class="lpw-dashboard-section__content {{ content_class }}">
+    {{ content }}
+  </div>
+</section>

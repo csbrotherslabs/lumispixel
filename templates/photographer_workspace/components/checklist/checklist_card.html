@@ -1,0 +1,8 @@
+<a href="{{ item.url }}" class="lpw-dashboard-card lpw-checklist-card {% if item.done %}is-done{% endif %}">
+  <div class="lpw-checklist-card__top">
+    <i class="bi {% if item.done %}bi-check-circle-fill{% else %}bi-circle{% endif %}" aria-hidden="true"></i>
+    <h3>{{ item.label }}</h3>
+  </div>
+  <p>Complete this workspace setup step to keep your photography business ready.</p>
+  <span class="lpw-checklist-card__action">{% if item.done %}Completed{% else %}Continue{% endif %}</span>
+</a>

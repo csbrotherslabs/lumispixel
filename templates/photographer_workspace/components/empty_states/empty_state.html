@@ -1,0 +1,7 @@
+<div class="lpw-dashboard-card lpw-empty-state">
+  {% if icon %}<i class="bi {{ icon }}" aria-hidden="true"></i>{% endif %}
+  <h3>{{ title }}</h3>
+  <p>{{ description }}</p>
+  {% if primary_url and primary_label %}<a class="lpw-btn" href="{{ primary_url }}">{{ primary_label }}</a>{% endif %}
+  {% if secondary_url and secondary_label %}<a class="lpw-section-link" href="{{ secondary_url }}">{{ secondary_label }}</a>{% endif %}
+</div>

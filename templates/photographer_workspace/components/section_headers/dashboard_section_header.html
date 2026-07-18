@@ -1,0 +1,12 @@
+<div class="lpw-dashboard-section__header">
+  <div class="lpw-dashboard-section__heading">
+    {% if eyebrow %}<p class="lpw-kicker">{{ eyebrow }}</p>{% endif %}
+    <h2 id="{{ section_id }}">{{ title }}</h2>
+    {% if subtitle %}<p class="lpw-dashboard-section__subtitle">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if action_label %}
+    <div class="lpw-dashboard-section__action">
+      {% if action_url %}<a class="lpw-section-link" href="{{ action_url }}">{{ action_label }}</a>{% else %}<span class="lpw-section-status">{{ action_label }}</span>{% endif %}
+    </div>
+  {% endif %}
+</div>
