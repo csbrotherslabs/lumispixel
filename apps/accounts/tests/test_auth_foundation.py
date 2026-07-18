@@ -159,13 +159,15 @@ class LoginTests(TestCase):
         self.client.force_login(user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
 
-    def test_completed_client_profile_keeps_existing_placeholder_destination(self):
+    def test_completed_client_profile_redirects_to_client_dashboard(self):
         user = make_user(email="completed-client@example.com")
         ClientProfile.objects.create(user=user, onboarding_completed=True)
         self.client.force_login(user)
-        response = self.client.get(reverse("accounts:client-dashboard"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "This authenticated destination is ready for the next authentication milestone.")
+        response = self.client.get(reverse("accounts:post-login-redirect"))
+        self.assertRedirects(response, reverse("clients:dashboard"), fetch_redirect_response=False)
+        dashboard = self.client.get(reverse("clients:dashboard"))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertContains(dashboard, "Find, save, and access your photos from one place.")
 
     def test_photographer_with_client_profile_does_not_enter_client_onboarding(self):
         user = make_user(email="photo-not-client-onboarding@example.com", primary_role=User.PrimaryRole.PHOTOGRAPHER, last_active_workspace=User.Workspace.PHOTOGRAPHER)
@@ -214,7 +216,7 @@ class LoginTests(TestCase):
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_anonymous_onboarding_urls_redirect_to_login(self):
-        for name in ("clients:onboarding-welcome", "clients:onboarding-profile", "clients:onboarding-how-it-works"):
+        for name in ("clients:dashboard", "clients:onboarding-welcome", "clients:onboarding-profile", "clients:onboarding-how-it-works"):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name))
                 self.assertRedirects(response, f"{reverse('accounts:login')}?next={reverse(name)}", fetch_redirect_response=False)
@@ -233,7 +235,7 @@ class LoginTests(TestCase):
 
         response = self.client.post(reverse("clients:onboarding-how-it-works"))
 
-        self.assertRedirects(response, reverse("accounts:client-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("clients:dashboard"), fetch_redirect_response=False)
         profile.refresh_from_db()
         self.assertTrue(profile.onboarding_completed)
 
@@ -245,7 +247,26 @@ class LoginTests(TestCase):
         for name in ("clients:onboarding-welcome", "clients:onboarding-profile", "clients:onboarding-how-it-works"):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name))
-                self.assertRedirects(response, reverse("accounts:client-dashboard"), fetch_redirect_response=False)
+                self.assertRedirects(response, reverse("clients:dashboard"), fetch_redirect_response=False)
+
+    def test_incomplete_client_dashboard_redirects_to_onboarding(self):
+        user = make_user(email="incomplete-dashboard@example.com")
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+
+        self.assertRedirects(self.client.get(reverse("clients:dashboard")), reverse("clients:onboarding-welcome"), fetch_redirect_response=False)
+
+    def test_photographer_cannot_access_client_dashboard(self):
+        user = make_user(
+            email="photo-client-dashboard@example.com",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            last_active_workspace=User.Workspace.PHOTOGRAPHER,
+            onboarding_completed=True,
+        )
+        PhotographerProfile.objects.create(user=user, slug="photo-client-dashboard")
+        self.client.force_login(user)
+
+        self.assertRedirects(self.client.get(reverse("clients:dashboard")), reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
 
     def test_finish_setup_requires_post(self):
         user = make_user(email="finish-get-client@example.com")

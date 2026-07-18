@@ -64,7 +64,7 @@ def _client_onboarding_redirect_name(profile):
     return "clients:onboarding-welcome"
 
 
-def _client_destination_url(request, user, fallback_route="accounts:client-dashboard"):
+def _client_destination_url(request, user, fallback_route="clients:dashboard"):
     if not _is_client_account(user):
         return None
     profile, _ = ClientProfile.objects.get_or_create(user=user)
@@ -81,13 +81,12 @@ def _post_verification_redirect(request, user):
         return next_url
     if _is_photographer_account(user):
         return reverse("accounts:photographer-onboarding")
-    if intent == "find_photos":
-        existing_client_destination = "accounts:find-photos-placeholder"
-    elif intent == "marketplace":
-        existing_client_destination = "accounts:marketplace-request-placeholder"
-    else:
-        existing_client_destination = "accounts:client-dashboard"
-    return _client_destination_url(request, user, existing_client_destination) or reverse(existing_client_destination)
+    client_destination = _client_destination_url(request, user)
+    if client_destination:
+        return client_destination
+    if intent == "marketplace":
+        return reverse("accounts:marketplace-request-placeholder")
+    return reverse("clients:dashboard")
 
 
 @require_http_methods(["GET", "POST"])
@@ -134,7 +133,7 @@ def _authenticated_signup_redirect(request, account_type):
     client_destination = _client_destination_url(request, request.user)
     if client_destination:
         return redirect(client_destination)
-    return redirect("accounts:client-dashboard")
+    return redirect("clients:dashboard")
 
 
 def _signup_view(request, form_class, template_name, account_type):
@@ -223,13 +222,13 @@ def post_login_redirect(request):
         client_destination = _client_destination_url(request, user)
         if client_destination:
             return redirect(client_destination)
-        return redirect("accounts:client-dashboard")
+        return redirect("clients:dashboard")
     if user.is_photographer:
         if not user.onboarding_completed:
             return redirect("accounts:photographer-onboarding")
         return redirect("accounts:photographer-dashboard")
     workspace_routes = {
-        User.Workspace.CLIENT: "accounts:client-dashboard",
+        User.Workspace.CLIENT: "clients:dashboard",
         User.Workspace.PHOTOGRAPHER: "accounts:photographer-dashboard",
         User.Workspace.MARKETPLACE: "accounts:marketplace-dashboard",
         User.Workspace.OPERATIONS: "accounts:operations-dashboard",
@@ -237,7 +236,7 @@ def post_login_redirect(request):
     route = workspace_routes.get(user.last_active_workspace)
     if route:
         return redirect(route)
-    return redirect("accounts:client-dashboard")
+    return redirect("clients:dashboard")
 
 
 @login_required
@@ -245,7 +244,7 @@ def client_dashboard(request):
     client_destination = _client_destination_url(request, request.user)
     if client_destination and client_destination != request.path:
         return redirect(client_destination)
-    return render(request, "accounts/placeholder.html", {"title": "Client dashboard"})
+    return redirect("clients:dashboard")
 
 
 @login_required
