@@ -124,7 +124,8 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lpw-two-col .lpw-dashboard-section{height:100%;display:flex;flex-direction:column}
 .lpw-two-col .lpw-dashboard-section>article,.lpw-two-col .lpw-dashboard-section>.lpw-dashboard-card{flex:1}
 .lpw-resource-list{padding:22px}
-.lpw-resource-list a{display:flex}
+.lpw-resource-list a{display:flex; color: #151515;}
+.lpw-resource-list a:hover{color: #a40005;}
 @media(max-width:1180px){.lpw-dashboard-grid,.lpw-dashboard-grid-3,.lpw-dashboard-grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.lpw-dashboard-grid-2{gap:var(--lpw-space-grid-gap)}}
 @media(max-width:860px){.lpw-two-col{grid-template-columns:1fr;display:grid}}
 @media(max-width:620px){.lpw-dashboard-grid,.lpw-dashboard-grid-2,.lpw-dashboard-grid-3,.lpw-dashboard-grid-4{grid-template-columns:1fr}.lpw-dashboard-section__header{grid-template-columns:1fr;align-items:start;gap:8px;margin-bottom:var(--lpw-space-section-header)}.lpw-dashboard-section__action{justify-content:flex-start;text-align:left}.lpw-section-link,.lpw-section-status{font-size:18px}.lpw-dashboard-card{padding:20px;border-radius:22px}.lpw-checklist-card,.lpw-workspace-card{min-height:196px}}
