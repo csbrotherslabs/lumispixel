@@ -5,18 +5,44 @@
 <form class="wptb-form lumis-onboarding__form" method="post" novalidate>
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <section class="lumis-onboarding__location-summary" aria-labelledby="primary-business-location-label">
+    <div>
+      <p class="lumis-onboarding__location-label" id="primary-business-location-label">Primary business location:</p>
+      {% if location_complete %}<p class="lumis-onboarding__location-value">{{ location_summary }}</p>{% else %}<p class="lumis-onboarding__location-value">Primary business location not completed.</p>{% endif %}
+    </div>
+    <a class="lumis-onboarding__location-edit" href="{% url 'photographers:onboarding-profile' %}" aria-label="Edit primary business location in photographer onboarding step 2">Edit location</a>
+  </section>
   <div class="lumis-onboarding__business-grid">
     {% include "photographers/_business_form_field.html" with field=form.business_type %}
     {% include "photographers/_business_form_field.html" with field=form.years_of_experience %}
-    {% include "photographers/_business_form_field.html" with field=form.service_area %}
     {% include "photographers/_business_form_field.html" with field=form.default_currency %}
+    {% include "photographers/_business_form_field.html" with field=form.travel_radius travel_dependent=True %}
+    {% include "photographers/_business_form_field.html" with field=form.willing_to_travel group_label="Travel preference" %}
+    {% include "photographers/_business_form_field.html" with field=form.destination_photographer group_label="Destination availability" travel_dependent=True %}
+    {% include "photographers/_business_form_field.html" with field=form.available_nationally group_label="National availability" travel_dependent=True %}
+    {% include "photographers/_business_form_field.html" with field=form.available_internationally group_label="International availability" travel_dependent=True %}
     {% include "photographers/_business_form_field.html" with field=form.instagram_url %}
     {% include "photographers/_business_form_field.html" with field=form.facebook_url %}
     {% include "photographers/_business_form_field.html" with field=form.tiktok_url %}
     {% include "photographers/_business_form_field.html" with field=form.linkedin_url %}
     {% include "photographers/_business_form_field.html" with field=form.youtube_url %}
-    {% include "photographers/_business_form_field.html" with field=form.willing_to_travel group_label="Travel preference" %}
   </div>
   <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-specialties' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button></div>
 </form>
+<script>
+(function () {
+  const toggle = document.querySelector('[data-travel-toggle="true"]');
+  const dependents = document.querySelectorAll('[data-travel-dependent="true"]');
+  if (!toggle || !dependents.length) return;
+  function syncTravelControls() {
+    dependents.forEach((control) => {
+      control.setAttribute('aria-disabled', String(!toggle.checked));
+      const field = control.closest('.lumis-onboarding__business-field');
+      if (field) field.classList.toggle('is-disabled', !toggle.checked);
+    });
+  }
+  toggle.addEventListener('change', syncTravelControls);
+  syncTravelControls();
+}());
+</script>
 {% endblock %}

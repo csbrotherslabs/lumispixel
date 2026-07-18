@@ -115,7 +115,10 @@ def onboarding_business(request):
         form.save()
         _set_photographer_step(profile, 5)
         return redirect("photographers:onboarding-theme")
-    return render(request, "photographers/onboarding_business.html", _context(4, "photographer-onboarding-business-title", form=form))
+    location_parts = [profile.city, profile.state, profile.country]
+    location_summary = ", ".join(part for part in location_parts if part)
+    location_complete = all(location_parts)
+    return render(request, "photographers/onboarding_business.html", _context(4, "photographer-onboarding-business-title", form=form, profile=profile, location_summary=location_summary, location_complete=location_complete))
 
 
 @login_required
