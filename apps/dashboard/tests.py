@@ -30,7 +30,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertRedirects(self.client.get(reverse("photographer_workspace:galleries")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
 
     def test_completed_photographer_dashboard_and_post_login_destination(self):
-        user, _ = self.make_photographer(True, business_name="Lumis Studio", display_name="Alex Lens", website_theme=PhotographerProfile.WebsiteTheme.MODERN)
+        user, _ = self.make_photographer(True, business_name="Lumis Studio", display_name="Alex Lens", website_theme=PhotographerProfile.WebsiteTheme.MODERN_STUDIO)
         self.client.force_login(user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
         response = self.client.get(reverse("photographer_workspace:dashboard"))

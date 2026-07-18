@@ -3,7 +3,7 @@ from zoneinfo import available_timezones
 from django import forms
 from django.db.models import Case, IntegerField, Value, When
 
-from apps.accounts.models import PhotographerProfile, PhotographerSpecialty
+from apps.accounts.models import PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile, PhotographerWebsiteProject
 from apps.clients.forms import COMMON_TIMEZONES, timezone_choices
 
 
@@ -183,3 +183,82 @@ class PhotographerThemeForm(forms.ModelForm):
         model = PhotographerProfile
         fields = ["website_theme"]
         widgets = {"website_theme": forms.RadioSelect(attrs={"class": "lumis-onboarding__theme-radio"})}
+
+IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
+
+THEME_FIELD_CONFIG = {
+    PhotographerProfile.WebsiteTheme.BASIC: {"required": [], "optional": []},
+    PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": ["testimonial_quote", "testimonial_name"]},
+    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "services_intro", "consultation_call_to_action"], "optional": ["client_list", "featured_project_title", "featured_project_description"]},
+    PhotographerProfile.WebsiteTheme.CINEMATIC: {"required": ["hero_media_type", "hero_heading", "hero_subheading", "story_heading", "story_text", "contact_call_to_action"], "optional": ["hero_video", "featured_video_url"]},
+    PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL: {"required": ["editorial_heading", "artist_statement", "project_section_heading", "contact_statement"], "optional": []},
+    PhotographerProfile.WebsiteTheme.SPORTS_EVENTS: {"required": ["hero_heading", "hero_subheading", "find_photos_heading", "recent_events_heading", "booking_call_to_action"], "optional": ["highlight_video", "featured_event_title", "featured_event_description"]},
+}
+
+class PhotographerWebsiteThemeForm(forms.ModelForm):
+    action = forms.CharField(required=False)
+    hero_image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={"class":"form-control","accept":"image/jpeg,image/png,image/webp,image/gif"}))
+    field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]})
+    hero_media_type = forms.ChoiceField(choices=(("image","Image"),("video","Video")), required=False, widget=forms.Select(attrs={"class":"form-control"}))
+    class Meta:
+        model = PhotographerProfile
+        fields = ["website_theme"]
+        widgets = {"website_theme": forms.RadioSelect(attrs={"class":"lumis-onboarding__theme-radio"})}
+
+    def __init__(self, *args, website_profile=None, draft=False, **kwargs):
+        self.website_profile = website_profile
+        self.draft = draft
+        super().__init__(*args, **kwargs)
+        content = (website_profile.theme_content if website_profile else {}) or {}
+        if not self.is_bound:
+            for name in self.field_names:
+                self.fields[name].initial = content.get(name, "")
+            if website_profile and website_profile.hero_image:
+                self.fields["hero_image"].help_text = f"Current image: {website_profile.hero_image.name}"
+
+    def clean_hero_image(self):
+        image = self.cleaned_data.get("hero_image")
+        if image:
+            if image.content_type not in IMAGE_TYPES:
+                raise forms.ValidationError("Upload a JPG, PNG, GIF, or WebP image.")
+            if image.size > MAX_IMAGE_SIZE:
+                raise forms.ValidationError("Image uploads must be 5 MB or smaller.")
+        return image
+
+    def clean(self):
+        cleaned = super().clean()
+        theme = cleaned.get("website_theme")
+        if theme not in THEME_FIELD_CONFIG:
+            return cleaned
+        required = THEME_FIELD_CONFIG[theme]["required"]
+        if not self.draft:
+            for name in required:
+                if not str(cleaned.get(name) or "").strip():
+                    self.add_error(name, "This field is required for the selected theme.")
+        for name in ("hero_video", "featured_video_url", "highlight_video"):
+            value = cleaned.get(name)
+            if value and not (value.startswith("https://") or value.startswith("http://")):
+                self.add_error(name, "Enter a valid video URL starting with http:// or https://.")
+        return cleaned
+
+    def save_theme(self):
+        profile = self.save(commit=False)
+        website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+        allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
+        content = dict(website.theme_content or {})
+        for name in allowed:
+            content[name] = self.cleaned_data.get(name, "")
+        website.theme_content = content
+        if self.cleaned_data.get("hero_image"):
+            website.hero_image = self.cleaned_data["hero_image"]
+        profile.save()
+        website.save()
+        return profile, website
+
+
+for _theme_field_name in PhotographerWebsiteThemeForm.field_names:
+    if _theme_field_name == "hero_media_type":
+        continue
+    _widget = forms.Textarea(attrs={"class":"form-control","rows":3}) if any(part in _theme_field_name for part in ("text", "intro", "statement", "description", "list")) else forms.TextInput(attrs={"class":"form-control"})
+    PhotographerWebsiteThemeForm.base_fields[_theme_field_name] = forms.CharField(required=False, widget=_widget)
