@@ -166,6 +166,8 @@ def public_page(request, page_key):
         return business_hub_booking_calendar(request)
     if page_key == "business_hub_contracts":
         return business_hub_contracts(request)
+    if page_key == "business_hub_invoices_payments":
+        return business_hub_invoices_payments(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -404,6 +406,57 @@ def business_hub_contracts(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Invoices & Payments", "Workflow Automation", "Client Galleries", "AI Business Assistant", "Analytics"],
     }
     return render(request, "business_hub_contracts.html", context)
+
+
+def business_hub_invoices_payments(request):
+    context = {
+        "problem_cards": [
+            ("bi-clock-history", "Late Payments", "Unpaid invoices slow down cash flow after the session is complete."),
+            ("bi-file-earmark-spreadsheet", "Manual Invoices", "Rebuilding invoices by hand takes time away from clients and editing."),
+            ("bi-credit-card", "Forgotten Deposits", "Bookings feel uncertain when deposits are not easy to track."),
+            ("bi-wallet2", "Outstanding Balances", "Final balances get missed when payment status lives in different tools."),
+            ("bi-question-circle", "Payment Confusion", "Clients need a clear way to know what is due and how to pay."),
+            ("bi-diagram-3", "Multiple Tools", "Invoices, checkout links, notes, and reminders should not be scattered."),
+        ],
+        "workflow": ["Booking", "Contract Signed", "Invoice Sent", "Deposit Paid", "Session", "Final Invoice", "Payment Received", "Gallery Delivered"],
+        "features": [
+            ("bi-receipt", "Invoices", "Create polished invoices connected to each client and booking."),
+            ("bi-credit-card-2-front", "Online Payments", "Let clients pay from a simple, secure online experience."),
+            ("bi-piggy-bank", "Deposits", "Collect retainers and see deposit status before session day."),
+            ("bi-calendar2-check", "Payment Plans", "Break larger packages into clear scheduled payments."),
+            ("bi-envelope-check", "Automatic Receipts", "Send clean confirmations after every successful payment."),
+            ("bi-bell", "Invoice Reminders", "Nudge clients before balances become overdue."),
+            ("bi-arrow-repeat", "Recurring Payments", "Support ongoing retainers, studio plans, and repeat work."),
+            ("bi-percent", "Tax Tracking", "Keep tax amounts visible without accounting complexity."),
+            ("bi-clock", "Payment History", "Review every charge, deposit, refund, and receipt in one place."),
+            ("bi-clipboard-data", "Balance Tracking", "Know what is paid, pending, overdue, or coming next."),
+            ("bi-wallet", "Payment Methods", "Offer flexible ways to pay while keeping records together."),
+            ("bi-shield-lock", "Secure Transactions", "Give clients a trusted checkout experience from any device."),
+        ],
+        "kpis": ["Revenue This Month", "Outstanding Invoices", "Deposits Collected", "Payments Received", "Pending Payments", "Average Payment Time", "Upcoming Revenue", "Recent Transactions"],
+        "ai_cards": [
+            ("Flag Overdue", "Spot invoices that need attention before cash flow slips."),
+            ("Suggest Reminders", "Draft friendly follow-ups tied to each client and balance."),
+            ("Predict Revenue", "See what is likely to arrive this month."),
+            ("Find Balances", "Identify unpaid amounts across active bookings."),
+            ("Summarize Activity", "Review payments, deposits, and trends in plain language."),
+            ("Recommend Follow-Ups", "Know which clients to nudge and when."),
+            ("Detect Deposits", "Surface bookings missing required retainers."),
+            ("Highlight Trends", "Understand payment speed, seasonality, and revenue patterns."),
+        ],
+        "benefits": [
+            ("Get Paid Faster", "Make every next payment easy for clients to complete."),
+            ("Reduce Manual Work", "Spend less time creating invoices and chasing status."),
+            ("Stay Organized", "Keep deposits, balances, and receipts connected to each job."),
+            ("Improve Cash Flow", "See what has arrived and what is coming next."),
+            ("Track Every Dollar", "Follow payment history from inquiry to delivery."),
+            ("Chase Less", "Use reminders and clear status instead of awkward follow-ups."),
+            ("Look Professional", "Give clients a polished billing experience."),
+            ("Focus On Photos", "Let payment admin move quietly in the background."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Workflow Automation", "Client Galleries", "Analytics", "AI Business Assistant"],
+    }
+    return render(request, "business_hub_invoices_payments.html", context)
 
 
 def wedding_photography(request):
