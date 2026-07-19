@@ -81,7 +81,145 @@ def index(request):
 
 
 def public_page(request, page_key):
+    if page_key == "wedding_photography":
+        return wedding_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
+
+
+def wedding_photography(request):
+    context = {
+        "stats": [
+            "Thousands of Photos Organized",
+            "AI Face Recognition",
+            "Online Client Galleries",
+            "Print & Album Sales",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-magic", "AI Editing"),
+            ("bi-images", "Client Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            (
+                "bi-funnel",
+                "AI Culling",
+                "Automatically remove duplicates, blurry images, and unwanted shots.",
+            ),
+            (
+                "bi-magic",
+                "AI Editing Assistance",
+                "Accelerate editing with intelligent recommendations.",
+            ),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Automatically organize the bride, groom, family members, and guests.",
+            ),
+            ("bi-images", "Client Galleries", "Deliver elegant online galleries."),
+            (
+                "bi-search-heart",
+                "AI Photo Search",
+                "Clients upload a selfie to instantly find every photo they appear in.",
+            ),
+            (
+                "bi-window",
+                "Photographer Websites",
+                "Create a beautiful online presence that converts visitors into bookings.",
+            ),
+            (
+                "bi-bag-heart",
+                "Print & Album Sales",
+                "Sell prints, albums, canvases, and digital downloads directly from galleries.",
+            ),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage inquiries, bookings, galleries, and communication in one platform.",
+            ),
+            (
+                "bi-bar-chart",
+                "Analytics",
+                "Track gallery engagement, sales, bookings, and client activity.",
+            ),
+        ],
+        "pain_solutions": [
+            ("Thousands of Images", "AI speeds up culling"),
+            ("Long Editing Hours", "AI editing assistance"),
+            ("Slow Photo Delivery", "Instant galleries"),
+            ("Missed Sales Opportunities", "Built-in storefront"),
+            ("Managing Multiple Platforms", "One unified platform"),
+            ("Repetitive Client Requests", "Face recognition"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos"),
+            ("bi-grid", "Beautiful Galleries"),
+            ("bi-heart", "Favorites"),
+            ("bi-shield-check", "Secure Downloads"),
+            ("bi-bag-check", "Print Ordering"),
+            ("bi-share", "Share with Family"),
+        ],
+        "timeline": [
+            "Book Wedding",
+            "Capture Moments",
+            "Upload Photos",
+            "AI Culling",
+            "AI Editing",
+            "Face Recognition",
+            "Gallery Delivery",
+            "Selfie Search",
+            "Downloads",
+            "Print Orders",
+            "Happy Couple",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel gives us a calmer post-wedding workflow. Culling and organizing huge galleries feels dramatically faster.",
+                "Wedding photographer",
+            ),
+            (
+                "Our couples love that guests can find photos without asking us to search through folders after delivery.",
+                "Studio owner",
+            ),
+            (
+                "The gallery experience feels premium from the first click, and print ordering finally fits naturally into delivery.",
+                "Client experience lead",
+            ),
+        ],
+        "metrics": [
+            "10× Faster Photo Organization",
+            "AI-Powered Client Search",
+            "Increase Print Sales",
+            "All-in-One Workflow",
+        ],
+        "faqs": [
+            (
+                "Can clients really find photos using a selfie?",
+                "Yes. When enabled by the photographer, clients can upload a selfie and LumisPixel uses AI face recognition to help surface matching photos within the wedding gallery.",
+            ),
+            (
+                "How many photos can I upload?",
+                "LumisPixel is designed for large wedding galleries with thousands of images. Final plan limits depend on your selected account and storage tier.",
+            ),
+            (
+                "Can I sell prints?",
+                "Yes. Galleries are designed to support print, album, canvas, digital download, and other storefront sales directly from the client experience.",
+            ),
+            (
+                "Can I create galleries for every wedding?",
+                "Yes. Photographers can create a separate polished gallery for each wedding, couple, or event workflow.",
+            ),
+            (
+                "Does LumisPixel replace multiple tools?",
+                "LumisPixel brings galleries, AI search, business tools, websites, sales, and analytics into one integrated platform.",
+            ),
+            (
+                "Can clients download full-resolution images?",
+                "Yes, photographers can offer downloads and control access settings based on each gallery and package.",
+            ),
+        ],
+    }
+    return render(request, "wedding_photography.html", context)
 
 
 def robots_txt(request):
