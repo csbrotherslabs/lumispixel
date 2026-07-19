@@ -87,6 +87,8 @@ def public_page(request, page_key):
         return portrait_photography(request)
     if page_key == "sports_photography":
         return sports_photography(request)
+    if page_key == "school_photography":
+        return school_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -444,6 +446,110 @@ def sports_photography(request):
         ],
     }
     return render(request, "sports_photography.html", context)
+
+
+def school_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Student Galleries",
+            "Online Ordering",
+            "Print Sales",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-person-bounding-box", "Face Recognition"),
+            ("bi-images", "Student Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best photos."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-person-bounding-box", "Face Recognition", "Organize students automatically."),
+            ("bi-images", "Student Galleries", "Create secure galleries for every student."),
+            ("bi-search-heart", "Photo Search", "Parents find student photos with a selfie."),
+            ("bi-window", "Photographer Websites", "Promote your school photography services."),
+            ("bi-bag-heart", "Print Sales", "Sell print packages and digital downloads."),
+            ("bi-chat-dots", "Client Management", "Manage schools, classes, and communication."),
+            ("bi-bar-chart", "Analytics", "Track orders, galleries, and sales."),
+        ],
+        "pain_solutions": [
+            ("Thousands of Students", "Faster Organization"),
+            ("Picture Day Deadlines", "AI Face Search"),
+            ("Finding Students", "Secure Galleries"),
+            ("Multiple Schools", "Easy Delivery"),
+            ("Print Orders", "Built-In Store"),
+            ("Too Many Tools", "One Platform"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos", "Use a selfie to locate school photos."),
+            ("bi-images", "Student Galleries", "View photos in a private gallery."),
+            ("bi-heart", "Favorites", "Save favorite poses for ordering."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-bag-check", "Online Ordering", "Order prints and downloads online."),
+            ("bi-share", "Easy Sharing", "Share photos with family."),
+        ],
+        "timeline": [
+            "Book School",
+            "Picture Day",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Galleries",
+            "Photo Search",
+            "Order Prints",
+            "Download",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel helps us organize students faster and deliver galleries before picture day questions pile up.",
+                "School photographer",
+            ),
+            (
+                "Parents find their child quickly, choose favorites, and order prints without extra emails.",
+                "Studio owner",
+            ),
+            (
+                "Picture day feels smoother when galleries, search, and orders stay in one place.",
+                "School coordinator",
+            ),
+        ],
+        "metrics": [
+            "Faster Student Organization",
+            "Easier Parent Search",
+            "More Print Orders",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Parents upload a selfie when search is enabled. LumisPixel finds matching student photos in the gallery.",
+            ),
+            (
+                "Can parents order photos online?",
+                "Yes. Parents can order print packages and digital downloads from the gallery.",
+            ),
+            (
+                "Can I create galleries for each student?",
+                "Yes. You can create secure galleries organized around each student.",
+            ),
+            (
+                "Can schools have private galleries?",
+                "Yes. Photographers can keep school galleries private and control access.",
+            ),
+            (
+                "Can I sell print packages?",
+                "Yes. LumisPixel supports print packages, downloads, and online ordering.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, galleries, websites, stores, parent communication, search, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "school_photography.html", context)
 
 
 def robots_txt(request):
