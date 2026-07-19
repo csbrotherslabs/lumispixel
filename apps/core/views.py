@@ -89,6 +89,8 @@ def public_page(request, page_key):
         return sports_photography(request)
     if page_key == "school_photography":
         return school_photography(request)
+    if page_key == "corporate_photography":
+        return corporate_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -361,12 +363,20 @@ def sports_photography(request):
         "features": [
             ("bi-funnel", "AI Culling", "Quickly remove duplicates and missed shots."),
             ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
-            ("bi-person-bounding-box", "Face Recognition", "Organize athletes automatically."),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Organize athletes automatically.",
+            ),
             ("bi-collection", "Team Galleries", "Create galleries by team or event."),
             ("bi-search-heart", "Photo Search", "Find photos with a selfie."),
             ("bi-window", "Photographer Websites", "Showcase your sports portfolio."),
             ("bi-bag-heart", "Print Sales", "Sell prints, banners, and downloads."),
-            ("bi-chat-dots", "Client Management", "Manage teams, leagues, and communication."),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage teams, leagues, and communication.",
+            ),
             ("bi-bar-chart", "Analytics", "Track gallery views and sales."),
         ],
         "pain_solutions": [
@@ -378,7 +388,11 @@ def sports_photography(request):
             ("Too Many Tools", "One Platform"),
         ],
         "guest_cards": [
-            ("bi-search-heart", "Find My Photos", "Use a selfie to locate game photos."),
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Use a selfie to locate game photos.",
+            ),
             ("bi-collection", "Team Galleries", "Browse photos by team or event."),
             ("bi-heart", "Favorites", "Save favorite action shots."),
             ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
@@ -465,12 +479,36 @@ def school_photography(request):
         "features": [
             ("bi-funnel", "AI Culling", "Quickly sort your best photos."),
             ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
-            ("bi-person-bounding-box", "Face Recognition", "Organize students automatically."),
-            ("bi-images", "Student Galleries", "Create secure galleries for every student."),
-            ("bi-search-heart", "Photo Search", "Parents find student photos with a selfie."),
-            ("bi-window", "Photographer Websites", "Promote your school photography services."),
-            ("bi-bag-heart", "Print Sales", "Sell print packages and digital downloads."),
-            ("bi-chat-dots", "Client Management", "Manage schools, classes, and communication."),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Organize students automatically.",
+            ),
+            (
+                "bi-images",
+                "Student Galleries",
+                "Create secure galleries for every student.",
+            ),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Parents find student photos with a selfie.",
+            ),
+            (
+                "bi-window",
+                "Photographer Websites",
+                "Promote your school photography services.",
+            ),
+            (
+                "bi-bag-heart",
+                "Print Sales",
+                "Sell print packages and digital downloads.",
+            ),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage schools, classes, and communication.",
+            ),
             ("bi-bar-chart", "Analytics", "Track orders, galleries, and sales."),
         ],
         "pain_solutions": [
@@ -482,7 +520,11 @@ def school_photography(request):
             ("Too Many Tools", "One Platform"),
         ],
         "guest_cards": [
-            ("bi-search-heart", "Find My Photos", "Use a selfie to locate school photos."),
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Use a selfie to locate school photos.",
+            ),
             ("bi-images", "Student Galleries", "View photos in a private gallery."),
             ("bi-heart", "Favorites", "Save favorite poses for ordering."),
             ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
@@ -550,6 +592,137 @@ def school_photography(request):
         ],
     }
     return render(request, "school_photography.html", context)
+
+
+def corporate_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Private Galleries",
+            "Team Galleries",
+            "Digital Downloads",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-person-bounding-box", "Face Recognition"),
+            ("bi-images", "Private Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Organize employees and attendees automatically.",
+            ),
+            (
+                "bi-images",
+                "Private Galleries",
+                "Deliver secure galleries for every client.",
+            ),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Employees find their photos with a selfie.",
+            ),
+            ("bi-window", "Photographer Websites", "Showcase your business portfolio."),
+            (
+                "bi-cloud-download",
+                "Digital Downloads",
+                "Deliver high-resolution files with ease.",
+            ),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage companies, events, and communication.",
+            ),
+            (
+                "bi-bar-chart",
+                "Analytics",
+                "Track galleries, downloads, and engagement.",
+            ),
+        ],
+        "pain_solutions": [
+            ("Large Events", "Faster Organization"),
+            ("Tight Deadlines", "AI Face Search"),
+            ("Finding Attendees", "Private Galleries"),
+            ("Multiple Clients", "Easy Delivery"),
+            ("Secure Delivery", "Secure Sharing"),
+            ("Too Many Tools", "One Platform"),
+        ],
+        "guest_cards": [
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Use a selfie to locate event photos.",
+            ),
+            ("bi-images", "Private Galleries", "Access approved client galleries."),
+            ("bi-heart", "Favorites", "Save images for review."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-share", "Easy Sharing", "Share photos with approved teams."),
+            ("bi-people", "Team Access", "Give organizers controlled gallery access."),
+        ],
+        "timeline": [
+            "Book Client",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Gallery",
+            "Photo Search",
+            "Download",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "Corporate galleries stay organized, and delivery feels faster for every event client.",
+                "Corporate photographer",
+            ),
+            (
+                "Employees find headshots and conference images without extra requests to our team.",
+                "Event organizer",
+            ),
+            (
+                "LumisPixel keeps our workflow simple from upload to secure client delivery.",
+                "Studio owner",
+            ),
+        ],
+        "metrics": [
+            "Faster Organization",
+            "Easy Employee Search",
+            "Secure Delivery",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Employees upload a selfie when search is enabled. LumisPixel finds matching photos in the gallery.",
+            ),
+            (
+                "Can I create private client galleries?",
+                "Yes. Create private galleries for companies, events, teams, or headshot sessions.",
+            ),
+            (
+                "Can employees download high-resolution photos?",
+                "Yes. Photographers control which files employees can download.",
+            ),
+            (
+                "Can I organize multiple events?",
+                "Yes. Manage separate companies, events, galleries, and communication in one place.",
+            ),
+            (
+                "Is gallery access secure?",
+                "Yes. Private galleries and controlled downloads help protect client access.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace tools for editing, galleries, face search, websites, file sharing, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "corporate_photography.html", context)
 
 
 def robots_txt(request):
