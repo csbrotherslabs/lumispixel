@@ -1506,7 +1506,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .marketing-page .header .overlay_menu_toggle,
 .marketing-page .header .nav-signin,
 .marketing-page .header .nav-signin:visited {
-  color: var(--color-black-fixed);
+  color: var(--color-white-fixed);
 }
 
 .marketing-page .header .aside_open .aside-open--inner > span {
@@ -1529,7 +1529,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .marketing-page .header .nav-user-trigger {
   background: rgba(var(--color-black-rgb), 0.04);
   border-color: rgba(var(--color-black-rgb), 0.12);
-  color: var(--color-black-fixed);
+  color: var(--color-white-fixed);
 }
 
 .page-inner .header,
