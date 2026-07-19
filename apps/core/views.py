@@ -83,6 +83,8 @@ def index(request):
 def public_page(request, page_key):
     if page_key == "wedding_photography":
         return wedding_photography(request)
+    if page_key == "portrait_photography":
+        return portrait_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -108,12 +110,32 @@ def wedding_photography(request):
                 "Face Recognition",
                 "Organize couples, families, and guests automatically.",
             ),
-            ("bi-images", "Client Galleries", "Deliver polished galleries on any device."),
-            ("bi-search-heart", "Photo Search", "Help guests find their photos with a selfie."),
-            ("bi-window", "Photographer Websites", "Showcase your work and attract new clients."),
+            (
+                "bi-images",
+                "Client Galleries",
+                "Deliver polished galleries on any device.",
+            ),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Help guests find their photos with a selfie.",
+            ),
+            (
+                "bi-window",
+                "Photographer Websites",
+                "Showcase your work and attract new clients.",
+            ),
             ("bi-bag-heart", "Print Sales", "Sell prints, albums, and downloads."),
-            ("bi-chat-dots", "Client Management", "Manage inquiries, bookings, and communication."),
-            ("bi-bar-chart", "Analytics", "Track galleries, sales, and client activity."),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage inquiries, bookings, and communication.",
+            ),
+            (
+                "bi-bar-chart",
+                "Analytics",
+                "Track galleries, sales, and client activity.",
+            ),
         ],
         "pain_solutions": [
             ("Too Many Photos", "Faster Culling"),
@@ -124,11 +146,23 @@ def wedding_photography(request):
             ("Repeated Client Requests", "One Connected Platform"),
         ],
         "guest_cards": [
-            ("bi-search-heart", "Find My Photos", "Use a selfie to locate matching images."),
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Use a selfie to locate matching images.",
+            ),
             ("bi-grid", "Online Galleries", "Browse photos from any device."),
             ("bi-heart", "Favorites", "Save images for albums and prints."),
-            ("bi-shield-check", "Secure Downloads", "Access approved high-resolution files."),
-            ("bi-bag-check", "Print Ordering", "Order prints directly from the gallery."),
+            (
+                "bi-shield-check",
+                "Secure Downloads",
+                "Access approved high-resolution files.",
+            ),
+            (
+                "bi-bag-check",
+                "Print Ordering",
+                "Order prints directly from the gallery.",
+            ),
             ("bi-share", "Easy Sharing", "Share photos with friends and family."),
         ],
         "timeline": [
@@ -192,6 +226,118 @@ def wedding_photography(request):
         ],
     }
     return render(request, "wedding_photography.html", context)
+
+
+def portrait_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Online Galleries",
+            "Print Sales",
+            "Client Management",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-magic", "Editing Assistance"),
+            ("bi-images", "Client Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Organize every client automatically.",
+            ),
+            ("bi-images", "Client Galleries", "Deliver polished online galleries."),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Clients find their photos with a selfie.",
+            ),
+            ("bi-window", "Photographer Websites", "Showcase your portfolio."),
+            ("bi-bag-heart", "Print Sales", "Sell prints and digital downloads."),
+            ("bi-chat-dots", "Client Management", "Manage bookings and communication."),
+            ("bi-bar-chart", "Analytics", "Track sales and gallery activity."),
+        ],
+        "pain_solutions": [
+            ("Finding New Clients", "Better Workflow"),
+            ("Editing Time", "Faster Editing"),
+            ("Gallery Delivery", "Easy Galleries"),
+            ("Missed Print Sales", "Built-In Store"),
+            ("Multiple Software Tools", "One Platform"),
+            ("Client Communication", "Happy Clients"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos", "Use a selfie to find portraits."),
+            ("bi-grid", "Online Galleries", "Browse portraits from any device."),
+            ("bi-heart", "Favorites", "Save favorite images for later."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-bag-check", "Print Ordering", "Order prints from the gallery."),
+            ("bi-share", "Easy Sharing", "Share portraits with family."),
+        ],
+        "timeline": [
+            "Book Session",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Gallery",
+            "Search",
+            "Download",
+            "Print Order",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel keeps sessions organized and makes gallery delivery feel simple.",
+                "Portrait photographer",
+            ),
+            (
+                "Clients find favorites quickly, which helps us sell prints without extra emails.",
+                "Studio owner",
+            ),
+            (
+                "Our portrait gallery was easy to browse, download, and share with family.",
+                "Portrait client",
+            ),
+        ],
+        "metrics": [
+            "Better Organization",
+            "Faster Delivery",
+            "More Print Sales",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Clients upload a selfie when search is enabled. LumisPixel finds matching portraits in the gallery.",
+            ),
+            (
+                "Can clients download full-resolution photos?",
+                "Yes. Photographers control download access by gallery and package.",
+            ),
+            (
+                "Can I sell prints?",
+                "Yes. You can sell prints and digital downloads from each gallery.",
+            ),
+            (
+                "Can I create multiple galleries?",
+                "Yes. Create galleries for sessions, clients, families, or campaigns.",
+            ),
+            (
+                "Can I organize clients automatically?",
+                "Yes. Face recognition helps organize people across portrait galleries.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, galleries, websites, stores, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "portrait_photography.html", context)
 
 
 def robots_txt(request):
