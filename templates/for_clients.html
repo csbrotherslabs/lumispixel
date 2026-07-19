@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}For Clients | Find and Enjoy Your Photos | LumisPixel{% endblock %}
+{% block meta_description %}Find your photos faster, enjoy beautiful client galleries, save favorites, download available images, and order keepsakes through LumisPixel.{% endblock %}
+{% block og_title %}For Clients | Find and Enjoy Your Photos | LumisPixel{% endblock %}
+{% block og_description %}Find your photos faster, enjoy beautiful client galleries, save favorites, download available images, and order keepsakes through LumisPixel.{% endblock %}
+{% block twitter_title %}For Clients | Find and Enjoy Your Photos | LumisPixel{% endblock %}
+{% block twitter_description %}Find your photos faster, enjoy beautiful client galleries, save favorites, download available images, and order keepsakes through LumisPixel.{% endblock %}
+{% block body_class %}page-for-photographers page-for-clients{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/for_photographers.css' %}"><link rel="stylesheet" href="{% static 'css/for_clients.css' %}">{% endblock %}
+
+{% block content %}
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"{{ request.scheme }}://{{ request.get_host }}{% url 'core:index' %}"},{"@type":"ListItem","position":2,"name":"For Clients","item":"{{ request.build_absolute_uri }}"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{% for faq in faqs %}{"@type":"Question","name":"{{ faq.0|escapejs }}","acceptedAnswer":{"@type":"Answer","text":"{{ faq.1|escapejs }}"}}{% if not forloop.last %},{% endif %}{% endfor %}]}</script>
+
+<div class="wptb-page-heading lp-photo-page-heading" aria-labelledby="clients-hero-title">
+  <div class="wptb-item--inner" style="background-image: url('{% static 'img/background/page-header-bg-2.jpg' %}');">
+    <div class="wptb-item-layer wptb-item-layer-one"><img src="{% static 'img/more/circle.png' %}" alt=""></div>
+    <h1 id="clients-hero-title" class="wptb-item--title">For Clients</h1>
+    <p class="lp-photo-page-heading__subtitle">Beautiful memories, easier to find.</p>
+  </div>
+</div>
+
+<section class="lp-video-intro" aria-labelledby="clients-video-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Client experience</span><h2 id="clients-video-title">See the LumisPixel Experience</h2><p>From finding your photos to downloading and sharing them, LumisPixel keeps every step simple.</p></div></div></section>
+<!-- BG Video -->
+<div class="wptb-video-player1 wow zoomIn mr-bottom-70 bg-image" style="background-image: url('{% static 'img/landing/gallery/40.jpg' %}');"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--video-button">{# Replace with the official LumisPixel client demo URL when ready. #}<a class="btn" data-fancybox href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" aria-label="Watch LumisPixel client demo video"><span class="text-second"><i class="bi bi-play-fill" aria-hidden="true"></i></span><span class="line-video-animation line-video-1"></span><span class="line-video-animation line-video-2"></span><span class="line-video-animation line-video-3"></span></a></div></div></div></div>
+
+<section class="lp-section lp-pain" aria-labelledby="pain-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">The old gallery problem</span><h2 id="pain-title">Stop Searching Through Thousands of Photos</h2></div><div class="lp-pain-grid">{% for item in pain_points %}<div class="lp-pain-card"><i class="bi {{ item.icon }}" aria-hidden="true"></i><p>{{ item.text }}</p></div>{% endfor %}</div><p class="lp-solve-line">LumisPixel makes the experience simpler.</p></div></section>
+
+<section class="lp-section lp-selfie bg-dark-200" aria-labelledby="selfie-title"><div class="container"><div class="row align-items-center gy-5"><div class="col-lg-5"><span class="lp-eyebrow">Less scrolling</span><h2 id="selfie-title">Find Your Photos in Seconds</h2><p>Upload a clear selfie and LumisPixel can help locate matching photos from the gallery.</p><a class="btn-one" href="{% url 'clients:for_clients' %}">Find My Photos</a><small>Search availability may depend on the photographer’s gallery settings.</small></div><div class="col-lg-7"><ol class="lp-workflow-track lp-client-process">{% for step in selfie_steps %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ step }}</strong></li>{% endfor %}</ol></div></div></div></section>
+
+<section class="lp-section lp-compare" aria-labelledby="compare-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">A better way</span><h2 id="compare-title">No More “Where Am I?”</h2></div><div class="lp-table-wrap"><table><thead><tr><th>Traditional Gallery</th><th>LumisPixel</th></tr></thead><tbody>{% for row in comparison %}<tr><td>{{ row.traditional }}</td><td>{{ row.lumis }}</td></tr>{% endfor %}</tbody></table></div></div></section>
+
+<section class="lp-section lp-features" aria-labelledby="memories-title"><div class="container"><article class="lp-feature-row"><div class="lp-feature-copy"><span>Gallery</span><h2 id="memories-title">Your Memories, All in One Place</h2><p>Enjoy a gallery designed around your event, your photographer, and the moments that matter most.</p><ul>{% for item in gallery_features %}<li><i class="bi bi-check2" aria-hidden="true"></i>{{ item }}</li>{% endfor %}</ul></div><div class="lp-feature-visual"><img src="{% static 'img/landing/gallery/38.jpg' %}" alt="Client browsing a delivered LumisPixel gallery" loading="lazy"><div class="lp-glass-card"><strong>Designed for your event</strong><small>Browse, save, and return to favorite moments.</small></div></div></article></div></section>
+
+<section class="lp-section lp-options bg-dark-200" aria-labelledby="enjoy-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Keepsakes</span><h2 id="enjoy-title">More Ways to Enjoy Your Photos</h2><p>Available products and download options vary by photographer and gallery.</p></div><div class="lp-roadmap">{% for title, copy in enjoy_options %}<article><span>When enabled</span><h3>{{ title }}</h3><p>{{ copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section lp-share" aria-labelledby="share-title"><div class="container"><article class="lp-feature-row reverse"><div class="lp-feature-copy"><span>Sharing</span><h2 id="share-title">Share the Moments That Matter</h2><p>Send the full gallery or share only the photos you love.</p><ul>{% for item in sharing %}<li><i class="bi bi-check2" aria-hidden="true"></i>{{ item }}</li>{% endfor %}</ul></div><div class="lp-feature-visual"><img src="{% static 'img/slider/21.jpg' %}" alt="Family sharing photos from a private gallery on mobile" loading="lazy"><div class="lp-glass-card"><strong>Private sharing</strong><small>Share options depend on gallery settings.</small></div></div></article></div></section>
+
+<section class="lp-section lp-ai bg-dark-200" aria-labelledby="privacy-title"><div class="container"><div class="row align-items-center gy-5"><div class="col-lg-5"><span class="lp-eyebrow">Privacy controls</span><h2 id="privacy-title">Your Photos Deserve Privacy</h2><p>Photographers can control who accesses a gallery and which actions are available.</p></div><div class="col-lg-7"><div class="lp-ai-grid">{% for item in privacy %}<div><i class="bi bi-shield-check" aria-hidden="true"></i><span>{{ item }}</span></div>{% endfor %}</div></div></div></div></section>
+
+<section class="lp-section lp-screens" aria-labelledby="screens-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Any device</span><h2 id="screens-title">Enjoy Your Gallery Anywhere</h2><p>Browse your gallery, find your favorites, and share your photos from the device you already use.</p></div><div class="lp-device-grid"><img src="{% static 'img/landing/gallery/31.jpg' %}" alt="Desktop gallery viewing" loading="lazy"><img src="{% static 'img/landing/gallery/37.jpg' %}" alt="Tablet gallery browsing" loading="lazy"><img src="{% static 'img/landing/gallery/12.jpg' %}" alt="Mobile gallery sharing" loading="lazy"></div><div class="lp-type-grid">{% for item in screens %}<div><i class="bi bi-phone" aria-hidden="true"></i><span>{{ item }}</span></div>{% endfor %}</div></div></section>
+
+<section class="lp-section lp-workflow bg-dark-200" aria-labelledby="journey-title"><div class="container"><div class="wptb-heading"><div class="wptb-item--inner"><h6 class="wptb-item--subtitle"><span>01 //</span> Client journey</h6><h2 id="journey-title" class="wptb-item--title mb-0">From the Event<br><span>to Your Favorites</span></h2></div></div><ol class="lp-workflow-track">{% for step in journey %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ step }}</strong></li>{% endfor %}</ol></div></section>
+
+<section class="lp-section lp-types" aria-labelledby="types-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Every memory</span><h2 id="types-title">Made for Every Kind of Memory</h2></div><div class="lp-type-grid">{% for name, icon in memory_types %}<div><i class="bi {{ icon }}" aria-hidden="true"></i><span>{{ name }}</span></div>{% endfor %}</div></div></section>
+
+{# Testimonials intentionally hidden until approved real client testimonials are available for production. #}
+
+<section class="lp-section lp-cta" aria-labelledby="cta-title"><div class="container"><div class="lp-cta-panel"><h2 id="cta-title">Ready to Find Your Memories?</h2><p>Open your photographer’s gallery or use your event details to begin.</p><div class="lp-photo-actions"><a class="btn-one" href="{% url 'clients:for_clients' %}">Find My Photos</a><a class="btn-two" href="{% url 'core:how_it_works' %}">How It Works</a></div></div></div></section>
+
+<section class="lp-section lp-faq" aria-labelledby="faq-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">FAQ</span><h2 id="faq-title">Client Questions</h2></div><div class="accordion" id="clientFaq">{% for faq in faqs %}<div class="accordion-item"><h3 class="accordion-header" id="clientFaqHeading{{ forloop.counter }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#clientFaq{{ forloop.counter }}" aria-expanded="false" aria-controls="clientFaq{{ forloop.counter }}">{{ faq.0 }}</button></h3><div id="clientFaq{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="clientFaqHeading{{ forloop.counter }}" data-bs-parent="#clientFaq"><div class="accordion-body">{{ faq.1 }}</div></div></div>{% endfor %}</div></div></section>
+{% endblock %}
