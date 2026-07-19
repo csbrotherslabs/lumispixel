@@ -14,34 +14,68 @@
                 <div class="header_center_part d-none d-xxl-block">
                     <nav class="mainnav" aria-label="Primary navigation">
                         <ul class="main-menu">
-                            <li class="menu-item menu-item-has-children"><a href="#" data-placeholder-link>Platform</a>
-                                <ul class="sub-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>For Photographers</a><!-- Future named route: photographers:for_photographers --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>For Clients</a><!-- Future named route: clients:for_clients --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>AI Photo Search</a><!-- Future named route: ai_engine:photo_search --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Client Galleries</a><!-- Future named route: galleries:index --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>AI Editing &amp; Culling</a><!-- Future named route: ai_engine:editing_culling --></li>
+                            <li class="menu-item"><a href="{% url 'core:index' %}">Home</a></li>
+                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:products' %}" aria-haspopup="true">Products</a>
+                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
+                                    <li class="menu-item"><a href="{% url 'photographers:for_photographers' %}">For Photographers</a></li>
+                                    <li class="menu-item"><a href="{% url 'clients:for_clients' %}">For Clients</a></li>
+                                    <li class="menu-item"><a href="{% url 'ai_engine:photo_search' %}">AI Photo Search</a></li>
+                                    <li class="menu-item"><a href="{% url 'galleries:client_galleries' %}">Client Galleries</a></li>
+                                    <li class="menu-item"><a href="{% url 'ai_engine:editing_culling' %}">AI Editing &amp; Culling</a></li>
+                                    <li class="menu-item"><a href="{% url 'photographers:websites' %}">Photographer Websites</a></li>
+                                    <li class="menu-item"><a href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></li>
                                 </ul>
                             </li>
-                            <li class="menu-item"><a href="#" data-placeholder-link>Find My Photos</a><!-- Future named route: clients:find_photos --></li>
-                            <li class="menu-item"><a href="#" data-placeholder-link>Hire a Photographer</a><!-- Future named route: marketplace:photographer_search --></li>
-                            <li class="menu-item menu-item-has-children"><a href="#" data-placeholder-link>Solutions</a>
-                                <ul class="sub-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Weddings</a><!-- Future named route: core:solutions_weddings --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Sports &amp; Events</a><!-- Future named route: core:solutions_sports_events --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Schools &amp; Graduations</a><!-- Future named route: core:solutions_schools_graduations --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Corporate Events</a><!-- Future named route: core:solutions_corporate_events --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Street Photography</a><!-- Future named route: core:solutions_street_photography --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Studios &amp; Teams</a><!-- Future named route: core:solutions_studios_teams --></li>
+                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:solutions' %}" aria-haspopup="true">Solutions</a>
+                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
+                                    <li class="menu-item"><a href="{% url 'core:solution_wedding_photography' %}">Wedding Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_portrait_photography' %}">Portrait Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_sports_photography' %}">Sports Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_school_photography' %}">School Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_corporate_photography' %}">Corporate Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_event_photography' %}">Event Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_real_estate_photography' %}">Real Estate Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_commercial_photography' %}">Commercial Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_studio_photography' %}">Studio Photography</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:solution_destination_photography' %}">Destination Photography</a></li>
                                 </ul>
                             </li>
-                            <li class="menu-item"><a href="#" data-placeholder-link>Pricing</a><!-- Future named route: billing:pricing --></li>
-                            <li class="menu-item menu-item-has-children"><a href="#" data-placeholder-link>Resources</a>
-                                <ul class="sub-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>How It Works</a><!-- Future named route: core:how_it_works --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Help Center</a><!-- Future named route: core:help_center --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Photographer Resources</a><!-- Future named route: photographers:resources --></li>
-                                    <li class="menu-item"><a href="#" data-placeholder-link>Blog</a><!-- Future named route: core:blog --></li>
+                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:business_tools' %}" aria-haspopup="true">Business Tools</a>
+                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
+                                    <li class="menu-item"><a href="{% url 'marketplace:marketplace' %}">Marketplace</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:business_sales_store' %}">Sales &amp; Store</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:business_analytics' %}">Analytics</a></li>
+                                    <li class="menu-item"><a href="{% url 'billing:billing' %}">Billing</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:business_events' %}">Events</a></li>
+                                </ul>
+                            </li>
+                            <li class="menu-item"><a href="{% url 'billing:pricing' %}">Pricing</a></li>
+                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:resources' %}" aria-haspopup="true">Resources</a>
+                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
+                                    <li class="menu-item"><a href="{% url 'core:how_it_works' %}">How It Works</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:documentation' %}">Documentation</a></li>
+                                    <li class="menu-item"><a href="{% url 'api:api_coming_soon' %}">API <span class="nav-badge">Coming Soon</span></a></li>
+                                    <li class="menu-item"><a href="{% url 'api:developer_center' %}">Developer Center <span class="nav-badge">Coming Soon</span></a></li>
+                                    <li class="menu-item"><a href="{% url 'core:help_center' %}">Help Center</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:faq' %}">FAQ</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:blog' %}">Blog</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:release_notes' %}">Release Notes</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:system_status' %}">System Status</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:tutorials' %}">Tutorials</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:community' %}">Community</a></li>
+                                </ul>
+                            </li>
+                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:company' %}" aria-haspopup="true">Company</a>
+                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
+                                    <li class="menu-item"><a href="{% url 'core:about' %}">About</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:our_story' %}">Our Story</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:careers' %}">Careers</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:partners' %}">Partners</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:contact' %}">Contact</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:privacy_policy' %}">Privacy Policy</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:terms_of_service' %}">Terms of Service</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:cookie_policy' %}">Cookie Policy</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:accessibility' %}">Accessibility</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -51,6 +85,7 @@
                 <div class="header_right_part d-flex align-items-center">
                     <div class="nav-account d-none d-xxl-flex align-items-center">
                         {% if request.user.is_authenticated %}
+                            <a class="nav-start-free" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
                             <div class="nav-user-menu">
                                 <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
                                     <img src="{% static 'img/default-avatar.svg' %}" class="nav-avatar" alt="" aria-hidden="true">
@@ -61,32 +96,21 @@
                                     <i class="bi bi-chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent>
-                                    <li><a href="{% url 'photographer_workspace:dashboard' %}">Work Space</a></li>
-                                    <li><a href="#" data-placeholder-link>My Profile</a><!-- Future named route: accounts:profile --></li>
-                                    <li><a href="#" data-placeholder-link>Account Settings</a><!-- Future named route: accounts:settings --></li>
-                                    <li><a href="#" data-placeholder-link>Notifications</a><!-- Future named route: notifications:index --></li>
-                                    <li><a href="#" data-placeholder-link>Help Center</a><!-- Future named route: core:help_center --></li>
-                                    <li>
-                                        <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="nav-logout-button">Sign Out</button>
-                                        </form>
-                                    </li>
+                                    <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
+                                    <li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>
+                                    <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
+                                    <li><a href="{% url 'notifications:index' %}">Notifications</a></li>
+                                    <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
+                                    <li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li>
                                 </ul>
                             </div>
                         {% else %}
                             <a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a>
-                            <a class="nav-start-free" href="{% url 'accounts:get-started' %}">Start Free</a>
+                            <a class="nav-start-free" href="{% url 'accounts:get-started' %}">Get Started</a>
                         {% endif %}
                     </div>
-
-                    <button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false">
-                        <span class="aside-open--inner" aria-hidden="true"><span></span><span></span><span></span></span>
-                    </button>
-
-                    <button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation">
-                        <i class="bi bi-list"></i>
-                    </button>
+                    <button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false"><span class="aside-open--inner" aria-hidden="true"><span></span><span></span><span></span></span></button>
+                    <button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation"><i class="bi bi-list"></i></button>
                 </div>
             </div>
         </div>
