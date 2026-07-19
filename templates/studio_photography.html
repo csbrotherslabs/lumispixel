@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Studio Photography Software & Client Galleries | LumisPixel{% endblock %}
+{% block meta_description %}Studio photography software for booking, session management, galleries, print sales, digital downloads, and photo delivery.{% endblock %}
+{% block og_title %}Studio Photography Software & Client Galleries | LumisPixel{% endblock %}
+{% block og_description %}Booking, session management, galleries, print sales, and easier studio delivery.{% endblock %}
+{% block twitter_title %}Studio Photography Software & Client Galleries | LumisPixel{% endblock %}
+{% block twitter_description %}Studio photography workflows for photographers and clients.{% endblock %}
+{% block body_class %}marketing-page page-for-photographers page-wedding-photography page-studio-photography{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/for_photographers.css' %}"><link rel="stylesheet" href="{% static 'css/wedding_photography.css' %}">{% endblock %}
+
+{% block content %}
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LumisPixel Studio Photography Solutions","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Studio photography software for bookings, session management, client galleries, print sales, downloads, and client experiences.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+
+<section class="wedding-hero" aria-labelledby="wedding-hero-title" style="background-image:url('{% static 'img/landing/gallery/30.jpg' %}')">
+  <div class="wedding-hero__overlay"></div>
+  <div class="container wedding-hero__content wow fadeInUp">
+    <span class="lp-eyebrow">Studio Photography</span>
+    <h1 id="wedding-hero-title">Studio Photography Made Simple</h1>
+    <p>Manage every session from booking to delivery.</p>
+    <div class="lp-photo-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="btn-two" href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></div>
+    <div class="wedding-stat-row" aria-label="Studio photography platform highlights">{% for stat in stats %}<div><i class="bi bi-check2-circle" aria-hidden="true"></i><span>{{ stat }}</span></div>{% endfor %}</div>
+  </div>
+  <a href="#built-for-studio-photographers" class="wedding-scroll" aria-label="Scroll to studio photographer benefits"><span></span>Scroll</a>
+</section>
+
+<section class="lp-section wedding-built" id="built-for-studio-photographers" aria-labelledby="built-title"><div class="container"><div class="row align-items-center gy-5"><div class="col-lg-6 wow fadeInLeft"><img src="{% static 'img/landing/gallery/31.jpg' %}" alt="Professional photographer working inside a modern photography studio" loading="lazy"></div><div class="col-lg-6 wow fadeInRight"><span class="lp-eyebrow">For photographers</span><h2 id="built-title">Built for Studio Photographers</h2><p>Everything you need to run your studio.</p><p>Whether you photograph portraits, families, newborns, maternity, products, or headshots, LumisPixel helps you organize sessions and deliver photos faster.</p><div class="wedding-mini-grid">{% for icon, title in photographer_cards %}<article><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3></article>{% endfor %}</div></div></div></div></section>
+
+<section class="lp-section wedding-features" aria-labelledby="features-title"><div class="container"><div class="lp-section-heading center wow fadeInUp"><span class="lp-eyebrow">Studio workflow</span><h2 id="features-title">Everything in One Place</h2><p>Tools built for studio photography.</p></div><div class="wedding-feature-grid">{% for icon, title, copy in features %}<article class="wow fadeInUp" data-wow-delay="0.{{ forloop.counter }}s"><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-solve bg-dark-200" aria-labelledby="challenges-title"><div class="container"><div class="wedding-solve-grid"><div class="wow fadeInLeft"><h2 id="challenges-title">Common Challenges</h2>{% for pain, solution in pain_solutions %}<article><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ pain }}</article>{% endfor %}</div><div class="wow fadeInRight"><h2>How LumisPixel Helps</h2>{% for pain, solution in pain_solutions %}<article class="solution"><i class="bi bi-check2" aria-hidden="true"></i>{{ solution }}</article>{% endfor %}</div></div></div></section>
+
+<section class="lp-section wedding-couples" aria-labelledby="couples-title"><div class="container"><div class="lp-section-heading center wow fadeInUp"><span class="lp-eyebrow">For clients</span><h2 id="couples-title">Made for Studio Clients</h2><p>Viewing photos should be easy.</p><p>Clients can browse galleries, favorite images, download photos, and order prints in minutes.</p></div><div class="lp-section-heading center"><h2>Photos in Four Steps</h2></div><ol class="wedding-steps"><li>Open Gallery</li><li>Choose Favorites</li><li>Order Prints</li><li>Download Photos</li></ol></div></section>
+
+<section class="lp-section wedding-guests" aria-labelledby="guests-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Client galleries</span><h2 id="guests-title">A Better Studio Experience</h2><p>Everything clients need in one gallery.</p></div><div class="wedding-guest-grid">{% for icon, title, copy in guest_cards %}<article><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-timeline bg-dark-200" aria-labelledby="timeline-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Studio workflow</span><h2 id="timeline-title">From Session to Delivery</h2><p>A simple workflow for every client.</p></div><ol>{% for step in timeline %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ step }}</li>{% endfor %}</ol></div></section>
+
+<section class="lp-section lp-testimonials" aria-labelledby="testimonial-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Testimonials</span><h2 id="testimonial-title">Trusted by Studio Photographers</h2><p>Helping studios serve clients better.</p></div><div class="lp-testimonial-grid">{% for text, role in testimonials %}<blockquote class="wedding-quote"><div class="wedding-stars" aria-label="Five star rating">★★★★★</div><p>“{{ text }}”</p><footer><span aria-hidden="true"></span>{{ role }}</footer></blockquote>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-metrics" aria-labelledby="love-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Photographer benefits</span><h2 id="love-title">Why Studio Photographers Choose LumisPixel</h2></div><div class="wedding-metric-grid">{% for metric in metrics %}<article><strong>{{ metric }}</strong></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-compare bg-dark-200" aria-labelledby="compare-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Unified platform</span><h2 id="compare-title">One Platform. Less Work.</h2><p>Everything needed for studio photography.</p></div><div class="wedding-compare-grid"><article><h3>Multiple Tools</h3><ul><li>Editing</li><li>Galleries</li><li>Booking</li><li>Website</li><li>Online Store</li><li>Client Messages</li><li>Analytics</li></ul></article><article class="lumis"><h3>LumisPixel</h3><ul><li>One Login</li><li>One Platform</li><li>One Workflow</li></ul></article></div></div></section>
+
+<section class="lp-section lp-faq" aria-labelledby="faq-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">FAQ</span><h2 id="faq-title">Frequently Asked Questions</h2></div><div class="accordion" id="studioFaq">{% for q, a in faqs %}<div class="accordion-item"><h3 class="accordion-header" id="studioFaqHeading{{ forloop.counter }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#studioFaq{{ forloop.counter }}" aria-expanded="false" aria-controls="studioFaq{{ forloop.counter }}">{{ q }}</button></h3><div id="studioFaq{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="studioFaqHeading{{ forloop.counter }}" data-bs-parent="#studioFaq"><div class="accordion-body">{{ a }}</div></div></div>{% endfor %}</div></div></section>
+
+<section class="wedding-final" aria-labelledby="final-title" style="background-image:url('{% static 'img/landing/gallery/32.jpg' %}')"><div class="container"><div class="wedding-final__panel"><span class="lp-eyebrow">Studio photography</span><h2 id="final-title">Run Your Studio Smarter</h2><p>Manage bookings, galleries, and sales from one platform.</p><div class="lp-photo-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="btn-two" href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></div></div></div></section>
+{% endblock %}
