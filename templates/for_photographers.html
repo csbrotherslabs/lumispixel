@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}For Photographers | Run & Grow Your Photography Business | LumisPixel{% endblock %}
+{% block meta_description %}LumisPixel helps photographers run their business with AI photo search, client galleries, websites, online sales, analytics, and marketplace tools in one premium platform.{% endblock %}
+{% block og_title %}LumisPixel for Photographers{% endblock %}
+{% block og_description %}Everything photographers need to organize events, deliver galleries, sell prints, launch websites, and grow with AI-powered workflows.{% endblock %}
+{% block twitter_title %}LumisPixel for Photographers{% endblock %}
+{% block twitter_description %}Run and grow your photography business with AI search, galleries, websites, sales, and analytics in one platform.{% endblock %}
+{% block body_class %}page-for-photographers{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/for_photographers.css' %}">{% endblock %}
+
+{% block content %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LumisPixel for Photographers",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "AI-powered photography business platform for client galleries, photo search, sales, websites, analytics, and business workflows.",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}
+}
+</script>
+
+<section class="lp-photo-hero wptb-video-player1 wow zoomIn bg-image" style="background-image: url('{% static 'img/background/bg-14.jpg' %}');" aria-labelledby="photo-hero-title">
+  <div class="lp-photo-hero__overlay"></div>
+  <div class="wptb-item--inner lp-photo-hero__inner">
+    <div class="container">
+      <div class="lp-photo-hero__content">
+        <span class="lp-eyebrow">LumisPixel for photographers</span>
+        <h1 id="photo-hero-title">Everything you need to run and grow your photography business.</h1>
+        <p>From AI-powered photo search to beautiful client galleries, website themes, online sales, and business management, LumisPixel helps photographers spend less time managing and more time creating.</p>
+        <div class="lp-photo-actions">
+          <a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a>
+          <a class="lp-watch-demo" data-fancybox href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" aria-label="Watch LumisPixel demo video"><span><i class="bi bi-play-fill"></i></span> Watch Demo</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wptb-item-layer wptb-item-layer-one"><img src="{% static 'img/more/light-3.png' %}" alt="" loading="lazy"></div>
+</section>
+
+<section class="lp-section lp-pain" aria-labelledby="pain-title">
+  <div class="container">
+    <div class="lp-section-heading center"><span class="lp-eyebrow">The work behind the work</span><h2 id="pain-title">Photography is hard enough.<br>Running your business shouldn't be.</h2></div>
+    <div class="lp-pain-grid">
+      {% for item in pain_points %}<div class="lp-pain-card"><i class="bi {{ item.icon }}"></i><p>{{ item.text }}</p></div>{% endfor %}
+    </div>
+    <p class="lp-solve-line">LumisPixel solves all of these in one platform.</p>
+  </div>
+</section>
+
+<section class="lp-section lp-workflow bg-dark-200" aria-labelledby="workflow-title">
+  <div class="container">
+    <div class="wptb-heading"><div class="wptb-item--inner"><h6 class="wptb-item--subtitle"><span>01 //</span> Workflow</h6><h2 id="workflow-title" class="wptb-item--title mb-0">One Platform.<br><span>Every Tool.</span></h2></div></div>
+    <ol class="lp-workflow-track">{% for step in workflow %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span><strong>{{ step }}</strong></li>{% endfor %}</ol>
+  </div>
+</section>
+
+<section class="lp-section lp-features" aria-labelledby="features-title">
+  <div class="container">
+    <div class="lp-section-heading center"><span class="lp-eyebrow">Core platform</span><h2 id="features-title">Built around how photographers actually work.</h2><p>Alternating product stories combine workspace, AI, galleries, websites, sales, analytics, and marketplace growth into one connected operating system.</p></div>
+    <div class="lp-feature-stack">
+      {% for feature in features %}<article class="lp-feature-row {% cycle '' 'reverse' %}">
+        <div class="lp-feature-copy"><span>{{ forloop.counter|stringformat:"02d" }}</span><h3>{{ feature.title }}</h3><p>{{ feature.copy }}</p><ul>{% for bullet in feature.bullets %}<li><i class="bi bi-check2"></i>{{ bullet }}</li>{% endfor %}</ul></div>
+        <div class="lp-feature-visual"><img src="{% static feature.image %}" alt="{{ feature.alt }}" loading="lazy"><div class="lp-glass-card"><strong>{{ feature.callout }}</strong><small>{{ feature.micro }}</small></div></div>
+      </article>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="lp-section lp-ai" aria-labelledby="ai-title"><div class="container"><div class="row align-items-center gy-5"><div class="col-lg-5"><span class="lp-eyebrow">AI throughout LumisPixel</span><h2 id="ai-title">AI is built into every stage—not bolted on.</h2><p>From the first upload to the final sale, LumisPixel helps surface the right images, reduce manual review, and create smarter collections for every client.</p></div><div class="col-lg-7"><div class="lp-ai-grid">{% for item in ai_tools %}<div><i class="bi bi-stars"></i><span>{{ item }}</span></div>{% endfor %}</div></div></div></div></section>
+
+<section class="lp-section lp-day" aria-labelledby="day-title"><div class="container"><div class="lp-section-heading"><span class="lp-eyebrow">A day in the life</span><h2 id="day-title">From booking to print purchase, the story stays connected.</h2></div><div class="lp-story"><p>Morning starts with a new client booking request. You create the event in LumisPixel, shoot the session, and upload the finished images when you return to the studio.</p><p>While you recharge, AI processes the gallery, groups people, flags quality issues, and makes the event searchable. The client uploads a selfie, finds their photos instantly, chooses favorites, downloads approved images, and buys prints.</p><p>By the next morning, revenue, downloads, gallery views, popular images, and engagement insights have already updated—without another spreadsheet.</p></div></div></section>
+
+<section class="lp-section lp-compare" aria-labelledby="compare-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Why photographers love LumisPixel</span><h2 id="compare-title">Replace disconnected tools with one modern workflow.</h2></div><div class="lp-table-wrap"><table><thead><tr><th>Category</th><th>Traditional Workflow</th><th>LumisPixel</th></tr></thead><tbody>{% for row in comparison %}<tr><th>{{ row.category }}</th><td>{{ row.traditional }}</td><td>{{ row.lumis }}</td></tr>{% endfor %}</tbody></table></div></div></section>
+
+<section class="lp-section lp-types" aria-labelledby="types-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Built for every photographer</span><h2 id="types-title">One platform for every specialty you shoot.</h2></div><div class="lp-type-grid">{% for type in photographer_types %}<div><i class="bi {{ type.icon }}"></i><span>{{ type.name }}</span></div>{% endfor %}</div></div></section>
+
+<section class="lp-section lp-vision bg-dark-200" aria-labelledby="vision-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Our vision</span><h2 id="vision-title">We're just getting started.</h2><p>LumisPixel is designed as the foundation for the future photography studio: intelligent, connected, and growth-focused.</p></div><div class="lp-roadmap">{% for item in roadmap %}<article><span>{{ item.status }}</span><h3>{{ item.title }}</h3><p>{{ item.copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section lp-testimonials" aria-labelledby="testimonial-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Photographer notes</span><h2 id="testimonial-title">Designed to feel like the platform photographers wished existed.</h2></div><div class="lp-testimonial-grid">{% for quote in testimonials %}<blockquote><p>“{{ quote.text }}”</p><footer>{{ quote.role }}</footer></blockquote>{% endfor %}</div></div></section>
+
+<section class="lp-section lp-cta" aria-labelledby="cta-title"><div class="container"><div class="lp-cta-panel"><h2 id="cta-title">Ready to transform your photography business?</h2><p>Launch a smarter studio workflow with galleries, search, sales, websites, analytics, and AI in one beautiful platform.</p><div class="lp-photo-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="btn-two" href="{% url 'core:contact' %}">Book a Demo</a></div></div></div></section>
+
+<section class="lp-section lp-faq" aria-labelledby="faq-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">FAQ</span><h2 id="faq-title">Questions photographers ask before switching.</h2></div><div class="accordion" id="photographerFaq">{% for faq in faqs %}<div class="accordion-item"><h3 class="accordion-header" id="faqHeading{{ forloop.counter }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ forloop.counter }}" aria-expanded="false" aria-controls="faq{{ forloop.counter }}">{{ faq.q }}</button></h3><div id="faq{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="faqHeading{{ forloop.counter }}" data-bs-parent="#photographerFaq"><div class="accordion-body">{{ faq.a }}</div></div></div>{% endfor %}</div></div></section>
+{% endblock %}
