@@ -24,12 +24,69 @@ def add(key, title, category, heading=None, description=None, status=""):
 for key, title in [
     ("products", "Products"),
     ("solutions", "Solutions"),
-    ("business_tools", "Business Tools"),
-    ("sales_store", "Sales & Store"),
-    ("analytics", "Analytics"),
-    ("events", "Events"),
 ]:
     add(key, title, "Platform")
+
+BUSINESS_HUB_PAGES = [
+    (
+        "business_hub",
+        "Business Hub",
+        "Bring the operational side of your photography business into one connected hub. Full page coming soon.",
+    ),
+    (
+        "business_hub_dashboard",
+        "Business Dashboard",
+        "Run your entire photography business from one intelligent dashboard. Full page coming soon.",
+    ),
+    (
+        "business_hub_client_crm",
+        "Client CRM",
+        "Manage leads, clients, relationships, and follow-ups in one organized workspace. Full page coming soon.",
+    ),
+    (
+        "business_hub_booking_calendar",
+        "Booking & Calendar",
+        "Coordinate bookings, sessions, availability, and calendar workflows with less admin. Full page coming soon.",
+    ),
+    (
+        "business_hub_contracts",
+        "Contracts",
+        "Prepare, send, and manage photography contracts from a future streamlined workflow. Full page coming soon.",
+    ),
+    (
+        "business_hub_invoices_payments",
+        "Invoices & Payments",
+        "Simplify invoices, payments, and client billing from one business workspace. Full page coming soon.",
+    ),
+    (
+        "business_hub_workflow_automation",
+        "Workflow Automation",
+        "Automate repetitive studio tasks so every job moves forward with less manual work. Full page coming soon.",
+    ),
+    (
+        "business_hub_ai_business_assistant",
+        "AI Business Assistant",
+        "Use AI-assisted business support to plan, respond, and operate more efficiently. Full page coming soon.",
+    ),
+    (
+        "business_hub_analytics_reports",
+        "Analytics & Reports",
+        "Track performance, revenue, clients, and growth signals with clearer reports. Full page coming soon.",
+    ),
+    (
+        "business_hub_marketing_growth",
+        "Marketing & Growth",
+        "Plan campaigns, improve visibility, and grow bookings with future marketing tools. Full page coming soon.",
+    ),
+    (
+        "business_hub_team_operations",
+        "Team & Operations",
+        "Coordinate team tasks, roles, and day-to-day operations for growing photography businesses. Full page coming soon.",
+    ),
+]
+
+for key, title, description in BUSINESS_HUB_PAGES:
+    add(key, title, "Business Hub", description=description, status="Coming Soon")
 for key, title in [
     ("wedding_photography", "Wedding Photography"),
     ("portrait_photography", "Portrait Photography"),
