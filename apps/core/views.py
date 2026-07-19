@@ -97,6 +97,8 @@ def public_page(request, page_key):
         return real_estate_photography(request)
     if page_key == "commercial_photography":
         return commercial_photography(request)
+    if page_key == "studio_photography":
+        return studio_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -350,6 +352,125 @@ def portrait_photography(request):
         ],
     }
     return render(request, "portrait_photography.html", context)
+
+
+def studio_photography(request):
+    context = {
+        "stats": [
+            "Client Galleries",
+            "Online Booking",
+            "Print Sales",
+            "Digital Downloads",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-magic", "Editing Assistance"),
+            ("bi-images", "Client Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            (
+                "bi-images",
+                "Client Galleries",
+                "Deliver polished galleries for every session.",
+            ),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Clients find their photos with a selfie.",
+            ),
+            ("bi-window", "Photographer Websites", "Showcase your studio portfolio."),
+            (
+                "bi-bag-heart",
+                "Print Sales",
+                "Sell prints, albums, wall art, and downloads.",
+            ),
+            (
+                "bi-calendar-check",
+                "Session Management",
+                "Manage appointments and communication.",
+            ),
+            ("bi-calendar-plus", "Online Booking", "Accept session requests anytime."),
+            ("bi-bar-chart", "Analytics", "Track bookings, galleries, and sales."),
+        ],
+        "pain_solutions": [
+            ("Busy Schedule", "Faster Workflow"),
+            ("Editing Time", "Better Organization"),
+            ("Client Communication", "Easy Galleries"),
+            ("Missed Sales", "Built-In Store"),
+            ("Too Many Tools", "Online Booking"),
+            ("Session Management", "One Platform"),
+        ],
+        "guest_cards": [
+            ("bi-grid", "Client Galleries", "Browse every session in one place."),
+            ("bi-heart", "Favorites", "Save favorite images for review."),
+            ("bi-shield-check", "Secure Downloads", "Download approved photos safely."),
+            ("bi-bag-check", "Print Ordering", "Order prints from the gallery."),
+            ("bi-share", "Easy Sharing", "Share images with family or teams."),
+            ("bi-phone", "Mobile Access", "View galleries on any device."),
+        ],
+        "timeline": [
+            "Book Session",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Gallery",
+            "Favorites",
+            "Order Prints",
+            "Download",
+        ],
+        "testimonials": [
+            (
+                "Our studio workflow is smoother, from booking to final gallery delivery.",
+                "Studio photographer",
+            ),
+            (
+                "Clients choose favorites faster, and print orders are easier to manage.",
+                "Portrait studio owner",
+            ),
+            (
+                "LumisPixel helps us deliver sessions quickly while keeping every client organized.",
+                "Commercial studio lead",
+            ),
+        ],
+        "metrics": [
+            "Better Organization",
+            "Faster Delivery",
+            "More Print Sales",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "Can clients order prints online?",
+                "Yes. Clients can order prints, albums, wall art, and downloads from the gallery.",
+            ),
+            (
+                "Can I manage multiple studio sessions?",
+                "Yes. You can organize sessions, clients, galleries, and communication in one place.",
+            ),
+            (
+                "Can clients download high-resolution photos?",
+                "Yes. Photographers control download access for each gallery and package.",
+            ),
+            (
+                "Can I accept online bookings?",
+                "Yes. LumisPixel supports online session requests and booking workflows.",
+            ),
+            (
+                "Can clients create favorites?",
+                "Yes. Clients can mark favorites for review, downloads, and print orders.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, galleries, booking, websites, stores, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "studio_photography.html", context)
 
 
 def sports_photography(request):
@@ -867,13 +988,33 @@ def commercial_photography(request):
         "features": [
             ("bi-funnel", "AI Culling", "Quickly sort your best images."),
             ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
-            ("bi-images", "Client Galleries", "Deliver polished galleries for every project."),
-            ("bi-window", "Photographer Websites", "Showcase your commercial portfolio."),
-            ("bi-cloud-download", "Digital Downloads", "Deliver high-resolution files instantly."),
-            ("bi-kanban", "Project Management", "Manage clients, projects, and communication."),
+            (
+                "bi-images",
+                "Client Galleries",
+                "Deliver polished galleries for every project.",
+            ),
+            (
+                "bi-window",
+                "Photographer Websites",
+                "Showcase your commercial portfolio.",
+            ),
+            (
+                "bi-cloud-download",
+                "Digital Downloads",
+                "Deliver high-resolution files instantly.",
+            ),
+            (
+                "bi-kanban",
+                "Project Management",
+                "Manage clients, projects, and communication.",
+            ),
             ("bi-heart", "Proofing & Favorites", "Collect client selections quickly."),
             ("bi-bar-chart", "Analytics", "Track gallery activity and downloads."),
-            ("bi-shield-check", "Brand Asset Delivery", "Share approved marketing assets securely."),
+            (
+                "bi-shield-check",
+                "Brand Asset Delivery",
+                "Share approved marketing assets securely.",
+            ),
         ],
         "pain_solutions": [
             ("Tight Deadlines", "Faster Workflow"),
@@ -888,8 +1029,16 @@ def commercial_photography(request):
             ("bi-heart", "Favorites", "Mark preferred images for approval."),
             ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
             ("bi-share", "Easy Sharing", "Share assets with your team."),
-            ("bi-check2-square", "Project Proofing", "Approve selections without long email threads."),
-            ("bi-people", "Team Access", "Give collaborators controlled gallery access."),
+            (
+                "bi-check2-square",
+                "Project Proofing",
+                "Approve selections without long email threads.",
+            ),
+            (
+                "bi-people",
+                "Team Access",
+                "Give collaborators controlled gallery access.",
+            ),
         ],
         "timeline": [
             "Book Project",
@@ -970,11 +1119,23 @@ def event_photography(request):
         "features": [
             ("bi-funnel", "AI Culling", "Quickly sort your best images."),
             ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
-            ("bi-person-bounding-box", "Face Recognition", "Organize attendees automatically."),
+            (
+                "bi-person-bounding-box",
+                "Face Recognition",
+                "Organize attendees automatically.",
+            ),
             ("bi-images", "Event Galleries", "Create galleries for every event."),
-            ("bi-search-heart", "Photo Search", "Guests find their photos with a selfie."),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Guests find their photos with a selfie.",
+            ),
             ("bi-window", "Photographer Websites", "Showcase your event portfolio."),
-            ("bi-cloud-download", "Print & Downloads", "Sell prints and digital files."),
+            (
+                "bi-cloud-download",
+                "Print & Downloads",
+                "Sell prints and digital files.",
+            ),
             ("bi-chat-dots", "Client Management", "Manage events and communication."),
             ("bi-bar-chart", "Analytics", "Track galleries, downloads, and sales."),
         ],
@@ -987,7 +1148,11 @@ def event_photography(request):
             ("Too Many Tools", "One Platform"),
         ],
         "guest_cards": [
-            ("bi-search-heart", "Find My Photos", "Use a selfie to locate event photos."),
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Use a selfie to locate event photos.",
+            ),
             ("bi-images", "Event Galleries", "Browse photos from every event."),
             ("bi-heart", "Favorites", "Save favorite moments for later."),
             ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
