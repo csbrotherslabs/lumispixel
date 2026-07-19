@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% url 'accounts:get-started' as start_free_url %}
+{% url 'marketplace:find_photographer' as find_photographer_url %}
 
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
@@ -515,8 +516,7 @@
                             <span class="lumis-audience-card__kicker">Booking marketplace</span>
                             <h2>Hire a Photographer</h2>
                             <p>Discover professionals by specialty, location, availability, and budget.</p>
-                            <!-- Future named URL: marketplace:photographer_search -->
-                            <a class="lumis-audience-card__link" href="#" aria-label="Find a photographer on LumisPixel">Find a Photographer <span aria-hidden="true">→</span></a>
+                            <a class="lumis-audience-card__link" href="{{ find_photographer_url }}" aria-label="Find a photographer on LumisPixel">Find a Photographer <span aria-hidden="true">→</span></a>
                         </div>
                     </article>
                 </div>
@@ -841,8 +841,7 @@
                     <p class="lumis-photographer-marketplace__reassurance">Compare specialties, locations, and service details before sending a request.</p>
 
                     <div class="lumis-photographer-marketplace__actions">
-                        <!-- Future named URL: marketplace:photographer_search -->
-                        {% include "components/button.html" with label="Find a Photographer" href="#" variant="solid" show_second=True second_label="Find a Photographer" %}
+                        {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="solid" show_second=True second_label="Find a Photographer" %}
                         <!-- Future named URL: photographers:signup -->
                         <a class="lumis-photographer-marketplace__secondary" href="#">Join as a Photographer <span aria-hidden="true">→</span></a>
                     </div>
