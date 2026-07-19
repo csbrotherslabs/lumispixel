@@ -39,7 +39,8 @@
                                                         {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
                                                     {% endif %}
     
-                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
+                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
+                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
                                                 {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
@@ -88,7 +89,8 @@
                                                         {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
                                                     {% endif %}
     
-                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
+                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
+                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
                                                 {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
@@ -137,7 +139,8 @@
                                                         {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
                                                     {% endif %}
     
-                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
+                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
+                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
                                                 {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
@@ -186,7 +189,8 @@
                                                         {% include "components/button.html" with label="Start Free" href=start_free_url variant="primary" show_second=True %}
                                                     {% endif %}
     
-                                                    {% include "components/button.html" with label="Find My Photos" href="#" variant="secondary" show_second=True %}
+                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
+                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
                                                 {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
                                             </div>
@@ -497,8 +501,7 @@
                             <span class="lumis-audience-card__kicker">Gallery access</span>
                             <h2>For Clients</h2>
                             <p>Find your photos with a selfie, browse private galleries, purchase images, and save your favorites.</p>
-                            <!-- Future named URL: clients:find_photos -->
-                            <a class="lumis-audience-card__link" href="#" aria-label="Find my photos on LumisPixel">Find My Photos <span aria-hidden="true">→</span></a>
+                            <a class="lumis-audience-card__link" href="{% url 'clients:for_clients' %}" aria-label="Find my photos on LumisPixel">Find My Photos <span aria-hidden="true">→</span></a>
                         </div>
                     </article>
                 </div>
@@ -947,7 +950,7 @@
                         <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="#" data-placeholder-link>Start as a Photographer</a>
                     {% endif %}
                     <!-- Future named URL: galleries:photo_search -->
-                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="#" data-placeholder-link>Find My Photos</a>
+                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find My Photos</a>
                     <!-- Future named URL: marketplace:photographer_search -->
                     <a class="lumis-final-cta__link" href="#" data-placeholder-link>Hire a Photographer <span aria-hidden="true">→</span></a>
                 </div>
