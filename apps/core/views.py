@@ -49,6 +49,11 @@ BUSINESS_HUB_PAGES = [
         "Coordinate bookings, sessions, availability, and calendar workflows with less admin. Full page coming soon.",
     ),
     (
+        "business_hub_ai_business_assistant",
+        "AI Business Assistant",
+        "Use AI-assisted business support to plan, respond, and operate more efficiently. Full page coming soon.",
+    ),
+    (
         "business_hub_contracts",
         "Contracts",
         "Prepare, send, and manage photography contracts from a future streamlined workflow. Full page coming soon.",
@@ -62,11 +67,6 @@ BUSINESS_HUB_PAGES = [
         "business_hub_workflow_automation",
         "Workflow Automation",
         "Automate repetitive studio tasks so every job moves forward with less manual work. Full page coming soon.",
-    ),
-    (
-        "business_hub_ai_business_assistant",
-        "AI Business Assistant",
-        "Use AI-assisted business support to plan, respond, and operate more efficiently. Full page coming soon.",
     ),
     (
         "business_hub_analytics_reports",
@@ -362,7 +362,7 @@ def business_hub_booking_calendar(request):
             ("Better Experience", "Give clients a smooth path from inquiry to shoot."),
             ("Increase Bookings", "Make it easier for clients to say yes."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Contracts", "Invoices & Payments", "Workflow Automation", "Client Galleries", "AI Business Assistant", "Marketing", "Analytics"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "AI Business Assistant", "Contracts", "Invoices & Payments", "Workflow Automation", "Client Galleries", "Marketing", "Analytics"],
     }
     return render(request, "business_hub_booking_calendar.html", context)
 
@@ -464,7 +464,7 @@ def business_hub_invoices_payments(request):
             ("Look Professional", "Give clients a polished billing experience."),
             ("Focus On Photos", "Let payment admin move quietly in the background."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Workflow Automation", "Client Galleries", "Analytics", "AI Business Assistant"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "AI Business Assistant", "Contracts", "Workflow Automation", "Client Galleries", "Analytics"],
     }
     return render(request, "business_hub_invoices_payments.html", context)
 
@@ -515,7 +515,7 @@ def business_hub_workflow_automation(request):
             ("Grow Easier", "Handle more bookings without adding more busywork."),
             ("Focus On Photography", "Spend more time creating and less time managing."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Client Galleries", "AI Business Assistant", "Analytics", "Marketing"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "AI Business Assistant", "Contracts", "Invoices & Payments", "Client Galleries", "Analytics", "Marketing"],
     }
     return render(request, "business_hub_workflow_automation.html", context)
 
@@ -566,7 +566,7 @@ def business_hub_analytics_reports(request):
             ("Plan Ahead", "Use trends to prepare offers, dates, and capacity."),
             ("Decide Confidently", "Move forward with clear signals instead of guesses."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Client Galleries", "Marketing", "Marketplace"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "AI Business Assistant", "Contracts", "Invoices & Payments", "Workflow Automation", "Client Galleries", "Marketing", "Marketplace"],
     }
     return render(request, "business_hub_analytics_reports.html", context)
 
@@ -617,7 +617,7 @@ def business_hub_marketing_growth(request):
             ("Retain Clients", "Bring families, couples, and teams back."),
             ("Market Efficiently", "Spend less time guessing what to send."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Analytics", "Client Galleries", "Marketplace"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "AI Business Assistant", "Contracts", "Invoices & Payments", "Workflow Automation", "Analytics", "Client Galleries", "Marketplace"],
     }
     return render(request, "business_hub_marketing_growth.html", context)
 
@@ -668,7 +668,7 @@ def business_hub_team_operations(request):
             ("Deliver Consistently", "Create reliable client experiences at scale."),
             ("Grow Your Studio", "Add capacity without adding chaos."),
         ],
-        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Analytics", "Marketing", "Client Galleries"],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "AI Business Assistant", "Contracts", "Invoices & Payments", "Workflow Automation", "Analytics", "Marketing", "Client Galleries"],
     }
     return render(request, "business_hub_team_operations.html", context)
 
