@@ -1,6 +1,6 @@
 {% load static %}
 <!-- Main Header -->
-<header class="header color-fixed navbar--transparent">
+<header class="header color-fixed {% if request.resolver_match.view_name == 'core:index' %}navbar--transparent{% else %}navbar--sticky{% endif %}">
     <div class="header-inner">
         <div class="container-fluid pe-0">
             <div class="d-flex align-items-center justify-content-between">
