@@ -1,0 +1,65 @@
+.page-client-galleries { background: #fffaf4; color: #1c1713; }
+.page-client-galleries .lp-video-intro,
+.page-client-galleries .lp-features,
+.page-client-galleries .lp-share,
+.page-client-galleries .lp-testimonials,
+.page-client-galleries .lp-compare,
+.page-client-galleries .lp-gallery-showcase,
+.page-client-galleries .lp-story-visual,
+.page-client-galleries .lp-faq { background: #fffaf4; }
+.page-client-galleries .bg-dark-200,
+.page-client-galleries .lp-pain,
+.page-client-galleries .lp-ai,
+.page-client-galleries .lp-day,
+.page-client-galleries .lp-types,
+.page-client-galleries .lp-options,
+.page-client-galleries .lp-customization { background: #f6f0e8 !important; }
+.page-client-galleries .lp-section-heading h2,
+.page-client-galleries .lp-section h2,
+.page-client-galleries .lp-feature-copy h3,
+.page-client-galleries .lp-roadmap h3,
+.page-client-galleries .lp-table-wrap thead th,
+.page-client-galleries .lp-table-wrap tbody th,
+.page-client-galleries .lp-solve-line,
+.page-client-galleries .lp-testimonial-grid p { color: #1c1713 !important; }
+.page-client-galleries .lp-section-heading p,
+.page-client-galleries .lp-section p,
+.page-client-galleries .lp-story p,
+.page-client-galleries .lp-table-wrap th,
+.page-client-galleries .lp-table-wrap td,
+.page-client-galleries .lp-faq .accordion-body { color: #62564c !important; }
+.page-client-galleries .lp-pain-card,
+.page-client-galleries .lp-type-grid div,
+.page-client-galleries .lp-ai-grid div,
+.page-client-galleries .lp-roadmap article,
+.page-client-galleries .lp-testimonial-grid blockquote,
+.page-client-galleries .lp-feature-row { background: rgba(255, 255, 255, .9); border: 1px solid rgba(80, 62, 43, .12); box-shadow: 0 22px 70px rgba(88, 64, 38, .11); }
+.page-client-galleries .lp-pain-card { min-height: 190px; }
+.page-client-galleries .lp-pain-card h3 { margin: 20px 0 8px; font-size: 22px; color: #1c1713; }
+.page-client-galleries .lp-pain-card p { color: #62564c !important; font-weight: 600; margin-top: 0; }
+.page-client-galleries .lp-workflow-track li { background: #fff; color: #1c1713; border-color: rgba(80, 62, 43, .12); box-shadow: 0 16px 42px rgba(88, 64, 38, .09); }
+.page-client-galleries .lp-workflow-track strong,
+.page-client-galleries .lp-type-grid div,
+.page-client-galleries .lp-ai-grid div { color: #1c1713; }
+.page-client-galleries .lp-table-wrap { border-color: rgba(80, 62, 43, .12); box-shadow: 0 22px 70px rgba(88, 64, 38, .1); }
+.page-client-galleries .lp-table-wrap table { background: #fff; }
+.page-client-galleries .lp-table-wrap th,
+.page-client-galleries .lp-table-wrap td { border-bottom-color: rgba(80, 62, 43, .1); }
+.page-client-galleries .lp-table-wrap td:last-child { color: #8f510c !important; }
+.page-client-galleries .lp-roadmap span { background: #fff1dc; color: #8f510c; }
+.page-client-galleries .lp-faq .accordion-item,
+.page-client-galleries .lp-faq .accordion-button,
+.page-client-galleries .lp-faq .accordion-body { background: #fff; color: #1c1713; border-color: rgba(80, 62, 43, .12); }
+.page-client-galleries .lp-cta-panel { background: radial-gradient(circle at 50% 0%, rgba(255, 184, 107, .36), transparent 35%), linear-gradient(135deg, #fff, #fff4e7); border-color: rgba(80, 62, 43, .12); box-shadow: 0 24px 90px rgba(88, 64, 38, .13); }
+.page-client-galleries .lp-gallery-journey { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lp-gallery-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lp-device-points { max-width: 920px; margin: 0 auto; }
+.lp-masonry { columns: 2 320px; column-gap: 18px; }
+.lp-masonry img { width: 100%; margin: 0 0 18px; border-radius: 32px; box-shadow: 0 24px 70px rgba(88, 64, 38, .14); break-inside: avoid; }
+.lp-story-list { margin: 24px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.lp-story-list li { padding: 12px 16px; border-radius: 999px; background: #fff5e8; color: #1c1713; font-weight: 800; }
+.page-client-galleries .lp-photo-page-heading__subtitle { color: rgba(255,255,255,.84); }
+.page-client-galleries .lp-faq .accordion-button:focus,
+.page-client-galleries .lp-photo-actions a:focus-visible { outline: 3px solid #b46614; outline-offset: 4px; }
+@media (max-width: 1199px) { .page-client-galleries .lp-gallery-journey, .lp-gallery-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) { .page-client-galleries .lp-gallery-journey, .lp-gallery-card-grid { grid-template-columns: 1fr; } .page-client-galleries .lp-table-wrap table, .page-client-galleries .lp-table-wrap thead, .page-client-galleries .lp-table-wrap tbody, .page-client-galleries .lp-table-wrap tr, .page-client-galleries .lp-table-wrap th, .page-client-galleries .lp-table-wrap td { display: block; width: 100%; } .page-client-galleries .lp-table-wrap thead { display: none; } .page-client-galleries .lp-table-wrap td:first-child:before { content: "Traditional Delivery"; display: block; color: #8f510c; font-weight: 900; margin-bottom: 8px; } .page-client-galleries .lp-table-wrap td:last-child:before { content: "LumisPixel Galleries"; display: block; color: #8f510c; font-weight: 900; margin-bottom: 8px; } }
