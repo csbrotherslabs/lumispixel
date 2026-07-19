@@ -1476,6 +1476,62 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 /* Inner-page authentication navigation and cards */
+.marketing-page .header,
+.marketing-page .header.color-fixed,
+.marketing-page .header.navbar--transparent,
+.marketing-page .header.navbar--sticky,
+.marketing-page .header.sticky {
+  background-color: rgba(var(--color-white-rgb), 0.98);
+  border-bottom-color: rgba(var(--color-black-rgb), 0.08);
+  transition: box-shadow 300ms ease, transform 300ms ease;
+}
+
+.marketing-page .header.sticky {
+  box-shadow: 0 16px 36px rgba(var(--color-black-rgb), 0.08);
+}
+
+.marketing-page .header .logo a.light_logo,
+.marketing-page .mr_menu .logo a.light_logo {
+  display: none;
+}
+
+.marketing-page .header .logo a.dark_logo,
+.marketing-page .mr_menu .logo a.dark_logo {
+  display: inline-block;
+}
+
+.marketing-page .header .mainnav ul.main-menu > li > a,
+.marketing-page .header .mr_menu_toggle,
+.marketing-page .header .modal_search_icon,
+.marketing-page .header .overlay_menu_toggle,
+.marketing-page .header .nav-signin,
+.marketing-page .header .nav-signin:visited {
+  color: var(--color-white-fixed);
+}
+
+.marketing-page .header .aside_open .aside-open--inner > span {
+  background: var(--color-black-fixed);
+}
+
+.marketing-page .header .nav-start-free {
+  background: var(--color-one);
+  border-color: var(--color-one);
+  color: var(--color-white);
+}
+
+.marketing-page .header .nav-start-free:hover,
+.marketing-page .header .nav-start-free:focus {
+  background: #930606;
+  border-color: #930606;
+  color: var(--color-white);
+}
+
+.marketing-page .header .nav-user-trigger {
+  background: rgba(var(--color-black-rgb), 0.04);
+  border-color: rgba(var(--color-black-rgb), 0.12);
+  color: var(--color-white-fixed);
+}
+
 .page-inner .header,
 .page-inner .header.color-fixed,
 .page-inner .header.navbar--transparent,

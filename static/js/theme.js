@@ -175,13 +175,20 @@ Description: Kimono - Photography Agency
 
         // Sticky Header
         var header = $("header");
+        var body = $("body");
+        var usesTransparentHeroNav = body.hasClass("page-home");
         function setNavbarState() {
             var scroll = $(window).scrollTop();
 
-            if (scroll >= 50) {
-                header.addClass("sticky navbar--sticky").removeClass("navbar--transparent");
-            } else if ($("body").hasClass("page-inner")) {
+            if (!usesTransparentHeroNav) {
                 header.addClass("navbar--sticky").removeClass("navbar--transparent");
+                if (scroll >= 50) {
+                    header.addClass("sticky");
+                } else {
+                    header.removeClass("sticky");
+                }
+            } else if (scroll >= 50) {
+                header.addClass("sticky navbar--sticky").removeClass("navbar--transparent");
             } else {
                 header.removeClass("sticky navbar--sticky").addClass("navbar--transparent");
             }
@@ -1527,4 +1534,3 @@ window.addEventListener("scroll", () => {
     }
     lastScroll = currentScroll;
 });
-
