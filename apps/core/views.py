@@ -168,6 +168,8 @@ def public_page(request, page_key):
         return business_hub_contracts(request)
     if page_key == "business_hub_invoices_payments":
         return business_hub_invoices_payments(request)
+    if page_key == "business_hub_workflow_automation":
+        return business_hub_workflow_automation(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -457,6 +459,57 @@ def business_hub_invoices_payments(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Workflow Automation", "Client Galleries", "Analytics", "AI Business Assistant"],
     }
     return render(request, "business_hub_invoices_payments.html", context)
+
+
+def business_hub_workflow_automation(request):
+    context = {
+        "problem_cards": [
+            ("bi-envelope", "Manual Emails", "Every inquiry, reminder, and follow-up takes another message."),
+            ("bi-bell-slash", "Forgotten Follow-Ups", "Great clients can slip away when the next step is not automatic."),
+            ("bi-calendar2-x", "Missed Deadlines", "Contracts, payments, prep notes, and delivery dates need constant attention."),
+            ("bi-arrow-repeat", "Repeated Admin", "The same tasks repeat for every wedding, portrait, event, or listing."),
+            ("bi-list-check", "Scattered Checklists", "To-dos live across notes, inboxes, calendars, and memory."),
+            ("bi-ui-checks", "Small Tasks", "Tiny operational details can steal hours from shooting and editing."),
+        ],
+        "journey": ["Inquiry", "Welcome Email", "Booking Confirmation", "Contract Sent", "Invoice Sent", "Reminder", "Photo Session", "Gallery Notification", "Review Request", "Referral Request"],
+        "features": [
+            ("bi-envelope-check", "Email Automation", "Send polished client messages at the right moment."),
+            ("bi-file-earmark-text", "Contract Automation", "Move signed agreements forward without manual chasing."),
+            ("bi-receipt", "Invoice Automation", "Send invoices, deposits, receipts, and payment nudges."),
+            ("bi-lightning-charge", "Booking Triggers", "Start the next step when a client books or changes status."),
+            ("bi-bell", "Reminder Scheduling", "Keep clients prepared before consults, sessions, and deadlines."),
+            ("bi-card-checklist", "Questionnaires", "Collect planning details before you need them."),
+            ("bi-check2-square", "Task Automation", "Create internal to-dos for prep, editing, delivery, and follow-up."),
+            ("bi-images", "Gallery Notifications", "Tell clients when galleries, proofs, and downloads are ready."),
+            ("bi-star", "Review Requests", "Ask happy clients for reviews while the experience is fresh."),
+            ("bi-share", "Referral Requests", "Turn completed sessions into warm future bookings."),
+            ("bi-diagram-3", "Custom Workflows", "Build repeatable paths for every photography service you offer."),
+            ("bi-layers", "Workflow Templates", "Launch proven workflows without starting from a blank page."),
+        ],
+        "kpis": ["Active Workflows", "Tasks Completed", "Emails Sent", "Reminders Scheduled", "Clients Automated", "Pending Actions", "Time Saved", "Upcoming Automations"],
+        "ai_cards": [
+            ("Better Workflows", "Suggest simpler paths for each client journey."),
+            ("Smart Follow-Ups", "Recommend the right message when a client goes quiet."),
+            ("Missing Steps", "Catch skipped tasks before they affect the experience."),
+            ("Find Delays", "Spot bookings that are moving slower than expected."),
+            ("Busy Periods", "Predict weeks that may need extra preparation."),
+            ("Templates", "Generate workflows for weddings, portraits, events, and studios."),
+            ("Bottlenecks", "Highlight where work keeps getting stuck."),
+            ("Improvements", "Recommend small changes that save more time."),
+        ],
+        "benefits": [
+            ("Reduce Admin", "Let routine work happen in the background."),
+            ("Never Forget", "Keep every next step visible and moving."),
+            ("Respond Faster", "Give clients timely replies without living in your inbox."),
+            ("Stay Organized", "Keep tasks, reminders, and client progress connected."),
+            ("Consistent Service", "Deliver the same polished experience every time."),
+            ("Better Experiences", "Make clients feel guided from inquiry to referral."),
+            ("Grow Easier", "Handle more bookings without adding more busywork."),
+            ("Focus On Photography", "Spend more time creating and less time managing."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Client Galleries", "AI Business Assistant", "Analytics", "Marketing"],
+    }
+    return render(request, "business_hub_workflow_automation.html", context)
 
 
 def wedding_photography(request):
