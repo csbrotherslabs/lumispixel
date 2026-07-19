@@ -1,0 +1,100 @@
+.page-ai-photo-search .lp-five-card-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.page-ai-photo-search .lp-ai-search-process {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.page-ai-photo-search .lp-example-process {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.page-ai-photo-search .lp-ai-search-process li,
+.page-ai-photo-search .lp-example-process li {
+  min-height: 175px;
+}
+
+.page-ai-photo-search .lp-benefit-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.page-ai-photo-search .lp-privacy-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lp-ai-search-privacy {
+  background: radial-gradient(circle at 15% 15%, rgba(255, 184, 107, .16), transparent 32%), #080808;
+}
+
+.lp-ai-search-privacy p + p {
+  margin-top: 14px;
+}
+
+.lp-reassurance {
+  max-width: 900px;
+  margin: 48px auto 0;
+  text-align: center;
+  color: #fff !important;
+  font-size: clamp(22px, 3vw, 38px) !important;
+  font-weight: 900;
+  letter-spacing: -.035em;
+}
+
+.page-ai-photo-search .lp-table-wrap table th,
+.page-ai-photo-search .lp-table-wrap table td {
+  width: 50%;
+}
+
+.page-ai-photo-search .lp-roadmap article p {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1199px) {
+  .page-ai-photo-search .lp-five-card-grid,
+  .page-ai-photo-search .lp-ai-search-process,
+  .page-ai-photo-search .lp-example-process,
+  .page-ai-photo-search .lp-benefit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .page-ai-photo-search .lp-five-card-grid,
+  .page-ai-photo-search .lp-ai-search-process,
+  .page-ai-photo-search .lp-example-process,
+  .page-ai-photo-search .lp-benefit-grid,
+  .page-ai-photo-search .lp-privacy-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-ai-photo-search .lp-table-wrap table,
+  .page-ai-photo-search .lp-table-wrap thead,
+  .page-ai-photo-search .lp-table-wrap tbody,
+  .page-ai-photo-search .lp-table-wrap tr,
+  .page-ai-photo-search .lp-table-wrap th,
+  .page-ai-photo-search .lp-table-wrap td {
+    display: block;
+    width: 100%;
+  }
+
+  .page-ai-photo-search .lp-table-wrap thead {
+    display: none;
+  }
+
+  .page-ai-photo-search .lp-table-wrap td:first-child:before {
+    content: "Traditional";
+    display: block;
+    color: #ffb86b;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .page-ai-photo-search .lp-table-wrap td:last-child:before {
+    content: "LumisPixel";
+    display: block;
+    color: #ffb86b;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+}

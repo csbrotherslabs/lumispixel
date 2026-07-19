@@ -31,9 +31,9 @@
             <span class="login-feature-slide__eyebrow">Discovery</span>
             <h2 class="login-feature-slide__title">Find Photos with AI</h2>
             <p class="login-feature-slide__description">Clients can use a selfie, gallery code, or invitation to discover the photographs that belong to them.</p>
-            <a class="login-feature-slide__link" href="#">Learn More <span aria-hidden="true">→</span></a>
+            <a class="login-feature-slide__link" href="{% url 'ai_engine:photo_search' %}">Learn More <span aria-hidden="true">→</span></a>
           </div>
-          <a class="login-feature-slide__corner-action" href="#" aria-label="Learn more about AI Photo Search"><span aria-hidden="true">›</span></a>
+          <a class="login-feature-slide__corner-action" href="{% url 'ai_engine:photo_search' %}" aria-label="Learn more about AI Photo Search"><span aria-hidden="true">›</span></a>
         </article>
       </div>
 
