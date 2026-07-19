@@ -37,10 +37,10 @@
             <p>{{ page.intro }}</p>
         </div>
         <div class="wptb-service--inner">
-            <div class="row g-4" role="list">
+            <div class="row" role="list">
                 {% for feature in page.features %}
-                    <div class="col-xl-3 col-lg-4 col-md-6" role="listitem">
-                        <a class="wptb-icon-box5 lp-feature-card" href="{% url feature.url_name %}">
+                    <div class="col-lg-3 col-md-6 col-sm-6 ps-0" role="listitem">
+                        <a class="wptb-icon-box5 mb-3 lp-parent-feature-card" href="{% url feature.url_name %}">
                             <span class="wptb-item--inner">
                                 <span class="wptb-item--icon lp-feature-icon" aria-hidden="true">
                                     <i class="bi {{ feature.icon }}"></i>
