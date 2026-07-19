@@ -158,7 +158,200 @@ def public_page(request, page_key):
         return commercial_photography(request)
     if page_key == "studio_photography":
         return studio_photography(request)
+    if page_key == "business_hub_dashboard":
+        return business_hub_dashboard(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
+
+
+def business_hub_dashboard(request):
+    context = {
+        "problem_cards": [
+            (
+                "bi-calendar2-x",
+                "Multiple calendars",
+                "Sessions, availability, consults, and delivery dates live in different places.",
+            ),
+            (
+                "bi-inbox",
+                "Lost inquiries",
+                "New leads slip through email, DMs, forms, and text threads before they become bookings.",
+            ),
+            (
+                "bi-receipt",
+                "Manual invoicing",
+                "Invoices, deposits, reminders, and balances take too many clicks to track.",
+            ),
+            (
+                "bi-person-lines-fill",
+                "Scattered client information",
+                "Notes, contracts, questionnaires, and gallery activity are disconnected from the job.",
+            ),
+            (
+                "bi-bell-slash",
+                "Missed follow-ups",
+                "Rebooking prompts, review requests, and overdue tasks are easy to forget.",
+            ),
+            (
+                "bi-graph-down",
+                "No performance visibility",
+                "It is hard to see revenue, bottlenecks, and next-best actions at a glance.",
+            ),
+        ],
+        "workflow": [
+            "Lead",
+            "Booking",
+            "Contract",
+            "Invoice",
+            "Photo Session",
+            "Editing",
+            "Gallery Delivery",
+            "Review Request",
+            "Repeat Client",
+        ],
+        "features": [
+            (
+                "bi-speedometer2",
+                "Business Overview",
+                "See today’s priorities, income, jobs, and client movement in one command center.",
+            ),
+            (
+                "bi-currency-dollar",
+                "Revenue Tracking",
+                "Monitor booked revenue, collected payments, balances, and month-over-month trends.",
+            ),
+            (
+                "bi-camera",
+                "Upcoming Sessions",
+                "Know what is coming next with shoot details, locations, timelines, and prep tasks.",
+            ),
+            (
+                "bi-people",
+                "Client Activity",
+                "Track inquiries, messages, favorites, downloads, approvals, and rebooking signals.",
+            ),
+            (
+                "bi-images",
+                "Gallery Status",
+                "Follow each gallery from upload through proofing, delivery, sales, and archive.",
+            ),
+            (
+                "bi-sliders",
+                "Editing Queue",
+                "Spot editing workloads, due dates, bottlenecks, and delivery risk before clients ask.",
+            ),
+            (
+                "bi-file-earmark-text",
+                "Invoices",
+                "Keep deposits, payment links, outstanding balances, and reminders close to every job.",
+            ),
+            (
+                "bi-pen",
+                "Contracts",
+                "Connect signed agreements to clients, sessions, invoices, and workflow milestones.",
+            ),
+            (
+                "bi-calendar-week",
+                "Calendar",
+                "Unify consults, shoots, deadlines, reminders, and personal availability.",
+            ),
+            (
+                "bi-list-check",
+                "Workflow Progress",
+                "Move every client through a clear repeatable process from inquiry to repeat booking.",
+            ),
+            (
+                "bi-stars",
+                "AI Insights",
+                "Receive intelligent recommendations that help you prioritize revenue and service.",
+            ),
+            (
+                "bi-bell",
+                "Recent Notifications",
+                "See what changed across clients, galleries, payments, and automation in real time.",
+            ),
+        ],
+        "kpis": [
+            "Monthly Revenue",
+            "Bookings This Month",
+            "Active Clients",
+            "Photos Delivered",
+            "Pending Galleries",
+            "Outstanding Invoices",
+            "Average Delivery Time",
+            "Repeat Client Rate",
+        ],
+        "ai_insights": [
+            "Identifies clients who have not booked again and suggests warm follow-ups.",
+            "Predicts slow seasons from booking trends and historical revenue patterns.",
+            "Recommends follow-up opportunities after galleries, orders, and anniversaries.",
+            "Flags overdue invoices and high-priority payment reminders.",
+            "Summarizes business performance in plain language every morning.",
+            "Detects editing bottlenecks before delivery timelines are at risk.",
+            "Recommends pricing improvements using demand, package mix, and profitability signals.",
+        ],
+        "benefits": [
+            (
+                "Spend Less Time Managing",
+                "Reduce the admin work that happens between every session.",
+            ),
+            (
+                "Never Miss A Client",
+                "Keep inquiries, follow-ups, contracts, and deliverables visible.",
+            ),
+            (
+                "Stay Organized",
+                "Bring every job, note, file, and next step into one place.",
+            ),
+            (
+                "Increase Revenue",
+                "See opportunities to collect balances, upsell galleries, and rebook.",
+            ),
+            (
+                "Book More Sessions",
+                "Respond faster and nurture leads through a polished workflow.",
+            ),
+            (
+                "Deliver Faster",
+                "Understand editing progress and keep every deadline moving.",
+            ),
+            (
+                "Reduce Administrative Work",
+                "Let automation and AI handle repetitive reminders and summaries.",
+            ),
+            (
+                "Make Better Decisions",
+                "Use real business signals instead of guessing what needs attention.",
+            ),
+        ],
+        "ecosystem": [
+            "Business Dashboard",
+            "Client CRM",
+            "Booking & Calendar",
+            "Contracts",
+            "Invoices & Payments",
+            "Workflow Automation",
+            "AI Editing",
+            "Client Galleries",
+            "Analytics",
+            "Marketing",
+            "Marketplace",
+        ],
+        "testimonials": [
+            (
+                "I finally know what is happening in my business every morning.",
+                "Wedding photographer",
+            ),
+            (
+                "LumisPixel replaced five different tools and gave my studio one operating rhythm.",
+                "Portrait studio owner",
+            ),
+            (
+                "I spend more time shooting and less time managing paperwork.",
+                "Commercial photographer",
+            ),
+        ],
+    }
+    return render(request, "business_hub_dashboard.html", context)
 
 
 def wedding_photography(request):
@@ -1298,7 +1491,11 @@ def destination_photography(request):
             ("bi-funnel", "AI Culling", "Quickly sort your best images."),
             ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
             ("bi-images", "Client Galleries", "Deliver galleries from anywhere."),
-            ("bi-search-heart", "Photo Search", "Clients find their photos with a selfie."),
+            (
+                "bi-search-heart",
+                "Photo Search",
+                "Clients find their photos with a selfie.",
+            ),
             ("bi-window", "Photographer Websites", "Showcase your travel portfolio."),
             ("bi-bag-check", "Print Sales", "Sell prints and digital downloads."),
             ("bi-chat-dots", "Client Management", "Manage travelers and bookings."),
@@ -1314,8 +1511,16 @@ def destination_photography(request):
             ("Busy Schedule", "One Platform"),
         ],
         "guest_cards": [
-            ("bi-search-heart", "Find My Photos", "Upload a selfie to find travel photos."),
-            ("bi-images", "Client Galleries", "Browse memories in one private gallery."),
+            (
+                "bi-search-heart",
+                "Find My Photos",
+                "Upload a selfie to find travel photos.",
+            ),
+            (
+                "bi-images",
+                "Client Galleries",
+                "Browse memories in one private gallery.",
+            ),
             ("bi-heart", "Favorites", "Save favorite images for later."),
             ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
             ("bi-bag-check", "Print Ordering", "Order prints from the gallery."),
