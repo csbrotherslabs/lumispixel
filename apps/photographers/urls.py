@@ -24,6 +24,5 @@ urlpatterns = [
 from . import public_views
 
 urlpatterns += [
-    path("for-photographers/", public_views.public_page, {"page_key": "for_photographers"}, name="for_photographers"),
     path("websites/", public_views.public_page, {"page_key": "photographer_websites"}, name="websites"),
 ]
