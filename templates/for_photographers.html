@@ -23,23 +23,45 @@
 }
 </script>
 
-<section class="lp-photo-hero wptb-video-player1 wow zoomIn bg-image" style="background-image: url('{% static 'img/background/bg-14.jpg' %}');" aria-labelledby="photo-hero-title">
-  <div class="lp-photo-hero__overlay"></div>
-  <div class="wptb-item--inner lp-photo-hero__inner">
-    <div class="container">
-      <div class="lp-photo-hero__content">
-        <span class="lp-eyebrow">LumisPixel for photographers</span>
-        <h1 id="photo-hero-title">Everything you need to run and grow your photography business.</h1>
-        <p>From AI-powered photo search to beautiful client galleries, website themes, online sales, and business management, LumisPixel helps photographers spend less time managing and more time creating.</p>
-        <div class="lp-photo-actions">
-          <a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a>
-          <a class="lp-watch-demo" data-fancybox href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" aria-label="Watch LumisPixel demo video"><span><i class="bi bi-play-fill"></i></span> Watch Demo</a>
-        </div>
+<div class="wptb-page-heading lp-photo-page-heading" aria-labelledby="photo-hero-title">
+  <div class="wptb-item--inner" style="background-image: url('{% static 'img/background/page-header-bg-2.jpg' %}');">
+    <div class="wptb-item-layer wptb-item-layer-one">
+      <img src="{% static 'img/more/circle.png' %}" alt="img">
+    </div>
+    <h2 id="photo-hero-title" class="wptb-item--title">For Photographers</h2>
+    <p class="lp-photo-page-heading__subtitle">One platform to showcase your work, deliver galleries, grow your business, and delight your clients.</p>
+  </div>
+</div>
+
+<section class="lp-video-intro" aria-labelledby="photo-video-title">
+  <div class="container">
+    <div class="lp-section-heading center">
+      <span class="lp-eyebrow">Product introduction</span>
+      <h2 id="photo-video-title">See LumisPixel in Action</h2>
+      <p>Watch how LumisPixel helps photographers organize, deliver, and grow their business.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BG Video -->
+<div class="wptb-video-player1 wow zoomIn mr-bottom-70 bg-image" style="background-image: url('{% static 'img/background/bg-14.jpg' %}');">
+  <div class="wptb-item--inner">
+    <div class="wptb-item--holder">
+      <div class="wptb-item--video-button">
+        {# Replace this placeholder with the official LumisPixel demo URL when ready. #}
+        <a class="btn" data-fancybox href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" aria-label="Watch LumisPixel demo video">
+          <span class="text-second"> <i class="bi bi-play-fill"></i> </span>
+          <span class="line-video-animation line-video-1"></span>
+          <span class="line-video-animation line-video-2"></span>
+          <span class="line-video-animation line-video-3"></span>
+        </a>
       </div>
     </div>
   </div>
-  <div class="wptb-item-layer wptb-item-layer-one"><img src="{% static 'img/more/light-3.png' %}" alt="" loading="lazy"></div>
-</section>
+  <div class="wptb-item-layer wptb-item-layer-one">
+    <img src="{% static 'img/more/light-3.png' %}" alt="img">
+  </div>
+</div>
 
 <section class="lp-section lp-pain" aria-labelledby="pain-title">
   <div class="container">
