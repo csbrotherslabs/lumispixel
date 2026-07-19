@@ -6,6 +6,60 @@ add("ai_photo_search", "AI Photo Search", "Products", description="Explain Lumis
 add("ai_editing_culling", "AI Editing & Culling", "Products", description="Preview AI-assisted editing and culling workflows designed to reduce photographer production time.")
 
 
+def editing_culling(request):
+    context = {
+        "pain_points": [
+            ("Thousands of images", "Large shoots create full galleries before editing even starts."),
+            ("Duplicate photos", "Near-identical frames make final selections harder to compare."),
+            ("Slightly blurry shots", "Soft images can hide among otherwise strong moments."),
+            ("Closed eyes", "Small expression issues often require careful manual review."),
+            ("Similar poses", "Repeated compositions slow down confident keep-or-skip decisions."),
+            ("Manual ratings", "Star ratings and flags take time across every event."),
+            ("Endless scrolling", "Review fatigue builds before creative editing begins."),
+        ],
+        "assistant_features": [
+            ("Quality Scoring", "Surface likely strong frames for faster review."),
+            ("Blur Detection", "Flag soft images that may need closer inspection."),
+            ("Duplicate Detection", "Group similar images so comparisons feel easier."),
+            ("Closed Eyes Detection", "Highlight expression issues before client delivery."),
+            ("Face Detection", "Help organize galleries around people and moments."),
+            ("Auto Tagging", "Suggest labels that make collections easier to search."),
+            ("Smart Collections", "Create helpful groupings for photographer review."),
+            ("Semantic Search", "Find images by natural words and event context."),
+            ("Batch Suggestions", "Recommend next steps while leaving approval to you."),
+        ],
+        "workflow": ["Import Photos", "AI Reviews Images", "Suggested Selections", "Photographer Reviews", "Edit", "Deliver Galleries"],
+        "benefits": [
+            ("bi-eye", "Review fewer photos manually", "Start with helpful signals instead of every frame."),
+            ("bi-lightning-charge", "Find your best images faster", "Move likely keepers into focus sooner."),
+            ("bi-arrow-repeat", "Reduce repetitive work", "Spend less energy on repeated sorting tasks."),
+            ("bi-folder2-open", "Organize galleries efficiently", "Prepare cleaner sets for review and delivery."),
+            ("bi-send-check", "Prepare deliveries sooner", "Shorten the path from shoot to gallery."),
+            ("bi-people", "Spend more time with clients", "Protect more time for service and creativity."),
+        ],
+        "capabilities": [
+            ("Image Quality Review", "Planned", "Assisted scoring to help prioritize image review."),
+            ("Duplicate Identification", "Planned", "Suggested grouping for similar or repeated frames."),
+            ("Blur Detection", "Planned", "Review signals for potentially soft photos."),
+            ("Auto Organization", "Coming Soon", "Suggested gallery groupings and tags."),
+            ("Semantic Search", "Future Release", "Search concepts, scenes, and moments with plain language."),
+            ("Tag Suggestions", "Coming Soon", "Optional labels for easier discovery."),
+        ],
+        "roadmap": ["AI Color Matching", "AI Crop Suggestions", "AI Album Design", "AI Editing Presets", "AI Subject Selection", "AI Background Cleanup", "AI Skin Retouching", "AI Batch Enhancements"],
+        "faqs": [
+            ("Will AI edit my photos automatically?", "No. LumisPixel positions AI as optional assistance for review and organization, not automatic final editing."),
+            ("Can I approve suggestions?", "Yes. Suggested selections and recommendations are intended for photographer review before anything moves forward."),
+            ("Does AI delete photos?", "No. The workflow should not automatically delete images. Photographers remain responsible for final decisions."),
+            ("Can I disable AI?", "AI assistance is intended to be optional, with photographer-controlled settings as features become available."),
+            ("Does it support RAW images?", "RAW workflow details are still part of backend implementation planning and should be confirmed before launch."),
+            ("Will AI improve over time?", "Yes. Future releases may improve recommendations while keeping photographer approval at the center."),
+            ("Are these tools available today?", "This page describes planned and coming LumisPixel AI workflow capabilities, clearly labeled by readiness."),
+            ("Can I choose which AI features to use?", "That is the goal: optional tools that photographers can enable based on their workflow."),
+        ],
+    }
+    return render(request, "ai_editing_culling.html", context)
+
+
 def ai_photo_search(request):
     context = {
         "pain_points": [
