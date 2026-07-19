@@ -91,6 +91,8 @@ def public_page(request, page_key):
         return school_photography(request)
     if page_key == "corporate_photography":
         return corporate_photography(request)
+    if page_key == "event_photography":
+        return event_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -723,6 +725,109 @@ def corporate_photography(request):
         ],
     }
     return render(request, "corporate_photography.html", context)
+
+
+def event_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Private Galleries",
+            "Event Galleries",
+            "Digital Downloads",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-person-bounding-box", "Face Recognition"),
+            ("bi-images", "Event Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-person-bounding-box", "Face Recognition", "Organize attendees automatically."),
+            ("bi-images", "Event Galleries", "Create galleries for every event."),
+            ("bi-search-heart", "Photo Search", "Guests find their photos with a selfie."),
+            ("bi-window", "Photographer Websites", "Showcase your event portfolio."),
+            ("bi-cloud-download", "Print & Downloads", "Sell prints and digital files."),
+            ("bi-chat-dots", "Client Management", "Manage events and communication."),
+            ("bi-bar-chart", "Analytics", "Track galleries, downloads, and sales."),
+        ],
+        "pain_solutions": [
+            ("Large Crowds", "Faster Organization"),
+            ("Tight Deadlines", "AI Face Search"),
+            ("Finding Guests", "Event Galleries"),
+            ("Multiple Events", "Easy Delivery"),
+            ("Missed Sales", "Built-In Store"),
+            ("Too Many Tools", "One Platform"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos", "Use a selfie to locate event photos."),
+            ("bi-images", "Event Galleries", "Browse photos from every event."),
+            ("bi-heart", "Favorites", "Save favorite moments for later."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-bag-check", "Print Ordering", "Order prints from the gallery."),
+            ("bi-share", "Easy Sharing", "Share photos with friends and teams."),
+        ],
+        "timeline": [
+            "Book Event",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Gallery",
+            "Photo Search",
+            "Download",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel helps us deliver event galleries faster without losing track of important guest photos.",
+                "Event photographer",
+            ),
+            (
+                "Guests use selfie search instead of asking our team to find photos manually.",
+                "Gala photographer",
+            ),
+            (
+                "Our client galleries stay organized, and attendees leave happier with easy downloads.",
+                "Studio owner",
+            ),
+        ],
+        "metrics": [
+            "Faster Organization",
+            "Easy Guest Search",
+            "More Sales",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Guests upload a selfie when search is enabled. LumisPixel finds matching photos in the event gallery.",
+            ),
+            (
+                "Can I create galleries for multiple events?",
+                "Yes. Create separate galleries for conferences, galas, festivals, fundraisers, and private events.",
+            ),
+            (
+                "Can guests download high-resolution photos?",
+                "Yes. Photographers control download access for each gallery and package.",
+            ),
+            (
+                "Can I sell prints and digital downloads?",
+                "Yes. Sell prints and digital files directly from each gallery.",
+            ),
+            (
+                "Can I organize attendees automatically?",
+                "Yes. Face recognition helps group attendees across high-volume event galleries.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace tools for editing, galleries, face search, websites, stores, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "event_photography.html", context)
 
 
 def robots_txt(request):
