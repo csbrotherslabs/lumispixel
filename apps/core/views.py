@@ -176,6 +176,8 @@ def public_page(request, page_key):
         return business_hub_analytics_reports(request)
     if page_key == "business_hub_marketing_growth":
         return business_hub_marketing_growth(request)
+    if page_key == "business_hub_team_operations":
+        return business_hub_team_operations(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -618,6 +620,57 @@ def business_hub_marketing_growth(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Analytics", "Client Galleries", "Marketplace"],
     }
     return render(request, "business_hub_marketing_growth.html", context)
+
+
+def business_hub_team_operations(request):
+    context = {
+        "problem_cards": [
+            ("bi-calendar-x", "Missed Assignments", "Shoots and deadlines get harder to track as more people join."),
+            ("bi-chat-left-dots", "Scattered Communication", "Updates can live in texts, email threads, and memory."),
+            ("bi-camera-video", "Equipment Conflicts", "Gear gets double-booked when availability is unclear."),
+            ("bi-hourglass-split", "Project Delays", "Editing, proofing, and delivery can stall without visibility."),
+            ("bi-arrow-repeat", "Manual Coordination", "Too much time goes into chasing status and next steps."),
+            ("bi-diagram-3", "Growing Complexity", "More clients, jobs, and teammates need a stronger system."),
+        ],
+        "workflow": ["Booking", "Assign Photographer", "Assign Editor", "Track Progress", "Deliver Gallery", "Client Approval", "Archive Project"],
+        "features": [
+            ("bi-people", "Team Members", "Organize photographers, editors, assistants, and partners."),
+            ("bi-person-check", "Project Assignments", "Give every job a clear owner and supporting team."),
+            ("bi-list-check", "Task Management", "Track shoot prep, edits, reviews, and delivery steps."),
+            ("bi-camera", "Equipment Tracking", "See gear status, usage, and upcoming conflicts."),
+            ("bi-calendar-week", "Studio Calendar", "Coordinate sessions, deadlines, and team availability."),
+            ("bi-shield-check", "Role Permissions", "Control access for staff, editors, and second shooters."),
+            ("bi-activity", "Project Status", "Know what is booked, shooting, editing, and delivered."),
+            ("bi-sliders", "Editor Queue", "Balance editing work and due dates across your team."),
+            ("bi-camera2", "Second Shooters", "Assign supporting photographers with session details."),
+            ("bi-sticky", "Internal Notes", "Keep team-only context connected to each project."),
+            ("bi-clock-history", "Activity History", "Review project changes, updates, and completed work."),
+            ("bi-speedometer2", "Operations Dashboard", "See people, projects, gear, and priorities together."),
+        ],
+        "kpis": ["Active Projects", "Team Availability", "Projects In Progress", "Upcoming Sessions", "Equipment In Use", "Tasks Due Today", "Pending Deliveries", "Completed Projects"],
+        "ai_cards": [
+            ("Suggest Assignments", "Match jobs to available photographers and editors."),
+            ("Detect Conflicts", "Find schedule and gear issues before shoot day."),
+            ("Balance Workloads", "Recommend fair team capacity across active projects."),
+            ("Flag Delays", "Spot projects that may miss delivery targets."),
+            ("Summarize Activity", "See daily team updates in plain language."),
+            ("Track Gear Needs", "Highlight equipment needed for upcoming sessions."),
+            ("Predict Busy Weeks", "Prepare staffing before your calendar fills up."),
+            ("Improve Workflows", "Recommend smoother steps for repeatable studio work."),
+        ],
+        "benefits": [
+            ("Stay Organized", "Keep every person and project easy to find."),
+            ("Better Collaboration", "Help teammates understand what needs to happen next."),
+            ("Reduce Delays", "Catch blockers before clients feel them."),
+            ("Track Projects", "Follow every job from booking to archive."),
+            ("Manage Equipment", "Know where important gear is going."),
+            ("Support Teams", "Give growing studios a clear operating rhythm."),
+            ("Deliver Consistently", "Create reliable client experiences at scale."),
+            ("Grow Your Studio", "Add capacity without adding chaos."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Analytics", "Marketing", "Client Galleries"],
+    }
+    return render(request, "business_hub_team_operations.html", context)
 
 
 def business_hub_ai_business_assistant(request):
