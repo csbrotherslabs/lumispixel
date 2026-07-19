@@ -95,6 +95,8 @@ def public_page(request, page_key):
         return event_photography(request)
     if page_key == "real_estate_photography":
         return real_estate_photography(request)
+    if page_key == "commercial_photography":
+        return commercial_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -846,6 +848,109 @@ def corporate_photography(request):
         ],
     }
     return render(request, "corporate_photography.html", context)
+
+
+def commercial_photography(request):
+    context = {
+        "stats": [
+            "Client Galleries",
+            "Fast Delivery",
+            "Digital Downloads",
+            "Project Management",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-magic", "Editing Assistance"),
+            ("bi-images", "Client Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-images", "Client Galleries", "Deliver polished galleries for every project."),
+            ("bi-window", "Photographer Websites", "Showcase your commercial portfolio."),
+            ("bi-cloud-download", "Digital Downloads", "Deliver high-resolution files instantly."),
+            ("bi-kanban", "Project Management", "Manage clients, projects, and communication."),
+            ("bi-heart", "Proofing & Favorites", "Collect client selections quickly."),
+            ("bi-bar-chart", "Analytics", "Track gallery activity and downloads."),
+            ("bi-shield-check", "Brand Asset Delivery", "Share approved marketing assets securely."),
+        ],
+        "pain_solutions": [
+            ("Tight Deadlines", "Faster Workflow"),
+            ("Multiple Revisions", "Easy Proofing"),
+            ("Large File Delivery", "Secure Delivery"),
+            ("Client Approvals", "Organized Projects"),
+            ("Too Many Tools", "One Platform"),
+            ("Multiple Projects", "Better Client Experience"),
+        ],
+        "guest_cards": [
+            ("bi-images", "Client Galleries", "Review every project in one place."),
+            ("bi-heart", "Favorites", "Mark preferred images for approval."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-share", "Easy Sharing", "Share assets with your team."),
+            ("bi-check2-square", "Project Proofing", "Approve selections without long email threads."),
+            ("bi-people", "Team Access", "Give collaborators controlled gallery access."),
+        ],
+        "timeline": [
+            "Book Project",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Review",
+            "Publish Gallery",
+            "Approve",
+            "Download",
+            "Deliver",
+        ],
+        "testimonials": [
+            (
+                "Approvals move faster because clients review, favorite, and download from one organized gallery.",
+                "Commercial photographer",
+            ),
+            (
+                "Each campaign stays organized, from proofing to final asset delivery for our brand clients.",
+                "Studio owner",
+            ),
+            (
+                "Clients enjoy the clean gallery experience, and that helps us earn repeat projects.",
+                "Creative director",
+            ),
+        ],
+        "metrics": [
+            "Faster Approvals",
+            "Organized Projects",
+            "Better Client Experience",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "Can clients review and approve images?",
+                "Yes. Clients can review galleries, mark favorites, and approve selections in one place.",
+            ),
+            (
+                "Can I create galleries for multiple projects?",
+                "Yes. Create separate galleries for campaigns, products, clients, or deliverables.",
+            ),
+            (
+                "Can teams download approved files?",
+                "Yes. Photographers control which files teams can download.",
+            ),
+            (
+                "Can clients mark favorites?",
+                "Yes. Favorites help clients share selections and request edits quickly.",
+            ),
+            (
+                "Can I manage multiple commercial clients?",
+                "Yes. Keep clients, projects, galleries, and communication organized together.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, file sharing, galleries, proofing, project management, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "commercial_photography.html", context)
 
 
 def event_photography(request):
