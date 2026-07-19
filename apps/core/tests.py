@@ -10,18 +10,18 @@ class ForPhotographersRoutingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "for_photographers.html")
-        self.assertContains(response, "lp-photo-hero")
+        self.assertContains(response, "lp-photo-page-heading")
         self.assertContains(response, "Photography is hard enough")
         self.assertContains(response, "One Platform")
         self.assertContains(response, "Core platform")
         self.assertContains(response, "AI throughout LumisPixel")
         self.assertContains(response, "A day in the life")
-        self.assertContains(response, "Replace disconnected tools")
+        self.assertContains(response, "Replace Tools With One Workflow")
         self.assertContains(response, "Built for every photographer")
         self.assertContains(response, "Our vision")
         self.assertContains(response, "Photographer notes")
-        self.assertContains(response, "Ready to transform your photography business")
-        self.assertContains(response, "Questions photographers ask before switching")
+        self.assertContains(response, "Ready to Simplify Your Studio")
+        self.assertContains(response, "Questions Before Switching")
         self.assertNotContains(response, "public_landing")
 
     def test_homepage_and_navigation_links_use_single_named_route(self):

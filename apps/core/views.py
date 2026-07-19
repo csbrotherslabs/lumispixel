@@ -102,35 +102,35 @@ def for_photographers(request):
         "pain_points": [
             {
                 "icon": "bi-images",
-                "text": "Thousands of photos to organize after every shoot.",
+                "text": "Too many photos to organize after each shoot.",
             },
             {
                 "icon": "bi-chat-dots",
-                "text": "Clients asking, “Do you have my photos?”",
+                "text": "Clients asking you to find their photos.",
             },
             {
                 "icon": "bi-cloud-arrow-up",
-                "text": "Hours spent uploading galleries and sending links.",
+                "text": "Hours lost uploading galleries and links.",
             },
             {
                 "icon": "bi-bag-x",
-                "text": "Lost print sales because buying is disconnected.",
+                "text": "Missed print sales from disconnected buying.",
             },
             {
                 "icon": "bi-grid-3x3-gap",
-                "text": "Multiple apps for galleries, websites, CRM, sales, and analytics.",
+                "text": "Separate apps for galleries, websites, sales, and analytics.",
             },
             {
                 "icon": "bi-search",
-                "text": "Difficult searching across events, people, and moments.",
+                "text": "Hard-to-search events, people, and moments.",
             },
             {
                 "icon": "bi-window",
-                "text": "No professional website that reflects your brand.",
+                "text": "A website that does not match your brand.",
             },
             {
                 "icon": "bi-graph-up",
-                "text": "Limited business insights when every tool reports separately.",
+                "text": "Scattered insights across disconnected tools.",
             },
         ],
         "workflow": [
@@ -146,7 +146,7 @@ def for_photographers(request):
         "features": [
             {
                 "title": "Photographer Workspace",
-                "copy": "A calm command center for the business side of photography—clients, events, billing, analytics, orders, and marketing in one place.",
+                "copy": "Manage clients, events, billing, orders, analytics, and marketing from one calm workspace.",
                 "bullets": [
                     "Dashboard, clients, and events",
                     "Billing, orders, and revenue",
@@ -159,7 +159,7 @@ def for_photographers(request):
             },
             {
                 "title": "AI Photo Search",
-                "copy": "Help clients find themselves and their moments without scrolling through thousands of images.",
+                "copy": "Let clients find themselves, people, and moments without scrolling through every image.",
                 "bullets": [
                     "Face recognition and selfie search",
                     "Semantic, event, and people search",
@@ -172,7 +172,7 @@ def for_photographers(request):
             },
             {
                 "title": "AI Editing & Culling",
-                "copy": "Reduce review time with intelligent signals that surface quality issues and likely keepers.",
+                "copy": "Speed up review with AI signals for quality issues, duplicates, and likely keepers.",
                 "bullets": [
                     "Blur and closed-eye detection",
                     "Quality scoring and duplicates",
@@ -185,7 +185,7 @@ def for_photographers(request):
             },
             {
                 "title": "Client Galleries",
-                "copy": "Deliver premium galleries that are easy for clients to access, share, favorite, download, and buy from.",
+                "copy": "Deliver polished galleries clients can access, share, favorite, download, and buy from.",
                 "bullets": [
                     "Password protection and watermarks",
                     "Favorites, downloads, QR codes",
@@ -198,7 +198,7 @@ def for_photographers(request):
             },
             {
                 "title": "Photographer Websites",
-                "copy": "Launch a professional web presence that turns visitors into inquiries and makes your work feel premium.",
+                "copy": "Build a professional portfolio site that turns visitors into inquiries.",
                 "bullets": [
                     "Portfolio and theme selection",
                     "Branding, SEO, and contact pages",
@@ -211,7 +211,7 @@ def for_photographers(request):
             },
             {
                 "title": "Sales & Store",
-                "copy": "Turn gallery attention into revenue with products clients can purchase while excitement is high.",
+                "copy": "Sell downloads, prints, albums, and offers directly from the gallery.",
                 "bullets": [
                     "Digital downloads, prints, and frames",
                     "Albums, packages, and gift cards",
@@ -224,7 +224,7 @@ def for_photographers(request):
             },
             {
                 "title": "Business Analytics",
-                "copy": "Understand what is working across revenue, downloads, gallery views, popular images, and client engagement.",
+                "copy": "See revenue, downloads, views, popular images, and client engagement in one place.",
                 "bullets": [
                     "Revenue and sales performance",
                     "Downloads and gallery views",
@@ -237,7 +237,7 @@ def for_photographers(request):
             },
             {
                 "title": "Marketplace",
-                "copy": "Prepare your studio for a connected ecosystem of requests, collaborators, second shooters, editors, and future client discovery.",
+                "copy": "Connect with requests, collaborators, second shooters, editors, and future client discovery.",
                 "bullets": [
                     "Photography requests",
                     "Second shooters, retouchers, and editors",
@@ -324,22 +324,22 @@ def for_photographers(request):
             {
                 "status": "Future",
                 "title": "AI Editing",
-                "copy": "Faster style-aware edits and assistive adjustments.",
+                "copy": "Style-aware edits and guided adjustments.",
             },
             {
                 "status": "Future",
                 "title": "AI Album Design",
-                "copy": "Album layouts generated from story, emotion, and selections.",
+                "copy": "Layouts based on story, emotion, and selections.",
             },
             {
                 "status": "Future",
                 "title": "Marketing Assistant",
-                "copy": "Campaign ideas, email drafts, and sales nudges.",
+                "copy": "Campaign ideas, email drafts, and sales prompts.",
             },
             {
                 "status": "Future",
                 "title": "Mobile App",
-                "copy": "On-the-go studio operations and client access.",
+                "copy": "Studio and client access on the go.",
             },
             {
                 "status": "Expanding",
@@ -349,7 +349,7 @@ def for_photographers(request):
             {
                 "status": "Future",
                 "title": "Studio CRM",
-                "copy": "Relationship history and pipeline management.",
+                "copy": "Client history and pipeline management.",
             },
             {
                 "status": "Future",
@@ -359,55 +359,55 @@ def for_photographers(request):
             {
                 "status": "Future",
                 "title": "Smart Contracts",
-                "copy": "Templates and guided client agreements.",
+                "copy": "Templates and guided agreements.",
             },
         ],
         "testimonials": [
             {
-                "text": "This feels like it was designed by someone who understands gallery delivery, client questions, and the chaos after a big event.",
+                "text": "It understands gallery delivery, client questions, and the chaos after a big event.",
                 "role": "Placeholder testimonial — wedding photographer",
             },
             {
-                "text": "The promise is simple: fewer disconnected tools, faster client discovery, and more opportunities to sell the work I already created.",
+                "text": "Fewer tools, faster client discovery, and more ways to sell the work I already created.",
                 "role": "Placeholder testimonial — sports photographer",
             },
             {
-                "text": "I want my website, galleries, orders, and analytics to finally speak the same language. LumisPixel is aiming directly at that gap.",
+                "text": "My website, galleries, orders, and analytics should finally work together.",
                 "role": "Placeholder testimonial — portrait studio owner",
             },
         ],
         "faqs": [
             {
                 "q": "Can clients upload selfies?",
-                "a": "Yes. LumisPixel is designed around selfie-based discovery so clients can find their own images quickly inside supported galleries.",
+                "a": "Yes. Clients can use selfie-based discovery to find their images quickly in supported galleries.",
             },
             {
                 "q": "Can I sell prints?",
-                "a": "The sales vision includes prints, frames, albums, packages, digital downloads, coupons, and gift cards from gallery experiences.",
+                "a": "Yes. The sales vision includes prints, frames, albums, packages, downloads, coupons, and gift cards.",
             },
             {
                 "q": "Can I use my own branding?",
-                "a": "Yes. Photographer websites and galleries are planned around themes, branding, portfolio presentation, SEO, and professional contact pages.",
+                "a": "Yes. Websites and galleries support themes, branding, portfolios, SEO, and contact pages.",
             },
             {
                 "q": "Can clients download photos?",
-                "a": "Yes. Client galleries include download-focused workflows, with controls such as passwords, favorites, watermarks, QR codes, and event codes.",
+                "a": "Yes. Galleries support downloads with passwords, favorites, watermarks, QR codes, and event codes.",
             },
             {
                 "q": "How does AI work?",
-                "a": "AI supports search, face recognition, quality detection, blur detection, duplicate detection, auto tagging, smart collections, and future recommendations.",
+                "a": "AI powers search, face recognition, quality checks, blur and duplicate detection, tagging, smart collections, and future recommendations.",
             },
             {
                 "q": "Can I migrate from another gallery provider?",
-                "a": "Migration tooling will require backend implementation, but the page and product direction are built for photographers replacing multiple existing tools.",
+                "a": "Migration tools are planned. LumisPixel is being built for photographers replacing multiple disconnected tools.",
             },
             {
                 "q": "What file formats are supported?",
-                "a": "Final production file-format support should be confirmed by backend upload and processing services as they are implemented.",
+                "a": "Final file-format support will be confirmed as upload and processing services are implemented.",
             },
             {
                 "q": "How secure are my galleries?",
-                "a": "The experience is designed for protected galleries with passwords, event codes, watermarks, and controlled downloads; production security depends on backend enforcement.",
+                "a": "Galleries are designed for passwords, event codes, watermarks, and controlled downloads. Production security depends on backend enforcement.",
             },
         ],
     }
