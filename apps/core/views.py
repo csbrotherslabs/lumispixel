@@ -93,6 +93,8 @@ def public_page(request, page_key):
         return corporate_photography(request)
     if page_key == "event_photography":
         return event_photography(request)
+    if page_key == "real_estate_photography":
+        return real_estate_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -462,6 +464,125 @@ def sports_photography(request):
         ],
     }
     return render(request, "sports_photography.html", context)
+
+
+def real_estate_photography(request):
+    context = {
+        "stats": [
+            "Property Galleries",
+            "Fast Delivery",
+            "Digital Downloads",
+            "Client Management",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-magic", "Editing Assistance"),
+            ("bi-images", "Property Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best property photos."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-images", "Property Galleries", "Create galleries for every listing."),
+            ("bi-window", "Photographer Websites", "Showcase your portfolio."),
+            (
+                "bi-cloud-download",
+                "Digital Downloads",
+                "Deliver high-resolution files instantly.",
+            ),
+            (
+                "bi-chat-dots",
+                "Client Management",
+                "Manage listings, agents, and communication.",
+            ),
+            (
+                "bi-calendar-check",
+                "Scheduling",
+                "Keep shoots and appointments organized.",
+            ),
+            ("bi-bar-chart", "Analytics", "Track galleries, downloads, and activity."),
+            (
+                "bi-megaphone",
+                "Marketing Assets",
+                "Deliver files for MLS and social media.",
+            ),
+        ],
+        "pain_solutions": [
+            ("Tight Deadlines", "Faster Workflow"),
+            ("Multiple Listings", "Organized Listings"),
+            ("Large File Delivery", "Easy Delivery"),
+            ("Client Revisions", "Secure Downloads"),
+            ("Too Many Tools", "One Platform"),
+            ("Busy Schedules", "Better Client Experience"),
+        ],
+        "guest_cards": [
+            ("bi-images", "Property Galleries", "View every listing in one gallery."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-heart", "Favorites", "Save preferred property photos."),
+            ("bi-share", "Easy Sharing", "Share galleries with clients quickly."),
+            ("bi-lightning", "Fast Delivery", "Access final photos sooner."),
+            ("bi-phone", "Mobile Access", "Review galleries from any device."),
+        ],
+        "timeline": [
+            "Book Shoot",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Gallery",
+            "Download",
+            "Share",
+            "List Property",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel helps us publish property galleries quickly and keep every listing organized for agents.",
+                "Real estate photographer",
+            ),
+            (
+                "Agents get clean galleries, fast downloads, and fewer back-and-forth messages after each shoot.",
+                "Photography studio owner",
+            ),
+            (
+                "Faster delivery and organized files have helped us win repeat business from busy brokers.",
+                "Property photographer",
+            ),
+        ],
+        "metrics": [
+            "Faster Delivery",
+            "Organized Listings",
+            "Better Client Experience",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "Can I create galleries for every property?",
+                "Yes. Create a separate gallery for each listing, property, or client.",
+            ),
+            (
+                "Can agents download full-resolution photos?",
+                "Yes. Photographers control download access for each gallery and package.",
+            ),
+            (
+                "Can I organize multiple listings?",
+                "Yes. Keep listings, agents, galleries, and files organized in one place.",
+            ),
+            (
+                "Can I deliver MLS-ready files?",
+                "Yes. Deliver final files for MLS, websites, and social media.",
+            ),
+            (
+                "Can I manage multiple clients?",
+                "Yes. Manage agents, brokers, property managers, and homeowners together.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, file sharing, galleries, websites, scheduling, messages, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "real_estate_photography.html", context)
 
 
 def school_photography(request):
