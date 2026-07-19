@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page.seo_title }}{% endblock %}
+{% block meta_description %}{{ page.meta_description }}{% endblock %}
+{% block og_title %}{{ page.og_title }}{% endblock %}
+{% block og_description %}{{ page.og_description }}{% endblock %}
+{% block twitter_title %}{{ page.og_title }}{% endblock %}
+{% block twitter_description %}{{ page.og_description }}{% endblock %}
+{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block body_class %}marketing-page page-parent-landing{% endblock %}
+
+{% block content %}
+<section class="lp-public-hero lp-parent-hero" aria-labelledby="parent-page-title">
+    <div class="container">
+        <nav class="lp-breadcrumb" aria-label="Breadcrumb">
+            <ol>
+                <li><a href="{% url 'core:index' %}">Home</a></li>
+                <li aria-current="page">{{ page.page_title }}</li>
+            </ol>
+        </nav>
+        <span class="lp-eyebrow">{{ page.category }}</span>
+        <h1 id="parent-page-title">{{ page.heading }}</h1>
+        <p>{{ page.description }}</p>
+        <div class="lp-public-actions">
+            <a class="btn-one" href="{% url page.cta_url %}">{{ page.cta_title }}</a>
+            <a class="btn-two" href="{% url page.cta_secondary_url %}">Talk to LumisPixel</a>
+        </div>
+    </div>
+</section>
+
+<section class="lp-public-section lp-parent-features" aria-labelledby="parent-feature-grid-title">
+    <div class="container">
+        <div class="lp-parent-intro">
+            <span class="lp-eyebrow">Explore Features</span>
+            <h2 id="parent-feature-grid-title">{{ page.page_title }} features</h2>
+            <p>{{ page.intro }}</p>
+        </div>
+        <div class="wptb-service--inner">
+            <div class="row g-4" role="list">
+                {% for feature in page.features %}
+                    <div class="col-xl-3 col-lg-4 col-md-6" role="listitem">
+                        <a class="wptb-icon-box5 lp-feature-card" href="{% url feature.url_name %}">
+                            <span class="wptb-item--inner">
+                                <span class="wptb-item--icon lp-feature-icon" aria-hidden="true">
+                                    <i class="bi {{ feature.icon }}"></i>
+                                </span>
+                                <span class="wptb-item--holder">
+                                    <span class="wptb-item--description">{{ forloop.counter|stringformat:"02d" }}</span>
+                                    <span class="wptb-item--title h4">{{ feature.title }}</span>
+                                    <span class="lp-feature-description">{{ feature.description }}</span>
+                                    <span class="lp-feature-link">Open feature <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                                </span>
+                            </span>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="lp-parent-cta" aria-labelledby="parent-cta-title">
+    <div class="container">
+        <div class="lp-parent-cta-card">
+            <div>
+                <span class="lp-eyebrow">Next Step</span>
+                <h2 id="parent-cta-title">{{ page.cta_title }}</h2>
+                <p>{{ page.cta_text }}</p>
+            </div>
+            <a class="btn-one" href="{% url page.cta_url %}">{{ page.cta_title }}</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

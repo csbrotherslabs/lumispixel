@@ -6,6 +6,60 @@ PAGE_DEFAULTS = {
     "future": "This landing page prepares the information architecture for deeper product workflows, integrations, and authenticated modules as they are released.",
 }
 
+PARENT_LANDING_PAGES = {
+    "products": {
+        "seo_title": "Products for Photographers and Clients | LumisPixel",
+        "meta_description": "Explore LumisPixel products for photographers and clients, including AI search, galleries, editing, websites, and marketplace discovery.",
+        "og_title": "Products for Photographers and Clients | LumisPixel",
+        "og_description": "Discover connected LumisPixel tools for managing photo work, serving clients, delivering galleries, and growing a photography business.",
+        "page_title": "Products",
+        "category": "Products",
+        "heading": "Everything You Need.",
+        "description": "Explore the tools that help photographers manage their work, serve clients, deliver photos, and grow their businesses.",
+        "intro": "Choose a product area to learn how LumisPixel connects photographers and clients from discovery through delivery.",
+        "cta_title": "Explore LumisPixel",
+        "cta_text": "Start with the LumisPixel tools that fit your next client experience.",
+        "cta_url": "accounts:get-started",
+        "cta_secondary_url": "core:contact",
+        "features": [
+            {"title": "For Photographers", "description": "Manage shoots, galleries, clients, and growth in one place.", "icon": "bi-camera", "url_name": "core:for_photographers"},
+            {"title": "For Clients", "description": "Find, view, and enjoy photo experiences made for clients.", "icon": "bi-person-heart", "url_name": "clients:for_clients"},
+            {"title": "AI Photo Search", "description": "Help people find the right photos faster with AI discovery.", "icon": "bi-search-heart", "url_name": "ai_engine:photo_search"},
+            {"title": "Client Galleries", "description": "Deliver polished galleries for proofing, sharing, and downloads.", "icon": "bi-images", "url_name": "galleries:client_galleries"},
+            {"title": "AI Editing & Culling", "description": "Speed up culling and editing decisions with AI support.", "icon": "bi-magic", "url_name": "ai_engine:editing_culling"},
+            {"title": "Photographer Websites", "description": "Create a photographer website that showcases your work beautifully.", "icon": "bi-window", "url_name": "photographers:websites"},
+            {"title": "Find a Photographer", "description": "Connect clients with photographers for their next session.", "icon": "bi-geo-alt", "url_name": "marketplace:find_photographer"},
+        ],
+    },
+    "solutions": {
+        "seo_title": "Photography Solutions | LumisPixel",
+        "meta_description": "Explore LumisPixel photography solutions for weddings, portraits, sports, schools, events, real estate, commercial work, studios, and destinations.",
+        "og_title": "Photography Solutions | LumisPixel",
+        "og_description": "See how LumisPixel supports photographers and clients across specialties with organized delivery, AI discovery, and business workflows.",
+        "page_title": "Solutions",
+        "category": "Solutions",
+        "heading": "Built For Every Shoot.",
+        "description": "Discover how LumisPixel supports photographers and clients across different photography specialties.",
+        "intro": "Browse the photography specialties currently available in the LumisPixel navigation.",
+        "cta_title": "Find Your Solution",
+        "cta_text": "Match LumisPixel to the way you shoot, deliver, and serve clients.",
+        "cta_url": "accounts:get-started",
+        "cta_secondary_url": "core:contact",
+        "features": [
+            {"title": "Wedding Photography", "description": "Plan, deliver, and preserve wedding memories with polished workflows.", "icon": "bi-gem", "url_name": "core:solution_wedding_photography"},
+            {"title": "Portrait Photography", "description": "Support portrait sessions with smooth galleries and client delivery.", "icon": "bi-person-square", "url_name": "core:solution_portrait_photography"},
+            {"title": "Sports Photography", "description": "Organize action coverage for teams, athletes, and families.", "icon": "bi-trophy", "url_name": "core:solution_sports_photography"},
+            {"title": "School Photography", "description": "Manage school photo experiences for students and families.", "icon": "bi-mortarboard", "url_name": "core:solution_school_photography"},
+            {"title": "Corporate Photography", "description": "Deliver professional photo workflows for teams and organizations.", "icon": "bi-building", "url_name": "core:solution_corporate_photography"},
+            {"title": "Event Photography", "description": "Help guests and organizers find event images quickly.", "icon": "bi-calendar-event", "url_name": "core:solution_event_photography"},
+            {"title": "Real Estate Photography", "description": "Present property photography with fast, polished delivery.", "icon": "bi-house", "url_name": "core:solution_real_estate_photography"},
+            {"title": "Commercial Photography", "description": "Support brand, product, and campaign photo production.", "icon": "bi-briefcase", "url_name": "core:solution_commercial_photography"},
+            {"title": "Studio Photography", "description": "Keep studio sessions, clients, and galleries organized.", "icon": "bi-camera-reels", "url_name": "core:solution_studio_photography"},
+            {"title": "Destination Photography", "description": "Coordinate destination shoots and client delivery from anywhere.", "icon": "bi-airplane", "url_name": "core:solution_destination_photography"},
+        ],
+    },
+}
+
 PUBLIC_PAGES = {}
 
 
@@ -133,11 +187,97 @@ for key, title in [
     add(key, title, "Company")
 
 
+PARENT_LANDING_PAGES.update({
+    "business_hub": {
+        "seo_title": "Photography Business Management Tools | LumisPixel",
+        "meta_description": "Manage photography clients, bookings, contracts, invoices, automation, analytics, marketing, teams, and operations with LumisPixel Business Hub.",
+        "og_title": "Photography Business Management Tools | LumisPixel",
+        "og_description": "Run daily photography business operations from one connected LumisPixel hub for clients, bookings, payments, automation, and growth.",
+        "page_title": "Business Hub",
+        "category": "Business Hub",
+        "heading": "Run Your Business Smarter.",
+        "description": "Manage clients, bookings, payments, automation, insights, growth, and daily operations from one connected platform.",
+        "intro": "Move through each Business Hub tool in the same order used by the LumisPixel navigation.",
+        "cta_title": "Run Your Business Smarter",
+        "cta_text": "Bring your studio operations into one connected workflow.",
+        "cta_url": "accounts:get-started",
+        "cta_secondary_url": "core:contact",
+        "features": [
+            {"title": "Business Dashboard", "description": "See priorities, clients, revenue, and work in one overview.", "icon": "bi-speedometer2", "url_name": "core:business_hub_dashboard"},
+            {"title": "Client CRM", "description": "Organize leads, clients, notes, and follow-ups clearly.", "icon": "bi-person-lines-fill", "url_name": "core:business_hub_client_crm"},
+            {"title": "Booking & Calendar", "description": "Coordinate sessions, availability, deadlines, and appointments.", "icon": "bi-calendar-week", "url_name": "core:business_hub_booking_calendar"},
+            {"title": "AI Assistant", "description": "Use AI support for planning, responses, and daily decisions.", "icon": "bi-stars", "url_name": "core:business_hub_ai_business_assistant"},
+            {"title": "Contracts", "description": "Keep agreements connected to clients, sessions, and jobs.", "icon": "bi-file-earmark-text", "url_name": "core:business_hub_contracts"},
+            {"title": "Invoices & Payments", "description": "Track invoices, deposits, balances, and payment workflows.", "icon": "bi-receipt", "url_name": "core:business_hub_invoices_payments"},
+            {"title": "Workflow Automation", "description": "Automate repeatable steps from inquiry through delivery.", "icon": "bi-arrow-repeat", "url_name": "core:business_hub_workflow_automation"},
+            {"title": "Analytics & Reports", "description": "Review performance, revenue, trends, and studio activity.", "icon": "bi-graph-up-arrow", "url_name": "core:business_hub_analytics_reports"},
+            {"title": "Marketing & Growth", "description": "Improve visibility, campaigns, follow-ups, and booking growth.", "icon": "bi-megaphone", "url_name": "core:business_hub_marketing_growth"},
+            {"title": "Team & Operations", "description": "Coordinate people, roles, tasks, and everyday operations.", "icon": "bi-people", "url_name": "core:business_hub_team_operations"},
+        ],
+    },
+    "resources": {
+        "seo_title": "Photography Business Resources | LumisPixel",
+        "meta_description": "Find LumisPixel resources for photographers, including how it works, documentation, API previews, help, FAQs, blog posts, tutorials, community, releases, and system status.",
+        "og_title": "Photography Business Resources | LumisPixel",
+        "og_description": "Learn how to get more from LumisPixel and build stronger photography workflows with help, guides, updates, and community resources.",
+        "page_title": "Resources",
+        "category": "Resources",
+        "heading": "Learn. Build. Grow.",
+        "description": "Explore practical resources that help photographers get more from LumisPixel and build stronger businesses.",
+        "intro": "Use these resources to learn the platform, follow updates, and connect with support.",
+        "cta_title": "Start Learning",
+        "cta_text": "Explore the resources that help your next workflow move faster.",
+        "cta_url": "core:how_it_works",
+        "cta_secondary_url": "core:help_center",
+        "features": [
+            {"title": "How It Works", "description": "See how LumisPixel connects discovery, delivery, and growth.", "icon": "bi-play-circle", "url_name": "core:how_it_works"},
+            {"title": "Documentation", "description": "Review platform guidance and implementation details.", "icon": "bi-journal-text", "url_name": "core:documentation"},
+            {"title": "API", "description": "Preview upcoming API capabilities for connected workflows.", "icon": "bi-code-slash", "url_name": "api:api_coming_soon"},
+            {"title": "Developer Center", "description": "Explore upcoming developer tools and integration resources.", "icon": "bi-terminal", "url_name": "api:developer_center"},
+            {"title": "Help Center", "description": "Find support answers for common LumisPixel tasks.", "icon": "bi-life-preserver", "url_name": "core:help_center"},
+            {"title": "FAQ", "description": "Get quick answers to frequent platform questions.", "icon": "bi-question-circle", "url_name": "core:faq"},
+            {"title": "Blog", "description": "Read ideas for photography workflows and business growth.", "icon": "bi-newspaper", "url_name": "core:blog"},
+            {"title": "Release Notes", "description": "Follow LumisPixel product updates and improvements.", "icon": "bi-megaphone", "url_name": "core:release_notes"},
+            {"title": "System Status", "description": "Check current platform availability and service updates.", "icon": "bi-activity", "url_name": "core:system_status"},
+            {"title": "Tutorials", "description": "Learn practical steps for using LumisPixel features.", "icon": "bi-easel", "url_name": "core:tutorials"},
+            {"title": "Community", "description": "Connect with photographers and LumisPixel users.", "icon": "bi-chat-dots", "url_name": "core:community"},
+        ],
+    },
+    "company": {
+        "seo_title": "About LumisPixel | Photography Platform",
+        "meta_description": "Learn about LumisPixel, our story, careers, partners, contact options, privacy, terms, cookies, and accessibility commitments.",
+        "og_title": "About LumisPixel | Photography Platform",
+        "og_description": "Meet LumisPixel and learn about the mission, company resources, policies, and ways to connect with the team.",
+        "page_title": "Company",
+        "category": "Company",
+        "heading": "Building The Future Of Photography.",
+        "description": "Learn about LumisPixel, our mission, and the people building a better platform for photographers and their clients.",
+        "intro": "Explore the company pages currently available in the LumisPixel navigation.",
+        "cta_title": "Get To Know LumisPixel",
+        "cta_text": "Learn more about the people, mission, and commitments behind the platform.",
+        "cta_url": "core:about",
+        "cta_secondary_url": "core:contact",
+        "features": [
+            {"title": "About", "description": "Learn what LumisPixel is building for photographers and clients.", "icon": "bi-info-circle", "url_name": "core:about"},
+            {"title": "Our Story", "description": "Read the mission and journey behind LumisPixel.", "icon": "bi-book", "url_name": "core:our_story"},
+            {"title": "Careers", "description": "Explore ways to help build the future of photography.", "icon": "bi-person-workspace", "url_name": "core:careers"},
+            {"title": "Partners", "description": "Discover partnership opportunities with LumisPixel.", "icon": "bi-handshake", "url_name": "core:partners"},
+            {"title": "Contact", "description": "Reach the LumisPixel team with questions or feedback.", "icon": "bi-envelope", "url_name": "core:contact"},
+            {"title": "Privacy Policy", "description": "Review how LumisPixel handles privacy and data.", "icon": "bi-shield-check", "url_name": "core:privacy_policy"},
+            {"title": "Terms of Service", "description": "Read the terms that govern use of LumisPixel.", "icon": "bi-file-check", "url_name": "core:terms_of_service"},
+            {"title": "Cookie Policy", "description": "Understand how cookies support the site experience.", "icon": "bi-cookie", "url_name": "core:cookie_policy"},
+            {"title": "Accessibility", "description": "Review LumisPixel accessibility information and commitments.", "icon": "bi-universal-access", "url_name": "core:accessibility"},
+        ],
+    },
+})
+
 def index(request):
     return render(request, "index.html")
 
 
 def public_page(request, page_key):
+    if page_key in PARENT_LANDING_PAGES:
+        return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":
         return wedding_photography(request)
     if page_key == "portrait_photography":
@@ -2216,7 +2356,7 @@ def for_photographers(request):
         "roadmap": [
             {
                 "status": "Future",
-                "title": "AI Editing",
+                "title": "AI Editing & Culling",
                 "copy": "Style-aware edits and guided adjustments.",
             },
             {
