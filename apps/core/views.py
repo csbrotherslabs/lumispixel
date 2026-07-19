@@ -170,6 +170,8 @@ def public_page(request, page_key):
         return business_hub_invoices_payments(request)
     if page_key == "business_hub_workflow_automation":
         return business_hub_workflow_automation(request)
+    if page_key == "business_hub_ai_business_assistant":
+        return business_hub_ai_business_assistant(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -510,6 +512,76 @@ def business_hub_workflow_automation(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Client Galleries", "AI Business Assistant", "Analytics", "Marketing"],
     }
     return render(request, "business_hub_workflow_automation.html", context)
+
+
+def business_hub_ai_business_assistant(request):
+    context = {
+        "problem_cards": [
+            ("bi-bell-slash", "Forgotten Follow-Ups", "Warm leads and past clients can go quiet without a clear next step."),
+            ("bi-search", "Missed Opportunities", "Revenue, repeat bookings, and client needs are hard to spot manually."),
+            ("bi-ui-checks", "Too Many Admin Tasks", "Small decisions pile up between shooting, editing, and delivery."),
+            ("bi-folder2-open", "Scattered Information", "Client details, payments, galleries, and deadlines live in too many places."),
+            ("bi-hourglass-split", "Slow Decisions", "Pricing, scheduling, and workflow choices take longer without context."),
+            ("bi-graph-down-arrow", "Business Blind Spots", "It is difficult to see what needs attention before it becomes urgent."),
+        ],
+        "questions": [
+            ("Who still owes a payment?", "Three clients have open balances. Harper Wedding is due Friday and ready for a reminder."),
+            ("Which galleries are overdue?", "Two galleries are past target delivery. Prioritize Nguyen Family before tomorrow afternoon."),
+            ("Summarize my busiest month.", "October has 14 booked sessions, three weddings, and the highest projected revenue."),
+            ("Who should I follow up with?", "Five inquiries have not replied in seven days. I drafted a short follow-up for each."),
+            ("What is on my schedule tomorrow?", "You have a newborn session at 10 AM, editing block at 1 PM, and a consult at 4 PM."),
+            ("Which sessions still need editing?", "Eight sessions are in editing. Two are due this week and one needs final review."),
+        ],
+        "features": [
+            ("bi-bar-chart", "Business Insights", "See plain-language answers about revenue, bookings, and workload."),
+            ("bi-person-vcard", "Client Summaries", "Review client history before calls, sessions, and follow-ups."),
+            ("bi-calendar2-check", "Smart Scheduling", "Find open time, conflicts, and upcoming session details."),
+            ("bi-envelope-paper", "Email Drafts", "Start client messages, reminders, and replies faster."),
+            ("bi-currency-dollar", "Revenue Reports", "Understand payments, balances, trends, and expected income."),
+            ("bi-diagram-3", "Workflow Guidance", "Know which jobs, galleries, and tasks need attention."),
+            ("bi-credit-card", "Payment Tracking", "Find unpaid invoices and deposits without searching."),
+            ("bi-images", "Gallery Updates", "See proofing, delivery, favorites, and overdue galleries."),
+            ("bi-tags", "Pricing Suggestions", "Review practical pricing ideas based on your services."),
+            ("bi-list-check", "Task Lists", "Turn business questions into focused to-do lists."),
+            ("bi-arrow-repeat", "Follow-Up Ideas", "Find clients who need a reply, review, or rebooking note."),
+            ("bi-chat-dots", "Business Q&A", "Ask everyday questions and get clear next steps."),
+        ],
+        "kpis": ["Revenue Trends", "Upcoming Sessions", "Pending Tasks", "Outstanding Payments", "Editing Queue", "Repeat Clients", "Business Health", "Weekly Summary"],
+        "ai_cards": [
+            ("Summarize History", "Understand each client relationship before you respond."),
+            ("Generate Emails", "Create friendly drafts you can review and send."),
+            ("Recommend Pricing", "Compare packages, add-ons, and booking patterns."),
+            ("Find Revenue", "Surface balances, reorders, and rebooking opportunities."),
+            ("Predict Seasons", "Prepare for busier weeks before they arrive."),
+            ("Suggest Marketing", "Get simple campaign ideas for quieter periods."),
+            ("Create Tasks", "Turn decisions into organized next steps."),
+            ("Recommend Follow-Ups", "Know who needs attention and why."),
+            ("Analyze Performance", "Review business activity in clear language."),
+            ("Surface Alerts", "See important changes across your studio."),
+            ("Organize Workflows", "Keep jobs moving from inquiry to delivery."),
+            ("Answer Questions", "Ask about clients, payments, schedules, and work."),
+        ],
+        "benefits": [
+            ("Save Time", "Spend less time searching and more time shooting."),
+            ("Stay Organized", "Keep daily priorities clear across your business."),
+            ("Respond Faster", "Turn questions into polished client replies."),
+            ("Reduce Admin", "Let repetitive planning become easier to manage."),
+            ("Better Decisions", "Use business context instead of guesswork."),
+            ("Increase Revenue", "Spot follow-ups, balances, and repeat work."),
+            ("Better Experience", "Give clients quicker, more prepared service."),
+            ("Focus On Photos", "Protect more time for creative work."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Editing", "Client Galleries", "Analytics", "Marketing", "Marketplace"],
+        "responsible": [
+            ("Human Control", "You review and approve every important decision."),
+            ("Privacy", "Business context stays focused on helping your studio operate."),
+            ("Security", "Assistant experiences follow LumisPixel platform protections."),
+            ("Transparency", "Suggestions are clear, practical, and easy to review."),
+            ("Reliable Suggestions", "Recommendations are designed to support, not replace, your judgment."),
+            ("Business Context", "Answers are shaped around photography clients, jobs, and workflows."),
+        ],
+    }
+    return render(request, "business_hub_ai_business_assistant.html", context)
 
 
 def wedding_photography(request):
