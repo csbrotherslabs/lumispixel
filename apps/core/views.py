@@ -93,6 +93,8 @@ def public_page(request, page_key):
         return corporate_photography(request)
     if page_key == "event_photography":
         return event_photography(request)
+    if page_key == "destination_photography":
+        return destination_photography(request)
     if page_key == "real_estate_photography":
         return real_estate_photography(request)
     if page_key == "commercial_photography":
@@ -1219,6 +1221,109 @@ def event_photography(request):
         ],
     }
     return render(request, "event_photography.html", context)
+
+
+def destination_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Client Galleries",
+            "Print Sales",
+            "Digital Downloads",
+        ],
+        "photographer_cards": [
+            ("bi-funnel", "AI Culling"),
+            ("bi-magic", "Editing Assistance"),
+            ("bi-images", "Client Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly sort your best images."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-images", "Client Galleries", "Deliver galleries from anywhere."),
+            ("bi-search-heart", "Photo Search", "Clients find their photos with a selfie."),
+            ("bi-window", "Photographer Websites", "Showcase your travel portfolio."),
+            ("bi-bag-check", "Print Sales", "Sell prints and digital downloads."),
+            ("bi-chat-dots", "Client Management", "Manage travelers and bookings."),
+            ("bi-phone", "Mobile Access", "Access projects anywhere."),
+            ("bi-bar-chart", "Analytics", "Track galleries, downloads, and sales."),
+        ],
+        "pain_solutions": [
+            ("Travel Logistics", "Faster Workflow"),
+            ("Tight Timelines", "Organized Projects"),
+            ("Remote Delivery", "Easy Galleries"),
+            ("Client Communication", "Secure Delivery"),
+            ("Too Many Tools", "Better Communication"),
+            ("Busy Schedule", "One Platform"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos", "Upload a selfie to find travel photos."),
+            ("bi-images", "Client Galleries", "Browse memories in one private gallery."),
+            ("bi-heart", "Favorites", "Save favorite images for later."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-bag-check", "Print Ordering", "Order prints from the gallery."),
+            ("bi-share", "Easy Sharing", "Share photos with friends and family."),
+        ],
+        "timeline": [
+            "Book Session",
+            "Travel",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Publish Gallery",
+            "Photo Search",
+            "Download",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel keeps destination shoots organized while we move between locations and clients.",
+                "Destination photographer",
+            ),
+            (
+                "Our travelers receive galleries faster, even when we are still on the road.",
+                "Travel photographer",
+            ),
+            (
+                "Selfie search creates happier clients and helps bring repeat bookings from past travelers.",
+                "Elopement photographer",
+            ),
+        ],
+        "metrics": [
+            "Better Organization",
+            "Faster Delivery",
+            "Happy Travelers",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Clients upload a selfie when search is enabled. LumisPixel finds matching photos in the gallery.",
+            ),
+            (
+                "Can clients download high-resolution photos?",
+                "Yes. Photographers control download access for each gallery and package.",
+            ),
+            (
+                "Can I manage multiple destinations?",
+                "Yes. Organize shoots, galleries, and clients by trip or location.",
+            ),
+            (
+                "Can I sell prints and downloads?",
+                "Yes. Sell prints and digital downloads directly from each gallery.",
+            ),
+            (
+                "Can I deliver galleries while traveling?",
+                "Yes. Publish and share client galleries from anywhere with access.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace tools for editing, galleries, websites, stores, messages, file sharing, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "destination_photography.html", context)
 
 
 def robots_txt(request):
