@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Event Photography Software & Event Galleries | LumisPixel{% endblock %}
+{% block meta_description %}Event photography software for culling, face search, event galleries, digital downloads, print sales, and fast photo delivery.{% endblock %}
+{% block og_title %}Event Photography Software & Event Galleries | LumisPixel{% endblock %}
+{% block og_description %}Culling, face search, event galleries, downloads, print sales, and faster event photo delivery.{% endblock %}
+{% block twitter_title %}Event Photography Software & Event Galleries | LumisPixel{% endblock %}
+{% block twitter_description %}Event photography workflows for photographers, attendees, organizers, and guests.{% endblock %}
+{% block body_class %}marketing-page page-for-photographers page-wedding-photography page-event-photography{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/for_photographers.css' %}"><link rel="stylesheet" href="{% static 'css/wedding_photography.css' %}">{% endblock %}
+
+{% block content %}
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LumisPixel Event Photography Solutions","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Event photography software for culling, face recognition, event galleries, digital downloads, print sales, and guest experiences.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+
+<section class="wedding-hero" aria-labelledby="event-hero-title" style="background-image:url('{% static 'img/slider/44.jpg' %}')">
+  <div class="wedding-hero__overlay"></div>
+  <div class="container wedding-hero__content wow fadeInUp">
+    <span class="lp-eyebrow">Event Photography</span>
+    <h1 id="event-hero-title">Event Photography Made Simple</h1>
+    <p>Capture, organize, and deliver every event with ease.</p>
+    <div class="lp-photo-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="btn-two" href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></div>
+    <div class="wedding-stat-row" aria-label="Event photography platform highlights">{% for stat in stats %}<div><i class="bi bi-check2-circle" aria-hidden="true"></i><span>{{ stat }}</span></div>{% endfor %}</div>
+  </div>
+  <a href="#built-for-event-photographers" class="wedding-scroll" aria-label="Scroll to event photographer benefits"><span></span>Scroll</a>
+</section>
+
+<section class="lp-section wedding-built" id="built-for-event-photographers" aria-labelledby="built-title"><div class="container"><div class="row align-items-center gy-5"><div class="col-lg-6 wow fadeInLeft"><img src="{% static 'img/slider/45.jpg' %}" alt="Professional photographer covering a live event" loading="lazy"></div><div class="col-lg-6 wow fadeInRight"><span class="lp-eyebrow">For photographers</span><h2 id="built-title">Built for Event Photographers</h2><p>Everything you need for busy event days.</p><p>From conferences and galas to festivals, fundraisers, and private events, LumisPixel helps you organize thousands of photos and deliver galleries quickly.</p><div class="wedding-mini-grid">{% for icon, title in photographer_cards %}<article><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3></article>{% endfor %}</div></div></div></div></section>
+
+<section class="lp-section wedding-features" aria-labelledby="features-title"><div class="container"><div class="lp-section-heading center wow fadeInUp"><span class="lp-eyebrow">Event workflow</span><h2 id="features-title">Everything in One Place</h2><p>Tools built for event photography.</p></div><div class="wedding-feature-grid">{% for icon, title, copy in features %}<article class="wow fadeInUp" data-wow-delay="0.{{ forloop.counter }}s"><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-solve bg-dark-200" aria-labelledby="challenges-title"><div class="container"><div class="wedding-solve-grid"><div class="wow fadeInLeft"><h2 id="challenges-title">Common Challenges</h2>{% for pain, solution in pain_solutions %}<article><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ pain }}</article>{% endfor %}</div><div class="wow fadeInRight"><h2>How LumisPixel Helps</h2>{% for pain, solution in pain_solutions %}<article class="solution"><i class="bi bi-check2" aria-hidden="true"></i>{{ solution }}</article>{% endfor %}</div></div></div></section>
+
+<section class="lp-section wedding-couples" aria-labelledby="guests-title"><div class="container"><div class="lp-section-heading center wow fadeInUp"><span class="lp-eyebrow">For guests</span><h2 id="guests-title">Made for Every Guest</h2><p>Finding event photos should be easy. Guests can upload a selfie to instantly find their event photos.</p></div><div class="lp-section-heading center"><h2>Photos in Four Steps</h2></div><ol class="wedding-steps"><li>Upload Selfie</li><li>Find Photos</li><li>Download</li><li>Order Prints</li></ol></div></section>
+
+<section class="lp-section wedding-guests" aria-labelledby="experience-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Guest galleries</span><h2 id="experience-title">A Better Guest Experience</h2><p>Everything attendees need in one gallery.</p></div><div class="wedding-guest-grid">{% for icon, title, copy in guest_cards %}<article><i class="bi {{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ copy }}</p></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-timeline bg-dark-200" aria-labelledby="timeline-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Event workflow</span><h2 id="timeline-title">From Event to Delivery</h2><p>A simple workflow for every event.</p></div><ol>{% for step in timeline %}<li><span>{{ forloop.counter|stringformat:"02d" }}</span>{{ step }}</li>{% endfor %}</ol></div></section>
+
+<section class="lp-section lp-testimonials" aria-labelledby="testimonial-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Testimonials</span><h2 id="testimonial-title">Trusted by Event Photographers</h2><p>Helping photographers deliver faster.</p></div><div class="lp-testimonial-grid">{% for text, role in testimonials %}<blockquote class="wedding-quote"><div class="wedding-stars" aria-label="Five star rating">★★★★★</div><p>“{{ text }}”</p><footer><span aria-hidden="true"></span>{{ role }}</footer></blockquote>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-metrics" aria-labelledby="choose-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Photographer benefits</span><h2 id="choose-title">Why Event Photographers Choose LumisPixel</h2></div><div class="wedding-metric-grid">{% for metric in metrics %}<article><strong>{{ metric }}</strong></article>{% endfor %}</div></div></section>
+
+<section class="lp-section wedding-compare bg-dark-200" aria-labelledby="compare-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">Unified platform</span><h2 id="compare-title">One Platform. Less Work.</h2><p>Everything needed for event photography.</p></div><div class="wedding-compare-grid"><article><h3>Multiple Tools</h3><ul><li>Editing</li><li>Event Galleries</li><li>Face Search</li><li>Website</li><li>Online Store</li><li>Client Messages</li><li>Analytics</li></ul></article><article class="lumis"><h3>LumisPixel</h3><ul><li>One Login</li><li>One Platform</li><li>One Workflow</li></ul></article></div></div></section>
+
+<section class="lp-section lp-faq" aria-labelledby="faq-title"><div class="container"><div class="lp-section-heading center"><span class="lp-eyebrow">FAQ</span><h2 id="faq-title">Frequently Asked Questions</h2></div><div class="accordion" id="eventFaq">{% for q, a in faqs %}<div class="accordion-item"><h3 class="accordion-header" id="eventFaqHeading{{ forloop.counter }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#eventFaq{{ forloop.counter }}" aria-expanded="false" aria-controls="eventFaq{{ forloop.counter }}">{{ q }}</button></h3><div id="eventFaq{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="eventFaqHeading{{ forloop.counter }}" data-bs-parent="#eventFaq"><div class="accordion-body">{{ a }}</div></div></div>{% endfor %}</div></div></section>
+
+<section class="wedding-final" aria-labelledby="final-title" style="background-image:url('{% static 'img/slider/47.jpg' %}')"><div class="container"><div class="wedding-final__panel"><span class="lp-eyebrow">Event photography</span><h2 id="final-title">Deliver Every Event Faster</h2><p>Organize, share, and sell event photos from one platform.</p><div class="lp-photo-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="btn-two" href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></div></div></div></section>
+{% endblock %}
