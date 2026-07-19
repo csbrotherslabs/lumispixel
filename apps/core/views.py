@@ -160,6 +160,8 @@ def public_page(request, page_key):
         return studio_photography(request)
     if page_key == "business_hub_dashboard":
         return business_hub_dashboard(request)
+    if page_key == "business_hub_client_crm":
+        return business_hub_client_crm(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -245,6 +247,57 @@ def business_hub_dashboard(request):
         ],
     }
     return render(request, "business_hub_dashboard.html", context)
+
+
+def business_hub_client_crm(request):
+    context = {
+        "problem_cards": [
+            ("bi-inbox", "Lost Inquiries", "New leads disappear in crowded inboxes before you can reply."),
+            ("bi-bell-slash", "Missed Follow-Ups", "Clients wait too long when next steps are not visible."),
+            ("bi-journal-text", "Scattered Notes", "Preferences, names, and shoot details live in different places."),
+            ("bi-clipboard2", "Manual Tracking", "Spreadsheets make every session harder to manage."),
+            ("bi-credit-card", "Forgotten Payments", "Deposits and balances slip through without clear status."),
+            ("bi-diagram-3", "Disconnected Tools", "Bookings, contracts, invoices, and galleries feel separate."),
+        ],
+        "timeline": ["Inquiry", "Consultation", "Booking", "Contract", "Invoice", "Session", "Editing", "Gallery Delivery", "Review", "Referral", "Repeat Client"],
+        "profile_features": [
+            ("bi-person-vcard", "Contact Info", "Names, emails, phone numbers, and preferences."),
+            ("bi-camera", "Session History", "Every past and upcoming shoot in one view."),
+            ("bi-file-earmark-text", "Contracts", "Signed agreements connected to each client."),
+            ("bi-receipt", "Invoices", "Deposits, balances, and payment links."),
+            ("bi-credit-card-2-front", "Payments", "Paid, due, and overdue status at a glance."),
+            ("bi-images", "Galleries", "Proofing, favorites, delivery, and archive status."),
+            ("bi-pencil-square", "Notes", "Personal details that help every client feel known."),
+            ("bi-ui-checks", "Questionnaires", "Planning answers stored beside the job."),
+            ("bi-heart", "Favorites", "Client selections and buying intent."),
+            ("bi-chat-dots", "Communication", "Recent messages and important activity."),
+            ("bi-list-check", "Tasks", "Follow-ups and reminders before they are missed."),
+            ("bi-stars", "AI Summary", "A fast snapshot of the full relationship."),
+        ],
+        "kpis": ["Upcoming Sessions", "Contracts Awaiting Signature", "Outstanding Payments", "Pending Galleries", "Clients Awaiting Follow-Up", "New Inquiries", "Recent Reviews", "Repeat Clients"],
+        "ai_cards": [
+            ("Summarize History", "Review the full client relationship in seconds."),
+            ("Suggest Follow-Ups", "Know who needs a reply, reminder, or thank-you."),
+            ("Find Repeat Work", "Spot past clients ready for another session."),
+            ("Flag Unpaid Invoices", "Bring balances back into focus."),
+            ("Generate Notes", "Turn details into organized client notes."),
+            ("Draft Emails", "Start personalized messages faster."),
+            ("Surface Tasks", "See what matters before the day gets busy."),
+            ("Recommend Actions", "Move each relationship forward with confidence."),
+        ],
+        "benefits": [
+            ("Know Every Client", "Walk into each session with the right context."),
+            ("Respond Faster", "Turn inquiries into bookings with less delay."),
+            ("Stay Organized", "Keep the relationship, job, and files together."),
+            ("Better Service", "Deliver a polished experience clients remember."),
+            ("Save Time", "Spend fewer hours searching for details."),
+            ("Build Loyalty", "Make every client feel remembered."),
+            ("Reduce Admin", "Let the CRM carry the operational details."),
+            ("Increase Repeat Work", "Follow up at the right moment."),
+        ],
+        "ecosystem": ["Business Dashboard", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Editing", "Client Galleries", "Marketing", "Analytics", "Marketplace"],
+    }
+    return render(request, "business_hub_client_crm.html", context)
 
 
 def wedding_photography(request):
