@@ -13,3 +13,9 @@ urlpatterns = [
     path("onboarding/profile/", views.onboarding_profile, name="onboarding-profile"),
     path("onboarding/how-it-works/", views.onboarding_how_it_works, name="onboarding-how-it-works"),
 ]
+
+from . import public_views
+
+urlpatterns += [
+    path("for-clients/", public_views.public_page, {"page_key": "for_clients"}, name="for_clients"),
+]

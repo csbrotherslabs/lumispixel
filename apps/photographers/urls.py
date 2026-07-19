@@ -20,3 +20,10 @@ urlpatterns = [
     path("onboarding/theme-preview/portfolio-editorial/", views.theme_preview, {"theme_slug": "portfolio-editorial"}, name="photographer_onboarding_theme_preview_portfolio_editorial"),
     path("onboarding/theme-preview/sports-events/", views.theme_preview, {"theme_slug": "sports-events"}, name="photographer_onboarding_theme_preview_sports_events"),
 ]
+
+from . import public_views
+
+urlpatterns += [
+    path("for-photographers/", public_views.public_page, {"page_key": "for_photographers"}, name="for_photographers"),
+    path("websites/", public_views.public_page, {"page_key": "photographer_websites"}, name="websites"),
+]

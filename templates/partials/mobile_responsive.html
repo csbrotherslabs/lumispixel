@@ -11,15 +11,15 @@
                 <img src="{% static 'img/default-avatar.svg' %}" class="mobile-avatar" alt="Avatar for {{ request.user.get_full_name|default:request.user.username }}">
                 <div>
                     <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
-                    <span>{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
+                    <span>{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span>
                 </div>
             </div>
-            <a class="mobile-dashboard-link" href="{% url 'photographer_workspace:dashboard' %}">Work Space</a>
+            <a class="mobile-dashboard-link" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
         {% else %}
             <p>Manage, find, and deliver photos with LumisPixel.</p>
             <div class="mobile-auth-actions">
                 <a href="{% url 'accounts:login' %}">Sign In</a>
-                <a href="{% url 'accounts:get-started' %}">Start Free</a>
+                <a href="{% url 'accounts:get-started' %}">Get Started</a>
             </div>
         {% endif %}
     </div>
@@ -30,8 +30,8 @@
     {% if request.user.is_authenticated %}
         <h6>Account</h6>
         <ul class="mobile-account-links">
-            <li><a href="{% url 'photographer_workspace:dashboard' %}">Work Space</a></li>
-            <li><a href="#" data-placeholder-link>Settings</a><!-- Future named route: accounts:settings --></li>
+            <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
+            <li><a href="{% url 'photographer_workspace:settings' %}">Settings</a></li>
             <li>
                 <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}

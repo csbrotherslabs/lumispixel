@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page.title }} | LumisPixel{% endblock %}
+{% block meta_description %}{{ page.description }}{% endblock %}
+{% block og_title %}{{ page.title }} | LumisPixel{% endblock %}
+{% block og_description %}{{ page.description }}{% endblock %}
+{% block twitter_title %}{{ page.title }} | LumisPixel{% endblock %}
+{% block twitter_description %}{{ page.description }}{% endblock %}
+{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
+
+{% block content %}
+<section class="lp-public-hero" aria-labelledby="public-page-title">
+    <div class="container">
+        <span class="lp-eyebrow">{{ page.category }}</span>
+        <h1 id="public-page-title">{{ page.heading }}</h1>
+        <p>{{ page.description }}</p>
+        {% if page.status %}<span class="lp-status-pill">{{ page.status }}</span>{% endif %}
+        <div class="lp-public-actions">
+            <a class="btn-one" href="{% url 'accounts:get-started' %}">Get Started</a>
+            <a class="btn-two" href="{% url 'core:contact' %}">Talk to LumisPixel</a>
+        </div>
+    </div>
+</section>
+
+<section class="lp-public-section">
+    <div class="container">
+        <div class="row gy-4">
+            <div class="col-lg-4"><div class="lp-info-card"><h2>Purpose</h2><p>{{ page.purpose }}</p></div></div>
+            <div class="col-lg-4"><div class="lp-info-card"><h2>Benefits</h2><p>{{ page.benefits }}</p></div></div>
+            <div class="col-lg-4"><div class="lp-info-card"><h2>Future capabilities</h2><p>{{ page.future }}</p></div></div>
+        </div>
+    </div>
+</section>
+{% endblock %}

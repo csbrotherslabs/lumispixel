@@ -5,17 +5,19 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <meta name="description" content="LumisPixel helps photographers deliver smart galleries, AI photo discovery, editing tools, and marketplace experiences for clients.">
+    <meta name="description" content="{% block meta_description %}LumisPixel helps photographers deliver smart galleries, AI photo discovery, editing tools, and marketplace experiences for clients.{% endblock %}">
     <meta name="author" content="LumisPixel">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="LumisPixel">
-    <meta property="og:title" content="LumisPixel | Photography Made Discoverable">
-    <meta property="og:description" content="AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.">
+    <meta property="og:title" content="{% block og_title %}LumisPixel | Photography Made Discoverable{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.{% endblock %}">
     <meta property="og:image" content="{% static 'img/slider/7.jpg' %}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LumisPixel | Photography Made Discoverable">
-    <meta name="twitter:description" content="AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.">
+    <meta name="twitter:title" content="{% block twitter_title %}LumisPixel | Photography Made Discoverable{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.{% endblock %}">
     <meta name="twitter:image" content="{% static 'img/slider/7.jpg' %}">
+
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
 
     <link href="{% static 'img/favicon.png' %}" rel="icon" type="image/png">
     <link href="{% static 'img/favicon.png' %}" rel="apple-touch-icon">

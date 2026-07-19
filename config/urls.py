@@ -11,6 +11,7 @@ urlpatterns = [
     path("client/", include("apps.clients.urls")),
     path("galleries/", include("apps.galleries.urls")),
     path("broker/", include("apps.broker.urls")),
+    path("ai/", include("apps.ai_engine.urls")),
     path("marketplace/", include("apps.marketplace.urls")),
     path("billing/", include("apps.billing.urls")),
     path("notifications/", include("apps.notifications.urls")),
