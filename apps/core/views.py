@@ -162,6 +162,8 @@ def public_page(request, page_key):
         return business_hub_dashboard(request)
     if page_key == "business_hub_client_crm":
         return business_hub_client_crm(request)
+    if page_key == "business_hub_booking_calendar":
+        return business_hub_booking_calendar(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -298,6 +300,57 @@ def business_hub_client_crm(request):
         "ecosystem": ["Business Dashboard", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Editing", "Client Galleries", "Marketing", "Analytics", "Marketplace"],
     }
     return render(request, "business_hub_client_crm.html", context)
+
+
+def business_hub_booking_calendar(request):
+    context = {
+        "problem_cards": [
+            ("bi-calendar2-x", "Scheduling Conflicts", "Shoots, consults, and deadlines compete for the same time."),
+            ("bi-envelope-exclamation", "Manual Confirmations", "Every booking needs another email, text, or reminder."),
+            ("bi-bell-slash", "Missed Appointments", "Clients forget details when reminders are not automatic."),
+            ("bi-chat-left-dots", "Back-and-Forth Emails", "Finding the right time takes too many messages."),
+            ("bi-credit-card", "Forgotten Deposits", "Sessions stay unconfirmed when payment is disconnected."),
+            ("bi-intersect", "Double Bookings", "Separate calendars make availability harder to trust."),
+        ],
+        "journey": ["Inquiry", "Choose Package", "Select Date", "Sign Contract", "Pay Deposit", "Confirmation", "Automatic Reminders", "Photo Session", "Gallery Delivery"],
+        "features": [
+            ("bi-window", "Online Booking", "Let clients choose a session without waiting on replies."),
+            ("bi-calendar-week", "Availability Calendar", "Show open dates while protecting personal time."),
+            ("bi-box-seam", "Session Packages", "Guide clients to the right offer faster."),
+            ("bi-grid-3x3-gap", "Mini Sessions", "Launch limited spots with clean booking windows."),
+            ("bi-credit-card-2-front", "Deposits", "Collect commitment before a date is confirmed."),
+            ("bi-file-earmark-text", "Contracts", "Connect agreements to each booking automatically."),
+            ("bi-arrow-repeat", "Calendar Sync", "Keep sessions aligned across your workday."),
+            ("bi-bell", "Reminders", "Send timely prep, payment, and arrival notes."),
+            ("bi-ui-checks", "Questionnaires", "Collect planning details before the shoot."),
+            ("bi-arrow-left-right", "Rescheduling", "Move sessions without losing the details."),
+            ("bi-check2-circle", "Booking Approvals", "Review requests before they become confirmed."),
+            ("bi-clock-history", "Booking History", "See every past request, change, and payment."),
+        ],
+        "kpis": ["Upcoming Sessions", "Available Time Slots", "Pending Booking Requests", "Confirmed Sessions", "Rescheduled Sessions", "Deposits Collected", "Upcoming Mini Sessions", "Today's Schedule"],
+        "ai_cards": [
+            ("Better Time Slots", "Offer openings that fit your schedule and client needs."),
+            ("Detect Conflicts", "Catch calendar issues before clients are affected."),
+            ("Recommend Follow-Ups", "Know which inquiries need a nudge."),
+            ("Identify Slow Weeks", "Spot gaps where a promotion could help."),
+            ("Predict Busy Seasons", "Prepare packages and availability ahead of demand."),
+            ("Mini Session Dates", "Find smart windows for limited session days."),
+            ("Booking Gaps", "Protect travel, prep, and editing time."),
+            ("Unconfirmed Sessions", "Highlight bookings still missing a step."),
+        ],
+        "benefits": [
+            ("Book Faster", "Turn interest into a confirmed date sooner."),
+            ("Reduce No-Shows", "Keep clients prepared with automatic reminders."),
+            ("Stay Organized", "See every session, request, and deadline together."),
+            ("Avoid Conflicts", "Protect your time with clearer availability."),
+            ("Collect Earlier", "Secure deposits during the booking flow."),
+            ("Save Admin Time", "Spend fewer hours coordinating schedules."),
+            ("Better Experience", "Give clients a smooth path from inquiry to shoot."),
+            ("Increase Bookings", "Make it easier for clients to say yes."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Contracts", "Invoices & Payments", "Workflow Automation", "Client Galleries", "AI Business Assistant", "Marketing", "Analytics"],
+    }
+    return render(request, "business_hub_booking_calendar.html", context)
 
 
 def wedding_photography(request):
