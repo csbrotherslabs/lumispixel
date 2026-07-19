@@ -172,6 +172,8 @@ def public_page(request, page_key):
         return business_hub_workflow_automation(request)
     if page_key == "business_hub_ai_business_assistant":
         return business_hub_ai_business_assistant(request)
+    if page_key == "business_hub_analytics_reports":
+        return business_hub_analytics_reports(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -512,6 +514,57 @@ def business_hub_workflow_automation(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Client Galleries", "AI Business Assistant", "Analytics", "Marketing"],
     }
     return render(request, "business_hub_workflow_automation.html", context)
+
+
+def business_hub_analytics_reports(request):
+    context = {
+        "problem_cards": [
+            ("bi-speedometer", "No Clear Metrics", "Important numbers are hard to find when they live in separate tools."),
+            ("bi-file-earmark-bar-graph", "Scattered Reports", "Revenue, bookings, galleries, and payments rarely tell one story."),
+            ("bi-graph-down", "Unknown Trends", "Busy seasons and slow periods can appear without warning."),
+            ("bi-lightbulb", "Missed Opportunities", "Repeat clients, pricing signals, and growth moments are easy to overlook."),
+            ("bi-hourglass-split", "Slow Decisions", "Planning takes longer when every answer requires manual digging."),
+            ("bi-eye-slash", "Limited Visibility", "It is difficult to know what is working and what needs attention."),
+        ],
+        "flow": ["Bookings", "Revenue", "Clients", "Sessions", "Galleries", "Payments", "Reviews", "Business Growth"],
+        "features": [
+            ("bi-currency-dollar", "Revenue Reports", "Understand booked, collected, pending, and growing revenue."),
+            ("bi-calendar2-week", "Booking Trends", "See which months, services, and offers drive demand."),
+            ("bi-people", "Client Growth", "Track new clients, repeat clients, and relationship momentum."),
+            ("bi-images", "Gallery Performance", "Measure delivery, activity, favorites, proofing, and sales signals."),
+            ("bi-credit-card", "Payment Reports", "Keep deposits, balances, and overdue payments visible."),
+            ("bi-speedometer2", "Business Dashboard", "Review your studio health from one polished dashboard."),
+            ("bi-camera", "Session Reports", "Understand session volume, workload, timing, and outcomes."),
+            ("bi-megaphone", "Marketing Performance", "See which campaigns and offers create real interest."),
+            ("bi-list-check", "Workflow Reports", "Find bottlenecks before they slow delivery."),
+            ("bi-sliders", "Custom Reports", "Build focused views for the questions you ask most."),
+            ("bi-download", "Export Reports", "Share clean summaries for planning, bookkeeping, or review."),
+            ("bi-activity", "Real-Time Metrics", "Stay current as bookings, payments, and galleries change."),
+        ],
+        "kpis": ["Monthly Revenue", "Bookings This Month", "New Clients", "Repeat Clients", "Average Booking Value", "Pending Payments", "Gallery Deliveries", "Business Growth"],
+        "ai_cards": [
+            ("Highlight Trends", "See revenue changes and booking shifts in plain language."),
+            ("Predict Seasons", "Prepare for busy stretches before your calendar fills."),
+            ("Find Slow Periods", "Spot quiet weeks where a promotion could help."),
+            ("Recommend Pricing", "Notice packages that may be ready for a smarter price."),
+            ("Spot Client Trends", "Understand which clients, services, and sessions repeat."),
+            ("Measure Growth", "Compare progress over time without complex spreadsheets."),
+            ("Repeat Opportunities", "Find past clients who may be ready to book again."),
+            ("Next Steps", "Turn insights into clear actions for the week ahead."),
+        ],
+        "benefits": [
+            ("Grow Revenue", "See the offers and seasons that create stronger income."),
+            ("Understand Performance", "Know what is working across your business."),
+            ("Track Progress", "Measure improvement month by month."),
+            ("Improve Efficiency", "Find workflow delays before they become client issues."),
+            ("Measure Growth", "Follow your business from bookings to delivery."),
+            ("Stay Informed", "Keep key activity visible without digging."),
+            ("Plan Ahead", "Use trends to prepare offers, dates, and capacity."),
+            ("Decide Confidently", "Move forward with clear signals instead of guesses."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Client Galleries", "Marketing", "Marketplace"],
+    }
+    return render(request, "business_hub_analytics_reports.html", context)
 
 
 def business_hub_ai_business_assistant(request):
