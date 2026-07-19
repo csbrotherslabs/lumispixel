@@ -41,7 +41,7 @@
 .lp-section-heading.center { text-align: center; margin-inline: auto; }
 .lp-section-heading h2, .lp-section h2 { color: var(--lp-heading); font-size: clamp(36px, 5vw, 72px); line-height: 1; letter-spacing: -.05em; }
 .lp-section-heading p, .lp-section p { color: var(--lp-body); font-size: 18px; line-height: 1.7; }
-.lp-pain { background: radial-gradient(circle at 10% 0%, rgba(255,138,31,.12), transparent 30%), var(--lp-bg-soft); }
+.lp-pain { background: radial-gradient(circle at 80% 30%, rgba(255, 138, 31, .12), transparent 32%), var(--lp-bg-warm);}
 .lp-pain-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .lp-pain-card, .lp-type-grid div, .lp-ai-grid div, .lp-roadmap article, .lp-testimonial-grid blockquote { border: 1px solid var(--lp-border); background: var(--lp-surface); border-radius: 28px; box-shadow: var(--lp-shadow-soft); }
 .lp-pain-card { padding: 28px; min-height: 170px; display: flex; flex-direction: column; justify-content: space-between; }
