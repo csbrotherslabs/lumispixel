@@ -24,7 +24,7 @@
 }
 
 .lp-ai-search-privacy {
-  background: radial-gradient(circle at 15% 15%, rgba(255, 184, 107, .16), transparent 32%), #080808;
+  background: radial-gradient(circle at 15% 15%, rgba(255, 138, 61, .12), transparent 32%), var(--lp-bg-warm);
 }
 
 .lp-ai-search-privacy p + p {
@@ -35,7 +35,7 @@
   max-width: 900px;
   margin: 48px auto 0;
   text-align: center;
-  color: #fff !important;
+  color: var(--lp-heading) !important;
   font-size: clamp(22px, 3vw, 38px) !important;
   font-weight: 900;
   letter-spacing: -.035em;
@@ -85,7 +85,7 @@
   .page-ai-photo-search .lp-table-wrap td:first-child:before {
     content: "Traditional";
     display: block;
-    color: #ffb86b;
+    color: var(--lp-accent);
     font-weight: 900;
     margin-bottom: 8px;
   }
@@ -93,7 +93,7 @@
   .page-ai-photo-search .lp-table-wrap td:last-child:before {
     content: "LumisPixel";
     display: block;
-    color: #ffb86b;
+    color: var(--lp-accent);
     font-weight: 900;
     margin-bottom: 8px;
   }

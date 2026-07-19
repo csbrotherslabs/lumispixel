@@ -1,5 +1,5 @@
 .page-for-clients .lp-video-intro {
-  background: #080808;
+  background: var(--lp-bg);
 }
 
 .page-for-clients .wptb-video-player1 {
@@ -17,7 +17,7 @@
 .page-for-clients .lp-selfie small {
   display: block;
   margin-top: 18px;
-  color: rgba(255, 255, 255, .62);
+  color: var(--lp-muted);
   line-height: 1.5;
 }
 
@@ -47,8 +47,8 @@
   height: 360px;
   object-fit: cover;
   border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, .12);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, .28);
+  border: 1px solid var(--lp-border);
+  box-shadow: 0 24px 70px rgba(18, 24, 38, .1);
 }
 
 .lp-device-grid img:nth-child(2) {
@@ -67,11 +67,11 @@
 }
 
 .page-for-clients .lp-options .lp-roadmap article span {
-  color: #ffb86b;
+  color: var(--lp-accent);
 }
 
 .page-for-clients .lp-feature-copy > span {
-  color: #ffb86b;
+  color: var(--lp-accent);
   text-transform: uppercase;
   letter-spacing: .14em;
   font-weight: 800;
@@ -124,7 +124,7 @@
   .page-for-clients .lp-table-wrap td:first-child:before {
     content: "Traditional Gallery";
     display: block;
-    color: #ffb86b;
+    color: var(--lp-accent);
     font-weight: 900;
     margin-bottom: 8px;
   }
@@ -132,13 +132,13 @@
   .page-for-clients .lp-table-wrap td:last-child:before {
     content: "LumisPixel";
     display: block;
-    color: #ffb86b;
+    color: var(--lp-accent);
     font-weight: 900;
     margin-bottom: 8px;
   }
 
   .page-for-clients .lp-table-wrap tr {
-    border-bottom: 1px solid rgba(255, 255, 255, .12);
+    border-bottom: 1px solid var(--lp-border);
   }
 
   .lp-device-grid img:nth-child(n) {
