@@ -1283,7 +1283,7 @@ body.overlay_menu_active .wptb-overlay-contact {
 
 /* Public IA navigation refinements */
 .header .mainnav ul.main-menu { align-items: center; }
-.header .mainnav ul.main-menu > li + li { margin-left: 22px; }
+.header .mainnav ul.main-menu > li + li { margin-left: 40px; }
 .header .mainnav ul.main-menu li ul.nav-mega-menu { column-count: 2; column-gap: 14px; min-width: 360px; padding: 18px; }
 .header .mainnav ul.main-menu li:nth-last-child(-n+2) ul.nav-mega-menu { left: auto; right: 0; }
 .header .mainnav ul.main-menu li ul.nav-mega-menu li { break-inside: avoid; }
