@@ -1,0 +1,33 @@
+.page-find-photographer { background: #fffaf4; }
+.page-find-photographer .lp-video-intro,
+.page-find-photographer .lp-types,
+.page-find-photographer .lp-testimonials,
+.page-find-photographer .lp-faq { background: #fffaf4; }
+.page-find-photographer .bg-dark-200,
+.page-find-photographer .lp-search-mock,
+.page-find-photographer .lp-compare { background: #f6f0e8 !important; }
+.lp-search-panel { padding: clamp(22px, 4vw, 36px); border-radius: 34px; background: linear-gradient(135deg, #fff, #fff7ec); border: 1px solid var(--lp-border); box-shadow: var(--lp-shadow); }
+.lp-search-bar { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--lp-border); border-radius: 999px; background: #fff; color: var(--lp-heading); font-weight: 800; }
+.lp-search-bar i { color: var(--lp-accent); font-size: 22px; }
+.lp-search-bar button { margin-left: auto; border: 0; border-radius: 999px; padding: 12px 22px; background: var(--lp-heading); color: #fff; font-weight: 900; }
+.lp-filter-grid, .lp-chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.lp-filter-grid span, .lp-chip-row span { padding: 9px 13px; border-radius: 999px; background: var(--lp-accent-soft); color: #7a3f00; font-weight: 900; font-size: 13px; }
+.lp-profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.lp-profile-card { overflow: hidden; border: 1px solid var(--lp-border); border-radius: 32px; background: #fff; box-shadow: var(--lp-shadow-soft); }
+.lp-profile-photo { width: 100%; height: 250px; object-fit: cover; }
+.lp-profile-body { padding: 24px; }
+.lp-profile-body h3 { color: var(--lp-heading); font-size: 28px; margin-bottom: 6px; }
+.lp-profile-meta { display: grid; gap: 8px; margin-top: 16px; color: var(--lp-muted); font-weight: 700; }
+.lp-profile-meta span { display: flex; gap: 8px; align-items: center; }
+.lp-mini-portfolio { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+.lp-mini-portfolio img { width: 100%; height: 120px; object-fit: cover; border-radius: 18px; }
+.lp-find-story { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lp-ecosystem { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
+.lp-ecosystem li { position: relative; min-height: 130px; display: grid; place-items: center; text-align: center; padding: 20px; border-radius: 24px; border: 1px solid var(--lp-border); background: #fff; color: var(--lp-heading); font-weight: 900; box-shadow: var(--lp-shadow-soft); }
+.lp-ecosystem li:not(:last-child)::after { content: "↓"; position: absolute; right: -12px; top: 50%; transform: translateY(-50%) rotate(-90deg); color: var(--lp-accent); font-size: 22px; }
+.page-find-photographer .lp-table-wrap td:first-child { color: var(--lp-muted) !important; }
+.page-find-photographer .lp-table-wrap td:last-child { color: #8f510c !important; }
+.page-find-photographer .lp-photo-actions a:focus-visible,
+.page-find-photographer .lp-search-bar button:focus-visible { outline: 3px solid var(--lp-accent); outline-offset: 4px; }
+@media (max-width: 1199px) { .lp-profile-grid { grid-template-columns: 1fr 1fr; } .lp-find-story, .lp-ecosystem { grid-template-columns: repeat(3, 1fr); } .lp-ecosystem li::after { display: none; } }
+@media (max-width: 767px) { .lp-profile-grid, .lp-find-story, .lp-ecosystem { grid-template-columns: 1fr; } .lp-search-bar { align-items: stretch; border-radius: 24px; flex-direction: column; } .lp-search-bar button { width: 100%; margin-left: 0; } .page-find-photographer .lp-table-wrap table, .page-find-photographer .lp-table-wrap thead, .page-find-photographer .lp-table-wrap tbody, .page-find-photographer .lp-table-wrap tr, .page-find-photographer .lp-table-wrap th, .page-find-photographer .lp-table-wrap td { display: block; width: 100%; min-width: 0; } .page-find-photographer .lp-table-wrap table { min-width: 0; } .page-find-photographer .lp-table-wrap thead { display: none; } .page-find-photographer .lp-table-wrap tr { border-bottom: 1px solid var(--lp-border); } .page-find-photographer .lp-table-wrap td:first-child:before { content: "Traditional Search"; display: block; color: var(--lp-accent); font-weight: 900; margin-bottom: 8px; } .page-find-photographer .lp-table-wrap td:last-child:before { content: "LumisPixel"; display: block; color: var(--lp-accent); font-weight: 900; margin-bottom: 8px; } }
