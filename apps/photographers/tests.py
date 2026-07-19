@@ -298,3 +298,15 @@ class PhotographerThemeExperienceTests(TestCase):
         response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "save_draft", "hero_image": bad})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Upload a valid image")
+
+
+class PhotographerWebsitesPublicPageTests(TestCase):
+    def test_photographer_websites_public_page_renders(self):
+        response = self.client.get(reverse("photographers:websites"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "photographer_websites.html")
+        self.assertContains(response, "Photographer Websites")
+        self.assertContains(response, "Ready to Showcase Your Photography?")
+        self.assertContains(response, reverse("photographers:onboarding-theme"))
+        self.assertContains(response, reverse("accounts:get-started"))
