@@ -85,6 +85,8 @@ def public_page(request, page_key):
         return wedding_photography(request)
     if page_key == "portrait_photography":
         return portrait_photography(request)
+    if page_key == "sports_photography":
+        return sports_photography(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -338,6 +340,110 @@ def portrait_photography(request):
         ],
     }
     return render(request, "portrait_photography.html", context)
+
+
+def sports_photography(request):
+    context = {
+        "stats": [
+            "AI Photo Search",
+            "Online Galleries",
+            "Team Galleries",
+            "Print Sales",
+        ],
+        "photographer_cards": [
+            ("bi-stars", "AI Culling"),
+            ("bi-person-bounding-box", "Face Recognition"),
+            ("bi-collection", "Team Galleries"),
+            ("bi-graph-up-arrow", "Business Growth"),
+        ],
+        "features": [
+            ("bi-funnel", "AI Culling", "Quickly remove duplicates and missed shots."),
+            ("bi-magic", "Editing Assistance", "Reduce repetitive editing work."),
+            ("bi-person-bounding-box", "Face Recognition", "Organize athletes automatically."),
+            ("bi-collection", "Team Galleries", "Create galleries by team or event."),
+            ("bi-search-heart", "Photo Search", "Find photos with a selfie."),
+            ("bi-window", "Photographer Websites", "Showcase your sports portfolio."),
+            ("bi-bag-heart", "Print Sales", "Sell prints, banners, and downloads."),
+            ("bi-chat-dots", "Client Management", "Manage teams, leagues, and communication."),
+            ("bi-bar-chart", "Analytics", "Track gallery views and sales."),
+        ],
+        "pain_solutions": [
+            ("Thousands of Photos", "Faster Culling"),
+            ("Fast Turnaround", "AI Face Search"),
+            ("Finding Athletes", "Organized Galleries"),
+            ("Multiple Teams", "Easy Delivery"),
+            ("Missed Sales", "Built-In Store"),
+            ("Too Many Tools", "One Platform"),
+        ],
+        "guest_cards": [
+            ("bi-search-heart", "Find My Photos", "Use a selfie to locate game photos."),
+            ("bi-collection", "Team Galleries", "Browse photos by team or event."),
+            ("bi-heart", "Favorites", "Save favorite action shots."),
+            ("bi-shield-check", "Secure Downloads", "Download approved files safely."),
+            ("bi-bag-check", "Print Ordering", "Order prints and banners online."),
+            ("bi-share", "Easy Sharing", "Share highlights with family and teammates."),
+        ],
+        "timeline": [
+            "Book Event",
+            "Capture",
+            "Upload",
+            "Cull",
+            "Edit",
+            "Organize",
+            "Publish Gallery",
+            "Search",
+            "Download",
+            "Print Order",
+            "Share",
+        ],
+        "testimonials": [
+            (
+                "LumisPixel helps us sort game-day photos faster and publish galleries while families are still excited.",
+                "Sports photographer",
+            ),
+            (
+                "Selfie search makes athlete discovery simple. Parents spend less time scrolling and more time ordering favorites.",
+                "Tournament photographer",
+            ),
+            (
+                "Team galleries keep everything organized, and built-in print sales make banners and downloads easy.",
+                "Studio owner",
+            ),
+        ],
+        "metrics": [
+            "Faster Organization",
+            "Easy Athlete Search",
+            "More Print Sales",
+            "One Connected Workflow",
+        ],
+        "faqs": [
+            (
+                "How does selfie photo search work?",
+                "Athletes or parents upload a selfie when search is enabled. LumisPixel finds matching photos in the gallery.",
+            ),
+            (
+                "Can I create galleries for multiple teams?",
+                "Yes. Create galleries by team, league, tournament, or event.",
+            ),
+            (
+                "Can parents download full-resolution photos?",
+                "Yes. Photographers control download access for each gallery and package.",
+            ),
+            (
+                "Can I sell prints and banners?",
+                "Yes. Sell prints, banners, downloads, and other products from the gallery.",
+            ),
+            (
+                "Can I organize athletes automatically?",
+                "Yes. Face recognition helps group athletes across high-volume galleries.",
+            ),
+            (
+                "Which tools can LumisPixel replace?",
+                "It can replace separate tools for editing, galleries, websites, stores, messages, search, and analytics.",
+            ),
+        ],
+    }
+    return render(request, "sports_photography.html", context)
 
 
 def robots_txt(request):
