@@ -174,6 +174,8 @@ def public_page(request, page_key):
         return business_hub_ai_business_assistant(request)
     if page_key == "business_hub_analytics_reports":
         return business_hub_analytics_reports(request)
+    if page_key == "business_hub_marketing_growth":
+        return business_hub_marketing_growth(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -565,6 +567,57 @@ def business_hub_analytics_reports(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Client Galleries", "Marketing", "Marketplace"],
     }
     return render(request, "business_hub_analytics_reports.html", context)
+
+
+def business_hub_marketing_growth(request):
+    context = {
+        "problem_cards": [
+            ("bi-share", "Few Referrals", "Happy clients are not always prompted to share your studio."),
+            ("bi-inbox", "Inconsistent Leads", "New inquiries can rise and fall without a clear system."),
+            ("bi-eye-slash", "Limited Visibility", "Your best work may not reach the right clients."),
+            ("bi-megaphone", "Manual Marketing", "Campaigns take time when every step starts from scratch."),
+            ("bi-lightbulb", "Missed Opportunities", "Reviews, rebookings, and follow-ups are easy to forget."),
+            ("bi-graph-down", "Slow Growth", "Growth is harder when results are not connected."),
+        ],
+        "journey": ["Website Visit", "Inquiry", "Booking", "Session", "Gallery Delivery", "Review", "Referral", "Repeat Client", "Business Growth"],
+        "features": [
+            ("bi-person-plus", "Lead Tracking", "Capture inquiries and see which sources create interest."),
+            ("bi-share", "Referrals", "Invite happy clients to recommend your studio."),
+            ("bi-star", "Reviews", "Ask for testimonials while the experience is fresh."),
+            ("bi-envelope-heart", "Email Campaigns", "Send polished updates, offers, and rebooking notes."),
+            ("bi-speedometer2", "Marketing Dashboard", "See campaigns, leads, reviews, and growth in one place."),
+            ("bi-window", "Website Performance", "Understand visits, inquiries, and page activity."),
+            ("bi-search", "SEO Insights", "Improve visibility for the services clients search for."),
+            ("bi-send", "Social Sharing", "Turn galleries and reviews into shareable moments."),
+            ("bi-percent", "Discount Campaigns", "Promote mini sessions, seasonal offers, and add-ons."),
+            ("bi-arrow-repeat", "Client Retention", "Bring past clients back at the right time."),
+            ("bi-file-earmark-bar-graph", "Growth Reports", "Track progress across leads, bookings, and revenue."),
+            ("bi-activity", "Campaign Analytics", "Measure what works without spreadsheets."),
+        ],
+        "kpis": ["New Leads", "Bookings", "Referral Rate", "Repeat Clients", "Review Requests", "Campaign Performance", "Website Visitors", "Revenue Growth"],
+        "ai_cards": [
+            ("Referral Chances", "Find clients likely to share your work."),
+            ("Campaign Ideas", "Suggest timely offers for each season."),
+            ("Follow-Ups", "Recommend messages for quiet leads."),
+            ("Repeat Clients", "Highlight clients ready to book again."),
+            ("Busy Seasons", "Prepare marketing before demand peaks."),
+            ("Pricing Signals", "Spot packages that may need adjustment."),
+            ("Growth Trends", "Explain lead and booking patterns clearly."),
+            ("Marketing Ideas", "Generate simple prompts for posts and emails."),
+        ],
+        "benefits": [
+            ("Book More", "Turn more attention into confirmed sessions."),
+            ("More Referrals", "Make sharing easy for happy clients."),
+            ("Build Brand", "Keep your studio visible and memorable."),
+            ("Improve Visibility", "Help the right clients discover your work."),
+            ("Grow Revenue", "Connect campaigns to bookings and sales."),
+            ("Stronger Relationships", "Stay present after gallery delivery."),
+            ("Retain Clients", "Bring families, couples, and teams back."),
+            ("Market Efficiently", "Spend less time guessing what to send."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Contracts", "Invoices & Payments", "Workflow Automation", "AI Business Assistant", "Analytics", "Client Galleries", "Marketplace"],
+    }
+    return render(request, "business_hub_marketing_growth.html", context)
 
 
 def business_hub_ai_business_assistant(request):
