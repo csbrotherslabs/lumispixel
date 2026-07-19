@@ -164,6 +164,8 @@ def public_page(request, page_key):
         return business_hub_client_crm(request)
     if page_key == "business_hub_booking_calendar":
         return business_hub_booking_calendar(request)
+    if page_key == "business_hub_contracts":
+        return business_hub_contracts(request)
     return render(request, "public_landing.html", {"page": PUBLIC_PAGES[page_key]})
 
 
@@ -351,6 +353,57 @@ def business_hub_booking_calendar(request):
         "ecosystem": ["Business Dashboard", "Client CRM", "Contracts", "Invoices & Payments", "Workflow Automation", "Client Galleries", "AI Business Assistant", "Marketing", "Analytics"],
     }
     return render(request, "business_hub_booking_calendar.html", context)
+
+
+def business_hub_contracts(request):
+    context = {
+        "problem_cards": [
+            ("bi-pencil-square", "Unsigned Agreements", "Sessions stay uncertain when signatures are still missing."),
+            ("bi-envelope-paper", "Manual Emails", "Every client follow-up becomes another message to send."),
+            ("bi-folder-x", "Lost Documents", "Contracts disappear across inboxes, drives, and downloads."),
+            ("bi-clock-history", "Missed Deadlines", "Important signing dates are easy to overlook."),
+            ("bi-file-diff", "Version Confusion", "Old drafts make it harder to know what was approved."),
+            ("bi-diagram-3", "Disconnected Workflows", "Bookings, deposits, clients, and galleries feel separate."),
+        ],
+        "workflow": ["Booking", "Generate Contract", "Send Automatically", "Client Reviews", "Digital Signature", "Deposit Payment", "Confirmation", "Session Ready"],
+        "features": [
+            ("bi-file-earmark-richtext", "Contract Templates", "Start with reusable contracts built for repeat sessions."),
+            ("bi-pen", "Digital Signatures", "Let clients sign from any device in minutes."),
+            ("bi-card-checklist", "Custom Clauses", "Adjust terms for weddings, portraits, events, and studios."),
+            ("bi-link-45deg", "Session Linking", "Attach every agreement to the right client and shoot."),
+            ("bi-send-check", "Automatic Delivery", "Send contracts when a booking reaches the right step."),
+            ("bi-activity", "Status Tracking", "See sent, viewed, signed, and pending agreements."),
+            ("bi-clock", "Version History", "Keep approved versions organized and easy to review."),
+            ("bi-shield-lock", "Secure Storage", "Store completed agreements in one protected workspace."),
+            ("bi-phone", "Client Access", "Give clients a simple place to review and sign."),
+            ("bi-arrow-repeat", "Renewable Templates", "Reuse polished contracts without rebuilding each time."),
+            ("bi-boxes", "Multi-Package Contracts", "Match agreements to packages, add-ons, and session types."),
+            ("bi-bell", "Contract Reminders", "Nudge clients before unsigned agreements slow you down."),
+        ],
+        "kpis": ["Pending Signatures", "Completed Contracts", "Contracts Sent", "Expiring Agreements", "Unsigned Contracts", "Today's Activity", "Recent Signatures", "Upcoming Sessions"],
+        "ai_cards": [
+            ("Remind Clients", "Prompt unsigned clients before the session gets close."),
+            ("Summarize Status", "See which agreements need attention now."),
+            ("Suggest Details", "Spot missing client, session, or package information."),
+            ("Detect Gaps", "Find incomplete agreements before they create delays."),
+            ("Recommend Follow-Ups", "Know when a friendly nudge can move things forward."),
+            ("Highlight Deadlines", "Surface signing dates tied to upcoming sessions."),
+            ("Generate Summaries", "Review key agreement details in plain language."),
+            ("Surface Priorities", "Focus on the contracts most likely to block a booking."),
+        ],
+        "benefits": [
+            ("Stay Protected", "Start every session with clear expectations."),
+            ("Save Time", "Spend fewer hours chasing paperwork."),
+            ("Reduce Paperwork", "Replace scattered files with one clean workflow."),
+            ("Look Professional", "Give clients a polished signing experience."),
+            ("Sign Faster", "Make approval simple from desktop or mobile."),
+            ("Stay Organized", "Keep every agreement beside its client and session."),
+            ("Stay Connected", "Link contracts to bookings, invoices, and galleries."),
+            ("Better Experience", "Help clients feel ready before session day."),
+        ],
+        "ecosystem": ["Business Dashboard", "Client CRM", "Booking & Calendar", "Invoices & Payments", "Workflow Automation", "Client Galleries", "AI Business Assistant", "Analytics"],
+    }
+    return render(request, "business_hub_contracts.html", context)
 
 
 def wedding_photography(request):
