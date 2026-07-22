@@ -34,13 +34,17 @@
     document.querySelectorAll("[data-pricing-faq] button").forEach(function (button) {
       button.addEventListener("click", function () {
         var panel = document.getElementById(button.getAttribute("aria-controls"));
+        var item = button.closest(".pricing-faq__item");
         var willOpen = button.getAttribute("aria-expanded") !== "true";
         document.querySelectorAll("[data-pricing-faq] button").forEach(function (other) {
           other.setAttribute("aria-expanded", "false");
+          var otherItem = other.closest(".pricing-faq__item");
           var otherPanel = document.getElementById(other.getAttribute("aria-controls"));
+          if (otherItem) otherItem.classList.remove("is-open");
           if (otherPanel) otherPanel.hidden = true;
         });
         button.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        if (item) item.classList.toggle("is-open", willOpen);
         if (panel) panel.hidden = !willOpen;
       });
     });
