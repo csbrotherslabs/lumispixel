@@ -302,7 +302,7 @@ def pricing(request):
             {"name":"Team and support","rows":[("Included users","1 user","1 user","3 users","Custom"),("Roles and permissions","Not included","Not included","Included","Custom"),("Shared studio calendar","Not included","Not included","Included","Custom"),("Priority support","Not included","Not included","Included","Included"),("Dedicated onboarding","Not included","Not included","Limited","Included"),("Account manager","Not included","Not included","Not included","Included"),("API access","Not included","Not included","Not included","Custom"),("Service-level agreement","Not included","Not included","Not included","Custom")]},
         ],
         "faqs": [
-            {"q":"Can I try LumisPixel before paying?","a":"Yes. You can start with the Free plan or explore paid features during a free trial. No credit card is required to begin."},
+            {"q":"Can I try LumisPixel before paying?","a":"Yes. You can start with the Free plan or explore Pro and Studio features during a 14-day free trial. No credit card is required to get started."},
             {"q":"Is the Free plan really free?","a":"Yes. The Free plan does not expire. You can use its included features for as long as you need and upgrade when your business requires more capacity or tools."},
             {"q":"What happens when my trial ends?","a":"You can choose a paid plan or continue with the features available in the Free plan. You will not be charged unless you select a subscription and provide payment information."},
             {"q":"Can I change plans later?","a":"Yes. You can upgrade as your business grows or move to another plan when your needs change."},
