@@ -10,11 +10,11 @@
                         <div class="footer-widget">
                             <div class="footer-nav">
                                 <ul>
-                                    <li class="menu-item"><a href="about.html">About Us</a></li>
-                                    <li class="menu-item"><a href="team-1.html">Our Team</a></li>
-                                    <li class="menu-item"><a href="packages.html">Packages</a></li>
-                                    <li class="menu-item"><a href="project-general.html">Gallery</a></li>
-                                    <li class="menu-item"><a href="services-1.html">Services</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:about' %}">About Us</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:our_story' %}">Our Story</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:pricing' %}">Pricing</a></li>
+                                    <li class="menu-item"><a href="{% url 'galleries:client_galleries' %}">Gallery</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:products' %}">Services</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -23,7 +23,7 @@
                     <div class="col-lg-4 col-md-4 mb-5 mb-md-0 order-1 order-md-0">
                         <div class="footer-widget text-center">
                             <div class="logo mr-bottom-55">
-                                <a href="index.html" class=""><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
+                                <a href="{% url 'core:index' %}" class=""><img src="{% static 'img/logo.svg' %}" alt="logo"></a>
                             </div>
 
                             <h6 class="widget-title">Sign up for all the latest <br> news and offers </h6>
@@ -45,11 +45,11 @@
                         <div class="footer-widget text-md-end">
                             <div class="footer-nav">
                                 <ul>
-                                    <li class="menu-item"><a href="#">Booking</a></li>
-                                    <li class="menu-item"><a href="shop.html">Products</a></li>
-                                    <li class="menu-item"><a href="blog-grid.html">Recent Posts</a></li>
-                                    <li class="menu-item"><a href="blog-grid.html">Latest News</a></li>
-                                    <li class="menu-item"><a href="contact-1.html">Contact Us</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:business_hub_booking_calendar' %}">Booking</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:products' %}">Products</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:blog' %}">Recent Posts</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:release_notes' %}">Latest News</a></li>
+                                    <li class="menu-item"><a href="{% url 'core:contact' %}">Contact Us</a></li>
                                 </ul>
                             </div>
                         </div>

@@ -271,11 +271,61 @@ PARENT_LANDING_PAGES.update({
     },
 })
 
+
+def pricing(request):
+    context = {
+        "connected_items": [
+            ("bi-bullseye", "Attract clients", "Present a polished brand and guide inquiries into one workspace."),
+            ("bi-person-lines-fill", "Manage inquiries", "Track leads, clients and conversations without scattered spreadsheets."),
+            ("bi-calendar2-check", "Book and get paid", "Connect bookings, contracts, invoices and payments around each job."),
+            ("bi-magic", "Edit and organize", "Use AI-assisted tools to find, cull and prepare images faster."),
+            ("bi-images", "Deliver and sell", "Share galleries, collect favorites and support image sales."),
+            ("bi-graph-up-arrow", "Measure and grow", "Understand business performance and where to focus next."),
+        ],
+        "separate_tools": [
+            "Portfolio website builder", "Client gallery platform", "CRM and booking software",
+            "Contract and invoicing software", "AI photo tools", "Analytics and automation tools",
+        ],
+        "ai_items": [
+            ("bi-cpu", "What counts as an AI-processed image", "Images processed through eligible AI search, culling, quality or organization tools may count toward usage."),
+            ("bi-calendar-range", "Monthly plan allowance", "Final AI-processing allowances will be shown clearly before subscription checkout."),
+            ("bi-bell", "Usage alerts before reaching a limit", "Dashboard notices will help you understand current usage before capacity is reached."),
+            ("bi-sliders", "Upgrade and additional capacity options", "Growing teams can upgrade plans or discuss additional capacity as production limits are finalized."),
+        ],
+        "comparison_groups": [
+            {"name":"Website and brand","rows":[("Photographer profile","Included","Included","Included","Included"),("Full photographer website","Limited","Included","Included","Custom"),("Custom domain","Not included","Included","Included","Included"),("Remove LumisPixel branding","Not included","Included","Included","Included"),("Custom logo and colors","Limited","Included","Included","Custom"),("SEO tools","Limited","Included","Included","Custom")]},
+            {"name":"Galleries and delivery","rows":[("Active galleries","3 active","Unlimited","Unlimited","Custom"),("Photo storage","5 GB","250 GB","1 TB","Custom"),("Password protection","Included","Included","Included","Included"),("Client favorites","Included","Included","Included","Included"),("Gallery proofing","Limited","Included","Included","Custom"),("High-resolution downloads","Limited","Included","Included","Custom"),("Custom watermarks","Limited","Included","Included","Custom"),("Digital sales","Not included","Included","Included","Custom"),("Print sales","Not included","Included","Included","Custom"),("Video support","Not included","Limited","Included","Custom")]},
+            {"name":"Business management","rows":[("CRM contacts","Limited","Included","Included","Custom"),("Booking forms","Not included","Included","Included","Custom"),("Calendar","Not included","Included","Included","Custom"),("Contracts","Not included","Included","Included","Custom"),("E-signatures","Not included","Included","Included","Custom"),("Quotes","Not included","Included","Included","Custom"),("Questionnaires","Not included","Included","Included","Custom"),("Invoices","Not included","Included","Included","Custom"),("Online payments","Not included","Included","Included","Custom"),("Client portal","Limited","Included","Included","Custom")]},
+            {"name":"AI tools","rows":[("AI photo search","Limited","Included","Included","Custom"),("Face matching","Not included","Included","Included","Custom"),("Duplicate detection","Limited","Included","Included","Custom"),("Blur detection","Limited","Included","Included","Custom"),("Image-quality scoring","Limited","Included","Included","Custom"),("AI culling","Limited","Included","Included","Custom"),("AI editing assistance","Limited","Included","Included","Custom"),("Auto-tagging","Limited","Included","Included","Custom"),("Monthly AI allowance","Limited","Included","Higher limits","Custom")]},
+            {"name":"Marketing and automation","rows":[("Email templates","Limited","Included","Included","Custom"),("Basic workflows","Not included","Included","Included","Custom"),("Advanced workflow builder","Not included","Not included","Included","Custom"),("Lead follow-ups","Not included","Included","Included","Custom"),("Gallery reminders","Not included","Included","Included","Custom"),("Payment reminders","Not included","Included","Included","Custom"),("Campaign tools","Not included","Limited","Included","Custom"),("Referral tools","Not included","Limited","Included","Custom")]},
+            {"name":"Analytics","rows":[("Business overview","Limited","Included","Included","Custom"),("Lead analytics","Not included","Included","Included","Custom"),("Booking analytics","Not included","Included","Included","Custom"),("Revenue analytics","Not included","Included","Included","Custom"),("Gallery engagement","Limited","Included","Included","Custom"),("Team reporting","Not included","Not included","Included","Custom")]},
+            {"name":"Team and support","rows":[("Included users","1 user","1 user","3 users","Custom"),("Roles and permissions","Not included","Not included","Included","Custom"),("Shared studio calendar","Not included","Not included","Included","Custom"),("Priority support","Not included","Not included","Included","Included"),("Dedicated onboarding","Not included","Not included","Limited","Included"),("Account manager","Not included","Not included","Not included","Included"),("API access","Not included","Not included","Not included","Custom"),("Service-level agreement","Not included","Not included","Not included","Custom")]},
+        ],
+        "faqs": [
+            {"q":"Can I try LumisPixel before paying?","a":"Yes. You can start with the Free plan or explore paid features during a free trial. No credit card is required to begin."},
+            {"q":"Is the Free plan really free?","a":"Yes. The Free plan does not expire. You can use its included features for as long as you need and upgrade when your business requires more capacity or tools."},
+            {"q":"What happens when my trial ends?","a":"You can choose a paid plan or continue with the features available in the Free plan. You will not be charged unless you select a subscription and provide payment information."},
+            {"q":"Can I change plans later?","a":"Yes. You can upgrade as your business grows or move to another plan when your needs change."},
+            {"q":"Can I cancel at any time?","a":"Yes. You can cancel your subscription from your account. Paid features remain available through the end of the current billing period."},
+            {"q":"What counts toward my storage limit?","a":"Original uploads, gallery images, videos and other stored media may count toward your storage allowance. Your account dashboard will provide a clear usage summary."},
+            {"q":"How do AI-processing limits work?","a":"AI allowances are based on images processed through eligible AI tools. Your dashboard will show your usage and available capacity."},
+            {"q":"Do unused AI credits roll over?","a":"Monthly AI allowances do not currently roll over. Enterprise customers may request custom usage arrangements."},
+            {"q":"Does LumisPixel charge commission on gallery sales?","a":"Platform and payment-processing fees will be shown clearly before you activate gallery sales. Any LumisPixel fee will be listed separately from payment-provider transaction fees."},
+            {"q":"Can I use my own domain?","a":"Yes. Custom-domain connections are available on Pro, Studio and Enterprise plans."},
+            {"q":"Can I add team members?","a":"Studio includes three team members. Additional seats and custom team arrangements will be available for qualifying accounts."},
+            {"q":"Can LumisPixel help migrate my existing galleries or client data?","a":"Import tools will support standard migrations. Assisted migration may be available for qualifying Studio and Enterprise accounts."},
+        ],
+    }
+    return render(request, "pricing.html", context)
+
+
 def index(request):
     return render(request, "index.html")
 
 
 def public_page(request, page_key):
+    if page_key == "pricing":
+        return pricing(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":

@@ -6,6 +6,7 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("pricing/", views.pricing, name="pricing"),
     path("products/", views.public_page, {"page_key": "products"}, name="products"),
     path("for-photographers/", views.for_photographers, name="for_photographers"),
     path("solutions/", views.public_page, {"page_key": "solutions"}, name="solutions"),
