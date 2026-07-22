@@ -15,7 +15,7 @@
         <div class="nav-sidebar-actions">
             <a href="{% url 'clients:for_clients' %}">Find My Photos</a>
             <a href="{% url 'marketplace:find_photographer' %}">Hire a Photographer</a>
-            <a href="#" data-placeholder-link>Pricing</a><!-- Future named route: billing:pricing -->
+            <a href="{% url 'core:pricing' %}">Pricing</a>
         </div>
 
         <h6>// Account</h6>
@@ -29,8 +29,8 @@
             </div>
             <ul class="mobile-account-links sidebar-account-links">
                 <li><a href="{% url 'photographer_workspace:dashboard' %}">Work Space</a></li>
-                <li><a href="#" data-placeholder-link>Account Settings</a><!-- Future named route: accounts:settings --></li>
-                <li><a href="#" data-placeholder-link>Help Center</a><!-- Future named route: core:help_center --></li>
+                <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
+                <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
                 <li>
                     <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
                         {% csrf_token %}
