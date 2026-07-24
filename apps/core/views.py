@@ -356,6 +356,10 @@ def resources_help_center(request):
     return render(request, "resources_help_center.html")
 
 
+def resources_video_tutorials(request):
+    return render(request, "resources_video_tutorials.html")
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
@@ -369,6 +373,8 @@ def public_page(request, page_key):
         return resources_templates(request)
     if page_key in {"resources_help_center", "help_center", "documentation"}:
         return resources_help_center(request)
+    if page_key == "resources_video_tutorials":
+        return resources_video_tutorials(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":

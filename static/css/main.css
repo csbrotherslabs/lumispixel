@@ -2895,3 +2895,44 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 767px) { .templates-category-grid, .templates-card-grid, .templates-latest-grid, .templates-free-grid, .templates-process .resources-framework { grid-template-columns: 1fr; } .templates-filter-list { flex-wrap: nowrap; overflow-x: auto; padding: 4px 0 10px; } .templates-filter-list .resources-guides-filter { flex: 0 0 auto; } .templates-card-actions { flex-direction: column; } .templates-card-actions .btn-one, .templates-card-actions .btn-two { width: 100%; } .templates-process .resources-framework { border-left: 3px solid #eaded5; padding-left: 16px; } }
 @media (prefers-reduced-motion: reduce) { .templates-page, .templates-page * { scroll-behavior: auto !important; transition: none !important; } }
 .templates-cta-actions { justify-content: center; }
+
+/* Video Tutorials marketing resource page */
+.resources-video-tutorials, .video-tutorials-page { background: #fffaf7; }
+.video-tutorials-page { color: #342b25; overflow-x: clip; scroll-behavior: smooth; }
+.video-tutorials-page a:focus-visible, .video-tutorials-page button:focus-visible, .video-tutorials-page input:focus-visible, .video-tutorials-page .resources-guides-filter:focus-within { outline: 3px solid rgba(215,0,6,.28); outline-offset: 3px; }
+.video-thumbnail-placeholder { position: relative; isolation: isolate; aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: clamp(16px,3vw,28px); border: 1px solid #eaded5; border-radius: 24px; background: radial-gradient(circle at 20% 10%, rgba(215,0,6,.10), transparent 32%), linear-gradient(135deg,#fff,#f6ede8); text-align: center; color: #514740; box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 16px 42px rgba(48,35,27,.06); overflow: hidden; }
+.video-thumbnail-placeholder i { width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #181818; color: #fff; font-size: 30px; box-shadow: 0 12px 28px rgba(24,24,24,.18); }
+.video-thumbnail-placeholder span { color: #342b25; font-weight: 900; }
+.video-thumbnail-placeholder small { color: #766b63; font-weight: 800; }
+.video-duration { position: absolute; right: 12px; bottom: 12px; z-index: 2; border-radius: 999px; padding: 6px 10px; background: #181818; color: #fff; font-size: 12px; }
+.video-hero-card { display: flex; flex-direction: column; gap: 14px; }
+.video-hero-card__caption { border: 1px solid #eaded5; border-radius: 24px; background: #fff; padding: 18px; box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.video-hero-card__caption h2 { font-size: clamp(24px,3vw,34px); margin: 10px 0; }
+.video-tutorials-search { display: grid; gap: 18px; padding: clamp(18px,3vw,28px); border: 1px solid #eaded5; border-radius: 28px; background: #fff; box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.video-tutorials-search label, .video-tutorials-search legend { color: #181818; font-weight: 900; }
+.video-tutorials-search input[type="search"] { width: 100%; min-height: 52px; border: 1px solid #eaded5; border-radius: 14px; padding: 0 15px; background: #fff; color: #181818; }
+.video-filter-grid { display: grid; gap: 16px; }
+.video-filter-grid fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.video-card-grid, .video-product-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; align-items: stretch; }
+.video-start-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 16px; align-items: stretch; }
+.video-series-grid, .video-upcoming-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; align-items: stretch; }
+.video-short-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.video-tutorial-card, .video-product-card, .video-step-card, .video-short-card { display: flex; flex-direction: column; height: 100%; min-width: 0; border: 1px solid #eaded5; border-radius: 28px; background: rgba(255,255,255,.94); box-shadow: 0 18px 50px rgba(48,35,27,.07); padding: 18px; }
+.video-short-card { display: grid; grid-template-columns: 112px minmax(0,1fr); gap: 14px; align-items: center; }
+.video-short-card .video-thumbnail-placeholder { border-radius: 16px; padding: 10px; }
+.video-short-card .video-thumbnail-placeholder i { width: 34px; height: 34px; font-size: 18px; }
+.video-short-card .video-thumbnail-placeholder span, .video-short-card .video-thumbnail-placeholder small { display: none; }
+.video-product-card > i { width: 54px; height: 54px; display: inline-flex; align-items: center; justify-content: center; border-radius: 17px; background: rgba(215,0,6,.09); color: var(--color-one); font-size: 25px; margin-bottom: 14px; }
+.video-card-body { flex: 1 1 auto; min-width: 0; }
+.video-card-body h3, .video-short-card h3 { color: #181818; font-size: 21px; line-height: 1.28; overflow-wrap: anywhere; }
+.video-card-body p, .video-short-card p, .video-product-card li { color: #625850; line-height: 1.55; }
+.video-product-card ul { margin: 14px 0; padding-left: 20px; }
+.video-step-number { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #181818; color: #fff; font-weight: 900; margin-bottom: 12px; }
+.video-progress-empty { border: 1px dashed #b8aca4; border-radius: 999px; padding: 4px 8px; color: #625850; }
+.video-card-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+.video-tutorial-card .btn-two, .video-product-card .btn-two, .video-step-card .btn-two { margin-top: auto; justify-content: center; }
+.video-centered { justify-content: center; }
+.video-tutorials-page .ai-faq-item button { font-size: 17px; }
+@media (max-width:1199px){ .video-start-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .video-card-grid, .video-product-grid, .video-short-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:767px){ .video-card-grid, .video-product-grid, .video-start-grid, .video-series-grid, .video-upcoming-grid, .video-short-grid { grid-template-columns: 1fr; } .video-short-card { grid-template-columns: 96px minmax(0,1fr); } .video-card-actions .btn-two, .video-card-actions .resources-guide-link { width: 100%; justify-content: center; } .video-thumbnail-placeholder i { width: 48px; height: 48px; font-size: 24px; } }
+@media (prefers-reduced-motion: reduce){ .video-tutorials-page, .video-tutorials-page * { scroll-behavior: auto !important; transition: none !important; } }
