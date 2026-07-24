@@ -336,9 +336,15 @@ def index(request):
     return render(request, "index.html")
 
 
+def resources_blog(request):
+    return render(request, "resources_blog.html")
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
+    if page_key == "resources_blog":
+        return resources_blog(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":

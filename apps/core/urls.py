@@ -156,7 +156,7 @@ urlpatterns = [
         name="help_center",
     ),
     path("resources/faq/", views.public_page, {"page_key": "faq"}, name="faq"),
-    path("resources/blog/", views.public_page, {"page_key": "blog"}, name="blog"),
+    path("resources/blog/", views.public_page, {"page_key": "resources_blog"}, name="resources_blog"),
     path(
         "resources/release-notes/",
         views.public_page,
@@ -184,7 +184,7 @@ urlpatterns = [
 
     # TODO: Replace these Resources architecture placeholder views with dedicated
     # marketing page templates as each resource category is built out.
-    path("resources/articles/", views.public_page, {"page_key": "resources_blog"}, name="resources_blog"),
+    path("resources/articles/", views.public_page, {"page_key": "blog"}, name="blog"),
     path("resources/photography-guides/", views.public_page, {"page_key": "resources_photography_guides"}, name="resources_photography_guides"),
     path("resources/business-guides/", views.public_page, {"page_key": "resources_business_guides"}, name="resources_business_guides"),
     path("resources/ai-learning-center/", views.public_page, {"page_key": "resources_ai_learning_center"}, name="resources_ai_learning_center"),
