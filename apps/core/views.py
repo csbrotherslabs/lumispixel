@@ -249,7 +249,7 @@ PARENT_LANDING_PAGES.update({
             {"title": "Templates", "description": "Download professional contracts, invoices, questionnaires, pricing guides, checklists, and more.", "icon": "bi-file-earmark-text", "url_name": "core:resources_templates"},
             {"title": "Help Center / Documentation", "description": "Find answers, setup guides, troubleshooting articles, and complete product documentation.", "icon": "bi-life-preserver", "url_name": "core:resources_help_center"},
             {"title": "Video Tutorials", "description": "Watch step-by-step tutorials covering every LumisPixel feature and photography workflow.", "icon": "bi-play-circle", "url_name": "core:resources_video_tutorials"},
-            {"title": "Webinars & Events", "description": "Join live webinars, workshops, product demos, and community events.", "icon": "bi-easel", "url_name": "core:resources_webinars"},
+            {"title": "Webinars & Events", "description": "Join live webinars, workshops, product demos, and community events.", "icon": "bi-easel", "url_name": "core:resources_webinars_events"},
             {"title": "Success Stories / Case Studies", "description": "See how photographers grow their businesses using LumisPixel.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
             {"title": "Free Downloads", "description": "Access free resources including guides, checklists, planners, templates, and business tools.", "icon": "bi-download", "url_name": "core:resources_free_downloads"},
             {"title": "Release Notes / Product Updates", "description": "Explore new features, improvements, bug fixes, and product announcements.", "icon": "bi-stars", "url_name": "core:resources_release_notes"},
@@ -395,6 +395,25 @@ def resources_video_tutorials(request):
     return render(request, "resources_video_tutorials.html", context)
 
 
+def resources_webinars_events(request):
+    """Render the pre-launch events hub with deliberately unscheduled content."""
+    events = [
+        ("Getting Started", "Live Webinar", "Getting Started With LumisPixel", "Explore the platform, understand the main product areas, and learn the recommended setup path.", "New Users", "45 minutes", "Registration Opening Soon", ""),
+        ("Client Galleries", "Product Demo", "Build a Better Client Gallery Experience", "See how gallery design, access, favorites, downloads, privacy, and delivery can work together.", "Photographers", "45 minutes", "Coming Soon", ""),
+        ("AI Photo Search", "Live Demo and Q&A", "How AI Photo Search Helps Clients Find Their Images", "Explore selfie matching, discovery workflows, privacy, consent, and photographer controls.", "Photographers and Clients", "60 minutes", "Coming Soon", ""),
+        ("AI Culling", "Workshop", "Design an AI-Assisted Culling Workflow", "Learn how duplicate grouping, image-quality signals, recommendations, and photographer review can work together.", "Professional Photographers", "75 minutes", "Coming Soon", ""),
+        ("Pricing", "Workshop", "Price Photography Services for Sustainable Profit", "Review costs, time, packages, margins, positioning, and client communication.", "Photography Business Owners", "75 minutes", "Registration Opening Soon", "Educational information only. This event does not provide personalized financial or tax advice."),
+        ("Marketing", "Expert Panel", "How Photographers Can Build a Reliable Lead Pipeline", "Discuss referrals, search, local partnerships, websites, content, email, and lead follow-up.", "Growing Photography Businesses", "60 minutes", "Coming Soon", ""),
+        ("Websites", "Product Demo", "Build a Photographer Website With LumisPixel", "Explore themes, portfolios, service pages, contact information, previews, and publishing workflows.", "Photographers", "45 minutes", "Coming Soon", ""),
+        ("Client Experience", "Live Webinar", "Create a Client Journey People Remember", "Improve inquiry response, preparation, communication, delivery, and follow-up.", "All Photographers", "60 minutes", "Registration Opening Soon", ""),
+        ("Business Operations", "Workshop", "Document and Automate Your Photography Workflow", "Map recurring tasks, define approvals, reduce manual work, and protect service quality.", "Growing Teams", "75 minutes", "Coming Soon", ""),
+        ("Privacy and AI", "Expert Discussion", "Responsible AI, Client Trust, and Photography Privacy", "Discuss consent, face matching, image handling, disclosure, security, and human oversight.", "Photographers and Business Owners", "60 minutes", "Coming Soon", "Educational information only. Privacy and biometric-data requirements can vary by jurisdiction."),
+        ("Team Operations", "Panel Discussion", "When and How to Build a Photography Team", "Explore capacity, delegation, quality standards, handoffs, leadership, and team systems.", "Studio Owners", "60 minutes", "Coming Soon", ""),
+        ("Community", "Virtual Community Event", "LumisPixel Photographer Community Session", "Connect with other photographers, share workflow challenges, ask questions, and discuss future learning topics.", "LumisPixel Community", "60 minutes", "Coming Soon", ""),
+    ]
+    return render(request, "resources_webinars_events.html", {"events": events})
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
@@ -410,6 +429,8 @@ def public_page(request, page_key):
         return resources_help_center(request)
     if page_key == "resources_video_tutorials":
         return resources_video_tutorials(request)
+    if page_key in {"resources_webinars", "resources_webinars_events"}:
+        return resources_webinars_events(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":

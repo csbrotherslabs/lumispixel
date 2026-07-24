@@ -197,7 +197,9 @@ urlpatterns = [
     path("resources/templates/", views.public_page, {"page_key": "resources_templates"}, name="resources_templates"),
     path("resources/help-center-documentation/", views.public_page, {"page_key": "resources_help_center"}, name="resources_help_center_legacy"),
     path("resources/video-tutorials/", views.public_page, {"page_key": "resources_video_tutorials"}, name="resources_video_tutorials"),
-    path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars"}, name="resources_webinars"),
+    path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars_events"}, name="resources_webinars_events"),
+    # Backwards-compatible name for navigation and existing integrations.
+    path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars_events"}, name="resources_webinars"),
     path("resources/success-stories/", views.public_page, {"page_key": "resources_success_stories"}, name="resources_success_stories"),
     path("resources/free-downloads/", views.public_page, {"page_key": "resources_free_downloads"}, name="resources_free_downloads"),
     path("resources/product-updates/", views.public_page, {"page_key": "resources_release_notes"}, name="resources_release_notes"),
