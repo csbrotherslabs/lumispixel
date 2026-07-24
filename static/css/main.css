@@ -2803,3 +2803,42 @@ img, svg, video { max-width: 100%; height: auto; }
 .resources-business-guides a:focus-visible, .resources-business-guides button:focus-visible, .resources-business-guides input:focus-visible { outline: 3px solid rgba(215,0,6,.28); outline-offset: 3px; }
 @media (max-width: 1199px) { .resources-business-stage-grid, .resources-framework { grid-template-columns: repeat(2,minmax(0,1fr)); } .resources-assessment-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .resources-framework article:not(:last-child)::after { display: none; } }
 @media (max-width: 767px) { .resources-business-stage-grid, .resources-assessment-grid, .resources-framework, .resources-results-grid { grid-template-columns: 1fr; } .resources-framework { border-left: 3px solid #eaded5; padding-left: 16px; } .resources-business-stage-card__step::after { display: none; } }
+
+/* AI Learning Center resource page */
+.resources-ai-learning-center { background: #fffaf7; }
+.resources-ai-learning-center .resource-image-placeholder--hero { aspect-ratio: 16 / 10; }
+.resources-ai-learning-center .resource-image-placeholder--featured,
+.resources-ai-learning-center .resource-image-placeholder--learning-path,
+.resources-ai-learning-center .resource-image-placeholder--video { aspect-ratio: 16 / 9; }
+.resources-ai-learning-center .resource-image-placeholder--download { aspect-ratio: 9 / 11; }
+.resources-ai-learning-center .resource-image-placeholder--thumbnail { aspect-ratio: 4 / 3; }
+.resources-ai-learning-center a:focus-visible,
+.resources-ai-learning-center button:focus-visible,
+.resources-ai-learning-center input:focus-visible { outline: 3px solid rgba(215,0,6,.28); outline-offset: 3px; }
+.ai-supporting { font-weight: 900; color: #342b25 !important; }
+.ai-topic-nav .container { display: flex; flex-wrap: wrap; gap: 10px; }
+.ai-topic-nav a { display: inline-flex; gap: 8px; align-items: center; border: 1px solid #eaded5; border-radius: 999px; padding: 10px 15px; background: #fff; color: #342b25; font-weight: 900; box-shadow: 0 8px 20px rgba(48,35,27,.04); }
+.ai-topic-nav a.is-active { background: #181818; border-color: #181818; color: #fff; }
+.ai-topic-nav a span { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.resources-ai-learning-center .ai-card h4 { margin-top: 12px; color: #181818; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; }
+.ai-step { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #181818; color: #fff; font-weight: 900; margin: 14px 0 0; }
+.ai-callout { margin: 28px auto 0; max-width: 820px; padding: 18px 22px; border-left: 4px solid var(--color-one); border-radius: 18px; background: #fff; color: #342b25; font-weight: 900; box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.ai-workflow .resources-framework article { min-width: 0; }
+.ai-workflow .resources-framework i { margin-bottom: 4px; }
+.ai-myths { background: linear-gradient(135deg,#fff,#f7ede8); }
+.ai-myth-grid { display: grid; gap: 16px; }
+.ai-myth-row { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 16px; border: 1px solid #eaded5; border-radius: 24px; padding: clamp(16px, 3vw, 24px); background: #fff; box-shadow: 0 14px 38px rgba(48,35,27,.06); }
+.ai-myth-row strong { display: inline-flex; border-radius: 999px; padding: 6px 11px; margin-bottom: 8px; background: #181818; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.ai-myth-row div:last-child strong { background: rgba(215,0,6,.09); color: #b70005; }
+.ai-faq-list { max-width: 980px; margin: 0 auto; display: grid; gap: 12px; }
+.ai-faq-item { border: 1px solid #eaded5; border-radius: 18px; background: #fff; padding: 0; box-shadow: 0 10px 30px rgba(48,35,27,.05); }
+.ai-faq-item summary { list-style: none; }
+.ai-faq-item summary::-webkit-details-marker { display: none; }
+.ai-faq-item button { width: 100%; border: 0; background: transparent; color: #181818; text-align: left; padding: 16px 18px; font-size: 17px; font-weight: 900; cursor: pointer; }
+.ai-faq-item div { padding: 0 18px 18px; color: #625850; line-height: 1.6; font-size: 15px; }
+.ai-points { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 22px 0; }
+.ai-points span { border: 1px solid #eaded5; border-radius: 999px; background: #fff; color: #342b25; padding: 9px 13px; font-weight: 900; }
+.ai-points span:first-child { background: #181818; color: #fff; border-color: #181818; }
+@media (min-width: 1200px) { .ai-workflow .resources-framework { grid-template-columns: repeat(6,minmax(0,1fr)); } }
+@media (max-width: 767px) { .ai-topic-nav .container { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px; } .ai-topic-nav a { flex: 0 0 auto; } .ai-myth-row { grid-template-columns: 1fr; } .resources-ai-learning-center .resources-framework { border-left: 3px solid #eaded5; padding-left: 16px; } }
+@media (prefers-reduced-motion: reduce) { .resources-ai-learning-center, .resources-ai-learning-center * { scroll-behavior: auto !important; transition: none !important; } }
