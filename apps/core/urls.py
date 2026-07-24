@@ -181,6 +181,21 @@ urlpatterns = [
         {"page_key": "community"},
         name="community",
     ),
+
+    # TODO: Replace these Resources architecture placeholder views with dedicated
+    # marketing page templates as each resource category is built out.
+    path("resources/articles/", views.public_page, {"page_key": "resources_blog"}, name="resources_blog"),
+    path("resources/photography-guides/", views.public_page, {"page_key": "resources_photography_guides"}, name="resources_photography_guides"),
+    path("resources/business-guides/", views.public_page, {"page_key": "resources_business_guides"}, name="resources_business_guides"),
+    path("resources/ai-learning-center/", views.public_page, {"page_key": "resources_ai_learning_center"}, name="resources_ai_learning_center"),
+    path("resources/templates/", views.public_page, {"page_key": "resources_templates"}, name="resources_templates"),
+    path("resources/help-center-documentation/", views.public_page, {"page_key": "resources_help_center"}, name="resources_help_center"),
+    path("resources/video-tutorials/", views.public_page, {"page_key": "resources_video_tutorials"}, name="resources_video_tutorials"),
+    path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars"}, name="resources_webinars"),
+    path("resources/success-stories/", views.public_page, {"page_key": "resources_success_stories"}, name="resources_success_stories"),
+    path("resources/free-downloads/", views.public_page, {"page_key": "resources_free_downloads"}, name="resources_free_downloads"),
+    path("resources/product-updates/", views.public_page, {"page_key": "resources_release_notes"}, name="resources_release_notes"),
+    path("resources/newsletter/", views.public_page, {"page_key": "resources_newsletter"}, name="resources_newsletter"),
     path("company/", views.public_page, {"page_key": "company"}, name="company"),
     path("company/about/", views.public_page, {"page_key": "about"}, name="about"),
     path(
