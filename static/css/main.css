@@ -2775,3 +2775,31 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 991px) { .resources-guides-hero__grid, .resources-guide-featured, .resources-video-guide__grid, .resources-checklist__grid { grid-template-columns: 1fr; } .resources-specialty-grid, .resources-path-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 767px) { .resources-guides__breadcrumbs { padding-top: 96px; } .resources-guides-section { padding: 52px 0; } .resources-specialty-grid, .resources-guide-card-grid, .resources-skill-grid, .resources-topic-grid, .resources-path-grid, .resources-latest-grid, .resources-guides-newsletter__form { grid-template-columns: 1fr; } .resources-guides-newsletter__form label, .resources-guides-newsletter__form input, .resources-guides-newsletter__form button { grid-row: auto; } .resources-guides__actions .btn-one, .resources-guides__actions .btn-two { width: 100%; justify-content: center; } .resources-guides-filter-list { flex-wrap: nowrap; overflow-x: auto; padding: 4px 0 10px; } .resources-guides-filter { flex: 0 0 auto; } .resources-latest-card { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .resources-guides, .resources-guides * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Business Guides marketing page */
+.resources-business-guides .resource-image-placeholder--toolkit { aspect-ratio: 9 / 11; }
+.resources-business-guides .resource-image-placeholder--success-story { aspect-ratio: 4 / 3; }
+.resources-business-stage-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px; align-items: stretch; }
+.resources-business-stage-card, .resources-assessment-card, .resources-framework article { display: flex; flex-direction: column; height: 100%; border: 1px solid #eaded5; border-radius: 28px; background: #fff; padding: 24px; box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.resources-business-stage-card__step { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; color: var(--color-one); }
+.resources-business-stage-card__step span, .resources-framework article > span { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #181818; color: #fff; font-weight: 900; }
+.resources-business-stage-card__step::after { content: ""; flex: 1; height: 4px; border-radius: 999px; background: linear-gradient(90deg,var(--color-one),#eaded5); }
+.resources-business-stage-card h3, .resources-assessment-card h3, .resources-framework h3 { color: #181818; font-size: 22px; line-height: 1.25; }
+.resources-business-stage-card p, .resources-assessment-card p, .resources-framework p { color: #625850; line-height: 1.55; }
+.resources-business-stage-card ul { flex: 1 1 auto; margin: 16px 0 22px; padding-left: 22px; color: #4b433d; }
+.resources-business-stage-card .btn-two, .resources-path-card .btn-two { margin-top: auto; justify-content: center; }
+.resources-business-disclaimer { margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--color-one); background: #fff7f4; font-size: 13px; font-weight: 800; }
+.resources-business-checkup .container, .resources-business-toolkit .container { border: 1px solid #eaded5; border-radius: 34px; padding: clamp(24px,4vw,48px); background: linear-gradient(135deg,#fff,#f7ede8); box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.resources-assessment-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 28px 0; }
+.resources-assessment-card > i, .resources-topic-card i, .resources-framework i { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 15px; background: rgba(215,0,6,.09); color: var(--color-one); font-size: 22px; margin-bottom: 12px; }
+.resources-assessment-scale { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin-top: auto; }
+.resources-assessment-scale span { padding: 8px 6px; border: 1px solid #eaded5; border-radius: 999px; text-align: center; font-size: 12px; font-weight: 900; color: #3d342e; background: #fff; }
+.resources-framework { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 14px; position: relative; }
+.resources-framework article { position: relative; gap: 10px; }
+.resources-framework article:not(:last-child)::after { content: ""; position: absolute; top: 44px; right: -15px; width: 16px; height: 2px; background: var(--color-one); }
+.resources-framework a, .resources-success-story a.resources-guide-link { color: var(--color-one); font-weight: 900; margin-top: auto; }
+.resources-results-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; width: 100%; }
+.resources-results-grid span { padding: 14px; border: 1px solid #eaded5; border-radius: 18px; background: #fff; color: #181818; font-weight: 900; }
+.resources-business-guides a:focus-visible, .resources-business-guides button:focus-visible, .resources-business-guides input:focus-visible { outline: 3px solid rgba(215,0,6,.28); outline-offset: 3px; }
+@media (max-width: 1199px) { .resources-business-stage-grid, .resources-framework { grid-template-columns: repeat(2,minmax(0,1fr)); } .resources-assessment-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .resources-framework article:not(:last-child)::after { display: none; } }
+@media (max-width: 767px) { .resources-business-stage-grid, .resources-assessment-grid, .resources-framework, .resources-results-grid { grid-template-columns: 1fr; } .resources-framework { border-left: 3px solid #eaded5; padding-left: 16px; } .resources-business-stage-card__step::after { display: none; } }
