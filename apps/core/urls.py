@@ -152,6 +152,12 @@ urlpatterns = [
     path(
         "resources/help-center/",
         views.public_page,
+        {"page_key": "resources_help_center"},
+        name="resources_help_center",
+    ),
+    path(
+        "resources/help-center/",
+        views.public_page,
         {"page_key": "help_center"},
         name="help_center",
     ),
@@ -189,7 +195,7 @@ urlpatterns = [
     path("resources/business-guides/", views.public_page, {"page_key": "resources_business_guides"}, name="resources_business_guides"),
     path("resources/ai-learning-center/", views.public_page, {"page_key": "resources_ai_learning_center"}, name="resources_ai_learning_center"),
     path("resources/templates/", views.public_page, {"page_key": "resources_templates"}, name="resources_templates"),
-    path("resources/help-center-documentation/", views.public_page, {"page_key": "resources_help_center"}, name="resources_help_center"),
+    path("resources/help-center-documentation/", views.public_page, {"page_key": "resources_help_center"}, name="resources_help_center_legacy"),
     path("resources/video-tutorials/", views.public_page, {"page_key": "resources_video_tutorials"}, name="resources_video_tutorials"),
     path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars"}, name="resources_webinars"),
     path("resources/success-stories/", views.public_page, {"page_key": "resources_success_stories"}, name="resources_success_stories"),
