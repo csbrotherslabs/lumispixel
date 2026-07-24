@@ -2635,3 +2635,73 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 767px) { .pricing-hero { padding-top: 116px; } .pricing-section { padding: 54px 0; } .pricing-faq-section { padding-top: 58px; padding-bottom: 58px; } .pricing-faq-heading { margin-bottom: 28px; } .pricing-faq-heading h2 { font-size: clamp(30px, 8vw, 34px); } .pricing-faq-heading p { font-size: 16px; } .pricing-faq { gap: 8px; } .pricing-faq button { min-height: 64px; padding: 14px 15px; grid-template-columns: 38px minmax(0, 1fr) 18px; gap: 11px; } .pricing-faq__chevron { width: 38px; height: 38px; font-size: 15px; } .pricing-faq__question { font-size: 16px; } .pricing-faq__badge { display: none; } .pricing-faq__panel { padding: 0 16px 16px 64px; } .pricing-faq__panel p { font-size: 15px; } .pricing-toggle { width: 100%; border-radius: 20px; } .pricing-toggle__option { flex: 1; padding: 0 10px; border-radius: 15px; } .pricing-card-grid, .pricing-value-grid, .pricing-tools__grid { grid-template-columns: 1fr; } .pricing-audience, .pricing-billing { min-height: 0; } .pricing-scroll-hint { display: block; } .pricing-final__actions { flex-direction: column; } .pricing-final__actions .btn-one, .pricing-final__actions .btn-two { width: 100%; justify-content: center; } }
 @media (max-width: 430px) { .pricing-plan-card { padding: 22px 18px 18px; border-radius: 20px; } .pricing-hero h1 { font-size: 34px; } .pricing-faq button { padding-left: 13px; padding-right: 13px; } .pricing-faq__panel { padding-left: 13px; padding-right: 13px; } }
 @media (prefers-reduced-motion: reduce) { .pricing-plan-card, .pricing-faq__item, .pricing-faq__chevron, .pricing-faq__plus { transition: none; } }
+
+/* Resources Blog / Articles page */
+.resources-blog { background: #fffaf7; color: #342b25; overflow-x: clip; }
+.resources-blog__breadcrumbs { padding-top: 118px; font-size: 13px; }
+.resources-blog__breadcrumbs ol { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.resources-blog__breadcrumbs li:not(:last-child)::after { content: "/"; margin-left: 8px; color: #9a8c84; }
+.resources-blog-hero { padding: 34px 0 70px; }
+.resources-blog-hero__grid, .resources-featured-article, .resources-download__grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(360px, 1.08fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
+.resources-blog-hero h1 { margin: 14px 0 18px; font-size: clamp(42px, 6vw, 76px); line-height: .98; letter-spacing: -.05em; }
+.resources-blog-hero p, .resources-blog-heading p, .resources-newsletter p, .resources-product-cta p { color: #625850; font-size: 18px; line-height: 1.65; }
+.resources-blog__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.resources-blog-section { padding: 74px 0; }
+.resources-blog-section--compact { padding: 28px 0; }
+.resources-blog-heading { max-width: 760px; margin: 0 auto 34px; text-align: center; }
+.resources-blog-heading h2, .resources-blog-section h2 { color: #181818; font-size: clamp(30px, 4vw, 48px); line-height: 1.12; }
+.resources-blog-category-nav, .resources-topic-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 100%; }
+.resources-blog-category, .resources-topic-pills a { border: 1px solid #eaded5; border-radius: 999px; background: #fff; color: #3d342e; padding: 10px 15px; font-weight: 800; box-shadow: 0 8px 20px rgba(48,35,27,.04); }
+.resources-blog-category:hover, .resources-topic-pills a:hover, .resources-blog-category:focus-visible, .resources-topic-pills a:focus-visible, .resources-blog-link:focus-visible { outline: 3px solid rgba(215,0,6,.22); outline-offset: 3px; color: var(--color-one); border-color: rgba(215,0,6,.34); }
+.resources-blog-category.is-active { background: #181818; border-color: #181818; color: #fff; }
+.resource-image-placeholder { aspect-ratio: 3 / 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 22px; border: 1px solid #eaded5; border-radius: 24px; background: linear-gradient(135deg,#fff,#f6ede8); text-align: center; color: #514740; box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 16px 42px rgba(48,35,27,.06); }
+.resource-image-placeholder i { width: 54px; height: 54px; display: inline-flex; align-items: center; justify-content: center; border-radius: 17px; background: rgba(215,0,6,.09); color: var(--color-one); font-size: 25px; }
+.resource-image-placeholder span { color: #181818; font-weight: 900; }
+.resource-image-placeholder small { color: #7c7068; font-weight: 700; }
+.resource-image-placeholder--hero { aspect-ratio: 16 / 10; }
+.resource-image-placeholder--featured, .resource-image-placeholder--learning-path { aspect-ratio: 16 / 9; }
+.resource-image-placeholder--thumbnail { aspect-ratio: 4 / 3; border-radius: 18px; }
+.resource-image-placeholder--download { aspect-ratio: 9 / 11; }
+.resource-image-placeholder--small { aspect-ratio: 3 / 2; min-width: 132px; border-radius: 16px; padding: 14px; }
+.resource-image-placeholder--small i { width: 36px; height: 36px; font-size: 17px; }
+.resources-featured-article, .resources-editor-card, .resources-article-card, .resources-learning-card, .resources-more-grid article { border: 1px solid #eaded5; border-radius: 28px; background: rgba(255,255,255,.9); box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.resources-featured-article { padding: clamp(18px, 3vw, 30px); }
+.resources-featured-article__content { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.resources-blog-badge { display: inline-flex; width: fit-content; border-radius: 999px; padding: 6px 11px; background: rgba(215,0,6,.09); color: #b70005; font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.resources-blog-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: #766b63; font-size: 13px; font-weight: 800; }
+.resources-article-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.resources-article-card, .resources-learning-card { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.resources-article-card__body, .resources-article-card__footer, .resources-learning-card__body { padding: 20px; }
+.resources-article-card__body, .resources-learning-card__body { flex: 1 1 auto; }
+.resources-article-card h3, .resources-learning-card h3, .resources-editor-card h3, .resources-more-grid h3 { color: #181818; font-size: 22px; line-height: 1.25; }
+.resources-article-card p, .resources-learning-card p, .resources-editor-card p { color: #625850; line-height: 1.55; }
+.resources-article-card__footer { margin-top: auto; padding-top: 0; }
+.resources-blog-link { display: inline-flex; gap: 7px; align-items: center; margin-top: 12px; color: var(--color-one); font-weight: 900; }
+.resources-editors-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr); gap: 20px; }
+.resources-editor-card { padding: 22px; }
+.resources-editor-stack { display: grid; gap: 16px; }
+.resources-editor-stack article { display: grid; grid-template-columns: 170px minmax(0,1fr); gap: 16px; align-items: center; padding: 16px; border: 1px solid #eaded5; border-radius: 22px; background: #fff; }
+.resources-learning-grid, .resources-more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.resources-learning-card .btn-two { margin: 0 20px 20px; justify-content: center; }
+.resources-learning-card ul, .resources-download ul { margin: 18px 0; padding-left: 22px; color: #4b433d; }
+.resources-download { background: linear-gradient(135deg,#181818,#3a2724); color: #fff; }
+.resources-download h2, .resources-download p, .resources-download li { color: #fff; }
+.resources-blog-form { display: grid; gap: 10px; margin-top: 18px; }
+.resources-blog-form label { color: inherit; font-weight: 900; }
+.resources-blog-form input { width: 100%; min-height: 50px; border: 1px solid #eaded5; border-radius: 13px; padding: 0 14px; background: #fff; color: #181818; }
+.resources-blog-form input:focus-visible { outline: 3px solid rgba(215,0,6,.25); }
+.resources-privacy-note { font-size: 13px !important; }
+.resources-more-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resources-more-grid article { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 15px; align-items: center; }
+.resources-more-grid span { color: #b70005; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.resources-newsletter, .resources-product-cta { text-align: center; }
+.resources-newsletter .container, .resources-product-cta .container { max-width: 860px; padding: clamp(30px, 5vw, 56px); border: 1px solid #eaded5; border-radius: 30px; background: #fff; box-shadow: 0 18px 50px rgba(48,35,27,.07); }
+.resources-newsletter__form { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; text-align: left; }
+.resources-newsletter__form label { grid-row: 1; }
+.resources-newsletter__form input, .resources-newsletter__form button { grid-row: 2; }
+.resources-newsletter__form button { min-height: 50px; }
+@media (max-width: 1199px) { .resources-article-grid, .resources-learning-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 991px) { .resources-blog-hero__grid, .resources-featured-article, .resources-download__grid, .resources-editors-grid { grid-template-columns: 1fr; } .resources-editor-stack article, .resources-more-grid article { grid-template-columns: 130px minmax(0,1fr); } }
+@media (max-width: 767px) { .resources-blog__breadcrumbs { padding-top: 96px; } .resources-blog-section { padding: 52px 0; } .resources-article-grid, .resources-learning-grid, .resources-more-grid, .resources-newsletter__form { grid-template-columns: 1fr; } .resources-newsletter__form label, .resources-newsletter__form input, .resources-newsletter__form button { grid-row: auto; } .resources-blog__actions .btn-one, .resources-blog__actions .btn-two { width: 100%; justify-content: center; } .resources-blog-category-nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 8px; } .resources-blog-category { flex: 0 0 auto; } }
+@media (max-width: 575px) { .resources-editor-stack article, .resources-more-grid article { grid-template-columns: 1fr; } .resource-image-placeholder--small { min-width: 0; } }
+@media (prefers-reduced-motion: reduce) { .resources-blog * { scroll-behavior: auto !important; transition: none !important; } }
