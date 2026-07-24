@@ -344,6 +344,10 @@ def resources_photography_guides(request):
     return render(request, "resources_photography_guides.html")
 
 
+def resources_ai_learning_center(request):
+    return render(request, "resources_ai_learning_center.html")
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
@@ -351,6 +355,8 @@ def public_page(request, page_key):
         return resources_blog(request)
     if page_key == "resources_photography_guides":
         return resources_photography_guides(request)
+    if page_key == "resources_ai_learning_center":
+        return resources_ai_learning_center(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":
