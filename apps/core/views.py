@@ -356,6 +356,45 @@ def resources_help_center(request):
     return render(request, "resources_help_center.html")
 
 
+def resources_video_tutorials(request):
+    context = {
+        "start_steps": [
+            ("Create and Verify Your Account", "Register, confirm your email, choose your role, and sign in securely.", "4 min"),
+            ("Complete Your Profile", "Add personal or business information and prepare your LumisPixel account.", "5 min"),
+            ("Complete Photographer Onboarding", "Add services, specialties, service areas, profile details, and a website theme.", "9 min"),
+            ("Explore Your Workspace", "Understand the dashboard, business overview, activation checklist, and workspace navigation.", "7 min"),
+            ("Upload Your First Photo Collection", "Prepare, upload, organize, and review images inside LumisPixel.", "8 min"),
+            ("Create Your First Client Gallery", "Build, preview, publish, and share a gallery with a client.", "11 min"),
+        ],
+        "product_areas": [
+            ("bi-person-check", "Accounts and Onboarding", "Create accounts, verify email, complete profiles, and finish photographer or client onboarding.", ["Create an account", "Reset a password", "Complete photographer onboarding"], "8 tutorials"),
+            ("bi-cloud-upload", "Photo Uploads and Organization", "Upload collections, organize files, review processing, and manage image libraries.", ["Upload images", "Organize a collection", "Resolve failed uploads"], "12 tutorials"),
+            ("bi-images", "Client Galleries", "Create, customize, publish, secure, share, and manage gallery experiences.", ["Create a gallery", "Configure downloads", "Manage gallery privacy"], "10 tutorials"),
+            ("bi-stars", "AI Photo Search", "Learn how clients can use selfies or image-search tools to locate relevant photographs.", ["Use Find My Photos", "Improve search results", "Manage search privacy"], "6 tutorials"),
+            ("bi-magic", "AI Editing and Culling", "Understand duplicate groups, quality review, recommended selections, and editing assistance.", ["Start an AI culling review", "Compare similar images", "Review AI editing suggestions"], "7 tutorials"),
+            ("bi-window", "Photographer Websites", "Choose a theme, add portfolio content, customize pages, preview changes, and publish.", ["Choose a website theme", "Add a portfolio", "Update website content"], "9 tutorials"),
+            ("bi-briefcase", "Business Hub", "Manage clients, bookings, contracts, invoices, workflows, marketing, analytics, and operations.", ["Add a client", "Create a booking", "Build a workflow"], "12 tutorials"),
+            ("bi-search-heart", "Marketplace and Photographer Discovery", "Create photographer profiles, explore listings, and understand client discovery workflows.", ["Complete a public profile", "Explore photographer search", "Manage marketplace information"], "6 tutorials"),
+            ("bi-credit-card", "Plans and Billing", "Review plans, update payment information, manage subscriptions, and access billing records.", ["Compare plans", "Update payment methods", "Change a subscription"], "8 tutorials"),
+        ],
+        "popular": [
+            ("Getting Started", "Create Your LumisPixel Account", "Register, verify your email, choose your role, and complete the first account steps.", "4 min", "Beginner"),
+            ("Photographer Onboarding", "Complete Your Photographer Profile", "Add business details, services, specialties, locations, profile content, and theme preferences.", "9 min", "Beginner"),
+            ("Uploads", "Upload and Organize a Photo Collection", "Prepare files, start an upload, review processing, and organize the collection.", "8 min", "Beginner"),
+            ("Client Galleries", "Create and Publish a Client Gallery", "Build a gallery, add images, customize access, preview the experience, and publish.", "11 min", "Beginner"),
+            ("AI Photo Search", "Find Photos Using a Selfie", "See how clients can submit a clear selfie and review matching photographs.", "5 min", "Beginner"),
+            ("AI Culling", "Review Similar Images and AI Recommendations", "Compare duplicate groups, quality signals, and recommended selections while keeping final control.", "10 min", "Intermediate"),
+            ("Client CRM", "Add and Manage a Client", "Create a client record, add details, review activity, and connect future bookings.", "6 min", "Beginner"),
+            ("Booking and Calendar", "Create a Photography Booking", "Add a session, choose the date and time, connect a client, and review booking details.", "7 min", "Beginner"),
+            ("Contracts", "Create and Send a Photography Contract", "Prepare an agreement, review client details, set expectations, and send it for action.", "9 min", "Intermediate"),
+            ("Invoices", "Create and Track an Invoice", "Add services, set payment details, send an invoice, and review payment status.", "8 min", "Beginner"),
+            ("Websites", "Choose and Customize a Photographer Website Theme", "Select a theme, preview the design, update content, and prepare the site for publishing.", "12 min", "Intermediate"),
+            ("Billing", "Update Your Plan and Payment Method", "Review plan details, update payment information, and manage subscription settings.", "5 min", "Beginner"),
+        ],
+    }
+    return render(request, "resources_video_tutorials.html", context)
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
@@ -369,6 +408,8 @@ def public_page(request, page_key):
         return resources_templates(request)
     if page_key in {"resources_help_center", "help_center", "documentation"}:
         return resources_help_center(request)
+    if page_key == "resources_video_tutorials":
+        return resources_video_tutorials(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":
