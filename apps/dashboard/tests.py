@@ -37,6 +37,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
         response = self.client.get(reverse("photographer_workspace:dashboard"))
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'id="dashboard-heading"')
         self.assertContains(response, "Good ")
         self.assertContains(response, "Alex.")
         self.assertContains(response, "Here’s what’s happening with your business today.")

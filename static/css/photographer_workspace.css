@@ -35,7 +35,6 @@
 .lpw-icon-btn::after,.lpw-menu-button::after,.lpw-drawer-close::after{content:none}
 
 .lpw-dashboard-header{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;padding:4px 0 2px}
-.lpw-dashboard-header__copy h2{margin:0 0 8px;color:var(--workspace-text-primary);font-size:clamp(30px,3vw,40px);line-height:1.05;letter-spacing:-.025em}
 .lpw-dashboard-header__greeting{margin:0 0 3px;color:var(--workspace-text-primary);font-size:17px;font-weight:700}
 .lpw-dashboard-header__subtitle{margin:0;color:var(--workspace-text-secondary);font-size:14px;line-height:1.5}
 .lpw-dashboard-header__actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
