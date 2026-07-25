@@ -1,55 +1,50 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<section class="lpw-dashboard-header" aria-label="Dashboard overview">
-  <div class="lpw-dashboard-header__copy">
-    <p class="lpw-dashboard-header__greeting">{{ greeting }}, {{ welcome_name }}.</p>
-    <p class="lpw-dashboard-header__subtitle">Here’s what’s happening with your business today.</p>
+<header class="lpw-command-header">
+  <div>
+    <p class="lpw-command-header__greeting">{{ greeting }}, {{ welcome_name }}.</p>
+    <p>Here’s what’s happening with your business today.</p>
   </div>
-  <div class="lpw-dashboard-header__actions">
+  <div class="lpw-command-header__actions">
     <a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn lpw-btn-primary"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload Photos</a>
     <a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Gallery</a>
   </div>
-</section>
-<section class="lpw-summary-grid" aria-label="Business summary">
+</header>
+
+<section class="lpw-kpi-grid" aria-label="Business key performance indicators">
   {% for card in summary_cards %}
-  <a class="lpw-summary-card" href="{{ card.url }}">
-    <div><span>{{ card.label }}</span><strong>{{ card.metric }}</strong></div>
-    <i class="bi {{ card.icon }}" aria-hidden="true"></i>
+  <a class="lpw-kpi-card" href="{{ card.url }}">
+    <div class="lpw-widget-icon"><i class="bi {{ card.icon }}" aria-hidden="true"></i></div>
+    <span>{{ card.label }}</span><strong>{{ card.metric }}</strong><small>{{ card.note }}</small>
   </a>
   {% endfor %}
 </section>
-<section class="lpw-dashboard-section" aria-labelledby="getting-started-title">
-  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Getting started" title="Getting Started" action_label="Workspace Activation Checklist" section_id="getting-started-title" only %}
-  <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-checklist-grid">{% for item in getting_started %}{% include "photographer_workspace/components/checklist/checklist_card.html" with item=item only %}{% endfor %}</div>
-</section>
-<section class="lpw-dashboard-section" aria-labelledby="quick-actions-title">
-  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Quick actions" title="Move around your workspace" section_id="quick-actions-title" only %}
-  <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-card-grid">{% for module in modules|slice:":7" %}{% include "photographer_workspace/components/cards/workspace_card.html" with module=module action_label="Open" only %}{% endfor %}</div>
-</section>
-<section class="lpw-dashboard-section" aria-labelledby="workspace-modules-title">
-  <div class="lpw-two-col">
-    <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="recent-activity-title">
-      {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Recent activity" title="Recent Activity" section_id="recent-activity-title" only %}
-      {% include "photographer_workspace/components/empty_states/empty_state.html" with icon="bi-clock-history" title="No recent activity yet." description="Activity will appear here as you upload photos, create galleries, invite clients, receive orders, and use LumisPixel tools." only %}
-    </section>
-    <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="website-preview-title">
-      {% url 'photographer_workspace:website' as website_url %}{% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Your website preview" title="Your Website Preview" action_label="Manage Website" action_url=website_url section_id="website-preview-title" only %}
-      <article class="lpw-dashboard-card lpw-preview-card"><div class="lpw-theme {{ theme_preview.preview_class }}" aria-hidden="true"></div><h3>{{ theme_preview.name }}</h3><p>{{ theme_preview.description }}</p></article>
-    </section>
-  </div>
-</section>
-<section class="lpw-dashboard-section" aria-labelledby="workspace-modules-title">
-  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Workspace modules" title="Explore modules" section_id="workspace-modules-title" only %}
-  <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-card-grid">{% for module in modules %}{% include "photographer_workspace/components/cards/workspace_card.html" with module=module action_label="Open "|add:module.title only %}{% endfor %}</div>
-</section>
-<div class="lpw-two-col">
-  <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="recent-clients-title">
-    {% url 'photographer_workspace:clients' as clients_url %}{% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Recent clients" title="Recent Clients" action_label="Open Clients" action_url=clients_url section_id="recent-clients-title" only %}
-    {% include "photographer_workspace/components/empty_states/empty_state.html" with icon="bi-people" title="No clients yet." description="Client relationships will appear once client management is connected." only %}
+
+<div class="lpw-command-row">
+  <section class="lpw-command-card" aria-labelledby="schedule-title">
+    <div class="lpw-command-card__head"><div><span>Today</span><h2 id="schedule-title">Today’s Schedule</h2></div><a href="{% url 'photographer_workspace:calendar' %}">View Calendar <i class="bi bi-arrow-right"></i></a></div>
+    {% if schedule_items %}<div class="lpw-feed">{% for item in schedule_items %}<article><time>{{ item.time }}</time><div><strong>{{ item.title }}</strong><span>{{ item.client }}</span></div></article>{% endfor %}</div>
+    {% else %}<div class="lpw-command-empty"><div class="lpw-widget-icon"><i class="bi bi-calendar2-check"></i></div><h3>Your day is clear</h3><p>There are no appointments scheduled for today. Add a booking to start planning your day.</p><a class="lpw-mini-btn" href="{% url 'photographer_workspace:bookings' %}"><i class="bi bi-plus-lg"></i>Create Booking</a></div>{% endif %}
   </section>
-  <section class="lpw-dashboard-section lpw-dashboard-section--compact" aria-labelledby="resources-title">
-    {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Help and resources" title="Help and Resources" section_id="resources-title" only %}
-    <div class="lpw-dashboard-card lpw-resource-list"><a href="{% url 'photographer_workspace:settings' %}">Documentation <span>Coming Soon</span></a><a href="{% url 'photographer_workspace:settings' %}">Video Tutorials <span>Coming Soon</span></a><a href="{% url 'photographer_workspace:settings' %}">Support <span>Coming Soon</span></a><a href="{% url 'photographer_workspace:settings' %}">Community <span>Coming Soon</span></a></div>
+  <section class="lpw-command-card" aria-labelledby="activity-title">
+    <div class="lpw-command-card__head"><div><span>Latest updates</span><h2 id="activity-title">Recent Activity</h2></div></div>
+    {% if activity_items %}<div class="lpw-activity-feed">{% for item in activity_items %}<article><div class="lpw-widget-icon"><i class="bi {{ item.icon }}"></i></div><div><strong>{{ item.title }}</strong><span>{{ item.description }}</span></div><time>{{ item.timestamp }}</time></article>{% endfor %}</div>
+    {% else %}<div class="lpw-command-empty"><div class="lpw-widget-icon"><i class="bi bi-activity"></i></div><h3>No activity yet</h3><p>Bookings, payments, gallery updates, client actions, and AI jobs will appear here.</p><a class="lpw-mini-btn" href="{% url 'photographer_workspace:galleries' %}"><i class="bi bi-cloud-arrow-up"></i>Upload Photos</a></div>{% endif %}
   </section>
 </div>
+
+<section class="lpw-command-section" aria-labelledby="quick-title">
+  <div class="lpw-section-title"><div><span>Shortcuts</span><h2 id="quick-title">Quick Actions</h2></div></div>
+  <div class="lpw-quick-actions">{% for action in quick_actions %}<a href="{{ action.url }}"><span class="lpw-widget-icon"><i class="bi {{ action.icon }}"></i></span>{{ action.label }}<i class="bi bi-chevron-right"></i></a>{% endfor %}</div>
+</section>
+
+<section class="lpw-command-section" aria-labelledby="snapshot-title">
+  <div class="lpw-section-title"><div><span>At a glance</span><h2 id="snapshot-title">Business Snapshot</h2></div><p>Keep an eye on work that needs your attention.</p></div>
+  <div class="lpw-snapshot-grid">{% for card in business_snapshot %}<article class="lpw-snapshot-card"><div class="lpw-widget-icon"><i class="bi {{ card.icon }}"></i></div><div><span>{{ card.label }}</span><strong>{{ card.count }}</strong></div><p>{{ card.summary }}</p><a href="{{ card.url }}">{{ card.action }} <i class="bi bi-arrow-right"></i></a></article>{% endfor %}</div>
+</section>
+
+<section class="lpw-command-section lpw-tools-section" aria-labelledby="tools-title">
+  <div class="lpw-section-title"><div><span>Workspace</span><h2 id="tools-title">Explore Business Tools</h2></div><p>Everything you need to run and grow your photography business.</p></div>
+  <div class="lpw-tool-groups">{% for group in tool_groups %}<article><div class="lpw-tool-group__title"><i class="bi {{ group.icon }}"></i><h3>{{ group.title }}</h3></div><div>{% for item in group.items %}<a href="{{ item.url }}"><i class="bi {{ item.icon }}"></i>{{ item.title }}<i class="bi bi-arrow-up-right"></i></a>{% endfor %}</div></article>{% endfor %}</div>
+</section>
 {% endblock %}
