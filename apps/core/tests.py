@@ -98,8 +98,7 @@ class BusinessGuidesNavigationTests(TestCase):
         self.assertContains(response, f'href="{business_guides_url}"')
         self.assertContains(
             response,
-            "Explore practical guides for pricing, client experience, marketing, "
-            "workflows, finances, studio operations, and photography business growth.",
+            "Learn pricing, marketing, finance, workflows, and studio operations.",
         )
 
     def test_public_marketing_navbar_links_to_business_guides_once(self):
