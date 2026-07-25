@@ -31,13 +31,19 @@ class PhotographerWorkspaceTests(TestCase):
 
     def test_completed_photographer_dashboard_and_post_login_destination(self):
         user, _ = self.make_photographer(True, business_name="Lumis Studio", display_name="Alex Lens", website_theme=PhotographerProfile.WebsiteTheme.MODERN_STUDIO)
+        user.first_name = "Alex"
+        user.save(update_fields=["first_name"])
         self.client.force_login(user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
         response = self.client.get(reverse("photographer_workspace:dashboard"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Welcome back, Lumis Studio")
+        self.assertContains(response, "Good ")
+        self.assertContains(response, "Alex.")
+        self.assertContains(response, "Here’s what’s happening with your business today.")
+        self.assertContains(response, "Active Galleries")
+        self.assertContains(response, "New Leads")
+        self.assertContains(response, "Upcoming Bookings")
         self.assertContains(response, "Modern Studio")
-        self.assertContains(response, "Total Galleries")
         self.assertContains(response, "0")
         self.assertContains(response, f'href="{reverse("core:index")}" aria-label="LumisPixel home"')
 
