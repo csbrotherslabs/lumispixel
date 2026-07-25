@@ -32,6 +32,21 @@ class PrivacyPolicyPageTests(TestCase):
         self.assertContains(response, "static/css/privacy-policy.css")
 
 
+class CookiePolicyPageTests(TestCase):
+    def test_cookie_policy_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:cookie_policy"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "cookie_policy.html")
+        self.assertContains(response, "Your Privacy, Your Choice")
+        self.assertContains(response, "Table of Contents")
+        self.assertContains(response, 'class="cookie-type-grid"')
+        self.assertContains(response, "Essential Cookies")
+        self.assertContains(response, "Questions About Cookies?")
+        self.assertContains(response, reverse("core:contact"))
+        self.assertContains(response, "static/css/cookie-policy.css")
+
+
 class CareersPageTests(TestCase):
     def test_careers_page_uses_dedicated_marketing_layout(self):
         response = self.client.get(reverse("core:careers"))
