@@ -163,12 +163,9 @@ urlpatterns = [
     ),
     path("resources/faq/", views.public_page, {"page_key": "faq"}, name="faq"),
     path("resources/blog/", views.public_page, {"page_key": "resources_blog"}, name="resources_blog"),
-    path(
-        "resources/release-notes/",
-        views.public_page,
-        {"page_key": "release_notes"},
-        name="release_notes",
-    ),
+    path("resources/release-notes/", views.resources_release_notes, name="resources_release_notes"),
+    # Backwards-compatible route name retained for existing integrations.
+    path("resources/release-notes/", views.resources_release_notes, name="release_notes"),
     path(
         "resources/system-status/",
         views.public_page,
@@ -202,7 +199,7 @@ urlpatterns = [
     path("resources/webinars-events/", views.public_page, {"page_key": "resources_webinars_events"}, name="resources_webinars"),
     path("resources/success-stories/", views.public_page, {"page_key": "resources_success_stories"}, name="resources_success_stories"),
     path("resources/free-downloads/", views.public_page, {"page_key": "resources_free_downloads"}, name="resources_free_downloads"),
-    path("resources/product-updates/", views.public_page, {"page_key": "resources_release_notes"}, name="resources_release_notes"),
+    path("resources/product-updates/", views.resources_release_notes, name="resources_release_notes_legacy"),
     path("resources/newsletter/", views.public_page, {"page_key": "resources_newsletter"}, name="resources_newsletter"),
     path("company/", views.public_page, {"page_key": "company"}, name="company"),
     path("company/about/", views.public_page, {"page_key": "about"}, name="about"),

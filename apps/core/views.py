@@ -472,6 +472,25 @@ def resources_success_stories(request):
     return render(request, "resources_success_stories.html", {"stories": stories, "specialties": specialties})
 
 
+def resources_release_notes(request):
+    """Render the transparent, pre-release product-change hub."""
+    updates = [
+        ("Photographer Workspace", "Improvement Preview", "A Clearer Photographer Workspace Overview", "An updated workspace layout could make business priorities, gallery activity, client work, and setup progress easier to review.", "Photographers could identify important tasks and business activity more quickly.", "Photographers", "Illustrative Release Note", ""),
+        ("Client Galleries", "New Feature Preview", "More Flexible Gallery Access Controls", "Future gallery controls may support clearer privacy, expiration, download, favorites, and client-access settings.", "Photographers could tailor gallery access more closely to each project and client.", "Photographers and Clients", "Planned Update", ""),
+        ("AI Photo Search", "Beta Preview", "Face-Assisted Photo Discovery", "Authorized users may eventually use a selfie or reference image to locate relevant photos inside approved galleries.", "Large event and sports galleries could become easier to explore.", "Photographers and Clients", "In Development", "Consent, access, retention, and biometric-data requirements must be addressed before release."),
+        ("AI Editing and Culling", "Improvement Preview", "More Organized Similar-Image Review", "AI-assisted grouping could make duplicate and near-duplicate image review more efficient.", "Photographers could review large collections with clearer context while retaining final control.", "Photographers", "Planned Update", ""),
+        ("Photographer Websites", "New Feature Preview", "Improved Portfolio and Service Page Controls", "Future website tools may make it easier to organize portfolios, services, specialties, testimonials, and inquiry paths.", "Photographers could create a clearer path from discovery to inquiry.", "Photographers", "In Development", ""),
+        ("Client CRM", "Workflow Improvement", "More Connected Client Records", "Client profiles could connect inquiries, bookings, projects, contracts, invoices, galleries, and communication history.", "Photographers could spend less time searching across separate tools.", "Photographers and Studios", "Illustrative Release Note", ""),
+        ("Booking and Calendar", "New Feature Preview", "Availability and Session Scheduling Tools", "Future scheduling controls may support service duration, availability, buffers, blackout dates, and client booking rules.", "Photographers could create more structured booking experiences.", "Photographers and Clients", "Planned Update", ""),
+        ("Contracts", "Workflow Preview", "Connected Agreement Tracking", "Contract status, signatures, project details, and client records could eventually be managed in one workflow.", "Photographers could gain better visibility into agreement completion.", "Photographers", "Planned Update", "Contract tools must not be presented as legal advice."),
+        ("Invoices and Payments", "Improvement Preview", "Clearer Payment Status and Client Communication", "Future billing workflows may provide more visible payment schedules, balances, reminders, and project links.", "Photographers could manage payment follow-up more consistently.", "Photographers and Clients", "In Development", ""),
+        ("Workflow Automation", "New Feature Preview", "Reusable Workflow Triggers and Actions", "Photographers may eventually create repeatable actions for booking, preparation, delivery, and follow-up.", "Routine steps could become easier to standardize.", "Photographers and Studios", "Planned Update", ""),
+        ("Analytics and Reports", "Dashboard Preview", "More Visible Business and Gallery Activity", "Future reports may combine inquiry, booking, project, gallery, sales, and operational activity.", "Photographers could make decisions with clearer business context.", "Photographers and Studios", "Planned Update", ""),
+        ("Mobile Experience", "Usability Improvement", "Improved Small-Screen Navigation and Card Layouts", "Responsive refinements could improve navigation, card visibility, forms, and workflow access on smaller screens.", "Photographers and clients could use important workflows more comfortably from mobile devices.", "All Users", "Illustrative Release Note", ""),
+    ]
+    return render(request, "resources_release_notes.html", {"updates": updates})
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
