@@ -9,17 +9,18 @@
   </div>
   <nav class="lpw-nav" aria-label="Workspace modules">
     {% for group in workspace_nav %}
-      <section class="lpw-nav-group{% if not group.title %} lpw-nav-group--standalone{% endif %}" data-nav-group>
+      <section class="lpw-nav-group{% if not group.title %} lpw-nav-group--standalone{% endif %}{% if group.active %} is-active{% endif %}" data-nav-group>
         {% if group.title %}
           <button class="lpw-nav-group__toggle" type="button" aria-expanded="{% if group.expanded %}true{% else %}false{% endif %}" aria-controls="{{ group.id }}" data-nav-group-toggle>
+            <i class="bi {{ group.icon }} lpw-section-icon" aria-hidden="true"></i>
             <span>{{ group.title }}</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            <i class="bi bi-chevron-right lpw-group-chevron" aria-hidden="true"></i>
           </button>
         {% endif %}
         <div class="lpw-nav-group__items" id="{{ group.id }}"{% if group.title and not group.expanded %} hidden{% endif %}>
           {% for item in group.items %}
-            <a href="{{ item.url }}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %} title="{{ item.title }}">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 12h16.5M12 3.75v16.5"/><circle cx="12" cy="12" r="8.25"/></svg>
+            <a href="{{ item.url }}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %} data-tooltip="{{ item.title }}">
+              <i class="bi {{ item.icon }}" aria-hidden="true"></i>
               <span>{{ item.title }}</span>
             </a>
           {% endfor %}

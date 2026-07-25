@@ -38,16 +38,16 @@ WORKSPACE_MODULES += [
 MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 
 NAVIGATION = [
-    {"title": "", "items": [("dashboard", "Dashboard", "home")]},
-    {"title": "Clients", "items": [("crm", "CRM", "users"), ("leads", "Leads", "user-plus"), ("clients", "Clients", "user-group")]},
-    {"title": "Galleries", "items": [("galleries", "Galleries", "photo"), ("ai_search", "AI Search", "sparkles"), ("albums", "Albums", "rectangle-stack")]},
-    {"title": "Bookings", "items": [("calendar", "Calendar", "calendar"), ("bookings", "Bookings", "calendar-days"), ("contracts", "Contracts", "document-text")]},
-    {"title": "Financial", "items": [("invoices", "Invoices", "document-currency"), ("payments", "Payments", "credit-card"), ("revenue", "Revenue", "chart-bar")]},
-    {"title": "Business Growth", "items": [("marketing", "Marketing", "megaphone"), ("reviews", "Reviews", "star"), ("referrals", "Referrals", "share")]},
-    {"title": "Automation", "items": [("workflows", "Workflows", "arrow-path"), ("ai_assistant", "AI Assistant", "chat-bubble")]},
-    {"title": "Operations", "items": [("team", "Team", "user-group"), ("equipment", "Equipment", "camera"), ("tasks", "Tasks", "clipboard") ]},
-    {"title": "Reports", "items": [("analytics", "Analytics", "presentation-chart")]},
-    {"title": "", "items": [("marketplace", "Marketplace", "shopping-bag"), ("settings", "Settings", "cog")]},
+    {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
+    {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
+    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries", "bi-images"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
+    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("calendar", "Calendar", "bi-calendar3"), ("bookings", "Bookings", "bi-calendar-check"), ("contracts", "Contracts", "bi-file-earmark-text")]},
+    {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
+    {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
+    {"title": "Automation", "icon": "bi-lightning-charge", "items": [("workflows", "Workflows", "bi-diagram-3"), ("ai_assistant", "AI Assistant", "bi-chat-dots") ]},
+    {"title": "Operations", "icon": "bi-briefcase", "items": [("team", "Team", "bi-person-workspace"), ("equipment", "Equipment", "bi-camera"), ("tasks", "Tasks", "bi-check2-square") ]},
+    {"title": "Reports", "icon": "bi-bar-chart", "items": [("analytics", "Analytics", "bi-bar-chart-line")]},
+    {"title": "", "icon": "bi-grid", "items": [("marketplace", "Marketplace", "bi-shop"), ("settings", "Settings", "bi-gear")]},
 ]
 THEMES = {
     PhotographerProfile.WebsiteTheme.ELEGANT: ("Elegant", "A refined visual direction for weddings, portraits, family, and fine-art work.", "elegant"),
@@ -67,7 +67,7 @@ def _workspace_nav(active_key):
         for key, title, icon in group["items"]:
             module = MODULE_BY_KEY[key]
             items.append({"key": key, "title": title, "icon": icon, "url": _reverse_module(module), "active": key == active_key})
-        groups.append({"title": group["title"], "id": f"nav-group-{index}", "items": items, "expanded": not group["title"] or any(item["active"] for item in items)})
+        groups.append({"title": group["title"], "icon": group["icon"], "id": f"nav-group-{index}", "items": items, "expanded": not group["title"] or any(item["active"] for item in items), "active": any(item["active"] for item in items)})
     return groups
 
 
