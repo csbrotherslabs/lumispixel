@@ -250,7 +250,7 @@ PARENT_LANDING_PAGES.update({
             {"title": "Help Center / Documentation", "description": "Find answers, setup guides, troubleshooting articles, and complete product documentation.", "icon": "bi-life-preserver", "url_name": "core:resources_help_center"},
             {"title": "Video Tutorials", "description": "Watch step-by-step tutorials covering every LumisPixel feature and photography workflow.", "icon": "bi-play-circle", "url_name": "core:resources_video_tutorials"},
             {"title": "Webinars & Events", "description": "Join live webinars, workshops, product demos, and community events.", "icon": "bi-easel", "url_name": "core:resources_webinars_events"},
-            {"title": "Success Stories / Case Studies", "description": "See how photographers grow their businesses using LumisPixel.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
+            {"title": "Success Stories / Case Studies", "description": "Explore clearly labeled illustrative workflows now and verified customer stories when available.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
             {"title": "Free Downloads", "description": "Access free resources including guides, checklists, planners, templates, and business tools.", "icon": "bi-download", "url_name": "core:resources_free_downloads"},
             {"title": "Release Notes / Product Updates", "description": "Explore new features, improvements, bug fixes, and product announcements.", "icon": "bi-stars", "url_name": "core:resources_release_notes"},
             {"title": "Newsletter / Learning Hub", "description": "Receive photography tips, AI insights, product updates, and exclusive educational content.", "icon": "bi-envelope", "url_name": "core:resources_newsletter"},
@@ -450,6 +450,28 @@ def resources_webinars_events(request):
     return render(request, "resources_webinars_events.html", {"events": events})
 
 
+def resources_success_stories(request):
+    """Render transparent, illustrative workflow stories (not customer claims)."""
+    stories = [
+        ("Wedding Photography", "Growing", "Client Journey", "Creating a More Consistent Wedding Client Experience", "Inquiry details, questionnaires, timelines, contracts, and delivery tasks were handled separately.", "A connected workflow could make every client step easier to track and repeat.", "Structured inquiry process|Clear preparation milestones|Consistent delivery follow-up"),
+        ("Portrait Photography", "Getting Started", "Booking and Communication", "Turning Portrait Inquiries Into Organized Sessions", "New leads required repeated manual responses, and session details were easy to overlook.", "Templates, booking steps, and client records could create a smoother path from inquiry to session.", "Faster response structure|Better session preparation|Centralized client details"),
+        ("Sports Photography", "Scaling", "AI Photo Search", "Helping Athletes and Families Find Their Photos Faster", "Large event galleries made it difficult for clients to locate relevant images.", "Face-assisted and searchable galleries could improve discovery while preserving access and consent controls.", "Faster image discovery|Less manual searching|Better client self-service"),
+        ("School Photography", "Scaling", "Gallery Delivery", "Organizing High-Volume School Photography Delivery", "Large numbers of students, families, galleries, and delivery steps created operational complexity.", "Structured data, organized galleries, and clear access rules could simplify delivery.", "Better roster organization|Clearer gallery access|Repeatable delivery steps"),
+        ("Corporate Photography", "Growing", "Scheduling and Delivery", "Managing a Multi-Employee Headshot Project", "Scheduling, participant information, brand requirements, and delivery were managed across different systems.", "A centralized project workflow could improve coordination and visibility.", "Consolidated participant details|Clearer scheduling|Organized final delivery"),
+        ("Event Photography", "Established", "AI Culling and Delivery", "Reviewing Large Event Collections More Efficiently", "High image volume made duplicate review, technical checks, and delivery preparation time-consuming.", "AI-assisted grouping and review could support faster decisions while keeping photographer approval central.", "Similar-image grouping|Technical-quality review|Photographer-controlled selection"),
+        ("Real Estate Photography", "Growing", "Booking and Workflow", "Standardizing Property Photography Jobs", "Property details, preparation instructions, scheduling, shot requirements, and delivery expectations varied by job.", "Reusable workflows and client templates could improve consistency.", "Standard preparation instructions|Repeatable shot workflow|Clearer delivery expectations"),
+        ("Commercial Photography", "Established", "Project Management", "Connecting Creative Briefs, Approvals, and Delivery", "Multiple stakeholders, usage requirements, feedback rounds, and delivery formats created complex handoffs.", "A connected project structure could improve communication, review, and accountability.", "Centralized requirements|Clearer approvals|Organized final assets"),
+        ("Studio Photography", "Scaling", "Team Operations", "Building Repeatable Studio Operations", "Informal instructions made team handoffs and quality control inconsistent.", "Documented workflows, assignments, and checkpoints could protect quality as the studio grows.", "Clear responsibilities|Standardized handoffs|Better quality review"),
+        ("Destination Photography", "Growing", "Planning and Communication", "Managing Destination Sessions With Fewer Surprises", "Travel, timing, locations, permits, weather, communication, and backup planning required careful coordination.", "Structured preparation could make destination sessions easier to manage.", "Better travel preparation|Clear backup planning|Centralized expectations"),
+        ("Portrait Photography", "Growing", "Photographer Website", "Turning a Portfolio Into a Clear Client Journey", "The portfolio showed strong work but did not clearly explain services, process, or next steps.", "A focused website structure could connect portfolio content with services, inquiries, and booking.", "Clearer service positioning|Stronger inquiry path|Consistent branding"),
+        ("Multi-Specialty Studio", "Scaling", "Business Hub", "Creating One Operating View Across the Studio", "Clients, bookings, invoices, assignments, galleries, and reports were managed across multiple systems.", "A shared operating workspace could improve visibility, accountability, and coordination.", "Centralized business overview|Better work assignment|More consistent reporting"),
+    ]
+    specialties = [
+        ("Wedding", "Coordinating a detailed, multi-step client journey", "Inquiries|Timelines|Contracts|Galleries"), ("Portrait", "Turning interest into prepared sessions", "Lead follow-up|Session preparation|Galleries|Website conversion"), ("Sports", "Helping people navigate high image volume", "High-volume uploads|Photo search|Gallery access|Fast delivery"), ("School", "Coordinating participants and private access", "Participant organization|Private access|High-volume galleries|Family delivery"), ("Corporate", "Keeping participants and brand needs aligned", "Scheduling|Participant records|Brand requirements|Delivery"), ("Event", "Reviewing and delivering large collections", "Large collections|AI review|Searchable galleries|Rapid delivery"), ("Real Estate", "Making every property job consistent", "Property preparation|Scheduling|Shot workflows|Delivery"), ("Commercial", "Managing stakeholder review and rights", "Creative briefs|Approvals|Usage requirements|Delivery formats"), ("Studio", "Protecting standards as a team grows", "Assignments|Standard procedures|Quality review|Capacity planning"), ("Destination", "Planning around travel and uncertainty", "Travel planning|Location preparation|Client communication|Backup plans"),
+    ]
+    return render(request, "resources_success_stories.html", {"stories": stories, "specialties": specialties})
+
+
 def public_page(request, page_key):
     if page_key == "pricing":
         return pricing(request)
@@ -469,6 +491,8 @@ def public_page(request, page_key):
         return resources_video_tutorials(request)
     if page_key in {"resources_webinars", "resources_webinars_events"}:
         return resources_webinars_events(request)
+    if page_key == "resources_success_stories":
+        return resources_success_stories(request)
     if page_key in PARENT_LANDING_PAGES:
         return render(request, "parent_landing.html", {"page": PARENT_LANDING_PAGES[page_key]})
     if page_key == "wedding_photography":
