@@ -519,6 +519,8 @@ def resources_release_notes(request):
 def public_page(request, page_key):
     if page_key == "about":
         return render(request, "about.html")
+    if page_key == "our_story":
+        return render(request, "our_story.html")
     if page_key == "pricing":
         return pricing(request)
     if page_key == "resources_blog":
