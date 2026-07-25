@@ -18,6 +18,20 @@ class AboutPageTests(TestCase):
         self.assertContains(response, reverse("accounts:get-started"))
 
 
+class PrivacyPolicyPageTests(TestCase):
+    def test_privacy_policy_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:privacy_policy"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "privacy_policy.html")
+        self.assertContains(response, "Privacy First")
+        self.assertContains(response, "Table of Contents")
+        self.assertContains(response, 'class="privacy-sections"')
+        self.assertContains(response, "Questions About Privacy?")
+        self.assertContains(response, reverse("core:contact"))
+        self.assertContains(response, "static/css/privacy-policy.css")
+
+
 class CareersPageTests(TestCase):
     def test_careers_page_uses_dedicated_marketing_layout(self):
         response = self.client.get(reverse("core:careers"))

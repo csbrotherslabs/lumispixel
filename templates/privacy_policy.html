@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy | LumisPixel{% endblock %}
+{% block meta_description %}Learn how LumisPixel collects, uses, stores, and protects personal information and uploaded images.{% endblock %}
+{% block body_class %}marketing-page privacy-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/privacy-policy.css' %}">{% endblock %}
+
+{% block content %}
+<section class="privacy-hero" aria-labelledby="privacy-title"><div class="container privacy-hero__inner">
+  <span class="privacy-eyebrow">Legal &amp; Privacy</span>
+  <h1 id="privacy-title">Privacy Policy</h1>
+  <p>Your privacy matters. This page explains how LumisPixel collects, uses, stores, and protects your information.</p>
+</div></section>
+
+<nav class="privacy-toc" aria-label="Privacy policy table of contents"><div class="container">
+  <strong>Table of Contents</strong>
+  <ol>
+    <li><a href="#introduction">Introduction</a></li><li><a href="#information-we-collect">Information We Collect</a></li><li><a href="#how-we-use-information">How We Use Your Information</a></li><li><a href="#cookies">Cookies and Tracking Technologies</a></li><li><a href="#ai-features">AI Features and Uploaded Images</a></li><li><a href="#sharing">Sharing Information with Third Parties</a></li><li><a href="#security">Data Security</a></li><li><a href="#retention">Data Retention</a></li><li><a href="#rights">Your Privacy Rights</a></li><li><a href="#children">Children's Privacy</a></li><li><a href="#international">International Users</a></li><li><a href="#changes">Changes to This Policy</a></li><li><a href="#contact-us">Contact Us</a></li>
+  </ol>
+</div></nav>
+
+<main class="privacy-content"><div class="container privacy-layout">
+  <aside class="privacy-callout" aria-labelledby="privacy-first-title"><span><i class="bi bi-shield-check" aria-hidden="true"></i></span><div><h2 id="privacy-first-title">Privacy First</h2><p>LumisPixel is committed to protecting photographer and client data while providing secure AI-powered services.</p></div></aside>
+  <div class="privacy-sections">
+    <section id="introduction"><span>01</span><h2>Introduction</h2><p>This policy describes the information LumisPixel may process when you visit our sites, create an account, or use our photography services.</p><p>It is intended as a clear overview and will be updated with attorney-reviewed details as our services evolve.</p></section>
+    <section id="information-we-collect"><span>02</span><h2>Information We Collect</h2><p>We may collect account details, contact information, payment-related records, device data, and information you provide when contacting us.</p><p>We may also process photographs, gallery activity, preferences, and other content submitted through the service.</p></section>
+    <section id="how-we-use-information"><span>03</span><h2>How We Use Your Information</h2><p>We use information to provide, maintain, personalize, and improve LumisPixel, and to communicate about accounts and support requests.</p><p>Information may also help us secure the platform, understand product performance, and meet legal obligations.</p></section>
+    <section id="cookies"><span>04</span><h2>Cookies and Tracking Technologies</h2><p>We may use cookies and similar technologies to keep the service working, remember preferences, and understand site usage.</p><p>Available controls and choices may vary by browser, device, and location.</p></section>
+    <section id="ai-features"><span>05</span><h2>AI Features and Uploaded Images</h2><p>When enabled, AI features may analyze uploaded images to support search, organization, culling, editing, or other requested functions.</p><p>Photographers are responsible for having appropriate rights and permissions before uploading content. Additional feature-specific notices may apply.</p></section>
+    <section id="sharing"><span>06</span><h2>Sharing Information with Third Parties</h2><p>We may share limited information with vendors that support hosting, payments, analytics, communications, and other platform operations.</p><p>We may also disclose information when required by law, to protect rights and safety, or as part of a properly notified business transaction.</p></section>
+    <section id="security"><span>07</span><h2>Data Security</h2><p>We use reasonable administrative, technical, and organizational measures designed to safeguard personal information.</p><p>No storage or transmission system is completely secure, so we cannot guarantee absolute security.</p></section>
+    <section id="retention"><span>08</span><h2>Data Retention</h2><p>We retain information for as long as needed to provide services, support legitimate business purposes, and satisfy legal requirements.</p><p>Retention periods may depend on the type of information, account settings, contractual needs, and applicable law.</p></section>
+    <section id="rights"><span>09</span><h2>Your Privacy Rights</h2><p>Depending on your location, you may have rights to access, correct, delete, restrict, or obtain a copy of certain personal information.</p><p>You may also have choices about marketing and some processing activities. We may need to verify requests before responding.</p></section>
+    <section id="children"><span>10</span><h2>Children's Privacy</h2><p>LumisPixel is not directed to children who cannot legally consent to the processing of their information.</p><p>Account holders uploading images of children are responsible for obtaining any permissions required by applicable law.</p></section>
+    <section id="international"><span>11</span><h2>International Users</h2><p>Information may be processed in countries other than the country where it was collected.</p><p>Where required, we use appropriate safeguards for international data transfers and provide applicable privacy rights.</p></section>
+    <section id="changes"><span>12</span><h2>Changes to This Policy</h2><p>We may revise this policy to reflect changes to LumisPixel, our practices, or applicable requirements.</p><p>We will post the updated policy here and provide additional notice when a material change requires it.</p></section>
+    <section id="contact-us"><span>13</span><h2>Contact Us</h2><p>Contact LumisPixel if you have questions about this policy, our privacy practices, or a request involving your information.</p><p>Please include enough detail for us to identify the relevant account or service and respond appropriately.</p></section>
+  </div>
+</div></main>
+
+<section class="privacy-cta" aria-labelledby="privacy-cta-title"><div class="container"><div class="privacy-cta__card">
+  <h2 id="privacy-cta-title">Questions About Privacy?</h2>
+  <a class="privacy-button" href="{% url 'core:contact' %}">Contact Us <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div></div></section>
+{% endblock %}
