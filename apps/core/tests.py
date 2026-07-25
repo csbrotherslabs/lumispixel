@@ -47,6 +47,22 @@ class CookiePolicyPageTests(TestCase):
         self.assertContains(response, "static/css/cookie-policy.css")
 
 
+class AccessibilityPageTests(TestCase):
+    def test_accessibility_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:accessibility"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accessibility.html")
+        self.assertContains(response, "Our Accessibility Commitment")
+        self.assertContains(response, "Table of Contents")
+        self.assertContains(response, 'class="feature-grid"')
+        self.assertContains(response, "Keyboard Navigation")
+        self.assertContains(response, "How You Can Help")
+        self.assertContains(response, "Help Us Improve Accessibility")
+        self.assertContains(response, reverse("core:contact"))
+        self.assertContains(response, "static/css/accessibility.css")
+
+
 class CareersPageTests(TestCase):
     def test_careers_page_uses_dedicated_marketing_layout(self):
         response = self.client.get(reverse("core:careers"))

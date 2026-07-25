@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accessibility | LumisPixel{% endblock %}
+{% block meta_description %}Learn about LumisPixel's commitment to an accessible and inclusive experience for photographers, clients, and visitors.{% endblock %}
+{% block body_class %}marketing-page accessibility-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/accessibility.css' %}">{% endblock %}
+
+{% block content %}
+<section class="accessibility-hero" aria-labelledby="accessibility-title">
+  <div class="container accessibility-hero__inner">
+    <div class="accessibility-hero__copy">
+      <span class="accessibility-eyebrow">An experience for everyone</span>
+      <h1 id="accessibility-title">Accessibility</h1>
+      <p>LumisPixel is committed to building a platform that is accessible and easy to use for everyone.</p>
+      <a class="accessibility-button accessibility-button--primary" href="{% url 'core:contact' %}">Contact Accessibility Support <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <aside class="commitment-card" aria-labelledby="commitment-card-title">
+      <span class="commitment-card__icon"><i class="bi bi-universal-access" aria-hidden="true"></i></span>
+      <div><span class="commitment-card__label">Accessibility at LumisPixel</span><h2 id="commitment-card-title">Our Commitment</h2><p>We continuously improve the accessibility of LumisPixel to create an inclusive experience for photographers, clients, and visitors.</p></div>
+    </aside>
+  </div>
+</section>
+
+<nav class="accessibility-toc" aria-label="Accessibility page table of contents"><div class="container">
+  <strong>Table of Contents</strong>
+  <ol>
+    <li><a href="#our-commitment">Our Commitment</a></li><li><a href="#features">Features</a></li><li><a href="#improvements">Improvements</a></li><li><a href="#supported-browsers">Browsers &amp; Devices</a></li><li><a href="#limitations">Known Limitations</a></li><li><a href="#feedback">Feedback</a></li><li><a href="#contact-us">Contact Us</a></li>
+  </ol>
+</div></nav>
+
+<main class="accessibility-content"><div class="container accessibility-layout">
+  <section class="accessibility-section" id="our-commitment"><span class="section-number">01</span><h2>Our Accessibility Commitment</h2><p>We want every visitor to explore LumisPixel with confidence, regardless of ability, technology, or context. Accessibility is considered throughout our design and development process.</p><p>Our team works toward clear, consistent experiences and reviews improvements as the platform grows. We will update this page as our practices and capabilities evolve.</p></section>
+
+  <section class="accessibility-section" id="features"><span class="section-number">02</span><h2>Accessibility Features</h2><p>Our interface is designed around familiar patterns, clear feedback, and flexible ways to navigate. The following areas guide our current accessibility work.</p>
+    <div class="feature-grid">
+      <article><span><i class="bi bi-keyboard" aria-hidden="true"></i></span><h3>Keyboard Navigation</h3><p>Move through key controls and page content without relying on a mouse.</p></article>
+      <article><span><i class="bi bi-volume-up" aria-hidden="true"></i></span><h3>Screen Reader Support</h3><p>Semantic structure and descriptive labels help assistive technology interpret content.</p></article>
+      <article><span><i class="bi bi-circle-half" aria-hidden="true"></i></span><h3>High Contrast Design</h3><p>Readable color combinations help important text and controls remain distinct.</p></article>
+      <article><span><i class="bi bi-phone" aria-hidden="true"></i></span><h3>Responsive Layouts</h3><p>Content adapts across desktop, tablet, and mobile screen sizes.</p></article>
+      <article><span><i class="bi bi-fonts" aria-hidden="true"></i></span><h3>Clear Typography</h3><p>Comfortable sizing, spacing, and hierarchy make information easier to scan.</p></article>
+      <article><span><i class="bi bi-ui-checks" aria-hidden="true"></i></span><h3>Accessible Forms</h3><p>Helpful labels, instructions, and validation support successful form completion.</p></article>
+    </div>
+    <p>Feature coverage may vary while we continue reviewing older and newly released experiences.</p>
+  </section>
+
+  <section class="accessibility-section" id="improvements"><span class="section-number">03</span><h2>Ongoing Improvements</h2><p>Accessibility is an ongoing responsibility rather than a one-time project. We regularly review navigation, page structure, forms, color use, and interaction patterns.</p><p>As new tools are introduced, we aim to test them with a range of devices and assistive technologies. Priorities may be refined in response to user feedback.</p></section>
+  <section class="accessibility-section" id="supported-browsers"><span class="section-number">04</span><h2>Supported Browsers and Devices</h2><p>LumisPixel is designed for current versions of widely used browsers on desktop and mobile devices. Keeping your browser and operating system updated generally provides the best experience.</p><p>Behavior can vary across browser, device, and assistive technology combinations. If something does not work as expected, please tell us what setup you are using.</p></section>
+  <section class="accessibility-section" id="limitations"><span class="section-number">05</span><h2>Known Limitations</h2><p>Some older pages, third-party integrations, or complex photography tools may not yet provide the same level of accessibility as the rest of the platform.</p><p>We are working to identify and address these gaps. When an immediate fix is not available, our support team will try to help you find another way to complete your task.</p></section>
+  <section class="accessibility-section" id="feedback"><span class="section-number">06</span><h2>Feedback and Assistance</h2><p>Your experience helps us understand where the platform can improve. We welcome reports about barriers, confusing interactions, or content that is difficult to access.</p><p>When possible, include the page, feature, device, browser, and assistive technology involved. This context helps our team investigate efficiently.</p></section>
+  <section class="accessibility-section" id="contact-us"><span class="section-number">07</span><h2>Contact Us</h2><p>Contact LumisPixel if you need help accessing information or completing an action. We will work with you to understand your request and identify an appropriate option.</p><p>Accessibility feedback can be submitted through our contact page. Please include your preferred way for our team to respond.</p></section>
+</div></main>
+
+<section class="help-section" aria-labelledby="help-title"><div class="container accessibility-layout">
+  <div class="section-heading"><span>Share your experience</span><h2 id="help-title">How You Can Help</h2><p>Every perspective helps us make LumisPixel more welcoming and useful.</p></div>
+  <div class="help-grid">
+    <article><span>01</span><h3>Report an Issue</h3><p>Let us know if you encounter an accessibility problem.</p></article>
+    <article><span>02</span><h3>Suggest Improvements</h3><p>Share ideas to make LumisPixel more inclusive.</p></article>
+    <article><span>03</span><h3>Request Assistance</h3><p>Contact our team if you need additional support.</p></article>
+  </div>
+</div></section>
+
+<section class="accessibility-cta" aria-labelledby="accessibility-cta-title"><div class="container"><div class="accessibility-cta__card">
+  <div><span>We’re listening</span><h2 id="accessibility-cta-title">Help Us Improve Accessibility</h2><p>Your feedback helps us build a better experience for everyone.</p></div>
+  <a class="accessibility-button accessibility-button--light" href="{% url 'core:contact' %}">Contact Accessibility Support <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div></div></section>
+{% endblock %}
