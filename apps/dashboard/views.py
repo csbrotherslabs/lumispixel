@@ -136,13 +136,26 @@ def _business_overview(profile):
 
 
 def _dashboard_summary(profile):
-    galleries, _ = _count_model("galleries", "Gallery", {"photographer": profile})
     return [
-        {"icon": "bi-images", "metric": galleries, "label": "Active Galleries", "url": reverse("photographer_workspace:galleries")},
-        {"icon": "bi-person-plus", "metric": 0, "label": "New Leads", "url": reverse("photographer_workspace:leads")},
-        {"icon": "bi-calendar-check", "metric": 0, "label": "Upcoming Bookings", "url": reverse("photographer_workspace:bookings")},
-        {"icon": "bi-currency-dollar", "metric": f"{profile.default_currency} {Decimal('0.00')}", "label": "Revenue", "url": reverse("photographer_workspace:revenue")},
+        {"icon": "bi-graph-up-arrow", "metric": f"{profile.default_currency} {Decimal('0.00')}", "label": "Revenue This Month", "note": "No revenue recorded", "url": reverse("photographer_workspace:revenue")},
+        {"icon": "bi-calendar-check", "metric": 0, "label": "Upcoming Bookings", "note": "No bookings scheduled", "url": reverse("photographer_workspace:bookings")},
+        {"icon": "bi-people", "metric": 0, "label": "Active Clients", "note": "No active clients", "url": reverse("photographer_workspace:clients")},
+        {"icon": "bi-hourglass-split", "metric": f"{profile.default_currency} {Decimal('0.00')}", "label": "Pending Payments", "note": "Nothing outstanding", "url": reverse("photographer_workspace:payments")},
     ]
+
+
+def _dashboard_tools():
+    groups = []
+    for group in NAVIGATION[1:9]:
+        groups.append({
+            "title": "Growth" if group["title"] == "Business Growth" else group["title"],
+            "icon": group["icon"],
+            "items": [
+                {"title": title, "icon": icon, "url": _reverse_module(MODULE_BY_KEY[key])}
+                for key, title, icon in group["items"]
+            ],
+        })
+    return groups
 
 
 def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
@@ -155,6 +168,21 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
         "photographer_profile": profile, "identity": _identity(profile, request.user), "greeting": greeting,
         "welcome_name": request.user.first_name or (request.user.full_name.split()[0] if request.user.full_name else "Photographer"),
         "summary_cards": _dashboard_summary(profile),
+        "schedule_items": [], "activity_items": [],
+        "quick_actions": [
+            {"label": "Upload Photos", "icon": "bi-cloud-arrow-up", "url": reverse("photographer_workspace:galleries")},
+            {"label": "Create Gallery", "icon": "bi-images", "url": reverse("photographer_workspace:galleries")},
+            {"label": "Add Client", "icon": "bi-person-plus", "url": reverse("photographer_workspace:clients")},
+            {"label": "Create Booking", "icon": "bi-calendar-plus", "url": reverse("photographer_workspace:bookings")},
+            {"label": "Send Invoice", "icon": "bi-send", "url": reverse("photographer_workspace:invoices")},
+        ],
+        "business_snapshot": [
+            {"label": "New Leads", "count": 0, "icon": "bi-person-plus", "summary": "No new inquiries to review.", "action": "View leads", "url": reverse("photographer_workspace:leads")},
+            {"label": "Recent Galleries", "count": _count_model("galleries", "Gallery", {"photographer": profile})[0], "icon": "bi-images", "summary": "Your latest client galleries appear here.", "action": "View galleries", "url": reverse("photographer_workspace:galleries")},
+            {"label": "Outstanding Invoices", "count": 0, "icon": "bi-receipt", "summary": "You’re all caught up.", "action": "View invoices", "url": reverse("photographer_workspace:invoices")},
+            {"label": "Pending Contracts", "count": 0, "icon": "bi-file-earmark-check", "summary": "No contracts await signatures.", "action": "View contracts", "url": reverse("photographer_workspace:contracts")},
+        ],
+        "tool_groups": _dashboard_tools(),
         "modules": modules, "theme_preview": _theme(profile), "overview_cards": _business_overview(profile),
         "getting_started": [
             {"label": "Business profile completed", "done": bool(profile.business_name or profile.display_name), "url": reverse("photographer_workspace:profile")},
