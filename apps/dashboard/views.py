@@ -10,7 +10,7 @@ from django.views.decorators.http import require_GET
 from apps.accounts.models import PhotographerProfile, User
 
 WORKSPACE_MODULES = [
-    {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Work Space", "description": "Your business command center.", "coming_soon": False},
+    {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
     {"key": "galleries", "url_name": "galleries", "icon": "bi-images", "title": "Galleries", "description": "Organize, publish, and deliver photography collections.", "coming_soon": True, "planned": ["Gallery organization", "Publishing controls", "Client delivery"]},
     {"key": "clients", "url_name": "clients", "icon": "bi-people", "title": "Clients", "description": "Manage client relationships, invitations, and gallery access.", "coming_soon": True, "planned": ["Client records", "Invitations", "Gallery access"]},
     {"key": "events", "url_name": "events", "icon": "bi-calendar-event", "title": "Events", "description": "Manage photography events and event-code photo discovery.", "coming_soon": True, "planned": ["Event setup", "Event codes", "Photo discovery"]},
@@ -24,7 +24,31 @@ WORKSPACE_MODULES = [
     {"key": "profile", "url_name": "profile", "icon": "bi-person-badge", "title": "Profile", "description": "Review photographer and business information.", "coming_soon": False, "planned": ["Business details", "Contact information", "Specialties"]},
     {"key": "settings", "url_name": "settings", "icon": "bi-sliders", "title": "Settings", "description": "Manage workspace preferences, branding, notifications, and future theme switching.", "coming_soon": True, "planned": ["Workspace preferences", "Branding", "Notifications", "Future theme switching"]},
 ]
+WORKSPACE_MODULES += [
+    {"key": key, "url_name": key, "icon": "", "title": title, "description": f"{title} tools for your photography business are being prepared.", "coming_soon": True}
+    for key, title in [
+        ("crm", "CRM"), ("leads", "Leads"), ("ai_search", "AI Search"), ("albums", "Albums"),
+        ("calendar", "Calendar"), ("bookings", "Bookings"), ("contracts", "Contracts"),
+        ("invoices", "Invoices"), ("payments", "Payments"), ("revenue", "Revenue"),
+        ("reviews", "Reviews"), ("referrals", "Referrals"), ("workflows", "Workflows"),
+        ("ai_assistant", "AI Assistant"), ("team", "Team"), ("equipment", "Equipment"),
+        ("tasks", "Tasks"), ("notifications", "Notifications"), ("help", "Help"),
+    ]
+]
 MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
+
+NAVIGATION = [
+    {"title": "", "items": [("dashboard", "Dashboard", "home")]},
+    {"title": "Clients", "items": [("crm", "CRM", "users"), ("leads", "Leads", "user-plus"), ("clients", "Clients", "user-group")]},
+    {"title": "Galleries", "items": [("galleries", "Galleries", "photo"), ("ai_search", "AI Search", "sparkles"), ("albums", "Albums", "rectangle-stack")]},
+    {"title": "Bookings", "items": [("calendar", "Calendar", "calendar"), ("bookings", "Bookings", "calendar-days"), ("contracts", "Contracts", "document-text")]},
+    {"title": "Financial", "items": [("invoices", "Invoices", "document-currency"), ("payments", "Payments", "credit-card"), ("revenue", "Revenue", "chart-bar")]},
+    {"title": "Business Growth", "items": [("marketing", "Marketing", "megaphone"), ("reviews", "Reviews", "star"), ("referrals", "Referrals", "share")]},
+    {"title": "Automation", "items": [("workflows", "Workflows", "arrow-path"), ("ai_assistant", "AI Assistant", "chat-bubble")]},
+    {"title": "Operations", "items": [("team", "Team", "user-group"), ("equipment", "Equipment", "camera"), ("tasks", "Tasks", "clipboard") ]},
+    {"title": "Reports", "items": [("analytics", "Analytics", "presentation-chart")]},
+    {"title": "", "items": [("marketplace", "Marketplace", "shopping-bag"), ("settings", "Settings", "cog")]},
+]
 THEMES = {
     PhotographerProfile.WebsiteTheme.ELEGANT: ("Elegant", "A refined visual direction for weddings, portraits, family, and fine-art work.", "elegant"),
     PhotographerProfile.WebsiteTheme.MODERN_STUDIO: ("Modern Studio", "A clean studio presentation for commercial, branding, product, and headshot work.", "modern"),
@@ -37,13 +61,14 @@ def _reverse_module(module):
 
 
 def _workspace_nav(active_key):
-    nav = []
-    for module in WORKSPACE_MODULES:
-        item = module.copy()
-        item["url"] = _reverse_module(module)
-        item["active"] = module["key"] == active_key
-        nav.append(item)
-    return nav
+    groups = []
+    for index, group in enumerate(NAVIGATION):
+        items = []
+        for key, title, icon in group["items"]:
+            module = MODULE_BY_KEY[key]
+            items.append({"key": key, "title": title, "icon": icon, "url": _reverse_module(module), "active": key == active_key})
+        groups.append({"title": group["title"], "id": f"nav-group-{index}", "items": items, "expanded": not group["title"] or any(item["active"] for item in items)})
+    return groups
 
 
 def _photographer_workspace_response(request):
@@ -73,11 +98,10 @@ def photographer_workspace_required(view_func):
 
 
 def _identity(profile, user):
-    name = profile.business_name or profile.display_name or user.first_name or "Photographer"
+    name = user.full_name or profile.display_name or user.email
     initials = "".join(part[:1] for part in name.split()[:2]).upper() or "LP"
-    logo = profile.business_logo.url if profile.business_logo else ""
     photo = profile.profile_photo.url if profile.profile_photo else ""
-    return {"name": name, "initials": initials, "image_url": logo or photo, "image_alt": f"{name} brand image" if logo else (f"{name} profile photo" if photo else "")}
+    return {"name": name, "initials": initials, "image_url": photo, "image_alt": f"{name} profile photo" if photo else ""}
 
 
 def _theme(profile):
@@ -119,6 +143,7 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
     context = {
         "active_key": active_key, "page_title": title, "workspace_nav": _workspace_nav(active_key),
         "photographer_profile": profile, "identity": _identity(profile, request.user), "greeting": greeting,
+        "welcome_name": profile.business_name or profile.display_name or request.user.full_name or "Photographer",
         "modules": modules, "theme_preview": _theme(profile), "overview_cards": _business_overview(profile),
         "getting_started": [
             {"label": "Business profile completed", "done": bool(profile.business_name or profile.display_name), "url": reverse("photographer_workspace:profile")},
