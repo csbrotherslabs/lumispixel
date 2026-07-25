@@ -253,7 +253,7 @@ PARENT_LANDING_PAGES.update({
             {"title": "Success Stories / Case Studies", "description": "Explore clearly labeled illustrative workflows now and verified customer stories when available.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
             {"title": "Free Downloads", "description": "Access free resources including guides, checklists, planners, templates, and business tools.", "icon": "bi-download", "url_name": "core:resources_free_downloads"},
             {"title": "Release Notes / Product Updates", "description": "Explore new features, improvements, bug fixes, and product announcements.", "icon": "bi-stars", "url_name": "core:resources_release_notes"},
-            {"title": "Newsletter / Learning Hub", "description": "Receive photography tips, AI insights, product updates, and exclusive educational content.", "icon": "bi-envelope", "url_name": "core:resources_newsletter"},
+            {"title": "Newsletter / Learning Hub", "description": "Receive photography tips, AI insights, product updates, and exclusive educational content.", "icon": "bi-envelope", "url_name": "core:resources_learning_hub"},
         ],
     },
     "company": {
@@ -346,6 +346,19 @@ def resources_photography_guides(request):
 
 def resources_ai_learning_center(request):
     return render(request, "resources_ai_learning_center.html")
+
+
+def resources_learning_hub(request):
+    """Render the public newsletter and photography education hub."""
+    benefits = [
+        ("bi-camera", "Photography Skills", "Planning, shooting, organizing, reviewing, and delivering photography work.", "Shoot planning|Image review|Delivery"),
+        ("bi-heart", "Client Experience", "Communication, preparation, galleries, delivery, follow-up, and referrals.", "Preparation|Gallery delivery|Referrals"),
+        ("bi-graph-up-arrow", "Business Growth", "Pricing, positioning, marketing, operations, planning, and business management.", "Pricing|Positioning|Planning"),
+        ("bi-cpu", "AI and Technology", "AI-assisted culling, editing, search, tagging, automation, privacy, and responsible use.", "Culling|Search|Responsible use"),
+        ("bi-arrow-repeat", "Workflow Improvement", "Repeatable systems for inquiries, bookings, projects, editing, delivery, and team handoffs.", "Inquiries|Bookings|Handoffs"),
+        ("bi-mortarboard", "LumisPixel Education", "Product walkthroughs, feature explanations, setup guidance, and connected workflows.", "Walkthroughs|Setup|Connected workflows"),
+    ]
+    return render(request, "resources_learning_hub.html", {"benefits": benefits})
 
 
 def resources_templates(request):
