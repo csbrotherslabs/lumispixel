@@ -64,8 +64,15 @@ PUBLIC_PAGES = {}
 
 
 def add(key, title, category, heading=None, description=None, status=""):
+    page_defaults = PAGE_DEFAULTS
+    if category == "Resources":
+        page_defaults = {
+            "purpose": "Learn the topic and find the next step.",
+            "benefits": "Get clear guidance for photography and LumisPixel workflows.",
+            "future": "More resources will appear as features are released.",
+        }
     PUBLIC_PAGES[key] = {
-        **PAGE_DEFAULTS,
+        **page_defaults,
         "title": title,
         "category": category,
         "heading": heading or title,
@@ -235,25 +242,25 @@ PARENT_LANDING_PAGES.update({
         "page_title": "Resources",
         "category": "Resources",
         "heading": "Learn. Build. Grow.",
-        "description": "Explore practical resources that help photographers get more from LumisPixel and build stronger businesses.",
-        "intro": "Use these resources to learn the platform, follow updates, and connect with support.",
+        "description": "Find guides and tools to build better photography workflows.",
+        "intro": "Learn LumisPixel, follow updates, or get help.",
         "cta_title": "Start Learning",
-        "cta_text": "Explore the resources that help your next workflow move faster.",
+        "cta_text": "Find the right guide for your next step.",
         "cta_url": "core:how_it_works",
         "cta_secondary_url": "core:help_center",
         "features": [
-            {"title": "Blog / Articles", "description": "Stay up to date with photography tips, business advice, AI insights, and product news.", "icon": "bi-newspaper", "url_name": "core:resources_blog"},
-            {"title": "Photography Guides", "description": "Learn techniques, workflows, lighting, posing, editing, and camera best practices.", "icon": "bi-camera", "url_name": "core:resources_photography_guides"},
-            {"title": "Business Guides", "description": "Explore practical guides for pricing, client experience, marketing, workflows, finances, studio operations, and photography business growth.", "icon": "bi-briefcase", "url_name": "core:resources_business_guides"},
-            {"title": "AI Learning Center", "description": "Discover how AI is transforming photography workflows, editing, search, and business operations.", "icon": "bi-cpu", "url_name": "core:resources_ai_learning_center"},
-            {"title": "Templates", "description": "Download professional contracts, invoices, questionnaires, pricing guides, checklists, and more.", "icon": "bi-file-earmark-text", "url_name": "core:resources_templates"},
-            {"title": "Help Center / Documentation", "description": "Find answers, setup guides, troubleshooting articles, and complete product documentation.", "icon": "bi-life-preserver", "url_name": "core:resources_help_center"},
-            {"title": "Video Tutorials", "description": "Watch step-by-step tutorials covering every LumisPixel feature and photography workflow.", "icon": "bi-play-circle", "url_name": "core:resources_video_tutorials"},
-            {"title": "Webinars & Events", "description": "Join live webinars, workshops, product demos, and community events.", "icon": "bi-easel", "url_name": "core:resources_webinars_events"},
-            {"title": "Success Stories / Case Studies", "description": "Explore clearly labeled illustrative workflows now and verified customer stories when available.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
-            {"title": "Free Downloads", "description": "Access free resources including guides, checklists, planners, templates, and business tools.", "icon": "bi-download", "url_name": "core:resources_free_downloads"},
-            {"title": "Release Notes / Product Updates", "description": "Explore new features, improvements, bug fixes, and product announcements.", "icon": "bi-stars", "url_name": "core:resources_release_notes"},
-            {"title": "Newsletter / Learning Hub", "description": "Receive photography tips, AI insights, product updates, and exclusive educational content.", "icon": "bi-envelope", "url_name": "core:resources_learning_hub"},
+            {"title": "Blog / Articles", "description": "Read photography, business, AI, and product updates.", "icon": "bi-newspaper", "url_name": "core:resources_blog"},
+            {"title": "Photography Guides", "description": "Improve shooting, lighting, posing, editing, and delivery.", "icon": "bi-camera", "url_name": "core:resources_photography_guides"},
+            {"title": "Business Guides", "description": "Learn pricing, marketing, finance, workflows, and studio operations.", "icon": "bi-briefcase", "url_name": "core:resources_business_guides"},
+            {"title": "AI Learning Center", "description": "Learn how AI supports editing, search, and workflows.", "icon": "bi-cpu", "url_name": "core:resources_ai_learning_center"},
+            {"title": "Templates", "description": "Get contracts, invoices, questionnaires, guides, and checklists.", "icon": "bi-file-earmark-text", "url_name": "core:resources_templates"},
+            {"title": "Help Center / Documentation", "description": "Find setup, troubleshooting, and product documentation.", "icon": "bi-life-preserver", "url_name": "core:resources_help_center"},
+            {"title": "Video Tutorials", "description": "Watch step-by-step LumisPixel product tutorials.", "icon": "bi-play-circle", "url_name": "core:resources_video_tutorials"},
+            {"title": "Webinars & Events", "description": "Join webinars, demos, workshops, and community events.", "icon": "bi-easel", "url_name": "core:resources_webinars_events"},
+            {"title": "Success Stories / Case Studies", "description": "See labeled illustrative workflows and future verified stories.", "icon": "bi-trophy", "url_name": "core:resources_success_stories"},
+            {"title": "Free Downloads", "description": "Get free guides, checklists, templates, and business tools.", "icon": "bi-download", "url_name": "core:resources_free_downloads"},
+            {"title": "Release Notes / Product Updates", "description": "See features, improvements, fixes, and product news.", "icon": "bi-stars", "url_name": "core:resources_release_notes"},
+            {"title": "Newsletter / Learning Hub", "description": "Get photography, AI, and product lessons by email.", "icon": "bi-envelope", "url_name": "core:resources_learning_hub"},
         ],
     },
     "company": {
@@ -356,12 +363,12 @@ def resources_ai_learning_center(request):
 def resources_learning_hub(request):
     """Render the public newsletter and photography education hub."""
     benefits = [
-        ("bi-camera", "Photography Skills", "Planning, shooting, organizing, reviewing, and delivering photography work.", "Shoot planning|Image review|Delivery"),
-        ("bi-heart", "Client Experience", "Communication, preparation, galleries, delivery, follow-up, and referrals.", "Preparation|Gallery delivery|Referrals"),
-        ("bi-graph-up-arrow", "Business Growth", "Pricing, positioning, marketing, operations, planning, and business management.", "Pricing|Positioning|Planning"),
-        ("bi-cpu", "AI and Technology", "AI-assisted culling, editing, search, tagging, automation, privacy, and responsible use.", "Culling|Search|Responsible use"),
-        ("bi-arrow-repeat", "Workflow Improvement", "Repeatable systems for inquiries, bookings, projects, editing, delivery, and team handoffs.", "Inquiries|Bookings|Handoffs"),
-        ("bi-mortarboard", "LumisPixel Education", "Product walkthroughs, feature explanations, setup guidance, and connected workflows.", "Walkthroughs|Setup|Connected workflows"),
+        ("bi-camera", "Photography Skills", "Plan, shoot, organize, review, and deliver your work.", "Shoot planning|Image review|Delivery"),
+        ("bi-heart", "Client Experience", "Improve preparation, communication, delivery, and follow-up.", "Preparation|Gallery delivery|Referrals"),
+        ("bi-graph-up-arrow", "Business Growth", "Learn pricing, marketing, planning, and operations.", "Pricing|Positioning|Planning"),
+        ("bi-cpu", "AI and Technology", "Learn AI culling, editing, search, privacy, and responsible use.", "Culling|Search|Responsible use"),
+        ("bi-arrow-repeat", "Workflow Improvement", "Build repeatable booking, editing, delivery, and handoff systems.", "Inquiries|Bookings|Handoffs"),
+        ("bi-mortarboard", "LumisPixel Education", "Follow product walkthroughs and setup guides.", "Walkthroughs|Setup|Connected workflows"),
     ]
     return render(request, "resources_learning_hub.html", {"benefits": benefits})
 
