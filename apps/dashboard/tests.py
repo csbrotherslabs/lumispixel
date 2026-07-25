@@ -68,6 +68,21 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'aria-current="page"')
         self.assertContains(response, "Analytics")
 
+    def test_grouped_navigation_and_profile_menu(self):
+        user, _ = self.make_photographer(True, email="grouped@example.com", slug="grouped")
+        user.first_name = "Avery"
+        user.last_name = "Stone"
+        user.save(update_fields=["first_name", "last_name"])
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:crm"))
+        self.assertContains(response, "Business Growth")
+        self.assertContains(response, 'aria-controls="nav-group-1"')
+        self.assertContains(response, 'href="/photographer/workspace/leads/"')
+        self.assertContains(response, "Avery Stone")
+        self.assertContains(response, "Photographer")
+        self.assertContains(response, "Business Settings")
+        self.assertContains(response, "Sign Out")
+
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)
         ClientProfile.objects.create(user=client_user, onboarding_completed=True)

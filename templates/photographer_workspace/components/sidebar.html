@@ -1,13 +1,30 @@
 {% load static %}
 <aside class="lpw-sidebar" data-workspace-sidebar aria-label="Photographer Workspace navigation">
-  <div class="lpw-brand"><a href="{% url 'core:index' %}" aria-label="LumisPixel home"><img src="{% static 'img/logo-orange.svg' %}" alt="LumisPixel"></a><button class="lpw-drawer-close" type="button" data-workspace-close aria-label="Close navigation">×</button></div>
-  <div class="lpw-identity">
-    {% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span aria-hidden="true">{{ identity.initials }}</span>{% endif %}
-    <div><strong>{{ identity.name }}</strong><small>Photographer Workspace</small></div>
+  <div class="lpw-brand">
+    <a href="{% url 'core:index' %}" aria-label="LumisPixel home"><img src="{% static 'img/logo-orange.svg' %}" alt="LumisPixel"></a>
+    <button class="lpw-sidebar-toggle" type="button" data-workspace-collapse aria-label="Collapse navigation" aria-expanded="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 6 4.5 12l6 6m9-12-6 6 6 6"/></svg>
+    </button>
+    <button class="lpw-drawer-close" type="button" data-workspace-close aria-label="Close navigation">×</button>
   </div>
   <nav class="lpw-nav" aria-label="Workspace modules">
-    {% for item in workspace_nav %}
-      <a href="{{ item.url }}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %}><i class="bi {{ item.icon }}" aria-hidden="true"></i><span>{{ item.title }}</span>{% if item.coming_soon %}<em>Soon</em>{% endif %}</a>
+    {% for group in workspace_nav %}
+      <section class="lpw-nav-group{% if not group.title %} lpw-nav-group--standalone{% endif %}" data-nav-group>
+        {% if group.title %}
+          <button class="lpw-nav-group__toggle" type="button" aria-expanded="{% if group.expanded %}true{% else %}false{% endif %}" aria-controls="{{ group.id }}" data-nav-group-toggle>
+            <span>{{ group.title }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        {% endif %}
+        <div class="lpw-nav-group__items" id="{{ group.id }}"{% if group.title and not group.expanded %} hidden{% endif %}>
+          {% for item in group.items %}
+            <a href="{{ item.url }}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %} title="{{ item.title }}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 12h16.5M12 3.75v16.5"/><circle cx="12" cy="12" r="8.25"/></svg>
+              <span>{{ item.title }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
     {% endfor %}
   </nav>
 </aside>

@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 <section class="lpw-hero">
-  <div><p class="lpw-kicker">{{ greeting }}</p><h2>Welcome back, {{ identity.name }}</h2><p>Let’s continue building your photography business.</p><div class="lpw-actions"><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn lpw-btn-primary">Upload Photos</a><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn">Create Gallery</a></div></div>
+  <div><p class="lpw-kicker">{{ greeting }}</p><h2>Welcome back, {{ welcome_name }}</h2><p>Let’s continue building your photography business.</p><div class="lpw-actions"><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn lpw-btn-primary">Upload Photos</a><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn">Create Gallery</a></div></div>
   <div class="lpw-avatar">{% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span>{{ identity.initials }}</span>{% endif %}</div>
 </section>
 <section class="lpw-dashboard-section" aria-labelledby="getting-started-title">
