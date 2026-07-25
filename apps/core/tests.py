@@ -34,6 +34,20 @@ class CareersPageTests(TestCase):
         self.assertContains(response, "static/css/careers.css")
 
 
+class PartnersPageTests(TestCase):
+    def test_partners_page_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:partners"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "partners.html")
+        self.assertContains(response, "Partnership Opportunities")
+        self.assertContains(response, "Why Partner With LumisPixel")
+        self.assertContains(response, "How It Works")
+        self.assertContains(response, "Partner FAQ")
+        self.assertContains(response, "Let's Grow Together")
+        self.assertContains(response, "static/css/partners.css")
+
+
 class ForPhotographersRoutingTests(TestCase):
     def test_named_url_resolves_to_public_marketing_page(self):
         self.assertEqual(reverse("core:for_photographers"), "/for-photographers/")

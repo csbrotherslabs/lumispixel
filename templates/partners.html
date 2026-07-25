@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Partners | LumisPixel{% endblock %}
+{% block meta_description %}Partner with LumisPixel to help photographers grow, simplify their businesses, and create exceptional client experiences.{% endblock %}
+{% block og_title %}Partner With LumisPixel{% endblock %}
+{% block og_description %}Explore technology, affiliate, reseller, organization, education, and business partnerships with LumisPixel.{% endblock %}
+{% block body_class %}marketing-page page-partners{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/partners.css' %}">{% endblock %}
+
+{% block content %}
+<section class="partners-hero" aria-labelledby="partners-title"><div class="container partners-hero__inner">
+  <span class="partners-kicker">Partner program</span>
+  <h1 id="partners-title">Partners</h1>
+  <p>Partner with LumisPixel to help photographers grow, simplify their businesses, and deliver amazing client experiences.</p>
+  <div class="partners-actions"><a class="partners-button partners-button--primary" href="mailto:partners@lumispixel.com?subject=LumisPixel%20Partner%20Application">Become a Partner <i class="bi bi-arrow-right" aria-hidden="true"></i></a><a class="partners-button partners-button--secondary" href="{% url 'core:contact' %}">Contact Sales</a></div>
+</div></section>
+
+<section class="partners-section" aria-labelledby="opportunities-title"><div class="container">
+  <header class="partners-heading"><span class="partners-kicker">Find your fit</span><h2 id="opportunities-title">Partnership Opportunities</h2><p>Choose a partnership designed around how you serve the photography community.</p></header>
+  <div class="partners-grid partners-grid--three">
+    <article><span class="partners-icon"><i class="bi bi-puzzle" aria-hidden="true"></i></span><h3>Technology Partners</h3><p>Integrate your products and services with LumisPixel.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-link-45deg" aria-hidden="true"></i></span><h3>Affiliate Partners</h3><p>Earn commissions by referring photographers.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-shop" aria-hidden="true"></i></span><h3>Reseller Partners</h3><p>Offer LumisPixel to your customers.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-people" aria-hidden="true"></i></span><h3>Photography Organizations</h3><p>Support members with modern business tools.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-mortarboard" aria-hidden="true"></i></span><h3>Education Partners</h3><p>Help students and educators prepare for successful photography careers.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-briefcase" aria-hidden="true"></i></span><h3>Business Partners</h3><p>Collaborate on solutions that help photographers grow.</p></article>
+  </div>
+</div></section>
+
+<section class="partners-section partners-tint" aria-labelledby="why-partner-title"><div class="container">
+  <header class="partners-heading partners-heading--center"><span class="partners-kicker">Better together</span><h2 id="why-partner-title">Why Partner With LumisPixel</h2></header>
+  <div class="partners-grid partners-grid--four partners-benefits">
+    <article><span class="partners-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span><h3>Growing Platform</h3><p>Connect with an expanding community of photography businesses.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-trophy" aria-hidden="true"></i></span><h3>Shared Success</h3><p>Create meaningful value and grow alongside your customers.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-megaphone" aria-hidden="true"></i></span><h3>Marketing Support</h3><p>Launch confidently with collaborative campaigns and resources.</p></article>
+    <article><span class="partners-icon"><i class="bi bi-person-check" aria-hidden="true"></i></span><h3>Dedicated Partner Team</h3><p>Get guidance from people invested in your partnership.</p></article>
+  </div>
+</div></section>
+
+<section class="partners-section" aria-labelledby="process-title"><div class="container">
+  <header class="partners-heading partners-heading--center"><span class="partners-kicker">A simple path</span><h2 id="process-title">How It Works</h2></header>
+  <ol class="partners-process"><li><span>01</span><i class="bi bi-send" aria-hidden="true"></i><h3>Apply</h3><p>Tell us about your organization and goals.</p></li><li><span>02</span><i class="bi bi-search" aria-hidden="true"></i><h3>Review</h3><p>We'll explore the best opportunity together.</p></li><li><span>03</span><i class="bi bi-rocket-takeoff" aria-hidden="true"></i><h3>Onboard</h3><p>Get the tools and support to launch.</p></li><li><span>04</span><i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i><h3>Grow Together</h3><p>Build momentum through ongoing collaboration.</p></li></ol>
+</div></section>
+
+<section class="partners-section partners-tint" aria-labelledby="partner-faq-title"><div class="container partners-faq-wrap">
+  <header class="partners-heading"><span class="partners-kicker">Common questions</span><h2 id="partner-faq-title">Partner FAQ</h2><p>Everything you need to take the next step.</p></header>
+  <div class="partners-faq">
+    <details><summary>Who can become a partner?<i class="bi bi-plus" aria-hidden="true"></i></summary><p>Technology companies, educators, associations, resellers, affiliates, and businesses that support photographers are welcome to apply.</p></details>
+    <details><summary>Is there a partner program fee?<i class="bi bi-plus" aria-hidden="true"></i></summary><p>There is no standard application fee. Any program-specific terms will be shared clearly during review.</p></details>
+    <details><summary>Do partners receive marketing resources?<i class="bi bi-plus" aria-hidden="true"></i></summary><p>Yes. Approved partners can receive brand guidance, campaign materials, and launch support suited to their program.</p></details>
+    <details><summary>Can technology companies integrate with LumisPixel?<i class="bi bi-plus" aria-hidden="true"></i></summary><p>Yes. We welcome integration ideas that create smoother, more connected workflows for photographers.</p></details>
+    <details><summary>How do I apply?<i class="bi bi-plus" aria-hidden="true"></i></summary><p>Select “Become a Partner,” share a few details, and our partner team will follow up.</p></details>
+  </div>
+</div></section>
+
+<section class="partners-final" aria-labelledby="partners-cta-title"><div class="container"><div class="partners-final__card"><span class="partners-final__icon"><i class="bi bi-stars" aria-hidden="true"></i></span><h2 id="partners-cta-title">Let's Grow Together</h2><p>We're always looking for organizations that share our passion for helping photographers succeed.</p><a class="partners-button partners-button--light" href="mailto:partners@lumispixel.com?subject=LumisPixel%20Partner%20Application">Become a Partner <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div></section>
+{% endblock %}
