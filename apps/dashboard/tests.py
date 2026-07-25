@@ -90,6 +90,7 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:crm"))
         self.assertContains(response, "Business Growth")
         self.assertContains(response, 'aria-controls="nav-group-1"')
+        self.assertContains(response, 'aria-label="Clients" data-tooltip="Clients"')
         self.assertContains(response, 'href="/photographer/workspace/leads/"')
         self.assertContains(response, "Avery Stone")
         self.assertContains(response, "Photographer")

@@ -70,8 +70,15 @@
     toggle.addEventListener('click', function () {
       const items = document.getElementById(toggle.getAttribute('aria-controls'));
       const expanded = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!expanded));
-      items.hidden = expanded;
+      const compactDesktop = sidebar.classList.contains('is-collapsed') && !window.matchMedia('(max-width: 860px)').matches;
+      if (compactDesktop) {
+        setCollapsed(false);
+        toggle.setAttribute('aria-expanded', 'true');
+        items.hidden = false;
+      } else {
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        items.hidden = expanded;
+      }
     });
   });
 
