@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cookie Policy | LumisPixel{% endblock %}
+{% block meta_description %}Learn how LumisPixel uses cookies and similar technologies to improve your experience.{% endblock %}
+{% block body_class %}marketing-page cookie-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cookie-policy.css' %}">{% endblock %}
+
+{% block content %}
+<section class="cookie-hero" aria-labelledby="cookie-title"><div class="container cookie-hero__inner">
+  <span class="cookie-eyebrow">Legal &amp; Privacy</span>
+  <h1 id="cookie-title">Cookie Policy</h1>
+  <p>Learn how LumisPixel uses cookies and similar technologies to improve your experience.</p>
+</div></section>
+
+<aside class="cookie-notice"><div class="container"><div class="cookie-notice__card" aria-labelledby="cookie-notice-title">
+  <span><i class="bi bi-sliders" aria-hidden="true"></i></span>
+  <div><h2 id="cookie-notice-title">Your Privacy, Your Choice</h2><p>You can manage or disable cookies through your browser settings. Some features may not function properly if cookies are disabled.</p></div>
+</div></div></aside>
+
+<nav class="cookie-toc" aria-label="Cookie policy table of contents"><div class="container">
+  <strong>Table of Contents</strong>
+  <ol>
+    <li><a href="#what-are-cookies">What Are Cookies?</a></li><li><a href="#why-we-use-cookies">Why We Use Cookies</a></li><li><a href="#types-of-cookies">Types of Cookies We Use</a></li><li><a href="#third-party-cookies">Third-Party Cookies</a></li><li><a href="#managing-preferences">Managing Cookie Preferences</a></li><li><a href="#changes">Changes to This Policy</a></li><li><a href="#contact-us">Contact Us</a></li>
+  </ol>
+</div></nav>
+
+<main class="cookie-content"><div class="container cookie-layout"><div class="cookie-sections">
+  <section id="what-are-cookies"><span>01</span><h2>What Are Cookies?</h2><p>Cookies are small text files that websites place on your device when you visit. Similar technologies may store or access information through your browser or application.</p><p>Cookies can be temporary and expire when you close your browser, or remain for a set period. This summary is placeholder guidance pending attorney review.</p></section>
+  <section id="why-we-use-cookies"><span>02</span><h2>Why We Use Cookies</h2><p>LumisPixel may use cookies to operate and secure the platform, remember your choices, and make features easier to use.</p><p>We may also use them to understand how our pages perform and identify opportunities to improve the visitor experience.</p></section>
+  <section id="types-of-cookies"><span>03</span><h2>Types of Cookies We Use</h2><p>The cookies used on LumisPixel may fall into the categories below. The specific cookies available can vary based on the services and features you use.</p>
+    <div class="cookie-type-grid">
+      <article><i class="bi bi-shield-check" aria-hidden="true"></i><h3>Essential Cookies</h3><p>Required for core platform functionality.</p></article>
+      <article><i class="bi bi-speedometer2" aria-hidden="true"></i><h3>Performance Cookies</h3><p>Help us understand and improve performance.</p></article>
+      <article><i class="bi bi-toggles" aria-hidden="true"></i><h3>Functional Cookies</h3><p>Remember preferences and personalize your experience.</p></article>
+      <article><i class="bi bi-bar-chart" aria-hidden="true"></i><h3>Analytics Cookies</h3><p>Provide insights into how visitors use LumisPixel.</p></article>
+    </div>
+    <p>Additional details about duration, providers, and purpose may be added as our cookie practices are finalized.</p>
+  </section>
+  <section id="third-party-cookies"><span>04</span><h2>Third-Party Cookies</h2><p>Some LumisPixel pages may use services provided by third parties for analytics, payments, communications, embedded content, or platform operations.</p><p>Those providers may set or access cookies under their own policies. We will identify relevant providers and controls in the attorney-reviewed version of this policy.</p></section>
+  <section id="managing-preferences"><span>05</span><h2>Managing Cookie Preferences</h2><p>Most browsers let you review, block, or delete cookies through their privacy or security settings. Available controls differ by browser and device.</p><p>Disabling certain cookies may affect sign-in, saved settings, or other features that depend on stored information.</p></section>
+  <section id="changes"><span>06</span><h2>Changes to This Policy</h2><p>We may update this policy as our technology, services, or legal requirements change.</p><p>Revisions will be posted on this page, and we may provide additional notice when a material update requires it.</p></section>
+  <section id="contact-us"><span>07</span><h2>Contact Us</h2><p>Contact LumisPixel if you have questions about cookies, similar technologies, or the choices available to you.</p><p>Please include enough detail for us to understand your question and respond appropriately.</p></section>
+</div></div></main>
+
+<section class="cookie-cta" aria-labelledby="cookie-cta-title"><div class="container"><div class="cookie-cta__card">
+  <div><span>We’re here to help</span><h2 id="cookie-cta-title">Questions About Cookies?</h2></div>
+  <a class="cookie-button" href="{% url 'core:contact' %}">Contact Us <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div></div></section>
+{% endblock %}
