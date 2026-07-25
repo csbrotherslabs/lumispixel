@@ -200,6 +200,7 @@ urlpatterns = [
     path("resources/success-stories/", views.public_page, {"page_key": "resources_success_stories"}, name="resources_success_stories"),
     path("resources/free-downloads/", views.public_page, {"page_key": "resources_free_downloads"}, name="resources_free_downloads"),
     path("resources/product-updates/", views.resources_release_notes, name="resources_release_notes_legacy"),
+    path("resources/learning-hub/", views.resources_learning_hub, name="resources_learning_hub"),
     path("resources/newsletter/", views.public_page, {"page_key": "resources_newsletter"}, name="resources_newsletter"),
     path("company/", views.public_page, {"page_key": "company"}, name="company"),
     path("company/about/", views.public_page, {"page_key": "about"}, name="about"),
