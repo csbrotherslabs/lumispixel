@@ -38,6 +38,7 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'id="dashboard-heading"')
+        self.assertNotContains(response, '<h2>Dashboard</h2>', html=True)
         self.assertContains(response, "Good ")
         self.assertContains(response, "Alex.")
         self.assertContains(response, "Here’s what’s happening with your business today.")
