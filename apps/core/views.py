@@ -529,6 +529,8 @@ def public_page(request, page_key):
         return render(request, "contact.html")
     if page_key == "privacy_policy":
         return render(request, "privacy_policy.html")
+    if page_key == "terms_of_service":
+        return render(request, "terms_of_service.html")
     if page_key == "pricing":
         return pricing(request)
     if page_key == "resources_blog":

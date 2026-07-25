@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Terms of Service | LumisPixel{% endblock %}
+{% block meta_description %}Review the terms that govern your use of LumisPixel and the responsibilities of users and our platform.{% endblock %}
+{% block body_class %}marketing-page terms-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/terms-of-service.css' %}">{% endblock %}
+
+{% block content %}
+<section class="terms-hero" aria-labelledby="terms-title"><div class="container terms-hero__inner">
+  <span class="terms-eyebrow">Legal</span>
+  <h1 id="terms-title">Terms of Service</h1>
+  <p>These terms govern your use of LumisPixel and outline the rights and responsibilities of both users and our platform.</p>
+</div></section>
+
+<nav class="terms-toc" aria-label="Terms of Service table of contents"><div class="container">
+  <strong>Table of Contents</strong>
+  <ol>
+    <li><a href="#acceptance">Acceptance of Terms</a></li><li><a href="#eligibility">Eligibility and Accounts</a></li><li><a href="#responsibilities">Photographer and Client Responsibilities</a></li><li><a href="#acceptable-use">Acceptable Use</a></li><li><a href="#user-content">User Content and Uploaded Photos</a></li><li><a href="#ai-features">AI Features and Generated Content</a></li><li><a href="#payments">Payments, Billing, and Subscriptions</a></li><li><a href="#intellectual-property">Intellectual Property</a></li><li><a href="#third-party-services">Third-Party Services</a></li><li><a href="#suspension">Account Suspension and Termination</a></li><li><a href="#warranties">Disclaimer of Warranties</a></li><li><a href="#liability">Limitation of Liability</a></li><li><a href="#indemnification">Indemnification</a></li><li><a href="#changes">Changes to These Terms</a></li><li><a href="#governing-law">Governing Law</a></li><li><a href="#contact-us">Contact Us</a></li>
+  </ol>
+</div></nav>
+
+<main class="terms-content"><div class="container terms-layout">
+  <aside class="terms-callout" aria-labelledby="terms-callout-title"><span><i class="bi bi-info-circle" aria-hidden="true"></i></span><div><h2 id="terms-callout-title">Please Read Carefully</h2><p>By creating an account or using LumisPixel, you agree to these Terms of Service and our <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a>.</p></div></aside>
+  <div class="terms-sections">
+    <section id="acceptance"><span>01</span><h2>Acceptance of Terms</h2><p>These Terms of Service form an agreement between you and LumisPixel when you access or use our websites, applications, and services.</p><p>If you do not agree to these terms, you should not create an account or use the platform.</p></section>
+    <section id="eligibility"><span>02</span><h2>Eligibility and Accounts</h2><p>You must be able to enter into a binding agreement under applicable law to use LumisPixel. Additional requirements may apply to certain features.</p><p>You are responsible for providing accurate account information, safeguarding your credentials, and notifying us of suspected unauthorized access.</p></section>
+    <section id="responsibilities"><span>03</span><h2>Photographer and Client Responsibilities</h2><p>Photographers are responsible for their services, client relationships, permissions, deliverables, and compliance with applicable professional obligations.</p><p>Clients are responsible for using galleries and content only as authorized and for providing accurate information when booking or communicating through LumisPixel.</p></section>
+    <section id="acceptable-use"><span>04</span><h2>Acceptable Use</h2><p>You may not misuse LumisPixel, interfere with platform operations, attempt unauthorized access, or use the service for unlawful, deceptive, or harmful activity.</p><p>You must follow applicable laws and any reasonable product-specific guidelines we provide.</p></section>
+    <section id="user-content"><span>05</span><h2>User Content and Uploaded Photos</h2><p>You retain ownership of content you submit and grant LumisPixel the limited permissions needed to host, process, display, and deliver that content through requested services.</p><p>You represent that you have the rights, releases, and permissions necessary to upload and share photographs and other content.</p></section>
+    <section id="ai-features"><span>06</span><h2>AI Features and Generated Content</h2><p>AI-assisted features may analyze, organize, edit, search, or generate content based on materials and instructions you provide.</p><p>AI results may be incomplete or inaccurate. You are responsible for reviewing outputs before relying on, publishing, or delivering them.</p></section>
+    <section id="payments"><span>07</span><h2>Payments, Billing, and Subscriptions</h2><p>Paid features may require a valid payment method and will be billed according to the plan, pricing, and renewal terms shown at purchase.</p><p>You are responsible for applicable charges and taxes. Cancellation, refund, and plan-change details will be presented with the relevant offering.</p></section>
+    <section id="intellectual-property"><span>08</span><h2>Intellectual Property</h2><p>LumisPixel and its licensors own the platform, software, branding, designs, and other materials provided by us, excluding user content.</p><p>These terms give you a limited right to use the service and do not transfer ownership of LumisPixel intellectual property.</p></section>
+    <section id="third-party-services"><span>09</span><h2>Third-Party Services</h2><p>LumisPixel may connect with third-party tools for payments, hosting, analytics, communications, or other functionality.</p><p>Third-party services may be governed by separate terms and policies, and LumisPixel is not responsible for services outside our control.</p></section>
+    <section id="suspension"><span>10</span><h2>Account Suspension and Termination</h2><p>You may stop using LumisPixel or close your account subject to any active commitments and applicable account procedures.</p><p>We may restrict, suspend, or terminate access when reasonably necessary to address violations, risk, nonpayment, legal requirements, or harm to the platform or others.</p></section>
+    <section id="warranties"><span>11</span><h2>Disclaimer of Warranties</h2><p>LumisPixel is provided on an “as is” and “as available” basis to the extent permitted by law.</p><p>We do not promise that every feature will always be uninterrupted, error-free, secure, or suitable for every purpose.</p></section>
+    <section id="liability"><span>12</span><h2>Limitation of Liability</h2><p>To the extent permitted by law, LumisPixel will not be liable for indirect, incidental, special, consequential, or punitive damages arising from use of the service.</p><p>Any additional limits, exclusions, or remedies will be applied consistently with applicable law and the services you use.</p></section>
+    <section id="indemnification"><span>13</span><h2>Indemnification</h2><p>You agree to be responsible for claims and costs arising from your content, misuse of LumisPixel, violation of these terms, or infringement of another person’s rights.</p><p>The scope and procedure for any indemnification obligation will be subject to applicable law.</p></section>
+    <section id="changes"><span>14</span><h2>Changes to These Terms</h2><p>We may update these terms to reflect changes to LumisPixel, our business practices, or legal requirements.</p><p>We will post revised terms here and provide additional notice when a material update requires it. Continued use after an update may constitute acceptance.</p></section>
+    <section id="governing-law"><span>15</span><h2>Governing Law</h2><p>These terms will be governed by the law identified in the final attorney-approved version, without regard to conflicting choice-of-law principles.</p><p>Any required dispute procedures, venue, or regional exceptions will be described in that version.</p></section>
+    <section id="contact-us"><span>16</span><h2>Contact Us</h2><p>Contact LumisPixel if you have questions about these terms, your account, or how a provision applies to your use of the platform.</p><p>Please include enough information for us to understand and respond to your request.</p></section>
+  </div>
+</div></main>
+
+<section class="terms-cta" aria-labelledby="terms-cta-title"><div class="container"><div class="terms-cta__card">
+  <h2 id="terms-cta-title">Questions About Our Terms?</h2>
+  <a class="terms-button" href="{% url 'core:contact' %}">Contact Us <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div></div></section>
+{% endblock %}
