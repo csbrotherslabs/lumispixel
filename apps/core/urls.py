@@ -189,7 +189,11 @@ urlpatterns = [
     # marketing page templates as each resource category is built out.
     path("resources/articles/", views.public_page, {"page_key": "blog"}, name="blog"),
     path("resources/photography-guides/", views.public_page, {"page_key": "resources_photography_guides"}, name="resources_photography_guides"),
-    path("resources/business-guides/", views.public_page, {"page_key": "resources_business_guides"}, name="resources_business_guides"),
+    path(
+        "resources/business-guides/",
+        views.resources_business_guides,
+        name="resources_business_guides",
+    ),
     path("resources/ai-learning-center/", views.public_page, {"page_key": "resources_ai_learning_center"}, name="resources_ai_learning_center"),
     path("resources/templates/", views.public_page, {"page_key": "resources_templates"}, name="resources_templates"),
     path("resources/help-center-documentation/", views.public_page, {"page_key": "resources_help_center"}, name="resources_help_center_legacy"),

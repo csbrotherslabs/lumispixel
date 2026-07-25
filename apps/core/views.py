@@ -244,7 +244,7 @@ PARENT_LANDING_PAGES.update({
         "features": [
             {"title": "Blog / Articles", "description": "Stay up to date with photography tips, business advice, AI insights, and product news.", "icon": "bi-newspaper", "url_name": "core:resources_blog"},
             {"title": "Photography Guides", "description": "Learn techniques, workflows, lighting, posing, editing, and camera best practices.", "icon": "bi-camera", "url_name": "core:resources_photography_guides"},
-            {"title": "Business Guides", "description": "Grow your photography business with pricing, marketing, branding, CRM, and automation strategies.", "icon": "bi-briefcase", "url_name": "core:resources_business_guides"},
+            {"title": "Business Guides", "description": "Explore practical guides for pricing, client experience, marketing, workflows, finances, studio operations, and photography business growth.", "icon": "bi-briefcase", "url_name": "core:resources_business_guides"},
             {"title": "AI Learning Center", "description": "Discover how AI is transforming photography workflows, editing, search, and business operations.", "icon": "bi-cpu", "url_name": "core:resources_ai_learning_center"},
             {"title": "Templates", "description": "Download professional contracts, invoices, questionnaires, pricing guides, checklists, and more.", "icon": "bi-file-earmark-text", "url_name": "core:resources_templates"},
             {"title": "Help Center / Documentation", "description": "Find answers, setup guides, troubleshooting articles, and complete product documentation.", "icon": "bi-life-preserver", "url_name": "core:resources_help_center"},
@@ -342,6 +342,11 @@ def resources_blog(request):
 
 def resources_photography_guides(request):
     return render(request, "resources_photography_guides.html")
+
+
+def resources_business_guides(request):
+    """Render the public photography business guides hub."""
+    return render(request, "resources_business_guides.html")
 
 
 def resources_ai_learning_center(request):
@@ -511,6 +516,8 @@ def public_page(request, page_key):
         return resources_blog(request)
     if page_key == "resources_photography_guides":
         return resources_photography_guides(request)
+    if page_key == "resources_business_guides":
+        return resources_business_guides(request)
     if page_key == "resources_ai_learning_center":
         return resources_ai_learning_center(request)
     if page_key == "resources_templates":

@@ -1,5 +1,7 @@
 from django.test import TestCase
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, resolve, reverse
+
+from . import views
 
 
 class ForPhotographersRoutingTests(TestCase):
@@ -73,3 +75,52 @@ class LearningHubNavigationTests(TestCase):
             response,
             f'href="{reverse("core:resources_learning_hub")}"',
         )
+
+
+class BusinessGuidesNavigationTests(TestCase):
+    def test_business_guides_route_renders_existing_marketing_template(self):
+        business_guides_url = reverse("core:resources_business_guides")
+
+        self.assertEqual(business_guides_url, "/resources/business-guides/")
+        self.assertIs(resolve(business_guides_url).func, views.resources_business_guides)
+
+        response = self.client.get(business_guides_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "base.html")
+        self.assertTemplateUsed(response, "resources_business_guides.html")
+
+    def test_resources_card_links_to_business_guides(self):
+        response = self.client.get(reverse("core:resources"))
+        business_guides_url = reverse("core:resources_business_guides")
+
+        self.assertContains(response, "Business Guides")
+        self.assertContains(response, f'href="{business_guides_url}"')
+        self.assertContains(
+            response,
+            "Explore practical guides for pricing, client experience, marketing, "
+            "workflows, finances, studio operations, and photography business growth.",
+        )
+
+    def test_public_marketing_navbar_links_to_business_guides_once(self):
+        business_guides_link = (
+            f'<a href="{reverse("core:resources_business_guides")}">'
+            "Business Guides</a>"
+        )
+        public_pages = (
+            "core:index",
+            "core:resources",
+            "core:resources_learning_hub",
+            "core:resources_release_notes",
+            "core:resources_success_stories",
+            "core:products",
+            "core:solutions",
+            "core:business_hub",
+            "core:pricing",
+        )
+
+        for route_name in public_pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, business_guides_link, count=1, html=True)
