@@ -13,6 +13,15 @@
     closeButton.focus();
   }
 
+  function setCollapsed(collapsed) {
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    if (collapseButton) {
+      collapseButton.setAttribute('aria-expanded', String(!collapsed));
+      collapseButton.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+    }
+    window.localStorage.setItem('lpw-sidebar-collapsed', String(collapsed));
+  }
+
   function closeDrawer(restoreFocus) {
     sidebar.classList.remove('is-open');
     scrim.hidden = true;
@@ -20,21 +29,40 @@
   }
 
   if (sidebar && openButton && closeButton && scrim) {
-    openButton.addEventListener('click', openDrawer);
+    openButton.addEventListener('click', function () {
+      if (window.matchMedia('(max-width: 860px)').matches) openDrawer();
+      else setCollapsed(!sidebar.classList.contains('is-collapsed'));
+    });
     closeButton.addEventListener('click', function () { closeDrawer(true); });
     scrim.addEventListener('click', function () { closeDrawer(true); });
   }
 
   if (sidebar && collapseButton) {
     const collapsed = window.localStorage.getItem('lpw-sidebar-collapsed') === 'true';
-    sidebar.classList.toggle('is-collapsed', collapsed);
-    collapseButton.setAttribute('aria-expanded', String(!collapsed));
+    setCollapsed(collapsed);
     collapseButton.addEventListener('click', function () {
       const next = !sidebar.classList.contains('is-collapsed');
-      sidebar.classList.toggle('is-collapsed', next);
-      collapseButton.setAttribute('aria-expanded', String(!next));
-      collapseButton.setAttribute('aria-label', next ? 'Expand navigation' : 'Collapse navigation');
-      window.localStorage.setItem('lpw-sidebar-collapsed', String(next));
+      setCollapsed(next);
+    });
+  }
+
+  const searchForm = document.querySelector('[data-workspace-search]');
+  const searchInput = document.querySelector('[data-workspace-search-input]');
+  if (searchForm && searchInput) {
+    searchForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const query = searchInput.value.trim().toLowerCase();
+      if (!query) return;
+      const match = Array.from(document.querySelectorAll('.lpw-nav a')).find(function (link) {
+        return link.textContent.trim().toLowerCase().includes(query);
+      });
+      if (match) window.location.assign(match.href);
+    });
+    document.addEventListener('keydown', function (event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchInput.focus();
+      }
     });
   }
 
