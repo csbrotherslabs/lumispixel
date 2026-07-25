@@ -4,6 +4,20 @@ from django.urls import NoReverseMatch, resolve, reverse
 from . import views
 
 
+class AboutPageTests(TestCase):
+    def test_about_page_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:about"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "about.html")
+        self.assertContains(response, "Built for Modern Photography")
+        self.assertContains(response, "Why LumisPixel")
+        self.assertContains(response, "10+")
+        self.assertContains(response, "Ready to simplify your photography business?")
+        self.assertContains(response, reverse("core:pricing"))
+        self.assertContains(response, reverse("accounts:get-started"))
+
+
 class ForPhotographersRoutingTests(TestCase):
     def test_named_url_resolves_to_public_marketing_page(self):
         self.assertEqual(reverse("core:for_photographers"), "/for-photographers/")

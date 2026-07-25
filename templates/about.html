@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About LumisPixel | Built for Modern Photography{% endblock %}
+{% block meta_description %}LumisPixel gives photographers one modern platform for client galleries, AI workflows, bookings, payments, analytics, and business growth.{% endblock %}
+{% block og_title %}Built for Modern Photography | LumisPixel{% endblock %}
+{% block og_description %}Spend less time on repetitive work and create better client experiences with LumisPixel.{% endblock %}
+{% block twitter_title %}Built for Modern Photography | LumisPixel{% endblock %}
+{% block twitter_description %}A simpler way to run, deliver, and grow your photography business.{% endblock %}
+{% block body_class %}marketing-page page-about{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/about.css' %}">{% endblock %}
+
+{% block content %}
+<section class="about-hero" aria-labelledby="about-title">
+  <div class="container about-hero__inner">
+    <span class="about-kicker">About LumisPixel</span>
+    <h1 id="about-title">Built for Modern Photography</h1>
+    <p>LumisPixel helps photographers run better businesses, deliver better client experiences, and spend less time on repetitive work.</p>
+    <div class="about-actions">
+      <a class="about-button about-button--primary" href="{% url 'accounts:get-started' %}">Start Free <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      <a class="about-button about-button--secondary" href="{% url 'core:pricing' %}">See Pricing</a>
+    </div>
+  </div>
+</section>
+
+<section class="about-section about-features" aria-label="What LumisPixel offers">
+  <div class="container"><div class="about-feature-grid">
+    <article><span class="about-icon"><i class="bi bi-camera" aria-hidden="true"></i></span><h2>Built for Photographers</h2><p>Simplify the everyday work of running your photography business.</p></article>
+    <article><span class="about-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><h2>AI-Powered</h2><p>Search, edit, automate, and organize your work with intelligent tools.</p></article>
+    <article><span class="about-icon"><i class="bi bi-heart" aria-hidden="true"></i></span><h2>Client First</h2><p>Deliver fast galleries, effortless photo search, and easy sharing.</p></article>
+    <article><span class="about-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span><h2>Business Growth</h2><p>Connect CRM, bookings, payments, analytics, and marketing.</p></article>
+  </div></div>
+</section>
+
+<section class="about-section about-why" aria-labelledby="why-title"><div class="container">
+  <div class="about-heading"><span class="about-kicker">Why LumisPixel</span><h2 id="why-title">More time for the work that matters.</h2></div>
+  <div class="about-why-grid">
+    <article><span>01</span><h3>Save Time</h3><p>Automate repetitive work.</p></article>
+    <article><span>02</span><h3>Delight Clients</h3><p>Create a smooth client experience.</p></article>
+    <article><span>03</span><h3>Grow Your Business</h3><p>Tools that help photographers scale.</p></article>
+  </div>
+</div></section>
+
+<section class="about-stats" aria-label="LumisPixel platform highlights"><div class="container"><div class="about-stats__grid">
+  <p><strong>10+</strong><span>Business Tools</span></p><p><i class="bi bi-stars" aria-hidden="true"></i><span>AI Powered Workflows</span></p><p><i class="bi bi-lightning-charge" aria-hidden="true"></i><span>Fast Client Galleries</span></p><p><strong>1</strong><span>One Platform</span></p>
+</div></div></section>
+
+<section class="about-section about-testimonials" aria-labelledby="stories-title"><div class="container">
+  <div class="about-heading"><span class="about-kicker">Photographer stories</span><h2 id="stories-title">Made for the way you work.</h2></div>
+  <div class="about-quote-grid">
+    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“LumisPixel gives me one clear place to manage the work behind every shoot.”</p><footer><strong>Maya R.</strong><span>Wedding Photographer</span></footer></blockquote>
+    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“My clients find their photos faster, and I spend far less time answering the same questions.”</p><footer><strong>Jordan K.</strong><span>Event Photographer</span></footer></blockquote>
+    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“The connected workflow makes my studio feel organized, polished, and ready to grow.”</p><footer><strong>Elena S.</strong><span>Portrait Photographer</span></footer></blockquote>
+  </div>
+</div></section>
+
+<section class="about-final" aria-labelledby="about-cta-title"><div class="container"><div class="about-final__card">
+  <span class="about-icon"><i class="bi bi-camera" aria-hidden="true"></i></span><h2 id="about-cta-title">Ready to simplify your photography business?</h2><p>Start building a better workflow today.</p><a class="about-button about-button--light" href="{% url 'accounts:get-started' %}">Start Free <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div></div></section>
+{% endblock %}
