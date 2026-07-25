@@ -135,6 +135,16 @@ def _business_overview(profile):
     ]
 
 
+def _dashboard_summary(profile):
+    galleries, _ = _count_model("galleries", "Gallery", {"photographer": profile})
+    return [
+        {"icon": "bi-images", "metric": galleries, "label": "Active Galleries", "url": reverse("photographer_workspace:galleries")},
+        {"icon": "bi-person-plus", "metric": 0, "label": "New Leads", "url": reverse("photographer_workspace:leads")},
+        {"icon": "bi-calendar-check", "metric": 0, "label": "Upcoming Bookings", "url": reverse("photographer_workspace:bookings")},
+        {"icon": "bi-currency-dollar", "metric": f"{profile.default_currency} {Decimal('0.00')}", "label": "Revenue", "url": reverse("photographer_workspace:revenue")},
+    ]
+
+
 def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
     profile = request.user.photographer_profile
     hour = timezone.localtime().hour
@@ -143,7 +153,8 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
     context = {
         "active_key": active_key, "page_title": title, "workspace_nav": _workspace_nav(active_key),
         "photographer_profile": profile, "identity": _identity(profile, request.user), "greeting": greeting,
-        "welcome_name": profile.business_name or profile.display_name or request.user.full_name or "Photographer",
+        "welcome_name": request.user.first_name or (request.user.full_name.split()[0] if request.user.full_name else "Photographer"),
+        "summary_cards": _dashboard_summary(profile),
         "modules": modules, "theme_preview": _theme(profile), "overview_cards": _business_overview(profile),
         "getting_started": [
             {"label": "Business profile completed", "done": bool(profile.business_name or profile.display_name), "url": reverse("photographer_workspace:profile")},

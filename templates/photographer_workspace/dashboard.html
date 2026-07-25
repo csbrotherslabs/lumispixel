@@ -1,16 +1,27 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<section class="lpw-hero">
-  <div><p class="lpw-kicker">{{ greeting }}</p><h2>Welcome back, {{ welcome_name }}</h2><p>Let’s continue building your photography business.</p><div class="lpw-actions"><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn lpw-btn-primary">Upload Photos</a><a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn">Create Gallery</a></div></div>
-  <div class="lpw-avatar">{% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span>{{ identity.initials }}</span>{% endif %}</div>
+<section class="lpw-dashboard-header" aria-labelledby="dashboard-heading">
+  <div class="lpw-dashboard-header__copy">
+    <h2 id="dashboard-heading">Dashboard</h2>
+    <p class="lpw-dashboard-header__greeting">{{ greeting }}, {{ welcome_name }}.</p>
+    <p class="lpw-dashboard-header__subtitle">Here’s what’s happening with your business today.</p>
+  </div>
+  <div class="lpw-dashboard-header__actions">
+    <a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn lpw-btn-primary"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload Photos</a>
+    <a href="{% url 'photographer_workspace:galleries' %}" class="lpw-btn"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Gallery</a>
+  </div>
+</section>
+<section class="lpw-summary-grid" aria-label="Business summary">
+  {% for card in summary_cards %}
+  <a class="lpw-summary-card" href="{{ card.url }}">
+    <div><span>{{ card.label }}</span><strong>{{ card.metric }}</strong></div>
+    <i class="bi {{ card.icon }}" aria-hidden="true"></i>
+  </a>
+  {% endfor %}
 </section>
 <section class="lpw-dashboard-section" aria-labelledby="getting-started-title">
   {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Getting started" title="Getting Started" action_label="Workspace Activation Checklist" section_id="getting-started-title" only %}
   <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-checklist-grid">{% for item in getting_started %}{% include "photographer_workspace/components/checklist/checklist_card.html" with item=item only %}{% endfor %}</div>
-</section>
-<section class="lpw-dashboard-section" aria-labelledby="business-overview-title">
-  {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Business overview" title="Business Overview" action_label="Current Workspace Metrics" section_id="business-overview-title" only %}
-  <div class="lpw-dashboard-grid lpw-dashboard-grid-3 lpw-metric-grid">{% for card in overview_cards %}{% include "photographer_workspace/components/metrics/metric_card.html" with card=card only %}{% endfor %}</div>
 </section>
 <section class="lpw-dashboard-section" aria-labelledby="quick-actions-title">
   {% include "photographer_workspace/components/section_headers/dashboard_section_header.html" with eyebrow="Quick actions" title="Move around your workspace" section_id="quick-actions-title" only %}
