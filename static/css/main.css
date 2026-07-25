@@ -2777,6 +2777,95 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (prefers-reduced-motion: reduce) { .resources-guides, .resources-guides * { scroll-behavior: auto !important; transition: none !important; } }
 
 /* Business Guides marketing page */
+.business-guides-page { --bg-ink:#1d1916; --bg-muted:#655c55; --bg-line:#eaded5; background:#fffaf7; color:var(--bg-ink); overflow-x:clip; scroll-behavior:smooth; }
+.business-guides-page .container { width:min(1180px,calc(100% - 40px)); }
+.business-guides-page .bg-breadcrumb { padding-top:118px; font-size:13px; }
+.business-guides-page .bg-breadcrumb ol { display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
+.business-guides-page .bg-breadcrumb li:not(:last-child)::after { content:"/"; margin-left:8px; color:#998b82; }
+.business-guides-page .bg-hero { padding:36px 0 76px; }
+.business-guides-page .bg-split { display:grid; grid-template-columns:minmax(0,.95fr) minmax(360px,1.05fr); align-items:center; gap:clamp(30px,5vw,68px); }
+.business-guides-page h1 { margin:14px 0 20px; font-size:clamp(44px,6vw,76px); line-height:.98; letter-spacing:-.05em; }
+.business-guides-page h2 { margin:0 0 14px; font-size:clamp(30px,4vw,48px); line-height:1.12; letter-spacing:-.025em; }
+.business-guides-page h3 { color:#211c19; font-size:21px; line-height:1.28; }
+.business-guides-page h4 { margin:16px 0 6px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; }
+.business-guides-page p,.business-guides-page li { line-height:1.62; }
+.business-guides-page .bg-lead { color:var(--bg-muted); font-size:19px; }
+.business-guides-page .bg-eyebrow { display:inline-block; color:#b70005; font-size:12px; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+.business-guides-page .bg-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+.business-guides-page .bg-trust { display:inline-flex; gap:8px; align-items:center; margin-top:24px; padding:8px 12px; border-radius:999px; background:#fff; border:1px solid var(--bg-line); font-weight:800; }
+.business-guides-page .bg-section { padding:76px 0; }
+.business-guides-page .bg-tint { background:#f8f0ea; }
+.business-guides-page .bg-heading { max-width:790px; margin:0 auto 36px; text-align:center; }
+.business-guides-page .bg-heading p { color:var(--bg-muted); font-size:18px; }
+.business-guides-page .bg-grid { display:grid; gap:18px; align-items:stretch; }
+.business-guides-page .bg-grid--3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.business-guides-page .bg-grid--4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.business-guides-page .bg-grid--5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.business-guides-page .bg-card,.business-guides-page .business-guide-card { display:flex; flex-direction:column; min-width:0; height:100%; padding:22px; border:1px solid var(--bg-line); border-radius:24px; background:#fff; box-shadow:0 16px 42px rgba(48,35,27,.06); }
+.business-guides-page .bg-card > i { width:46px; height:46px; display:grid; place-items:center; border-radius:14px; background:#fff1ed; color:#c60005; font-size:21px; }
+.business-guides-page .bg-card ul,.business-guides-page .business-guide-card ul { padding-left:20px; color:#514740; }
+.business-guides-page .bg-card .btn-two,.business-guides-page .bg-download button { margin-top:auto; justify-content:center; }
+.business-guides-page .business-guide-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:22px; border:1px solid #e8d8ce; border-radius:26px; background:radial-gradient(circle at 75% 20%,#ffe3da,transparent 34%),linear-gradient(135deg,#fff,#f5e9e2); text-align:center; box-shadow:0 20px 54px rgba(48,35,27,.08); }
+.business-guides-page .business-guide-placeholder i { width:58px; height:58px; display:grid; place-items:center; border-radius:18px; background:#fff; color:#c70005; font-size:27px; box-shadow:0 8px 24px rgba(80,35,25,.1); }
+.business-guides-page .business-guide-placeholder strong,.business-guides-page .business-guide-placeholder span { font-weight:900; }
+.business-guides-page .business-guide-placeholder small { color:#786c64; }
+.business-guides-page .business-guide-placeholder--hero { aspect-ratio:16/10; }
+.business-guides-page .business-guide-placeholder--featured { aspect-ratio:4/3; }
+.business-guides-page .business-guide-placeholder--card { aspect-ratio:3/2; margin:-22px -22px 18px; border:0; border-radius:23px 23px 0 0; box-shadow:none; }
+.business-guides-page .business-guide-placeholder--stage { aspect-ratio:4/3; margin:-22px -22px 18px; border:0; border-radius:23px 23px 0 0; box-shadow:none; }
+.business-guides-page .business-guide-placeholder--download { aspect-ratio:3/2; margin:-22px -22px 18px; border:0; border-radius:23px 23px 0 0; box-shadow:none; }
+.business-guides-page .bg-filters { display:grid; grid-template-columns:repeat(4,minmax(150px,1fr)); gap:14px; padding:24px; border:1px solid var(--bg-line); border-radius:26px; background:#fff; box-shadow:0 16px 44px rgba(48,35,27,.07); }
+.business-guides-page .bg-filters label { display:flex; flex-direction:column; gap:7px; font-weight:800; }
+.business-guides-page .bg-search { grid-column:1/-1; }
+.business-guides-page input,.business-guides-page select,.business-guides-page textarea { width:100%; min-height:50px; padding:11px 13px; border:1px solid #d9cbc2; border-radius:12px; background:#fff; color:#211c19; }
+.business-guides-page textarea { resize:vertical; }
+.business-guides-page .bg-result-count { grid-column:1/-1; margin:0; color:var(--bg-muted); }
+.business-guides-page .bg-badges,.business-guides-page .business-guide-card__badges { display:flex; flex-wrap:wrap; gap:7px; }
+.business-guides-page .bg-badges span,.business-guides-page .business-guide-card__badges span,.business-guides-page .bg-status { display:inline-flex; width:fit-content; padding:6px 10px; border-radius:999px; background:#f2ece7; color:#514740; font-size:10px; font-weight:900; letter-spacing:.05em; text-transform:uppercase; }
+.business-guides-page .bg-badges span:first-child,.business-guides-page .bg-status { background:#fff0ec; color:#a90004; }
+.business-guides-page .bg-columns { columns:2; padding-left:20px; }
+.business-guides-page .bg-notice,.business-guides-page .bg-note { padding:13px 15px; border-left:4px solid #c90005; border-radius:8px; background:#fff3ef; color:#514740; font-size:13px; font-weight:700; }
+.business-guides-page .business-guide-card__actions { display:flex; flex-direction:column; align-items:flex-start; gap:11px; margin-top:auto; padding-top:15px; }
+.business-guides-page button:disabled { cursor:not-allowed; opacity:.62; }
+.business-guides-page .bg-example { margin-top:28px; padding:clamp(22px,4vw,38px); border:1px solid var(--bg-line); border-radius:28px; background:#fff; }
+.business-guides-page .bg-example dl { display:grid; gap:0; }
+.business-guides-page .bg-example dl div { display:flex; justify-content:space-between; gap:20px; padding:12px 0; border-bottom:1px solid var(--bg-line); }
+.business-guides-page .bg-example dd { margin:0; font-weight:900; }
+.business-guides-page .bg-links { display:flex; flex-wrap:wrap; gap:16px; }
+.business-guides-page .bg-journey,.business-guides-page .bg-framework { display:grid; grid-template-columns:repeat(8,minmax(140px,1fr)); gap:12px; overflow-x:auto; padding-bottom:10px; }
+.business-guides-page .bg-journey article,.business-guides-page .bg-framework article { position:relative; min-width:0; padding:20px; border:1px solid var(--bg-line); border-radius:20px; background:#fff; }
+.business-guides-page .bg-journey span,.business-guides-page .bg-framework span { width:36px; height:36px; display:grid; place-items:center; border-radius:50%; background:#1f1a17; color:#fff; font-weight:900; }
+.business-guides-page .bg-dark { background:linear-gradient(135deg,#1d1916,#3b2924); color:#fff; }
+.business-guides-page .bg-dark h2,.business-guides-page .bg-dark .bg-heading p { color:#fff; }
+.business-guides-page .bg-dark .bg-card { color:#342b25; }
+.business-guides-page .bg-dark .bg-framework { grid-template-columns:repeat(6,minmax(0,1fr)); overflow:visible; }
+.business-guides-page .bg-framework-mini { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:28px; padding:20px; border-radius:18px; background:#fff; }
+.business-guides-page .bg-center { text-align:center; justify-content:center; }
+.business-guides-page .bg-compare { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:28px; }
+.business-guides-page .bg-compare article { padding:24px; border:1px solid var(--bg-line); border-radius:22px; background:#fff; }
+.business-guides-page .bg-form-wrap { display:grid; grid-template-columns:.75fr 1.25fr; gap:clamp(28px,5vw,64px); padding:clamp(24px,5vw,54px); border:1px solid var(--bg-line); border-radius:30px; background:#fff; }
+.business-guides-page .bg-form { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.business-guides-page .bg-form label { display:flex; flex-direction:column; gap:7px; font-weight:800; }
+.business-guides-page .bg-span-2 { grid-column:1/-1; }
+.business-guides-page .bg-check { flex-direction:row!important; align-items:center; }
+.business-guides-page .bg-check input { width:auto; min-height:0; }
+.business-guides-page .bg-faq { max-width:900px; }
+.business-guides-page .bg-faq-item { margin-bottom:10px; border:1px solid var(--bg-line); border-radius:16px; background:#fff; overflow:hidden; }
+.business-guides-page .bg-faq-item h3 { margin:0; }
+.business-guides-page .bg-faq-item button { display:flex; justify-content:space-between; gap:20px; width:100%; padding:18px 20px; border:0; background:transparent; color:#211c19; text-align:left; font-size:17px; font-weight:800; }
+.business-guides-page .bg-faq-item div { padding:0 20px 18px; }
+.business-guides-page .bg-faq-item div[hidden] { display:none; }
+.business-guides-page .bg-faq-item button[aria-expanded="true"] i { transform:rotate(45deg); }
+.business-guides-page .bg-bridge,.business-guides-page .bg-final { text-align:center; }
+.business-guides-page .bg-bridge .container,.business-guides-page .bg-final .container { max-width:900px; padding:clamp(30px,5vw,58px); border-radius:30px; background:#fff; box-shadow:0 18px 50px rgba(48,35,27,.08); }
+.business-guides-page .bg-final { background:#f8f0ea; }
+.business-guides-page .bg-final ul { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 25px; padding:0; list-style:none; }
+.business-guides-page .bg-general-disclaimer { padding:18px 0; background:#211c19; color:#fff; text-align:center; font-size:13px; }
+.business-guides-page a:focus-visible,.business-guides-page button:focus-visible,.business-guides-page input:focus-visible,.business-guides-page select:focus-visible,.business-guides-page textarea:focus-visible { outline:3px solid rgba(215,0,6,.32); outline-offset:3px; }
+@media(max-width:1199px){.business-guides-page .bg-grid--4,.business-guides-page .bg-grid--5{grid-template-columns:repeat(2,minmax(0,1fr))}.business-guides-page .bg-dark .bg-framework{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:991px){.business-guides-page .bg-split,.business-guides-page .bg-form-wrap{grid-template-columns:1fr}.business-guides-page .bg-grid--3{grid-template-columns:repeat(2,minmax(0,1fr))}.business-guides-page .bg-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){.business-guides-page .container{width:min(100% - 28px,1180px)}.business-guides-page .bg-breadcrumb{padding-top:96px}.business-guides-page .bg-section{padding:54px 0}.business-guides-page .bg-grid--3,.business-guides-page .bg-grid--4,.business-guides-page .bg-grid--5,.business-guides-page .bg-filters,.business-guides-page .bg-form,.business-guides-page .bg-compare,.business-guides-page .bg-dark .bg-framework{grid-template-columns:1fr}.business-guides-page .bg-actions .btn-one,.business-guides-page .bg-actions .btn-two{width:100%;justify-content:center}.business-guides-page .bg-journey{display:grid;grid-template-columns:1fr;overflow:visible;border-left:3px solid #dfcec4;padding-left:18px}.business-guides-page .bg-columns{columns:1}.business-guides-page .bg-example dl div{display:block}.business-guides-page .bg-example dd{margin-top:4px}.business-guides-page .bg-span-2{grid-column:auto}.business-guides-page .bg-final ul{display:block}}
+@media(prefers-reduced-motion:reduce){.business-guides-page,.business-guides-page *{scroll-behavior:auto!important;transition:none!important}}
 .resources-business-guides .resource-image-placeholder--toolkit { aspect-ratio: 9 / 11; }
 .resources-business-guides .resource-image-placeholder--success-story { aspect-ratio: 4 / 3; }
 .resources-business-stage-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px; align-items: stretch; }
