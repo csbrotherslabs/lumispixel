@@ -1,5 +1,26 @@
 <header class="lpw-topbar">
-  <button class="lpw-menu-button" type="button" data-workspace-open aria-controls="workspace-sidebar" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-  <div><p class="lpw-breadcrumb">Photographer Workspace</p><h1 id="workspace-page-title">{{ page_title }}</h1></div>
-  <div class="lpw-top-actions"><button type="button" class="lpw-icon-btn" aria-label="Notifications coming soon"><i class="bi bi-bell" aria-hidden="true"></i></button><a class="lpw-account" href="{% url 'photographer_workspace:profile' %}">{{ identity.initials }}</a><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="lpw-signout">Sign out</button></form></div>
+  <button class="lpw-menu-button" type="button" data-workspace-open aria-controls="workspace-sidebar" aria-label="Open navigation">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+  </button>
+  <div class="lpw-page-heading"><p class="lpw-breadcrumb">Photographer Workspace</p><h1 id="workspace-page-title">{{ page_title }}</h1></div>
+  <div class="lpw-top-actions">
+    <a class="lpw-icon-btn" href="{% url 'photographer_workspace:notifications' %}" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.857 17.082a23.85 23.85 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022 23.85 23.85 0 0 0 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
+    </a>
+    <div class="lpw-profile-menu" data-profile-menu>
+      <button class="lpw-profile-trigger" type="button" data-profile-toggle aria-expanded="false" aria-haspopup="menu">
+        {% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span class="lpw-profile-avatar" aria-hidden="true">{{ identity.initials }}</span>{% endif %}
+        <span class="lpw-profile-copy"><strong>{{ identity.name }}</strong><small>Photographer</small></span>
+        <svg class="lpw-profile-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+      </button>
+      <div class="lpw-profile-dropdown" role="menu" data-profile-dropdown hidden>
+        <a role="menuitem" href="{% url 'photographer_workspace:profile' %}">My Profile</a>
+        <a role="menuitem" href="{% url 'photographer_workspace:settings' %}">Business Settings</a>
+        <a role="menuitem" href="{% url 'photographer_workspace:notifications' %}">Notifications</a>
+        <a role="menuitem" href="{% url 'photographer_workspace:billing' %}">Billing</a>
+        <a role="menuitem" href="{% url 'photographer_workspace:help' %}">Help</a>
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button role="menuitem" type="submit">Sign Out</button></form>
+      </div>
+    </div>
+  </div>
 </header>
