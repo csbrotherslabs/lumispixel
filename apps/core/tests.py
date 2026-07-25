@@ -18,6 +18,22 @@ class AboutPageTests(TestCase):
         self.assertContains(response, reverse("accounts:get-started"))
 
 
+class CareersPageTests(TestCase):
+    def test_careers_page_uses_dedicated_marketing_layout(self):
+        response = self.client.get(reverse("core:careers"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "careers.html")
+        self.assertContains(response, "Why Work With Us")
+        self.assertContains(response, "Our Values")
+        self.assertContains(response, "Open Positions")
+        self.assertContains(response, "Full Stack Software Engineer")
+        self.assertContains(response, '<i class="bi bi-geo-alt" aria-hidden="true"></i> Remote', count=3)
+        self.assertContains(response, '<i class="bi bi-clock" aria-hidden="true"></i> Full-Time', count=3)
+        self.assertContains(response, "Don't See the Right Role?")
+        self.assertContains(response, "static/css/careers.css")
+
+
 class ForPhotographersRoutingTests(TestCase):
     def test_named_url_resolves_to_public_marketing_page(self):
         self.assertEqual(reverse("core:for_photographers"), "/for-photographers/")
