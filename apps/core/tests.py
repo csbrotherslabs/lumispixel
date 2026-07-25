@@ -38,3 +38,38 @@ class ForPhotographersRoutingTests(TestCase):
         response = self.client.get("/photographer/for-photographers/")
 
         self.assertEqual(response.status_code, 404)
+
+
+class LearningHubNavigationTests(TestCase):
+    def test_learning_hub_route_renders_marketing_template(self):
+        learning_hub_url = reverse("core:resources_learning_hub")
+
+        self.assertEqual(learning_hub_url, "/resources/learning-hub/")
+        response = self.client.get(learning_hub_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "base.html")
+        self.assertTemplateUsed(response, "resources_learning_hub.html")
+
+    def test_marketing_navbar_links_to_learning_hub(self):
+        response = self.client.get(reverse("core:index"))
+        learning_hub_link = (
+            f'<a href="{reverse("core:resources_learning_hub")}">'
+            "Newsletter / Learning Hub</a>"
+        )
+
+        self.assertContains(response, learning_hub_link, html=True)
+        self.assertNotContains(
+            response,
+            f'<a href="{reverse("core:resources_newsletter")}">'
+            "Newsletter / Learning Hub</a>",
+            html=True,
+        )
+
+    def test_resources_card_links_to_learning_hub(self):
+        response = self.client.get(reverse("core:resources"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("core:resources_learning_hub")}"',
+        )
