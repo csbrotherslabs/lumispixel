@@ -1,8 +1,10 @@
 from decimal import Decimal
+import mimetypes
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import FileResponse, JsonResponse
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
@@ -12,12 +14,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import GalleryForm
-from apps.galleries.models import Gallery
+from apps.galleries.models import Gallery, GalleryPhoto
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -688,13 +691,47 @@ def gallery_actions(request):
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def gallery_upload_queue(request):
-    galleries = Gallery.objects.for_photographer(request.user.photographer_profile).filter(
-        status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING]
-    ).select_related("client")
+    profile = request.user.photographer_profile
+    galleries = Gallery.objects.for_photographer(profile).select_related("client")
+    if request.method == "POST":
+        gallery = get_object_or_404(galleries, pk=request.POST.get("gallery"))
+        files = request.FILES.getlist("files")
+        if not files:
+            return JsonResponse({"error": "Choose at least one image."}, status=400)
+        created, errors = [], []
+        allowed = {"image/jpeg", "image/png", "image/webp"}
+        max_size = 25 * 1024 * 1024
+        for upload in files:
+            if upload.content_type not in allowed or upload.size > max_size:
+                errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
+                continue
+            try:
+                image = Image.open(upload)
+                image.verify()
+                upload.seek(0)
+            except (UnidentifiedImageError, OSError):
+                errors.append({"name": upload.name, "error": "The file is not a valid image."})
+                continue
+            photo = GalleryPhoto(gallery=gallery, photographer=profile, file=upload, original_name=upload.name[:255], file_size=upload.size, status=GalleryPhoto.Status.COMPLETED)
+            try:
+                photo.full_clean()
+                photo.save()
+            except Exception:
+                errors.append({"name": upload.name, "error": "The image could not be validated."})
+                continue
+            created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
+        if created:
+            Gallery.objects.filter(pk=gallery.pk).update(image_count=F("image_count") + len(created), storage_used=F("storage_used") + sum(item["size"] for item in created))
+        return JsonResponse({"uploads": created, "errors": errors}, status=201 if created else 400)
+    upload_records = GalleryPhoto.objects.for_photographer(profile)
+    counts = {status: upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
+    uploads = upload_records.select_related("gallery")[:100]
+    storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
     context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
-    context.update({"queued_galleries": galleries})
+    context.update({"gallery_choices": galleries, "uploads": uploads, "upload_counts": counts,
+                    "storage": {"used": _format_storage(storage_used), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)}})
     return render(request, "photographer_workspace/galleries/upload_queue.html", context)
 
 
@@ -705,8 +742,53 @@ def gallery_workspace(request, pk):
         Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client"), pk=pk
     )
     context = _dashboard_context(request, "all_galleries", gallery.name)
-    context.update({"gallery": gallery})
-    return render(request, "photographer_workspace/galleries/workspace_placeholder.html", context)
+    tab = request.GET.get("tab", "overview")
+    tabs = ("overview", "photos", "albums", "ai-tools", "client-access", "store", "downloads", "activity", "settings")
+    if tab not in tabs:
+        tab = "overview"
+    photos = gallery.photos.all()
+    query = request.GET.get("q", "").strip()
+    if query:
+        photos = photos.filter(original_name__icontains=query)
+    photos = photos.order_by("original_name" if request.GET.get("sort") == "name" else "-created_at")
+    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "storage_display": _format_storage(gallery.storage_used),
+                    "upload_percent": 100 if gallery.image_count else 0})
+    return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_photo_media(request, pk):
+    photo = get_object_or_404(GalleryPhoto.objects.for_photographer(request.user.photographer_profile), pk=pk)
+    content_type = mimetypes.guess_type(photo.original_name)[0] or "application/octet-stream"
+    response = FileResponse(photo.file.open("rb"), content_type=content_type)
+    response["Content-Disposition"] = f'inline; filename="{photo.original_name.replace(chr(34), "")}"'
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_action(request, pk):
+    photo = get_object_or_404(GalleryPhoto.objects.for_photographer(request.user.photographer_profile).select_related("gallery"), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete":
+        Gallery.objects.filter(pk=photo.gallery_id).update(image_count=F("image_count") - 1, storage_used=F("storage_used") - photo.file_size)
+        photo.file.delete(save=False)
+        photo.delete()
+    elif action == "cover":
+        GalleryPhoto.objects.filter(gallery=photo.gallery).update(is_cover=False)
+        photo.is_cover = True
+        photo.save(update_fields=["is_cover", "updated_at"])
+    elif action == "remove":
+        # Queue dismissal is a presentation concern; it must never delete the gallery original.
+        pass
+    elif action == "retry" and photo.status == GalleryPhoto.Status.FAILED:
+        photo.status, photo.error_message = GalleryPhoto.Status.QUEUED, ""
+        photo.save(update_fields=["status", "error_message", "updated_at"])
+    else:
+        return JsonResponse({"error": "Unsupported action."}, status=400)
+    return JsonResponse({"ok": True})
 
 
 @photographer_workspace_required

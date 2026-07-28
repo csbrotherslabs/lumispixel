@@ -1,11 +1,14 @@
 from django.core.management import call_command
 from django.test import Client as TestClient, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
+from io import BytesIO
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
-from apps.galleries.models import Gallery
+from apps.galleries.models import Gallery, GalleryPhoto
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -107,8 +110,31 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(dashboard, "Upcoming Deadlines")
 
         detail = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
-        self.assertContains(detail, "Gallery Workspace is coming soon")
+        self.assertContains(detail, "Gallery summary")
+        self.assertContains(detail, "Upload progress")
+        self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "photos"}), "Search photos")
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
+
+    def test_gallery_upload_validates_images_and_scopes_media(self):
+        user, profile = self.make_photographer(True, email="upload@example.com", slug="upload")
+        other_user, other = self.make_photographer(True, email="upload-other@example.com", slug="upload-other")
+        gallery = Gallery.objects.create(photographer=profile, name="Secure", slug="secure")
+        image = BytesIO()
+        Image.new("RGB", (8, 8), "red").save(image, "JPEG")
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:gallery_upload_queue"), {
+            "gallery": gallery.pk, "files": SimpleUploadedFile("photo.jpg", image.getvalue(), content_type="image/jpeg")
+        })
+        self.assertEqual(response.status_code, 201)
+        photo = GalleryPhoto.objects.get(gallery=gallery)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_photo_media", args=[photo.pk])).status_code, 200)
+        invalid = self.client.post(reverse("photographer_workspace:gallery_upload_queue"), {
+            "gallery": gallery.pk, "files": SimpleUploadedFile("fake.jpg", b"not an image", content_type="image/jpeg")
+        })
+        self.assertEqual(invalid.status_code, 400)
+        self.client.force_login(other_user)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_photo_media", args=[photo.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:gallery_upload_queue"), {"gallery": gallery.pk}).status_code, 404)
 
     def test_gallery_create_edit_filters_and_bulk_actions(self):
         user, profile = self.make_photographer(True, email="gallery-crud@example.com", slug="gallery-crud")
