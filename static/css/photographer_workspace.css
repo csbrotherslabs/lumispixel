@@ -252,3 +252,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:1250px){.lpw-lead-filters label:not(.lpw-lead-search){display:none}.lpw-lead-insights{grid-template-columns:1fr 1fr}.lpw-source-card{grid-column:1/-1}}
 @media(max-width:700px){.lpw-leads-header{top:64px;margin:-16px -16px 0;padding:18px 16px}.lpw-leads-actions{width:100%;flex-wrap:wrap}.lpw-leads-actions .lpw-btn{flex:1}.lpw-leads-title{font-size:32px}.lpw-breadcrumb{display:none}.lpw-leads-toolbar{align-items:stretch}.lpw-lead-filters label:not(.lpw-lead-search){display:block}.lpw-lead-filters select{max-width:none}.lpw-lead-insights{grid-template-columns:1fr}.lpw-source-card{grid-column:auto}}
 @media print{.lpw-sidebar,.lpw-topbar,.lpw-leads-actions,.lpw-leads-toolbar{display:none!important}.lpw-main-wrap{margin:0!important}.lpw-leads-header{position:static}.lpw-lead-board{overflow:visible;grid-template-columns:repeat(3,1fr)}}
+
+/* Keep all Leads workspace action labels legible in the light CRM surface. */
+.lpw-main:has(.lpw-leads-header) .lpw-btn-primary{border-color:#d8cec7;background:#fff;color:var(--workspace-text-primary)}
+.lpw-main:has(.lpw-leads-header) .lpw-btn-primary:hover,.lpw-main:has(.lpw-leads-header) .lpw-btn-primary:focus-visible{border-color:#b9aaa0;background:#f7f2ed;color:var(--workspace-text-primary)}
