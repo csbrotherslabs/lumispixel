@@ -31,9 +31,12 @@ class LeadAdmin(PhotographerOwnedAdmin):
 
 @admin.register(Client)
 class ClientAdmin(PhotographerOwnedAdmin):
-    list_display = ("first_name", "last_name", "email", "company", "status", "photographer")
-    list_filter = ("status",)
-    search_fields = ("first_name", "last_name", "email", "phone", "company")
+    list_display = ("first_name", "last_name", "email", "company", "client_type", "status", "photographer", "updated_at")
+    list_filter = ("status", "client_type", "preferred_contact_method")
+    search_fields = ("first_name", "last_name", "email", "phone", "company", "tags")
+    readonly_fields = ("created_at", "updated_at")
+    autocomplete_fields = ("user", "converted_lead")
+    date_hierarchy = "created_at"
 
 
 @admin.register(ClientNote)

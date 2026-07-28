@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum, Value
+from django.db.models import Count, DecimalField, F, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
+from apps.clients.models import Client, ClientActivity, ClientNote, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 
 WORKSPACE_MODULES = [
@@ -223,18 +223,13 @@ def clients_crm(request):
          "url": f"{reverse('photographer_workspace:leads')}?status={key}"}
         for key, label in Lead.Status.choices
     ]
-    balance_expression = ExpressionWrapper(
-        F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2)
-    )
-    outstanding = ClientInvoice.objects.for_photographer(profile).exclude(
-        status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]
-    ).aggregate(total=Coalesce(Sum(balance_expression), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
-    sessions = ClientSession.objects.for_photographer(profile).filter(starts_at__gte=now).exclude(
-        status=ClientSession.Status.CANCELLED
-    ).select_related("client")
+    outstanding = clients.outstanding_balances().aggregate(
+        total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    sessions = clients.upcoming_sessions(now).select_related("client")
     metrics = [
         ("Total Leads", leads.count(), "bi-person-plus"),
-        ("Active Clients", clients.filter(status=Client.Status.ACTIVE).count(), "bi-people"),
+        ("Active Clients", clients.active().count(), "bi-people"),
         ("New Inquiries", leads.filter(created_at__date__gte=today - timezone.timedelta(days=30)).count(), "bi-envelope-open"),
         ("Awaiting Response", leads.filter(status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]).count(), "bi-reply"),
         ("Upcoming Sessions", sessions.count(), "bi-calendar-event"),
@@ -249,9 +244,7 @@ def clients_crm(request):
         "tasks": ClientTask.objects.for_photographer(profile).exclude(
             status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]
         ).select_related("client", "lead").order_by(F("due_date").asc(nulls_last=True), "-created_at")[:7],
-        "recent_activity": ClientActivity.objects.for_photographer(profile).select_related(
-            "client", "lead"
-        ).order_by("-occurred_at")[:8],
+        "recent_activity": clients.recent_activity().select_related("client", "lead")[:8],
     })
     return render(request, "photographer_workspace/clients_crm.html", context)
 
@@ -262,7 +255,7 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
     kwargs = {"instance": model(photographer=profile)}
     if form_class is ClientTaskForm:
         kwargs["photographer"] = profile
-    form = form_class(request.POST or None, **kwargs)
+    form = form_class(request.POST or None, request.FILES or None, **kwargs)
     if request.method == "POST" and form.is_valid():
         record = form.save(commit=False)
         record.photographer = profile
