@@ -1,0 +1,13 @@
+<section class="lpw-gallery-list" aria-label="Gallery list">
+  {% for gallery in gallery_records %}
+    <a class="lpw-gallery-row" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">
+      <span class="lpw-gallery-cover">{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="">{% else %}<i class="bi bi-images" aria-hidden="true"></i>{% endif %}</span>
+      <span class="lpw-gallery-info"><strong>{{ gallery.name }}</strong><small>{% if gallery.client %}{{ gallery.client }}{% else %}No client assigned{% endif %} · {{ gallery.image_count }} image{{ gallery.image_count|pluralize }}</small></span>
+      <span class="lpw-gallery-date">{{ gallery.event_date|date:"M j, Y"|default:"No event date" }}</span>
+      <span class="lpw-client-status lpw-gallery-status--{{ gallery.status }}"><i></i>{{ gallery.get_status_display }}</span>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </a>
+  {% empty %}
+    <div class="lpw-client-empty"><span><i class="bi bi-images"></i></span><h2>{{ empty_title }}</h2><p>{{ empty_message }}</p></div>
+  {% endfor %}
+</section>

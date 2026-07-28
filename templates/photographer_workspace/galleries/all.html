@@ -1,0 +1,7 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+  {% url 'photographer_workspace:gallery_upload_queue' as queue_url %}
+  {% include "photographer_workspace/galleries/components/header.html" with page_description="Browse and manage every client gallery in your workspace." header_action_url=queue_url header_action_icon="bi-cloud-arrow-up" header_action_label="Upload Queue" %}
+  <form method="get" class="lpw-client-toolbar lpw-gallery-filters"><label class="lpw-client-search"><i class="bi bi-search"></i><span class="sr-only">Search galleries</span><input type="search" name="q" value="{{ gallery_query }}" placeholder="Search galleries or clients…"></label><label><span class="sr-only">Status</span><select name="status"><option value="">All statuses</option>{% for value,label in gallery_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button class="lpw-btn" type="submit"><i class="bi bi-funnel"></i>Apply</button>{% if gallery_query or selected_status %}<a class="lpw-client-clear" href="{% url 'photographer_workspace:all_galleries' %}">Clear</a>{% endif %}</form>
+  {% include "photographer_workspace/galleries/components/gallery_list.html" with gallery_records=galleries empty_title="No galleries found" empty_message="Create a gallery later or adjust your current filters." %}
+{% endblock %}

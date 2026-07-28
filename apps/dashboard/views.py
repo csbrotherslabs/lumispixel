@@ -15,10 +15,13 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
+from apps.galleries.models import Gallery
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
-    {"key": "galleries", "url_name": "galleries", "icon": "bi-images", "title": "Galleries", "description": "Organize, publish, and deliver photography collections.", "coming_soon": True, "planned": ["Gallery organization", "Publishing controls", "Client delivery"]},
+    {"key": "galleries", "url_name": "galleries", "icon": "bi-grid", "title": "Galleries Dashboard", "description": "Organize, publish, and deliver photography collections.", "coming_soon": False},
+    {"key": "all_galleries", "url_name": "all_galleries", "icon": "bi-images", "title": "All Galleries", "description": "Browse every photography collection.", "coming_soon": False},
+    {"key": "gallery_upload_queue", "url_name": "gallery_upload_queue", "icon": "bi-cloud-arrow-up", "title": "Upload Queue", "description": "Review gallery uploads and processing.", "coming_soon": False},
     {"key": "clients", "url_name": "clients", "icon": "bi-people", "title": "Clients", "description": "Manage client relationships, invitations, and gallery access.", "coming_soon": True, "planned": ["Client records", "Invitations", "Gallery access"]},
     {"key": "events", "url_name": "events", "icon": "bi-calendar-event", "title": "Events", "description": "Manage photography events and event-code photo discovery.", "coming_soon": True, "planned": ["Event setup", "Event codes", "Photo discovery"]},
     {"key": "ai", "url_name": "ai", "icon": "bi-stars", "title": "AI Workspace", "description": "Future home for culling, editing assistance, search, tagging, and face recognition.", "coming_soon": True, "planned": ["Face recognition", "Image quality scoring", "Duplicate detection", "Blur detection", "Semantic search", "Auto-tagging", "AI editing assistance", "Watermark generation"]},
@@ -47,7 +50,7 @@ MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
     {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
-    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries", "bi-images"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
+    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
     {"title": "Bookings", "icon": "bi-calendar-check", "items": [("calendar", "Calendar", "bi-calendar3"), ("bookings", "Bookings", "bi-calendar-check"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
     {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
@@ -497,6 +500,61 @@ def clients_workspace(request):
         "retained_query": retained.urlencode(),
     })
     return render(request, "photographer_workspace/clients.html", context)
+
+
+def _gallery_summary(galleries):
+    return [
+        {"label": "Total Galleries", "value": galleries.count(), "icon": "bi-images", "note": "All collections"},
+        {"label": "Published", "value": galleries.filter(status=Gallery.Status.PUBLISHED).count(), "icon": "bi-send-check", "note": "Live for clients"},
+        {"label": "In Progress", "value": galleries.filter(status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING, Gallery.Status.REVIEW]).count(), "icon": "bi-arrow-repeat", "note": "Uploading or review"},
+        {"label": "Total Images", "value": galleries.aggregate(total=Coalesce(Sum("image_count"), Value(0)))["total"], "icon": "bi-camera", "note": "Across all galleries"},
+    ]
+
+
+@photographer_workspace_required
+@require_GET
+def galleries_dashboard(request):
+    galleries = Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client")
+    context = _dashboard_context(request, "galleries", "Galleries Dashboard")
+    context.update({"gallery_summary": _gallery_summary(galleries), "recent_galleries": galleries[:6]})
+    return render(request, "photographer_workspace/galleries/dashboard.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def all_galleries(request):
+    galleries = Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client")
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    if query:
+        galleries = galleries.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(client__first_name__icontains=query) | Q(client__last_name__icontains=query))
+    if status in Gallery.Status.values:
+        galleries = galleries.filter(status=status)
+    context = _dashboard_context(request, "all_galleries", "All Galleries")
+    context.update({"galleries": galleries, "gallery_query": query, "selected_status": status, "gallery_status_choices": Gallery.Status.choices})
+    return render(request, "photographer_workspace/galleries/all.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_upload_queue(request):
+    galleries = Gallery.objects.for_photographer(request.user.photographer_profile).filter(
+        status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING]
+    ).select_related("client")
+    context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
+    context.update({"queued_galleries": galleries})
+    return render(request, "photographer_workspace/galleries/upload_queue.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_workspace(request, pk):
+    gallery = get_object_or_404(
+        Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client"), pk=pk
+    )
+    context = _dashboard_context(request, "all_galleries", gallery.name)
+    context.update({"gallery": gallery})
+    return render(request, "photographer_workspace/galleries/workspace_placeholder.html", context)
 
 
 @photographer_workspace_required

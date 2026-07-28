@@ -1,0 +1,8 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+  {% url 'photographer_workspace:all_galleries' as all_galleries_url %}
+  {% include "photographer_workspace/galleries/components/header.html" with page_description="Manage your collections, delivery progress, and client activity." header_action_url=all_galleries_url header_action_icon="bi-images" header_action_label="View All Galleries" %}
+  <section class="lpw-client-metrics" aria-label="Gallery summary">{% for metric in gallery_summary %}<article class="lpw-client-metric"><span class="lpw-widget-icon"><i class="bi {{ metric.icon }}"></i></span><div><p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small></div></article>{% endfor %}</section>
+  <div class="lpw-gallery-section-heading"><div><h2>Recent galleries</h2><p>Your newest gallery records.</p></div><a href="{% url 'photographer_workspace:all_galleries' %}">View all <i class="bi bi-arrow-right"></i></a></div>
+  {% include "photographer_workspace/galleries/components/gallery_list.html" with gallery_records=recent_galleries empty_title="No galleries yet" empty_message="Your first gallery will appear here when it is created." %}
+{% endblock %}
