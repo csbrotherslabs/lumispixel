@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
+from apps.clients.models import Client, ClientInvoice, Lead
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -71,8 +72,28 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] != "dashboard":
+            if module["key"] not in {"dashboard", "crm"}:
                 self.assertContains(response, "Back to Dashboard")
+
+    def test_crm_dashboard_uses_only_logged_in_photographers_records(self):
+        user, profile = self.make_photographer(True, email="crm@example.com", slug="crm")
+        other_user, other = self.make_photographer(True, email="other-crm@example.com", slug="other-crm")
+        Lead.objects.create(photographer=profile, first_name="Visible", status=Lead.Status.NEW)
+        Lead.objects.create(photographer=other, first_name="Private", status=Lead.Status.NEW)
+        client = Client.objects.create(photographer=profile, first_name="Taylor")
+        ClientInvoice.objects.create(photographer=profile, client=client, total="500.00", amount_paid="125.00", status=ClientInvoice.Status.SENT)
+        other_client = Client.objects.create(photographer=other, first_name="Other")
+        ClientInvoice.objects.create(photographer=other, client=other_client, total="900.00", status=ClientInvoice.Status.SENT)
+
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:crm"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Manage leads, clients, tasks, and upcoming activity.")
+        self.assertContains(response, "Visible")
+        self.assertNotContains(response, "Private")
+        self.assertContains(response, "USD 375.00")
+        self.assertContains(response, "?status=new")
 
     def test_active_navigation_item_is_correct(self):
         user, _ = self.make_photographer(True, email="active@example.com", slug="active")

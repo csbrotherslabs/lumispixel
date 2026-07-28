@@ -208,3 +208,62 @@ class ClientActivity(PhotographerOwnedModel):
 
     def __str__(self):
         return self.get_event_type_display()
+
+
+class ClientSession(PhotographerOwnedModel):
+    class Status(models.TextChoices):
+        TENTATIVE = "tentative", "Tentative"
+        CONFIRMED = "confirmed", "Confirmed"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="sessions")
+    session_type = models.CharField(max_length=120)
+    starts_at = models.DateTimeField()
+    location = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["starts_at"]
+        indexes = [models.Index(fields=["photographer", "status", "starts_at"], name="session_owner_status_start")]
+
+    def clean(self):
+        if self.client_id and self.photographer_id != self.client.photographer_id:
+            raise ValidationError({"client": "The client must belong to this photographer."})
+
+    def __str__(self):
+        return f"{self.client} — {self.session_type}"
+
+
+class ClientInvoice(PhotographerOwnedModel):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        PARTIALLY_PAID = "partially_paid", "Partially paid"
+        PAID = "paid", "Paid"
+        VOID = "void", "Void"
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="invoices")
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    due_date = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["due_date", "-created_at"]
+        indexes = [models.Index(fields=["photographer", "status", "due_date"], name="invoice_owner_status_due")]
+
+    def clean(self):
+        errors = {}
+        if self.client_id and self.photographer_id != self.client.photographer_id:
+            errors["client"] = "The client must belong to this photographer."
+        if self.amount_paid > self.total:
+            errors["amount_paid"] = "Amount paid cannot exceed the invoice total."
+        if errors:
+            raise ValidationError(errors)
+
+    @property
+    def balance(self):
+        return self.total - self.amount_paid
