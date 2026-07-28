@@ -85,7 +85,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(user)
 
         expected_pages = [
-            ("galleries", "Galleries Dashboard"),
+            ("galleries", "Galleries"),
             ("all_galleries", "All Galleries"),
             ("gallery_upload_queue", "Upload Queue"),
         ]
@@ -96,6 +96,15 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, f'href="{reverse(f"photographer_workspace:{url_name}")}" class="is-active"')
             self.assertContains(response, "Summer Portraits")
             self.assertNotContains(response, "Private Collection")
+
+        dashboard = self.client.get(reverse("photographer_workspace:galleries"))
+        self.assertContains(dashboard, "Manage gallery delivery, client activity, uploads, and storage.")
+        self.assertContains(dashboard, "Active Galleries")
+        self.assertContains(dashboard, "Ready to Deliver")
+        self.assertContains(dashboard, "Delivery Pipeline")
+        self.assertContains(dashboard, "Recent Client Activity")
+        self.assertContains(dashboard, "Storage Overview")
+        self.assertContains(dashboard, "Upcoming Deadlines")
 
         detail = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
         self.assertContains(detail, "Gallery Workspace is coming soon")
