@@ -256,3 +256,4 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Keep all Leads workspace action labels legible in the light CRM surface. */
 .lpw-main:has(.lpw-leads-header) .lpw-btn-primary{border-color:#d8cec7;background:#fff;color:var(--workspace-text-primary)}
 .lpw-main:has(.lpw-leads-header) .lpw-btn-primary:hover,.lpw-main:has(.lpw-leads-header) .lpw-btn-primary:focus-visible{border-color:#b9aaa0;background:#f7f2ed;color:var(--workspace-text-primary)}
+.lpw-lead-column h2{color:var(--workspace-text-primary)}
