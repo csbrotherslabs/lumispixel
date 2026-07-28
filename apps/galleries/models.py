@@ -1,4 +1,7 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
 
@@ -70,3 +73,50 @@ class Gallery(models.Model):
 
     def __str__(self):
         return self.name
+
+
+private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
+
+
+def gallery_photo_path(instance, filename):
+    """Keep originals in an owner/gallery namespace (served only by an authorized view)."""
+    return f"galleries/{instance.photographer_id}/{instance.gallery_id}/{filename}"
+
+
+class GalleryPhotoQuerySet(models.QuerySet):
+    def for_photographer(self, photographer):
+        return self.filter(photographer=photographer)
+
+
+class GalleryPhoto(models.Model):
+    """Storage-agnostic upload record for a gallery original."""
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        UPLOADING = "uploading", "Uploading"
+        PAUSED = "paused", "Paused"
+        PROCESSING = "processing", "Processing"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photos")
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_photos")
+    file = models.ImageField(storage=private_gallery_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
+    original_name = models.CharField(max_length=255)
+    file_size = models.PositiveBigIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.QUEUED)
+    is_cover = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=True)
+    error_message = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = GalleryPhotoQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["photographer", "status", "-created_at"], name="photo_owner_status_created")]
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Gallery must belong to this photographer."})

@@ -1,6 +1,0 @@
-{% extends "photographer_workspace/base.html" %}
-{% block workspace_content %}
-  {% url 'photographer_workspace:all_galleries' as all_url %}
-  {% include "photographer_workspace/galleries/components/header.html" with page_description="Gallery Workspace foundation" header_action_url=all_url header_action_icon="bi-arrow-left" header_action_label="All Galleries" %}
-  <section class="lpw-gallery-workspace-placeholder"><i class="bi bi-layout-wtf"></i><span class="lpw-client-status lpw-gallery-status--{{ gallery.status }}"><i></i>{{ gallery.get_status_display }}</span><h2>Gallery Workspace is coming soon</h2><p>The detail route for <strong>{{ gallery.name }}</strong> is ready. Photo management and delivery tools will be added in a future phase.</p></section>
-{% endblock %}
