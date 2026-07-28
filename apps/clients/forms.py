@@ -141,15 +141,15 @@ class CrmClientForm(forms.ModelForm):
     state_province = forms.CharField(required=False, max_length=100, label="State or province")
     postal_code = forms.CharField(required=False, max_length=20)
     country = forms.CharField(required=False, max_length=100)
-    client_type = forms.ChoiceField(required=False, choices=(("", "Select a client type"), ("individual", "Individual"), ("business", "Business"), ("organization", "Organization")))
+    client_type = forms.ChoiceField(required=False, choices=(("", "Select a client type"), *Client.ClientType.choices))
     lead_source = forms.ChoiceField(required=False, choices=(("", "Select a lead source"), ("referral", "Referral"), ("website", "Website"), ("social", "Social media"), ("event", "Event"), ("other", "Other")))
-    preferred_contact_method = forms.ChoiceField(required=False, choices=(("", "Select a contact method"), ("email", "Email"), ("phone", "Phone"), ("text", "Text message")))
+    preferred_contact_method = forms.ChoiceField(required=False, choices=(("", "Select a contact method"), *Client.ContactMethod.choices))
     tags_input = forms.CharField(required=False, label="Tags")
     notes = forms.CharField(required=False, max_length=2000, widget=forms.Textarea(attrs={"rows": 7}))
 
     class Meta:
         model = Client
-        fields = ("first_name", "last_name", "email", "phone", "company", "address", "birthday", "status")
+        fields = ("first_name", "last_name", "email", "phone", "company", "address", "birthday", "status", "client_type", "preferred_contact_method", "profile_photo")
         labels = {"address": "Street address"}
         widgets = {"birthday": forms.DateInput(attrs={"type": "date"}), "address": forms.TextInput()}
 
@@ -167,6 +167,10 @@ class CrmClientForm(forms.ModelForm):
         self.fields["last_name"].widget.attrs["autocomplete"] = "family-name"
         self.fields["email"].widget.attrs["autocomplete"] = "email"
         self.fields["phone"].widget.attrs["autocomplete"] = "tel"
+        self.fields["profile_photo"].widget.attrs.update({
+            "accept": "image/png,image/jpeg,image/webp",
+            "data-photo-input": "",
+        })
 
     def clean_tags_input(self):
         tags = [tag.strip() for tag in self.cleaned_data.get("tags_input", "").split(",") if tag.strip()]

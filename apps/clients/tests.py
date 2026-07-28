@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 
-from .models import Client, ClientActivity, ClientNote, ClientTask, Lead
+from .models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 
 
 class CrmModelTests(TestCase):
@@ -121,3 +121,83 @@ class CrmModelTests(TestCase):
             lead.full_clean()
 
         self.assertEqual(set(raised.exception.message_dict), {"estimated_value", "tags", "lost_reason"})
+
+    def test_client_fields_and_contact_validation(self):
+        linked_user = User.objects.create_user(email="client@example.com", password="test-pass")
+        client = Client(
+            photographer=self.owner,
+            user=linked_user,
+            first_name="Avery",
+            last_name="Morgan",
+            email="client@example.com",
+            company="Morgan Co",
+            birthday=timezone.localdate(),
+            address="1 Main Street",
+            client_type=Client.ClientType.BUSINESS,
+            preferred_contact_method=Client.ContactMethod.EMAIL,
+            tags=["commercial"],
+        )
+        client.full_clean()
+
+        client.email = ""
+        with self.assertRaises(ValidationError) as raised:
+            client.full_clean()
+        self.assertIn("preferred_contact_method", raised.exception.message_dict)
+
+        client.preferred_contact_method = ""
+        client.tags = [""]
+        with self.assertRaises(ValidationError) as raised:
+            client.full_clean()
+        self.assertIn("tags", raised.exception.message_dict)
+
+    def test_client_query_helpers_are_scoped(self):
+        now = timezone.now()
+        owned = Client.objects.create(photographer=self.owner, first_name="Owned")
+        inactive = Client.objects.create(
+            photographer=self.owner, first_name="Inactive", status=Client.Status.INACTIVE
+        )
+        private = Client.objects.create(photographer=self.other, first_name="Private")
+        owned_session = ClientSession.objects.create(
+            photographer=self.owner,
+            client=owned,
+            session_type="Portrait",
+            starts_at=now + timedelta(days=2),
+        )
+        ClientSession.objects.create(
+            photographer=self.other,
+            client=private,
+            session_type="Private",
+            starts_at=now + timedelta(days=1),
+        )
+        invoice = ClientInvoice.objects.create(
+            photographer=self.owner,
+            client=owned,
+            total=Decimal("500.00"),
+            amount_paid=Decimal("125.00"),
+            status=ClientInvoice.Status.PARTIALLY_PAID,
+        )
+        ClientInvoice.objects.create(
+            photographer=self.other,
+            client=private,
+            total=Decimal("900.00"),
+            status=ClientInvoice.Status.SENT,
+        )
+        activity = ClientActivity.objects.create(
+            photographer=self.owner,
+            client=owned,
+            event_type=ClientActivity.EventType.EMAIL_SENT,
+        )
+        ClientActivity.objects.create(
+            photographer=self.other,
+            client=private,
+            event_type=ClientActivity.EventType.EMAIL_SENT,
+        )
+
+        clients = Client.objects.for_user(self.owner_user)
+        self.assertEqual(list(clients.active()), [owned])
+        self.assertEqual(list(clients.upcoming_sessions(now)), [owned_session])
+        self.assertEqual(list(clients.outstanding_balances()), [invoice])
+        self.assertEqual(clients.outstanding_balances().get().balance_due, Decimal("375.00"))
+        self.assertEqual(list(clients.recent_activity()), [activity])
+        self.assertEqual(clients.total_and_monthly_counts(), {"total": 2, "monthly": 2})
+        self.assertNotIn(inactive, clients.active())

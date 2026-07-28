@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -52,6 +52,51 @@ class LeadQuerySet(PhotographerOwnedQuerySet):
     def conversion_rate(self):
         total = self.count()
         return (self.filter(status="booked").count() / total * 100) if total else 0.0
+
+
+class ClientQuerySet(PhotographerOwnedQuerySet):
+    """Client workspace queries which keep related records owner-isolated."""
+
+    def active(self):
+        return self.filter(status="active")
+
+    def upcoming_sessions(self, as_of=None):
+        as_of = as_of or timezone.now()
+        return ClientSession.objects.filter(
+            client__in=self,
+            photographer_id=F("client__photographer_id"),
+            starts_at__gte=as_of,
+        ).exclude(status=ClientSession.Status.CANCELLED)
+
+    def outstanding_balances(self):
+        balance = ExpressionWrapper(
+            F("total") - F("amount_paid"),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        )
+        return ClientInvoice.objects.filter(
+            client__in=self,
+            photographer_id=F("client__photographer_id"),
+        ).exclude(status__in=(ClientInvoice.Status.PAID, ClientInvoice.Status.VOID)).annotate(balance_due=balance)
+
+    def recent_activity(self, since=None):
+        activities = ClientActivity.objects.filter(
+            client__in=self,
+            photographer_id=F("client__photographer_id"),
+        )
+        return activities.filter(occurred_at__gte=since) if since else activities
+
+    def total_count(self):
+        return self.count()
+
+    def monthly_count(self, as_of=None):
+        as_of = as_of or timezone.localdate()
+        return self.filter(created_at__year=as_of.year, created_at__month=as_of.month).count()
+
+    def total_and_monthly_counts(self, as_of=None):
+        return {
+            "total": self.total_count(),
+            "monthly": self.monthly_count(as_of),
+        }
 
 
 class Lead(PhotographerOwnedModel):
@@ -147,6 +192,16 @@ class Client(PhotographerOwnedModel):
         INACTIVE = "inactive", "Inactive"
         ARCHIVED = "archived", "Archived"
 
+    class ClientType(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual"
+        BUSINESS = "business", "Business"
+        ORGANIZATION = "organization", "Organization"
+
+    class ContactMethod(models.TextChoices):
+        EMAIL = "email", "Email"
+        PHONE = "phone", "Phone"
+        TEXT = "text", "Text message"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -168,21 +223,43 @@ class Client(PhotographerOwnedModel):
     company = models.CharField(max_length=200, blank=True)
     address = models.TextField(blank=True)
     birthday = models.DateField(blank=True, null=True)
+    client_type = models.CharField(max_length=20, choices=ClientType.choices, blank=True)
+    preferred_contact_method = models.CharField(max_length=10, choices=ContactMethod.choices, blank=True)
     tags = models.JSONField(default=list, blank=True)
+    profile_photo = models.ImageField(upload_to="clients/profile_photos/%Y/%m/", blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ClientQuerySet.as_manager()
 
     class Meta:
         ordering = ["last_name", "first_name"]
         indexes = [
             models.Index(fields=["photographer", "status", "last_name"], name="client_owner_status_name"),
             models.Index(fields=["photographer", "email"], name="client_owner_email"),
+            models.Index(fields=["photographer", "-created_at"], name="client_owner_created"),
+            models.Index(fields=["photographer", "client_type"], name="client_owner_type"),
         ]
 
     def clean(self):
+        errors = {}
         if self.converted_lead_id and self.photographer_id != self.converted_lead.photographer_id:
-            raise ValidationError({"converted_lead": "The converted lead must belong to this photographer."})
+            errors["converted_lead"] = "The converted lead must belong to this photographer."
+        if not isinstance(self.tags, list) or any(not isinstance(tag, str) or not tag.strip() for tag in self.tags):
+            errors["tags"] = "Tags must be a list of non-empty strings."
+        elif len(self.tags) > 20 or any(len(tag) > 50 for tag in self.tags):
+            errors["tags"] = "Use at most 20 tags, each no longer than 50 characters."
+        if self.preferred_contact_method == self.ContactMethod.EMAIL and not self.email:
+            errors["preferred_contact_method"] = "An email address is required for email contact."
+        if self.preferred_contact_method in (self.ContactMethod.PHONE, self.ContactMethod.TEXT) and not self.phone:
+            errors["preferred_contact_method"] = "A phone number is required for phone or text contact."
+        if self.birthday and self.birthday > timezone.localdate():
+            errors["birthday"] = "Birthday cannot be in the future."
+        if self.profile_photo and self.profile_photo.size > 5 * 1024 * 1024:
+            errors["profile_photo"] = "Profile photos must be 5 MB or smaller."
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip()
