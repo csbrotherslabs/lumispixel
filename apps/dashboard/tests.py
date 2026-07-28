@@ -72,7 +72,7 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm"}:
+            if module["key"] not in {"dashboard", "crm", "leads"}:
                 self.assertContains(response, "Back to Dashboard")
 
     def test_crm_dashboard_uses_only_logged_in_photographers_records(self):
@@ -210,3 +210,35 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.logout()
         self.client.post(url)
         self.assertFalse(Client.objects.filter(converted_lead=lead).exists())
+
+    def test_leads_workspace_uses_scoped_real_data_and_metrics(self):
+        user, profile = self.make_photographer(True, email="pipeline@example.com", slug="pipeline")
+        _, other = self.make_photographer(True, email="other-pipeline@example.com", slug="other-pipeline")
+        Lead.objects.create(photographer=profile, first_name="Morgan", last_name="Ray", event_type="Wedding", estimated_value="2400", lead_source="Referral")
+        Lead.objects.create(photographer=profile, first_name="Casey", status=Lead.Status.BOOKED, estimated_value="1600")
+        Lead.objects.create(photographer=other, first_name="Private", estimated_value="9000")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:leads"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Track inquiries and move prospects toward booking.")
+        self.assertContains(response, "Morgan Ray")
+        self.assertNotContains(response, "Private")
+        self.assertContains(response, "USD 4,000")
+        self.assertContains(response, "50.0%")
+        self.assertContains(response, 'data-lead-view="board"')
+        self.assertContains(response, 'data-stage="proposal_sent"')
+
+    def test_lead_stage_and_bulk_updates_are_scoped(self):
+        user, profile = self.make_photographer(True, email="move@example.com", slug="move")
+        _, other = self.make_photographer(True, email="other-move@example.com", slug="other-move")
+        own = Lead.objects.create(photographer=profile, first_name="Move Me")
+        private = Lead.objects.create(photographer=other, first_name="Do Not Move")
+        self.client.force_login(user)
+        self.client.post(reverse("photographer_workspace:update_lead_status", args=[own.pk]), {"status": Lead.Status.CONTACTED, "next": reverse("photographer_workspace:leads")})
+        self.client.post(reverse("photographer_workspace:bulk_update_leads"), {"lead_ids": [own.pk, private.pk], "action": Lead.Status.CONSULTATION})
+        own.refresh_from_db()
+        private.refresh_from_db()
+        self.assertEqual(own.status, Lead.Status.CONSULTATION)
+        self.assertEqual(private.status, Lead.Status.NEW)

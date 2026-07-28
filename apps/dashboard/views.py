@@ -4,7 +4,8 @@ from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum, Value
+from django.core.paginator import Paginator
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -324,7 +325,72 @@ def update_lead_status(request, pk):
         lead.status = status
         lead.save(update_fields=["status", "updated_at"])
         messages.success(request, "Lead status updated.")
-    return redirect("photographer_workspace:crm")
+    destination = "photographer_workspace:leads" if request.POST.get("next") == reverse("photographer_workspace:leads") else "photographer_workspace:crm"
+    return redirect(destination)
+
+
+@photographer_workspace_required
+@require_GET
+def leads_workspace(request):
+    """Render the photographer-scoped lead pipeline in board or list form."""
+    profile = request.user.photographer_profile
+    leads = Lead.objects.for_photographer(profile).annotate(last_activity_at=Max("activities__occurred_at"))
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    source = request.GET.get("source", "").strip()
+    if query:
+        leads = leads.filter(
+            Q(first_name__icontains=query) | Q(last_name__icontains=query) |
+            Q(email__icontains=query) | Q(event_type__icontains=query)
+        )
+    if status in Lead.Status.values:
+        leads = leads.filter(status=status)
+    if source:
+        leads = leads.filter(lead_source=source)
+
+    allowed_sorts = {
+        "newest": "-created_at", "oldest": "created_at", "name": "first_name",
+        "event_date": F("event_date").asc(nulls_last=True),
+        "value_high": F("estimated_value").desc(nulls_last=True),
+        "value_low": F("estimated_value").asc(nulls_last=True),
+    }
+    sort = request.GET.get("sort", "newest")
+    leads = leads.order_by(allowed_sorts.get(sort, "-created_at"))
+    today = timezone.localdate()
+    all_leads = Lead.objects.for_photographer(profile)
+    booked = all_leads.filter(status=Lead.Status.BOOKED).count()
+    total = all_leads.count()
+    summary = [
+        {"label": "New Leads", "value": all_leads.filter(status=Lead.Status.NEW).count(), "icon": "bi-person-plus", "note": "Awaiting first contact"},
+        {"label": "Follow-ups Due", "value": all_leads.overdue_followups(today).count(), "icon": "bi-clock-history", "note": "Need your attention"},
+        {"label": "Pipeline Value", "value": f"{profile.default_currency} {all_leads.pipeline_value():,.0f}", "icon": "bi-cash-stack", "note": "Open and booked leads"},
+        {"label": "Conversion Rate", "value": f"{(booked / total * 100) if total else 0:.1f}%", "icon": "bi-graph-up-arrow", "note": "Leads moved to booked"},
+    ]
+    stages = [{"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
+               "leads": list(leads.filter(status=key)), "count": leads.filter(status=key).count()}
+              for key, label in Lead.Status.choices]
+    paginator = Paginator(leads, 10)
+    page = paginator.get_page(request.GET.get("page"))
+    sources = Lead.objects.for_photographer(profile).exclude(lead_source="").values_list("lead_source", flat=True).distinct().order_by("lead_source")
+    context = _dashboard_context(request, "leads", "Leads")
+    context.update({"lead_summary": summary, "lead_stages": stages, "lead_page": page,
+                    "lead_sources": sources, "lead_query": query, "selected_status": status,
+                    "selected_source": source, "selected_sort": sort, "today": today,
+                    "lead_status_choices": Lead.Status.choices})
+    return render(request, "photographer_workspace/leads.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def bulk_update_leads(request):
+    leads = Lead.objects.for_photographer(request.user.photographer_profile).filter(pk__in=request.POST.getlist("lead_ids"))
+    action = request.POST.get("action")
+    if action in Lead.Status.values:
+        updated = leads.update(status=action, updated_at=timezone.now())
+        messages.success(request, f"Updated {updated} lead{'s' if updated != 1 else ''}.")
+    else:
+        messages.error(request, "Choose a valid bulk action.")
+    return redirect("photographer_workspace:leads")
 
 
 @photographer_workspace_required
