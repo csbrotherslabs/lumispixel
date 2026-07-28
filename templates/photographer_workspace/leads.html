@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 <header class="lpw-leads-header">
-  <div class="lpw-leads-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right"></i><span>Clients</span><i class="bi bi-chevron-right"></i><strong>Leads</strong></nav><h1 id="workspace-page-title" class="lpw-leads-title">Leads</h1><p>Track inquiries and move prospects toward booking.</p></div>
+  <div class="lpw-leads-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right"></i><span>Clients</span><i class="bi bi-chevron-right"></i><strong>Leads</strong></nav><p>Track inquiries and move prospects toward booking.</p></div>
   <div class="lpw-leads-actions"><button class="lpw-btn" type="button" title="Import tools coming soon"><i class="bi bi-upload"></i>Import</button><button class="lpw-btn" type="button" onclick="window.print()"><i class="bi bi-download"></i>Export</button><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Add Lead</a></div>
 </header>
 <section class="lpw-lead-metrics" aria-label="Lead summary">
