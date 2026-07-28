@@ -374,6 +374,7 @@ def leads_workspace(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
     source = request.GET.get("source", "").strip()
+    event_type = request.GET.get("event_type", "").strip()
     if query:
         leads = leads.filter(
             Q(first_name__icontains=query) | Q(last_name__icontains=query) |
@@ -383,6 +384,8 @@ def leads_workspace(request):
         leads = leads.filter(status=status)
     if source:
         leads = leads.filter(lead_source=source)
+    if event_type:
+        leads = leads.filter(event_type=event_type)
 
     allowed_sorts = {
         "newest": "-created_at", "oldest": "created_at", "name": "first_name",
@@ -403,15 +406,25 @@ def leads_workspace(request):
         {"label": "Conversion Rate", "value": f"{(booked / total * 100) if total else 0:.1f}%", "icon": "bi-graph-up-arrow", "note": "Leads moved to booked"},
     ]
     stages = [{"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
-               "leads": list(leads.filter(status=key)), "count": leads.filter(status=key).count()}
+               "leads": list(leads.filter(status=key)), "count": leads.filter(status=key).count(),
+               "value": leads.filter(status=key).aggregate(total=Coalesce(Sum("estimated_value"), Value(Decimal("0")), output_field=DecimalField()))["total"]}
               for key, label in Lead.Status.choices]
     paginator = Paginator(leads, 10)
     page = paginator.get_page(request.GET.get("page"))
     sources = Lead.objects.for_photographer(profile).exclude(lead_source="").values_list("lead_source", flat=True).distinct().order_by("lead_source")
+    event_types = Lead.objects.for_photographer(profile).exclude(event_type="").values_list("event_type", flat=True).distinct().order_by("event_type")
+    tasks_due = ClientTask.objects.filter(photographer=profile, lead__isnull=False, status__in=[ClientTask.Status.OPEN, ClientTask.Status.IN_PROGRESS]).select_related("lead").order_by(F("due_date").asc(nulls_last=True))[:5]
+    recent_activity = ClientActivity.objects.filter(photographer=profile, lead__isnull=False).select_related("lead").order_by("-occurred_at")[:5]
+    source_rows = list(all_leads.exclude(lead_source="").values("lead_source").annotate(count=Count("id")).order_by("-count")[:5])
+    source_total = sum(row["count"] for row in source_rows)
+    for row in source_rows:
+        row["percent"] = round(row["count"] / source_total * 100) if source_total else 0
     context = _dashboard_context(request, "leads", "Leads")
     context.update({"lead_summary": summary, "lead_stages": stages, "lead_page": page,
                     "lead_sources": sources, "lead_query": query, "selected_status": status,
-                    "selected_source": source, "selected_sort": sort, "today": today,
+                    "selected_source": source, "selected_event_type": event_type, "event_types": event_types,
+                    "selected_sort": sort, "today": today, "tasks_due": tasks_due,
+                    "recent_activity": recent_activity, "source_rows": source_rows,
                     "lead_status_choices": Lead.Status.choices})
     return render(request, "photographer_workspace/leads.html", context)
 
