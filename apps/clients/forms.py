@@ -94,10 +94,11 @@ class LeadForm(forms.ModelForm):
 
     class Meta:
         model = Lead
-        fields = ("first_name", "last_name", "email", "phone", "event_type", "event_date", "lead_source", "estimated_value", "notes")
+        fields = ("first_name", "last_name", "email", "phone", "event_type", "event_date", "lead_source", "estimated_value", "status", "next_follow_up", "notes")
         labels = {"estimated_value": "Estimated value"}
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
+            "next_follow_up": forms.DateInput(attrs={"type": "date"}),
             "estimated_value": forms.NumberInput(attrs={"min": "0", "step": "0.01"}),
             "notes": forms.Textarea(attrs={"rows": 7}),
         }
@@ -119,6 +120,9 @@ class LeadForm(forms.ModelForm):
                 field.widget.attrs.setdefault("placeholder", placeholders[name])
             field.widget.attrs.setdefault("autocomplete", "off")
         self.fields["lead_source"].widget.attrs["class"] = "form-select"
+        self.fields["status"].widget.attrs["class"] = "form-select"
+        self.fields["status"].required = False
+        self.fields["status"].initial = self.instance.status or Lead.Status.NEW
         self.fields["first_name"].widget.attrs["autocomplete"] = "given-name"
         self.fields["last_name"].widget.attrs["autocomplete"] = "family-name"
         self.fields["email"].widget.attrs["autocomplete"] = "email"
@@ -126,6 +130,7 @@ class LeadForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
+        data["status"] = data.get("status") or Lead.Status.NEW
         if not data.get("email") and not data.get("phone"):
             raise forms.ValidationError("Provide an email address or phone number.")
         return data

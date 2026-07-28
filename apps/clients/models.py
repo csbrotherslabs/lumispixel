@@ -77,6 +77,7 @@ class Lead(PhotographerOwnedModel):
     tags = models.JSONField(default=list, blank=True)
     last_contacted_at = models.DateTimeField(blank=True, null=True)
     notes = models.TextField(blank=True)
+    archived_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -260,6 +261,12 @@ class ClientActivity(PhotographerOwnedModel):
         INVOICE_SENT = "invoice_sent", "Invoice sent"
         PAYMENT_RECEIVED = "payment_received", "Payment received"
         GALLERY_DELIVERED = "gallery_delivered", "Gallery delivered"
+        LEAD_UPDATED = "lead_updated", "Lead updated"
+        STAGE_CHANGED = "stage_changed", "Stage changed"
+        FOLLOW_UP_CREATED = "follow_up_created", "Follow-up created"
+        LEAD_BOOKED = "lead_booked", "Lead booked"
+        LEAD_LOST = "lead_lost", "Lead lost"
+        LEAD_ARCHIVED = "lead_archived", "Lead archived"
 
     event_type = models.CharField(max_length=32, choices=EventType.choices)
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
