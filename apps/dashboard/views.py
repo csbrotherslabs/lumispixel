@@ -336,10 +336,10 @@ def convert_lead(request, pk):
         if Client.objects.filter(converted_lead=lead).exists():
             messages.error(request, "This lead has already been converted.")
             return redirect("photographer_workspace:crm")
-        client = Client.objects.create(photographer=profile, converted_lead=lead, first_name=lead.first_name,
-                                       last_name=lead.last_name, email=lead.email, phone=lead.phone)
-        lead.status = Lead.Status.BOOKED
-        lead.save(update_fields=["status", "updated_at"])
+        client, created = lead.convert_to_client()
+        if not created:
+            messages.error(request, "This lead has already been converted.")
+            return redirect("photographer_workspace:crm")
         ClientActivity.objects.create(photographer=profile, lead=lead, client=client,
                                       event_type=ClientActivity.EventType.LEAD_CONVERTED,
                                       description=f"Lead {lead} converted to a client.")

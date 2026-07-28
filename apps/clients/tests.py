@@ -1,5 +1,9 @@
 from django.core.exceptions import ValidationError
+from datetime import timedelta
+from decimal import Decimal
+
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 
@@ -50,3 +54,70 @@ class CrmModelTests(TestCase):
     def test_task_requires_a_related_lead_or_client(self):
         with self.assertRaises(ValidationError):
             ClientTask(photographer=self.owner, title="Unrelated").full_clean()
+
+    def test_lead_pipeline_helpers_are_scoped_and_include_empty_stages(self):
+        today = timezone.localdate()
+        overdue = Lead.objects.create(
+            photographer=self.owner,
+            first_name="Overdue",
+            estimated_value=Decimal("1200.00"),
+            next_follow_up=today - timedelta(days=1),
+        )
+        Lead.objects.create(
+            photographer=self.owner,
+            first_name="Booked",
+            status=Lead.Status.BOOKED,
+            estimated_value=Decimal("800.00"),
+            next_follow_up=today - timedelta(days=1),
+        )
+        Lead.objects.create(
+            photographer=self.owner,
+            first_name="Lost",
+            status=Lead.Status.LOST,
+            estimated_value=Decimal("900.00"),
+        )
+        Lead.objects.create(
+            photographer=self.other,
+            first_name="Private",
+            estimated_value=Decimal("5000.00"),
+            next_follow_up=today - timedelta(days=1),
+        )
+
+        leads = Lead.objects.for_photographer(self.owner)
+        self.assertEqual(list(leads.overdue_followups()), [overdue])
+        self.assertEqual(leads.pipeline_value(), Decimal("2000.00"))
+        self.assertEqual(leads.stage_counts()[Lead.Status.NEW], 1)
+        self.assertEqual(leads.stage_counts()[Lead.Status.CONTACTED], 0)
+        self.assertAlmostEqual(leads.conversion_rate(), 100 / 3)
+
+    def test_safe_conversion_is_idempotent_and_preserves_owner_and_tags(self):
+        lead = Lead.objects.create(
+            photographer=self.owner,
+            first_name="Ada",
+            last_name="Lovelace",
+            tags=["wedding", "priority"],
+        )
+
+        client, created = lead.convert_to_client()
+        duplicate, duplicate_created = lead.convert_to_client()
+
+        self.assertTrue(created)
+        self.assertFalse(duplicate_created)
+        self.assertEqual(client, duplicate)
+        self.assertEqual(client.photographer, self.owner)
+        self.assertEqual(client.tags, lead.tags)
+        self.assertEqual(Lead.objects.get(pk=lead.pk).status, Lead.Status.BOOKED)
+
+    def test_lead_validation_rejects_invalid_value_tags_and_lost_reason(self):
+        lead = Lead(
+            photographer=self.owner,
+            first_name="Invalid",
+            estimated_value=Decimal("-1.00"),
+            tags="not-a-list",
+            lost_reason="No response",
+        )
+
+        with self.assertRaises(ValidationError) as raised:
+            lead.full_clean()
+
+        self.assertEqual(set(raised.exception.message_dict), {"estimated_value", "tags", "lost_reason"})
