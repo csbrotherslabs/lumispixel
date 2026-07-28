@@ -2,12 +2,15 @@ from decimal import Decimal
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum, Value
+from django.db.models.functions import Coalesce
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientSession, ClientTask, Lead
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -200,6 +203,53 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
 @require_GET
 def photographer_dashboard(request):
     return render(request, "photographer_workspace/dashboard.html", _dashboard_context(request))
+
+
+@photographer_workspace_required
+@require_GET
+def clients_crm(request):
+    profile = request.user.photographer_profile
+    today = timezone.localdate()
+    now = timezone.now()
+    leads = Lead.objects.for_photographer(profile)
+    clients = Client.objects.for_photographer(profile)
+    pipeline_counts = {row["status"]: row["count"] for row in leads.values("status").annotate(count=Count("id"))}
+    pipeline = [
+        {"key": key, "label": label, "count": pipeline_counts.get(key, 0),
+         "url": f"{reverse('photographer_workspace:leads')}?status={key}"}
+        for key, label in Lead.Status.choices
+    ]
+    balance_expression = ExpressionWrapper(
+        F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+    outstanding = ClientInvoice.objects.for_photographer(profile).exclude(
+        status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]
+    ).aggregate(total=Coalesce(Sum(balance_expression), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    sessions = ClientSession.objects.for_photographer(profile).filter(starts_at__gte=now).exclude(
+        status=ClientSession.Status.CANCELLED
+    ).select_related("client")
+    metrics = [
+        ("Total Leads", leads.count(), "bi-person-plus"),
+        ("Active Clients", clients.filter(status=Client.Status.ACTIVE).count(), "bi-people"),
+        ("New Inquiries", leads.filter(created_at__date__gte=today - timezone.timedelta(days=30)).count(), "bi-envelope-open"),
+        ("Awaiting Response", leads.filter(status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]).count(), "bi-reply"),
+        ("Upcoming Sessions", sessions.count(), "bi-calendar-event"),
+        ("Outstanding Balance", f"{profile.default_currency} {outstanding:,.2f}", "bi-wallet2"),
+    ]
+    context = _dashboard_context(request, "crm", "Clients")
+    context.update({
+        "crm_metrics": [{"label": label, "value": value, "icon": icon} for label, value, icon in metrics],
+        "pipeline": pipeline,
+        "recent_leads": leads.order_by("-created_at")[:8],
+        "upcoming_sessions": sessions.order_by("starts_at")[:6],
+        "tasks": ClientTask.objects.for_photographer(profile).exclude(
+            status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]
+        ).select_related("client", "lead").order_by(F("due_date").asc(nulls_last=True), "-created_at")[:7],
+        "recent_activity": ClientActivity.objects.for_photographer(profile).select_related(
+            "client", "lead"
+        ).order_by("-occurred_at")[:8],
+    })
+    return render(request, "photographer_workspace/clients_crm.html", context)
 
 
 @photographer_workspace_required

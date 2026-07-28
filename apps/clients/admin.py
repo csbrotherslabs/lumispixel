@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Client, ClientActivity, ClientNote, ClientTask, Lead
+from .models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 
 
 class PhotographerOwnedAdmin(admin.ModelAdmin):
@@ -50,3 +50,17 @@ class ClientActivityAdmin(PhotographerOwnedAdmin):
     list_filter = ("event_type",)
     search_fields = ("description", "client__first_name", "client__last_name", "lead__first_name", "lead__last_name")
     date_hierarchy = "occurred_at"
+
+
+@admin.register(ClientSession)
+class ClientSessionAdmin(PhotographerOwnedAdmin):
+    list_display = ("client", "session_type", "starts_at", "location", "status", "photographer")
+    list_filter = ("status", "session_type")
+    search_fields = ("client__first_name", "client__last_name", "location")
+
+
+@admin.register(ClientInvoice)
+class ClientInvoiceAdmin(PhotographerOwnedAdmin):
+    list_display = ("client", "total", "amount_paid", "due_date", "status", "photographer")
+    list_filter = ("status",)
+    search_fields = ("client__first_name", "client__last_name")
