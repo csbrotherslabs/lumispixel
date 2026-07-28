@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 
 class PhotographerOwnedQuerySet(models.QuerySet):
@@ -26,6 +29,31 @@ class PhotographerOwnedModel(models.Model):
         abstract = True
 
 
+class LeadQuerySet(PhotographerOwnedQuerySet):
+    """Database-level lead metrics that retain any existing workspace scope."""
+
+    def overdue_followups(self, as_of=None):
+        as_of = as_of or timezone.localdate()
+        return self.filter(next_follow_up__lt=as_of).exclude(status__in=("booked", "lost"))
+
+    def pipeline_value(self):
+        return self.exclude(status="lost").aggregate(
+            total=Coalesce(
+                Sum("estimated_value"),
+                Value(0),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        )["total"]
+
+    def stage_counts(self):
+        counts = {row["status"]: row["count"] for row in self.values("status").annotate(count=Count("pk"))}
+        return {value: counts.get(value, 0) for value, _label in Lead.Status.choices}
+
+    def conversion_rate(self):
+        total = self.count()
+        return (self.filter(status="booked").count() / total * 100) if total else 0.0
+
+
 class Lead(PhotographerOwnedModel):
     class Status(models.TextChoices):
         NEW = "new", "New"
@@ -44,10 +72,15 @@ class Lead(PhotographerOwnedModel):
     lead_source = models.CharField(max_length=100, blank=True)
     estimated_value = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
-    last_contacted_date = models.DateField(blank=True, null=True)
+    next_follow_up = models.DateField(blank=True, null=True)
+    lost_reason = models.CharField(max_length=255, blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    last_contacted_at = models.DateTimeField(blank=True, null=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = LeadQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -55,7 +88,53 @@ class Lead(PhotographerOwnedModel):
             models.Index(fields=["photographer", "status", "-created_at"], name="lead_owner_status_created"),
             models.Index(fields=["photographer", "event_date"], name="lead_owner_event_date"),
             models.Index(fields=["photographer", "email"], name="lead_owner_email"),
+            models.Index(fields=["photographer", "next_follow_up"], name="lead_owner_followup"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(estimated_value__gte=0) | Q(estimated_value__isnull=True),
+                name="lead_estimated_value_nonnegative",
+            ),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.estimated_value is not None and self.estimated_value < 0:
+            errors["estimated_value"] = "Estimated value cannot be negative."
+        if self.lost_reason and self.status != self.Status.LOST:
+            errors["lost_reason"] = "A lost reason can only be set for a lost lead."
+        tags_are_valid_list = isinstance(self.tags, list)
+        if not tags_are_valid_list or any(not isinstance(tag, str) or not tag.strip() for tag in self.tags):
+            errors["tags"] = "Tags must be a list of non-empty strings."
+        elif len(self.tags) > 20 or any(len(tag) > 50 for tag in self.tags):
+            errors["tags"] = "Use at most 20 tags, each no longer than 50 characters."
+        if errors:
+            raise ValidationError(errors)
+
+    def convert_to_client(self):
+        """Atomically convert this lead once, without crossing workspace boundaries."""
+        if not self.pk:
+            raise ValidationError("Save the lead before converting it.")
+        with transaction.atomic():
+            lead = type(self).objects.select_for_update().get(pk=self.pk, photographer=self.photographer)
+            client, created = Client.objects.get_or_create(
+                converted_lead=lead,
+                defaults={
+                    "photographer": lead.photographer,
+                    "first_name": lead.first_name,
+                    "last_name": lead.last_name,
+                    "email": lead.email,
+                    "phone": lead.phone,
+                    "tags": list(lead.tags),
+                },
+            )
+            if client.photographer_id != lead.photographer_id:
+                raise ValidationError("The converted client must belong to the same photographer.")
+            if lead.status != self.Status.BOOKED:
+                lead.status = self.Status.BOOKED
+                lead.save(update_fields=["status", "updated_at"])
+            self.status = lead.status
+            return client, created
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip()

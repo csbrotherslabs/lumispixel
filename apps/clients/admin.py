@@ -11,17 +11,22 @@ class PhotographerOwnedAdmin(admin.ModelAdmin):
         return queryset.for_user(request.user)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser and db_field.name == "photographer":
-            kwargs["queryset"] = db_field.remote_field.model.objects.filter(user=request.user)
+        if not request.user.is_superuser:
+            related_model = db_field.remote_field.model
+            if db_field.name == "photographer":
+                kwargs["queryset"] = related_model.objects.filter(user=request.user)
+            elif issubclass(related_model, (Lead, Client)):
+                kwargs["queryset"] = related_model.objects.for_user(request.user)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(Lead)
 class LeadAdmin(PhotographerOwnedAdmin):
-    list_display = ("first_name", "last_name", "email", "event_type", "status", "event_date", "photographer")
+    list_display = ("first_name", "last_name", "email", "event_type", "status", "event_date", "next_follow_up", "photographer")
     list_filter = ("status", "event_type", "lead_source")
     search_fields = ("first_name", "last_name", "email", "phone")
     date_hierarchy = "created_at"
+    readonly_fields = ("created_at", "updated_at", "last_contacted_at")
 
 
 @admin.register(Client)
