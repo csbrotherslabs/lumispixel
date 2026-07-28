@@ -1,9 +1,10 @@
 from django.core.management import call_command
 from django.test import Client as TestClient, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientTask, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -92,6 +93,45 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertNotContains(response, "Private Record")
         self.assertContains(response, 'data-client-view="list"')
         self.assertContains(response, 'data-client-view="grid"')
+
+    def test_client_detail_actions_tabs_alerts_and_isolation(self):
+        user, profile = self.make_photographer(True, email="detail@example.com", slug="detail")
+        _, other = self.make_photographer(True, email="private-detail@example.com", slug="private-detail")
+        client = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone", email="avery@example.com", tags=["VIP"], preferred_contact_method=Client.ContactMethod.EMAIL)
+        private = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        ClientInvoice.objects.create(photographer=profile, client=client, total="500", amount_paid="100", status=ClientInvoice.Status.SENT, due_date="2020-01-01")
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", starts_at=timezone.now() + timezone.timedelta(days=2), status=ClientSession.Status.CONFIRMED)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]))
+        self.assertContains(response, "Contact details")
+        self.assertContains(response, "Outstanding balance")
+        self.assertContains(response, "Overdue invoices")
+        self.assertContains(response, "Unsigned contracts")
+        self.assertContains(response, "Galleries awaiting delivery")
+        self.assertContains(response, "USD 400.00")
+        self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[private.pk])).status_code, 404)
+
+        self.client.post(reverse("photographer_workspace:add_client_note", args=[client.pk]), {"content": "Prefers mornings"})
+        self.client.post(reverse("photographer_workspace:add_client_task", args=[client.pk]), {"title": "Send guide", "priority": "high"})
+        self.assertTrue(ClientNote.objects.filter(client=client, content="Prefers mornings").exists())
+        self.assertTrue(ClientTask.objects.filter(client=client, title="Send guide").exists())
+        self.client.post(reverse("photographer_workspace:client_archive_restore", args=[client.pk]))
+        client.refresh_from_db()
+        self.assertEqual(client.status, Client.Status.ARCHIVED)
+        self.client.post(reverse("photographer_workspace:client_archive_restore", args=[client.pk]))
+        client.refresh_from_db()
+        self.assertEqual(client.status, Client.Status.ACTIVE)
+        self.assertTrue(ClientActivity.objects.filter(client=client, event_type=ClientActivity.EventType.CLIENT_RESTORED).exists())
+
+    def test_client_mutations_require_csrf(self):
+        user, profile = self.make_photographer(True, email="client-csrf@example.com", slug="client-csrf")
+        client = Client.objects.create(photographer=profile, first_name="Protected", email="protected@example.com")
+        csrf_client = TestClient(enforce_csrf_checks=True)
+        csrf_client.force_login(user)
+        self.assertEqual(csrf_client.post(reverse("photographer_workspace:client_archive_restore", args=[client.pk])).status_code, 403)
+        client.refresh_from_db()
+        self.assertEqual(client.status, Client.Status.ACTIVE)
 
     def test_crm_dashboard_uses_only_logged_in_photographers_records(self):
         user, profile = self.make_photographer(True, email="crm@example.com", slug="crm")
