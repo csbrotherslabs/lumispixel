@@ -110,6 +110,35 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(detail, "Gallery Workspace is coming soon")
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
 
+    def test_gallery_create_edit_filters_and_bulk_actions(self):
+        user, profile = self.make_photographer(True, email="gallery-crud@example.com", slug="gallery-crud")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole")
+        self.client.force_login(user)
+
+        create = self.client.post(reverse("photographer_workspace:create_gallery"), {
+            "name": "Maya & Rowan", "client": client.pk, "event_date": "2026-08-12",
+            "description": "A summer celebration", "status": Gallery.Status.DRAFT,
+            "visibility": Gallery.Visibility.PASSWORD, "expiration_date": "2026-10-01",
+        })
+        gallery = Gallery.objects.get(name="Maya & Rowan")
+        self.assertRedirects(create, reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
+        self.assertEqual(gallery.slug, "maya-rowan")
+        self.assertIsNotNone(gallery.expires_at)
+
+        filtered = self.client.get(reverse("photographer_workspace:all_galleries"), {"q": "Maya", "client": client.pk, "status": "draft"})
+        self.assertContains(filtered, "Maya &amp; Rowan")
+        self.assertContains(filtered, 'data-gallery-view="grid"')
+        self.assertContains(filtered, 'data-gallery-view="list"')
+
+        self.client.post(reverse("photographer_workspace:gallery_actions"), {"gallery_ids": [gallery.pk], "action": "publish"})
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.PUBLISHED)
+        self.assertIsNotNone(gallery.published_at)
+
+        self.client.post(reverse("photographer_workspace:gallery_actions"), {"gallery_ids": [gallery.pk], "action": "archive"})
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
+
     def test_clients_workspace_uses_scoped_data_and_directory_controls(self):
         user, profile = self.make_photographer(True, email="directory@example.com", slug="directory")
         _, other = self.make_photographer(True, email="other-directory@example.com", slug="other-directory")

@@ -10,11 +10,13 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
+from apps.galleries.forms import GalleryForm
 from apps.galleries.models import Gallery
 
 WORKSPACE_MODULES = [
@@ -561,19 +563,128 @@ def galleries_dashboard(request):
     return render(request, "photographer_workspace/galleries/dashboard.html", context)
 
 
+def _unique_gallery_slug(profile, name, exclude_pk=None):
+    base = slugify(name)[:200] or "gallery"
+    slug, suffix = base, 2
+    matches = Gallery.objects.for_photographer(profile)
+    if exclude_pk:
+        matches = matches.exclude(pk=exclude_pk)
+    while matches.filter(slug=slug).exists():
+        slug = f"{base[:210-len(str(suffix))]}-{suffix}"
+        suffix += 1
+    return slug
+
+
 @photographer_workspace_required
 @require_GET
 def all_galleries(request):
-    galleries = Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client")
+    profile = request.user.photographer_profile
+    all_records = Gallery.objects.for_photographer(profile).select_related("client")
+    galleries = all_records
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
+    client = request.GET.get("client", "").strip()
+    event_date = request.GET.get("event_date", "").strip()
+    sort = request.GET.get("sort", "updated").strip()
     if query:
         galleries = galleries.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(client__first_name__icontains=query) | Q(client__last_name__icontains=query))
     if status in Gallery.Status.values:
         galleries = galleries.filter(status=status)
+    if client.isdigit():
+        galleries = galleries.filter(client_id=client)
+    if event_date:
+        galleries = galleries.filter(event_date=event_date)
+    ordering = {"updated": "-updated_at", "newest": "-created_at", "name": "name", "event_soon": "event_date", "images": "-image_count"}
+    galleries = galleries.order_by(ordering.get(sort, "-updated_at"))
+    paginator = Paginator(galleries, 12)
+    page = paginator.get_page(request.GET.get("page"))
+    retained = request.GET.copy()
+    retained.pop("page", None)
+    summary = [
+        {"label": "All Galleries", "value": all_records.count(), "status": ""},
+        {"label": "Draft", "value": all_records.filter(status=Gallery.Status.DRAFT).count(), "status": Gallery.Status.DRAFT},
+        {"label": "Processing", "value": all_records.filter(status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING]).count(), "status": Gallery.Status.PROCESSING},
+        {"label": "Ready", "value": all_records.filter(status=Gallery.Status.READY).count(), "status": Gallery.Status.READY},
+        {"label": "Published", "value": all_records.filter(status=Gallery.Status.PUBLISHED).count(), "status": Gallery.Status.PUBLISHED},
+    ]
     context = _dashboard_context(request, "all_galleries", "All Galleries")
-    context.update({"galleries": galleries, "gallery_query": query, "selected_status": status, "gallery_status_choices": Gallery.Status.choices})
+    context.update({"gallery_page": page, "gallery_query": query, "selected_status": status,
+        "selected_client": client, "selected_event_date": event_date, "selected_sort": sort,
+        "gallery_status_choices": Gallery.Status.choices, "gallery_clients": Client.objects.for_photographer(profile).order_by("first_name", "last_name"),
+        "gallery_summary_strip": summary, "retained_query": retained.urlencode(), "has_filters": any([query, status, client, event_date])})
     return render(request, "photographer_workspace/galleries/all.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def create_gallery(request):
+    profile = request.user.photographer_profile
+    form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile)
+    if request.method == "POST" and form.is_valid():
+        gallery = form.save(commit=False)
+        gallery.photographer = profile
+        gallery.slug = _unique_gallery_slug(profile, gallery.name)
+        gallery.full_clean()
+        gallery.save()
+        messages.success(request, "Gallery created. Your workspace is ready.")
+        return redirect("photographer_workspace:gallery_workspace", pk=gallery.pk)
+    context = _dashboard_context(request, "all_galleries", "Create Gallery")
+    context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the essentials now—you can add photos and delivery settings next.", "submit_label": "Create Gallery"})
+    return render(request, "photographer_workspace/galleries/form.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_gallery(request, pk):
+    profile = request.user.photographer_profile
+    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
+    form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery, photographer=profile)
+    if request.method == "POST" and form.is_valid():
+        gallery = form.save(commit=False)
+        gallery.slug = _unique_gallery_slug(profile, gallery.name, gallery.pk)
+        gallery.full_clean()
+        gallery.save()
+        messages.success(request, "Gallery updated.")
+        return redirect("photographer_workspace:all_galleries")
+    context = _dashboard_context(request, "all_galleries", "Edit Gallery")
+    context.update({"form": form, "gallery": gallery, "form_title": "Edit Gallery", "form_subtitle": "Update gallery details, access, and availability.", "submit_label": "Save Changes"})
+    return render(request, "photographer_workspace/galleries/form.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_actions(request):
+    profile = request.user.photographer_profile
+    ids = request.POST.getlist("gallery_ids")
+    records = Gallery.objects.for_photographer(profile).filter(pk__in=ids)
+    action = request.POST.get("action")
+    if not ids:
+        messages.error(request, "Select at least one gallery.")
+    elif action == "delete":
+        count = records.count()
+        records.delete()
+        messages.success(request, f"Deleted {count} {'gallery' if count == 1 else 'galleries'}.")
+    elif action == "archive":
+        records.update(status=Gallery.Status.ARCHIVED)
+        messages.success(request, "Selected galleries archived.")
+    elif action == "publish":
+        records.update(status=Gallery.Status.PUBLISHED, published_at=timezone.now())
+        messages.success(request, "Selected galleries published.")
+    elif action == "status" and request.POST.get("status") in Gallery.Status.values:
+        records.update(status=request.POST["status"])
+        messages.success(request, "Gallery status updated.")
+    elif action == "duplicate" and len(ids) == 1:
+        original = records.first()
+        original.pk = None
+        original.name = f"{original.name} Copy"
+        original.slug = _unique_gallery_slug(profile, original.name)
+        original.status = Gallery.Status.DRAFT
+        original.published_at = None
+        original.save()
+        messages.success(request, "Gallery duplicated as a draft.")
+    else:
+        messages.error(request, "Choose a valid gallery action.")
+    return redirect("photographer_workspace:all_galleries")
 
 
 @photographer_workspace_required

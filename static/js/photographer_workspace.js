@@ -161,6 +161,55 @@
     });
   }
 
+  const galleryViewButtons = document.querySelectorAll('[data-gallery-view]');
+  const galleryPanels = document.querySelectorAll('[data-gallery-panel]');
+  function setGalleryView(view) {
+    galleryViewButtons.forEach(function (button) { const active = button.dataset.galleryView === view; button.classList.toggle('is-active', active); button.setAttribute('aria-pressed', String(active)); });
+    galleryPanels.forEach(function (panel) { panel.hidden = panel.dataset.galleryPanel !== view; });
+    window.localStorage.setItem('lpw-gallery-view', view);
+  }
+  if (galleryViewButtons.length) {
+    setGalleryView(window.localStorage.getItem('lpw-gallery-view') || 'grid');
+    galleryViewButtons.forEach(function (button) { button.addEventListener('click', function () { setGalleryView(button.dataset.galleryView); }); });
+  }
+
+  const galleryChecks = Array.from(document.querySelectorAll('[data-gallery-check]'));
+  const galleryBulkBar = document.querySelector('[data-gallery-bulk-bar]');
+  function syncGallerySelection(source) {
+    if (source) document.querySelectorAll('[data-gallery-check][value="' + source.value + '"]').forEach(function (box) { box.checked = source.checked; });
+    const selected = new Set(galleryChecks.filter(function (box) { return box.checked; }).map(function (box) { return box.value; }));
+    if (galleryBulkBar) galleryBulkBar.hidden = selected.size === 0;
+    document.querySelectorAll('[data-gallery-count]').forEach(function (count) { count.textContent = selected.size; });
+  }
+  galleryChecks.forEach(function (box) { box.addEventListener('change', function () { syncGallerySelection(box); }); });
+  document.querySelectorAll('[data-gallery-select-all]').forEach(function (all) { all.addEventListener('change', function () { galleryChecks.forEach(function (box) { box.checked = all.checked; }); syncGallerySelection(); }); });
+  document.querySelectorAll('[data-single-gallery]').forEach(function (button) { button.addEventListener('click', function () { galleryChecks.forEach(function (box) { box.checked = box.value === button.dataset.singleGallery; }); }); });
+
+  const galleryModal = document.querySelector('[data-gallery-modal]');
+  function openGalleryModal(action, id) {
+    if (!galleryModal) return;
+    galleryModal.querySelector('[data-modal-title]').textContent = action === 'delete' ? 'Delete selected galleries?' : 'Archive selected galleries?';
+    galleryModal.querySelector('[data-modal-copy]').textContent = action === 'delete' ? 'This action cannot be undone. Gallery records will be permanently removed.' : 'Archived galleries leave your active workflow, but can be restored later.';
+    const submit = galleryModal.querySelector('[data-modal-submit]'); submit.value = action; submit.textContent = action === 'delete' ? 'Delete' : 'Archive'; submit.classList.toggle('lpw-btn-danger', action === 'delete');
+    if (id) { galleryChecks.forEach(function (box) { box.checked = box.value === id; }); syncGallerySelection(); }
+    galleryModal.showModal();
+  }
+  document.querySelectorAll('[data-gallery-confirm]').forEach(function (button) { button.addEventListener('click', function () { openGalleryModal(button.dataset.galleryConfirm); }); });
+  document.querySelectorAll('[data-card-confirm]').forEach(function (button) { button.addEventListener('click', function () { openGalleryModal(button.dataset.cardConfirm, button.dataset.galleryId); }); });
+  const modalCancel = document.querySelector('[data-modal-cancel]'); if (modalCancel) modalCancel.addEventListener('click', function () { galleryModal.close(); });
+  document.querySelectorAll('[data-copy-link]').forEach(function (button) { button.addEventListener('click', function () { navigator.clipboard.writeText(new URL(button.dataset.copyLink, window.location.origin).href); button.innerHTML = '<i class="bi bi-check2"></i>Link copied'; }); });
+
+  const coverDrop = document.querySelector('[data-cover-drop]');
+  const coverInput = document.querySelector('[data-cover-input]');
+  if (coverDrop && coverInput) {
+    const preview = coverDrop.querySelector('[data-cover-preview]'); const prompt = coverDrop.querySelector('[data-cover-prompt]');
+    function previewCover(file) { if (!file || !file.type.startsWith('image/')) return; preview.src = URL.createObjectURL(file); preview.hidden = false; prompt.hidden = true; }
+    coverInput.addEventListener('change', function () { previewCover(coverInput.files[0]); });
+    ['dragenter', 'dragover'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.add('is-dragging'); }); });
+    ['dragleave', 'drop'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.remove('is-dragging'); }); });
+    coverDrop.addEventListener('drop', function (event) { if (event.dataTransfer.files.length) { coverInput.files = event.dataTransfer.files; previewCover(event.dataTransfer.files[0]); } });
+  }
+
   document.querySelectorAll('[data-mutation-form]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
       if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
