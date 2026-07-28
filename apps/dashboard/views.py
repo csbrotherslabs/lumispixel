@@ -502,12 +502,24 @@ def clients_workspace(request):
     return render(request, "photographer_workspace/clients.html", context)
 
 
-def _gallery_summary(galleries):
+GALLERY_STORAGE_LIMIT = 100 * 1024**3
+
+
+def _format_storage(byte_count):
+    """Return a compact, presentation-ready storage value."""
+    if byte_count >= 1024**3:
+        return f"{byte_count / 1024**3:.1f} GB"
+    if byte_count >= 1024**2:
+        return f"{byte_count / 1024**2:.1f} MB"
+    return f"{byte_count / 1024:.1f} KB" if byte_count else "0 GB"
+
+
+def _gallery_summary(galleries, storage_used):
     return [
         {"label": "Total Galleries", "value": galleries.count(), "icon": "bi-images", "note": "All collections"},
-        {"label": "Published", "value": galleries.filter(status=Gallery.Status.PUBLISHED).count(), "icon": "bi-send-check", "note": "Live for clients"},
-        {"label": "In Progress", "value": galleries.filter(status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING, Gallery.Status.REVIEW]).count(), "icon": "bi-arrow-repeat", "note": "Uploading or review"},
-        {"label": "Total Images", "value": galleries.aggregate(total=Coalesce(Sum("image_count"), Value(0)))["total"], "icon": "bi-camera", "note": "Across all galleries"},
+        {"label": "Active Galleries", "value": galleries.exclude(status__in=[Gallery.Status.ARCHIVED, Gallery.Status.EXPIRED, Gallery.Status.DELIVERED]).count(), "icon": "bi-activity", "note": "Currently in your workflow"},
+        {"label": "Ready to Deliver", "value": galleries.filter(status=Gallery.Status.READY).count(), "icon": "bi-send-check", "note": "Awaiting delivery"},
+        {"label": "Storage Used", "value": _format_storage(storage_used), "icon": "bi-device-ssd", "note": f"{round(storage_used / GALLERY_STORAGE_LIMIT * 100)}% of 100 GB"},
     ]
 
 
@@ -515,8 +527,37 @@ def _gallery_summary(galleries):
 @require_GET
 def galleries_dashboard(request):
     galleries = Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client")
-    context = _dashboard_context(request, "galleries", "Galleries Dashboard")
-    context.update({"gallery_summary": _gallery_summary(galleries), "recent_galleries": galleries[:6]})
+    now = timezone.now()
+    storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
+    pipeline_counts = {row["status"]: row["count"] for row in galleries.values("status").annotate(count=Count("id"))}
+    pipeline = [
+        {"key": key, "label": label, "count": pipeline_counts.get(key, 0), "percent": round(pipeline_counts.get(key, 0) / max(galleries.count(), 1) * 100)}
+        for key, label in Gallery.Status.choices
+        if key not in {Gallery.Status.ARCHIVED, Gallery.Status.EXPIRED}
+    ]
+    activity = []
+    for gallery in galleries.filter(client__isnull=False)[:8]:
+        if gallery.download_count:
+            activity.append({"icon": "bi-download", "action": "Gallery downloaded", "client": str(gallery.client), "gallery": gallery.name, "time": gallery.updated_at})
+        if gallery.favorite_count:
+            activity.append({"icon": "bi-heart", "action": "Photo favorited", "client": str(gallery.client), "gallery": gallery.name, "time": gallery.updated_at})
+        if gallery.status in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
+            activity.append({"icon": "bi-eye", "action": "Client viewed gallery", "client": str(gallery.client), "gallery": gallery.name, "time": gallery.published_at or gallery.updated_at})
+    deadlines = []
+    for gallery in galleries.filter(Q(expires_at__gte=now) | Q(event_date__gte=timezone.localdate())).order_by("expires_at", "event_date")[:6]:
+        if gallery.expires_at:
+            days = (gallery.expires_at.date() - timezone.localdate()).days
+            deadlines.append({"gallery": gallery, "type": "Expires", "date": gallery.expires_at, "urgency": "Urgent" if days <= 3 else "Soon", "urgent": days <= 3})
+        elif gallery.event_date:
+            days = (gallery.event_date - timezone.localdate()).days
+            deadlines.append({"gallery": gallery, "type": "Delivery target", "date": gallery.event_date, "urgency": "Urgent" if days <= 3 else "Upcoming", "urgent": days <= 3})
+    context = _dashboard_context(request, "galleries", "Galleries")
+    context.update({
+        "gallery_summary": _gallery_summary(galleries, storage_used), "recent_galleries": galleries[:6],
+        "delivery_pipeline": pipeline, "recent_client_activity": sorted(activity, key=lambda item: item["time"], reverse=True)[:6],
+        "storage": {"used": _format_storage(storage_used), "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)},
+        "gallery_deadlines": deadlines,
+    })
     return render(request, "photographer_workspace/galleries/dashboard.html", context)
 
 
