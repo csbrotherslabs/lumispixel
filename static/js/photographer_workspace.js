@@ -107,7 +107,7 @@
     closeProfile();
   });
 
-  const clientForm = document.querySelector('[data-client-form]');
+  const clientForm = document.querySelector('[data-crm-form]');
   if (clientForm) {
     const submitButton = clientForm.querySelector('[data-submit-button]');
     clientForm.addEventListener('submit', function () {
