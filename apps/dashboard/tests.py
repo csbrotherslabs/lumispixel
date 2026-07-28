@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
-from apps.clients.models import Client, ClientInvoice, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientTask, Lead
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -126,3 +126,53 @@ class PhotographerWorkspaceTests(TestCase):
 
     def test_system_checks_pass(self):
         call_command("check")
+
+    def test_crm_create_complete_and_convert_workflow(self):
+        user, profile = self.make_photographer(True, email="workflow@example.com", slug="workflow")
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:add_lead"), {
+            "first_name": "Jordan", "last_name": "Lee", "email": "jordan@example.com",
+        })
+        self.assertRedirects(response, reverse("photographer_workspace:crm"))
+        lead = Lead.objects.get(photographer=profile, email="jordan@example.com")
+        self.assertTrue(ClientActivity.objects.filter(lead=lead, event_type=ClientActivity.EventType.LEAD_CREATED).exists())
+
+        response = self.client.post(reverse("photographer_workspace:create_task"), {
+            "title": "Call Jordan", "priority": ClientTask.Priority.HIGH, "lead": lead.pk,
+        })
+        self.assertRedirects(response, reverse("photographer_workspace:crm"))
+        task = ClientTask.objects.get(photographer=profile)
+        self.client.post(reverse("photographer_workspace:complete_task", args=[task.pk]))
+        task.refresh_from_db()
+        self.assertEqual(task.status, ClientTask.Status.COMPLETED)
+
+        self.client.post(reverse("photographer_workspace:convert_lead", args=[lead.pk]))
+        lead.refresh_from_db()
+        converted = Client.objects.get(converted_lead=lead)
+        self.assertEqual(converted.photographer, profile)
+        self.assertEqual(lead.status, Lead.Status.BOOKED)
+        self.assertTrue(ClientActivity.objects.filter(lead=lead, client=converted, event_type=ClientActivity.EventType.LEAD_CONVERTED).exists())
+        self.client.post(reverse("photographer_workspace:convert_lead", args=[lead.pk]))
+        self.assertEqual(Client.objects.filter(converted_lead=lead).count(), 1)
+
+    def test_crm_client_creation_and_ownership_protection(self):
+        user, profile = self.make_photographer(True, email="create@example.com", slug="create")
+        other_user, other = self.make_photographer(True, email="private@example.com", slug="private")
+        private_task = ClientTask.objects.create(photographer=other, lead=Lead.objects.create(photographer=other, first_name="Private"), title="Private")
+        self.client.force_login(user)
+        self.client.post(reverse("photographer_workspace:add_client"), {"first_name": "Sam", "email": "sam@example.com", "status": Client.Status.ACTIVE})
+        self.assertTrue(Client.objects.filter(photographer=profile, email="sam@example.com").exists())
+        self.assertEqual(self.client.post(reverse("photographer_workspace:complete_task", args=[private_task.pk])).status_code, 404)
+        private_task.refresh_from_db()
+        self.assertEqual(private_task.status, ClientTask.Status.OPEN)
+
+    def test_crm_mutations_require_authentication_and_post(self):
+        user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
+        lead = Lead.objects.create(photographer=profile, first_name="Secure")
+        url = reverse("photographer_workspace:convert_lead", args=[lead.pk])
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.logout()
+        self.client.post(url)
+        self.assertFalse(Client.objects.filter(converted_lead=lead).exists())

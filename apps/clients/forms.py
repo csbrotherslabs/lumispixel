@@ -3,6 +3,7 @@ from zoneinfo import available_timezones
 from django import forms
 
 from apps.accounts.models import ClientProfile
+from .models import Client, ClientTask, Lead
 
 
 COMMON_TIMEZONES = [
@@ -76,3 +77,47 @@ class ClientOnboardingProfileForm(forms.ModelForm):
                 self.user.save(update_fields=["first_name", "last_name", "updated_at"])
             profile.save()
         return profile
+
+
+class LeadForm(forms.ModelForm):
+    class Meta:
+        model = Lead
+        fields = ("first_name", "last_name", "email", "phone", "event_type", "event_date", "lead_source", "estimated_value", "notes")
+        widgets = {"event_date": forms.DateInput(attrs={"type": "date"}), "notes": forms.Textarea(attrs={"rows": 3})}
+
+    def clean(self):
+        data = super().clean()
+        if not data.get("email") and not data.get("phone"):
+            raise forms.ValidationError("Provide an email address or phone number.")
+        return data
+
+
+class CrmClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ("first_name", "last_name", "email", "phone", "company", "address", "birthday", "status")
+        widgets = {"birthday": forms.DateInput(attrs={"type": "date"}), "address": forms.Textarea(attrs={"rows": 3})}
+
+    def clean(self):
+        data = super().clean()
+        if not data.get("email") and not data.get("phone"):
+            raise forms.ValidationError("Provide an email address or phone number.")
+        return data
+
+
+class ClientTaskForm(forms.ModelForm):
+    class Meta:
+        model = ClientTask
+        fields = ("title", "due_date", "priority", "lead", "client")
+        widgets = {"due_date": forms.DateInput(attrs={"type": "date"})}
+
+    def __init__(self, *args, photographer, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["lead"].queryset = Lead.objects.for_photographer(photographer)
+        self.fields["client"].queryset = Client.objects.for_photographer(photographer)
+
+    def clean(self):
+        data = super().clean()
+        if bool(data.get("lead")) == bool(data.get("client")):
+            raise forms.ValidationError("Choose exactly one lead or client.")
+        return data
