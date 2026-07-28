@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Count, DecimalField, F, Max, Q, Sum, Value
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientNote, ClientTask, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 
 WORKSPACE_MODULES = [
@@ -420,6 +420,101 @@ def leads_workspace(request):
                     "recent_activity": recent_activity, "source_rows": source_rows,
                     "lead_status_choices": Lead.Status.choices})
     return render(request, "photographer_workspace/leads.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def clients_workspace(request):
+    """Render the searchable, photographer-scoped client directory."""
+    profile = request.user.photographer_profile
+    now = timezone.now()
+    balance = ExpressionWrapper(F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2))
+    upcoming = ClientSession.objects.filter(
+        photographer=profile, client=OuterRef("pk"), starts_at__gte=now,
+    ).exclude(status=ClientSession.Status.CANCELLED).order_by("starts_at")
+    invoices = ClientInvoice.objects.filter(
+        photographer=profile, client=OuterRef("pk"),
+    ).exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]).values("client").annotate(
+        due=Sum(balance)
+    )
+    activity = ClientActivity.objects.filter(
+        photographer=profile, client=OuterRef("pk")
+    ).order_by("-occurred_at")
+    clients = Client.objects.for_photographer(profile).annotate(
+        next_session_at=Subquery(upcoming.values("starts_at")[:1]),
+        next_session_type=Subquery(upcoming.values("session_type")[:1]),
+        outstanding_balance=Coalesce(Subquery(invoices.values("due")[:1]), Value(Decimal("0.00")), output_field=DecimalField()),
+        last_activity_at=Subquery(activity.values("occurred_at")[:1]),
+        last_activity_label=Subquery(activity.values("description")[:1]),
+    )
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    client_type = request.GET.get("client_type", "").strip()
+    tag = request.GET.get("tag", "").strip()
+    has_session = request.GET.get("upcoming", "").strip()
+    has_balance = request.GET.get("balance", "").strip()
+    if query:
+        clients = clients.filter(Q(first_name__icontains=query) | Q(last_name__icontains=query) |
+                                 Q(email__icontains=query) | Q(phone__icontains=query) | Q(company__icontains=query))
+    if status in Client.Status.values:
+        clients = clients.filter(status=status)
+    if client_type in Client.ClientType.values:
+        clients = clients.filter(client_type=client_type)
+    if tag:
+        matching_ids = [client.pk for client in clients.only("pk", "tags") if tag.casefold() in {str(item).casefold() for item in client.tags}]
+        clients = clients.filter(pk__in=matching_ids)
+    if has_session == "yes":
+        clients = clients.filter(next_session_at__isnull=False)
+    elif has_session == "no":
+        clients = clients.filter(next_session_at__isnull=True)
+    if has_balance == "yes":
+        clients = clients.filter(outstanding_balance__gt=0)
+    elif has_balance == "no":
+        clients = clients.filter(outstanding_balance=0)
+    clients = clients.order_by("last_name", "first_name")
+
+    all_clients = Client.objects.for_photographer(profile)
+    outstanding_total = all_clients.outstanding_balances().aggregate(
+        total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    summary = [
+        {"label": "Total Clients", "value": all_clients.count(), "icon": "bi-people", "note": "All client relationships"},
+        {"label": "Active Clients", "value": all_clients.active().count(), "icon": "bi-person-check", "note": "Currently active"},
+        {"label": "Upcoming Sessions", "value": all_clients.upcoming_sessions(now).count(), "icon": "bi-calendar2-check", "note": "Scheduled from today"},
+        {"label": "Outstanding Balance", "value": f"{profile.default_currency} {outstanding_total:,.2f}", "icon": "bi-wallet2", "note": "Across open invoices"},
+    ]
+    tags = sorted({str(tag) for values in all_clients.values_list("tags", flat=True) for tag in (values or [])}, key=str.casefold)
+    paginator = Paginator(clients, 12)
+    page = paginator.get_page(request.GET.get("page"))
+    retained = request.GET.copy()
+    retained.pop("page", None)
+    context = _dashboard_context(request, "clients", "Clients")
+    context.update({
+        "client_summary": summary, "client_page": page, "client_query": query,
+        "selected_status": status, "selected_client_type": client_type, "selected_tag": tag,
+        "selected_upcoming": has_session, "selected_balance": has_balance, "client_tags": tags,
+        "client_status_choices": Client.Status.choices, "client_type_choices": Client.ClientType.choices,
+        "retained_query": retained.urlencode(),
+    })
+    return render(request, "photographer_workspace/clients.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_client(request, pk):
+    profile = request.user.photographer_profile
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    form = CrmClientForm(request.POST or None, request.FILES or None, instance=client)
+    if request.method == "POST" and form.is_valid():
+        client = form.save(commit=False)
+        client.photographer = profile
+        client.full_clean()
+        client.save()
+        messages.success(request, "Client updated.")
+        return redirect("photographer_workspace:clients")
+    context = _dashboard_context(request, "clients", "Edit Client")
+    context.update({"form": form, "form_title": "Edit Client", "is_client_form": True})
+    return render(request, "photographer_workspace/crm_form.html", context)
 
 
 @photographer_workspace_required
