@@ -106,4 +106,58 @@
     if (sidebar && sidebar.classList.contains('is-open')) closeDrawer(true);
     closeProfile();
   });
+
+  const clientForm = document.querySelector('[data-client-form]');
+  if (clientForm) {
+    const submitButton = clientForm.querySelector('[data-submit-button]');
+    clientForm.addEventListener('submit', function () {
+      if (submitButton.disabled) return;
+      submitButton.disabled = true;
+      submitButton.querySelector('span').textContent = 'Saving…';
+    });
+    const notes = clientForm.querySelector('#id_notes');
+    const noteCount = clientForm.querySelector('[data-note-count]');
+    function updateCount() { if (notes && noteCount) noteCount.textContent = notes.value.length; }
+    if (notes) { notes.addEventListener('input', updateCount); updateCount(); }
+
+    const tagInput = clientForm.querySelector('#id_tags_input');
+    const tagList = clientForm.querySelector('[data-tag-list]');
+    let tags = tagInput ? tagInput.value.split(',').map(function (tag) { return tag.trim(); }).filter(Boolean) : [];
+    function renderTags() {
+      if (!tagInput || !tagList) return;
+      tagInput.value = '';
+      tagList.replaceChildren();
+      tags.forEach(function (tag, index) {
+        const chip = document.createElement('span'); chip.className = 'tag-chip'; chip.textContent = tag;
+        const remove = document.createElement('button'); remove.type = 'button'; remove.setAttribute('aria-label', 'Remove ' + tag); remove.innerHTML = '&times;';
+        remove.addEventListener('click', function () { tags.splice(index, 1); renderTags(); }); chip.appendChild(remove); tagList.appendChild(chip);
+      });
+    }
+    if (tagInput) tagInput.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' && event.key !== ',') return;
+      event.preventDefault(); const value = tagInput.value.trim().replace(/,$/, '');
+      if (value && !tags.includes(value) && tags.length < 20) tags.push(value);
+      tagInput.value = ''; renderTags();
+    });
+    renderTags();
+    clientForm.addEventListener('formdata', function (event) { event.formData.set('tags_input', tags.join(',')); });
+
+    const dropzone = clientForm.querySelector('[data-upload-dropzone]');
+    const photoInput = clientForm.querySelector('[data-photo-input]');
+    const preview = clientForm.querySelector('[data-upload-preview]');
+    const uploadError = clientForm.querySelector('[data-upload-error]');
+    function previewPhoto(file) {
+      uploadError.textContent = '';
+      if (!file.type.match(/^image\/(jpeg|png|webp)$/)) { uploadError.textContent = 'Choose a JPG, PNG, or WebP image.'; return; }
+      if (file.size > 5 * 1024 * 1024) { uploadError.textContent = 'Choose an image smaller than 5 MB.'; return; }
+      const image = document.createElement('img'); image.alt = 'Selected profile photo preview'; image.src = URL.createObjectURL(file); preview.replaceChildren(image);
+    }
+    if (dropzone && photoInput) {
+      photoInput.addEventListener('change', function () { if (photoInput.files[0]) previewPhoto(photoInput.files[0]); });
+      ['dragenter', 'dragover'].forEach(function (name) { dropzone.addEventListener(name, function (event) { event.preventDefault(); dropzone.classList.add('is-dragging'); }); });
+      ['dragleave', 'drop'].forEach(function (name) { dropzone.addEventListener(name, function (event) { event.preventDefault(); dropzone.classList.remove('is-dragging'); }); });
+      dropzone.addEventListener('drop', function (event) { if (event.dataTransfer.files[0]) previewPhoto(event.dataTransfer.files[0]); });
+      dropzone.addEventListener('keydown', function (event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); photoInput.click(); } });
+    }
+  }
 })();

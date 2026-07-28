@@ -93,16 +93,55 @@ class LeadForm(forms.ModelForm):
 
 
 class CrmClientForm(forms.ModelForm):
+    city = forms.CharField(required=False, max_length=100)
+    state_province = forms.CharField(required=False, max_length=100, label="State or province")
+    postal_code = forms.CharField(required=False, max_length=20)
+    country = forms.CharField(required=False, max_length=100)
+    client_type = forms.ChoiceField(required=False, choices=(("", "Select a client type"), ("individual", "Individual"), ("business", "Business"), ("organization", "Organization")))
+    lead_source = forms.ChoiceField(required=False, choices=(("", "Select a lead source"), ("referral", "Referral"), ("website", "Website"), ("social", "Social media"), ("event", "Event"), ("other", "Other")))
+    preferred_contact_method = forms.ChoiceField(required=False, choices=(("", "Select a contact method"), ("email", "Email"), ("phone", "Phone"), ("text", "Text message")))
+    tags_input = forms.CharField(required=False, label="Tags")
+    notes = forms.CharField(required=False, max_length=2000, widget=forms.Textarea(attrs={"rows": 7}))
+
     class Meta:
         model = Client
         fields = ("first_name", "last_name", "email", "phone", "company", "address", "birthday", "status")
-        widgets = {"birthday": forms.DateInput(attrs={"type": "date"}), "address": forms.Textarea(attrs={"rows": 3})}
+        labels = {"address": "Street address"}
+        widgets = {"birthday": forms.DateInput(attrs={"type": "date"}), "address": forms.TextInput()}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {"first_name": "e.g. Avery", "last_name": "e.g. Morgan", "email": "avery@example.com", "phone": "+1 (555) 123-4567", "company": "Studio or company name", "address": "Street and number", "city": "City", "state_province": "State or province", "postal_code": "Postal code", "country": "Country", "tags_input": "Type a tag and press Enter", "notes": "Add preferences, important dates, project context, or anything your team should know…"}
+        for name, field in self.fields.items():
+            field.widget.attrs.setdefault("class", "form-control")
+            if name in placeholders:
+                field.widget.attrs.setdefault("placeholder", placeholders[name])
+            field.widget.attrs.setdefault("autocomplete", "off")
+        for name in ("status", "client_type", "lead_source", "preferred_contact_method"):
+            self.fields[name].widget.attrs["class"] = "form-select"
+        self.fields["first_name"].widget.attrs["autocomplete"] = "given-name"
+        self.fields["last_name"].widget.attrs["autocomplete"] = "family-name"
+        self.fields["email"].widget.attrs["autocomplete"] = "email"
+        self.fields["phone"].widget.attrs["autocomplete"] = "tel"
+
+    def clean_tags_input(self):
+        tags = [tag.strip() for tag in self.cleaned_data.get("tags_input", "").split(",") if tag.strip()]
+        return list(dict.fromkeys(tags))[:20]
 
     def clean(self):
         data = super().clean()
         if not data.get("email") and not data.get("phone"):
             raise forms.ValidationError("Provide an email address or phone number.")
         return data
+
+    def save(self, commit=True):
+        client = super().save(commit=False)
+        parts = [self.cleaned_data.get(name, "").strip() for name in ("address", "city", "state_province", "postal_code", "country")]
+        client.address = "\n".join(part for part in parts if part)
+        client.tags = self.cleaned_data.get("tags_input", [])
+        if commit:
+            client.save()
+        return client
 
 
 class ClientTaskForm(forms.ModelForm):
