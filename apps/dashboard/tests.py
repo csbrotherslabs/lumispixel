@@ -166,6 +166,27 @@ class PhotographerWorkspaceTests(TestCase):
         private_task.refresh_from_db()
         self.assertEqual(private_task.status, ClientTask.Status.OPEN)
 
+    def test_add_client_form_renders_crud_system_and_saves_extended_details(self):
+        user, profile = self.make_photographer(True, email="form@example.com", slug="form")
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:add_client"))
+        self.assertContains(response, 'class="workspace-form-page"')
+        self.assertContains(response, 'class="form-section-card"')
+        self.assertContains(response, 'data-upload-dropzone')
+        self.assertContains(response, 'data-submit-button')
+
+        response = self.client.post(reverse("photographer_workspace:add_client"), {
+            "first_name": "Avery", "email": "avery@example.com", "status": Client.Status.ACTIVE,
+            "address": "10 Main Street", "city": "Portland", "state_province": "Oregon",
+            "postal_code": "97205", "country": "United States", "tags_input": "VIP,Portrait",
+            "notes": "Prefers morning sessions.",
+        })
+        self.assertRedirects(response, reverse("photographer_workspace:crm"))
+        client = Client.objects.get(photographer=profile, email="avery@example.com")
+        self.assertEqual(client.address, "10 Main Street\nPortland\nOregon\n97205\nUnited States")
+        self.assertEqual(client.tags, ["VIP", "Portrait"])
+        self.assertEqual(client.notes.get().content, "Prefers morning sessions.")
+
     def test_crm_mutations_require_authentication_and_post(self):
         user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
         lead = Lead.objects.create(photographer=profile, first_name="Secure")

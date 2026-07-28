@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientSession, ClientTask, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 
 WORKSPACE_MODULES = [
@@ -267,12 +267,14 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         record.photographer = profile
         record.full_clean()
         record.save()
+        if isinstance(form, CrmClientForm) and form.cleaned_data.get("notes"):
+            ClientNote.objects.create(photographer=profile, client=record, content=form.cleaned_data["notes"])
         if activity_type:
             ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
         messages.success(request, success_message)
         return redirect("photographer_workspace:crm")
     context = _dashboard_context(request, "crm", title)
-    context.update({"form": form, "form_title": title})
+    context.update({"form": form, "form_title": title, "is_client_form": form_class is CrmClientForm})
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
