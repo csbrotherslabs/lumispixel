@@ -284,10 +284,41 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
+def _lead_destination(request):
+    """Only allow redirects back to known workspace pages."""
+    return "photographer_workspace:crm" if request.POST.get("next") == reverse("photographer_workspace:crm") else "photographer_workspace:leads"
+
+
+def _log_lead(profile, lead, event_type, description, metadata=None, client=None):
+    return ClientActivity.objects.create(
+        photographer=profile, lead=lead, client=client, event_type=event_type,
+        description=description, metadata=metadata or {},
+    )
+
+
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def add_lead(request):
     return _crm_form_page(request, LeadForm, "Add Lead", "Lead added successfully.", ClientActivity.EventType.LEAD_CREATED)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_lead(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    form = LeadForm(request.POST or None, instance=lead)
+    if request.method == "POST" and form.is_valid():
+        updated = form.save(commit=False)
+        updated.photographer = profile
+        updated.full_clean()
+        updated.save()
+        _log_lead(profile, updated, ClientActivity.EventType.LEAD_UPDATED, f"Lead {updated} was updated.")
+        messages.success(request, "Lead updated successfully.")
+        return redirect("photographer_workspace:leads")
+    context = _dashboard_context(request, "leads", "Edit Lead")
+    context.update({"form": form, "form_title": "Edit Lead", "is_lead_form": True, "editing_lead": lead})
+    return render(request, "photographer_workspace/crm_form.html", context)
 
 
 @photographer_workspace_required
@@ -322,8 +353,13 @@ def update_lead_status(request, pk):
     elif Client.objects.filter(converted_lead=lead).exists():
         messages.error(request, "A converted lead must remain booked.")
     else:
+        previous = lead.get_status_display()
         lead.status = status
-        lead.save(update_fields=["status", "updated_at"])
+        if status != Lead.Status.LOST:
+            lead.lost_reason = ""
+        lead.save(update_fields=["status", "lost_reason", "updated_at"])
+        _log_lead(request.user.photographer_profile, lead, ClientActivity.EventType.STAGE_CHANGED,
+                  f"Stage changed from {previous} to {lead.get_status_display()}.", {"from": previous, "to": status})
         messages.success(request, "Lead status updated.")
     destination = "photographer_workspace:leads" if request.POST.get("next") == reverse("photographer_workspace:leads") else "photographer_workspace:crm"
     return redirect(destination)
@@ -334,7 +370,7 @@ def update_lead_status(request, pk):
 def leads_workspace(request):
     """Render the photographer-scoped lead pipeline in board or list form."""
     profile = request.user.photographer_profile
-    leads = Lead.objects.for_photographer(profile).annotate(last_activity_at=Max("activities__occurred_at"))
+    leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True).prefetch_related("activities").annotate(last_activity_at=Max("activities__occurred_at"))
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
     source = request.GET.get("source", "").strip()
@@ -357,7 +393,7 @@ def leads_workspace(request):
     sort = request.GET.get("sort", "newest")
     leads = leads.order_by(allowed_sorts.get(sort, "-created_at"))
     today = timezone.localdate()
-    all_leads = Lead.objects.for_photographer(profile)
+    all_leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
     booked = all_leads.filter(status=Lead.Status.BOOKED).count()
     total = all_leads.count()
     summary = [
@@ -383,14 +419,115 @@ def leads_workspace(request):
 @photographer_workspace_required
 @require_POST
 def bulk_update_leads(request):
-    leads = Lead.objects.for_photographer(request.user.photographer_profile).filter(pk__in=request.POST.getlist("lead_ids"))
+    profile = request.user.photographer_profile
+    leads = Lead.objects.for_photographer(profile).filter(pk__in=request.POST.getlist("lead_ids"), archived_at__isnull=True)
     action = request.POST.get("action")
-    if action in Lead.Status.values:
-        updated = leads.update(status=action, updated_at=timezone.now())
+    if action == Lead.Status.LOST:
+        messages.error(request, "Mark leads lost individually so a reason can be recorded.")
+    elif action in Lead.Status.values:
+        updated = 0
+        with transaction.atomic():
+            for lead in leads.select_for_update():
+                if hasattr(lead, "converted_client") and action != Lead.Status.BOOKED:
+                    continue
+                previous = lead.get_status_display()
+                lead.status = action
+                lead.save(update_fields=["status", "updated_at"])
+                _log_lead(profile, lead, ClientActivity.EventType.STAGE_CHANGED,
+                          f"Stage changed from {previous} to {lead.get_status_display()}.", {"from": previous, "to": action})
+                updated += 1
         messages.success(request, f"Updated {updated} lead{'s' if updated != 1 else ''}.")
     else:
         messages.error(request, "Choose a valid bulk action.")
     return redirect("photographer_workspace:leads")
+
+
+@photographer_workspace_required
+@require_POST
+def archive_lead(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    lead.archived_at = timezone.now()
+    lead.save(update_fields=["archived_at", "updated_at"])
+    _log_lead(profile, lead, ClientActivity.EventType.LEAD_ARCHIVED, f"Lead {lead} was archived.")
+    messages.success(request, "Lead archived.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def create_lead_follow_up(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    title = request.POST.get("title", "").strip()
+    due_date = request.POST.get("due_date", "").strip()
+    if not title or not due_date:
+        messages.error(request, "Enter a follow-up title and due date.")
+    else:
+        form = ClientTaskForm(
+            {"title": title, "due_date": due_date, "priority": request.POST.get("priority", "medium"), "lead": lead.pk},
+            photographer=profile, instance=ClientTask(photographer=profile),
+        )
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.photographer = profile
+            task.full_clean()
+            task.save()
+            lead.next_follow_up = task.due_date
+            lead.save(update_fields=["next_follow_up", "updated_at"])
+            _log_lead(profile, lead, ClientActivity.EventType.FOLLOW_UP_CREATED, f"Follow-up task created: {task.title}.", {"task_id": task.pk})
+            messages.success(request, "Follow-up task created.")
+        else:
+            messages.error(request, "Check the follow-up details and try again.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def mark_lead_booked(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    lead.status, lead.lost_reason = Lead.Status.BOOKED, ""
+    lead.save(update_fields=["status", "lost_reason", "updated_at"])
+    _log_lead(profile, lead, ClientActivity.EventType.LEAD_BOOKED, f"Lead {lead} was marked booked.")
+    messages.success(request, "Lead marked booked.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def mark_lead_lost(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Provide a reason before marking this lead lost.")
+    elif len(reason) > 255:
+        messages.error(request, "Lost reason must be 255 characters or fewer.")
+    else:
+        lead.status, lead.lost_reason = Lead.Status.LOST, reason
+        lead.save(update_fields=["status", "lost_reason", "updated_at"])
+        _log_lead(profile, lead, ClientActivity.EventType.LEAD_LOST, f"Lead marked lost: {reason}", {"reason": reason})
+        messages.success(request, "Lead marked lost.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def add_lead_note(request, pk):
+    profile = request.user.photographer_profile
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    note = request.POST.get("note", "").strip()
+    if not note:
+        messages.error(request, "Enter a note before saving.")
+    elif len(note) > 2000:
+        messages.error(request, "Notes must be 2,000 characters or fewer.")
+    else:
+        lead.notes = f"{lead.notes}\n\n{note}".strip()
+        lead.save(update_fields=["notes", "updated_at"])
+        _log_lead(profile, lead, ClientActivity.EventType.NOTE_ADDED, note)
+        messages.success(request, "Note added.")
+    return redirect(_lead_destination(request))
 
 
 @photographer_workspace_required
@@ -401,16 +538,16 @@ def convert_lead(request, pk):
         lead = get_object_or_404(Lead.objects.select_for_update().for_photographer(profile), pk=pk)
         if Client.objects.filter(converted_lead=lead).exists():
             messages.error(request, "This lead has already been converted.")
-            return redirect("photographer_workspace:crm")
+            return redirect(_lead_destination(request))
         client, created = lead.convert_to_client()
         if not created:
             messages.error(request, "This lead has already been converted.")
-            return redirect("photographer_workspace:crm")
+            return redirect(_lead_destination(request))
         ClientActivity.objects.create(photographer=profile, lead=lead, client=client,
                                       event_type=ClientActivity.EventType.LEAD_CONVERTED,
                                       description=f"Lead {lead} converted to a client.")
     messages.success(request, "Lead converted to a client.")
-    return redirect("photographer_workspace:crm")
+    return redirect(_lead_destination(request))
 
 
 @photographer_workspace_required

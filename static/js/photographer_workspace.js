@@ -123,6 +123,31 @@
     viewButtons.forEach(function (button) { button.addEventListener('click', function () { setLeadView(button.dataset.leadView); }); });
   }
 
+  const filterToggle = document.querySelector('[data-filter-open]');
+  const filterDrawer = document.getElementById('lead-filter-drawer');
+  if (filterToggle && filterDrawer) {
+    filterToggle.addEventListener('click', function () {
+      const open = filterToggle.getAttribute('aria-expanded') === 'true';
+      filterToggle.setAttribute('aria-expanded', String(!open));
+      filterDrawer.classList.toggle('is-open', !open);
+      if (!open) filterDrawer.querySelector('input, select').focus();
+    });
+  }
+
+  document.querySelectorAll('[data-mutation-form]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
+      if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) { event.preventDefault(); return; }
+      form.dataset.submitting = 'true';
+      form.setAttribute('aria-busy', 'true');
+      form.querySelectorAll('button[type="submit"]').forEach(function (button) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.textContent = 'Saving…';
+      });
+    });
+  });
+
   let draggedLead = null;
   document.querySelectorAll('[data-lead-id]').forEach(function (card) {
     card.addEventListener('dragstart', function () { draggedLead = card; card.classList.add('is-dragging'); });

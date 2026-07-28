@@ -1,5 +1,5 @@
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import Client as TestClient, TestCase
 from django.urls import reverse
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
@@ -242,3 +242,39 @@ class PhotographerWorkspaceTests(TestCase):
         private.refresh_from_db()
         self.assertEqual(own.status, Lead.Status.CONSULTATION)
         self.assertEqual(private.status, Lead.Status.NEW)
+
+    def test_lead_actions_validate_log_and_enforce_ownership(self):
+        user, profile = self.make_photographer(True, email="actions@example.com", slug="actions")
+        _, other = self.make_photographer(True, email="other-actions@example.com", slug="other-actions")
+        lead = Lead.objects.create(photographer=profile, first_name="Action", email="action@example.com")
+        private = Lead.objects.create(photographer=other, first_name="Private", email="private@example.com")
+        self.client.force_login(user)
+
+        self.assertEqual(self.client.post(reverse("photographer_workspace:add_lead_note", args=[private.pk]), {"note": "No access"}).status_code, 404)
+        self.client.post(reverse("photographer_workspace:add_lead_note", args=[lead.pk]), {"note": "Prefers afternoons"})
+        self.client.post(reverse("photographer_workspace:create_lead_follow_up", args=[lead.pk]), {"title": "Call lead", "due_date": "2026-08-01", "priority": "high"})
+        self.client.post(reverse("photographer_workspace:mark_lead_lost", args=[lead.pk]), {"reason": ""})
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
+        self.assertIn("Prefers afternoons", lead.notes)
+        self.assertEqual(lead.tasks.get().title, "Call lead")
+        self.assertTrue(ClientActivity.objects.filter(lead=lead, event_type=ClientActivity.EventType.NOTE_ADDED).exists())
+        self.assertTrue(ClientActivity.objects.filter(lead=lead, event_type=ClientActivity.EventType.FOLLOW_UP_CREATED).exists())
+
+        self.client.post(reverse("photographer_workspace:mark_lead_lost", args=[lead.pk]), {"reason": "Budget changed"})
+        lead.refresh_from_db()
+        self.assertEqual((lead.status, lead.lost_reason), (Lead.Status.LOST, "Budget changed"))
+        self.client.post(reverse("photographer_workspace:archive_lead", args=[lead.pk]))
+        lead.refresh_from_db()
+        self.assertIsNotNone(lead.archived_at)
+        self.assertNotContains(self.client.get(reverse("photographer_workspace:leads")), "action@example.com")
+
+    def test_lead_mutations_require_csrf(self):
+        user, profile = self.make_photographer(True, email="csrf@example.com", slug="csrf")
+        lead = Lead.objects.create(photographer=profile, first_name="Protected", email="protected@example.com")
+        csrf_client = TestClient(enforce_csrf_checks=True)
+        csrf_client.force_login(user)
+        response = csrf_client.post(reverse("photographer_workspace:mark_lead_booked", args=[lead.pk]))
+        self.assertEqual(response.status_code, 403)
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
