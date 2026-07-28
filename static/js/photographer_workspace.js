@@ -107,6 +107,50 @@
     closeProfile();
   });
 
+  const viewButtons = document.querySelectorAll('[data-lead-view]');
+  const viewPanels = document.querySelectorAll('[data-lead-panel]');
+  function setLeadView(view) {
+    viewButtons.forEach(function (button) {
+      const active = button.dataset.leadView === view;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    viewPanels.forEach(function (panel) { panel.hidden = panel.dataset.leadPanel !== view; });
+    window.localStorage.setItem('lpw-lead-view', view);
+  }
+  if (viewButtons.length) {
+    setLeadView(window.localStorage.getItem('lpw-lead-view') || 'board');
+    viewButtons.forEach(function (button) { button.addEventListener('click', function () { setLeadView(button.dataset.leadView); }); });
+  }
+
+  let draggedLead = null;
+  document.querySelectorAll('[data-lead-id]').forEach(function (card) {
+    card.addEventListener('dragstart', function () { draggedLead = card; card.classList.add('is-dragging'); });
+    card.addEventListener('dragend', function () { card.classList.remove('is-dragging'); draggedLead = null; });
+  });
+  document.querySelectorAll('[data-lead-dropzone]').forEach(function (zone) {
+    zone.addEventListener('dragover', function (event) { event.preventDefault(); zone.classList.add('is-drag-over'); });
+    zone.addEventListener('dragleave', function () { zone.classList.remove('is-drag-over'); });
+    zone.addEventListener('drop', function (event) {
+      event.preventDefault(); zone.classList.remove('is-drag-over');
+      if (!draggedLead) return;
+      const status = zone.closest('[data-stage]').dataset.stage;
+      const select = draggedLead.querySelector('[data-stage-form] select');
+      if (select && select.value !== status) { select.value = status; select.form.submit(); }
+    });
+  });
+
+  const selectAll = document.querySelector('[data-select-all]');
+  const leadChecks = Array.from(document.querySelectorAll('[data-lead-check]'));
+  const selectedCount = document.querySelector('[data-selected-count]');
+  function updateSelectedCount() {
+    const count = leadChecks.filter(function (check) { return check.checked; }).length;
+    if (selectedCount) selectedCount.textContent = count + ' selected';
+    if (selectAll) selectAll.indeterminate = count > 0 && count < leadChecks.length;
+  }
+  if (selectAll) selectAll.addEventListener('change', function () { leadChecks.forEach(function (check) { check.checked = selectAll.checked; }); updateSelectedCount(); });
+  leadChecks.forEach(function (check) { check.addEventListener('change', updateSelectedCount); });
+
   const clientForm = document.querySelector('[data-crm-form]');
   if (clientForm) {
     const submitButton = clientForm.querySelector('[data-submit-button]');
