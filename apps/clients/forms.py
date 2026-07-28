@@ -155,6 +155,12 @@ class CrmClientForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and not self.is_bound:
+            self.fields["tags_input"].initial = ", ".join(self.instance.tags or [])
+            address_parts = (self.instance.address or "").splitlines()
+            self.fields["address"].initial = address_parts[0] if address_parts else ""
+            for name, value in zip(("city", "state_province", "postal_code", "country"), address_parts[1:]):
+                self.fields[name].initial = value
         placeholders = {"first_name": "e.g. Avery", "last_name": "e.g. Morgan", "email": "avery@example.com", "phone": "+1 (555) 123-4567", "company": "Studio or company name", "address": "Street and number", "city": "City", "state_province": "State or province", "postal_code": "Postal code", "country": "Country", "tags_input": "Type a tag and press Enter", "notes": "Add preferences, important dates, project context, or anything your team should know…"}
         for name, field in self.fields.items():
             field.widget.attrs.setdefault("class", "form-control")

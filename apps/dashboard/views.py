@@ -510,11 +510,102 @@ def edit_client(request, pk):
         client.photographer = profile
         client.full_clean()
         client.save()
+        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.CLIENT_UPDATED, description=f"Client {client} was updated.")
         messages.success(request, "Client updated.")
-        return redirect("photographer_workspace:clients")
+        return redirect("photographer_workspace:client_detail", pk=client.pk)
     context = _dashboard_context(request, "clients", "Edit Client")
     context.update({"form": form, "form_title": "Edit Client", "is_client_form": True})
     return render(request, "photographer_workspace/crm_form.html", context)
+
+
+CLIENT_DETAIL_TABS = ("overview", "projects", "sessions", "galleries", "contracts", "invoices", "questionnaires", "files", "activity")
+
+
+@photographer_workspace_required
+@require_GET
+def client_detail(request, pk):
+    profile = request.user.photographer_profile
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    now, today = timezone.now(), timezone.localdate()
+    sessions = ClientSession.objects.for_photographer(profile).filter(client=client)
+    invoices = ClientInvoice.objects.for_photographer(profile).filter(client=client)
+    open_invoices = invoices.exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
+    outstanding = sum((invoice.balance for invoice in open_invoices), Decimal("0.00"))
+    upcoming = sessions.filter(starts_at__gte=now).exclude(status=ClientSession.Status.CANCELLED).first()
+    overdue = open_invoices.filter(due_date__lt=today)
+    soon = sessions.filter(starts_at__gte=now, starts_at__lte=now + timezone.timedelta(days=7)).exclude(status=ClientSession.Status.CANCELLED)
+    tab = request.GET.get("tab", "overview")
+    if tab not in CLIENT_DETAIL_TABS:
+        tab = "overview"
+    activities = ClientActivity.objects.for_photographer(profile).filter(client=client)
+    context = _dashboard_context(request, "clients", str(client))
+    context.update({
+        "client_record": client, "detail_tabs": CLIENT_DETAIL_TABS, "active_tab": tab,
+        "sessions": sessions, "invoices": invoices, "upcoming_session": upcoming,
+        "outstanding_balance": outstanding, "recent_notes": client.notes.all()[:5],
+        "client_tasks": client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]),
+        "activities": activities[:30],
+        "operational_alerts": [
+            {"label": "Overdue invoices", "count": overdue.count(), "icon": "bi-receipt", "urgent": overdue.exists()},
+            {"label": "Unsigned contracts", "count": 0, "icon": "bi-file-earmark-signature", "urgent": False},
+            {"label": "Sessions in 7 days", "count": soon.count(), "icon": "bi-calendar-event", "urgent": soon.exists()},
+            {"label": "Galleries awaiting delivery", "count": 0, "icon": "bi-images", "urgent": False},
+        ],
+    })
+    return render(request, "photographer_workspace/client_detail.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def client_archive_restore(request, pk):
+    profile = request.user.photographer_profile
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    restoring = client.status == Client.Status.ARCHIVED
+    client.status = Client.Status.ACTIVE if restoring else Client.Status.ARCHIVED
+    client.save(update_fields=["status", "updated_at"])
+    event = ClientActivity.EventType.CLIENT_RESTORED if restoring else ClientActivity.EventType.CLIENT_ARCHIVED
+    verb = "restored" if restoring else "archived"
+    ClientActivity.objects.create(photographer=profile, client=client, event_type=event, description=f"Client {client} was {verb}.")
+    messages.success(request, f"Client {verb}.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+
+@photographer_workspace_required
+@require_POST
+def add_client_note(request, pk):
+    profile = request.user.photographer_profile
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    content = request.POST.get("content", "").strip()
+    if not content:
+        messages.error(request, "Enter a note before saving.")
+    elif len(content) > 5000:
+        messages.error(request, "Notes must be 5,000 characters or fewer.")
+    else:
+        ClientNote.objects.create(photographer=profile, client=client, content=content)
+        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.NOTE_ADDED, description="A client note was added.")
+        messages.success(request, "Note added.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+
+@photographer_workspace_required
+@require_POST
+def add_client_task(request, pk):
+    profile = request.user.photographer_profile
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    data = request.POST.copy()
+    data["client"] = client.pk
+    data.pop("lead", None)
+    form = ClientTaskForm(data, photographer=profile, instance=ClientTask(photographer=profile))
+    if form.is_valid():
+        task = form.save(commit=False)
+        task.photographer = profile
+        task.full_clean()
+        task.save()
+        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.FOLLOW_UP_CREATED, description=f"Task created: {task.title}.")
+        messages.success(request, "Task created.")
+    else:
+        messages.error(request, "Enter valid task details.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
 
 
 @photographer_workspace_required

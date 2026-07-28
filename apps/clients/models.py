@@ -344,6 +344,9 @@ class ClientActivity(PhotographerOwnedModel):
         LEAD_BOOKED = "lead_booked", "Lead booked"
         LEAD_LOST = "lead_lost", "Lead lost"
         LEAD_ARCHIVED = "lead_archived", "Lead archived"
+        CLIENT_UPDATED = "client_updated", "Client updated"
+        CLIENT_ARCHIVED = "client_archived", "Client archived"
+        CLIENT_RESTORED = "client_restored", "Client restored"
 
     event_type = models.CharField(max_length=32, choices=EventType.choices)
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
