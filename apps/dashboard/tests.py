@@ -72,8 +72,26 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads"}:
+            if module["key"] not in {"dashboard", "crm", "leads", "clients"}:
                 self.assertContains(response, "Back to Dashboard")
+
+    def test_clients_workspace_uses_scoped_data_and_directory_controls(self):
+        user, profile = self.make_photographer(True, email="directory@example.com", slug="directory")
+        _, other = self.make_photographer(True, email="other-directory@example.com", slug="other-directory")
+        visible = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone", email="avery@example.com", tags=["VIP"], client_type=Client.ClientType.INDIVIDUAL)
+        ClientInvoice.objects.create(photographer=profile, client=visible, total="900.00", amount_paid="250.00", status=ClientInvoice.Status.SENT)
+        Client.objects.create(photographer=other, first_name="Private", last_name="Record")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:clients"), {"tag": "VIP"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Manage client relationships, projects, payments, and galleries.")
+        self.assertContains(response, "Avery Stone")
+        self.assertContains(response, "USD 650.00")
+        self.assertNotContains(response, "Private Record")
+        self.assertContains(response, 'data-client-view="list"')
+        self.assertContains(response, 'data-client-view="grid"')
 
     def test_crm_dashboard_uses_only_logged_in_photographers_records(self):
         user, profile = self.make_photographer(True, email="crm@example.com", slug="crm")

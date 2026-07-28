@@ -134,6 +134,33 @@
     });
   }
 
+  const clientViewButtons = document.querySelectorAll('[data-client-view]');
+  const clientViewPanels = document.querySelectorAll('[data-client-panel]');
+  function setClientView(view) {
+    clientViewButtons.forEach(function (button) {
+      const active = button.dataset.clientView === view;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    clientViewPanels.forEach(function (panel) { panel.hidden = panel.dataset.clientPanel !== view; });
+    window.localStorage.setItem('lpw-client-view', view);
+  }
+  if (clientViewButtons.length) {
+    setClientView(window.localStorage.getItem('lpw-client-view') || 'list');
+    clientViewButtons.forEach(function (button) { button.addEventListener('click', function () { setClientView(button.dataset.clientView); }); });
+  }
+
+  const clientFilterToggle = document.querySelector('[data-client-filter-open]');
+  const clientFilterDrawer = document.getElementById('client-filter-drawer');
+  if (clientFilterToggle && clientFilterDrawer) {
+    clientFilterToggle.addEventListener('click', function () {
+      const open = clientFilterToggle.getAttribute('aria-expanded') === 'true';
+      clientFilterToggle.setAttribute('aria-expanded', String(!open));
+      clientFilterDrawer.classList.toggle('is-open', !open);
+      if (!open) clientFilterDrawer.querySelector('input, select').focus();
+    });
+  }
+
   document.querySelectorAll('[data-mutation-form]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
       if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
