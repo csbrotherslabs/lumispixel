@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% if is_client_form %}
-<form class="workspace-form-page" method="post" data-client-form novalidate>{% csrf_token %}
+<form class="workspace-form-page" method="post" data-crm-form novalidate>{% csrf_token %}
   <header class="form-page-header">
     <div><nav class="form-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right"></i><a href="{% url 'photographer_workspace:crm' %}">Clients</a><i class="bi bi-chevron-right"></i><span aria-current="page">Add Client</span></nav><h1 id="workspace-page-title">Add Client</h1><p>Create a complete client profile so every conversation and project starts with the right context.</p></div>
     <div class="sticky-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:crm' %}">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit" data-submit-button><i class="bi bi-check2"></i><span>Save Client</span></button></div>
@@ -16,6 +16,23 @@
     <section><header><i class="bi bi-camera"></i><h2>Profile Photo</h2></header><label class="upload-dropzone" data-upload-dropzone tabindex="0"><input type="file" accept="image/png,image/jpeg,image/webp" data-photo-input><span class="upload-preview" data-upload-preview><i class="bi bi-cloud-arrow-up"></i></span><strong>Drop a photo here</strong><span>or click to browse</span><small>JPG, PNG, or WebP · Max 5 MB</small></label><p class="upload-error" data-upload-error role="alert"></p></section>
     <section><header><i class="bi bi-tags"></i><h2>Stay organized</h2></header><p>Use short, consistent tags such as <strong>Wedding</strong>, <strong>VIP</strong>, or <strong>2026 inquiry</strong> to find clients quickly.</p></section>
     <section><header><i class="bi bi-lightbulb"></i><h2>Quick tips</h2></header><ul><li>Add either an email or phone number.</li><li>Record contact preferences before reaching out.</li><li>Use notes for details your whole team needs.</li></ul></section>
+  </aside></div>
+</form>
+{% elif is_lead_form %}
+<form class="workspace-form-page" method="post" data-crm-form novalidate>{% csrf_token %}
+  <header class="form-page-header">
+    <div><nav class="form-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right"></i><a href="{% url 'photographer_workspace:crm' %}">Clients</a><i class="bi bi-chevron-right"></i><span aria-current="page">Add Lead</span></nav><h1 id="workspace-page-title">Add Lead</h1><p>Capture a new inquiry and the details you need to turn interest into a booked session.</p></div>
+    <div class="sticky-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:crm' %}">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit" data-submit-button><i class="bi bi-check2"></i><span>Save Lead</span></button></div>
+  </header>
+  {% if form.non_field_errors %}<div class="form-alert" role="alert"><i class="bi bi-exclamation-circle"></i><div><strong>Please review the form.</strong>{{ form.non_field_errors }}</div></div>{% endif %}
+  <div class="workspace-form-layout"><div class="workspace-form-main">
+    <section class="form-section-card" aria-labelledby="lead-contact-heading"><header><i class="bi bi-person"></i><div><h2 id="lead-contact-heading">Contact Information</h2><p>The essentials you’ll use to identify and follow up with this lead.</p></div></header><div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.first_name %}{% include "photographer_workspace/components/form_field.html" with field=form.last_name %}{% include "photographer_workspace/components/form_field.html" with field=form.email %}{% include "photographer_workspace/components/form_field.html" with field=form.phone %}</div></section>
+    <section class="form-section-card" aria-labelledby="inquiry-heading"><header><i class="bi bi-calendar2-event"></i><div><h2 id="inquiry-heading">Inquiry Details</h2><p>Record what they’re planning and the potential value of the opportunity.</p></div></header><div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.event_type %}{% include "photographer_workspace/components/form_field.html" with field=form.event_date %}{% include "photographer_workspace/components/form_field.html" with field=form.lead_source %}{% include "photographer_workspace/components/form_field.html" with field=form.estimated_value %}</div></section>
+    <section class="form-section-card" aria-labelledby="lead-notes-heading"><header><i class="bi bi-journal-text"></i><div><h2 id="lead-notes-heading">Notes</h2><p>Keep useful inquiry context private to your workspace.</p></div></header>{% include "photographer_workspace/components/form_field.html" with field=form.notes wide=True %}<div class="character-feedback"><span>Visible only to your team</span><span><b data-note-count>0</b> characters</span></div></section>
+  </div><aside class="contextual-panel" aria-label="Lead setup help">
+    <section><header><i class="bi bi-lightning-charge"></i><h2>Start strong</h2></header><p>A complete inquiry gives you the context to respond personally and keep the conversation moving.</p></section>
+    <section><header><i class="bi bi-envelope-check"></i><h2>Contact details</h2></header><p>Add at least an <strong>email address</strong> or <strong>phone number</strong> so this lead is ready for follow-up.</p></section>
+    <section><header><i class="bi bi-lightbulb"></i><h2>Quick tips</h2></header><ul><li>Use a consistent event type for easier filtering.</li><li>Add the expected date as soon as it is known.</li><li>Capture budget and preferences in the notes.</li></ul></section>
   </aside></div>
 </form>
 {% else %}
