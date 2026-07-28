@@ -1,0 +1,7 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+  {% url 'photographer_workspace:all_galleries' as all_url %}
+  {% include "photographer_workspace/galleries/components/header.html" with page_description="Monitor gallery uploads and processing jobs." header_action_url=all_url header_action_icon="bi-images" header_action_label="All Galleries" %}
+  <div class="lpw-gallery-notice"><i class="bi bi-info-circle"></i><div><strong>Upload tools are coming next</strong><p>This Phase 1 page establishes the queue location. Active uploading and processing galleries are listed below.</p></div></div>
+  {% include "photographer_workspace/galleries/components/gallery_list.html" with gallery_records=queued_galleries empty_title="Your upload queue is clear" empty_message="Galleries being uploaded or processed will appear here." %}
+{% endblock %}

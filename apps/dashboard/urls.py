@@ -6,7 +6,10 @@ app_name = "photographer_workspace"
 
 urlpatterns = [
     path("", views.photographer_dashboard, name="dashboard"),
-    path("galleries/", views.module_placeholder, {"module_key": "galleries"}, name="galleries"),
+    path("galleries/", views.galleries_dashboard, name="galleries"),
+    path("galleries/all/", views.all_galleries, name="all_galleries"),
+    path("galleries/upload-queue/", views.gallery_upload_queue, name="gallery_upload_queue"),
+    path("galleries/<int:pk>/", views.gallery_workspace, name="gallery_workspace"),
     path("clients/", views.clients_workspace, name="clients"),
     path("clients/<int:pk>/edit/", views.edit_client, name="edit_client"),
     path("clients/<int:pk>/", views.client_detail, name="client_detail"),

@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
+from apps.galleries.models import Gallery
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -73,8 +74,32 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads", "clients"}:
+            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue"}:
                 self.assertContains(response, "Back to Dashboard")
+
+    def test_gallery_pages_render_with_active_navigation_and_scoped_records(self):
+        user, profile = self.make_photographer(True, email="gallery@example.com", slug="gallery-photo")
+        _, other = self.make_photographer(True, email="other-gallery@example.com", slug="other-gallery-photo")
+        gallery = Gallery.objects.create(photographer=profile, name="Summer Portraits", slug="summer-portraits", status=Gallery.Status.UPLOADING, image_count=24)
+        private_gallery = Gallery.objects.create(photographer=other, name="Private Collection", slug="private-collection")
+        self.client.force_login(user)
+
+        expected_pages = [
+            ("galleries", "Galleries Dashboard"),
+            ("all_galleries", "All Galleries"),
+            ("gallery_upload_queue", "Upload Queue"),
+        ]
+        for url_name, heading in expected_pages:
+            response = self.client.get(reverse(f"photographer_workspace:{url_name}"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, heading)
+            self.assertContains(response, f'href="{reverse(f"photographer_workspace:{url_name}")}" class="is-active"')
+            self.assertContains(response, "Summer Portraits")
+            self.assertNotContains(response, "Private Collection")
+
+        detail = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
+        self.assertContains(detail, "Gallery Workspace is coming soon")
+        self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
 
     def test_clients_workspace_uses_scoped_data_and_directory_controls(self):
         user, profile = self.make_photographer(True, email="directory@example.com", slug="directory")
