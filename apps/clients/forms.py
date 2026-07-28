@@ -80,10 +80,49 @@ class ClientOnboardingProfileForm(forms.ModelForm):
 
 
 class LeadForm(forms.ModelForm):
+    lead_source = forms.ChoiceField(
+        required=False,
+        choices=(
+            ("", "Select a lead source"),
+            ("referral", "Referral"),
+            ("website", "Website"),
+            ("social", "Social media"),
+            ("event", "Event"),
+            ("other", "Other"),
+        ),
+    )
+
     class Meta:
         model = Lead
         fields = ("first_name", "last_name", "email", "phone", "event_type", "event_date", "lead_source", "estimated_value", "notes")
-        widgets = {"event_date": forms.DateInput(attrs={"type": "date"}), "notes": forms.Textarea(attrs={"rows": 3})}
+        labels = {"estimated_value": "Estimated value"}
+        widgets = {
+            "event_date": forms.DateInput(attrs={"type": "date"}),
+            "estimated_value": forms.NumberInput(attrs={"min": "0", "step": "0.01"}),
+            "notes": forms.Textarea(attrs={"rows": 7}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            "first_name": "e.g. Avery",
+            "last_name": "e.g. Morgan",
+            "email": "avery@example.com",
+            "phone": "+1 (555) 123-4567",
+            "event_type": "e.g. Wedding, portrait, or event",
+            "estimated_value": "0.00",
+            "notes": "Add inquiry details, preferences, follow-up context, or anything your team should know…",
+        }
+        for name, field in self.fields.items():
+            field.widget.attrs.setdefault("class", "form-control")
+            if name in placeholders:
+                field.widget.attrs.setdefault("placeholder", placeholders[name])
+            field.widget.attrs.setdefault("autocomplete", "off")
+        self.fields["lead_source"].widget.attrs["class"] = "form-select"
+        self.fields["first_name"].widget.attrs["autocomplete"] = "given-name"
+        self.fields["last_name"].widget.attrs["autocomplete"] = "family-name"
+        self.fields["email"].widget.attrs["autocomplete"] = "email"
+        self.fields["phone"].widget.attrs["autocomplete"] = "tel"
 
     def clean(self):
         data = super().clean()

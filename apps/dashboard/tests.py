@@ -187,6 +187,17 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(client.tags, ["VIP", "Portrait"])
         self.assertEqual(client.notes.get().content, "Prefers morning sessions.")
 
+    def test_add_lead_form_uses_crud_design_system(self):
+        user, _ = self.make_photographer(True, email="lead-form@example.com", slug="lead-form")
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:add_lead"))
+        self.assertContains(response, 'class="workspace-form-page"')
+        self.assertContains(response, "Contact Information")
+        self.assertContains(response, "Inquiry Details")
+        self.assertContains(response, 'aria-label="Lead setup help"')
+        self.assertContains(response, 'data-submit-button')
+        self.assertContains(response, "Save Lead")
+
     def test_crm_mutations_require_authentication_and_post(self):
         user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
         lead = Lead.objects.create(photographer=profile, first_name="Secure")

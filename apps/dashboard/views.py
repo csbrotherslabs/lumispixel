@@ -274,7 +274,12 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         messages.success(request, success_message)
         return redirect("photographer_workspace:crm")
     context = _dashboard_context(request, "crm", title)
-    context.update({"form": form, "form_title": title, "is_client_form": form_class is CrmClientForm})
+    context.update({
+        "form": form,
+        "form_title": title,
+        "is_client_form": form_class is CrmClientForm,
+        "is_lead_form": form_class is LeadForm,
+    })
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
