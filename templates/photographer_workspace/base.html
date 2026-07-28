@@ -17,6 +17,7 @@
   <div class="lpw-main-wrap">
     {% include "photographer_workspace/components/topbar.html" %}
     <main id="workspace-main" class="lpw-main" tabindex="-1" aria-labelledby="workspace-page-title">
+      {% if messages %}<div aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}
       {% block workspace_content %}{% endblock %}
     </main>
   </div>

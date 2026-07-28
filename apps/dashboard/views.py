@@ -2,15 +2,18 @@ from decimal import Decimal
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientSession, ClientTask, Lead
+from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -250,6 +253,91 @@ def clients_crm(request):
         ).order_by("-occurred_at")[:8],
     })
     return render(request, "photographer_workspace/clients_crm.html", context)
+
+
+def _crm_form_page(request, form_class, title, success_message, activity_type=None):
+    profile = request.user.photographer_profile
+    model = form_class._meta.model
+    kwargs = {"instance": model(photographer=profile)}
+    if form_class is ClientTaskForm:
+        kwargs["photographer"] = profile
+    form = form_class(request.POST or None, **kwargs)
+    if request.method == "POST" and form.is_valid():
+        record = form.save(commit=False)
+        record.photographer = profile
+        record.full_clean()
+        record.save()
+        if activity_type:
+            ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
+        messages.success(request, success_message)
+        return redirect("photographer_workspace:crm")
+    context = _dashboard_context(request, "crm", title)
+    context.update({"form": form, "form_title": title})
+    return render(request, "photographer_workspace/crm_form.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def add_lead(request):
+    return _crm_form_page(request, LeadForm, "Add Lead", "Lead added successfully.", ClientActivity.EventType.LEAD_CREATED)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def add_client(request):
+    return _crm_form_page(request, CrmClientForm, "Add Client", "Client added successfully.")
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def create_task(request):
+    return _crm_form_page(request, ClientTaskForm, "Create Task", "Task created successfully.")
+
+
+@photographer_workspace_required
+@require_POST
+def complete_task(request, pk):
+    task = get_object_or_404(ClientTask.objects.for_photographer(request.user.photographer_profile), pk=pk)
+    task.status = ClientTask.Status.COMPLETED
+    task.save(update_fields=["status", "updated_at"])
+    messages.success(request, "Task marked complete.")
+    return redirect("photographer_workspace:crm")
+
+
+@photographer_workspace_required
+@require_POST
+def update_lead_status(request, pk):
+    lead = get_object_or_404(Lead.objects.for_photographer(request.user.photographer_profile), pk=pk)
+    status = request.POST.get("status")
+    if status not in Lead.Status.values:
+        messages.error(request, "Select a valid lead status.")
+    elif Client.objects.filter(converted_lead=lead).exists():
+        messages.error(request, "A converted lead must remain booked.")
+    else:
+        lead.status = status
+        lead.save(update_fields=["status", "updated_at"])
+        messages.success(request, "Lead status updated.")
+    return redirect("photographer_workspace:crm")
+
+
+@photographer_workspace_required
+@require_POST
+def convert_lead(request, pk):
+    profile = request.user.photographer_profile
+    with transaction.atomic():
+        lead = get_object_or_404(Lead.objects.select_for_update().for_photographer(profile), pk=pk)
+        if Client.objects.filter(converted_lead=lead).exists():
+            messages.error(request, "This lead has already been converted.")
+            return redirect("photographer_workspace:crm")
+        client = Client.objects.create(photographer=profile, converted_lead=lead, first_name=lead.first_name,
+                                       last_name=lead.last_name, email=lead.email, phone=lead.phone)
+        lead.status = Lead.Status.BOOKED
+        lead.save(update_fields=["status", "updated_at"])
+        ClientActivity.objects.create(photographer=profile, lead=lead, client=client,
+                                      event_type=ClientActivity.EventType.LEAD_CONVERTED,
+                                      description=f"Lead {lead} converted to a client.")
+    messages.success(request, "Lead converted to a client.")
+    return redirect("photographer_workspace:crm")
 
 
 @photographer_workspace_required

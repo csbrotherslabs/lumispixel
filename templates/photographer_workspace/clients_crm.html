@@ -3,8 +3,8 @@
 <header class="lpw-command-header lpw-crm-header">
   <div><p class="lpw-command-header__greeting">Clients</p><p>Manage leads, clients, tasks, and upcoming activity.</p></div>
   <div class="lpw-command-header__actions">
-    <a class="lpw-btn" href="{% url 'photographer_workspace:leads' %}?action=add"><i class="bi bi-person-plus"></i>Add Lead</a>
-    <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:clients' %}?action=add"><i class="bi bi-person-check"></i>Add Client</a>
+    <a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-person-plus"></i>Add Lead</a>
+    <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:add_client' %}"><i class="bi bi-person-check"></i>Add Client</a>
   </div>
 </header>
 
@@ -23,8 +23,8 @@
   <div class="lpw-section-title"><div><span>Latest inquiries</span><h2>Recent Leads</h2></div><a class="lpw-mini-btn" href="{% url 'photographer_workspace:leads' %}">View all leads</a></div>
   <div class="lpw-data-card">
     {% if recent_leads %}<div class="lpw-table-scroll"><table class="lpw-crm-table"><thead><tr><th>Name</th><th>Event type</th><th>Event date</th><th>Source</th><th>Estimated value</th><th>Status</th><th>Last contact</th><th><span class="sr-only">Quick actions</span></th></tr></thead><tbody>
-    {% for lead in recent_leads %}<tr><td><strong>{{ lead }}</strong>{% if lead.email %}<small>{{ lead.email }}</small>{% endif %}</td><td>{{ lead.event_type|default:"—" }}</td><td>{{ lead.event_date|date:"M j, Y"|default:"—" }}</td><td>{{ lead.lead_source|default:"—" }}</td><td>{% if lead.estimated_value != None %}{{ photographer_profile.default_currency }} {{ lead.estimated_value|floatformat:2 }}{% else %}—{% endif %}</td><td><span class="lpw-status lpw-status--{{ lead.status }}">{{ lead.get_status_display }}</span></td><td>{{ lead.last_contacted_date|date:"M j, Y"|default:"Never" }}</td><td><a class="lpw-row-action" href="{% url 'photographer_workspace:leads' %}?lead={{ lead.pk }}" aria-label="Open {{ lead }}"><i class="bi bi-arrow-up-right"></i></a></td></tr>{% endfor %}
-    </tbody></table></div>{% else %}<div class="lpw-crm-empty"><i class="bi bi-person-plus"></i><h3>No leads yet</h3><p>New inquiries will appear here as soon as you add or receive them.</p><a class="lpw-mini-btn" href="{% url 'photographer_workspace:leads' %}?action=add">Add your first lead</a></div>{% endif %}
+    {% for lead in recent_leads %}<tr><td><strong>{{ lead }}</strong>{% if lead.email %}<small>{{ lead.email }}</small>{% endif %}</td><td>{{ lead.event_type|default:"—" }}</td><td>{{ lead.event_date|date:"M j, Y"|default:"—" }}</td><td>{{ lead.lead_source|default:"—" }}</td><td>{% if lead.estimated_value != None %}{{ photographer_profile.default_currency }} {{ lead.estimated_value|floatformat:2 }}{% else %}—{% endif %}</td><td><form method="post" action="{% url 'photographer_workspace:update_lead_status' lead.pk %}">{% csrf_token %}<label class="sr-only" for="status-{{ lead.pk }}">Status for {{ lead }}</label><select id="status-{{ lead.pk }}" name="status" onchange="this.form.submit()">{% for value,label in lead.Status.choices %}<option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></form></td><td>{{ lead.last_contacted_date|date:"M j, Y"|default:"Never" }}</td><td>{% if not lead.converted_client %}<form method="post" action="{% url 'photographer_workspace:convert_lead' lead.pk %}">{% csrf_token %}<button class="lpw-row-action" type="submit" aria-label="Convert {{ lead }} to client"><i class="bi bi-person-check"></i></button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<div class="lpw-crm-empty"><i class="bi bi-person-plus"></i><h3>No leads yet</h3><p>New inquiries will appear here as soon as you add or receive them.</p><a class="lpw-mini-btn" href="{% url 'photographer_workspace:add_lead' %}">Add your first lead</a></div>{% endif %}
   </div>
 </section>
 
@@ -34,7 +34,7 @@
     {% else %}<div class="lpw-crm-empty"><i class="bi bi-calendar2-plus"></i><h3>No upcoming sessions</h3><p>Scheduled client work will appear here.</p></div>{% endif %}
   </div></section>
   <section class="lpw-command-section"><div class="lpw-section-title"><div><span>To do</span><h2>Tasks</h2></div><a class="lpw-mini-btn" href="{% url 'photographer_workspace:tasks' %}">View all</a></div><div class="lpw-data-card">
-    {% if tasks %}<ul class="lpw-task-list">{% for task in tasks %}<li><span class="lpw-task-check" role="checkbox" aria-checked="false" aria-label="Mark {{ task.title }} complete"></span><div><strong>{{ task.title }}</strong><small>{% if task.client %}{{ task.client }}{% else %}{{ task.lead }}{% endif %} · {% if task.due_date %}Due {{ task.due_date|date:"M j" }}{% else %}No due date{% endif %}</small></div><span class="lpw-priority lpw-priority--{{ task.priority }}">{{ task.get_priority_display }}</span></li>{% endfor %}</ul>
+    {% if tasks %}<ul class="lpw-task-list">{% for task in tasks %}<li><form method="post" action="{% url 'photographer_workspace:complete_task' task.pk %}">{% csrf_token %}<button class="lpw-task-check" type="submit" aria-label="Mark {{ task.title }} complete"></button></form><div><strong>{{ task.title }}</strong><small>{% if task.client %}{{ task.client }}{% else %}{{ task.lead }}{% endif %} · {% if task.due_date %}Due {{ task.due_date|date:"M j" }}{% else %}No due date{% endif %}</small></div><span class="lpw-priority lpw-priority--{{ task.priority }}">{{ task.get_priority_display }}</span></li>{% endfor %}</ul>
     {% else %}<div class="lpw-crm-empty"><i class="bi bi-check2-square"></i><h3>You're all caught up</h3><p>Open client and lead tasks will appear here.</p></div>{% endif %}
   </div></section>
 </div>
@@ -45,10 +45,10 @@
     {% else %}<div class="lpw-crm-empty"><i class="bi bi-clock-history"></i><h3>No activity yet</h3><p>CRM updates will build a chronological history here.</p></div>{% endif %}
   </div></section>
   <section class="lpw-command-section"><div class="lpw-section-title"><div><span>Shortcuts</span><h2>Quick Actions</h2></div></div><div class="lpw-data-card lpw-crm-actions">
-    <a href="{% url 'photographer_workspace:leads' %}?action=add"><i class="bi bi-person-plus"></i><span>Add Lead</span></a>
-    <a href="{% url 'photographer_workspace:clients' %}?action=add"><i class="bi bi-person-check"></i><span>Add Client</span></a>
+    <a href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-person-plus"></i><span>Add Lead</span></a>
+    <a href="{% url 'photographer_workspace:add_client' %}"><i class="bi bi-person-check"></i><span>Add Client</span></a>
     <a href="{% url 'photographer_workspace:calendar' %}?action=consultation"><i class="bi bi-calendar2-plus"></i><span>Schedule Consultation</span></a>
-    <a href="{% url 'photographer_workspace:tasks' %}?action=add"><i class="bi bi-check2-square"></i><span>Create Task</span></a>
+    <a href="{% url 'photographer_workspace:create_task' %}"><i class="bi bi-check2-square"></i><span>Create Task</span></a>
     <a href="{% url 'photographer_workspace:clients' %}?action=questionnaire"><i class="bi bi-send"></i><span>Send Questionnaire</span></a>
   </div></section>
 </div>
