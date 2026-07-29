@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.clients.models import Client
 
-from .models import Gallery
+from .models import Album, Gallery
 
 
 class GalleryForm(forms.ModelForm):
@@ -51,3 +51,25 @@ class GalleryForm(forms.ModelForm):
             gallery.save()
             self.save_m2m()
         return gallery
+
+
+class AlbumForm(forms.ModelForm):
+    class Meta:
+        model = Album
+        fields = ("name", "description", "visibility", "cover_image", "display_order")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Describe the story this collection tells…"}),
+            "cover_image": forms.FileInput(attrs={"accept": "image/*"}),
+            "display_order": forms.NumberInput(attrs={"min": 0}),
+        }
+
+    def __init__(self, *args, gallery, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gallery = gallery
+        for name, field in self.fields.items():
+            field.widget.attrs.setdefault("class", "lpw-form-control")
+            field.widget.attrs.setdefault("id", f"album-{name.replace('_', '-')}")
+
+    def validate_unique(self):
+        self.instance.gallery = self.gallery
+        super().validate_unique()

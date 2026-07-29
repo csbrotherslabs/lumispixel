@@ -19,8 +19,8 @@ from PIL import Image, UnidentifiedImageError
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
-from apps.galleries.forms import GalleryForm
-from apps.galleries.models import Gallery, GalleryPhoto
+from apps.galleries.forms import AlbumForm, GalleryForm
+from apps.galleries.models import Album, AlbumPhoto, Gallery, GalleryPhoto
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -828,9 +828,112 @@ def gallery_workspace(request, pk):
     if query:
         photos = photos.filter(original_name__icontains=query)
     photos = photos.order_by("original_name" if request.GET.get("sort") == "name" else "-created_at")
-    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "storage_display": _format_storage(gallery.storage_used),
-                    "upload_percent": 100 if gallery.image_count else 0})
+    albums = gallery.albums.annotate(photo_count=Count("photos"))
+    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+                    "album_summary": [
+                        {"label": "Total Albums", "value": albums.count(), "icon": "bi-collection"},
+                        {"label": "Public Albums", "value": albums.filter(visibility=Album.Visibility.PUBLIC).count(), "icon": "bi-globe2"},
+                        {"label": "Private Albums", "value": albums.filter(visibility=Album.Visibility.CLIENT_ONLY).count(), "icon": "bi-people"},
+                        {"label": "Hidden Albums", "value": albums.filter(visibility=Album.Visibility.HIDDEN).count(), "icon": "bi-eye-slash"},
+                    ], "storage_display": _format_storage(gallery.storage_used), "upload_percent": 100 if gallery.image_count else 0})
     return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def create_album(request, gallery_pk):
+    gallery = get_object_or_404(Gallery.objects.for_photographer(request.user.photographer_profile), pk=gallery_pk)
+    form = AlbumForm(request.POST or None, request.FILES or None, gallery=gallery)
+    if request.method == "POST" and form.is_valid():
+        album = form.save(commit=False)
+        album.gallery = gallery
+        album.full_clean()
+        album.save()
+        messages.success(request, "Album created. Add photos when you're ready.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", "Create Album")
+    context.update({"form": form, "gallery": gallery, "form_title": "Create Album", "submit_label": "Create Album"})
+    return render(request, "photographer_workspace/galleries/album_form.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_album(request, pk):
+    album = get_object_or_404(Album.objects.for_photographer(request.user.photographer_profile).select_related("gallery"), pk=pk)
+    form = AlbumForm(request.POST or None, request.FILES or None, instance=album, gallery=album.gallery)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Album updated.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", "Edit Album")
+    context.update({"form": form, "gallery": album.gallery, "album": album, "form_title": "Edit Album", "submit_label": "Save Changes"})
+    return render(request, "photographer_workspace/galleries/album_form.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def album_workspace(request, pk):
+    album = get_object_or_404(Album.objects.for_photographer(request.user.photographer_profile).select_related("gallery", "cover_photo"), pk=pk)
+    memberships = album.album_photos.select_related("photo")
+    query = request.GET.get("q", "").strip()
+    if query:
+        memberships = memberships.filter(photo__original_name__icontains=query)
+    ordering = {"newest": "-photo__created_at", "name": "photo__original_name", "order": "position"}
+    memberships = memberships.order_by(ordering.get(request.GET.get("sort"), "position"))
+    other_albums = album.gallery.albums.exclude(pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", album.name)
+    context.update({"album": album, "gallery": album.gallery, "memberships": memberships, "other_albums": other_albums})
+    return render(request, "photographer_workspace/galleries/album_workspace.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def album_action(request, pk):
+    album = get_object_or_404(Album.objects.for_photographer(request.user.photographer_profile).select_related("gallery"), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete":
+        gallery_pk = album.gallery_id
+        album.delete()
+        messages.success(request, "Album deleted. Your gallery photos were not removed.")
+        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery_pk])}?tab=albums")
+    if action == "duplicate":
+        source_memberships = list(album.album_photos.all())
+        original_name = album.name
+        album.pk = None
+        album.name = f"{original_name} Copy"
+        album.cover_image = ""
+        album.save()
+        AlbumPhoto.objects.bulk_create([AlbumPhoto(album=album, photo_id=item.photo_id, position=item.position) for item in source_memberships])
+        messages.success(request, "Album duplicated.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    return JsonResponse({"error": "Unsupported action."}, status=400)
+
+
+@photographer_workspace_required
+@require_POST
+def album_photo_action(request, pk):
+    album = get_object_or_404(Album.objects.for_photographer(request.user.photographer_profile).select_related("gallery"), pk=pk)
+    photo_ids = request.POST.getlist("photo_ids")
+    photos = GalleryPhoto.objects.filter(gallery=album.gallery, pk__in=photo_ids)
+    action = request.POST.get("action")
+    if action == "remove":
+        album.album_photos.filter(photo__in=photos).delete()
+    elif action == "cover" and photos.count() == 1:
+        album.cover_photo = photos.first()
+        album.save(update_fields=["cover_photo", "updated_at"])
+    elif action == "move":
+        target = get_object_or_404(album.gallery.albums, pk=request.POST.get("target_album"))
+        with transaction.atomic():
+            existing = set(target.photos.filter(pk__in=photo_ids).values_list("pk", flat=True))
+            start = target.album_photos.aggregate(Max("position"))["position__max"] or 0
+            AlbumPhoto.objects.bulk_create([AlbumPhoto(album=target, photo=photo, position=start + index) for index, photo in enumerate(photos, 1) if photo.pk not in existing])
+            album.album_photos.filter(photo__in=photos).delete()
+    else:
+        return JsonResponse({"error": "Choose valid photos and an action."}, status=400)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True})
+    messages.success(request, "Album photos updated.")
+    return redirect("photographer_workspace:album_workspace", pk=album.pk)
 
 
 @photographer_workspace_required

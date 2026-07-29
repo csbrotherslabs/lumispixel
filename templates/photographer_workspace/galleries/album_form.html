@@ -1,0 +1,9 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<header class="lpw-gallery-form-head"><div><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums"><i class="bi bi-arrow-left"></i>Albums</a><h1 id="workspace-page-title">{{ form_title }}</h1><p>Curate a meaningful collection inside {{ gallery.name }}.</p></div><button class="lpw-btn lpw-btn-primary" form="album-form">{{ submit_label }}</button></header>
+<form id="album-form" class="lpw-gallery-form" method="post" enctype="multipart/form-data">{% csrf_token %}
+  <section class="lpw-gallery-form-card"><header><span><i class="bi bi-collection"></i></span><div><h2>Album details</h2><p>Define the story, access, cover, and placement.</p></div></header><div class="lpw-gallery-form-grid">
+  {% for field in form %}<div class="lpw-field{% if field.name == 'description' or field.name == 'cover_image' %} lpw-field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small class="lpw-field-error">{{ error }}</small>{% endfor %}{% if field.name == 'visibility' %}<small>Public is shareable, Client Only requires gallery access, and Hidden stays internal.</small>{% endif %}</div>{% endfor %}
+  </div></section><footer class="lpw-gallery-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">Cancel</a><button class="lpw-btn lpw-btn-primary">{{ submit_label }}</button></footer>
+</form>
+{% endblock %}
