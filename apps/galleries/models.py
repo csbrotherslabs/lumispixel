@@ -201,6 +201,41 @@ class GalleryPermission(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class GallerySettings(models.Model):
+    """Presentation, download, preference, and discovery settings for a gallery."""
+
+    class WatermarkPosition(models.TextChoices):
+        CENTER = "center", "Center"
+        TOP_LEFT = "top_left", "Top left"
+        TOP_RIGHT = "top_right", "Top right"
+        BOTTOM_LEFT = "bottom_left", "Bottom left"
+        BOTTOM_RIGHT = "bottom_right", "Bottom right"
+
+    class Theme(models.TextChoices):
+        LIGHT = "light", "Light"
+        DARK = "dark", "Dark"
+        EDITORIAL = "editorial", "Editorial"
+
+    gallery = models.OneToOneField(Gallery, on_delete=models.CASCADE, related_name="settings")
+    studio_logo = models.ImageField(upload_to="galleries/branding/%Y/%m/", blank=True)
+    accent_color = models.CharField(max_length=7, default="#B42328")
+    watermark_position = models.CharField(max_length=20, choices=WatermarkPosition.choices, default=WatermarkPosition.BOTTOM_RIGHT)
+    theme = models.CharField(max_length=20, choices=Theme.choices, default=Theme.LIGHT)
+    allow_downloads = models.BooleanField(default=True)
+    allow_original_downloads = models.BooleanField(default=False)
+    zip_downloads = models.BooleanField(default=True)
+    download_limit = models.PositiveIntegerField(blank=True, null=True)
+    enable_favorites = models.BooleanField(default=True)
+    enable_comments = models.BooleanField(default=False)
+    enable_slideshow = models.BooleanField(default=True)
+    show_exif_data = models.BooleanField(default=False)
+    show_file_names = models.BooleanField(default=False)
+    gallery_url = models.SlugField(max_length=220)
+    meta_title = models.CharField(max_length=70, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class GalleryInvitation(models.Model):
     """An email-address invitation; delivery can be attached by a future mail service."""
 

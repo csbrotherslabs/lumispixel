@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
-from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto
+from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 
@@ -35,6 +35,34 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(incomplete)
         self.assertRedirects(self.client.get(url), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
         self.assertRedirects(self.client.get(reverse("photographer_workspace:galleries")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
+
+    def test_gallery_settings_persist_validate_and_are_owner_scoped(self):
+        user, profile = self.make_photographer(True, email="settings@example.com", slug="settings")
+        _, other = self.make_photographer(True, email="settings-other@example.com", slug="settings-other")
+        gallery = Gallery.objects.create(photographer=profile, name="Coastal Wedding", slug="coastal-wedding")
+        private_gallery = Gallery.objects.create(photographer=other, name="Private", slug="private")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
+        page = self.client.get(url, {"tab": "settings"})
+        self.assertContains(page, "Gallery Settings")
+        self.assertContains(page, "Permanently Delete Gallery")
+        payload = {
+            "action": "save_settings", "general-name": "Coastal Celebration", "general-description": "Client delivery",
+            "general-event_date": "2026-08-10", "general-client": "", "general-status": Gallery.Status.PUBLISHED,
+            "general-visibility": Gallery.Visibility.PRIVATE, "general-expiration_date": "2026-09-01",
+            "settings-accent_color": "#123ABC", "settings-watermark_position": GallerySettings.WatermarkPosition.CENTER,
+            "settings-theme": GallerySettings.Theme.EDITORIAL, "settings-allow_downloads": "on", "settings-zip_downloads": "on",
+            "settings-download_limit": "12", "settings-enable_favorites": "on", "settings-enable_slideshow": "on",
+            "settings-gallery_url": "coastal-client", "settings-meta_title": "Coastal client gallery",
+            "settings-meta_description": "A private photography gallery for our coastal celebration.",
+        }
+        response = self.client.post(url, payload)
+        self.assertRedirects(response, f"{url}?tab=settings")
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.name, "Coastal Celebration")
+        self.assertEqual(gallery.settings.download_limit, 12)
+        self.assertEqual(gallery.settings.gallery_url, "coastal-client")
+        self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk]), {"tab": "settings"}).status_code, 404)
 
     def test_completed_photographer_dashboard_and_post_login_destination(self):
         user, _ = self.make_photographer(True, business_name="Lumis Studio", display_name="Alex Lens", website_theme=PhotographerProfile.WebsiteTheme.MODERN_STUDIO)
