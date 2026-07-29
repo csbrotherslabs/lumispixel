@@ -9,6 +9,7 @@ from django.utils import timezone
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.galleries.models import Gallery, GalleryPhoto
+from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 
 
@@ -77,8 +78,44 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue"}:
+            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing"}:
                 self.assertContains(response, "Back to Dashboard")
+
+    def test_ai_processing_center_creates_scoped_jobs_and_supports_actions(self):
+        user, profile = self.make_photographer(True, email="ai@example.com", slug="ai")
+        _, other = self.make_photographer(True, email="other-ai@example.com", slug="other-ai")
+        gallery = Gallery.objects.create(photographer=profile, name="AI Wedding", slug="ai-wedding", image_count=80)
+        private_gallery = Gallery.objects.create(photographer=other, name="Private AI Gallery", slug="private-ai")
+        self.client.force_login(user)
+
+        page = self.client.get(reverse("photographer_workspace:ai_processing"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Monitor and manage AI tasks for every gallery.")
+        self.assertContains(page, "Face Detection")
+        self.assertContains(page, "Search Indexing")
+        self.assertNotContains(page, "Private AI Gallery")
+
+        response = self.client.post(reverse("photographer_workspace:ai_processing"), {
+            "gallery_ids": [gallery.pk, private_gallery.pk],
+            "task_types": [AIJob.TaskType.FACE_DETECTION, AIJob.TaskType.BLUR_DETECTION],
+        })
+        self.assertRedirects(response, reverse("photographer_workspace:ai_processing"))
+        self.assertEqual(AIJob.objects.for_photographer(profile).count(), 2)
+        job = AIJob.objects.get(photographer=profile, task_type=AIJob.TaskType.FACE_DETECTION)
+        self.assertEqual(job.progress.total_images, 80)
+        self.assertEqual(job.status, AIJob.Status.QUEUED)
+
+        job.status = AIJob.Status.FAILED
+        job.error_summary = "Worker unavailable"
+        job.save()
+        retry = self.client.post(reverse("photographer_workspace:ai_job_action", args=[job.pk]), {"action": "retry"})
+        self.assertRedirects(retry, reverse("photographer_workspace:ai_processing"))
+        job.refresh_from_db()
+        self.assertEqual(job.status, AIJob.Status.QUEUED)
+        cancel = self.client.post(reverse("photographer_workspace:ai_job_action", args=[job.pk]), {"action": "cancel"})
+        self.assertRedirects(cancel, reverse("photographer_workspace:ai_processing"))
+        job.refresh_from_db()
+        self.assertEqual(job.status, AIJob.Status.CANCELLED)
 
     def test_gallery_pages_render_with_active_navigation_and_scoped_records(self):
         user, profile = self.make_photographer(True, email="gallery@example.com", slug="gallery-photo")

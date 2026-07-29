@@ -21,12 +21,14 @@ from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNot
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import GalleryForm
 from apps.galleries.models import Gallery, GalleryPhoto
+from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
     {"key": "galleries", "url_name": "galleries", "icon": "bi-grid", "title": "Galleries Dashboard", "description": "Organize, publish, and deliver photography collections.", "coming_soon": False},
     {"key": "all_galleries", "url_name": "all_galleries", "icon": "bi-images", "title": "All Galleries", "description": "Browse every photography collection.", "coming_soon": False},
     {"key": "gallery_upload_queue", "url_name": "gallery_upload_queue", "icon": "bi-cloud-arrow-up", "title": "Upload Queue", "description": "Review gallery uploads and processing.", "coming_soon": False},
+    {"key": "ai_processing", "url_name": "ai_processing", "icon": "bi-cpu", "title": "AI Processing", "description": "Monitor and manage gallery AI tasks.", "coming_soon": False},
     {"key": "clients", "url_name": "clients", "icon": "bi-people", "title": "Clients", "description": "Manage client relationships, invitations, and gallery access.", "coming_soon": True, "planned": ["Client records", "Invitations", "Gallery access"]},
     {"key": "events", "url_name": "events", "icon": "bi-calendar-event", "title": "Events", "description": "Manage photography events and event-code photo discovery.", "coming_soon": True, "planned": ["Event setup", "Event codes", "Photo discovery"]},
     {"key": "ai", "url_name": "ai", "icon": "bi-stars", "title": "AI Workspace", "description": "Future home for culling, editing assistance, search, tagging, and face recognition.", "coming_soon": True, "planned": ["Face recognition", "Image quality scoring", "Duplicate detection", "Blur detection", "Semantic search", "Auto-tagging", "AI editing assistance", "Watermark generation"]},
@@ -55,7 +57,7 @@ MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
     {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
-    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
+    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
     {"title": "Bookings", "icon": "bi-calendar-check", "items": [("calendar", "Calendar", "bi-calendar3"), ("bookings", "Bookings", "bi-calendar-check"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
     {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
@@ -576,6 +578,81 @@ def _unique_gallery_slug(profile, name, exclude_pk=None):
         slug = f"{base[:210-len(str(suffix))]}-{suffix}"
         suffix += 1
     return slug
+
+
+AI_TASK_ICONS = {
+    AIJob.TaskType.FACE_DETECTION: "bi-person-bounding-box", AIJob.TaskType.FACE_CLUSTERING: "bi-people",
+    AIJob.TaskType.DUPLICATE_DETECTION: "bi-copy", AIJob.TaskType.BLUR_DETECTION: "bi-droplet-half",
+    AIJob.TaskType.CLOSED_EYES_DETECTION: "bi-eye-slash", AIJob.TaskType.IMAGE_QUALITY_SCORING: "bi-stars",
+    AIJob.TaskType.SCENE_RECOGNITION: "bi-image", AIJob.TaskType.OBJECT_DETECTION: "bi-bounding-box-circles",
+    AIJob.TaskType.COLOR_DETECTION: "bi-palette", AIJob.TaskType.KEYWORD_GENERATION: "bi-tags",
+    AIJob.TaskType.SEARCH_INDEXING: "bi-search",
+}
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def ai_processing_center(request):
+    profile = request.user.photographer_profile
+    galleries = Gallery.objects.for_photographer(profile).order_by("name")
+    if request.method == "POST":
+        gallery_ids = request.POST.getlist("gallery_ids")
+        task_types = request.POST.getlist("task_types")
+        selected_galleries = galleries.filter(pk__in=gallery_ids)
+        valid_tasks = [task for task in task_types if task in AIJob.TaskType.values]
+        created = 0
+        with transaction.atomic():
+            for gallery in selected_galleries:
+                for task_type in valid_tasks:
+                    if AIJob.objects.filter(gallery=gallery, task_type=task_type, status__in=[AIJob.Status.QUEUED, AIJob.Status.RUNNING]).exists():
+                        continue
+                    job = AIJob.objects.create(photographer=profile, gallery=gallery, task_type=task_type, estimated_seconds=max(gallery.image_count * 2, 60))
+                    AIProcessingStatus.objects.create(job=job, total_images=gallery.image_count)
+                    created += 1
+        if created:
+            messages.success(request, f"{created} AI processing job{'s' if created != 1 else ''} added to the queue.")
+        else:
+            messages.warning(request, "Select at least one gallery and AI task, or choose work that is not already active.")
+        return redirect("photographer_workspace:ai_processing")
+
+    jobs = AIJob.objects.for_photographer(profile).select_related("gallery", "gallery__client", "progress")
+    active_jobs = list(jobs.active().order_by("queued_at"))
+    completed_jobs = list(jobs.filter(status=AIJob.Status.COMPLETED)[:10])
+    failed_jobs = list(jobs.filter(status=AIJob.Status.FAILED)[:8])
+    capabilities = []
+    for task_type, label in AIJob.TaskType.choices:
+        latest = jobs.filter(task_type=task_type).first()
+        capabilities.append({"key": task_type, "label": label, "icon": AI_TASK_ICONS[task_type], "job": latest})
+    context = _dashboard_context(request, "ai_processing", "AI Processing")
+    context.update({
+        "galleries": galleries, "task_choices": AIJob.TaskType.choices, "queue_jobs": active_jobs,
+        "completed_jobs": completed_jobs, "failed_jobs": failed_jobs, "capabilities": capabilities,
+        "ai_summary": [
+            {"label": "Galleries Processing", "value": jobs.filter(status=AIJob.Status.RUNNING).values("gallery").distinct().count(), "icon": "bi-images", "tone": "purple"},
+            {"label": "Images Processed", "value": sum(getattr(job, "progress", None).completed_images for job in jobs.filter(status=AIJob.Status.COMPLETED) if getattr(job, "progress", None)), "icon": "bi-check2-circle", "tone": "green"},
+            {"label": "Pending Jobs", "value": jobs.filter(status=AIJob.Status.QUEUED).count(), "icon": "bi-clock", "tone": "amber"},
+            {"label": "Failed Jobs", "value": jobs.filter(status=AIJob.Status.FAILED).count(), "icon": "bi-exclamation-triangle", "tone": "red"},
+        ],
+    })
+    return render(request, "photographer_workspace/galleries/ai_processing.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def ai_job_action(request, pk):
+    job = get_object_or_404(AIJob.objects.for_photographer(request.user.photographer_profile), pk=pk)
+    action = request.POST.get("action")
+    if action == "retry" and job.status == AIJob.Status.FAILED:
+        job.status, job.error_summary, job.error_details = AIJob.Status.QUEUED, "", ""
+        job.started_at, job.completed_at = None, None
+        job.save(update_fields=["status", "error_summary", "error_details", "started_at", "completed_at", "updated_at"])
+        AIProcessingStatus.objects.update_or_create(job=job, defaults={"total_images": job.gallery.image_count, "completed_images": 0, "failed_images": 0, "current_stage": ""})
+        messages.success(request, "The AI job was returned to the queue.")
+    elif action == "cancel" and job.status in {AIJob.Status.QUEUED, AIJob.Status.RUNNING, AIJob.Status.FAILED}:
+        job.status, job.completed_at = AIJob.Status.CANCELLED, timezone.now()
+        job.save(update_fields=["status", "completed_at", "updated_at"])
+        messages.success(request, "The AI job was cancelled.")
+    return redirect("photographer_workspace:ai_processing")
 
 
 @photographer_workspace_required
