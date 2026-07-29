@@ -4,7 +4,7 @@ from django.test import TestCase
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
-from .models import Gallery
+from .models import Album, AlbumPhoto, Gallery, GalleryPhoto
 
 
 class GalleryModelTests(TestCase):
@@ -30,3 +30,17 @@ class GalleryModelTests(TestCase):
         gallery = Gallery(photographer=owner, client=client, name="Invalid", slug="invalid")
         with self.assertRaises(ValidationError):
             gallery.full_clean()
+
+    def test_album_curates_only_photos_from_its_gallery(self):
+        user = User.objects.create_user(email="albums@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=user, slug="album-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="Wedding", slug="wedding")
+        other_gallery = Gallery.objects.create(photographer=owner, name="Portraits", slug="portraits")
+        photo = GalleryPhoto.objects.create(gallery=other_gallery, photographer=owner, file="other.jpg", original_name="other.jpg")
+        album = Album.objects.create(gallery=gallery, name="Ceremony", visibility=Album.Visibility.CLIENT_ONLY)
+
+        membership = AlbumPhoto(album=album, photo=photo)
+        with self.assertRaises(ValidationError):
+            membership.full_clean()
+
+        self.assertEqual(list(Album.objects.for_photographer(owner)), [album])

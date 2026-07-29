@@ -202,6 +202,31 @@ class PhotographerWorkspaceTests(TestCase):
         gallery.refresh_from_db()
         self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
 
+    def test_album_crud_workspace_and_owner_isolation(self):
+        from apps.galleries.models import Album, AlbumPhoto
+
+        user, profile = self.make_photographer(True, email="album-crud@example.com", slug="album-crud")
+        _, other = self.make_photographer(True, email="album-other@example.com", slug="album-other")
+        gallery = Gallery.objects.create(photographer=profile, name="Wedding", slug="wedding")
+        private_gallery = Gallery.objects.create(photographer=other, name="Private", slug="private")
+        private_album = Album.objects.create(gallery=private_gallery, name="Private album")
+        self.client.force_login(user)
+
+        created = self.client.post(reverse("photographer_workspace:create_album", args=[gallery.pk]), {
+            "name": "Golden Hour", "description": "Warm portraits", "visibility": Album.Visibility.PUBLIC, "display_order": 2,
+        })
+        album = Album.objects.get(gallery=gallery)
+        self.assertRedirects(created, reverse("photographer_workspace:album_workspace", args=[album.pk]))
+        albums_page = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "albums"})
+        self.assertContains(albums_page, "Organize galleries into beautiful collections.")
+        self.assertContains(albums_page, "Golden Hour")
+        self.assertContains(albums_page, "Public Albums")
+        self.assertEqual(self.client.get(reverse("photographer_workspace:album_workspace", args=[private_album.pk])).status_code, 404)
+
+        duplicate = self.client.post(reverse("photographer_workspace:album_action", args=[album.pk]), {"action": "duplicate"})
+        self.assertEqual(duplicate.status_code, 302)
+        self.assertTrue(Album.objects.filter(gallery=gallery, name="Golden Hour Copy").exists())
+
     def test_clients_workspace_uses_scoped_data_and_directory_controls(self):
         user, profile = self.make_photographer(True, email="directory@example.com", slug="directory")
         _, other = self.make_photographer(True, email="other-directory@example.com", slug="other-directory")

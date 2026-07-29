@@ -16,3 +16,53 @@
   const checks=Array.from(document.querySelectorAll('[data-photo-check]')),all=document.querySelector('[data-photo-select-all]'),bulk=document.querySelector('[data-photo-bulk]');function update(){const n=checks.filter(function(c){return c.checked;}).length;if(bulk){bulk.hidden=!n;bulk.querySelector('[data-photo-count]').textContent=n;}if(all)all.indeterminate=n>0&&n<checks.length;}if(all)all.onchange=function(){checks.forEach(function(c){c.checked=all.checked;});update();};checks.forEach(function(c){c.onchange=update;});document.querySelectorAll('[data-select-photo]').forEach(function(b){b.onclick=function(){const c=b.closest('article').querySelector('[data-photo-check]');c.checked=!c.checked;update();};});
   document.querySelectorAll('[data-photo-action],[data-server-action]').forEach(function(b){b.onclick=function(){if(b.dataset.photoAction==='delete'&&!confirm('Delete this photo permanently?'))return;fetch(b.dataset.actionUrl,{method:'POST',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/x-www-form-urlencoded'},body:'action='+(b.dataset.photoAction||b.dataset.serverAction)}).then(function(r){if(r.ok&&(b.dataset.photoAction==='delete'||b.dataset.serverAction==='remove'))b.closest('article').remove();});};});
 })();
+
+// Album curation controls and cross-album drag-and-drop.
+(() => {
+  const form = document.querySelector('[data-album-photos]');
+  if (form) {
+    const checks = [...form.querySelectorAll('[data-album-photo-check]')];
+    const bulk = form.querySelector('[data-album-bulk]');
+    const count = bulk?.querySelector('strong span');
+    const refresh = () => {
+      const selected = checks.filter((item) => item.checked).length;
+      if (bulk) bulk.hidden = !selected;
+      if (count) count.textContent = selected;
+    };
+    checks.forEach((item) => item.addEventListener('change', refresh));
+    document.querySelector('[data-album-select-all]')?.addEventListener('change', (event) => {
+      checks.forEach((item) => { item.checked = event.target.checked; });
+      refresh();
+    });
+    form.querySelectorAll('[data-album-photo]').forEach((card) => {
+      card.addEventListener('dragstart', (event) => {
+        const checked = card.querySelector('[data-album-photo-check]');
+        if (checked && !checked.checked) checked.checked = true;
+        refresh();
+        event.dataTransfer.setData('application/x-lumispixel-photos', JSON.stringify(checks.filter((item) => item.checked).map((item) => item.value)));
+        event.dataTransfer.effectAllowed = 'move';
+      });
+    });
+  }
+  document.querySelectorAll('[data-album-drop-url]').forEach((card) => {
+    card.addEventListener('dragover', (event) => { event.preventDefault(); card.classList.add('is-drop-target'); });
+    card.addEventListener('dragleave', () => card.classList.remove('is-drop-target'));
+    card.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      card.classList.remove('is-drop-target');
+      let photoIds = [];
+      try { photoIds = JSON.parse(event.dataTransfer.getData('application/x-lumispixel-photos')); } catch (_) { return; }
+      const sourceForm = document.querySelector('[data-album-photos]');
+      if (!sourceForm || !photoIds.length) return;
+      const data = new FormData(sourceForm);
+      data.set('action', 'move');
+      data.set('target_album', card.dataset.albumDropUrl.match(/albums\/(\d+)/)?.[1] || '');
+      data.delete('photo_ids');
+      photoIds.forEach((id) => data.append('photo_ids', id));
+      const response = await fetch(sourceForm.action, {method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'}});
+      if (response.ok) window.location.reload();
+    });
+  });
+  document.querySelectorAll('[data-album-delete]').forEach((button) => button.addEventListener('click', () => button.closest('form').querySelector('dialog').showModal()));
+  document.querySelectorAll('[data-album-cancel]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+})();

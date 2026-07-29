@@ -120,3 +120,58 @@ class GalleryPhoto(models.Model):
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
             raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+
+class AlbumQuerySet(models.QuerySet):
+    def for_photographer(self, photographer):
+        return self.filter(gallery__photographer=photographer)
+
+
+class Album(models.Model):
+    """A curated, ordered collection of photos within a gallery."""
+
+    class Visibility(models.TextChoices):
+        PUBLIC = "public", "Public"
+        CLIENT_ONLY = "client_only", "Client Only"
+        HIDDEN = "hidden", "Hidden"
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="albums")
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    visibility = models.CharField(max_length=20, choices=Visibility.choices, default=Visibility.CLIENT_ONLY)
+    cover_image = models.ImageField(upload_to="galleries/albums/covers/%Y/%m/", blank=True)
+    cover_photo = models.ForeignKey(GalleryPhoto, on_delete=models.SET_NULL, related_name="cover_for_albums", blank=True, null=True)
+    display_order = models.PositiveIntegerField(default=0)
+    photos = models.ManyToManyField(GalleryPhoto, through="AlbumPhoto", related_name="albums", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = AlbumQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["display_order", "-updated_at"]
+        constraints = [models.UniqueConstraint(fields=["gallery", "name"], name="album_gallery_name_unique")]
+        indexes = [models.Index(fields=["gallery", "visibility", "display_order"], name="album_gallery_visibility_order")]
+
+    def clean(self):
+        if self.cover_photo_id and self.gallery_id and self.cover_photo.gallery_id != self.gallery_id:
+            raise ValidationError({"cover_photo": "Cover photo must belong to this album's gallery."})
+
+    def __str__(self):
+        return self.name
+
+
+class AlbumPhoto(models.Model):
+    album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name="album_photos")
+    photo = models.ForeignKey(GalleryPhoto, on_delete=models.CASCADE, related_name="album_memberships")
+    position = models.PositiveIntegerField(default=0)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "added_at"]
+        constraints = [models.UniqueConstraint(fields=["album", "photo"], name="album_photo_unique")]
+        indexes = [models.Index(fields=["album", "position"], name="album_photo_position")]
+
+    def clean(self):
+        if self.album_id and self.photo_id and self.album.gallery_id != self.photo.gallery_id:
+            raise ValidationError({"photo": "Photo and album must belong to the same gallery."})
