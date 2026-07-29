@@ -10,6 +10,13 @@ import secrets
 
 
 class GalleryQuerySet(models.QuerySet):
+    def active(self):
+        """Galleries that belong in day-to-day workspace lists."""
+        return self.filter(archived_at__isnull=True, deleted_at__isnull=True).exclude(status=Gallery.Status.ARCHIVED)
+
+    def archived(self):
+        return self.filter(archived_at__isnull=False, deleted_at__isnull=True)
+
     def for_photographer(self, photographer):
         return self.filter(photographer=photographer)
 
@@ -33,6 +40,20 @@ class Gallery(models.Model):
         PASSWORD = "password", "Password protected"
         PUBLIC = "public", "Public"
 
+    class ArchiveReason(models.TextChoices):
+        COMPLETED = "completed", "Project Completed"
+        EXPIRED = "expired", "Gallery Expired"
+        CLIENT_REQUESTED = "client_requested", "Client Requested"
+        STORAGE = "storage", "Storage Management"
+        DUPLICATE = "duplicate", "Duplicate Gallery"
+        OTHER = "other", "Other"
+
+    class RetentionType(models.TextChoices):
+        INDEFINITE = "indefinite", "Retained Indefinitely"
+        UNTIL_DATE = "until_date", "Retained Until Date"
+        SCHEDULED = "scheduled", "Scheduled for Deletion"
+        DELETION_PENDING = "deletion_pending", "Deletion Pending"
+
     photographer = models.ForeignKey(
         "accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="galleries"
     )
@@ -52,6 +73,14 @@ class Gallery(models.Model):
     storage_used = models.PositiveBigIntegerField(default=0, help_text="Storage used in bytes.")
     published_at = models.DateTimeField(blank=True, null=True)
     expires_at = models.DateTimeField(blank=True, null=True)
+    archived_at = models.DateTimeField(blank=True, null=True)
+    archived_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="archived_galleries")
+    archive_reason = models.CharField(max_length=24, choices=ArchiveReason.choices, blank=True)
+    previous_status = models.CharField(max_length=20, choices=Status.choices, blank=True)
+    retention_type = models.CharField(max_length=24, choices=RetentionType.choices, default=RetentionType.INDEFINITE)
+    retention_until = models.DateField(blank=True, null=True)
+    scheduled_deletion_at = models.DateTimeField(blank=True, null=True)
+    deleted_at = models.DateTimeField(blank=True, null=True, help_text="Soft-deletion marker used before permanent removal.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -76,6 +105,18 @@ class Gallery(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class GalleryArchivePolicy(models.Model):
+    """Owner-scoped archive defaults; storage-provider neutral by design."""
+
+    photographer = models.OneToOneField("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_archive_policy")
+    archive_delivered = models.BooleanField(default=False)
+    archive_after_expiration = models.BooleanField(default=True)
+    inactivity_days = models.PositiveIntegerField(blank=True, null=True)
+    default_retention_days = models.PositiveIntegerField(default=365)
+    warn_before_deletion = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class GalleryActivityQuerySet(models.QuerySet):

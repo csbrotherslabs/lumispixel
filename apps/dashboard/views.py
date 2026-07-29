@@ -1,6 +1,9 @@
 from decimal import Decimal
+from datetime import timedelta
 import csv
+import io
 import mimetypes
+import zipfile
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
@@ -23,13 +26,14 @@ from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
     {"key": "galleries", "url_name": "galleries", "icon": "bi-grid", "title": "Galleries Dashboard", "description": "Organize, publish, and deliver photography collections.", "coming_soon": False},
     {"key": "all_galleries", "url_name": "all_galleries", "icon": "bi-images", "title": "All Galleries", "description": "Browse every photography collection.", "coming_soon": False},
+    {"key": "gallery_archive", "url_name": "gallery_archive", "icon": "bi-archive", "title": "Gallery Archive", "description": "Recover inactive galleries and manage retention.", "coming_soon": False},
     {"key": "gallery_upload_queue", "url_name": "gallery_upload_queue", "icon": "bi-cloud-arrow-up", "title": "Upload Queue", "description": "Review gallery uploads and processing.", "coming_soon": False},
     {"key": "ai_processing", "url_name": "ai_processing", "icon": "bi-cpu", "title": "AI Processing", "description": "Monitor and manage gallery AI tasks.", "coming_soon": False},
     {"key": "clients", "url_name": "clients", "icon": "bi-people", "title": "Clients", "description": "Manage client relationships, invitations, and gallery access.", "coming_soon": True, "planned": ["Client records", "Invitations", "Gallery access"]},
@@ -60,7 +64,7 @@ MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
     {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
-    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
+    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_archive", "Gallery Archive", "bi-archive"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
     {"title": "Bookings", "icon": "bi-calendar-check", "items": [("calendar", "Calendar", "bi-calendar3"), ("bookings", "Bookings", "bi-calendar-check"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
     {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
@@ -662,7 +666,7 @@ def ai_job_action(request, pk):
 @require_GET
 def all_galleries(request):
     profile = request.user.photographer_profile
-    all_records = Gallery.objects.for_photographer(profile).select_related("client")
+    all_records = Gallery.objects.for_photographer(profile).active().select_related("client")
     galleries = all_records
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -696,6 +700,135 @@ def all_galleries(request):
         "gallery_status_choices": Gallery.Status.choices, "gallery_clients": Client.objects.for_photographer(profile).order_by("first_name", "last_name"),
         "gallery_summary_strip": summary, "retained_query": retained.urlencode(), "has_filters": any([query, status, client, event_date])})
     return render(request, "photographer_workspace/galleries/all.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_archive(request):
+    profile = request.user.photographer_profile
+    records = Gallery.objects.for_photographer(profile).archived().select_related("client", "archived_by")
+    query = request.GET.get("q", "").strip()
+    reason, retention = request.GET.get("reason", ""), request.GET.get("retention", "")
+    date_from, date_to = request.GET.get("date_from", ""), request.GET.get("date_to", "")
+    storage, sort = request.GET.get("storage", ""), request.GET.get("sort", "recent")
+    if query:
+        records = records.filter(Q(name__icontains=query) | Q(client__first_name__icontains=query) | Q(client__last_name__icontains=query))
+    if reason in Gallery.ArchiveReason.values:
+        records = records.filter(archive_reason=reason)
+    if retention in Gallery.RetentionType.values:
+        records = records.filter(retention_type=retention)
+    if date_from:
+        records = records.filter(archived_at__date__gte=date_from)
+    if date_to:
+        records = records.filter(archived_at__date__lte=date_to)
+    size_filters = {"small": (0, 1024**3), "medium": (1024**3, 10 * 1024**3), "large": (10 * 1024**3, None)}
+    if storage in size_filters:
+        low, high = size_filters[storage]
+        records = records.filter(storage_used__gte=low)
+        if high:
+            records = records.filter(storage_used__lt=high)
+    ordering = {"recent": "-archived_at", "oldest": "archived_at", "name": "name", "storage": "-storage_used", "deletion": "scheduled_deletion_at"}
+    records = records.order_by(ordering.get(sort, "-archived_at"))
+    page = Paginator(records, 10).get_page(request.GET.get("page"))
+    retained_query = request.GET.copy(); retained_query.pop("page", None)
+    all_archived = Gallery.objects.for_photographer(profile).archived()
+    policy, _ = GalleryArchivePolicy.objects.get_or_create(photographer=profile)
+    context = _dashboard_context(request, "gallery_archive", "Gallery Archive")
+    context.update({
+        "archive_page": page, "archive_query": query, "selected_reason": reason, "selected_retention": retention,
+        "selected_date_from": date_from, "selected_date_to": date_to, "selected_storage": storage, "selected_sort": sort,
+        "archive_reasons": Gallery.ArchiveReason.choices, "retention_choices": Gallery.RetentionType.choices,
+        "active_galleries": Gallery.objects.for_photographer(profile).active().order_by("name"), "policy": policy,
+        "retained_query": retained_query.urlencode(), "has_filters": any([query, reason, retention, date_from, date_to, storage]),
+        "archive_metrics": [
+            ("Archived Galleries", all_archived.count(), "bi-archive", "Available to restore"),
+            ("Archived Photos", all_archived.aggregate(total=Coalesce(Sum("image_count"), 0))["total"], "bi-images", "Relationships preserved"),
+            ("Storage Used", all_archived.aggregate(total=Coalesce(Sum("storage_used"), 0))["total"], "bi-device-ssd", "bytes"),
+            ("Scheduled for Deletion", all_archived.filter(retention_type__in=[Gallery.RetentionType.SCHEDULED, Gallery.RetentionType.DELETION_PENDING]).count(), "bi-clock-history", "Review before removal"),
+        ],
+    })
+    return render(request, "photographer_workspace/galleries/archive.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_archive_actions(request):
+    profile = request.user.photographer_profile
+    ids = request.POST.getlist("gallery_ids")
+    records = Gallery.objects.for_photographer(profile).filter(pk__in=ids, deleted_at__isnull=True)
+    action = request.POST.get("action")
+    if action == "save_policy":
+        policy, _ = GalleryArchivePolicy.objects.get_or_create(photographer=profile)
+        policy.archive_delivered = bool(request.POST.get("archive_delivered"))
+        policy.archive_after_expiration = bool(request.POST.get("archive_after_expiration"))
+        policy.warn_before_deletion = bool(request.POST.get("warn_before_deletion"))
+        policy.inactivity_days = int(request.POST["inactivity_days"]) if request.POST.get("inactivity_days", "").isdigit() else None
+        policy.default_retention_days = int(request.POST.get("default_retention_days", 365))
+        policy.save()
+        messages.success(request, "Archive policies saved.")
+        return redirect("photographer_workspace:gallery_archive")
+    if not ids:
+        messages.error(request, "Select at least one gallery.")
+        return redirect("photographer_workspace:gallery_archive")
+    now = timezone.now()
+    if action == "download":
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+            for gallery in records.archived().prefetch_related("photos"):
+                manifest = f"Gallery: {gallery.name}\nPhotos: {gallery.image_count}\nArchived: {gallery.archived_at}\nReason: {gallery.get_archive_reason_display()}\n"
+                bundle.writestr(f"{slugify(gallery.name)}/archive-info.txt", manifest)
+                for photo in gallery.photos.all():
+                    if photo.file:
+                        with photo.file.open("rb") as source:
+                            bundle.writestr(f"{slugify(gallery.name)}/photos/{photo.original_name}", source.read())
+        archive.seek(0)
+        return FileResponse(archive, as_attachment=True, filename="lumispixel-gallery-archive.zip", content_type="application/zip")
+    if action == "archive" and request.POST.get("confirm_archive"):
+        reason = request.POST.get("archive_reason")
+        if reason not in Gallery.ArchiveReason.values:
+            messages.error(request, "Choose an archive reason.")
+            return redirect("photographer_workspace:gallery_archive")
+        days = int(request.POST.get("retention_days", 365))
+        for gallery in records:
+            gallery.previous_status = gallery.status
+            gallery.status, gallery.archived_at, gallery.archived_by = Gallery.Status.ARCHIVED, now, request.user
+            gallery.archive_reason = reason
+            gallery.visibility = Gallery.Visibility.PRIVATE if request.POST.get("disable_public_access") else gallery.visibility
+            gallery.retention_type = Gallery.RetentionType.INDEFINITE if days == 0 else Gallery.RetentionType.UNTIL_DATE
+            gallery.retention_until = None if days == 0 else (now + timedelta(days=days)).date()
+            gallery.save()
+            log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_ARCHIVED, description="Gallery archived; albums, photos, and history were preserved.", actor=request.user)
+        messages.success(request, f"Archived {records.count()} gallery records.")
+    elif action == "restore":
+        for gallery in records.archived():
+            restored_status = gallery.previous_status if gallery.previous_status and gallery.previous_status != Gallery.Status.PUBLISHED else Gallery.Status.DRAFT
+            gallery.status, gallery.archived_at, gallery.scheduled_deletion_at = restored_status, None, None
+            gallery.archived_by, gallery.archive_reason, gallery.retention_until = None, "", None
+            gallery.visibility = Gallery.Visibility.PRIVATE
+            gallery.save()
+            log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_UPDATED, title="Gallery restored", description="Restored without publishing. Visibility and expiration settings require review.", actor=request.user)
+        messages.success(request, "Gallery restored privately. Review visibility and expiration before publishing.")
+    elif action == "retention":
+        retention_type = request.POST.get("retention_type")
+        if retention_type not in Gallery.RetentionType.values:
+            messages.error(request, "Choose a valid retention status.")
+            return redirect("photographer_workspace:gallery_archive")
+        until = request.POST.get("retention_until") or None
+        records.archived().update(retention_type=retention_type, retention_until=until,
+            scheduled_deletion_at=timezone.make_aware(timezone.datetime.fromisoformat(until)) if until and retention_type in [Gallery.RetentionType.SCHEDULED, Gallery.RetentionType.DELETION_PENDING] else None)
+        messages.success(request, "Retention settings updated.")
+    elif action == "permanent_delete":
+        gallery = records.archived().first()
+        if not gallery or len(ids) != 1 or request.POST.get("gallery_name") != gallery.name or not request.POST.get("acknowledge_delete"):
+            messages.error(request, "Permanent deletion requires the exact gallery name and explicit acknowledgment.")
+        elif gallery.orders.exists():
+            gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
+            messages.warning(request, "Gallery access was removed, but required financial transaction history was retained.")
+        else:
+            gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
+            gallery.delete()
+            messages.success(request, "Gallery and associated non-financial records permanently deleted.")
+    return redirect("photographer_workspace:gallery_archive")
 
 
 @photographer_workspace_required
@@ -754,7 +887,17 @@ def gallery_actions(request):
         records.delete()
         messages.success(request, f"Deleted {count} {'gallery' if count == 1 else 'galleries'}.")
     elif action == "archive":
-        records.update(status=Gallery.Status.ARCHIVED)
+        now = timezone.now()
+        for gallery in records:
+            gallery.previous_status = gallery.status
+            gallery.status = Gallery.Status.ARCHIVED
+            gallery.archived_at = now
+            gallery.archived_by = request.user
+            gallery.archive_reason = Gallery.ArchiveReason.OTHER
+            gallery.visibility = Gallery.Visibility.PRIVATE
+            gallery.save()
+            log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_ARCHIVED,
+                                 description="Gallery archived from the gallery list.", actor=request.user)
         messages.success(request, "Selected galleries archived.")
     elif action == "publish":
         records.update(status=Gallery.Status.PUBLISHED, published_at=timezone.now())
