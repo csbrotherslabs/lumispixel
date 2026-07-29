@@ -19,8 +19,8 @@ from PIL import Image, UnidentifiedImageError
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
-from apps.galleries.forms import AlbumForm, GalleryForm, GallerySettingsForm
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
+from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -825,6 +825,9 @@ def gallery_workspace(request, pk):
         tab = "overview"
     permissions, _ = GalleryPermission.objects.get_or_create(gallery=gallery)
     settings, _ = GallerySettings.objects.get_or_create(gallery=gallery, defaults={"gallery_url": gallery.slug})
+    store, _ = GalleryStore.objects.get_or_create(gallery=gallery, defaults={"photographer": request.user.photographer_profile, "name": f"{gallery.name} Store"})
+    store_form = StoreSettingsForm(request.POST or None, instance=store, prefix="store")
+    discount_form = DiscountCodeForm(request.POST or None, prefix="discount")
     settings_form = GallerySettingsForm(request.POST or None, request.FILES or None, instance=settings,
                                         photographer=request.user.photographer_profile, prefix="settings")
     general_form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery,
@@ -833,7 +836,23 @@ def gallery_workspace(request, pk):
                                                if value in {Gallery.Status.DRAFT, Gallery.Status.PUBLISHED, Gallery.Status.ARCHIVED}]
     if request.method == "POST":
         action = request.POST.get("action")
-        if action == "save_settings":
+        if action == "save_store":
+            if store_form.is_valid():
+                configured = store_form.save(commit=False); configured.photographer = request.user.photographer_profile; configured.gallery = gallery
+                configured.full_clean(); configured.save(); messages.success(request, "Store settings saved.")
+            else: messages.error(request, "Review the highlighted store settings.")
+            tab = "store"
+        elif action == "add_discount":
+            if discount_form.is_valid():
+                discount = discount_form.save(commit=False); discount.photographer = request.user.photographer_profile; discount.gallery = gallery
+                discount.full_clean(); discount.save(); messages.success(request, "Discount code created.")
+            else: messages.error(request, "Review the discount code details.")
+            tab = "store"
+        elif action == "toggle_store":
+            store.enabled = not store.enabled; store.save(update_fields=["enabled", "updated_at"])
+            messages.success(request, f"Store {'enabled' if store.enabled else 'disabled'}.")
+            return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=store")
+        elif action == "save_settings":
             if general_form.is_valid() and settings_form.is_valid():
                 with transaction.atomic():
                     updated_gallery = general_form.save(commit=False)
@@ -921,7 +940,7 @@ def gallery_workspace(request, pk):
                 invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
                 AccessToken.issue(invitation, expires_at=gallery.expires_at)
                 messages.success(request, "A fresh invitation is ready for future email delivery.")
-        if action != "save_settings":
+        if action not in {"save_settings", "save_store", "add_discount"}:
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
     photos = gallery.photos.all()
     query = request.GET.get("q", "").strip()
@@ -930,7 +949,13 @@ def gallery_workspace(request, pk):
     photos = photos.order_by("original_name" if request.GET.get("sort") == "name" else "-created_at")
     albums = gallery.albums.annotate(photo_count=Count("photos"))
     invitations = gallery.invitations.all()
+    paid_orders = store.orders.filter(payment_status__in=[GalleryOrder.Status.PAID, GalleryOrder.Status.COMPLETED])
+    revenue = paid_orders.aggregate(value=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField(max_digits=10, decimal_places=2)))["value"]
+    orders_page = Paginator(store.orders.prefetch_related("items"), 10).get_page(request.GET.get("orders_page"))
+    products_page = Paginator(store.products.prefetch_related("variants"), 8).get_page(request.GET.get("products_page"))
     context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+                    "store": store, "store_form": store_form, "discount_form": discount_form, "products": products_page, "orders": orders_page,
+                    "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
                     "general_form": general_form, "settings_form": settings_form,
                     "gallery_permissions": permissions, "invitations": invitations,
                     "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
@@ -947,6 +972,46 @@ def gallery_workspace(request, pk):
                         {"label": "Hidden Albums", "value": albums.filter(visibility=Album.Visibility.HIDDEN).count(), "icon": "bi-eye-slash"},
                     ], "storage_display": _format_storage(gallery.storage_used), "upload_percent": 100 if gallery.image_count else 0})
     return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def store_product_form(request, gallery_pk, pk=None):
+    profile = request.user.photographer_profile
+    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=gallery_pk)
+    store, _ = GalleryStore.objects.get_or_create(gallery=gallery, defaults={"photographer": profile, "name": f"{gallery.name} Store"})
+    product = get_object_or_404(StoreProduct.objects.filter(photographer=profile, gallery=gallery), pk=pk) if pk else None
+    form = StoreProductForm(request.POST or None, request.FILES or None, instance=product)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            product = form.save(commit=False); product.store=store; product.gallery=gallery; product.photographer=profile; product.full_clean(); product.save()
+            product.variants.all().delete()
+            ProductVariant.objects.bulk_create([ProductVariant(product=product, name=name.strip(), display_order=i) for i, name in enumerate(form.cleaned_data["variants"].splitlines()) if name.strip()])
+        messages.success(request, "Product saved.")
+        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=store")
+    context = _dashboard_context(request, "all_galleries", "Edit Product" if product else "Add Product")
+    context.update({"gallery":gallery, "product":product, "form":form})
+    return render(request, "photographer_workspace/galleries/product_form.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def store_product_action(request, pk):
+    product = get_object_or_404(StoreProduct.objects.filter(photographer=request.user.photographer_profile), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete": product.delete(); messages.success(request, "Product deleted.")
+    elif action == "toggle": product.active=not product.active; product.save(update_fields=["active", "updated_at"])
+    elif action == "duplicate":
+        variants=list(product.variants.all()); product.pk=None; product.name += " Copy"; product.active=False; product.save()
+        ProductVariant.objects.bulk_create([ProductVariant(product=product,name=v.name,price_adjustment=v.price_adjustment,display_order=v.display_order) for v in variants])
+    return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[product.gallery_id])}?tab=store")
+
+
+@photographer_workspace_required
+def gallery_order_detail(request, pk):
+    order = get_object_or_404(GalleryOrder.objects.filter(photographer=request.user.photographer_profile).select_related("gallery").prefetch_related("items__selected_photos"), pk=pk)
+    context=_dashboard_context(request,"all_galleries",order.order_number); context["order"]=order
+    return render(request,"photographer_workspace/galleries/order_detail.html",context)
 
 
 @photographer_workspace_required

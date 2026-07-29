@@ -5,7 +5,41 @@ from django.utils import timezone
 
 from apps.clients.models import Client
 
-from .models import Album, Gallery, GallerySettings
+from .models import Album, DiscountCode, Gallery, GalleryStore, GallerySettings, StoreProduct
+
+
+class StoreSettingsForm(forms.ModelForm):
+    class Meta:
+        model = GalleryStore
+        fields = ("enabled", "name", "message", "currency", "collect_sales_tax", "expires_at", "minimum_order_amount", "digital_delivery_enabled", "delivery_message")
+        widgets = {"message": forms.Textarea(attrs={"rows": 3}), "expires_at": forms.DateTimeInput(attrs={"type": "datetime-local"})}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["currency"].widget = forms.Select(choices=(("USD", "USD — US Dollar"), ("CAD", "CAD — Canadian Dollar"), ("EUR", "EUR — Euro"), ("GBP", "GBP — British Pound")))
+        for field in self.fields.values(): field.widget.attrs.setdefault("class", "lpw-form-control")
+
+
+class StoreProductForm(forms.ModelForm):
+    variants = forms.CharField(required=False, help_text="One size or variant per line (for example: 8 × 10).", widget=forms.Textarea(attrs={"rows": 4}))
+    class Meta:
+        model = StoreProduct
+        fields = ("name", "product_type", "description", "image", "price", "sale_price", "fulfillment", "download_resolution", "maximum_download_count", "active", "display_order")
+        widgets = {"description": forms.Textarea(attrs={"rows": 5}), "image": forms.FileInput(attrs={"accept": "image/*"})}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values(): field.widget.attrs.setdefault("class", "lpw-form-control")
+        if self.instance.pk: self.fields["variants"].initial = "\n".join(self.instance.variants.values_list("name", flat=True))
+
+
+class DiscountCodeForm(forms.ModelForm):
+    class Meta:
+        model = DiscountCode
+        fields = ("code", "discount_type", "amount", "minimum_order", "starts_at", "expires_at", "usage_limit", "active")
+        widgets = {"starts_at": forms.DateTimeInput(attrs={"type":"datetime-local"}), "expires_at": forms.DateTimeInput(attrs={"type":"datetime-local"})}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values(): field.widget.attrs.setdefault("class", "lpw-form-control")
+    def clean_code(self): return self.cleaned_data["code"].strip().upper()
 
 
 class GalleryForm(forms.ModelForm):

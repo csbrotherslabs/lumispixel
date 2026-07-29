@@ -4,7 +4,7 @@ from django.test import TestCase
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
-from .models import Album, AlbumPhoto, Gallery, GalleryPhoto
+from .models import Album, AlbumPhoto, Gallery, GalleryOrder, GalleryPhoto, GalleryStore, StoreProduct
 
 
 class GalleryModelTests(TestCase):
@@ -44,3 +44,27 @@ class GalleryModelTests(TestCase):
             membership.full_clean()
 
         self.assertEqual(list(Album.objects.for_photographer(owner)), [album])
+
+    def test_store_product_and_order_enforce_owner_boundaries(self):
+        first_user = User.objects.create_user(email="store@example.com", password="testpass")
+        second_user = User.objects.create_user(email="other-store@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=first_user, slug="store-owner")
+        other = PhotographerProfile.objects.create(user=second_user, slug="other-store-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="Store Gallery", slug="store-gallery")
+        store = GalleryStore.objects.create(photographer=owner, gallery=gallery, name="Keepsakes")
+
+        product = StoreProduct(store=store, gallery=gallery, photographer=other, name="Print", product_type=StoreProduct.ProductType.PRINT, price="25.00")
+        with self.assertRaises(ValidationError):
+            product.full_clean()
+        order = GalleryOrder(store=store, gallery=gallery, photographer=other, order_number="LP-100", customer_name="Client", customer_email="client@example.com")
+        with self.assertRaises(ValidationError):
+            order.full_clean()
+
+    def test_sale_price_must_be_lower_than_regular_price(self):
+        user = User.objects.create_user(email="pricing@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=user, slug="pricing-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="Pricing", slug="pricing")
+        store = GalleryStore.objects.create(photographer=owner, gallery=gallery)
+        product = StoreProduct(store=store, gallery=gallery, photographer=owner, name="Download", product_type=StoreProduct.ProductType.DIGITAL, price="10.00", sale_price="10.00")
+        with self.assertRaises(ValidationError):
+            product.full_clean()

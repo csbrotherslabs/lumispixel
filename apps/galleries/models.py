@@ -236,6 +236,145 @@ class GallerySettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class GalleryStore(models.Model):
+    """Gallery-scoped storefront configuration; payment providers live outside this model."""
+    gallery = models.OneToOneField(Gallery, on_delete=models.CASCADE, related_name="store")
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_stores")
+    enabled = models.BooleanField(default=False)
+    name = models.CharField(max_length=160, blank=True)
+    message = models.TextField(blank=True)
+    currency = models.CharField(max_length=3, default="USD")
+    collect_sales_tax = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    minimum_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    digital_delivery_enabled = models.BooleanField(default=True)
+    delivery_message = models.CharField(max_length=300, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Store and gallery must have the same photographer."})
+
+
+class StoreProduct(models.Model):
+    class ProductType(models.TextChoices):
+        DIGITAL = "digital_download", "Digital Download"
+        GALLERY = "full_gallery_download", "Full Gallery Download"
+        PRINT = "print", "Print"
+        CANVAS = "canvas", "Canvas"
+        FRAMED = "framed_print", "Framed Print"
+        ALBUM = "photo_album", "Photo Album"
+    class Fulfillment(models.TextChoices):
+        DIGITAL = "digital", "Digital delivery"
+        PHYSICAL = "physical", "Physical fulfillment"
+    class Resolution(models.TextChoices):
+        WEB = "web", "Web size"
+        HIGH = "high", "High resolution"
+        ORIGINAL = "original", "Original"
+    store = models.ForeignKey(GalleryStore, on_delete=models.CASCADE, related_name="products")
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="store_products")
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="store_products")
+    name = models.CharField(max_length=180)
+    product_type = models.CharField(max_length=30, choices=ProductType.choices)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="galleries/products/%Y/%m/", blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    fulfillment = models.CharField(max_length=12, choices=Fulfillment.choices, default=Fulfillment.DIGITAL)
+    download_resolution = models.CharField(max_length=12, choices=Resolution.choices, blank=True)
+    maximum_download_count = models.PositiveIntegerField(blank=True, null=True)
+    active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ["display_order", "name"]
+    def clean(self):
+        errors = {}
+        if self.sale_price is not None and self.price is not None and self.sale_price >= self.price:
+            errors["sale_price"] = "Sale price must be lower than the regular price."
+        if self.store_id and (self.gallery_id != self.store.gallery_id or self.photographer_id != self.store.photographer_id):
+            errors["store"] = "Product ownership must match its store."
+        if errors: raise ValidationError(errors)
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(StoreProduct, on_delete=models.CASCADE, related_name="variants")
+    name = models.CharField(max_length=100)
+    price_adjustment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering = ["display_order", "name"]
+        constraints = [models.UniqueConstraint(fields=["product", "name"], name="store_product_variant_unique")]
+
+
+class GalleryOrder(models.Model):
+    class Status(models.TextChoices):
+        PENDING="pending", "Pending"
+        PAID="paid", "Paid"
+        PROCESSING="processing", "Processing"
+        COMPLETED="completed", "Completed"
+        CANCELLED="cancelled", "Cancelled"
+        REFUNDED="refunded", "Refunded"
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_orders")
+    gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT, related_name="orders")
+    store = models.ForeignKey(GalleryStore, on_delete=models.PROTECT, related_name="orders")
+    order_number = models.CharField(max_length=30, unique=True)
+    customer_name = models.CharField(max_length=160)
+    customer_email = models.EmailField()
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    fulfillment_status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    internal_notes = models.TextField(blank=True)
+    activity_history = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta: ordering = ["-created_at"]
+    def clean(self):
+        if self.store_id and (self.gallery_id != self.store.gallery_id or self.photographer_id != self.store.photographer_id):
+            raise ValidationError({"store": "Order ownership must match its store."})
+
+
+class GalleryOrderItem(models.Model):
+    order = models.ForeignKey(GalleryOrder, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(StoreProduct, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items")
+    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items")
+    product_name = models.CharField(max_length=180)
+    selected_photos = models.ManyToManyField(GalleryPhoto, blank=True, related_name="order_items")
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    line_total = models.DecimalField(max_digits=10, decimal_places=2)
+
+
+class DiscountCode(models.Model):
+    class DiscountType(models.TextChoices):
+        PERCENTAGE="percentage", "Percentage"
+        FIXED="fixed", "Fixed amount"
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="discount_codes")
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="discount_codes")
+    code = models.CharField(max_length=40)
+    discount_type = models.CharField(max_length=12, choices=DiscountType.choices)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    minimum_order = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    starts_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    usage_limit = models.PositiveIntegerField(blank=True, null=True)
+    times_used = models.PositiveIntegerField(default=0)
+    active = models.BooleanField(default=True)
+    class Meta:
+        ordering = ["-active", "code"]
+        constraints = [models.UniqueConstraint(fields=["gallery", "code"], name="gallery_discount_code_unique")]
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Discount and gallery must have the same photographer."})
+        if self.discount_type == self.DiscountType.PERCENTAGE and self.amount > 100:
+            raise ValidationError({"amount": "Percentage cannot exceed 100."})
+
+
 class GalleryInvitation(models.Model):
     """An email-address invitation; delivery can be attached by a future mail service."""
 
