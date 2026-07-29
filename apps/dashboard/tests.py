@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
-from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
+from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 
@@ -267,6 +267,29 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.post(reverse("photographer_workspace:gallery_actions"), {"gallery_ids": [gallery.pk], "action": "archive"})
         gallery.refresh_from_db()
         self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
+
+    def test_activity_timeline_filters_exports_and_enforces_ownership(self):
+        user, profile = self.make_photographer(True, email="activity@example.com", slug="activity")
+        _, other = self.make_photographer(True, email="private-activity@example.com", slug="private-activity")
+        gallery = Gallery.objects.create(photographer=profile, name="Activity Gallery", slug="activity-gallery")
+        private_gallery = Gallery.objects.create(photographer=other, name="Private Activity", slug="private-activity")
+        GalleryActivity.objects.create(photographer=profile, gallery=gallery, actor=user,
+            actor_type=GalleryActivity.ActorType.PHOTOGRAPHER, event_type=GalleryActivity.EventType.GALLERY_UPDATED,
+            title="Gallery updated", description="A visible timeline event.")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
+
+        page = self.client.get(url, {"tab": "activity"})
+        self.assertContains(page, "Review everything that has happened in this gallery.")
+        self.assertContains(page, "Client Interactions")
+        self.assertContains(page, "A visible timeline event.")
+        self.assertContains(page, "View details")
+        no_results = self.client.get(url, {"tab": "activity", "activity_q": "missing"})
+        self.assertContains(no_results, "No activity matches your filters")
+        exported = self.client.get(url, {"tab": "activity", "export": "csv"})
+        self.assertEqual(exported["Content-Type"], "text/csv")
+        self.assertIn(b"Gallery updated", exported.content)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk]), {"tab": "activity"}).status_code, 404)
 
     def test_album_crud_workspace_and_owner_isolation(self):
         from apps.galleries.models import Album, AlbumPhoto

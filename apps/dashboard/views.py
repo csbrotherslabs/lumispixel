@@ -1,10 +1,11 @@
 from decimal import Decimal
+import csv
 import mimetypes
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
@@ -20,7 +21,8 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.activity import log_gallery_activity
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -706,6 +708,8 @@ def create_gallery(request):
         gallery.slug = _unique_gallery_slug(profile, gallery.name)
         gallery.full_clean()
         gallery.save()
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_CREATED,
+                             description=f"{gallery.name} was created and its workspace is ready.", actor=request.user)
         messages.success(request, "Gallery created. Your workspace is ready.")
         return redirect("photographer_workspace:gallery_workspace", pk=gallery.pk)
     context = _dashboard_context(request, "all_galleries", "Create Gallery")
@@ -720,10 +724,14 @@ def edit_gallery(request, pk):
     gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
     form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery, photographer=profile)
     if request.method == "POST" and form.is_valid():
+        previous = {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}
         gallery = form.save(commit=False)
         gallery.slug = _unique_gallery_slug(profile, gallery.name, gallery.pk)
         gallery.full_clean()
         gallery.save()
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_UPDATED,
+                             description="Gallery details were updated.", actor=request.user,
+                             metadata={"previous_value": previous, "new_value": {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}})
         messages.success(request, "Gallery updated.")
         return redirect("photographer_workspace:all_galleries")
     context = _dashboard_context(request, "all_galleries", "Edit Gallery")
@@ -801,6 +809,9 @@ def gallery_upload_queue(request):
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
         if created:
             Gallery.objects.filter(pk=gallery.pk).update(image_count=F("image_count") + len(created), storage_used=F("storage_used") + sum(item["size"] for item in created))
+            log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
+                                 description=f"{len(created)} photo{'s' if len(created) != 1 else ''} uploaded successfully.", actor=request.user,
+                                 metadata={"count": len(created), "files": [item["name"] for item in created[:10]]})
         return JsonResponse({"uploads": created, "errors": errors}, status=201 if created else 400)
     upload_records = GalleryPhoto.objects.for_photographer(profile)
     counts = {status: upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
@@ -910,6 +921,9 @@ def gallery_workspace(request, pk):
             download_expiration = request.POST.get("download_expiration")
             permissions.download_expires_at = timezone.make_aware(timezone.datetime.fromisoformat(download_expiration)) if download_expiration else None
             permissions.save()
+            log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PERMISSION_CHANGED,
+                                 description="Client access permissions were updated.", actor=request.user,
+                                 related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark}})
             messages.success(request, "Client access settings saved.")
         elif action == "invite":
             name, email = request.POST.get("client_name", "").strip(), request.POST.get("email", "").strip().lower()
@@ -920,6 +934,9 @@ def gallery_workspace(request, pk):
                     invitation.save(update_fields=["client_name", "status", "resent_at"])
                 AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).update(revoked_at=timezone.now())
                 AccessToken.issue(invitation, expires_at=gallery.expires_at)
+                log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.CLIENT_INVITED,
+                                     description=f"An invitation was prepared for {name}.", actor=request.user,
+                                     related_object=invitation, metadata={"client": name})
                 messages.success(request, "Invitation prepared. Email delivery can be connected later.")
             else:
                 messages.error(request, "Enter a client name and email address.")
@@ -953,6 +970,31 @@ def gallery_workspace(request, pk):
     revenue = paid_orders.aggregate(value=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField(max_digits=10, decimal_places=2)))["value"]
     orders_page = Paginator(store.orders.prefetch_related("items"), 10).get_page(request.GET.get("orders_page"))
     products_page = Paginator(store.products.prefetch_related("variants"), 8).get_page(request.GET.get("products_page"))
+    all_activity = GalleryActivity.objects.for_photographer(request.user.photographer_profile).filter(gallery=gallery)
+    activity = all_activity.select_related("actor")
+    activity_query, activity_type = request.GET.get("activity_q", "").strip(), request.GET.get("activity_type", "")
+    activity_user, activity_source = request.GET.get("activity_user", ""), request.GET.get("activity_source", "")
+    activity_start, activity_end = request.GET.get("activity_start", ""), request.GET.get("activity_end", "")
+    if activity_query: activity = activity.filter(Q(title__icontains=activity_query) | Q(description__icontains=activity_query) | Q(related_object_type__icontains=activity_query))
+    if activity_type in GalleryActivity.EventType.values: activity = activity.filter(event_type=activity_type)
+    if activity_user == "system": activity = activity.filter(actor_type=GalleryActivity.ActorType.SYSTEM)
+    elif activity_user.isdigit(): activity = activity.filter(actor_id=activity_user)
+    if activity_source: activity = activity.filter(related_object_type__iexact=activity_source)
+    if activity_start: activity = activity.filter(created_at__date__gte=activity_start)
+    if activity_end: activity = activity.filter(created_at__date__lte=activity_end)
+    if tab == "activity" and request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-activity.csv"'
+        writer = csv.writer(response); writer.writerow(["Date", "Event", "Description", "Actor", "Source", "Related record"])
+        for event in activity.iterator(): writer.writerow([event.created_at.isoformat(), event.title, event.description, event.actor.full_name if event.actor else "System", event.actor_type, f"{event.related_object_type} {event.related_object_id}"])
+        return response
+    activity_page = Paginator(activity, 12).get_page(request.GET.get("activity_page"))
+    today, grouped_activity = timezone.localdate(), []
+    for event in activity_page:
+        event_date = timezone.localtime(event.created_at).date()
+        label = "Today" if event_date == today else "Yesterday" if event_date == today - timezone.timedelta(days=1) else "Earlier this week" if (today - event_date).days < 7 else event_date.strftime("%B %d, %Y").replace(" 0", " ")
+        if not grouped_activity or grouped_activity[-1][0] != label: grouped_activity.append([label, []])
+        grouped_activity[-1][1].append(event)
     context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
                     "store": store, "store_form": store_form, "discount_form": discount_form, "products": products_page, "orders": orders_page,
                     "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
@@ -970,7 +1012,12 @@ def gallery_workspace(request, pk):
                         {"label": "Public Albums", "value": albums.filter(visibility=Album.Visibility.PUBLIC).count(), "icon": "bi-globe2"},
                         {"label": "Private Albums", "value": albums.filter(visibility=Album.Visibility.CLIENT_ONLY).count(), "icon": "bi-people"},
                         {"label": "Hidden Albums", "value": albums.filter(visibility=Album.Visibility.HIDDEN).count(), "icon": "bi-eye-slash"},
-                    ], "storage_display": _format_storage(gallery.storage_used), "upload_percent": 100 if gallery.image_count else 0})
+                    ], "storage_display": _format_storage(gallery.storage_used), "upload_percent": 100 if gallery.image_count else 0,
+                    "activity_page": activity_page, "grouped_activity": grouped_activity, "activity_types": GalleryActivity.EventType.choices,
+                    "activity_actors": all_activity.filter(actor__isnull=False).values("actor_id", "actor__first_name", "actor__last_name", "actor__email").distinct(),
+                    "activity_sources": all_activity.exclude(related_object_type="").values_list("related_object_type", flat=True).distinct().order_by("related_object_type"),
+                    "activity_summary": {"total": all_activity.count(), "clients": all_activity.filter(actor_type=GalleryActivity.ActorType.CLIENT).count(), "downloads": all_activity.filter(event_type__in=[GalleryActivity.EventType.PHOTO_DOWNLOADED, GalleryActivity.EventType.GALLERY_DOWNLOADED]).count(), "store": all_activity.filter(event_type__in=[GalleryActivity.EventType.STORE_ORDER_CREATED, GalleryActivity.EventType.PAYMENT_CHANGED]).count()},
+                    "activity_has_filters": any([activity_query, activity_type, activity_user, activity_source, activity_start, activity_end])})
     return render(request, "photographer_workspace/galleries/workspace.html", context)
 
 
@@ -1024,6 +1071,8 @@ def create_album(request, gallery_pk):
         album.gallery = gallery
         album.full_clean()
         album.save()
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.ALBUM_CREATED,
+                             description=f"The album {album.name} was created.", actor=request.user, related_object=album)
         messages.success(request, "Album created. Add photos when you're ready.")
         return redirect("photographer_workspace:album_workspace", pk=album.pk)
     context = _dashboard_context(request, "all_galleries", "Create Album")
@@ -1038,6 +1087,8 @@ def edit_album(request, pk):
     form = AlbumForm(request.POST or None, request.FILES or None, instance=album, gallery=album.gallery)
     if request.method == "POST" and form.is_valid():
         form.save()
+        log_gallery_activity(gallery=album.gallery, event_type=GalleryActivity.EventType.ALBUM_UPDATED,
+                             description=f"The album {album.name} was updated.", actor=request.user, related_object=album)
         messages.success(request, "Album updated.")
         return redirect("photographer_workspace:album_workspace", pk=album.pk)
     context = _dashboard_context(request, "all_galleries", "Edit Album")

@@ -77,6 +77,68 @@ class Gallery(models.Model):
         return self.name
 
 
+class GalleryActivityQuerySet(models.QuerySet):
+    def for_photographer(self, photographer):
+        return self.filter(photographer=photographer)
+
+
+class GalleryActivity(models.Model):
+    """An immutable, photographer-owned audit entry for a gallery workflow."""
+
+    class ActorType(models.TextChoices):
+        PHOTOGRAPHER = "photographer", "Photographer"
+        CLIENT = "client", "Client"
+        SYSTEM = "system", "System"
+
+    class EventType(models.TextChoices):
+        GALLERY_CREATED = "gallery_created", "Gallery created"
+        GALLERY_UPDATED = "gallery_updated", "Gallery updated"
+        GALLERY_PUBLISHED = "gallery_published", "Gallery published"
+        GALLERY_ARCHIVED = "gallery_archived", "Gallery archived"
+        PHOTOS_UPLOADED = "photos_uploaded", "Photos uploaded"
+        PHOTOS_DELETED = "photos_deleted", "Photos deleted"
+        ALBUM_CREATED = "album_created", "Album created"
+        ALBUM_UPDATED = "album_updated", "Album updated"
+        AI_STARTED = "ai_started", "AI processing started"
+        AI_COMPLETED = "ai_completed", "AI processing completed"
+        CLIENT_INVITED = "client_invited", "Client invited"
+        CLIENT_VIEWED = "client_viewed", "Client viewed gallery"
+        CLIENT_FAVORITED = "client_favorited", "Client favorited a photo"
+        CLIENT_COMMENTED = "client_commented", "Client commented"
+        PHOTO_DOWNLOADED = "photo_downloaded", "Photo downloaded"
+        GALLERY_DOWNLOADED = "gallery_downloaded", "Gallery downloaded"
+        GALLERY_SHARED = "gallery_shared", "Gallery shared"
+        STORE_ORDER_CREATED = "store_order_created", "Store order created"
+        PAYMENT_CHANGED = "payment_changed", "Payment status changed"
+        PERMISSION_CHANGED = "permission_changed", "Permission changed"
+        SETTINGS_CHANGED = "settings_changed", "Settings changed"
+
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_activity")
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="activity")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="gallery_activity", blank=True, null=True)
+    actor_type = models.CharField(max_length=20, choices=ActorType.choices, default=ActorType.SYSTEM)
+    event_type = models.CharField(max_length=40, choices=EventType.choices)
+    title = models.CharField(max_length=180)
+    description = models.TextField(blank=True)
+    related_object_type = models.CharField(max_length=40, blank=True)
+    related_object_id = models.CharField(max_length=64, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = GalleryActivityQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [
+            models.Index(fields=["photographer", "gallery", "-created_at"], name="activity_owner_gallery_date"),
+            models.Index(fields=["gallery", "event_type", "-created_at"], name="activity_gallery_type_date"),
+        ]
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Activity and gallery must have the same photographer."})
+
+
 private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
 
 
