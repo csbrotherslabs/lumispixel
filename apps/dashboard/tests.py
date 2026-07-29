@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
-from apps.galleries.models import Gallery, GalleryPhoto
+from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 
@@ -151,6 +151,44 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(detail, "Upload progress")
         self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "photos"}), "Search photos")
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
+
+    def test_client_access_settings_and_secure_invitations(self):
+        user, profile = self.make_photographer(True, email="access@example.com", slug="access")
+        gallery = Gallery.objects.create(photographer=profile, name="Client Delivery", slug="client-delivery")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
+
+        page = self.client.get(url, {"tab": "client-access"})
+        self.assertContains(page, "Control who can access this gallery.")
+        self.assertContains(page, "Gallery Visibility")
+        self.assertContains(page, "Purchase Prints")
+        self.assertContains(page, "Client Invitations")
+
+        saved = self.client.post(url, {
+            "action": "save_access", "visibility": Gallery.Visibility.PUBLIC,
+            "view_gallery": "on", "favorite_photos": "on", "automatic_gallery_lock": "on",
+            "watermark": GalleryPermission.Watermark.ALL, "expiration_date": "2027-01-10",
+        })
+        self.assertRedirects(saved, f"{url}?tab=client-access")
+        gallery.refresh_from_db()
+        permissions = gallery.permissions
+        self.assertEqual(gallery.visibility, Gallery.Visibility.PUBLIC)
+        self.assertTrue(permissions.automatic_gallery_lock)
+        self.assertFalse(permissions.download_images)
+        self.assertEqual(permissions.watermark, GalleryPermission.Watermark.ALL)
+
+        invited = self.client.post(url, {"action": "invite", "client_name": "Avery Stone", "email": "AVERY@example.com"})
+        self.assertRedirects(invited, f"{url}?tab=client-access")
+        invitation = GalleryInvitation.objects.get(gallery=gallery, email="avery@example.com")
+        token = AccessToken.objects.get(invitation=invitation)
+        self.assertEqual(len(token.token_hash), 64)
+        self.assertNotIn("avery", token.token_hash)
+
+        self.client.post(url, {"action": "disable", "invitation_id": invitation.pk})
+        invitation.refresh_from_db()
+        token.refresh_from_db()
+        self.assertEqual(invitation.status, GalleryInvitation.Status.DISABLED)
+        self.assertIsNotNone(token.revoked_at)
 
     def test_gallery_upload_validates_images_and_scopes_media(self):
         user, profile = self.make_photographer(True, email="upload@example.com", slug="upload")

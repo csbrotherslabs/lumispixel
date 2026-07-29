@@ -20,7 +20,7 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, GalleryForm
-from apps.galleries.models import Album, AlbumPhoto, Gallery, GalleryPhoto
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -813,7 +813,7 @@ def gallery_upload_queue(request):
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def gallery_workspace(request, pk):
     gallery = get_object_or_404(
         Gallery.objects.for_photographer(request.user.photographer_profile).select_related("client"), pk=pk
@@ -823,13 +823,72 @@ def gallery_workspace(request, pk):
     tabs = ("overview", "photos", "albums", "ai-tools", "client-access", "store", "downloads", "activity", "settings")
     if tab not in tabs:
         tab = "overview"
+    permissions, _ = GalleryPermission.objects.get_or_create(gallery=gallery)
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "save_access":
+            visibility = request.POST.get("visibility")
+            if visibility in Gallery.Visibility.values:
+                gallery.visibility = visibility
+            expiration = request.POST.get("expiration_date")
+            gallery.expires_at = timezone.make_aware(timezone.datetime.fromisoformat(expiration)) if expiration else None
+            gallery.save(update_fields=["visibility", "expires_at", "updated_at"])
+            boolean_fields = ("view_gallery", "download_images", "download_originals", "favorite_photos", "comment", "share_gallery", "purchase_prints", "automatic_gallery_lock")
+            for field in boolean_fields:
+                setattr(permissions, field, field in request.POST)
+            watermark = request.POST.get("watermark")
+            if watermark in GalleryPermission.Watermark.values:
+                permissions.watermark = watermark
+            download_expiration = request.POST.get("download_expiration")
+            permissions.download_expires_at = timezone.make_aware(timezone.datetime.fromisoformat(download_expiration)) if download_expiration else None
+            permissions.save()
+            messages.success(request, "Client access settings saved.")
+        elif action == "invite":
+            name, email = request.POST.get("client_name", "").strip(), request.POST.get("email", "").strip().lower()
+            if name and email:
+                invitation, created = GalleryInvitation.objects.get_or_create(gallery=gallery, email=email, defaults={"client_name": name})
+                if not created:
+                    invitation.client_name, invitation.status, invitation.resent_at = name, GalleryInvitation.Status.PENDING, timezone.now()
+                    invitation.save(update_fields=["client_name", "status", "resent_at"])
+                AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).update(revoked_at=timezone.now())
+                AccessToken.issue(invitation, expires_at=gallery.expires_at)
+                messages.success(request, "Invitation prepared. Email delivery can be connected later.")
+            else:
+                messages.error(request, "Enter a client name and email address.")
+        elif action in {"resend", "disable", "remove"}:
+            invitation = get_object_or_404(gallery.invitations, pk=request.POST.get("invitation_id"))
+            if action == "remove":
+                invitation.delete()
+                messages.success(request, "Invitation removed.")
+            elif action == "disable":
+                invitation.status = GalleryInvitation.Status.DISABLED
+                invitation.save(update_fields=["status"])
+                invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+                messages.success(request, "Client access disabled.")
+            else:
+                invitation.resent_at = timezone.now()
+                invitation.status = GalleryInvitation.Status.PENDING
+                invitation.save(update_fields=["resent_at", "status"])
+                invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+                AccessToken.issue(invitation, expires_at=gallery.expires_at)
+                messages.success(request, "A fresh invitation is ready for future email delivery.")
+        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
     photos = gallery.photos.all()
     query = request.GET.get("q", "").strip()
     if query:
         photos = photos.filter(original_name__icontains=query)
     photos = photos.order_by("original_name" if request.GET.get("sort") == "name" else "-created_at")
     albums = gallery.albums.annotate(photo_count=Count("photos"))
+    invitations = gallery.invitations.all()
     context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+                    "gallery_permissions": permissions, "invitations": invitations,
+                    "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
+                    "permission_options": [(field, label, getattr(permissions, field)) for field, label in (
+                        ("view_gallery", "View Gallery"), ("download_images", "Download Images"),
+                        ("download_originals", "Download Originals"), ("favorite_photos", "Favorite Photos"),
+                        ("comment", "Comment"), ("share_gallery", "Share Gallery"),
+                        ("purchase_prints", "Purchase Prints"),
+                    )], "watermark_options": GalleryPermission.Watermark.choices,
                     "album_summary": [
                         {"label": "Total Albums", "value": albums.count(), "icon": "bi-collection"},
                         {"label": "Public Albums", "value": albums.filter(visibility=Album.Visibility.PUBLIC).count(), "icon": "bi-globe2"},

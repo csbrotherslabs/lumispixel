@@ -4,6 +4,8 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
+import hashlib
+import secrets
 
 
 class GalleryQuerySet(models.QuerySet):
@@ -175,3 +177,72 @@ class AlbumPhoto(models.Model):
     def clean(self):
         if self.album_id and self.photo_id and self.album.gallery_id != self.photo.gallery_id:
             raise ValidationError({"photo": "Photo and album must belong to the same gallery."})
+
+
+class GalleryPermission(models.Model):
+    """The gallery-wide client access policy, kept separate from presentation data."""
+
+    class Watermark(models.TextChoices):
+        NONE = "none", "None"
+        PREVIEW = "preview", "Preview Only"
+        ALL = "all", "All Images"
+
+    gallery = models.OneToOneField(Gallery, on_delete=models.CASCADE, related_name="permissions")
+    view_gallery = models.BooleanField(default=True)
+    download_images = models.BooleanField(default=True)
+    download_originals = models.BooleanField(default=False)
+    favorite_photos = models.BooleanField(default=True)
+    comment = models.BooleanField(default=False)
+    share_gallery = models.BooleanField(default=True)
+    purchase_prints = models.BooleanField(default=False)
+    automatic_gallery_lock = models.BooleanField(default=False)
+    download_expires_at = models.DateTimeField(blank=True, null=True)
+    watermark = models.CharField(max_length=12, choices=Watermark.choices, default=Watermark.PREVIEW)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class GalleryInvitation(models.Model):
+    """An email-address invitation; delivery can be attached by a future mail service."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACTIVE = "active", "Active"
+        DISABLED = "disabled", "Disabled"
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="invitations")
+    client_name = models.CharField(max_length=160)
+    email = models.EmailField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    invited_at = models.DateTimeField(auto_now_add=True)
+    last_access_at = models.DateTimeField(blank=True, null=True)
+    resent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-invited_at"]
+        constraints = [models.UniqueConstraint(fields=["gallery", "email"], name="gallery_invitation_email_unique")]
+
+
+class AccessToken(models.Model):
+    """Revocable access credential. Only a SHA-256 digest is persisted."""
+
+    invitation = models.ForeignKey(GalleryInvitation, on_delete=models.CASCADE, related_name="access_tokens")
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    last_used_at = models.DateTimeField(blank=True, null=True)
+    revoked_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def issue(cls, invitation, *, expires_at=None):
+        """Create a cryptographically secure token and return it once with its record."""
+        raw_token = secrets.token_urlsafe(32)
+        record = cls.objects.create(
+            invitation=invitation,
+            token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            expires_at=expires_at,
+        )
+        return record, raw_token
+
+    @classmethod
+    def digest(cls, raw_token):
+        return hashlib.sha256(raw_token.encode()).hexdigest()
