@@ -4,10 +4,39 @@ from django.test import TestCase
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
-from .models import Album, AlbumPhoto, Gallery, GalleryOrder, GalleryPhoto, GalleryStore, StoreProduct
+from .analytics import gallery_analytics_report, track_gallery_event
+from .models import Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryOrder, GalleryPhoto, GalleryStore, StoreProduct
 
 
 class GalleryModelTests(TestCase):
+    def test_analytics_tracking_and_reports_are_owner_scoped(self):
+        user = User.objects.create_user(email="analytics@example.com", password="testpass")
+        other_user = User.objects.create_user(email="other-analytics@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=user, slug="analytics-owner")
+        other = PhotographerProfile.objects.create(user=other_user, slug="other-analytics-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="Wedding", slug="analytics-wedding")
+        other_gallery = Gallery.objects.create(photographer=other, name="Other", slug="analytics-other")
+
+        track_gallery_event(gallery=gallery, event_type="view", visitor_identifier="opaque-1", session_identifier="session-1", device_category="mobile")
+        track_gallery_event(gallery=gallery, event_type="favorite", visitor_identifier="opaque-1", session_identifier="session-1")
+        track_gallery_event(gallery=other_gallery, event_type="view", visitor_identifier="opaque-2")
+        report = gallery_analytics_report(gallery=gallery)
+
+        self.assertEqual(report["counts"]["views"], 1)
+        self.assertEqual(report["counts"]["favorites"], 1)
+        self.assertEqual(report["counts"]["visitors"], 1)
+        self.assertEqual(GalleryAnalyticsEvent.objects.for_photographer(owner).count(), 2)
+
+    def test_analytics_event_rejects_cross_gallery_photo(self):
+        user = User.objects.create_user(email="analytics-photo@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=user, slug="analytics-photo-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="First", slug="analytics-first")
+        other_gallery = Gallery.objects.create(photographer=owner, name="Second", slug="analytics-second")
+        photo = GalleryPhoto.objects.create(gallery=other_gallery, photographer=owner, file="other.jpg", original_name="other.jpg")
+
+        with self.assertRaises(ValidationError):
+            track_gallery_event(gallery=gallery, event_type="photo_view", photo=photo)
+
     def test_gallery_defaults_and_owner_scoping(self):
         user = User.objects.create_user(email="owner@example.com", password="testpass", primary_role=User.PrimaryRole.PHOTOGRAPHER)
         other_user = User.objects.create_user(email="other@example.com", password="testpass", primary_role=User.PrimaryRole.PHOTOGRAPHER)
