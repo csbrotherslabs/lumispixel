@@ -267,6 +267,34 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.post(reverse("photographer_workspace:gallery_actions"), {"gallery_ids": [gallery.pk], "action": "archive"})
         gallery.refresh_from_db()
         self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
+        self.assertIsNotNone(gallery.archived_at)
+        self.assertNotContains(self.client.get(reverse("photographer_workspace:all_galleries")), "Maya &amp; Rowan")
+        self.assertContains(self.client.get(reverse("photographer_workspace:gallery_archive")), "Maya &amp; Rowan")
+
+        restored = self.client.post(reverse("photographer_workspace:gallery_archive_actions"), {
+            "gallery_ids": [gallery.pk], "action": "restore",
+        })
+        self.assertRedirects(restored, reverse("photographer_workspace:gallery_archive"))
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.DRAFT)
+        self.assertEqual(gallery.visibility, Gallery.Visibility.PRIVATE)
+        self.assertIsNone(gallery.archived_at)
+
+    def test_archive_actions_enforce_photographer_ownership(self):
+        user, profile = self.make_photographer(True, email="archive@example.com", slug="archive")
+        _, other = self.make_photographer(True, email="archive-other@example.com", slug="archive-other")
+        gallery = Gallery.objects.create(photographer=profile, name="Owned Archive", slug="owned-archive")
+        private = Gallery.objects.create(photographer=other, name="Private Archive", slug="private-archive")
+        self.client.force_login(user)
+        self.client.post(reverse("photographer_workspace:gallery_archive_actions"), {
+            "gallery_ids": [gallery.pk, private.pk], "action": "archive", "archive_reason": Gallery.ArchiveReason.COMPLETED,
+            "retention_days": "365", "disable_public_access": "on", "confirm_archive": "on",
+        })
+        gallery.refresh_from_db(); private.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
+        self.assertEqual(gallery.archive_reason, Gallery.ArchiveReason.COMPLETED)
+        self.assertEqual(private.status, Gallery.Status.DRAFT)
+        self.assertNotContains(self.client.get(reverse("photographer_workspace:gallery_archive")), "Private Archive")
 
     def test_activity_timeline_filters_exports_and_enforces_ownership(self):
         user, profile = self.make_photographer(True, email="activity@example.com", slug="activity")
