@@ -306,3 +306,21 @@
     }
   }
 })();
+
+(function () {
+  const select = document.querySelector('[data-analytics-metric]');
+  const chart = document.querySelector('[data-analytics-chart]');
+  if (!select || !chart) return;
+  function draw() {
+    const metric = select.value;
+    const points = Array.from(chart.children);
+    const max = Math.max(1, ...points.map(function (point) { return Number(point.dataset[metric] || 0); }));
+    points.forEach(function (point) {
+      const value = Number(point.dataset[metric] || 0);
+      point.querySelector('b').style.height = Math.max(value ? 6 : 2, value / max * 100) + '%';
+      point.title = point.querySelector('small').textContent + ': ' + value + ' ' + select.options[select.selectedIndex].text.toLowerCase();
+    });
+  }
+  select.addEventListener('change', draw);
+  draw();
+}());

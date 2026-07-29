@@ -22,7 +22,8 @@ from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNot
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.analytics import gallery_analytics_report
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -1019,6 +1020,35 @@ def gallery_workspace(request, pk):
                     "activity_summary": {"total": all_activity.count(), "clients": all_activity.filter(actor_type=GalleryActivity.ActorType.CLIENT).count(), "downloads": all_activity.filter(event_type__in=[GalleryActivity.EventType.PHOTO_DOWNLOADED, GalleryActivity.EventType.GALLERY_DOWNLOADED]).count(), "store": all_activity.filter(event_type__in=[GalleryActivity.EventType.STORE_ORDER_CREATED, GalleryActivity.EventType.PAYMENT_CHANGED]).count()},
                     "activity_has_filters": any([activity_query, activity_type, activity_user, activity_source, activity_start, activity_end])})
     return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_analytics(request, pk):
+    profile = request.user.photographer_profile
+    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
+    def parsed_date(name):
+        try:
+            return timezone.datetime.fromisoformat(request.GET.get(name, "")).date()
+        except ValueError:
+            return None
+    report = gallery_analytics_report(
+        gallery=gallery, start=parsed_date("start"), end=parsed_date("end"),
+        album_id=request.GET.get("album") if request.GET.get("album", "").isdigit() else None,
+        device=request.GET.get("device", ""), visitor_type=request.GET.get("visitor_type", "all"),
+    )
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-analytics.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Date", "Gallery views", "Unique visitors", "Downloads", "Favorites"])
+        for day in report["days"]:
+            writer.writerow([day["date"], day["views"], day["visitors"], day["downloads"], day["favorites"]])
+        return response
+    context = _dashboard_context(request, "all_galleries", "Gallery Analytics")
+    context.update({"gallery": gallery, "report": report, "albums": gallery.albums.only("id", "name"),
+                    "device_choices": GalleryAnalyticsEvent.Device.choices})
+    return render(request, "photographer_workspace/galleries/analytics.html", context)
 
 
 @photographer_workspace_required

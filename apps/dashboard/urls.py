@@ -22,6 +22,7 @@ urlpatterns = [
     path("albums/<int:pk>/action/", views.album_action, name="album_action"),
     path("albums/<int:pk>/photos/action/", views.album_photo_action, name="album_photo_action"),
     path("galleries/<int:pk>/", views.gallery_workspace, name="gallery_workspace"),
+    path("galleries/<int:pk>/analytics/", views.gallery_analytics, name="gallery_analytics"),
     path("galleries/<int:gallery_pk>/store/products/add/", views.store_product_form, name="store_product_add"),
     path("galleries/<int:gallery_pk>/store/products/<int:pk>/edit/", views.store_product_form, name="store_product_edit"),
     path("store/products/<int:pk>/action/", views.store_product_action, name="store_product_action"),

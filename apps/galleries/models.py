@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 import hashlib
 import secrets
 
@@ -137,6 +138,65 @@ class GalleryActivity(models.Model):
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
             raise ValidationError({"gallery": "Activity and gallery must have the same photographer."})
+
+
+class GalleryAnalyticsEventQuerySet(models.QuerySet):
+    def for_photographer(self, photographer):
+        return self.filter(photographer=photographer)
+
+    def for_gallery(self, gallery):
+        return self.filter(gallery=gallery, photographer=gallery.photographer)
+
+
+class GalleryAnalyticsEvent(models.Model):
+    """Privacy-conscious, append-only events used for first-party gallery reporting."""
+
+    class EventType(models.TextChoices):
+        VIEW = "view", "Gallery view"
+        PHOTO_VIEW = "photo_view", "Photo view"
+        DOWNLOAD = "download", "Photo download"
+        GALLERY_DOWNLOAD = "gallery_download", "Full gallery download"
+        FAVORITE = "favorite", "Favorite"
+        COMMENT = "comment", "Comment"
+        SHARE = "share", "Share"
+        PURCHASE = "purchase", "Purchase"
+
+    class Device(models.TextChoices):
+        DESKTOP = "desktop", "Desktop"
+        MOBILE = "mobile", "Mobile"
+        TABLET = "tablet", "Tablet"
+        UNKNOWN = "unknown", "Unknown"
+
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_analytics_events")
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="analytics_events")
+    visitor_identifier = models.CharField(max_length=64, blank=True, help_text="Opaque, application-generated identifier only.")
+    authenticated_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_analytics_events")
+    session_identifier = models.CharField(max_length=64, blank=True)
+    event_type = models.CharField(max_length=24, choices=EventType.choices)
+    related_photo = models.ForeignKey("GalleryPhoto", on_delete=models.SET_NULL, blank=True, null=True, related_name="analytics_events")
+    related_album = models.ForeignKey("Album", on_delete=models.SET_NULL, blank=True, null=True, related_name="analytics_events")
+    device_category = models.CharField(max_length=12, choices=Device.choices, default=Device.UNKNOWN)
+    source = models.CharField(max_length=24, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    occurred_at = models.DateTimeField(default=timezone.now)
+
+    objects = GalleryAnalyticsEventQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-occurred_at", "-pk"]
+        indexes = [
+            models.Index(fields=["photographer", "gallery", "-occurred_at"], name="analytics_owner_gallery_date"),
+            models.Index(fields=["gallery", "event_type", "-occurred_at"], name="analytics_gallery_type_date"),
+            models.Index(fields=["gallery", "visitor_identifier", "-occurred_at"], name="analytics_gallery_visitor"),
+        ]
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Analytics event and gallery must have the same photographer."})
+        if self.related_photo_id and self.related_photo.gallery_id != self.gallery_id:
+            raise ValidationError({"related_photo": "Photo must belong to this gallery."})
+        if self.related_album_id and self.related_album.gallery_id != self.gallery_id:
+            raise ValidationError({"related_album": "Album must belong to this gallery."})
 
 
 private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
