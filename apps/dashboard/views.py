@@ -19,8 +19,8 @@ from PIL import Image, UnidentifiedImageError
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
-from apps.galleries.forms import AlbumForm, GalleryForm
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto
+from apps.galleries.forms import AlbumForm, GalleryForm, GallerySettingsForm
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
@@ -824,9 +824,58 @@ def gallery_workspace(request, pk):
     if tab not in tabs:
         tab = "overview"
     permissions, _ = GalleryPermission.objects.get_or_create(gallery=gallery)
+    settings, _ = GallerySettings.objects.get_or_create(gallery=gallery, defaults={"gallery_url": gallery.slug})
+    settings_form = GallerySettingsForm(request.POST or None, request.FILES or None, instance=settings,
+                                        photographer=request.user.photographer_profile, prefix="settings")
+    general_form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery,
+                               photographer=request.user.photographer_profile, prefix="general")
+    general_form.fields["status"].choices = [(value, label) for value, label in Gallery.Status.choices
+                                               if value in {Gallery.Status.DRAFT, Gallery.Status.PUBLISHED, Gallery.Status.ARCHIVED}]
     if request.method == "POST":
         action = request.POST.get("action")
-        if action == "save_access":
+        if action == "save_settings":
+            if general_form.is_valid() and settings_form.is_valid():
+                with transaction.atomic():
+                    updated_gallery = general_form.save(commit=False)
+                    updated_gallery.slug = _unique_gallery_slug(request.user.photographer_profile, updated_gallery.name, gallery.pk)
+                    if updated_gallery.status == Gallery.Status.PUBLISHED and not updated_gallery.published_at:
+                        updated_gallery.published_at = timezone.now()
+                    updated_gallery.full_clean()
+                    updated_gallery.save()
+                    updated_settings = settings_form.save(commit=False)
+                    updated_settings.gallery = updated_gallery
+                    updated_settings.full_clean()
+                    updated_settings.save()
+                messages.success(request, "Gallery settings saved.")
+                return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=settings")
+            tab = "settings"
+            messages.error(request, "Review the highlighted settings and try again.")
+        elif action in {"archive_gallery", "duplicate_gallery", "delete_gallery"}:
+            if action == "delete_gallery":
+                gallery.delete()
+                messages.success(request, "Gallery permanently deleted.")
+                return redirect("photographer_workspace:all_galleries")
+            if action == "archive_gallery":
+                gallery.status = Gallery.Status.ARCHIVED
+                gallery.save(update_fields=["status", "updated_at"])
+                messages.success(request, "Gallery archived.")
+            else:
+                with transaction.atomic():
+                    duplicate = Gallery.objects.get(pk=gallery.pk)
+                    duplicate.pk = None
+                    duplicate.name = f"{gallery.name} Copy"
+                    duplicate.slug = _unique_gallery_slug(request.user.photographer_profile, duplicate.name)
+                    duplicate.status = Gallery.Status.DRAFT
+                    duplicate.published_at = None
+                    duplicate.save()
+                    copied_settings = GallerySettings.objects.get(pk=settings.pk)
+                    copied_settings.pk = None
+                    copied_settings.gallery = duplicate
+                    copied_settings.gallery_url = duplicate.slug
+                    copied_settings.save()
+                messages.success(request, "Gallery duplicated as a draft.")
+            return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=settings")
+        elif action == "save_access":
             visibility = request.POST.get("visibility")
             if visibility in Gallery.Visibility.values:
                 gallery.visibility = visibility
@@ -872,7 +921,8 @@ def gallery_workspace(request, pk):
                 invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
                 AccessToken.issue(invitation, expires_at=gallery.expires_at)
                 messages.success(request, "A fresh invitation is ready for future email delivery.")
-        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
+        if action != "save_settings":
+            return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
     photos = gallery.photos.all()
     query = request.GET.get("q", "").strip()
     if query:
@@ -881,6 +931,7 @@ def gallery_workspace(request, pk):
     albums = gallery.albums.annotate(photo_count=Count("photos"))
     invitations = gallery.invitations.all()
     context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+                    "general_form": general_form, "settings_form": settings_form,
                     "gallery_permissions": permissions, "invitations": invitations,
                     "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
                     "permission_options": [(field, label, getattr(permissions, field)) for field, label in (

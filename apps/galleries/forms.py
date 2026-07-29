@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.clients.models import Client
 
-from .models import Album, Gallery
+from .models import Album, Gallery, GallerySettings
 
 
 class GalleryForm(forms.ModelForm):
@@ -73,3 +73,37 @@ class AlbumForm(forms.ModelForm):
     def validate_unique(self):
         self.instance.gallery = self.gallery
         super().validate_unique()
+
+
+class GallerySettingsForm(forms.ModelForm):
+    class Meta:
+        model = GallerySettings
+        exclude = ("gallery",)
+        widgets = {
+            "studio_logo": forms.FileInput(attrs={"accept": "image/png,image/jpeg,image/webp"}),
+            "accent_color": forms.TextInput(attrs={"type": "color"}),
+            "download_limit": forms.NumberInput(attrs={"min": 1, "placeholder": "Unlimited"}),
+            "meta_description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, photographer, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.photographer = photographer
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault("class", "lpw-form-control")
+
+    def clean_accent_color(self):
+        value = self.cleaned_data["accent_color"].upper()
+        if len(value) != 7 or value[0] != "#" or any(c not in "0123456789ABCDEF" for c in value[1:]):
+            raise forms.ValidationError("Enter a valid six-digit hex color.")
+        return value
+
+    def clean_gallery_url(self):
+        slug = self.cleaned_data["gallery_url"]
+        queryset = GallerySettings.objects.filter(gallery__photographer=self.photographer, gallery_url=slug)
+        if self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise forms.ValidationError("You already use this gallery URL.")
+        return slug
