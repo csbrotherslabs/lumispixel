@@ -1640,6 +1640,12 @@ def bookings_dashboard(request):
     inquiries = Lead.objects.for_photographer(profile).filter(
         archived_at__isnull=True, status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]
     )
+    all_leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
+    new_inquiries = all_leads.filter(status=Lead.Status.NEW).count()
+    paid_revenue = ClientInvoice.objects.filter(photographer=profile).aggregate(
+        total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    conversion_rate = all_leads.conversion_rate()
 
     context = _dashboard_context(request, "bookings", "Bookings")
     context.update({
@@ -1648,10 +1654,12 @@ def bookings_dashboard(request):
         "range_label": range_options[range_key],
         "range_options": range_options.items(),
         "booking_metrics": [
-            {"label": "Upcoming Sessions", "value": sessions.count(), "icon": "bi-calendar2-check", "note": range_options[range_key]},
-            {"label": "Open Inquiries", "value": inquiries.count(), "icon": "bi-envelope-open", "note": "Awaiting a booking decision"},
-            {"label": "Awaiting Payment", "value": open_invoices.count(), "icon": "bi-credit-card", "note": f"{profile.default_currency} {outstanding:,.2f} outstanding"},
-            {"label": "Confirmed", "value": sessions.filter(status=ClientSession.Status.CONFIRMED).count(), "icon": "bi-check2-circle", "note": "Sessions in selected range"},
+            {"label": "Upcoming Bookings", "value": sessions.count(), "icon": "bi-calendar2-check", "support": range_options[range_key], "indicator": "Schedule", "tone": "neutral", "tooltip": "Non-cancelled sessions scheduled within the selected date range.", "link_label": "View bookings", "url": reverse("photographer_workspace:calendar")},
+            {"label": "New Inquiries", "value": new_inquiries, "icon": "bi-chat-left-text", "support": "Awaiting first response", "indicator": "Needs review" if new_inquiries else "All caught up", "tone": "warning" if new_inquiries else "positive", "tooltip": "Active inquiries that have not yet moved beyond the new stage.", "link_label": "Review inquiries", "url": reverse("photographer_workspace:leads")},
+            {"label": "Pending Contracts", "value": 4, "icon": "bi-file-earmark-text", "support": "Awaiting signature", "indicator": "Sample data", "tone": "neutral", "tooltip": "Placeholder count of contracts awaiting a client signature; contract data will replace this sample when connected.", "link_label": "View contracts", "url": reverse("photographer_workspace:contracts")},
+            {"label": "Outstanding Payments", "value": f"{profile.default_currency} {outstanding:,.2f}", "icon": "bi-credit-card", "support": f"Across {open_invoices.count()} open invoice{'s' if open_invoices.count() != 1 else ''}", "indicator": "Action needed" if outstanding else "Up to date", "tone": "warning" if outstanding else "positive", "tooltip": "Remaining balance on invoices that are neither paid nor void.", "link_label": "Review payments", "url": reverse("photographer_workspace:payments")},
+            {"label": "Booking Revenue", "value": f"{profile.default_currency} {paid_revenue:,.2f}", "icon": "bi-graph-up-arrow", "support": "Payments collected", "indicator": "All time", "tone": "positive", "tooltip": "Total payments recorded against your client invoices.", "link_label": "View revenue", "url": reverse("photographer_workspace:revenue")},
+            {"label": "Conversion Rate", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel", "support": "Inquiries booked", "indicator": f"{all_leads.filter(status=Lead.Status.BOOKED).count()} converted", "tone": "positive" if conversion_rate else "neutral", "tooltip": "Percentage of active inquiries whose current status is booked.", "link_label": "View pipeline", "url": reverse("photographer_workspace:leads")},
         ],
         "upcoming_bookings": sessions.order_by("starts_at")[:8],
         "recent_inquiries": inquiries.order_by("-created_at")[:5],

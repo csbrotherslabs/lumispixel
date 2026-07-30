@@ -25,7 +25,16 @@
     <section class="lpw-bookings-state lpw-bookings-state--error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i><h2>Bookings could not be loaded</h2><p>Refresh the page to try again. Your booking data has not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:bookings' %}">Try again</a></section>
   {% else %}
     <section class="lpw-bookings-metrics" aria-label="Booking summary">
-      {% for metric in booking_metrics %}<article><span><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span><div><p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small></div></article>{% endfor %}
+      {% for metric in booking_metrics %}
+        <article class="lpw-booking-metric">
+          <div class="lpw-booking-metric__top">
+            <span class="lpw-booking-metric__icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span>
+            <span class="lpw-booking-metric__tooltip" tabindex="0" aria-label="About {{ metric.label }}: {{ metric.tooltip }}"><i class="bi bi-info-circle" aria-hidden="true"></i><span role="tooltip">{{ metric.tooltip }}</span></span>
+          </div>
+          <div class="lpw-booking-metric__body"><p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.support }}</small></div>
+          <div class="lpw-booking-metric__footer"><span class="lpw-booking-metric__status lpw-booking-metric__status--{{ metric.tone }}">{{ metric.indicator }}</span><a href="{{ metric.url }}">{{ metric.link_label }}<i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+        </article>
+      {% endfor %}
     </section>
 
     <div class="lpw-bookings-grid">
