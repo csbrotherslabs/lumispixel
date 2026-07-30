@@ -1,0 +1,49 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-bookings-page">
+  <header class="lpw-bookings-header">
+    <div class="lpw-bookings-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Dashboard</strong></nav>
+      <h1 id="workspace-page-title">Bookings</h1>
+      <p>Manage upcoming sessions, inquiries, payments, and scheduling activity.</p>
+    </div>
+    <div class="lpw-bookings-actions">
+      <form class="lpw-date-range" method="get">
+        <label for="booking-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Date range</span></label>
+        <select id="booking-range" name="range" onchange="this.form.submit()">
+          {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </form>
+      <a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-envelope-plus" aria-hidden="true"></i>Add Inquiry</a>
+      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
+    </div>
+  </header>
+
+  {% if booking_state == 'loading' %}
+    <section class="lpw-bookings-state" aria-live="polite" aria-busy="true"><span class="lpw-bookings-spinner"></span><h2>Loading bookings</h2><p>Gathering your latest scheduling activity.</p></section>
+  {% elif booking_state == 'error' %}
+    <section class="lpw-bookings-state lpw-bookings-state--error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i><h2>Bookings could not be loaded</h2><p>Refresh the page to try again. Your booking data has not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:bookings' %}">Try again</a></section>
+  {% else %}
+    <section class="lpw-bookings-metrics" aria-label="Booking summary">
+      {% for metric in booking_metrics %}<article><span><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span><div><p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small></div></article>{% endfor %}
+    </section>
+
+    <div class="lpw-bookings-grid">
+      <section class="lpw-bookings-card lpw-bookings-card--schedule">
+        <div class="lpw-bookings-card-head"><div><span>Schedule</span><h2>Upcoming Bookings</h2><p>Sessions in {{ range_label|lower }}.</p></div><a href="{% url 'photographer_workspace:calendar' %}">View calendar <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+        {% if upcoming_bookings %}
+          <div class="lpw-bookings-table-wrap"><table class="lpw-bookings-table"><thead><tr><th>Client</th><th>Session</th><th>Date &amp; time</th><th>Location</th><th>Status</th></tr></thead><tbody>{% for booking in upcoming_bookings %}<tr><td><strong>{{ booking.client }}</strong></td><td>{{ booking.session_type }}</td><td><time datetime="{{ booking.starts_at|date:'c' }}">{{ booking.starts_at|date:"M j, Y" }}<small>{{ booking.starts_at|date:"g:i A" }}</small></time></td><td>{{ booking.location|default:"To be confirmed" }}</td><td><span class="lpw-booking-status lpw-booking-status--{{ booking.status }}">{{ booking.get_status_display }}</span></td></tr>{% endfor %}</tbody></table></div>
+        {% else %}
+          <div class="lpw-bookings-empty"><span><i class="bi bi-calendar2-plus" aria-hidden="true"></i></span><h3>No upcoming bookings</h3><p>New sessions in this date range will appear here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new">Create a booking</a></div>
+        {% endif %}
+      </section>
+
+      <section class="lpw-bookings-card">
+        <div class="lpw-bookings-card-head"><div><span>Pipeline</span><h2>Recent Inquiries</h2><p>Prospective sessions awaiting attention.</p></div><a href="{% url 'photographer_workspace:leads' %}">View all</a></div>
+        {% if recent_inquiries %}<div class="lpw-inquiry-list">{% for inquiry in recent_inquiries %}<article><span>{{ inquiry.first_name|first|default:"?" }}{{ inquiry.last_name|first }}</span><div><strong>{{ inquiry }}</strong><small>{{ inquiry.event_type|default:"Photography inquiry" }}{% if inquiry.event_date %} · {{ inquiry.event_date|date:"M j" }}{% endif %}</small></div><em>{{ inquiry.get_status_display }}</em></article>{% endfor %}</div>
+        {% else %}<div class="lpw-bookings-empty lpw-bookings-empty--compact"><span><i class="bi bi-envelope-open" aria-hidden="true"></i></span><h3>No open inquiries</h3><p>New inquiries will be collected here.</p><a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}">Add Inquiry</a></div>{% endif %}
+      </section>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

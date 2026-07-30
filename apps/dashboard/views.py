@@ -65,7 +65,7 @@ NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
     {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
     {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_archive", "Gallery Archive", "bi-archive"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
-    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("calendar", "Calendar", "bi-calendar3"), ("bookings", "Bookings", "bi-calendar-check"), ("contracts", "Contracts", "bi-file-earmark-text")]},
+    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Dashboard", "bi-grid-1x2"), ("calendar", "Calendar", "bi-calendar3"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
     {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
     {"title": "Automation", "icon": "bi-lightning-charge", "items": [("workflows", "Workflows", "bi-diagram-3"), ("ai_assistant", "AI Assistant", "bi-chat-dots") ]},
@@ -1611,6 +1611,52 @@ def convert_lead(request, pk):
                                       description=f"Lead {lead} converted to a client.")
     messages.success(request, "Lead converted to a client.")
     return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_GET
+def bookings_dashboard(request):
+    """Render the lightweight bookings command view without introducing booking models."""
+    profile = request.user.photographer_profile
+    now = timezone.now()
+    range_key = request.GET.get("range", "30")
+    range_options = {"7": "Next 7 days", "30": "Next 30 days", "90": "Next 90 days", "all": "All upcoming"}
+    if range_key not in range_options:
+        range_key = "30"
+
+    sessions = ClientSession.objects.filter(
+        photographer=profile, starts_at__gte=now,
+    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client")
+    if range_key != "all":
+        sessions = sessions.filter(starts_at__lt=now + timedelta(days=int(range_key)))
+
+    open_invoices = ClientInvoice.objects.filter(photographer=profile).exclude(
+        status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]
+    )
+    balance = ExpressionWrapper(F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2))
+    outstanding = open_invoices.aggregate(
+        total=Coalesce(Sum(balance), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    inquiries = Lead.objects.for_photographer(profile).filter(
+        archived_at__isnull=True, status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]
+    )
+
+    context = _dashboard_context(request, "bookings", "Bookings")
+    context.update({
+        "booking_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
+        "range_key": range_key,
+        "range_label": range_options[range_key],
+        "range_options": range_options.items(),
+        "booking_metrics": [
+            {"label": "Upcoming Sessions", "value": sessions.count(), "icon": "bi-calendar2-check", "note": range_options[range_key]},
+            {"label": "Open Inquiries", "value": inquiries.count(), "icon": "bi-envelope-open", "note": "Awaiting a booking decision"},
+            {"label": "Awaiting Payment", "value": open_invoices.count(), "icon": "bi-credit-card", "note": f"{profile.default_currency} {outstanding:,.2f} outstanding"},
+            {"label": "Confirmed", "value": sessions.filter(status=ClientSession.Status.CONFIRMED).count(), "icon": "bi-check2-circle", "note": "Sessions in selected range"},
+        ],
+        "upcoming_bookings": sessions.order_by("starts_at")[:8],
+        "recent_inquiries": inquiries.order_by("-created_at")[:5],
+    })
+    return render(request, "photographer_workspace/bookings/dashboard.html", context)
 
 
 @photographer_workspace_required
