@@ -1,0 +1,30 @@
+<section class="lpw-revenue" aria-labelledby="booking-revenue-title">
+  <header class="lpw-operations-head">
+    <div><span>Financial performance</span><h2 id="booking-revenue-title">Booking Revenue</h2><p>Invoice-backed revenue for the current calendar month.</p></div>
+    <a href="{% url 'photographer_workspace:revenue' %}">Revenue report <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+  </header>
+  <div class="lpw-revenue-layout">
+    <div class="lpw-revenue-overview">
+      <dl class="lpw-revenue-stats">
+        <div><dt>Booked this month</dt><dd>{{ photographer_profile.default_currency }} {{ revenue_summary.booked|floatformat:2 }}</dd></div>
+        <div><dt>Revenue collected</dt><dd>{{ photographer_profile.default_currency }} {{ revenue_summary.collected|floatformat:2 }}</dd></div>
+        <div><dt>Outstanding balance</dt><dd>{{ photographer_profile.default_currency }} {{ revenue_summary.outstanding|floatformat:2 }}</dd></div>
+        <div><dt>Average booking value</dt><dd>{{ photographer_profile.default_currency }} {{ revenue_summary.average|floatformat:2 }}</dd></div>
+      </dl>
+      <p class="lpw-period-change {% if revenue_summary.change > 0 %}is-up{% endif %}"><i class="bi bi-arrow-{% if revenue_summary.change > 0 %}up{% else %}right{% endif %}" aria-hidden="true"></i>{% if revenue_summary.change != None %}{{ revenue_summary.change|floatformat:1 }}% compared with previous month{% else %}No previous-period revenue to compare{% endif %}</p>
+      <div class="lpw-revenue-chart">
+        <div><strong>Revenue over time</strong><span>Last 6 months</span></div>
+        <svg viewBox="0 0 100 100" role="img" aria-labelledby="revenue-chart-description" preserveAspectRatio="none">
+          <title id="revenue-chart-description">Six-month booking revenue trend</title>
+          <path d="M8 88 H98 M8 52 H98 M8 16 H98" class="grid" vector-effect="non-scaling-stroke"></path>
+          <polyline points="{{ revenue_chart_points }}" vector-effect="non-scaling-stroke"></polyline>
+          {% for point in revenue_chart %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="1.8"><title>{{ point.label }}: {{ photographer_profile.default_currency }} {{ point.value|floatformat:2 }}</title></circle>{% endfor %}
+        </svg>
+        <div class="lpw-chart-labels">{% for point in revenue_chart %}<span>{{ point.label }}</span>{% endfor %}</div>
+      </div>
+    </div>
+    <div class="lpw-session-breakdown"><h3>Session-type breakdown</h3><p>Based on recorded client sessions.</p>
+      {% for item in session_breakdown %}<div class="lpw-breakdown-row"><div><span>{{ item.label }}</span><strong>{{ item.count }}</strong></div><div class="lpw-breakdown-track" aria-label="{{ item.label }}: {{ item.percent }} percent"><i style="width:{{ item.percent }}%"></i></div></div>{% endfor %}
+    </div>
+  </div>
+</section>

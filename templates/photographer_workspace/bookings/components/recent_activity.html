@@ -1,0 +1,10 @@
+<section class="lpw-booking-activity" aria-labelledby="booking-activity-title">
+  <header class="lpw-operations-head"><div><span>Workspace updates</span><h2 id="booking-activity-title">Recent Activity</h2><p>Inquiry, booking, contract, payment, and delivery events.</p></div></header>
+  {% if recent_booking_activity %}<ol>
+    {% for activity in recent_booking_activity %}<li>
+      <span class="is-{{ activity.tone }}"><i class="bi {{ activity.icon }}" aria-hidden="true"></i></span>
+      <div><strong>{{ activity.description }}</strong><a href="{% url 'photographer_workspace:clients' %}"><i class="bi bi-link-45deg" aria-hidden="true"></i>{{ activity.related }}</a></div>
+      <time datetime="{{ activity.occurred_at|date:'c' }}">{{ activity.occurred_at|timesince }} ago</time>
+    </li>{% endfor %}
+  </ol>{% else %}<div class="lpw-activity-empty"><i class="bi bi-clock-history" aria-hidden="true"></i><h3>No booking activity yet</h3><p>New inquiries, confirmed bookings, signed contracts, payments, questionnaires, reschedules, and gallery creation will appear here.</p><a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}">Add your first inquiry</a></div>{% endif %}
+</section>

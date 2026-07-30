@@ -1,0 +1,7 @@
+<nav class="lpw-booking-quick" aria-label="Booking quick actions">
+  {% for action in booking_quick_actions %}
+    <a href="{{ action.url }}" title="{{ action.help }}" aria-label="{{ action.label }} — {{ action.help }}">
+      <i class="bi {{ action.icon }}" aria-hidden="true"></i><span>{{ action.label }}</span>
+    </a>
+  {% endfor %}
+</nav>
