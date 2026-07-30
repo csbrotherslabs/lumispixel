@@ -106,8 +106,25 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing"}:
+            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing", "bookings"}:
                 self.assertContains(response, "Back to Dashboard")
+
+    def test_bookings_dashboard_structure_navigation_and_states(self):
+        user, profile = self.make_photographer(True, email="bookings@example.com", slug="bookings")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya@example.com")
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", starts_at=timezone.now() + timezone.timedelta(days=2), status=ClientSession.Status.CONFIRMED)
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:bookings")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Business Hub")
+        self.assertContains(response, "Manage upcoming sessions, inquiries, payments, and scheduling activity.")
+        self.assertContains(response, "New Booking")
+        self.assertContains(response, "Add Inquiry")
+        self.assertContains(response, "Maya Cole")
+        self.assertContains(response, f'href="{url}" class="is-active"')
+        self.assertContains(self.client.get(url, {"state": "loading"}), "Loading bookings")
+        self.assertContains(self.client.get(url, {"state": "error"}), "Bookings could not be loaded")
 
     def test_ai_processing_center_creates_scoped_jobs_and_supports_actions(self):
         user, profile = self.make_photographer(True, email="ai@example.com", slug="ai")
