@@ -83,6 +83,24 @@
   });
 
   const profileMenu = document.querySelector('[data-profile-menu]');
+
+  const bookingSearch = document.querySelector('[data-booking-search]');
+  const bookingFilter = document.querySelector('[data-booking-filter]');
+  const bookingRows = Array.from(document.querySelectorAll('[data-booking-row]'));
+  const bookingFilterEmpty = document.querySelector('[data-booking-filter-empty]');
+  function filterBookings() {
+    const query = bookingSearch ? bookingSearch.value.trim().toLowerCase() : '';
+    const status = bookingFilter ? bookingFilter.value : '';
+    let visible = 0;
+    bookingRows.forEach(function (row) {
+      const show = (!query || row.textContent.toLowerCase().includes(query)) && (!status || row.dataset.status === status);
+      row.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (bookingFilterEmpty) bookingFilterEmpty.hidden = visible !== 0;
+  }
+  if (bookingSearch) bookingSearch.addEventListener('input', filterBookings);
+  if (bookingFilter) bookingFilter.addEventListener('change', filterBookings);
   const profileToggle = document.querySelector('[data-profile-toggle]');
   const profileDropdown = document.querySelector('[data-profile-dropdown]');
   function closeProfile() {
