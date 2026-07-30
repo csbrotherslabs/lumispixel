@@ -37,6 +37,9 @@
       {% endfor %}
     </section>
 
+    {% include "photographer_workspace/bookings/components/quick_actions.html" %}
+    {% include "photographer_workspace/bookings/components/revenue_insights.html" %}
+
     <section class="lpw-pipeline-card" aria-labelledby="inquiry-pipeline-title">
       <div class="lpw-operations-head"><div><span>Sales workflow</span><h2 id="inquiry-pipeline-title">Inquiry Pipeline</h2><p>See where every opportunity stands and move the right conversations forward.</p></div><div class="lpw-operations-summary"><span>{{ pipeline_inquiry_count }} active inquir{{ pipeline_inquiry_count|pluralize:"y,ies" }}</span><a href="{% url 'photographer_workspace:leads' %}">View all inquiries <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>
       <div class="lpw-pipeline" aria-label="Inquiry stages">
@@ -79,6 +82,7 @@
         {% else %}<div class="lpw-bookings-empty"><span><i class="bi bi-calendar2-plus" aria-hidden="true"></i></span><h3>No upcoming bookings</h3><p>Confirmed sessions will appear here as your calendar fills up.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new">Create a booking</a></div>{% endif %}
       </section>
     </div>
+    {% include "photographer_workspace/bookings/components/recent_activity.html" %}
   {% endif %}
 </div>
 {% endblock %}

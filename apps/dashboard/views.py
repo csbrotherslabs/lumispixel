@@ -1663,6 +1663,75 @@ def bookings_dashboard(request):
     paid_revenue = ClientInvoice.objects.filter(photographer=profile).aggregate(
         total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField())
     )["total"]
+    month_start = timezone.localdate().replace(day=1)
+    previous_month_end = month_start - timedelta(days=1)
+    previous_month_start = previous_month_end.replace(day=1)
+    monthly_invoices = ClientInvoice.objects.filter(
+        photographer=profile, created_at__date__gte=month_start,
+    ).exclude(status=ClientInvoice.Status.VOID)
+    previous_invoices = ClientInvoice.objects.filter(
+        photographer=profile,
+        created_at__date__range=(previous_month_start, previous_month_end),
+    ).exclude(status=ClientInvoice.Status.VOID)
+    monthly_booked = monthly_invoices.aggregate(
+        total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    monthly_collected = monthly_invoices.aggregate(
+        total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    previous_booked = previous_invoices.aggregate(
+        total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
+    )["total"]
+    monthly_average = monthly_booked / monthly_invoices.count() if monthly_invoices.count() else Decimal("0.00")
+    period_change = ((monthly_booked - previous_booked) / previous_booked * 100) if previous_booked else None
+
+    # ClientInvoice currently has no service/category field. Session names provide
+    # the best server-rendered breakdown until a first-class Booking model lands.
+    session_categories = {name: 0 for name in ("Weddings", "Portraits", "Events", "Commercial", "Other")}
+    for session_type in ClientSession.objects.filter(photographer=profile).values_list("session_type", flat=True):
+        normalized = session_type.lower()
+        category = next((name for name in session_categories if name[:-1].lower() in normalized), "Other")
+        session_categories[category] += 1
+    category_total = sum(session_categories.values())
+    session_breakdown = [
+        {"label": label, "count": count, "percent": round(count / category_total * 100) if category_total else 0}
+        for label, count in session_categories.items()
+    ]
+
+    # Six compact points keep the chart dependency-free and reusable. Values are
+    # derived from invoice records rather than embedded presentation data.
+    revenue_chart = []
+    for offset in range(5, -1, -1):
+        point_start = month_start
+        for _ in range(offset):
+            point_start = (point_start - timedelta(days=1)).replace(day=1)
+        next_month = (point_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+        point_end = min(next_month - timedelta(days=1), timezone.localdate())
+        point_value = ClientInvoice.objects.filter(
+            photographer=profile, created_at__date__gte=point_start,
+            created_at__date__lte=point_end,
+        ).exclude(status=ClientInvoice.Status.VOID).aggregate(
+            total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
+        )["total"]
+        revenue_chart.append({"label": point_start.strftime("%b"), "value": point_value})
+    chart_max = max((point["value"] for point in revenue_chart), default=Decimal("0.00")) or Decimal("1.00")
+    for index, point in enumerate(revenue_chart):
+        point["x"] = 8 + index * 18
+        point["y"] = round(88 - float(point["value"] / chart_max) * 72, 2)
+
+    activity_styles = {
+        ClientActivity.EventType.LEAD_CREATED: ("bi-envelope-plus", "inquiry"),
+        ClientActivity.EventType.LEAD_BOOKED: ("bi-calendar2-check", "booking"),
+        ClientActivity.EventType.CONTRACT_SIGNED: ("bi-pen", "contract"),
+        ClientActivity.EventType.PAYMENT_RECEIVED: ("bi-credit-card", "payment"),
+        ClientActivity.EventType.CONSULTATION_SCHEDULED: ("bi-calendar-event", "schedule"),
+        ClientActivity.EventType.GALLERY_DELIVERED: ("bi-images", "gallery"),
+    }
+    recent_activity = []
+    for activity in ClientActivity.objects.filter(photographer=profile).select_related("lead", "client")[:7]:
+        icon, tone = activity_styles.get(activity.event_type, ("bi-activity", "default"))
+        related = str(activity.client or activity.lead or "Booking workspace")
+        recent_activity.append({"icon": icon, "tone": tone, "description": activity.description or activity.get_event_type_display(), "related": related, "occurred_at": activity.occurred_at})
     conversion_rate = all_leads.conversion_rate()
 
     # Keep the pipeline useful even while the surrounding booking modules are
@@ -1742,6 +1811,22 @@ def bookings_dashboard(request):
         ],
         "action_center": action_center,
         "action_count": sum(item["count"] for item in action_center),
+        "revenue_summary": {
+            "booked": monthly_booked, "collected": monthly_collected,
+            "outstanding": monthly_booked - monthly_collected, "average": monthly_average,
+            "change": period_change,
+        },
+        "revenue_chart": revenue_chart,
+        "revenue_chart_points": " ".join(f'{point["x"]},{point["y"]}' for point in revenue_chart),
+        "session_breakdown": session_breakdown,
+        "recent_booking_activity": recent_activity,
+        "booking_quick_actions": [
+            {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:bookings")}?action=new', "help": "Start a client booking"},
+            {"label": "Add Inquiry", "icon": "bi-envelope-plus", "url": reverse("photographer_workspace:add_lead"), "help": "Capture a new lead"},
+            {"label": "Block Calendar Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
+            {"label": "Create Package", "icon": "bi-box-seam", "url": f'{reverse("photographer_workspace:bookings")}?action=package', "help": "Build a session package"},
+            {"label": "Share Booking Link", "icon": "bi-link-45deg", "url": f'{reverse("photographer_workspace:bookings")}?action=share', "help": "Copy your public booking link"},
+        ],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
 
