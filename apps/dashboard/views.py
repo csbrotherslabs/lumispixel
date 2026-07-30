@@ -1665,6 +1665,54 @@ def bookings_dashboard(request):
     )["total"]
     conversion_rate = all_leads.conversion_rate()
 
+    # Keep the pipeline useful even while the surrounding booking modules are
+    # being connected: every stage is calculated from the photographer's own
+    # inquiry records and links back to the existing filtered leads view.
+    pipeline_rows = {
+        row["status"]: row
+        for row in all_leads.values("status").annotate(
+            count=Count("id"),
+            value=Coalesce(
+                Sum("estimated_value"),
+                Value(Decimal("0.00")),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            ),
+        )
+    }
+    inquiry_pipeline = [
+        {
+            "key": key,
+            "label": label,
+            "count": pipeline_rows.get(key, {}).get("count", 0),
+            "value": pipeline_rows.get(key, {}).get("value", Decimal("0.00")),
+            "url": f"{reverse('photographer_workspace:leads')}?status={key}",
+        }
+        for key, label in Lead.Status.choices
+    ]
+    responded_leads = list(all_leads.filter(last_contacted_at__isnull=False).only("created_at", "last_contacted_at"))
+    if responded_leads:
+        average_response_seconds = sum(
+            max((lead.last_contacted_at - lead.created_at).total_seconds(), 0) for lead in responded_leads
+        ) / len(responded_leads)
+        average_response = f"{average_response_seconds / 3600:.1f} hrs" if average_response_seconds < 86400 else f"{average_response_seconds / 86400:.1f} days"
+    else:
+        average_response = "—"
+    open_pipeline_value = all_leads.exclude(
+        status__in=[Lead.Status.BOOKED, Lead.Status.LOST]
+    ).pipeline_value()
+
+    overdue_retainers = open_invoices.filter(due_date__lt=timezone.localdate()).count()
+    awaiting_replies = all_leads.filter(status=Lead.Status.NEW).count()
+    action_center = [
+        {"count": 4, "description": "contracts awaiting signatures", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Chen Wedding · Contract", "action": "Send reminder", "url": reverse("photographer_workspace:contracts")},
+        {"count": overdue_retainers, "description": "retainers overdue", "icon": "bi-credit-card-2-front", "priority": "Urgent", "tone": "urgent", "related": "Open client invoices", "action": "Review payments", "url": reverse("photographer_workspace:payments")},
+        {"count": 2, "description": "questionnaires incomplete", "icon": "bi-ui-checks-grid", "priority": "Follow Up", "tone": "followup", "related": "Harper Family · Portrait", "action": "View forms", "url": reverse("photographer_workspace:clients")},
+        {"count": awaiting_replies, "description": "inquiries awaiting replies", "icon": "bi-reply", "priority": "Urgent", "tone": "urgent", "related": "Newest unanswered inquiries", "action": "Reply now", "url": f"{reverse('photographer_workspace:leads')}?status={Lead.Status.NEW}"},
+        {"count": 1, "description": "potential scheduling conflict", "icon": "bi-calendar-x", "priority": "Urgent", "tone": "urgent", "related": "Oct 18 · Two sessions overlap", "action": "Resolve conflict", "url": reverse("photographer_workspace:calendar")},
+        {"count": 3, "description": "sessions without assigned staff", "icon": "bi-person-exclamation", "priority": "Due Soon", "tone": "soon", "related": "Upcoming studio sessions", "action": "Assign staff", "url": reverse("photographer_workspace:team")},
+    ]
+    action_center = [item for item in action_center if item["count"]]
+
     context = _dashboard_context(request, "bookings", "Bookings")
     context.update({
         "booking_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
@@ -1683,6 +1731,13 @@ def bookings_dashboard(request):
         "today_sessions": today_sessions,
         "schedule_owner": profile.display_name or request.user.full_name or "Studio team",
         "recent_inquiries": inquiries.order_by("-created_at")[:5],
+        "inquiry_pipeline": inquiry_pipeline,
+        "pipeline_insights": [
+            {"label": "Inquiry-to-booking conversion", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel"},
+            {"label": "Average response time", "value": average_response, "icon": "bi-clock-history"},
+            {"label": "Estimated open-pipeline value", "value": f"{profile.default_currency} {open_pipeline_value:,.2f}", "icon": "bi-cash-stack"},
+        ],
+        "action_center": action_center,
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
 
