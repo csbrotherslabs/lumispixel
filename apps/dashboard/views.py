@@ -1682,7 +1682,7 @@ def bookings_dashboard(request):
     inquiry_pipeline = [
         {
             "key": key,
-            "label": label,
+            "label": "Proposal Sent" if key == Lead.Status.PROPOSAL_SENT else label,
             "count": pipeline_rows.get(key, {}).get("count", 0),
             "value": pipeline_rows.get(key, {}).get("value", Decimal("0.00")),
             "url": f"{reverse('photographer_workspace:leads')}?status={key}",
@@ -1712,6 +1712,8 @@ def bookings_dashboard(request):
         {"count": 3, "description": "sessions without assigned staff", "icon": "bi-person-exclamation", "priority": "Due Soon", "tone": "soon", "related": "Upcoming studio sessions", "action": "Assign staff", "url": reverse("photographer_workspace:team")},
     ]
     action_center = [item for item in action_center if item["count"]]
+    priority_rank = {"urgent": 0, "soon": 1, "followup": 2}
+    action_center.sort(key=lambda item: (priority_rank[item["tone"]], -item["count"]))
 
     context = _dashboard_context(request, "bookings", "Bookings")
     context.update({
@@ -1732,12 +1734,14 @@ def bookings_dashboard(request):
         "schedule_owner": profile.display_name or request.user.full_name or "Studio team",
         "recent_inquiries": inquiries.order_by("-created_at")[:5],
         "inquiry_pipeline": inquiry_pipeline,
+        "pipeline_inquiry_count": all_leads.count(),
         "pipeline_insights": [
             {"label": "Inquiry-to-booking conversion", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel"},
             {"label": "Average response time", "value": average_response, "icon": "bi-clock-history"},
             {"label": "Estimated open-pipeline value", "value": f"{profile.default_currency} {open_pipeline_value:,.2f}", "icon": "bi-cash-stack"},
         ],
         "action_center": action_center,
+        "action_count": sum(item["count"] for item in action_center),
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
 

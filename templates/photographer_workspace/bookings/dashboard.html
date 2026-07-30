@@ -38,7 +38,7 @@
     </section>
 
     <section class="lpw-pipeline-card" aria-labelledby="inquiry-pipeline-title">
-      <div class="lpw-operations-head"><div><span>Sales workflow</span><h2 id="inquiry-pipeline-title">Inquiry Pipeline</h2><p>See where every opportunity stands and move the right conversations forward.</p></div><a href="{% url 'photographer_workspace:leads' %}">View all inquiries <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+      <div class="lpw-operations-head"><div><span>Sales workflow</span><h2 id="inquiry-pipeline-title">Inquiry Pipeline</h2><p>See where every opportunity stands and move the right conversations forward.</p></div><div class="lpw-operations-summary"><span>{{ pipeline_inquiry_count }} active inquir{{ pipeline_inquiry_count|pluralize:"y,ies" }}</span><a href="{% url 'photographer_workspace:leads' %}">View all inquiries <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>
       <div class="lpw-pipeline" aria-label="Inquiry stages">
         {% for stage in inquiry_pipeline %}<a class="lpw-pipeline-stage lpw-pipeline-stage--{{ stage.key }}" href="{{ stage.url }}" aria-label="View {{ stage.label }} inquiries">
           <span>{{ stage.label }}</span><strong>{{ stage.count }}</strong><small>{{ photographer_profile.default_currency }} {{ stage.value|floatformat:2 }}</small><i class="bi bi-chevron-right" aria-hidden="true"></i>
@@ -48,7 +48,7 @@
     </section>
 
     <section class="lpw-action-center" aria-labelledby="action-center-title">
-      <div class="lpw-operations-head"><div><span>Prioritized for you</span><h2 id="action-center-title">Action Center</h2><p>Clear the operational tasks most likely to hold up a client or booking.</p></div><span class="lpw-action-total">{{ action_center|length }} priorities</span></div>
+      <div class="lpw-operations-head"><div><span>Prioritized for you</span><h2 id="action-center-title">Action Center</h2><p>Clear the operational tasks most likely to hold up a client or booking.</p></div><span class="lpw-action-total">{{ action_count }} open action{{ action_count|pluralize }}</span></div>
       {% if action_center %}<div class="lpw-action-list">{% for item in action_center %}<article>
         <span class="lpw-action-icon"><i class="bi {{ item.icon }}" aria-hidden="true"></i></span>
         <div class="lpw-action-copy"><div><h3>{{ item.count }} {{ item.description }}</h3><span class="lpw-priority lpw-priority--{{ item.tone }}">{{ item.priority }}</span></div><p><i class="bi bi-link-45deg" aria-hidden="true"></i>{{ item.related }}</p></div>
