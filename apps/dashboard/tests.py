@@ -140,6 +140,21 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(url, {"state": "loading"}), "Loading bookings")
         self.assertContains(self.client.get(url, {"state": "error"}), "Bookings could not be loaded")
 
+    def test_bookings_schedule_can_mark_an_owned_session_complete(self):
+        user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya@example.com")
+        session = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait consultation",
+            starts_at=timezone.now(), status=ClientSession.Status.CONFIRMED,
+        )
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "mark_complete", "session_id": session.pk,
+        })
+        self.assertRedirects(response, reverse("photographer_workspace:bookings"))
+        session.refresh_from_db()
+        self.assertEqual(session.status, ClientSession.Status.COMPLETED)
+
     def test_ai_processing_center_creates_scoped_jobs_and_supports_actions(self):
         user, profile = self.make_photographer(True, email="ai@example.com", slug="ai")
         _, other = self.make_photographer(True, email="other-ai@example.com", slug="other-ai")

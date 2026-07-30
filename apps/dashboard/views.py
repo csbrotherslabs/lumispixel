@@ -1614,10 +1614,21 @@ def convert_lead(request, pk):
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def bookings_dashboard(request):
     """Render the lightweight bookings command view without introducing booking models."""
     profile = request.user.photographer_profile
+    if request.method == "POST":
+        if request.POST.get("action") == "mark_complete":
+            session = get_object_or_404(
+                ClientSession.objects.filter(photographer=profile).exclude(status=ClientSession.Status.CANCELLED),
+                pk=request.POST.get("session_id"),
+            )
+            session.status = ClientSession.Status.COMPLETED
+            session.save(update_fields=["status"])
+            messages.success(request, f"{session.session_type} for {session.client} marked complete.")
+        return redirect("photographer_workspace:bookings")
+
     now = timezone.now()
     range_key = request.GET.get("range", "30")
     range_options = {"7": "Next 7 days", "30": "Next 30 days", "90": "Next 90 days", "all": "All upcoming"}
