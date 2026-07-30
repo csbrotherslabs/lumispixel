@@ -1630,6 +1630,13 @@ def bookings_dashboard(request):
     if range_key != "all":
         sessions = sessions.filter(starts_at__lt=now + timedelta(days=int(range_key)))
 
+    today_sessions = ClientSession.objects.filter(
+        photographer=profile,
+        starts_at__date=timezone.localdate(),
+    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at")
+    for session in today_sessions:
+        session.ends_at = session.starts_at + timedelta(hours=1, minutes=30)
+
     open_invoices = ClientInvoice.objects.filter(photographer=profile).exclude(
         status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]
     )
@@ -1661,7 +1668,9 @@ def bookings_dashboard(request):
             {"label": "Booking Revenue", "value": f"{profile.default_currency} {paid_revenue:,.2f}", "icon": "bi-graph-up-arrow", "support": "Payments collected", "indicator": "All time", "tone": "positive", "tooltip": "Total payments recorded against your client invoices.", "link_label": "View revenue", "url": reverse("photographer_workspace:revenue")},
             {"label": "Conversion Rate", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel", "support": "Inquiries booked", "indicator": f"{all_leads.filter(status=Lead.Status.BOOKED).count()} converted", "tone": "positive" if conversion_rate else "neutral", "tooltip": "Percentage of active inquiries whose current status is booked.", "link_label": "View pipeline", "url": reverse("photographer_workspace:leads")},
         ],
-        "upcoming_bookings": sessions.order_by("starts_at")[:8],
+        "upcoming_bookings": sessions.filter(status=ClientSession.Status.CONFIRMED).order_by("starts_at")[:8],
+        "today_sessions": today_sessions,
+        "schedule_owner": profile.display_name or request.user.full_name or "Studio team",
         "recent_inquiries": inquiries.order_by("-created_at")[:5],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
