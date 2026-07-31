@@ -35,12 +35,54 @@
       </article>{% endfor %}
     </section>
 
+    <section class="lpw-transaction-controls" aria-label="Transaction views and filters">
+      <nav class="lpw-transaction-tabs" aria-label="Transaction views">
+        {% for item in transaction_views %}<a href="{{ item.url }}"{% if item.active %} class="is-active" aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
+      </nav>
+
+      <form class="lpw-transaction-filter-form" method="get" role="search">
+        <input type="hidden" name="view" value="{{ transaction_view }}">
+        <label class="lpw-transaction-search"><i class="bi bi-search" aria-hidden="true"></i><span class="sr-only">Search transactions</span><input type="search" name="q" value="{{ selected_filters.q }}" placeholder="Search client, booking, reference, invoice or amount"></label>
+        <label class="lpw-transaction-mobile-view"><span>View</span><select aria-label="View" data-view-select>{% for item in transaction_views %}<option value="{{ item.url }}"{% if item.active %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
+        <div class="lpw-transaction-quick-filters">
+          <label><span>Date range</span><select name="range">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <label><span>Status</span><select name="status"><option value="">Any status</option><option value="draft"{% if selected_filters.status == 'draft' %} selected{% endif %}>Draft</option><option value="pending"{% if selected_filters.status == 'pending' %} selected{% endif %}>Pending</option><option value="completed"{% if selected_filters.status == 'completed' %} selected{% endif %}>Completed</option><option value="failed"{% if selected_filters.status == 'failed' %} selected{% endif %}>Failed</option><option value="overdue"{% if selected_filters.status == 'overdue' %} selected{% endif %}>Overdue</option></select></label>
+          <label><span>Record type</span><select name="record_type"><option value="">All records</option><option value="invoice"{% if selected_filters.record_type == 'invoice' %} selected{% endif %}>Invoice</option><option value="payment"{% if selected_filters.record_type == 'payment' %} selected{% endif %}>Payment</option><option value="refund"{% if selected_filters.record_type == 'refund' %} selected{% endif %}>Refund</option><option value="credit"{% if selected_filters.record_type == 'credit' %} selected{% endif %}>Credit</option></select></label>
+          <label><span>Client</span><input name="client" value="{{ selected_filters.client }}" placeholder="All clients"></label>
+          <label><span>Booking</span><input name="booking" value="{{ selected_filters.booking }}" placeholder="All bookings"></label>
+          <label><span>Payment method</span><select name="payment_method"><option value="">Any method</option><option value="card"{% if selected_filters.payment_method == 'card' %} selected{% endif %}>Card</option><option value="bank"{% if selected_filters.payment_method == 'bank' %} selected{% endif %}>Bank transfer</option><option value="cash"{% if selected_filters.payment_method == 'cash' %} selected{% endif %}>Cash</option><option value="other"{% if selected_filters.payment_method == 'other' %} selected{% endif %}>Other</option></select></label>
+        </div>
+        <details class="lpw-transaction-advanced">
+          <summary><i class="bi bi-sliders" aria-hidden="true"></i><span class="lpw-desktop-filter-label">More filters</span><span class="lpw-mobile-filter-label">Filters</span>{% if active_filter_count %}<b>{{ active_filter_count }}</b>{% endif %}</summary>
+          <div>
+            <header><div><strong>Advanced filters</strong><span>Narrow financial activity with additional criteria.</span></div></header>
+            <div class="lpw-advanced-grid">
+              <label><span>Minimum amount</span><input type="number" step="0.01" name="amount_min" value="{{ selected_filters.amount_min }}" placeholder="0.00"></label>
+              <label><span>Maximum amount</span><input type="number" step="0.01" name="amount_max" value="{{ selected_filters.amount_max }}" placeholder="No maximum"></label>
+              <label><span>Currency</span><select name="currency"><option value="">Any currency</option><option>USD</option><option>CAD</option><option>GBP</option><option>EUR</option></select></label>
+              <label><span>Created by</span><input name="created_by" value="{{ selected_filters.created_by }}" placeholder="Anyone"></label>
+              <label><span>Financial source</span><select name="source"><option value="">Any source</option><option>Online checkout</option><option>Manual entry</option><option>Import</option></select></label>
+              <label><span>Due date from</span><input type="date" name="due_from" value="{{ selected_filters.due_from }}"></label>
+              <label><span>Due date to</span><input type="date" name="due_to" value="{{ selected_filters.due_to }}"></label>
+              <label><span>Payment date from</span><input type="date" name="paid_from" value="{{ selected_filters.paid_from }}"></label>
+              <label><span>Payment date to</span><input type="date" name="paid_to" value="{{ selected_filters.paid_to }}"></label>
+            </div>
+          </div>
+        </details>
+        <button class="lpw-apply-filters" type="submit">Apply</button>
+        <a class="lpw-clear-filters" href="{{ clear_filters_url }}">Clear filters</a>
+      </form>
+      {% if active_filters %}<div class="lpw-active-filters" aria-label="Active filters"><span>Active filters</span>{% for filter in active_filters %}<a href="{{ filter.remove_url }}">{{ filter.label }}: {{ filter.value }} <i class="bi bi-x" aria-hidden="true"></i><span class="sr-only">Remove</span></a>{% endfor %}</div>{% endif %}
+    </section>
+
     {% if transaction_state == 'loading' %}
       <section class="lpw-financial-state" aria-live="polite" aria-busy="true"><span class="lpw-bookings-spinner"></span><h2>Loading transactions</h2><p>Gathering invoices, payments, refunds, credits, and related financial activity.</p></section>
     {% elif transaction_state == 'permission' %}
       <section class="lpw-financial-state" role="status"><span><i class="bi bi-shield-lock" aria-hidden="true"></i></span><h2>Transaction access is restricted</h2><p>You do not have permission to view financial activity. Ask a workspace owner to update your role.</p></section>
     {% elif transaction_state == 'error' %}
       <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Transactions could not be loaded</h2><p>Financial activity is temporarily unavailable. Your records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:transactions' %}?range={{ range_key }}">Try again</a></section>
+    {% elif active_filter_count and transaction_state == 'empty' %}
+      <section class="lpw-financial-state" aria-labelledby="transactions-no-results-title"><span><i class="bi bi-search" aria-hidden="true"></i></span><h2 id="transactions-no-results-title">No matching transactions</h2><p>Try changing or clearing filters to see more financial activity.</p><a class="lpw-btn" href="{{ clear_filters_url }}">Clear filters</a></section>
     {% elif transaction_state == 'empty' or not transaction_has_activity %}
       <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
     {% else %}
@@ -48,4 +90,5 @@
     {% endif %}
   </div>
 </div>
+<script>document.querySelector('[data-view-select]')?.addEventListener('change',function(){window.location.assign(this.value)});</script>
 {% endblock %}
