@@ -14,7 +14,7 @@
           {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </form>
-      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-receipt" aria-hidden="true"></i>Create invoice</a>
+      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-receipt" aria-hidden="true"></i>Create invoice</a>
       <details class="lpw-financial-menu">
         <summary class="lpw-btn"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
         <div>
@@ -84,7 +84,7 @@
     {% elif active_filter_count and transaction_state == 'empty' %}
       <section class="lpw-financial-state" aria-labelledby="transactions-no-results-title"><span><i class="bi bi-search" aria-hidden="true"></i></span><h2 id="transactions-no-results-title">No matching transactions</h2><p>Try changing or clearing filters to see more financial activity.</p><a class="lpw-btn" href="{{ clear_filters_url }}">Clear filters</a></section>
     {% elif transaction_state == 'empty' or not transaction_has_activity %}
-      <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
+      <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
     {% else %}
       {% include "photographer_workspace/financial/_transactions_table.html" %}
     {% endif %}

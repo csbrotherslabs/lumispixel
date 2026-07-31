@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.db import transaction
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,7 +25,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceLineItem, InvoicePayment, Lead
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
@@ -37,6 +38,7 @@ from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
 from apps.dashboard.financial_transactions import transaction_records
 from apps.dashboard.financial_record_detail import financial_record_detail
+from apps.dashboard.invoices import next_invoice_number, save_invoice
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2398,6 +2400,122 @@ def financial_record_detail_view(request, record_type, pk):
         return JsonResponse({"error": "This financial record was not found."}, status=404)
     html = render_to_string("photographer_workspace/financial/_record_detail.html", {"record": detail}, request=request)
     return JsonResponse({"html": html, "reference": detail["reference"]})
+
+
+def _invoice_context(request, invoice=None, errors=None):
+    profile = request.user.photographer_profile
+    context = _dashboard_context(request, "invoices", "Create Invoice" if invoice is None else f"Invoice {invoice.invoice_number}")
+    context.update({"invoice": invoice, "invoice_number": invoice.invoice_number if invoice else next_invoice_number(profile),
+                    "clients": Client.objects.for_photographer(profile).filter(status=Client.Status.ACTIVE),
+                    "bookings": ClientSession.objects.for_photographer(profile).exclude(status=ClientSession.Status.CANCELLED).select_related("client"),
+                    "item_types": InvoiceLineItem.ItemType.choices,
+                    "today": timezone.localdate(), "errors": errors or {}})
+    return context
+
+
+@photographer_workspace_required
+@require_GET
+def invoices_workspace(request):
+    profile = request.user.photographer_profile
+    invoices = ClientInvoice.objects.for_photographer(profile).select_related("client", "booking").prefetch_related("line_items")
+    context = _dashboard_context(request, "invoices", "Invoices")
+    context["invoices"] = invoices
+    return render(request, "photographer_workspace/invoices/list.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def invoice_create(request):
+    if request.method == "POST":
+        try:
+            invoice = save_invoice(request.user.photographer_profile, request.POST, send=request.POST.get("intent") == "send")
+            messages.success(request, f"{invoice.invoice_number} was {'sent' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
+            return redirect("photographer_workspace:invoice_view", pk=invoice.pk)
+        except ValidationError as exc:
+            return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, errors=exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
+    return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request))
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def invoice_edit(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.user.photographer_profile).prefetch_related("line_items", "payment_schedule"), pk=pk)
+    if invoice.status != ClientInvoice.Status.DRAFT:
+        messages.error(request, "Only draft invoices can be edited.")
+        return redirect("photographer_workspace:invoice_view", pk=pk)
+    if request.method == "POST":
+        try:
+            invoice = save_invoice(request.user.photographer_profile, request.POST, invoice, request.POST.get("intent") == "send")
+            messages.success(request, "Invoice updated.")
+            return redirect("photographer_workspace:invoice_view", pk=pk)
+        except ValidationError as exc:
+            return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, invoice, exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
+    return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, invoice))
+
+
+@photographer_workspace_required
+@require_GET
+def invoice_view(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.user.photographer_profile).select_related("client", "booking").prefetch_related("line_items", "payment_schedule", "activity"), pk=pk)
+    return render(request, "photographer_workspace/invoices/detail.html", _invoice_context(request, invoice))
+
+
+@photographer_workspace_required
+@require_POST
+def invoice_action(request, pk, action):
+    profile = request.user.photographer_profile
+    with transaction.atomic():
+        invoice = get_object_or_404(ClientInvoice.objects.select_for_update().filter(photographer=profile), pk=pk)
+        if action == "duplicate":
+            source = ClientInvoice.objects.prefetch_related("line_items", "payment_schedule").get(pk=invoice.pk)
+            duplicate = ClientInvoice.objects.create(photographer=profile, client=source.client, booking=source.booking,
+                invoice_number=next_invoice_number(profile), issue_date=timezone.localdate(), due_date=timezone.localdate() + timedelta(days=source.payment_terms),
+                payment_terms=source.payment_terms, currency=source.currency, subtotal=source.subtotal, discount_total=source.discount_total,
+                tax_total=source.tax_total, total=source.total, client_notes=source.client_notes, internal_notes=source.internal_notes, terms=source.terms)
+            for item in source.line_items.all(): item.pk = None; item.invoice = duplicate; item.save()
+            InvoiceActivity.objects.create(photographer=profile, invoice=duplicate, action="duplicated", description=f"Duplicated from {source.invoice_number}.")
+            messages.success(request, "Draft duplicate created.")
+            return redirect("photographer_workspace:invoice_edit", pk=duplicate.pk)
+        if action in {"send", "resend"}:
+            if invoice.status not in {ClientInvoice.Status.DRAFT, ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.client.email:
+                messages.error(request, "This invoice cannot be sent in its current state, or the client has no email address.")
+            else:
+                invoice.status, invoice.sent_at = ClientInvoice.Status.SENT if invoice.status == ClientInvoice.Status.DRAFT else invoice.status, timezone.now()
+                invoice.save(update_fields=["status", "sent_at"])
+                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action=action, description="Invoice emailed to client.")
+                messages.success(request, "Invoice sent.")
+        elif action == "void":
+            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID} or invoice.amount_paid > 0:
+                messages.error(request, "Paid, partially paid, or already void invoices cannot be voided.")
+            else:
+                invoice.status = ClientInvoice.Status.VOID; invoice.save(update_fields=["status"])
+                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="voided", description="Invoice voided.")
+                messages.success(request, "Invoice voided.")
+        elif action == "payment":
+            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID, ClientInvoice.Status.DRAFT}:
+                messages.error(request, "A payment cannot be recorded for this invoice.")
+            else:
+                try: amount = Decimal(request.POST.get("amount", "0")).quantize(Decimal("0.01"))
+                except Exception: amount = Decimal("0")
+                if amount <= 0 or amount > invoice.balance:
+                    messages.error(request, "Payment must be greater than zero and no more than the balance.")
+                else:
+                    InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=amount)
+                    invoice.amount_paid += amount; invoice.status = ClientInvoice.Status.PAID if invoice.amount_paid == invoice.total else ClientInvoice.Status.PARTIALLY_PAID
+                    invoice.save(update_fields=["amount_paid", "status"])
+                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment", description=f"Payment of {amount} recorded.")
+                    messages.success(request, "Payment recorded.")
+    return redirect("photographer_workspace:invoice_view", pk=pk)
+
+
+@photographer_workspace_required
+@require_GET
+def invoice_download(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.user.photographer_profile).select_related("client").prefetch_related("line_items"), pk=pk)
+    html = render_to_string("photographer_workspace/invoices/print.html", {"invoice": invoice})
+    response = HttpResponse(html, content_type="text/html")
+    response["Content-Disposition"] = f'attachment; filename="{invoice.invoice_number}.html"'
+    return response
 
 
 @photographer_workspace_required
