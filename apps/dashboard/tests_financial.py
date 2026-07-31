@@ -9,7 +9,7 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceCredit, InvoicePayment, PaymentRefund
 from apps.dashboard.financial import ZERO, date_window, financial_summary, format_currency
-from apps.dashboard.financial_analytics import _grouping
+from apps.dashboard.financial_analytics import _grouping, _labels
 
 
 class FinancialSelectorTests(SimpleTestCase):
@@ -32,6 +32,10 @@ class FinancialSelectorTests(SimpleTestCase):
         self.assertEqual(_grouping(date(2026, 7, 1), date(2026, 7, 31))[0], "daily")
         self.assertEqual(_grouping(date(2026, 1, 1), date(2026, 4, 30))[0], "weekly")
         self.assertEqual(_grouping(date(2025, 1, 1), date(2026, 7, 31))[0], "monthly")
+
+    def test_chart_labels_do_not_use_platform_specific_strftime_flags(self):
+        self.assertEqual(_labels(date(2026, 7, 1), 2, "daily"), ["Jul 1", "Jul 2"])
+        self.assertEqual(_labels(date(2026, 1, 1), 2, "monthly"), ["Jan 2026", "Feb 2026"])
 
 
 class FinancialDatabaseSelectorTests(TestCase):

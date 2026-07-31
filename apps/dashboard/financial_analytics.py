@@ -71,7 +71,9 @@ def _series(profile, start, end, grouping, truncator):
 def _labels(start, count, grouping):
     labels, cursor = [], _bucket_start(start, grouping)
     for _ in range(count):
-        labels.append(cursor.strftime("%b %-d" if grouping != "monthly" else "%b %Y"))
+        # ``%-d`` is a POSIX extension and raises ValueError on Windows. Build
+        # the unpadded day with ``date.day`` so dashboard rendering is portable.
+        labels.append(cursor.strftime("%b %Y") if grouping == "monthly" else f"{cursor:%b} {cursor.day}")
         cursor = _advance(cursor, grouping)
     return labels
 
