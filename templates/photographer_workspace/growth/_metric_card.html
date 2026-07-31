@@ -1,0 +1,12 @@
+<article class="lpw-metric-card lpw-growth-metric{% if loading %} is-loading{% endif %}" aria-label="{{ metric.title }}">
+  {% if loading %}
+    <span class="lpw-metric-skeleton lpw-metric-skeleton--label"></span><span class="lpw-metric-skeleton lpw-metric-skeleton--value"></span><span class="lpw-metric-skeleton lpw-metric-skeleton--trend"></span>
+    <span class="sr-only">Loading {{ metric.title }}</span>
+  {% else %}
+    <header><h2>{{ metric.title }}</h2><button class="lpw-metric-help" type="button" aria-label="About {{ metric.title }}" aria-describedby="growth-metric-help-{{ forloop.counter }}" data-tooltip="{{ metric.tooltip }}"><i class="bi bi-info-circle" aria-hidden="true"></i></button><span class="sr-only" id="growth-metric-help-{{ forloop.counter }}">{{ metric.tooltip }}</span></header>
+    <strong class="lpw-metric-value{% if metric.value == None %} is-empty{% endif %}">{{ metric.formatted_value }}</strong>
+    <div class="lpw-metric-comparison lpw-metric-comparison--{{ metric.trend }}">{% if metric.trend == 'positive' %}<i class="bi bi-arrow-up-right" aria-hidden="true"></i>{% elif metric.trend == 'negative' %}<i class="bi bi-arrow-down-right" aria-hidden="true"></i>{% else %}<i class="bi bi-dash" aria-hidden="true"></i>{% endif %}<span>{% if metric.percentage != None %}{{ metric.percentage }}%{% else %}No comparison{% endif %}</span><small>{{ metric.period_label }}</small></div>
+    <p>{{ metric.supporting_value }}</p>
+    <a class="lpw-growth-metric__link" href="{{ metric.url }}" aria-label="View {{ metric.title }} details">View details <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+  {% endif %}
+</article>

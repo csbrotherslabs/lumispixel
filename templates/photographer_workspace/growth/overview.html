@@ -27,7 +27,7 @@
 
   <main class="lpw-growth-content">
     {% if growth_state == 'loading' %}
-      <section class="lpw-growth-state" aria-live="polite" aria-busy="true"><span class="lpw-activity-spinner" aria-hidden="true"></span><h2>Loading your growth overview</h2><p>Gathering acquisition and conversion signals…</p><div class="lpw-growth-state-skeleton" aria-hidden="true"><i></i><i></i><i></i></div></section>
+      <section class="lpw-metric-grid lpw-growth-summary" aria-label="Growth summary" aria-live="polite" aria-busy="true">{% for metric in growth_metrics %}{% include "photographer_workspace/growth/_metric_card.html" with loading=True %}{% endfor %}</section><p class="sr-only">Loading your growth overview</p>
     {% elif growth_state == 'empty' %}
       <section class="lpw-growth-state"><span><i class="bi bi-bar-chart" aria-hidden="true"></i></span><h2>Your growth overview is ready</h2><p>Lead, booking, review, and referral activity will appear here as your business grows.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:leads' %}">Add your first lead</a></section>
     {% elif growth_state == 'permission' %}
@@ -35,6 +35,7 @@
     {% elif growth_state == 'error' %}
       <section class="lpw-growth-state lpw-growth-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Growth insights could not be loaded</h2><p>Refresh the page to try again. No workspace data has been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:growth' %}?range={{ range_key }}">Try again</a></section>
     {% else %}
+      <section class="lpw-metric-grid lpw-growth-summary" aria-label="Growth summary">{% for metric in growth_metrics %}{% include "photographer_workspace/growth/_metric_card.html" %}{% endfor %}</section>
       <div class="lpw-growth-grid" aria-label="Growth overview sections">
         {% for section_id, title, icon, description in growth_sections %}<section class="lpw-growth-card" id="{{ section_id }}" aria-labelledby="{{ section_id }}-title"><header><span><i class="bi {{ icon }}" aria-hidden="true"></i></span><span class="lpw-badge">Coming next</span></header><h2 id="{{ section_id }}-title">{{ title }}</h2><p>{{ description }}</p><div class="lpw-growth-placeholder" aria-hidden="true"><i></i><i></i><i></i></div></section>{% endfor %}
       </div>
