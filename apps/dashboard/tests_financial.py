@@ -4,6 +4,7 @@ from decimal import Decimal
 from datetime import datetime
 
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
@@ -92,3 +93,17 @@ class FinancialDatabaseSelectorTests(TestCase):
         values = financial_summary(self.profile("empty"), "this_month", today=self.today)["values"]
         for key in ("invoice_value", "collected", "refunds", "credits", "net_revenue", "outstanding", "overdue", "booking_value"):
             self.assertEqual(values[key], ZERO)
+
+    def test_transactions_page_uses_real_view_summary_and_active_navigation(self):
+        profile = self.profile("transactions")
+        self.client.force_login(profile.user)
+
+        response = self.client.get(reverse("photographer_workspace:transactions"), {"range": "this_year"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "photographer_workspace/financial/transactions.html")
+        self.assertEqual(response.context["range_key"], "this_year")
+        self.assertEqual(len(response.context["transaction_summary"]), 4)
+        financial_group = next(group for group in response.context["workspace_nav"] if group["title"] == "Financial")
+        self.assertEqual([item["title"] for item in financial_group["items"]], ["Overview", "Transactions"])
+        self.assertTrue(next(item for item in financial_group["items"] if item["title"] == "Transactions")["active"])

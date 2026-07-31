@@ -30,7 +30,7 @@ from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
-from apps.dashboard.financial import financial_summary
+from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
 from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
@@ -2282,6 +2282,46 @@ def financial_overview(request):
                     "financial_operations_state": operations_state, "financial_activity": activity,
                     "financial_activity_state": activity_state})
     return render(request, "photographer_workspace/financial/overview.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def financial_transactions(request):
+    """Render the unified, date-scoped financial transactions workspace shell."""
+    range_options = [
+        ("this_month", "This month"),
+        ("last_month", "Last month"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "this_month")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "this_month"
+    page_state = request.GET.get("state", "ready")
+    if page_state not in {"ready", "loading", "empty", "permission", "error"}:
+        page_state = "ready"
+
+    profile = request.user.photographer_profile
+    currency = getattr(profile, "default_currency", "USD")
+    summary = financial_summary(profile, range_key, currency)
+    values = summary["values"]
+    transaction_value = values["invoice_value"] + values["collected"] + values["refunds"] + values["credits"]
+    summary_items = [
+        {"label": "Total transaction value", "value": format_currency(transaction_value, currency), "icon": "bi-arrow-left-right"},
+        {"label": "Payments collected", "value": format_currency(values["collected"], currency), "icon": "bi-cash-coin"},
+        {"label": "Outstanding balance", "value": format_currency(values["outstanding"], currency), "icon": "bi-hourglass-split"},
+        {"label": "Refund total", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
+    ]
+    context = _dashboard_context(request, "transactions", "Transactions")
+    context.update({
+        "range_key": range_key,
+        "range_options": range_options,
+        "transaction_state": page_state,
+        "transaction_summary": summary_items,
+        "transaction_has_activity": summary["has_activity"],
+    })
+    return render(request, "photographer_workspace/financial/transactions.html", context)
 
 
 @photographer_workspace_required

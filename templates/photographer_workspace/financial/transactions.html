@@ -1,0 +1,51 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-financial-page lpw-transactions-page">
+  <header class="lpw-financial-header">
+    <div class="lpw-financial-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Transactions</strong></nav>
+      <h1 id="workspace-page-title">Transactions</h1>
+      <p>Manage invoices, payments, refunds, credits, and financial activity.</p>
+    </div>
+    <div class="lpw-financial-actions">
+      <form class="lpw-date-range" method="get">
+        <label for="transaction-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Transaction date range</span></label>
+        <select id="transaction-range" name="range" onchange="this.form.submit()">
+          {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </form>
+      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-receipt" aria-hidden="true"></i>Create invoice</a>
+      <details class="lpw-financial-menu">
+        <summary class="lpw-btn"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div>
+          <a href="?range={{ range_key }}&amp;action=record-payment"><i class="bi bi-cash-coin" aria-hidden="true"></i><span><strong>Record payment</strong><small>Add an offline or manual payment</small></span></a>
+          <a href="?range={{ range_key }}&amp;action=issue-refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue refund</strong><small>Return a completed payment</small></span></a>
+          <a href="?range={{ range_key }}&amp;action=add-credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add credit</strong><small>Apply credit to a client balance</small></span></a>
+          <a href="?range={{ range_key }}&amp;action=export"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export transactions</strong><small>Download activity for this date range</small></span></a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <div class="lpw-financial-content">
+    <section class="lpw-transaction-summary" aria-label="Transaction summary"{% if transaction_state == 'loading' %} aria-busy="true"{% endif %}>
+      {% for item in transaction_summary %}<article>
+        <span class="lpw-transaction-summary__icon"><i class="bi {{ item.icon }}" aria-hidden="true"></i></span>
+        <div><p>{{ item.label }}</p>{% if transaction_state == 'loading' %}<span class="lpw-metric-skeleton lpw-transaction-summary__skeleton"></span>{% else %}<strong>{{ item.value }}</strong>{% endif %}</div>
+      </article>{% endfor %}
+    </section>
+
+    {% if transaction_state == 'loading' %}
+      <section class="lpw-financial-state" aria-live="polite" aria-busy="true"><span class="lpw-bookings-spinner"></span><h2>Loading transactions</h2><p>Gathering invoices, payments, refunds, credits, and related financial activity.</p></section>
+    {% elif transaction_state == 'permission' %}
+      <section class="lpw-financial-state" role="status"><span><i class="bi bi-shield-lock" aria-hidden="true"></i></span><h2>Transaction access is restricted</h2><p>You do not have permission to view financial activity. Ask a workspace owner to update your role.</p></section>
+    {% elif transaction_state == 'error' %}
+      <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Transactions could not be loaded</h2><p>Financial activity is temporarily unavailable. Your records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:transactions' %}?range={{ range_key }}">Try again</a></section>
+    {% elif transaction_state == 'empty' or not transaction_has_activity %}
+      <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
+    {% else %}
+      <section class="lpw-transaction-table-placeholder" aria-label="Transactions workspace"><i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i><h2>Transaction records</h2><p>The unified transaction table will be added in the next phase.</p></section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
