@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import DecimalField, Sum, Value
+from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.clients.models import ClientSession, Lead
+from apps.clients.models import ClientSession, InvoicePayment, Lead
 from apps.dashboard.financial import format_currency
 
 ZERO = Decimal("0.00")
@@ -196,3 +196,88 @@ def lead_source_performance(profile, range_key, currency="USD", sort_key="leads"
     sort_fields = {"leads": "leads", "bookings": "bookings", "conversion": "conversion_rate", "value": "booking_value"}
     field = sort_fields.get(sort_key, "leads")
     return sorted(rows.values(), key=lambda row: (row[field] is not None, row[field] or ZERO, row["source"]), reverse=True)
+
+
+def booking_value_by_source(profile, range_key, metric="booking_value", show_all=False, currency="USD", today=None):
+    """Return chart-ready acquisition results with payments attributed in bulk."""
+    window = growth_window(range_key, today)
+    rows = {label: {"source": label, "booking_value": ZERO, "collected_revenue": ZERO, "bookings": 0}
+            for label in set(SOURCE_LABELS.values())} if show_all else {}
+    bookings = (_during(ClientSession.objects.for_photographer(profile).filter(
+        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED),
+        client__converted_lead__isnull=False), "created_at", window.start, window.end)
+        .values("client__converted_lead__lead_source").annotate(
+            bookings=Count("id"), booking_value=Coalesce(Sum("booking_value"), Value(ZERO), output_field=MONEY_FIELD)))
+    for result in bookings:
+        label = _source_label(result["client__converted_lead__lead_source"])
+        row = rows.setdefault(label, {"source": label, "booking_value": ZERO, "collected_revenue": ZERO, "bookings": 0})
+        row["bookings"] += result["bookings"]
+        row["booking_value"] += result["booking_value"]
+    payments = (_during(InvoicePayment.objects.for_photographer(profile).filter(
+        status=InvoicePayment.Status.COMPLETED, invoice__booking__isnull=False,
+        invoice__booking__client__converted_lead__isnull=False), "paid_at", window.start, window.end)
+        .values("invoice__booking__client__converted_lead__lead_source").annotate(
+            total=Coalesce(Sum("amount"), Value(ZERO), output_field=MONEY_FIELD)))
+    for result in payments:
+        label = _source_label(result["invoice__booking__client__converted_lead__lead_source"])
+        row = rows.setdefault(label, {"source": label, "booking_value": ZERO, "collected_revenue": ZERO, "bookings": 0})
+        row["collected_revenue"] += result["total"]
+    metric = metric if metric in {"booking_value", "collected_revenue", "bookings"} else "booking_value"
+    total = sum((row[metric] for row in rows.values()), ZERO)
+    maximum = max((row[metric] for row in rows.values()), default=ZERO)
+    output = []
+    for row in sorted(rows.values(), key=lambda item: (item[metric], item["source"]), reverse=True):
+        if not show_all and not (row["bookings"] or row["booking_value"] or row["collected_revenue"]):
+            continue
+        value = row[metric]
+        output.append({**row, "value": value, "percent": _percent(value, total) or ZERO,
+                       "bar_percent": round(float(Decimal(value) / Decimal(maximum) * HUNDRED), 2) if maximum else 0,
+                       "formatted_value": f"{value:,}" if metric == "bookings" else format_currency(value, currency)})
+    return {"rows": output, "metric": metric, "total": total,
+            "summary": "; ".join(f'{row["source"]}: {row["formatted_value"]}, {row["bookings"]} bookings, {row["percent"]}% of total' for row in output)}
+
+
+def service_performance(profile, range_key, currency="USD", today=None):
+    """Aggregate configured/custom service labels without per-row database work."""
+    window = growth_window(range_key, today)
+    previous_start, previous_end = window.previous_start, window.previous_end
+    leads = (_during(Lead.objects.for_photographer(profile).filter(archived_at__isnull=True),
+                     "created_at", window.start, window.end).values("event_type").annotate(
+        leads=Count("id"), converted=Count("id", filter=Q(status=Lead.Status.BOOKED))))
+    sessions = (_during(ClientSession.objects.for_photographer(profile), "created_at", window.start, window.end)
+                .values("session_type").annotate(
+                    bookings=Count("id", filter=Q(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))),
+                    cancelled=Count("id", filter=Q(status=ClientSession.Status.CANCELLED)),
+                    booking_value=Coalesce(Sum("booking_value", filter=Q(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))), Value(ZERO), output_field=MONEY_FIELD)))
+    previous = {}
+    if previous_end:
+        previous = {item["session_type"]: item["value"] for item in
+                    _during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)),
+                            "created_at", previous_start, previous_end).values("session_type").annotate(value=Sum("booking_value"))}
+    rows = {}
+    for item in leads:
+        name = (item["event_type"] or "Unspecified service").strip()
+        rows[name] = {"service": name, "leads": item["leads"], "converted": item["converted"], "bookings": 0, "cancelled": 0, "booking_value": ZERO}
+    for item in sessions:
+        name = (item["session_type"] or "Unspecified service").strip()
+        row = rows.setdefault(name, {"service": name, "leads": 0, "converted": 0, "bookings": 0, "cancelled": 0, "booking_value": ZERO})
+        row.update({key: item[key] for key in ("bookings", "cancelled", "booking_value")})
+    output = []
+    for row in rows.values():
+        total_sessions = row["bookings"] + row["cancelled"]
+        prior = previous.get(row["service"], ZERO)
+        growth, _ = _comparison(row["booking_value"], prior)
+        output.append({**row, "conversion_rate": _percent(row["converted"], row["leads"]),
+                       "average_value": row["booking_value"] / row["bookings"] if row["bookings"] else None,
+                       "growth": growth, "cancellation_rate": _percent(row["cancelled"], total_sessions),
+                       "formatted_value": format_currency(row["booking_value"], currency),
+                       "formatted_average": format_currency(row["booking_value"] / row["bookings"], currency) if row["bookings"] else "—",
+                       "url": f'{reverse("photographer_workspace:bookings")}?service={row["service"]}'})
+    if output:
+        fastest = max(output, key=lambda row: row["growth"] if row["growth"] is not None else Decimal("-Infinity"))
+        highest = max(output, key=lambda row: row["booking_value"])
+        converting = max(output, key=lambda row: row["conversion_rate"] if row["conversion_rate"] is not None else Decimal("-1"))
+        losing = min(output, key=lambda row: row["growth"] if row["growth"] is not None else Decimal("Infinity"))
+        for row in output:
+            row["badges"] = (["Fastest growing"] if row is fastest and row["growth"] is not None else []) + (["Highest value"] if row is highest else []) + (["Best converting"] if row is converting and row["conversion_rate"] is not None else []) + (["Losing momentum"] if row is losing and row["growth"] is not None and row["growth"] < 0 else [])
+    return sorted(output, key=lambda row: (row["booking_value"], row["service"]), reverse=True)

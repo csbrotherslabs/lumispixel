@@ -40,7 +40,8 @@ from apps.dashboard.financial_transactions import transaction_records
 from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, csv_bytes, invoice_zip,
                                            run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
-from apps.dashboard.growth_analytics import growth_summary, lead_funnel, lead_source_performance
+from apps.dashboard.growth_analytics import (booking_value_by_source, growth_summary, lead_funnel,
+                                             lead_source_performance, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
@@ -2316,7 +2317,6 @@ def growth_overview(request):
         page_state = "ready"
     sections = [
         ("growth-metrics", "Growth metrics", "bi-graph-up-arrow", "Key acquisition and conversion signals will appear here."),
-        ("service-performance", "Service performance", "bi-camera", "Compare demand and conversion across your services."),
         ("reviews", "Reviews", "bi-star", "Track client feedback and reputation signals."),
         ("referrals", "Referrals", "bi-people", "Understand the clients and partners driving referrals."),
         ("client-retention", "Client retention", "bi-arrow-repeat", "See how often clients return for another session."),
@@ -2328,6 +2328,8 @@ def growth_overview(request):
                              getattr(request.user.photographer_profile, "default_currency", "USD"))
     source_sort = request.GET.get("source_sort", "leads")
     currency = getattr(request.user.photographer_profile, "default_currency", "USD")
+    source_metric = request.GET.get("source_metric", "booking_value")
+    show_all_sources = request.GET.get("show_all_sources") == "1"
     context.update({
         "growth_state": page_state,
         "range_key": range_key,
@@ -2338,6 +2340,10 @@ def growth_overview(request):
         "funnel_stages": lead_funnel(request.user.photographer_profile, range_key, currency),
         "source_rows": lead_source_performance(request.user.photographer_profile, range_key, currency, source_sort),
         "source_sort": source_sort,
+        "source_chart": booking_value_by_source(request.user.photographer_profile, range_key, source_metric,
+                                                 show_all_sources, currency),
+        "show_all_sources": show_all_sources,
+        "service_rows": service_performance(request.user.photographer_profile, range_key, currency),
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
 

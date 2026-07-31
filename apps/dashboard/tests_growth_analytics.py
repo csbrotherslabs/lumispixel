@@ -7,7 +7,8 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientSession, Lead
 from apps.dashboard.growth_analytics import (
-    growth_summary, growth_window, lead_funnel, lead_source_performance,
+    booking_value_by_source, growth_summary, growth_window, lead_funnel, lead_source_performance,
+    service_performance,
 )
 
 
@@ -86,3 +87,14 @@ class GrowthAnalyticsTests(TestCase):
         self.assertEqual(sources[0]["bookings"], 1)
         self.assertEqual(sources[0]["conversion_rate"], Decimal("100.0"))
         self.assertEqual(sources[1]["source"], "Other")
+
+        chart = booking_value_by_source(self.profile, "last_30_days", today=self.today)
+        self.assertEqual(chart["rows"][0]["source"], "Website")
+        self.assertEqual(chart["rows"][0]["value"], Decimal("600.00"))
+        self.assertEqual(chart["rows"][0]["percent"], Decimal("100.0"))
+
+        services = service_performance(self.profile, "last_30_days", today=self.today)
+        portrait = next(row for row in services if row["service"] == "Portrait")
+        self.assertEqual(portrait["bookings"], 1)
+        self.assertEqual(portrait["formatted_value"], "$600.00")
+        self.assertIn("Highest value", portrait["badges"])
