@@ -413,20 +413,39 @@ class ClientInvoice(PhotographerOwnedModel):
         VOID = "void", "Void"
 
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="invoices")
+    booking = models.ForeignKey(ClientSession, on_delete=models.SET_NULL, related_name="invoices", blank=True, null=True)
+    invoice_number = models.CharField(max_length=32, null=True)
+    issue_date = models.DateField(default=timezone.localdate)
+    currency = models.CharField(max_length=3, default="USD")
+    payment_terms = models.PositiveSmallIntegerField(default=30)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    tax_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     due_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    client_notes = models.TextField(blank=True)
+    internal_notes = models.TextField(blank=True)
+    terms = models.TextField(blank=True)
+    delivery_email = models.BooleanField(default=True)
+    reminders_enabled = models.BooleanField(default=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["due_date", "-created_at"]
         indexes = [models.Index(fields=["photographer", "status", "due_date"], name="invoice_owner_status_due")]
+        constraints = [models.UniqueConstraint(fields=["photographer", "invoice_number"], name="invoice_owner_number_unique")]
 
     def clean(self):
         errors = {}
         if self.client_id and self.photographer_id != self.client.photographer_id:
             errors["client"] = "The client must belong to this photographer."
+        if self.booking_id and (self.photographer_id != self.booking.photographer_id or self.client_id != self.booking.client_id):
+            errors["booking"] = "The booking must belong to this client and photographer."
+        if self.total < 0 or self.subtotal < 0 or self.discount_total < 0 or self.tax_total < 0:
+            errors["total"] = "Invoice amounts cannot be negative."
         if self.amount_paid > self.total:
             errors["amount_paid"] = "Amount paid cannot exceed the invoice total."
         if errors:
@@ -435,6 +454,56 @@ class ClientInvoice(PhotographerOwnedModel):
     @property
     def balance(self):
         return self.total - self.amount_paid
+
+    @property
+    def is_locked(self):
+        return self.status in (self.Status.PAID, self.Status.VOID)
+
+
+class InvoiceLineItem(models.Model):
+    class ItemType(models.TextChoices):
+        PACKAGE = "package", "Booking package"
+        SESSION = "session", "Session fee"
+        DEPOSIT = "deposit", "Deposit"
+        ADD_ON = "add_on", "Add-on"
+        TRAVEL = "travel", "Travel fee"
+        PRODUCT = "product", "Prints or products"
+        CUSTOM = "custom", "Custom item"
+
+    invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="line_items")
+    item_type = models.CharField(max_length=16, choices=ItemType.choices, default=ItemType.CUSTOM)
+    description = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "pk"]
+
+
+class InvoicePaymentSchedule(models.Model):
+    invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="payment_schedule")
+    label = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    due_date = models.DateField()
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "due_date"]
+
+
+class InvoiceActivity(PhotographerOwnedModel):
+    invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="activity")
+    action = models.CharField(max_length=32)
+    description = models.CharField(max_length=255)
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-occurred_at"]
 
 
 class InvoicePayment(PhotographerOwnedModel):
