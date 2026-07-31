@@ -386,6 +386,7 @@ class ClientSession(PhotographerOwnedModel):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="sessions")
     session_type = models.CharField(max_length=120)
     starts_at = models.DateTimeField()
+    duration_minutes = models.PositiveIntegerField(default=120)
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
     created_at = models.DateTimeField(auto_now_add=True)

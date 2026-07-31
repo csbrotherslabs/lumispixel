@@ -728,3 +728,83 @@
   });
   window.addEventListener('beforeunload', function (event) { if (dirty && !layer.hidden) { event.preventDefault(); event.returnValue = ''; } });
 }());
+
+(function () {
+  const layer = document.querySelector('[data-move-layer]');
+  const dataNode = document.getElementById('schedule-event-data');
+  if (!layer || !dataNode) return;
+  const events = JSON.parse(dataNode.textContent);
+  const byDrawer = Object.fromEntries(events.map(function (item) { return [item.drawer_id, item]; }));
+  const checks = layer.querySelector('[data-move-checks]');
+  const error = layer.querySelector('[data-move-error]');
+  const save = layer.querySelector('[data-move-save]');
+  const notify = layer.querySelector('[data-move-notify]');
+  let pending = null; let opener = null;
+
+  function csrf() {
+    const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+  function request(url, body) {
+    return fetch(url, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()}, body: JSON.stringify(body)})
+      .then(function (response) { return response.json().then(function (json) { if (!response.ok) throw json; return json; }); });
+  }
+  function formatRange(start, end) {
+    const options = {weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'};
+    return new Intl.DateTimeFormat(undefined, options).format(start) + ' – ' + new Intl.DateTimeFormat(undefined, {hour: 'numeric', minute: '2-digit'}).format(end);
+  }
+  function close() { layer.hidden = true; document.body.classList.remove('lpw-drawer-open'); if (opener) opener.focus(); }
+  function render(result) {
+    const start = new Date(result.starts_at); const end = new Date(result.ends_at);
+    layer.querySelector('[data-move-time]').textContent = formatRange(start, end);
+    checks.innerHTML = result.checks.map(function (item) {
+      return '<div class="lpw-move-check' + (item.ok ? '' : ' is-warning') + '"><i class="bi ' + (item.ok ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill') + '"></i><strong>' + item.label + '</strong><small>' + item.detail + '</small></div>';
+    }).join('');
+    notify.closest('label').hidden = !result.notify_recommended;
+    notify.checked = result.notify_recommended;
+    save.disabled = result.blocking;
+  }
+  function preview(button, start, duration) {
+    const item = byDrawer[button.dataset.movableEvent];
+    if (!item || !item.persisted) return;
+    opener = button; pending = {url: button.dataset.moveUrl, starts_at: start.toISOString(), duration_minutes: duration, previous: {starts_at: item.starts_at, duration_minutes: Math.round((new Date(item.ends_at) - new Date(item.starts_at)) / 60000)}};
+    error.hidden = true; checks.innerHTML = '<div class="lpw-schedule-loading">Checking conflicts, availability, blocked time, buffers, and travel…</div>';
+    save.disabled = true; layer.hidden = false; document.body.classList.add('lpw-drawer-open'); layer.querySelector('.lpw-move-dialog').focus();
+    request(pending.url, {starts_at: pending.starts_at, duration_minutes: duration, preview: true}).then(render).catch(function (problem) { error.textContent = problem.error || 'The schedule check could not be completed. Try again.'; error.hidden = false; });
+  }
+  function toast(previous) {
+    const node = document.createElement('div'); node.className = 'lpw-event-form-saved lpw-undo-toast'; node.setAttribute('role', 'status');
+    node.innerHTML = '<span>Schedule updated.</span><button type="button">Undo</button>';
+    document.body.appendChild(node);
+    const timer = window.setTimeout(function () { node.remove(); }, 7000);
+    node.querySelector('button').addEventListener('click', function () {
+      clearTimeout(timer); request(pending.url, {starts_at: previous.starts_at, duration_minutes: previous.duration_minutes, preview: false}).then(function () { window.location.reload(); }).catch(function () { node.querySelector('span').textContent = 'Undo failed. Refresh and try again.'; });
+    });
+  }
+  document.querySelectorAll('[data-movable-event]').forEach(function (button) {
+    button.setAttribute('aria-describedby', 'schedule-move-help');
+    button.addEventListener('dragstart', function (event) { event.dataTransfer.setData('text/plain', button.dataset.movableEvent); button.classList.add('is-dragging'); });
+    button.addEventListener('dragend', function () { button.classList.remove('is-dragging'); });
+    button.addEventListener('keydown', function (event) {
+      if (!event.altKey || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault(); const item = byDrawer[button.dataset.movableEvent]; const start = new Date(item.starts_at); let duration = Math.round((new Date(item.ends_at) - start) / 60000);
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') duration = Math.max(30, duration + (event.key === 'ArrowDown' ? 15 : -15));
+      else start.setDate(start.getDate() + (event.key === 'ArrowRight' ? 1 : -1));
+      preview(button, start, duration);
+    });
+  });
+  document.querySelectorAll('[data-drop-date]').forEach(function (cell) {
+    cell.addEventListener('dragover', function (event) { event.preventDefault(); cell.classList.add('is-drop-target'); });
+    cell.addEventListener('dragleave', function () { cell.classList.remove('is-drop-target'); });
+    cell.addEventListener('drop', function (event) {
+      event.preventDefault(); cell.classList.remove('is-drop-target'); const button = document.querySelector('[data-movable-event="' + event.dataTransfer.getData('text/plain') + '"]'); if (!button) return;
+      const item = byDrawer[button.dataset.movableEvent]; const start = new Date(item.starts_at); const parts = cell.dataset.dropDate.split('-'); start.setFullYear(+parts[0], +parts[1] - 1, +parts[2]); preview(button, start, Math.round((new Date(item.ends_at) - new Date(item.starts_at)) / 60000));
+    });
+  });
+  layer.querySelectorAll('[data-move-close]').forEach(function (button) { button.addEventListener('click', close); });
+  save.addEventListener('click', function () {
+    save.disabled = true; error.hidden = true;
+    request(pending.url, {starts_at: pending.starts_at, duration_minutes: pending.duration_minutes, notify_client: notify.checked, preview: false}).then(function () { const previous = pending.previous; close(); toast(previous); window.setTimeout(function () { window.location.reload(); }, 7200); }).catch(function (problem) { save.disabled = false; error.textContent = problem.error || 'This change could not be saved.'; error.hidden = false; if (problem.checks) render(problem); });
+  });
+  layer.querySelector('.lpw-move-dialog').addEventListener('keydown', function (event) { if (event.key === 'Escape') close(); });
+}());
