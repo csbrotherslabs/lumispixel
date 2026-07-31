@@ -1,56 +1,28 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpw-schedule-page">
+<div class="lpw-schedule-page" data-calendar>
+  <a class="sr-only" href="{% url 'photographer_workspace:dashboard' %}">Back to Dashboard</a>
   <header class="lpw-schedule-header">
-    <div class="lpw-bookings-heading">
-      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Schedule</strong></nav>
-      <h1 id="workspace-page-title">Schedule</h1>
-      <p>View bookings, manage availability, and organize photography work.</p>
-    </div>
-    <div class="lpw-schedule-actions">
-      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
-      <a class="lpw-btn" href="?action=block"><i class="bi bi-calendar-x" aria-hidden="true"></i>Block Time</a>
-      <details class="lpw-schedule-more">
-        <summary class="lpw-btn" aria-label="More schedule actions"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary>
-        <div>
-          <a href="?action=consultation"><i class="bi bi-chat-square-text"></i>Add Consultation</a>
-          <a href="?action=editing"><i class="bi bi-magic"></i>Add Editing Time</a>
-          <a href="?action=vacation"><i class="bi bi-sun"></i>Add Vacation</a>
-          <a href="?action=mini-session"><i class="bi bi-people"></i>Create Mini Session</a>
-        </div>
-      </details>
-    </div>
+    <div class="lpw-bookings-heading"><nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Schedule</strong></nav><h1 id="workspace-page-title">Schedule</h1><p>View bookings, manage availability, and organize photography work.</p></div>
+    <div class="lpw-schedule-actions"><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a><a class="lpw-btn" href="?action=block"><i class="bi bi-calendar-x" aria-hidden="true"></i>Block Time</a><details class="lpw-schedule-more"><summary class="lpw-btn" aria-label="More schedule actions"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary><div><a href="?action=consultation"><i class="bi bi-chat-square-text"></i>Add Consultation</a><a href="?action=editing"><i class="bi bi-magic"></i>Add Editing Time</a><a href="?action=vacation"><i class="bi bi-sun"></i>Add Vacation</a><a href="?action=mini-session"><i class="bi bi-people"></i>Create Mini Session</a></div></details></div>
   </header>
 
   <section class="lpw-schedule-controls" aria-label="Schedule controls">
-    <nav class="lpw-schedule-views" aria-label="Schedule view">
-      {% for value, label in schedule_views %}<a href="?view={{ value }}&amp;date={{ selected_date|date:'Y-m-d' }}"{% if schedule_view == value %} class="is-active" aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
-    </nav>
-    <div class="lpw-schedule-date-nav">
-      <a href="?view={{ schedule_view }}&amp;date={{ previous_date|date:'Y-m-d' }}" aria-label="Previous {{ schedule_view }}"><i class="bi bi-chevron-left"></i></a>
-      <a class="lpw-schedule-today" href="?view={{ schedule_view }}&amp;date={{ today|date:'Y-m-d' }}">Today</a>
-      <a href="?view={{ schedule_view }}&amp;date={{ next_date|date:'Y-m-d' }}" aria-label="Next {{ schedule_view }}"><i class="bi bi-chevron-right"></i></a>
-      <h2>{{ date_range_label }}</h2>
-    </div>
+    <nav class="lpw-schedule-views" aria-label="Calendar view">{% for value, label in schedule_views %}<a href="?view={{ value }}&amp;date={{ selected_date|date:'Y-m-d' }}"{% if schedule_view == value %} class="is-active" aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
+    <div class="lpw-schedule-date-nav"><a href="?view={{ schedule_view }}&amp;date={{ previous_date|date:'Y-m-d' }}" aria-label="Previous {{ schedule_view }}"><i class="bi bi-chevron-left"></i></a><a class="lpw-schedule-today" href="?view={{ schedule_view }}&amp;date={{ today|date:'Y-m-d' }}">Today</a><a href="?view={{ schedule_view }}&amp;date={{ next_date|date:'Y-m-d' }}" aria-label="Next {{ schedule_view }}"><i class="bi bi-chevron-right"></i></a><h2 aria-live="polite">{{ date_range_label }}</h2></div>
   </section>
+
+  {% if using_sample_events %}<p class="lpw-calendar-demo"><i class="bi bi-info-circle" aria-hidden="true"></i><strong>Preview schedule</strong> — sample events are shown until your first booking is added.</p>{% endif %}
+  {% if schedule_view == 'list' or schedule_view == 'agenda' %}<p class="sr-only">{{ schedule_view_label }} view</p>{% endif %}
+  <ul class="lpw-calendar-legend" aria-label="Event type legend"><li class="booking"><i class="bi bi-camera"></i>Booking</li><li class="consultation"><i class="bi bi-chat-square-text"></i>Consultation</li><li class="editing"><i class="bi bi-magic"></i>Editing</li><li class="blocked"><i class="bi bi-slash-circle"></i>Blocked</li><li class="vacation"><i class="bi bi-sun"></i>Vacation</li><li class="mini"><i class="bi bi-people"></i>Mini session</li><li><i class="bi bi-exclamation-triangle"></i>Action required</li></ul>
 
   {% if schedule_view == 'month' %}
   <section class="lpw-month-calendar" aria-label="Calendar for {{ date_range_label }}">
     <div class="lpw-calendar-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-    <div class="lpw-calendar-grid">
-      {% for week in calendar_weeks %}{% for cell in week %}
-      <article class="lpw-calendar-day{% if not cell.in_month %} is-muted{% endif %}{% if cell.is_today %} is-today{% endif %}">
-        <header><time datetime="{{ cell.date|date:'Y-m-d' }}">{{ cell.date.day }}</time>{% if cell.is_today %}<span>Today</span>{% endif %}</header>
-        <div>{% for session in cell.sessions|slice:':3' %}<a href="{% url 'photographer_workspace:bookings' %}" class="lpw-calendar-event"><time>{{ session.starts_at|date:'g:i A' }}</time><strong>{{ session.session_type }}</strong><small>{{ session.client }}</small></a>{% empty %}{% if cell.in_month %}<span class="lpw-calendar-open">Available</span>{% endif %}{% endfor %}</div>
-      </article>
-      {% endfor %}{% endfor %}
-    </div>
+    <div class="lpw-calendar-grid" role="grid" aria-label="Month calendar">{% for week in calendar_weeks %}{% for cell in week %}<article class="lpw-calendar-day{% if not cell.in_month %} is-muted{% endif %}{% if cell.is_today %} is-today{% endif %}" role="gridcell" tabindex="0" aria-label="{{ cell.date|date:'l, F j' }}{% if cell.is_today %}, today{% endif %}"><header><time datetime="{{ cell.date|date:'Y-m-d' }}">{{ cell.date.day }}</time>{% if cell.is_today %}<span>Today</span>{% endif %}</header><div>{% for event in cell.events|slice:':4' %}{% include "photographer_workspace/bookings/components/calendar_event.html" %}{% empty %}{% if cell.in_month %}<span class="lpw-calendar-open"><i class="bi bi-plus" aria-hidden="true"></i>No events</span>{% endif %}{% endfor %}</div></article>{% endfor %}{% endfor %}</div>
   </section>
   {% else %}
-  <section class="lpw-schedule-list" aria-labelledby="schedule-list-title">
-    <header><div><span>{{ schedule_view_label }} view</span><h2 id="schedule-list-title">{{ date_range_label }}</h2><p>Bookings and reserved work time for this range.</p></div><i class="bi bi-calendar3" aria-hidden="true"></i></header>
-    {% for session in schedule_sessions %}<article><time datetime="{{ session.starts_at|date:'c' }}"><strong>{{ session.starts_at|date:'D, M j' }}</strong><span>{{ session.starts_at|date:'g:i A' }}</span></time><div><h3>{{ session.session_type }}</h3><p>{{ session.client }}</p></div><span class="lpw-booking-status{% if session.status == 'confirmed' %} lpw-booking-status--confirmed{% endif %}">{{ session.get_status_display }}</span></article>{% empty %}<div class="lpw-schedule-empty"><i class="bi bi-calendar2-check"></i><h3>No bookings in this range</h3><p>New bookings and blocked time will appear here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new">New Booking</a></div>{% endfor %}
-  </section>
+  <section class="lpw-time-calendar lpw-time-calendar--{{ schedule_view }}" aria-label="{{ schedule_view_label }} calendar for {{ date_range_label }}"><div class="lpw-time-grid" role="grid">{% for calendar_day in week_days %}<article class="lpw-time-day{% if calendar_day.date == today %} is-today{% endif %}" role="gridcell" tabindex="0"><header><span>{{ calendar_day.date|date:'D' }}</span><strong>{{ calendar_day.date.day }}</strong>{% if calendar_day.date == today %}<small>Today</small>{% endif %}</header><div class="lpw-all-day"><span>All day</span>{% for event in calendar_day.events %}{% if event.all_day %}{% include "photographer_workspace/bookings/components/calendar_event.html" %}{% endif %}{% endfor %}</div><div class="lpw-day-events">{% for event in calendar_day.events %}{% if not event.all_day %}{% include "photographer_workspace/bookings/components/calendar_event.html" %}{% endif %}{% empty %}<div class="lpw-day-empty"><i class="bi bi-calendar2-plus"></i><strong>Nothing scheduled</strong><span>This day is open.</span></div>{% endfor %}</div></article>{% endfor %}</div></section>
   {% endif %}
 </div>
 {% endblock %}
