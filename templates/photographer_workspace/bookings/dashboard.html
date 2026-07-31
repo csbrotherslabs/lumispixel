@@ -3,8 +3,8 @@
 <div class="lpw-bookings-page">
   <header class="lpw-bookings-header">
     <div class="lpw-bookings-heading">
-      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Dashboard</strong></nav>
-      <h1 id="workspace-page-title">Bookings</h1>
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Overview</strong></nav>
+      <h1 id="workspace-page-title">Overview</h1>
       <p>Manage upcoming sessions, inquiries, payments, and scheduling activity.</p>
     </div>
     <div class="lpw-bookings-actions">
@@ -14,7 +14,7 @@
           {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </form>
-      <a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-envelope-plus" aria-hidden="true"></i>Add Inquiry</a>
+      <a class="lpw-btn" href="{% url 'photographer_workspace:add_lead' %}"><i class="bi bi-envelope-plus" aria-hidden="true"></i>New Lead</a>
       <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
     </div>
   </header>
@@ -38,6 +38,12 @@
     </section>
 
     {% include "photographer_workspace/bookings/components/quick_actions.html" %}
+
+    <section class="lpw-today-focus" aria-labelledby="today-focus-title">
+      <div><span>Daily priorities</span><h2 id="today-focus-title">Today's Focus</h2></div>
+      <ul>{% for item in today_focus %}<li><i class="bi {{ item.icon }}" aria-hidden="true"></i><strong>{{ item.value }}</strong> {{ item.label }}</li>{% endfor %}</ul>
+    </section>
+
     {% include "photographer_workspace/bookings/components/revenue_insights.html" %}
 
     <section class="lpw-pipeline-card" aria-labelledby="inquiry-pipeline-title">
@@ -76,7 +82,7 @@
       </section>
 
       <section class="lpw-bookings-card" aria-labelledby="upcoming-title">
-        <div class="lpw-bookings-card-head"><div><span>Next up</span><h2 id="upcoming-title">Upcoming Bookings</h2><p>Your next confirmed client sessions.</p></div><a href="{% url 'photographer_workspace:calendar' %}">View All Bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+        <div class="lpw-bookings-card-head"><div><span>Next up</span><h2 id="upcoming-title">Upcoming Bookings</h2><p>Your next confirmed client sessions.</p></div><a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}">Open Schedule <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         <div class="lpw-booking-tools"><label><i class="bi bi-search" aria-hidden="true"></i><span class="sr-only">Search bookings</span><input type="search" placeholder="Search client or session" data-booking-search></label><select data-booking-filter aria-label="Filter booking status"><option value="">All statuses</option><option value="confirmed">Confirmed</option><option value="tentative">Tentative</option></select></div>
         {% if upcoming_bookings %}<div class="lpw-bookings-table-wrap"><table class="lpw-bookings-table lpw-upcoming-table"><thead><tr><th>Client</th><th>Session</th><th>Date &amp; time</th><th>Location</th><th>Package</th><th>Payment</th><th>Contract</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>{% for booking in upcoming_bookings %}<tr data-booking-row data-status="{{ booking.status }}"><td><strong>{{ booking.client }}</strong><small>{{ booking.client.email }}</small></td><td>{{ booking.session_type }}</td><td><time datetime="{{ booking.starts_at|date:'c' }}">{{ booking.starts_at|date:"M j, Y" }}<small>{{ booking.starts_at|date:"g:i A" }}</small></time></td><td>{{ booking.location|default:"To be confirmed" }}</td><td>Signature Collection</td><td><span class="lpw-mini-status lpw-mini-status--warning">Deposit due</span></td><td><span class="lpw-mini-status">Awaiting</span></td><td><span class="lpw-booking-status lpw-booking-status--{{ booking.status }}">{{ booking.get_status_display }}</span></td><td><details class="lpw-context"><summary aria-label="Actions for {{ booking.client }}"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div><a href="{% url 'photographer_workspace:bookings' %}?booking={{ booking.pk }}">View details</a><a href="{% url 'photographer_workspace:calendar' %}?reschedule={{ booking.pk }}">Reschedule</a><a href="mailto:{{ booking.client.email }}">Contact client</a></div></details></td></tr>{% endfor %}</tbody></table><div class="lpw-filter-empty" data-booking-filter-empty hidden><i class="bi bi-search"></i><strong>No matching bookings</strong><span>Try a different search or status.</span></div></div>
         {% else %}<div class="lpw-bookings-empty"><span><i class="bi bi-calendar2-plus" aria-hidden="true"></i></span><h3>No upcoming bookings</h3><p>Confirmed sessions will appear here as your calendar fills up.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:bookings' %}?action=new">Create a booking</a></div>{% endif %}
