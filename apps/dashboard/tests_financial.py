@@ -127,3 +127,38 @@ class FinancialDatabaseSelectorTests(TestCase):
         self.assertIn("status=completed", invoices_view["url"])
         self.assertContains(response, "Search: INV-42")
         self.assertContains(response, "Minimum: 100")
+
+    def test_unified_transactions_are_decimal_backed_sorted_and_paginated(self):
+        profile = self.profile("unified-transactions")
+        invoice = self.invoice(profile, status=ClientInvoice.Status.PARTIALLY_PAID, total=Decimal("125.50"))
+        payment = InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=Decimal("75.25"))
+        PaymentRefund.objects.create(photographer=profile, payment=payment, amount=Decimal("10.10"))
+        InvoiceCredit.objects.create(photographer=profile, invoice=invoice, amount=Decimal("5.15"))
+        self.client.force_login(profile.user)
+
+        response = self.client.get(reverse("photographer_workspace:transactions"), {
+            "range": "all_time", "sort": "amount", "direction": "desc", "page_size": "10",
+        })
+
+        records = response.context["transaction_records"]
+        self.assertEqual(records["total"], 4)
+        self.assertTrue(all(isinstance(row["sort_amount"], Decimal) for row in records["rows"]))
+        self.assertEqual([row["type"] for row in records["rows"]], ["invoice", "payment", "credit", "refund"])
+        refund = next(row for row in records["rows"] if row["type"] == "refund")
+        self.assertEqual(refund["gross"], "-$10.10")
+        self.assertContains(response, "Transaction records")
+        self.assertContains(response, "Rows per page")
+        self.assertContains(response, "data-row-url")
+
+    def test_unified_transactions_support_record_filter_and_filtered_empty_state(self):
+        profile = self.profile("transaction-filtering")
+        self.invoice(profile, status=ClientInvoice.Status.SENT)
+        self.client.force_login(profile.user)
+
+        payments = self.client.get(reverse("photographer_workspace:transactions"), {
+            "range": "all_time", "record_type": "payment",
+        })
+
+        self.assertEqual(payments.context["transaction_records"]["total"], 0)
+        self.assertEqual(payments.context["transaction_state"], "empty")
+        self.assertContains(payments, "No matching transactions")
