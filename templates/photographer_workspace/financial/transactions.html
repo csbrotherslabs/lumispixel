@@ -76,7 +76,7 @@
     </section>
 
     {% if transaction_state == 'loading' %}
-      <section class="lpw-financial-state" aria-live="polite" aria-busy="true"><span class="lpw-bookings-spinner"></span><h2>Loading transactions</h2><p>Gathering invoices, payments, refunds, credits, and related financial activity.</p></section>
+      <section class="lpw-transaction-loading" aria-live="polite" aria-busy="true"><span class="sr-only">Loading transactions</span>{% for item in "123456" %}<div><i></i><span></span><span></span><span></span><span></span></div>{% endfor %}</section>
     {% elif transaction_state == 'permission' %}
       <section class="lpw-financial-state" role="status"><span><i class="bi bi-shield-lock" aria-hidden="true"></i></span><h2>Transaction access is restricted</h2><p>You do not have permission to view financial activity. Ask a workspace owner to update your role.</p></section>
     {% elif transaction_state == 'error' %}
@@ -86,9 +86,9 @@
     {% elif transaction_state == 'empty' or not transaction_has_activity %}
       <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
     {% else %}
-      <section class="lpw-transaction-table-placeholder" aria-label="Transactions workspace"><i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i><h2>Transaction records</h2><p>The unified transaction table will be added in the next phase.</p></section>
+      {% include "photographer_workspace/financial/_transactions_table.html" %}
     {% endif %}
   </div>
 </div>
-<script>document.querySelector('[data-view-select]')?.addEventListener('change',function(){window.location.assign(this.value)});</script>
+<script>document.querySelector('[data-view-select]')?.addEventListener('change',function(){window.location.assign(this.value)});document.querySelectorAll('[data-row-url]').forEach(function(row){function open(event){if(event.target.closest('a,button,input,select,details,summary'))return;window.location.assign(row.dataset.rowUrl)}row.addEventListener('click',open);row.addEventListener('keydown',function(event){if((event.key==='Enter'||event.key===' ')&&!event.target.closest('a,button,input,select,details,summary')){event.preventDefault();window.location.assign(row.dataset.rowUrl)}})});</script>
 {% endblock %}

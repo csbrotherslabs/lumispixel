@@ -34,6 +34,7 @@ from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
 from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
+from apps.dashboard.financial_transactions import transaction_records
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2348,10 +2349,24 @@ def financial_transactions(request):
         {"label": "Outstanding balance", "value": format_currency(values["outstanding"], currency), "icon": "bi-hourglass-split"},
         {"label": "Refund total", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
     ]
+    records = transaction_records(profile, selected_filters, view_key, request.GET.get("page", 1),
+                                  request.GET.get("page_size", 25), request.GET.get("sort", "date"),
+                                  request.GET.get("direction", "desc"), currency)
+    if page_state == "ready" and not records["total"]:
+        page_state = "empty"
     context = _dashboard_context(request, "transactions", "Transactions")
     clear_query = request.GET.copy()
     for key, _ in filter_definitions:
         clear_query.pop(key, None)
+    sort_links = {}
+    for key in ("date", "amount", "client", "reference", "status"):
+        query = request.GET.copy()
+        query["sort"] = key
+        query["direction"] = "asc" if records["sort"] == key and records["direction"] == "desc" else "desc"
+        query.pop("page", None)
+        sort_links[key] = f"?{query.urlencode()}"
+    page_query = request.GET.copy()
+    page_query.pop("page", None)
     context.update({
         "range_key": range_key,
         "range_options": range_options,
@@ -2364,6 +2379,9 @@ def financial_transactions(request):
         "active_filters": active_filters,
         "active_filter_count": len(active_filters),
         "clear_filters_url": f"?{clear_query.urlencode()}" if clear_query else "?",
+        "transaction_records": records,
+        "sort_links": sort_links,
+        "page_query": page_query.urlencode(),
     })
     return render(request, "photographer_workspace/financial/transactions.html", context)
 
