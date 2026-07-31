@@ -671,12 +671,17 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, action)
         for metric in ("Total revenue", "Payments collected", "Outstanding balance", "Overdue balance", "Refunds", "Total booking value"):
             self.assertContains(response, metric)
+        for analytics_label in ("Revenue Trend", "Current period", "Previous period", "Payment Status", "Partially paid", "Awaiting payment", "Refunded or credited"):
+            self.assertContains(response, analytics_label)
+        self.assertContains(response, "Values are grouped daily.")
+        self.assertContains(response, '?status=overdue')
         self.assertContains(response, "Your financial overview is ready for activity")
         self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
 
         loading_url = f'{reverse("photographer_workspace:financial_overview")}?state=loading'
         error_url = f'{reverse("photographer_workspace:financial_overview")}?state=error'
         self.assertContains(self.client.get(loading_url), "Loading financial overview")
+        self.assertContains(self.client.get(loading_url), "Loading revenue trend")
         self.assertContains(self.client.get(error_url), "Financial activity could not be loaded")
 
     def test_client_cannot_access_module_url(self):
