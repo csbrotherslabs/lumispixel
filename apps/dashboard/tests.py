@@ -345,15 +345,15 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(user)
 
         expected_pages = [
-            ("galleries", "Galleries"),
-            ("all_galleries", "All Galleries"),
-            ("gallery_upload_queue", "Upload Queue"),
+            ("galleries", "Galleries", "galleries"),
+            ("all_galleries", "All Galleries", "all_galleries"),
+            ("gallery_upload_queue", "Upload Queue", "all_galleries"),
         ]
-        for url_name, heading in expected_pages:
+        for url_name, heading, active_url_name in expected_pages:
             response = self.client.get(reverse(f"photographer_workspace:{url_name}"))
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, heading)
-            self.assertContains(response, f'href="{reverse(f"photographer_workspace:{url_name}")}" class="is-active"')
+            self.assertContains(response, f'href="{reverse(f"photographer_workspace:{active_url_name}")}" class="is-active"')
             self.assertContains(response, "Summer Portraits")
             self.assertNotContains(response, "Private Collection")
 
@@ -627,7 +627,8 @@ class PhotographerWorkspaceTests(TestCase):
         user.save(update_fields=["first_name", "last_name"])
         self.client.force_login(user)
         response = self.client.get(reverse("photographer_workspace:crm"))
-        self.assertContains(response, "Business Growth")
+        self.assertContains(response, "Growth")
+        self.assertNotContains(response, "Business Growth")
         self.assertContains(response, 'aria-controls="nav-group-1"')
         self.assertContains(response, 'aria-label="Clients" data-tooltip="Clients"')
         self.assertContains(response, 'href="/photographer/workspace/leads/"')
@@ -635,6 +636,27 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Photographer")
         self.assertContains(response, "Business Settings")
         self.assertContains(response, "Sign Out")
+
+    def test_sidebar_uses_simplified_business_hub_navigation(self):
+        user, _ = self.make_photographer(True, email="simple-nav@example.com", slug="simple-nav")
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:dashboard"))
+
+        for label in ("Clients", "Bookings", "Galleries", "Financial", "Growth", "Analytics", "Team", "Settings"):
+            self.assertContains(response, label)
+        for route_name in ("crm", "leads", "clients", "bookings", "schedule", "galleries", "all_galleries", "financial_overview", "transactions", "growth", "analytics", "team", "settings"):
+            self.assertContains(response, f'href="{reverse(f"photographer_workspace:{route_name}")}"')
+        for obsolete_label in ("Business Growth", "Gallery Archive", "Upload Queue", "AI Processing", "Marketing", "Reviews", "Referrals", "Invoices", "Payments", "Revenue", "Contracts"):
+            self.assertNotContains(response, f">{obsolete_label}<")
+
+    def test_legacy_financial_and_growth_pages_keep_consolidated_nav_active(self):
+        user, _ = self.make_photographer(True, email="legacy-nav@example.com", slug="legacy-nav")
+        self.client.force_login(user)
+
+        invoice_page = self.client.get(reverse("photographer_workspace:invoices"))
+        self.assertContains(invoice_page, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
+        marketing_page = self.client.get(reverse("photographer_workspace:marketing"))
+        self.assertContains(marketing_page, f'href="{reverse("photographer_workspace:growth")}" class="is-active"')
 
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)
