@@ -33,7 +33,7 @@ from apps.ai_engine.models import AIJob, AIProcessingStatus
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
-    {"key": "galleries", "url_name": "galleries", "icon": "bi-grid", "title": "Galleries Dashboard", "description": "Organize, publish, and deliver photography collections.", "coming_soon": False},
+    {"key": "galleries", "url_name": "galleries", "icon": "bi-grid", "title": "Galleries", "description": "Organize, publish, and deliver photography collections.", "coming_soon": False},
     {"key": "all_galleries", "url_name": "all_galleries", "icon": "bi-images", "title": "All Galleries", "description": "Browse every photography collection.", "coming_soon": False},
     {"key": "gallery_archive", "url_name": "gallery_archive", "icon": "bi-archive", "title": "Gallery Archive", "description": "Recover inactive galleries and manage retention.", "coming_soon": False},
     {"key": "gallery_upload_queue", "url_name": "gallery_upload_queue", "icon": "bi-cloud-arrow-up", "title": "Upload Queue", "description": "Review gallery uploads and processing.", "coming_soon": False},
@@ -55,6 +55,7 @@ WORKSPACE_MODULES += [
     for key, title in [
         ("crm", "CRM"), ("leads", "Leads"), ("ai_search", "AI Search"), ("albums", "Albums"),
         ("calendar", "Schedule"), ("bookings", "Bookings"), ("contracts", "Contracts"),
+        ("financial_overview", "Financial Overview"), ("transactions", "Transactions"), ("growth", "Growth Overview"),
         ("invoices", "Invoices"), ("payments", "Payments"), ("revenue", "Revenue"),
         ("reviews", "Reviews"), ("referrals", "Referrals"), ("workflows", "Workflows"),
         ("ai_assistant", "AI Assistant"), ("team", "Team"), ("equipment", "Equipment"),
@@ -66,16 +67,24 @@ MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
-    {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("clients", "Clients", "bi-people-fill")]},
-    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_archive", "Gallery Archive", "bi-archive"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
-    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Dashboard", "bi-grid-1x2"), ("calendar", "Schedule", "bi-calendar3"), ("contracts", "Contracts", "bi-file-earmark-text")]},
-    {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
-    {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
-    {"title": "Automation", "icon": "bi-lightning-charge", "items": [("workflows", "Workflows", "bi-diagram-3"), ("ai_assistant", "AI Assistant", "bi-chat-dots") ]},
-    {"title": "Operations", "icon": "bi-briefcase", "items": [("team", "Team", "bi-person-workspace"), ("equipment", "Equipment", "bi-camera"), ("tasks", "Tasks", "bi-check2-square") ]},
-    {"title": "Reports", "icon": "bi-bar-chart", "items": [("analytics", "Analytics", "bi-bar-chart-line")]},
-    {"title": "", "icon": "bi-grid", "items": [("marketplace", "Marketplace", "bi-shop"), ("settings", "Settings", "bi-gear")]},
+    {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-funnel"), ("clients", "Clients", "bi-people-fill")]},
+    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Overview", "bi-grid-1x2"), ("calendar", "Schedule", "bi-calendar3")]},
+    {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Dashboard", "bi-grid"), ("all_galleries", "Galleries", "bi-images")]},
+    {"title": "Financial", "icon": "bi-wallet2", "items": [("financial_overview", "Overview", "bi-pie-chart"), ("transactions", "Transactions", "bi-arrow-left-right")]},
+    {"title": "Growth", "icon": "bi-rocket-takeoff", "items": [("growth", "Overview", "bi-graph-up-arrow")]},
+    {"title": "", "icon": "bi-bar-chart", "items": [("analytics", "Analytics", "bi-bar-chart-line")]},
+    {"title": "", "icon": "bi-people", "items": [("team", "Team", "bi-person-workspace")]},
+    {"title": "", "icon": "bi-gear", "items": [("settings", "Settings", "bi-gear")]},
 ]
+
+# Legacy pages remain directly addressable, but highlight their consolidated workspace.
+NAV_ACTIVE_ALIASES = {
+    "invoices": "financial_overview", "revenue": "financial_overview",
+    "payments": "transactions", "marketing": "growth", "reviews": "growth", "referrals": "growth",
+    "schedule": "calendar",
+    "gallery_archive": "all_galleries", "gallery_upload_queue": "all_galleries",
+    "ai_processing": "all_galleries", "ai_search": "all_galleries", "albums": "all_galleries",
+}
 THEMES = {
     PhotographerProfile.WebsiteTheme.ELEGANT: ("Elegant", "A refined visual direction for weddings, portraits, family, and fine-art work.", "elegant"),
     PhotographerProfile.WebsiteTheme.MODERN_STUDIO: ("Modern Studio", "A clean studio presentation for commercial, branding, product, and headshot work.", "modern"),
@@ -88,6 +97,7 @@ def _reverse_module(module):
 
 
 def _workspace_nav(active_key):
+    active_key = NAV_ACTIVE_ALIASES.get(active_key, active_key)
     groups = []
     for index, group in enumerate(NAVIGATION):
         items = []
@@ -173,9 +183,9 @@ def _dashboard_summary(profile):
 
 def _dashboard_tools():
     groups = []
-    for group in NAVIGATION[1:9]:
+    for group in NAVIGATION[1:]:
         groups.append({
-            "title": "Growth" if group["title"] == "Business Growth" else group["title"],
+            "title": group["title"],
             "icon": group["icon"],
             "items": [
                 {"title": title, "icon": icon, "url": _reverse_module(MODULE_BY_KEY[key])}
