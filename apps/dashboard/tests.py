@@ -166,6 +166,35 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(url, {"state": "loading"}), "Loading bookings")
         self.assertContains(self.client.get(url, {"state": "error"}), "Bookings could not be loaded")
 
+    def test_schedule_route_controls_and_navigation(self):
+        user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya.schedule@example.com")
+        ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait",
+            starts_at=timezone.now() + timezone.timedelta(days=2),
+            status=ClientSession.Status.CONFIRMED,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:schedule"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Business Hub")
+        self.assertContains(response, "View bookings, manage availability, and organize photography work.")
+        self.assertContains(response, "New Booking")
+        self.assertContains(response, "Block Time")
+        self.assertContains(response, "Add Consultation")
+        self.assertContains(response, "Add Editing Time")
+        self.assertContains(response, "Add Vacation")
+        self.assertContains(response, "Create Mini Session")
+        self.assertContains(response, "Booking List")
+        self.assertContains(response, "Today")
+        self.assertContains(response, "Schedule", count=None)
+        self.assertContains(response, 'aria-current="page"')
+
+        list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "Booking List view")
+
     def test_bookings_schedule_can_mark_an_owned_session_complete(self):
         user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
         client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya@example.com")
