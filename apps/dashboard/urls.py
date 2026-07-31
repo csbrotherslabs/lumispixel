@@ -70,6 +70,7 @@ urlpatterns = [
     path("contracts/", views.module_placeholder, {"module_key": "contracts"}, name="contracts"),
     path("financial/", views.financial_overview, name="financial_overview"),
     path("financial/transactions/", views.financial_transactions, name="transactions"),
+    path("financial/transactions/<str:record_type>/<int:pk>/", views.financial_record_detail_view, name="financial_record_detail"),
     path("growth/", views.module_placeholder, {"module_key": "growth"}, name="growth"),
     path("invoices/", views.module_placeholder, {"module_key": "invoices"}, name="invoices"),
     path("payments/", views.module_placeholder, {"module_key": "payments"}, name="payments"),

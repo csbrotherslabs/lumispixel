@@ -16,6 +16,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
@@ -35,6 +36,7 @@ from apps.dashboard.financial_analytics import financial_analytics
 from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
 from apps.dashboard.financial_transactions import transaction_records
+from apps.dashboard.financial_record_detail import financial_record_detail
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2384,6 +2386,18 @@ def financial_transactions(request):
         "page_query": page_query.urlencode(),
     })
     return render(request, "photographer_workspace/financial/transactions.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def financial_record_detail_view(request, record_type, pk):
+    """Return drawer markup for one owner-scoped financial record."""
+    detail = financial_record_detail(request.user.photographer_profile, record_type, pk,
+                                     getattr(request.user.photographer_profile, "default_currency", "USD"))
+    if detail is None:
+        return JsonResponse({"error": "This financial record was not found."}, status=404)
+    html = render_to_string("photographer_workspace/financial/_record_detail.html", {"record": detail}, request=request)
+    return JsonResponse({"html": html, "reference": detail["reference"]})
 
 
 @photographer_workspace_required
