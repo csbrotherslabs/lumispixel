@@ -431,8 +431,15 @@
     layer.querySelector('[data-event-notes]').textContent = event.notes || '';
     layer.querySelector('[data-event-actions]').innerHTML = event.actions.map(function (label, index) {
       const danger = label.indexOf('Cancel') === 0 || label.indexOf('Remove') === 0;
+      const canEdit = label.indexOf('Edit ') === 0;
+      if (canEdit) return '<button type="button" class="lpw-btn" data-detail-edit="' + escapeHtml(event.drawer_id) + '">' + escapeHtml(label) + '</button>';
       return '<a class="lpw-btn ' + (index === 0 ? 'lpw-btn-primary ' : '') + (danger ? 'is-danger' : '') + '" href="' + encodeURI(event.url) + '">' + escapeHtml(label) + '</a>';
     }).join('');
+    const editButton = layer.querySelector('[data-detail-edit]');
+    if (editButton) editButton.addEventListener('click', function () {
+      closeDrawer();
+      window.setTimeout(function () { if (window.LumisScheduleEventForm) window.LumisScheduleEventForm.open(event.kind, button, event); }, 190);
+    });
     layer.hidden = false;
     window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
     document.body.classList.add('lpw-drawer-open');
@@ -451,4 +458,139 @@
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   });
+}());
+
+(function () {
+  const layer = document.querySelector('[data-event-form-layer]');
+  if (!layer) return;
+  const drawer = layer.querySelector('[data-event-form-drawer]');
+  const form = layer.querySelector('[data-event-form]');
+  const title = layer.querySelector('[data-event-form-title]');
+  const alert = layer.querySelector('[data-form-alert]');
+  const conflict = layer.querySelector('[data-conflict-warning]');
+  const initialDefaults = new FormData(form);
+  let dirty = false;
+  let opener = null;
+  let editing = false;
+
+  function currentType() { return form.elements.event_type.value; }
+  function syncType() {
+    const type = currentType();
+    layer.querySelectorAll('[data-type-fields]').forEach(function (section) {
+      const visible = section.dataset.typeFields.split(' ').includes(type);
+      section.hidden = !visible;
+      section.querySelectorAll('[data-required-for]').forEach(function (field) {
+        field.required = visible && field.dataset.requiredFor.split(' ').includes(type);
+      });
+    });
+    if (!editing) title.textContent = 'Create ' + form.elements.event_type.closest('fieldset').querySelector('input[value="' + type + '"] + span').textContent.trim();
+    checkConflict();
+  }
+  function syncAllDay() {
+    const allDay = form.elements.all_day.checked;
+    layer.querySelectorAll('[data-time-field]').forEach(function (label) {
+      label.hidden = allDay;
+      label.querySelector('input').required = !allDay;
+    });
+  }
+  function checkConflict() {
+    if (!form.elements.start_date.value) return;
+    const type = currentType();
+    const start = form.elements.start_time.value;
+    conflict.hidden = form.elements.all_day.checked || !['booking', 'consultation', 'mini'].includes(type) || !(start >= '09:30' && start <= '10:30');
+  }
+  function resetForm() {
+    form.reset();
+    initialDefaults.forEach(function (value, key) {
+      const field = form.elements[key];
+      if (field && field.type !== 'radio' && field.type !== 'checkbox') field.value = value;
+    });
+    form.querySelectorAll('.has-error').forEach(function (field) { field.classList.remove('has-error'); });
+    form.querySelectorAll('.lpw-field-error').forEach(function (error) { error.textContent = ''; });
+    alert.hidden = true;
+  }
+  function close(force) {
+    if (!force && dirty && !window.confirm('Discard your unsaved changes?')) return;
+    layer.classList.remove('is-open');
+    document.body.classList.remove('lpw-drawer-open');
+    window.setTimeout(function () { layer.hidden = true; }, 220);
+    dirty = false;
+    if (opener) opener.focus();
+  }
+  function setValue(name, value) { if (form.elements[name] && value != null) form.elements[name].value = value; }
+  function open(type, button, event) {
+    opener = button;
+    resetForm();
+    editing = Boolean(event);
+    const radio = form.querySelector('input[name="event_type"][value="' + type + '"]');
+    if (radio) radio.checked = true;
+    if (event) {
+      title.textContent = 'Edit ' + (type === 'mini' ? 'Mini Session' : type.charAt(0).toUpperCase() + type.slice(1));
+      setValue('title', event.name);
+      setValue('location', event.location === 'Away' ? '' : event.location);
+      setValue('notes', event.notes);
+      setValue('session_type', event.session_type);
+      setValue('client', event.name);
+      setValue('contact', event.name);
+      setValue('related_work', event.name);
+      setValue('reason', event.name);
+      setValue('mini_name', event.name);
+      const start = new Date(event.starts_at); const end = new Date(event.ends_at);
+      setValue('start_date', start.toISOString().slice(0, 10)); setValue('end_date', end.toISOString().slice(0, 10));
+      setValue('start_time', start.toTimeString().slice(0, 5)); setValue('end_time', end.toTimeString().slice(0, 5));
+      form.elements.all_day.checked = event.all_day;
+    }
+    syncType(); syncAllDay();
+    layer.hidden = false;
+    window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
+    document.body.classList.add('lpw-drawer-open');
+    drawer.focus();
+    window.setTimeout(function () { form.elements.title.focus(); }, 230);
+  }
+  function validate() {
+    let first = null;
+    form.querySelectorAll(':invalid').forEach(function (field) {
+      if (field.closest('[hidden]')) return;
+      field.classList.add('has-error');
+      const error = field.parentElement.querySelector('.lpw-field-error');
+      if (error) error.textContent = field.validity.valueMissing ? 'This field is required.' : 'Enter a valid value.';
+      if (!first) first = field;
+    });
+    if (form.elements.end_date.value && form.elements.start_date.value) {
+      const start = form.elements.start_date.value + 'T' + (form.elements.start_time.value || '00:00');
+      const end = form.elements.end_date.value + 'T' + (form.elements.end_time.value || '23:59');
+      if (end <= start) { form.elements.end_date.classList.add('has-error'); first = first || form.elements.end_date; }
+    }
+    alert.hidden = !first;
+    if (first) first.focus();
+    return !first;
+  }
+  function toast(message) {
+    const node = document.createElement('div'); node.className = 'lpw-event-form-saved'; node.setAttribute('role', 'status'); node.textContent = message;
+    document.body.appendChild(node); window.setTimeout(function () { node.remove(); }, 2800);
+  }
+
+  document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () { open(button.dataset.eventFormOpen, button); }); });
+  form.addEventListener('input', function (event) { dirty = true; event.target.classList.remove('has-error'); checkConflict(); });
+  form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (!validate()) return;
+    const another = event.submitter && event.submitter.value === 'another';
+    toast(editing ? 'Event updated.' : 'Event saved to your schedule.');
+    dirty = false;
+    if (another) { const type = currentType(); open(type, opener); }
+    else close(true);
+  });
+  layer.querySelectorAll('[data-event-form-close]').forEach(function (button) { button.addEventListener('click', function () { close(false); }); });
+  drawer.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') { event.preventDefault(); close(false); }
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(drawer.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')).filter(function (el) { return !el.closest('[hidden]'); });
+    const first = focusable[0]; const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  window.addEventListener('beforeunload', function (event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+  window.LumisScheduleEventForm = { open: open };
 }());
