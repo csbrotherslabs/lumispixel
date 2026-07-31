@@ -651,3 +651,80 @@
   window.addEventListener('beforeunload', function (event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
   window.LumisScheduleEventForm = { open: open };
 }());
+
+(function () {
+  const layer = document.querySelector('[data-availability-layer]');
+  const opener = document.querySelector('[data-availability-open]');
+  if (!layer || !opener) return;
+  const drawer = layer.querySelector('.lpw-availability-drawer');
+  const form = layer.querySelector('[data-availability-form]');
+  const editor = layer.querySelector('[data-exception-editor]');
+  const type = form.elements.exception_type;
+  const status = layer.querySelector('[data-availability-status]');
+  let dirty = false;
+
+  function open() {
+    layer.hidden = false;
+    window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
+    opener.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('lpw-drawer-open');
+    drawer.focus();
+  }
+  function close() {
+    layer.classList.remove('is-open');
+    opener.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('lpw-drawer-open');
+    window.setTimeout(function () { layer.hidden = true; opener.focus(); }, 220);
+  }
+  function syncException() {
+    editor.querySelector('.lpw-exception-repeat').hidden = type.value !== 'recurring';
+    const timed = type.value !== 'unavailable';
+    form.elements.exception_start.closest('label').hidden = !timed;
+    form.elements.exception_end.closest('label').hidden = !timed;
+  }
+  function flash(message) {
+    status.textContent = message;
+    status.classList.add('lpw-availability-saved');
+    window.setTimeout(function () { status.classList.remove('lpw-availability-saved'); }, 1800);
+  }
+
+  opener.addEventListener('click', open);
+  layer.querySelectorAll('[data-availability-close]').forEach(function (button) { button.addEventListener('click', close); });
+  layer.querySelectorAll('[data-add-exception]').forEach(function (button) {
+    button.addEventListener('click', function () { editor.hidden = false; type.value = button.dataset.addException; syncException(); form.elements.exception_date.focus(); });
+  });
+  type.addEventListener('change', syncException);
+  layer.querySelector('[data-apply-days]').addEventListener('click', function () {
+    const count = form.querySelectorAll('input[name="days"]:checked').length;
+    flash('Working hours applied to ' + count + ' selected day' + (count === 1 ? '.' : 's.'));
+  });
+  layer.querySelector('[data-copy-schedule]').addEventListener('click', function () {
+    form.querySelectorAll('input[name="days"]').forEach(function (day) { day.checked = day.value !== 'Sun'; });
+    flash('Monday’s schedule copied. Review selected days before saving.');
+  });
+  layer.querySelector('[data-save-exception]').addEventListener('click', function () {
+    if (!form.elements.exception_date.value) { form.elements.exception_date.focus(); return; }
+    const labels = { override: 'Date-specific hours', unavailable: 'Temporarily unavailable', recurring: 'Recurring blocked time' };
+    const item = document.createElement('li');
+    item.innerHTML = '<i class="bi bi-calendar2-x"></i><span><strong>' + labels[type.value] + '</strong><small>' + form.elements.exception_date.value + (type.value === 'unavailable' ? ' · All day' : ' · ' + form.elements.exception_start.value + '–' + form.elements.exception_end.value) + '</small></span><button type="button" aria-label="Remove exception"><i class="bi bi-trash"></i></button>';
+    layer.querySelector('[data-exception-list]').appendChild(item);
+    editor.hidden = true; dirty = true; flash('Exception added. Save to publish this change.');
+  });
+  layer.querySelector('[data-exception-list]').addEventListener('click', function (event) { const button = event.target.closest('button'); if (button) { button.closest('li').remove(); dirty = true; } });
+  form.addEventListener('input', function () { dirty = true; });
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const member = form.elements.member.value;
+    window.localStorage.setItem('lpw-availability-' + member, JSON.stringify(Object.fromEntries(new FormData(form).entries())));
+    dirty = false; flash('Availability saved. Client booking rules are now up to date.');
+    window.setTimeout(close, 650);
+  });
+  drawer.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') close();
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(drawer.querySelectorAll('button:not([hidden]),input:not([hidden]),select:not([hidden])')).filter(function (node) { return !node.closest('[hidden]'); });
+    if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable[focusable.length - 1].focus(); }
+    else if (!event.shiftKey && document.activeElement === focusable[focusable.length - 1]) { event.preventDefault(); focusable[0].focus(); }
+  });
+  window.addEventListener('beforeunload', function (event) { if (dirty && !layer.hidden) { event.preventDefault(); event.returnValue = ''; } });
+}());
