@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.test import SimpleTestCase
 
 from apps.dashboard.financial import date_window, format_currency
+from apps.dashboard.financial_analytics import _grouping
 
 
 class FinancialSelectorTests(SimpleTestCase):
@@ -21,3 +22,8 @@ class FinancialSelectorTests(SimpleTestCase):
         window = date_window("all_time", date(2026, 7, 31))
         self.assertIsNone(window.start)
         self.assertIsNone(window.previous_end)
+
+    def test_chart_grouping_adapts_to_selected_range_length(self):
+        self.assertEqual(_grouping(date(2026, 7, 1), date(2026, 7, 31))[0], "daily")
+        self.assertEqual(_grouping(date(2026, 1, 1), date(2026, 4, 30))[0], "weekly")
+        self.assertEqual(_grouping(date(2025, 1, 1), date(2026, 7, 31))[0], "monthly")

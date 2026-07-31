@@ -28,11 +28,40 @@
 
   <div class="lpw-financial-content">
     {% if financial_state == 'loading' %}
-      <section class="lpw-metric-grid" aria-label="Financial summary" aria-live="polite" aria-busy="true">{% for metric in financial_metrics %}{% include "photographer_workspace/financial/_metric_card.html" with loading=True %}{% endfor %}</section><p class="sr-only">Loading financial overview</p>
+      <section class="lpw-metric-grid" aria-label="Financial summary" aria-live="polite" aria-busy="true">{% for metric in financial_metrics %}{% include "photographer_workspace/financial/_metric_card.html" with loading=True %}{% endfor %}</section><section class="lpw-analytics-card lpw-chart-panel-state" aria-live="polite" aria-busy="true"><h2>Revenue Trend</h2><div class="lpw-chart-skeleton"><span></span><span></span><span></span></div><p>Loading revenue trend</p></section><p class="sr-only">Loading financial overview</p>
     {% elif financial_state == 'error' %}
-      <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Financial activity could not be loaded</h2><p>Refresh the page to try again. Your financial records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:financial_overview' %}?range={{ range_key }}">Try again</a></section>
+      <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Financial activity could not be loaded</h2><p>The revenue trend and payment statuses are unavailable. Refresh the page to try again. Your financial records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:financial_overview' %}?range={{ range_key }}">Try again</a></section>
     {% else %}
       <section class="lpw-metric-grid" aria-label="Financial summary">{% for metric in financial_metrics %}{% include "photographer_workspace/financial/_metric_card.html" %}{% endfor %}</section>
+      <section class="lpw-analytics-grid" aria-label="Financial analytics">
+        <article class="lpw-analytics-card lpw-revenue-trend" aria-labelledby="revenue-trend-title">
+          <header><div><h2 id="revenue-trend-title">Revenue Trend</h2><p>{{ financial_analytics.grouping|capfirst }} revenue for the selected range</p></div><strong>{{ financial_analytics.current_total }}</strong></header>
+          <div class="lpw-chart-legend" aria-hidden="true"><span><i class="is-current"></i>Current period</span><span><i class="is-previous"></i>Previous period</span></div>
+          {% if financial_analytics.has_revenue %}
+            <div class="lpw-line-chart" role="img" aria-label="{{ financial_analytics.summary }}">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <path class="lpw-chart-baseline" d="M0 92H100"></path>
+                {% if financial_analytics.previous_points %}<polyline class="is-previous" points="{{ financial_analytics.previous_points }}"></polyline>{% endif %}
+                <polyline class="is-current" points="{{ financial_analytics.current_points }}"></polyline>
+              </svg>
+              <div><span>{{ financial_analytics.first_label }}</span><span>{{ financial_analytics.last_label }}</span></div>
+            </div>
+          {% else %}
+            <div class="lpw-chart-state"><i class="bi bi-graph-up" aria-hidden="true"></i><strong>No revenue in this range</strong><span>Revenue will appear as payments are recorded.</span></div>
+          {% endif %}
+          <p class="sr-only">{{ financial_analytics.summary }}</p>
+        </article>
+        <article class="lpw-analytics-card lpw-payment-status" aria-labelledby="payment-status-title">
+          <header><div><h2 id="payment-status-title">Payment Status</h2><p>Invoice totals by current status</p></div></header>
+          <div class="lpw-status-list">
+            {% for status in financial_analytics.statuses %}<a href="{% url 'photographer_workspace:transactions' %}?status={{ status.key }}" aria-label="View {{ status.label|lower }} transactions">
+              <span class="lpw-status-badge lpw-status-badge--{{ status.key }}">{{ status.label }}</span>
+              <span class="lpw-status-count">{{ status.count }} record{{ status.count|pluralize }}</span>
+              <strong>{{ status.formatted_total }}</strong><span class="lpw-status-percent">{{ status.percentage }}%</span>
+            </a>{% endfor %}
+          </div>
+        </article>
+      </section>
       {% if not financial_has_activity %}<section class="lpw-financial-state lpw-financial-state--compact" aria-labelledby="financial-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="financial-empty-title">Your financial overview is ready for activity</h2><p>Invoices, payments, refunds, and credits will appear here as your business records grow.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create your first invoice</a></section>{% endif %}
     {% endif %}
   </div>
