@@ -2302,6 +2302,41 @@ def financial_transactions(request):
     if page_state not in {"ready", "loading", "empty", "permission", "error"}:
         page_state = "ready"
 
+    view_options = [
+        ("all", "All activity"), ("invoices", "Invoices"), ("payments", "Payments"),
+        ("refunds", "Refunds"), ("credits", "Credits"), ("overdue", "Overdue"),
+    ]
+    view_key = request.GET.get("view", "all")
+    if view_key not in {value for value, _ in view_options}:
+        view_key = "all"
+    filter_definitions = [
+        ("q", "Search"), ("range", "Date"), ("status", "Status"), ("record_type", "Type"),
+        ("client", "Client"), ("booking", "Booking"), ("payment_method", "Payment method"),
+        ("amount_min", "Minimum"), ("amount_max", "Maximum"), ("currency", "Currency"),
+        ("created_by", "Created by"), ("source", "Source"), ("due_from", "Due from"),
+        ("due_to", "Due to"), ("paid_from", "Paid from"), ("paid_to", "Paid to"),
+    ]
+    selected_filters = {key: request.GET.get(key, "").strip() for key, _ in filter_definitions}
+    # The default date window is useful context, but is not presented as an active filter.
+    active_filters = []
+    for key, label in filter_definitions:
+        value = selected_filters[key]
+        if not value or (key == "range" and value == "this_month"):
+            continue
+        query = request.GET.copy()
+        query.pop(key, None)
+        active_filters.append({"key": key, "label": label, "value": dict(range_options).get(value, value),
+                               "remove_url": f"?{query.urlencode()}" if query else "?"})
+    preserved_query = request.GET.copy()
+    preserved_query.pop("view", None)
+    views = []
+    for value, label in view_options:
+        query = preserved_query.copy()
+        if value != "all":
+            query["view"] = value
+        views.append({"value": value, "label": label, "active": value == view_key,
+                      "url": f"?{query.urlencode()}" if query else "?"})
+
     profile = request.user.photographer_profile
     currency = getattr(profile, "default_currency", "USD")
     summary = financial_summary(profile, range_key, currency)
@@ -2314,12 +2349,21 @@ def financial_transactions(request):
         {"label": "Refund total", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
     ]
     context = _dashboard_context(request, "transactions", "Transactions")
+    clear_query = request.GET.copy()
+    for key, _ in filter_definitions:
+        clear_query.pop(key, None)
     context.update({
         "range_key": range_key,
         "range_options": range_options,
         "transaction_state": page_state,
         "transaction_summary": summary_items,
         "transaction_has_activity": summary["has_activity"],
+        "transaction_views": views,
+        "transaction_view": view_key,
+        "selected_filters": selected_filters,
+        "active_filters": active_filters,
+        "active_filter_count": len(active_filters),
+        "clear_filters_url": f"?{clear_query.urlencode()}" if clear_query else "?",
     })
     return render(request, "photographer_workspace/financial/transactions.html", context)
 

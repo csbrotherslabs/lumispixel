@@ -107,3 +107,23 @@ class FinancialDatabaseSelectorTests(TestCase):
         financial_group = next(group for group in response.context["workspace_nav"] if group["title"] == "Financial")
         self.assertEqual([item["title"] for item in financial_group["items"]], ["Overview", "Transactions"])
         self.assertTrue(next(item for item in financial_group["items"] if item["title"] == "Transactions")["active"])
+
+    def test_transactions_filters_are_bookmarkable_and_preserved_across_views(self):
+        profile = self.profile("filtered-transactions")
+        self.client.force_login(profile.user)
+
+        response = self.client.get(reverse("photographer_workspace:transactions"), {
+            "view": "payments", "q": "INV-42", "status": "completed", "amount_min": "100",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["transaction_view"], "payments")
+        self.assertEqual(response.context["active_filter_count"], 3)
+        self.assertContains(response, "All activity")
+        self.assertContains(response, "Invoices")
+        self.assertContains(response, "Refunds")
+        invoices_view = next(item for item in response.context["transaction_views"] if item["value"] == "invoices")
+        self.assertIn("q=INV-42", invoices_view["url"])
+        self.assertIn("status=completed", invoices_view["url"])
+        self.assertContains(response, "Search: INV-42")
+        self.assertContains(response, "Minimum: 100")
