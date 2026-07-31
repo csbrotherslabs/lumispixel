@@ -30,6 +30,7 @@ from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.ai_engine.models import AIJob, AIProcessingStatus
+from apps.dashboard.financial import financial_summary
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2242,7 +2243,7 @@ def reschedule_session(request, pk):
 @photographer_workspace_required
 @require_GET
 def financial_overview(request):
-    """Render the financial workspace shell while reporting is being built."""
+    """Render date-scoped financial metrics from the reporting selector."""
     range_options = [
         ("this_month", "This month"),
         ("last_month", "Last month"),
@@ -2257,7 +2258,10 @@ def financial_overview(request):
     if page_state not in {"loading", "empty", "error"}:
         page_state = "empty"
     context = _dashboard_context(request, "financial_overview", "Financial Overview")
-    context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options})
+    profile = request.user.photographer_profile
+    summary = financial_summary(profile, range_key, getattr(profile, "default_currency", "USD"))
+    context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options,
+                    "financial_metrics": summary["cards"], "financial_has_activity": summary["has_activity"]})
     return render(request, "photographer_workspace/financial/overview.html", context)
 
 
