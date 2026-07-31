@@ -197,6 +197,11 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-schedule-event="schedule-event-0"')
         self.assertContains(response, "Open Full Booking")
         self.assertContains(response, "Contract not signed")
+        self.assertContains(response, "Today’s Schedule")
+        self.assertContains(response, "Upcoming Shoots")
+        self.assertContains(response, "Scheduling Alerts")
+        self.assertContains(response, 'data-schedule-summary')
+        self.assertContains(response, "Preparation incomplete")
 
         list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
         self.assertEqual(list_response.status_code, 200)
