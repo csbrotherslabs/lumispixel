@@ -6,7 +6,9 @@ from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientSession, Lead
-from apps.dashboard.growth_analytics import growth_summary, growth_window
+from apps.dashboard.growth_analytics import (
+    growth_summary, growth_window, lead_funnel, lead_source_performance,
+)
 
 
 class GrowthAnalyticsTests(TestCase):
@@ -54,3 +56,33 @@ class GrowthAnalyticsTests(TestCase):
         self.assertEqual(result["cards"][2]["formatted_value"], "—")
         window = growth_window("last_90_days", self.today)
         self.assertEqual((window.end - window.start).days, (window.previous_end - window.previous_start).days)
+
+    def test_funnel_and_sources_use_owner_scoped_records(self):
+        website = self._timestamp(Lead.objects.create(
+            photographer=self.profile, first_name="Web", status=Lead.Status.BOOKED,
+            lead_source="website", estimated_value=Decimal("900.00")), 2)
+        self._timestamp(Lead.objects.create(
+            photographer=self.profile, first_name="Mystery", status=Lead.Status.CONTACTED,
+            lead_source="Unmapped campaign"), 1)
+        self._timestamp(Lead.objects.create(
+            photographer=self.other, first_name="Private", status=Lead.Status.BOOKED,
+            lead_source="website"), 1)
+        client = Client.objects.create(photographer=self.profile, first_name="Web", converted_lead=website)
+        booking = ClientSession.objects.create(
+            photographer=self.profile, client=client, session_type="Portrait", starts_at=timezone.now(),
+            status=ClientSession.Status.CONFIRMED, booking_value=Decimal("600.00"))
+        self._timestamp(booking, 1)
+
+        funnel = lead_funnel(self.profile, "last_30_days", today=self.today)
+        sources = lead_source_performance(self.profile, "last_30_days", sort_key="value", today=self.today)
+
+        self.assertEqual([stage["label"] for stage in funnel], [
+            "New lead", "Contacted", "Consultation scheduled", "Proposal or quote sent",
+            "Booking pending", "Confirmed booking",
+        ])
+        self.assertEqual(funnel[-1]["count"], 1)
+        self.assertIn("status=confirmed", funnel[-1]["url"])
+        self.assertEqual(sources[0]["source"], "Website")
+        self.assertEqual(sources[0]["bookings"], 1)
+        self.assertEqual(sources[0]["conversion_rate"], Decimal("100.0"))
+        self.assertEqual(sources[1]["source"], "Other")

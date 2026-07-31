@@ -106,3 +106,93 @@ def growth_summary(profile, range_key, currency="USD", today=None):
                       "trend": trend, "period_label": window.label, "tooltip": tooltip,
                       "supporting_value": detail, "url": reverse(url_name)})
     return {"cards": cards, "values": current, "window": window}
+
+
+def _format_duration(delta):
+    """Return a compact, readable age for a stage without implying false precision."""
+    hours = max(0, int(delta.total_seconds() // 3600))
+    if hours < 24:
+        return f"{hours} hr" if hours == 1 else f"{hours} hrs"
+    days = hours // 24
+    return f"{days} day" if days == 1 else f"{days} days"
+
+
+def lead_funnel(profile, range_key, currency="USD", today=None):
+    """Build the date-scoped lead and booking stage snapshot."""
+    window = growth_window(range_key, today)
+    leads = _during(Lead.objects.for_photographer(profile).filter(archived_at__isnull=True),
+                    "created_at", window.start, window.end)
+    sessions = _during(ClientSession.objects.for_photographer(profile), "created_at",
+                       window.start, window.end)
+    now = timezone.now()
+    stage_specs = [
+        ("New lead", leads.filter(status=Lead.Status.NEW), "leads", Lead.Status.NEW, "estimated_value"),
+        ("Contacted", leads.filter(status=Lead.Status.CONTACTED), "leads", Lead.Status.CONTACTED, "estimated_value"),
+        ("Consultation scheduled", leads.filter(status=Lead.Status.CONSULTATION), "leads", Lead.Status.CONSULTATION, "estimated_value"),
+        ("Proposal or quote sent", leads.filter(status=Lead.Status.PROPOSAL_SENT), "leads", Lead.Status.PROPOSAL_SENT, "estimated_value"),
+        ("Booking pending", sessions.filter(status=ClientSession.Status.TENTATIVE), "bookings", ClientSession.Status.TENTATIVE, "booking_value"),
+        ("Confirmed booking", sessions.filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), "bookings", ClientSession.Status.CONFIRMED, "booking_value"),
+    ]
+    stages, first_count, previous_count = [], None, None
+    for label, queryset, destination, status, value_field in stage_specs:
+        records = list(queryset)
+        count = len(records)
+        first_count = count if first_count is None else first_count
+        total = sum((getattr(record, value_field) or ZERO for record in records), ZERO)
+        ages = [(record.updated_at if isinstance(record, Lead) else now) - record.created_at for record in records]
+        average_age = sum(ages, timedelta()) / len(ages) if ages else None
+        url_name = "photographer_workspace:leads" if destination == "leads" else "photographer_workspace:bookings"
+        stages.append({
+            "label": label, "count": count, "previous_rate": _percent(count, previous_count),
+            "overall_rate": _percent(count, first_count), "formatted_value": format_currency(total, currency),
+            "average_time": _format_duration(average_age) if average_age else None,
+            "url": f"{reverse(url_name)}?status={status}",
+        })
+        previous_count = count
+    return stages
+
+
+SOURCE_LABELS = {
+    "website": "Website", "google": "Google", "instagram": "Instagram", "facebook": "Facebook",
+    "tiktok": "TikTok", "tik tok": "TikTok", "pinterest": "Pinterest", "referral": "Referral",
+    "client referral": "Referral", "returning client": "Returning client", "partner": "Partner",
+    "paid advertising": "Paid advertising", "paid ads": "Paid advertising", "direct inquiry": "Direct inquiry",
+    "direct": "Direct inquiry", "other": "Other",
+}
+
+
+def _source_label(value):
+    normalized = " ".join((value or "").strip().lower().replace("_", " ").replace("-", " ").split())
+    return SOURCE_LABELS.get(normalized, "Other")
+
+
+def lead_source_performance(profile, range_key, currency="USD", sort_key="leads", today=None):
+    """Aggregate leads and their real converted bookings under stable source labels."""
+    window = growth_window(range_key, today)
+    leads = list(_during(Lead.objects.for_photographer(profile).filter(archived_at__isnull=True),
+                         "created_at", window.start, window.end))
+    rows = {}
+    qualified = {Lead.Status.CONTACTED, Lead.Status.CONSULTATION, Lead.Status.PROPOSAL_SENT, Lead.Status.BOOKED}
+    for lead in leads:
+        label = _source_label(lead.lead_source)
+        row = rows.setdefault(label, {"source": label, "leads": 0, "qualified_leads": 0,
+                                      "bookings": 0, "booking_value": ZERO})
+        row["leads"] += 1
+        row["qualified_leads"] += lead.status in qualified
+    bookings = _during(ClientSession.objects.for_photographer(profile).filter(
+        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED),
+        client__converted_lead__isnull=False), "created_at", window.start, window.end).select_related("client__converted_lead")
+    for booking in bookings:
+        label = _source_label(booking.client.converted_lead.lead_source)
+        row = rows.setdefault(label, {"source": label, "leads": 0, "qualified_leads": 0,
+                                      "bookings": 0, "booking_value": ZERO})
+        row["bookings"] += 1
+        row["booking_value"] += booking.booking_value or ZERO
+    for row in rows.values():
+        row["conversion_rate"] = _percent(row["bookings"], row["leads"])
+        row["average_value"] = row["booking_value"] / row["bookings"] if row["bookings"] else None
+        row["formatted_booking_value"] = format_currency(row["booking_value"], currency)
+        row["formatted_average_value"] = format_currency(row["average_value"], currency) if row["average_value"] is not None else "—"
+    sort_fields = {"leads": "leads", "bookings": "bookings", "conversion": "conversion_rate", "value": "booking_value"}
+    field = sort_fields.get(sort_key, "leads")
+    return sorted(rows.values(), key=lambda row: (row[field] is not None, row[field] or ZERO, row["source"]), reverse=True)
