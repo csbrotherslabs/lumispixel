@@ -2241,6 +2241,28 @@ def reschedule_session(request, pk):
 
 @photographer_workspace_required
 @require_GET
+def financial_overview(request):
+    """Render the financial workspace shell while reporting is being built."""
+    range_options = [
+        ("this_month", "This month"),
+        ("last_month", "Last month"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "this_month")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "this_month"
+    page_state = request.GET.get("state", "empty")
+    if page_state not in {"loading", "empty", "error"}:
+        page_state = "empty"
+    context = _dashboard_context(request, "financial_overview", "Financial Overview")
+    context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options})
+    return render(request, "photographer_workspace/financial/overview.html", context)
+
+
+@photographer_workspace_required
+@require_GET
 def module_placeholder(request, module_key):
     module = MODULE_BY_KEY[module_key]
     context = _dashboard_context(request, module_key, module["title"])
