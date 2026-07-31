@@ -428,7 +428,9 @@ def leads_workspace(request):
         )
     if status in Lead.Status.values:
         leads = leads.filter(status=status)
-    if source:
+    if source == "__unknown__":
+        leads = leads.filter(Q(lead_source="") | Q(lead_source__isnull=True))
+    elif source:
         leads = leads.filter(lead_source=source)
     if event_type:
         leads = leads.filter(event_type=event_type)
