@@ -41,7 +41,8 @@ from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, cs
                                            run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
 from apps.dashboard.growth_analytics import (booking_value_by_source, growth_summary, lead_funnel,
-                                             lead_source_performance, service_performance)
+                                             lead_source_performance, referral_summary, reputation_summary,
+                                             retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
@@ -2317,9 +2318,6 @@ def growth_overview(request):
         page_state = "ready"
     sections = [
         ("growth-metrics", "Growth metrics", "bi-graph-up-arrow", "Key acquisition and conversion signals will appear here."),
-        ("reviews", "Reviews", "bi-star", "Track client feedback and reputation signals."),
-        ("referrals", "Referrals", "bi-people", "Understand the clients and partners driving referrals."),
-        ("client-retention", "Client retention", "bi-arrow-repeat", "See how often clients return for another session."),
         ("growth-opportunities", "Growth opportunities", "bi-lightbulb", "Find practical next steps based on business activity."),
         ("recent-activity", "Recent activity", "bi-clock-history", "Review the latest growth-related activity."),
     ]
@@ -2330,6 +2328,10 @@ def growth_overview(request):
     currency = getattr(request.user.photographer_profile, "default_currency", "USD")
     source_metric = request.GET.get("source_metric", "booking_value")
     show_all_sources = request.GET.get("show_all_sources") == "1"
+    section_states = {}
+    for section in ("reviews", "referrals", "retention"):
+        state = request.GET.get(f"{section}_state", "ready")
+        section_states[section] = state if state in {"ready", "loading", "empty", "error", "permission"} else "ready"
     context.update({
         "growth_state": page_state,
         "range_key": range_key,
@@ -2344,6 +2346,10 @@ def growth_overview(request):
                                                  show_all_sources, currency),
         "show_all_sources": show_all_sources,
         "service_rows": service_performance(request.user.photographer_profile, range_key, currency),
+        "section_states": section_states,
+        "reviews": reputation_summary(request.user.photographer_profile, range_key),
+        "referrals": referral_summary(request.user.photographer_profile, range_key, currency),
+        "retention": retention_summary(request.user.photographer_profile, range_key, currency),
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
 

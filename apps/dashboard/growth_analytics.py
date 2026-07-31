@@ -3,13 +3,14 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models import Avg, Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.clients.models import ClientSession, InvoicePayment, Lead
+from apps.clients.models import Client, ClientSession, InvoicePayment, Lead
 from apps.dashboard.financial import format_currency
+from apps.dashboard.models import ReferralAttribution, ReferralLink, Review, ReviewRequest
 
 ZERO = Decimal("0.00")
 HUNDRED = Decimal("100")
@@ -281,3 +282,64 @@ def service_performance(profile, range_key, currency="USD", today=None):
         for row in output:
             row["badges"] = (["Fastest growing"] if row is fastest and row["growth"] is not None else []) + (["Highest value"] if row is highest else []) + (["Best converting"] if row is converting and row["conversion_rate"] is not None else []) + (["Losing momentum"] if row is losing and row["growth"] is not None and row["growth"] < 0 else [])
     return sorted(output, key=lambda row: (row["booking_value"], row["service"]), reverse=True)
+
+
+def reputation_summary(profile, range_key, today=None):
+    """Summarize native and manually tracked external reviews; no external sync is implied."""
+    window = growth_window(range_key, today)
+    all_reviews = Review.objects.for_photographer(profile)
+    reviews = _during(all_reviews, "reviewed_at", window.start, window.end)
+    requests = _during(ReviewRequest.objects.for_photographer(profile), "sent_at", window.start, window.end)
+    total_requests = requests.count()
+    distribution = {row["rating"]: row["count"] for row in all_reviews.values("rating").annotate(count=Count("id"))}
+    sources = list(all_reviews.values("source", "source_name").annotate(count=Count("id"), average=Avg("rating")).order_by("-count"))
+    for source in sources:
+        source["label"] = source["source_name"] or ("LumisPixel" if source["source"] == Review.Source.LUMISPIXEL else "External")
+        source["average"] = Decimal(source["average"]).quantize(Decimal("0.1"))
+    average = all_reviews.aggregate(value=Avg("rating"))["value"]
+    return {"metrics": [("Average rating", f'{Decimal(average).quantize(Decimal("0.1"))} / 5' if average else "—"),
+                        ("Total reviews", all_reviews.count()), ("New reviews", reviews.count()),
+                        ("Pending review requests", requests.filter(completed_at__isnull=True).count()),
+                        ("Review-request conversion rate", f'{_percent(requests.filter(completed_at__isnull=False).count(), total_requests)}%' if total_requests else "—"),
+                        ("Reviews requiring a response", all_reviews.filter(source=Review.Source.LUMISPIXEL, response="").count())],
+            "distribution": [(stars, distribution.get(stars, 0)) for stars in range(5, 0, -1)],
+            "sources": sources, "recent": all_reviews.first(), "has_data": all_reviews.exists() or total_requests}
+
+
+def referral_summary(profile, range_key, currency="USD", today=None):
+    """Summarize referral records while retaining the lead and booking as sources of truth."""
+    window = growth_window(range_key, today)
+    links = _during(ReferralLink.objects.for_photographer(profile), "created_at", window.start, window.end)
+    attrs = _during(ReferralAttribution.objects.for_photographer(profile), "created_at", window.start, window.end)
+    bookings = attrs.filter(booking__status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))
+    value = bookings.aggregate(total=Coalesce(Sum("booking__booking_value"), Value(ZERO), output_field=MONEY_FIELD))["total"]
+    top = attrs.values("referral_link__referrer_name", "referral_link__referral_type").annotate(
+        leads=Count("id"), bookings=Count("booking", filter=Q(booking__status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)))).order_by("-bookings", "-leads")[:5]
+    visits = links.aggregate(total=Sum("visits"))["total"]
+    return {"metrics": [("Referral links created", links.count()), ("Referral visits", visits if visits is not None else "—"),
+                        ("Leads generated", attrs.count()), ("Confirmed bookings", bookings.count()),
+                        ("Referral conversion rate", f'{_percent(bookings.count(), attrs.count())}%' if attrs.exists() else "—"),
+                        ("Referral booking value", format_currency(value, currency))],
+            "links": links.order_by("-created_at")[:4], "top": top, "has_data": links.exists() or attrs.exists()}
+
+
+def retention_summary(profile, range_key, currency="USD", today=None):
+    """Derive retention from existing clients and bookings using transparent history rules."""
+    today = today or timezone.localdate()
+    window = growth_window(range_key, today)
+    clients = _during(Client.objects.for_photographer(profile), "created_at", window.start, window.end)
+    eligible = list(_during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), "created_at", window.start, window.end).select_related("client"))
+    histories = {}
+    for booking in ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)).select_related("client").order_by("starts_at"):
+        histories.setdefault(booking.client_id, []).append(booking)
+    returning_ids = {booking.client_id for booking in eligible if any(old.starts_at < booking.starts_at for old in histories[booking.client_id])}
+    gaps = [(later.starts_at - earlier.starts_at).days for history in histories.values() for earlier, later in zip(history, history[1:])]
+    total = sum((booking.booking_value or ZERO for booking in eligible), ZERO)
+    due = [{"client": history[-1].client, "last_session": history[-1].starts_at.date(), "session_type": history[-1].session_type}
+           for history in histories.values() if history[-1].starts_at.date() <= today - timedelta(days=365)]
+    return {"metrics": [("New clients", clients.count()), ("Returning clients", len(returning_ids)),
+                        ("Repeat booking rate", f'{_percent(len(returning_ids), len(eligible))}%' if eligible else "—"),
+                        ("Avg. time between bookings", f"{round(sum(gaps) / len(gaps))} days" if gaps else "—"),
+                        ("Avg. client booking value", format_currency(total / len(eligible), currency) if eligible else "—"),
+                        ("Clients potentially due", len(due))], "due": due[:5], "has_data": bool(histories),
+            "rule": "Clients whose latest confirmed or completed session was at least 12 months ago."}
