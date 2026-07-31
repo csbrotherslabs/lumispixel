@@ -1,6 +1,6 @@
 from decimal import Decimal
 from calendar import Calendar
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 import csv
 import io
 import mimetypes
@@ -1843,7 +1843,7 @@ def bookings_dashboard(request):
 @photographer_workspace_required
 @require_GET
 def schedule(request):
-    """Render the responsive schedule shell without adding scheduling mutations."""
+    """Render the responsive schedule with booking data and an illustrative empty state."""
     profile = request.user.photographer_profile
     today = timezone.localdate()
     try:
@@ -1852,10 +1852,7 @@ def schedule(request):
         selected_date = today
 
     view = request.GET.get("view", "month")
-    view_labels = {
-        "month": "Month", "week": "Week", "day": "Day",
-        "agenda": "Agenda", "list": "Booking List",
-    }
+    view_labels = {"month": "Month", "week": "Week", "day": "Day", "agenda": "Agenda", "list": "Booking List"}
     if view not in view_labels:
         view = "month"
 
@@ -1885,9 +1882,45 @@ def schedule(request):
         starts_at__date__gte=range_start,
         starts_at__date__lt=range_end,
     ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at"))
-    sessions_by_date = {}
-    for session in sessions:
-        sessions_by_date.setdefault(timezone.localtime(session.starts_at).date(), []).append(session)
+    owner = request.user.full_name or "Studio photographer"
+    events = [{
+        "starts_at": timezone.localtime(session.starts_at),
+        "ends_at": timezone.localtime(session.starts_at) + timedelta(hours=2),
+        "name": str(session.client), "session_type": session.session_type,
+        "photographer": owner, "status": session.get_status_display(),
+        "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
+        "all_day": False, "url": reverse("photographer_workspace:bookings"),
+    } for session in sessions]
+
+    # Until schedule-specific event models are connected, keep an empty calendar useful
+    # with clearly disclosed, realistic sample work. Existing bookings always take priority.
+    using_sample_events = not events
+    if using_sample_events:
+        anchor = selected_date if view == "day" else week_start
+        samples = [
+            (0, 9, "Harper family", "Family portraits", "booking", "Confirmed", "bi-camera", False, False, 2),
+            (0, 10, "Maya & Theo", "Wedding consultation", "consultation", "Tentative", "bi-chat-square-text", True, False, 1),
+            (1, 13, "Rivera wedding", "Upcoming shoot", "booking", "Confirmed", "bi-camera", False, False, 3),
+            (2, 9, "Nora Chen", "Brand mini session", "mini", "6 slots open", "bi-people", False, False, 4),
+            (3, 8, "Miller gallery", "Editing day", "editing", "In progress", "bi-magic", False, True, 8),
+            (4, 12, "Studio maintenance", "Blocked time", "blocked", "Unavailable", "bi-slash-circle", False, False, 3),
+            (5, 0, "Summer break", "Vacation", "vacation", "Away", "bi-sun", False, True, 24),
+            (1, 10, "Olivia Bennett", "Newborn session", "booking", "Tentative", "bi-camera", True, False, 2),
+        ]
+        events = []
+        for offset, hour, name, session_type, kind, status, icon, warning, all_day, duration in samples:
+            event_date = anchor + timedelta(days=offset)
+            starts_at = timezone.make_aware(datetime.combine(event_date, time(hour=hour)))
+            events.append({
+                "starts_at": starts_at, "ends_at": starts_at + timedelta(hours=duration),
+                "name": name, "session_type": session_type, "photographer": owner,
+                "status": status, "kind": kind, "icon": icon, "warning": warning,
+                "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
+            })
+
+    events_by_date = {}
+    for event in events:
+        events_by_date.setdefault(event["starts_at"].date(), []).append(event)
 
     calendar_weeks = []
     for week in Calendar(firstweekday=0).monthdatescalendar(selected_date.year, selected_date.month):
@@ -1896,7 +1929,7 @@ def schedule(request):
                 "date": day,
                 "in_month": day.month == selected_date.month,
                 "is_today": day == today,
-                "sessions": sessions_by_date.get(day, []),
+                "events": events_by_date.get(day, []),
             }
             for day in week
         ])
@@ -1912,7 +1945,9 @@ def schedule(request):
         "previous_date": previous_date,
         "next_date": next_date,
         "calendar_weeks": calendar_weeks,
-        "schedule_sessions": sessions,
+        "schedule_events": events,
+        "using_sample_events": using_sample_events,
+        "week_days": [{"date": range_start + timedelta(days=offset), "events": events_by_date.get(range_start + timedelta(days=offset), [])} for offset in range((range_end - range_start).days)],
     })
     return render(request, "photographer_workspace/bookings/schedule.html", context)
 
