@@ -504,6 +504,20 @@
 }());
 
 (function () {
+  const summary = document.querySelector('[data-schedule-summary]');
+  if (!summary) return;
+  const toggle = summary.querySelector('[data-summary-toggle]');
+  const panels = summary.querySelector('.lpw-summary-panels');
+  toggle.addEventListener('click', function () {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    toggle.querySelector('span').textContent = expanded ? 'Show' : 'Hide';
+    toggle.querySelector('i').className = 'bi ' + (expanded ? 'bi-chevron-down' : 'bi-chevron-up');
+    panels.hidden = expanded;
+  });
+}());
+
+(function () {
   const layer = document.querySelector('[data-event-form-layer]');
   if (!layer) return;
   const drawer = layer.querySelector('[data-event-form-drawer]');

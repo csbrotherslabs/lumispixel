@@ -1944,11 +1944,11 @@ def schedule(request):
     # with clearly disclosed, realistic sample work. Existing bookings always take priority.
     using_sample_events = not events
     if using_sample_events:
-        anchor = selected_date if view == "day" else week_start
+        anchor = selected_date if view == "day" else (today if (selected_date.year, selected_date.month) == (today.year, today.month) else week_start)
         samples = [
             (0, 9, "Harper family", "Family portraits", "booking", "Confirmed", "bi-camera", False, False, 2),
             (0, 10, "Maya & Theo", "Wedding consultation", "consultation", "Tentative", "bi-chat-square-text", True, False, 1),
-            (1, 13, "Rivera wedding", "Upcoming shoot", "booking", "Confirmed", "bi-camera", False, False, 3),
+            (1, 13, "Rivera wedding", "Upcoming shoot", "booking", "Confirmed", "bi-camera", True, False, 3),
             (2, 9, "Nora Chen", "Brand mini session", "mini", "6 slots open", "bi-people", False, False, 4),
             (3, 8, "Miller gallery", "Editing day", "editing", "In progress", "bi-magic", False, True, 8),
             (4, 12, "Studio maintenance", "Blocked time", "blocked", "Unavailable", "bi-slash-circle", False, False, 3),
@@ -2009,6 +2009,54 @@ def schedule(request):
         events = [event for event in events if sample_matches(event)]
         session_types = sorted({event["session_type"] for event in events} | {item[3] for item in samples})
         locations = ["Away", "LumisPixel Studio"]
+
+    # Keep the schedule's operational summary intentionally narrow: what is next
+    # today, the next confirmed shoots, and only issues that need intervention.
+    now = timezone.localtime()
+    todays_schedule = sorted(
+        (event for event in events if event["starts_at"].date() == today and event["ends_at"] >= now),
+        key=lambda event: event["starts_at"],
+    )[:5]
+    if todays_schedule:
+        todays_schedule[0]["is_next"] = True
+
+    upcoming_shoots = sorted(
+        (
+            event for event in events
+            if event["kind"] in ("booking", "mini")
+            and event["status"].casefold() == "confirmed"
+            and event["starts_at"] >= now
+        ),
+        key=lambda event: event["starts_at"],
+    )[:5]
+    for event in upcoming_shoots:
+        event["preparation_incomplete"] = any((
+            event["contract_status"] != "Signed",
+            event["payment_status"] != "Paid",
+            event["questionnaire_status"] != "Complete",
+            event["location"] in ("", "Location not set"),
+            not event["photographer"],
+        ))
+
+    alert_icons = {
+        "Scheduling conflict": "bi-calendar2-x",
+        "Travel time may be insufficient": "bi-car-front",
+        "Contract not signed": "bi-file-earmark-x",
+        "Retainer unpaid": "bi-credit-card",
+        "Questionnaire incomplete": "bi-clipboard-x",
+    }
+    scheduling_alerts = []
+    for event in events:
+        for warning in event["warnings"]:
+            if len(scheduling_alerts) == 5:
+                break
+            scheduling_alerts.append({
+                "title": warning,
+                "event": event["name"],
+                "when": event["starts_at"],
+                "icon": alert_icons.get(warning, "bi-exclamation-triangle"),
+                "drawer_id": event["drawer_id"],
+            })
 
     events_by_date = {}
     for event in events:
@@ -2083,6 +2131,9 @@ def schedule(request):
         "booking_status_options": [("tentative", "Tentative"), ("confirmed", "Confirmed"), ("in_progress", "In Progress"), ("completed", "Completed"), ("cancelled", "Cancelled")],
         "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
         "filter_query": filter_query,
+        "todays_schedule": todays_schedule,
+        "upcoming_shoots": upcoming_shoots,
+        "scheduling_alerts": scheduling_alerts,
     })
     return render(request, "photographer_workspace/bookings/schedule.html", context)
 

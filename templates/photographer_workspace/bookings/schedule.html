@@ -43,6 +43,9 @@
   {% if schedule_view == 'list' or schedule_view == 'agenda' %}<p class="sr-only">{{ schedule_view_label }} view</p>{% endif %}
   <ul class="lpw-calendar-legend" aria-label="Event type legend"><li class="booking"><i class="bi bi-camera"></i>Booking</li><li class="consultation"><i class="bi bi-chat-square-text"></i>Consultation</li><li class="editing"><i class="bi bi-magic"></i>Editing</li><li class="blocked"><i class="bi bi-slash-circle"></i>Blocked</li><li class="vacation"><i class="bi bi-sun"></i>Vacation</li><li class="mini"><i class="bi bi-people"></i>Mini session</li><li><i class="bi bi-exclamation-triangle"></i>Action required</li></ul>
 
+  <div class="lpw-schedule-workspace">
+  <div class="lpw-schedule-calendar-area">
+
   {% if schedule_view == 'agenda' %}
   <section class="lpw-agenda" aria-label="Agenda for {{ date_range_label }}">
     {% for group in agenda_groups %}<section class="lpw-agenda-group" aria-labelledby="agenda-{{ group.date|date:'Ymd' }}">
@@ -74,6 +77,37 @@
   {% else %}
   <section class="lpw-time-calendar lpw-time-calendar--{{ schedule_view }}" aria-label="{{ schedule_view_label }} calendar for {{ date_range_label }}"><div class="lpw-time-grid" role="grid">{% for calendar_day in week_days %}<article class="lpw-time-day{% if calendar_day.date == today %} is-today{% endif %}" role="gridcell" tabindex="0"><header><span>{{ calendar_day.date|date:'D' }}</span><strong>{{ calendar_day.date.day }}</strong>{% if calendar_day.date == today %}<small>Today</small>{% endif %}</header><div class="lpw-all-day"><span>All day</span>{% for event in calendar_day.events %}{% if event.all_day %}{% include "photographer_workspace/bookings/components/calendar_event.html" %}{% endif %}{% endfor %}</div><div class="lpw-day-events">{% for event in calendar_day.events %}{% if not event.all_day %}{% include "photographer_workspace/bookings/components/calendar_event.html" %}{% endif %}{% empty %}<div class="lpw-day-empty"><i class="bi bi-calendar2-plus"></i><strong>Nothing scheduled</strong><span>This day is open.</span></div>{% endfor %}</div></article>{% endfor %}</div></section>
   {% endif %}
+  </div>
+
+  <aside class="lpw-schedule-summary" aria-label="Schedule summary" data-schedule-summary>
+    <div class="lpw-summary-heading"><div><span>Daily operations</span><h2>Schedule summary</h2></div><button type="button" data-summary-toggle aria-expanded="true" aria-controls="schedule-summary-panels"><span>Hide</span><i class="bi bi-chevron-up" aria-hidden="true"></i></button></div>
+    <div id="schedule-summary-panels" class="lpw-summary-panels">
+      <section class="lpw-summary-panel" aria-labelledby="today-summary-title">
+        <header><div><span>Today · {% now "M j" %}</span><h3 id="today-summary-title">Today’s Schedule</h3></div><strong>{{ todays_schedule|length }}</strong></header>
+        <div class="lpw-today-list">{% for event in todays_schedule %}<article{% if event.is_next %} class="is-next"{% endif %}>
+          {% if event.is_next %}<span class="lpw-next-label"><i class="bi bi-lightning-charge-fill"></i>Next event</span>{% endif %}
+          <div class="lpw-today-time"><time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:"g:i A" }}</time><span>{{ event.ends_at|date:"g:i A" }}</span></div>
+          <div class="lpw-today-copy"><strong>{{ event.name }}</strong><span>{{ event.session_type }}</span><small><i class="bi bi-geo-alt"></i>{{ event.location }}</small><small><i class="bi bi-person"></i>{{ event.photographer }}</small></div>
+          <div class="lpw-today-action"><span class="lpw-booking-status lpw-booking-status--{{ event.status|lower }}">{{ event.status }}</span><button type="button" data-schedule-event="{{ event.drawer_id }}">View <i class="bi bi-arrow-right"></i></button></div>
+        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-calendar2-check"></i><strong>No more events today</strong><span>Your remaining schedule is clear.</span></div>{% endfor %}</div>
+      </section>
+
+      <section class="lpw-summary-panel" aria-labelledby="upcoming-summary-title">
+        <header><div><span>Next five</span><h3 id="upcoming-summary-title">Upcoming Shoots</h3></div><strong>{{ upcoming_shoots|length }}</strong></header>
+        <div class="lpw-upcoming-list">{% for event in upcoming_shoots %}<article>
+          <div><strong>{{ event.name }}</strong><span>{{ event.session_type }}</span></div><time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:"M j" }}<small>{{ event.starts_at|date:"g:i A" }}</small></time>
+          <p><i class="bi bi-geo-alt"></i>{{ event.location }}</p><div class="lpw-prep-status"><span class="{% if event.contract_status == 'Signed' %}is-ready{% endif %}"><i class="bi bi-file-earmark-text"></i>{{ event.contract_status }}</span><span class="{% if event.payment_status == 'Paid' %}is-ready{% endif %}"><i class="bi bi-credit-card"></i>{{ event.payment_status }}</span></div>
+          {% if event.preparation_incomplete %}<button class="lpw-prep-warning" type="button" data-schedule-event="{{ event.drawer_id }}"><i class="bi bi-exclamation-triangle-fill"></i>Preparation incomplete <span>Review</span></button>{% endif %}
+        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-camera"></i><strong>No confirmed shoots ahead</strong><span>Confirmed sessions will appear here.</span></div>{% endfor %}</div>
+      </section>
+
+      <section class="lpw-summary-panel lpw-alert-panel" aria-labelledby="alerts-summary-title">
+        <header><div><span>Needs attention</span><h3 id="alerts-summary-title">Scheduling Alerts</h3></div><strong>{{ scheduling_alerts|length }}</strong></header>
+        <div>{% for alert in scheduling_alerts %}<button type="button" data-schedule-event="{{ alert.drawer_id }}"><i class="bi {{ alert.icon }}"></i><span><strong>{{ alert.title }}</strong><small>{{ alert.event }} · {{ alert.when|date:"M j, g:i A" }}</small></span><i class="bi bi-chevron-right"></i></button>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-shield-check"></i><strong>No scheduling issues</strong><span>Everything requiring attention is resolved.</span></div>{% endfor %}</div>
+      </section>
+    </div>
+  </aside>
+  </div>
 </div>
 {% include "photographer_workspace/bookings/components/event_form_drawer.html" %}
 {{ schedule_events|json_script:"schedule-event-data" }}
