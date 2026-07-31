@@ -40,11 +40,14 @@ def _base_row(kind, item, invoice, occurred_at, amount, currency, booking):
         "booking": booking.session_type if booking else "", "booking_url": reverse("photographer_workspace:booking_detail", args=[booking.pk]) if booking else "",
         "description": description, "date": occurred_at, "sort_amount": amount,
         "record_url": f"{reverse('photographer_workspace:transactions')}?{kind}={item.pk}",
-        "gross": format_currency(amount, currency), "fee": "—", "net": "—", "method": "—",
+        "client_email": client.email, "due_date": invoice.due_date, "currency": invoice.currency or currency,
+        "gross_amount": amount, "fee_amount": Decimal("0.00"), "net_amount": amount,
+        "balance_amount": invoice.balance, "gross": format_currency(amount, currency), "fee": "—", "net": "—",
+        "method": "—", "source": "LumisPixel", "external_invoice": not invoice.delivery_email,
     }
 
 
-def transaction_records(profile, filters, view_key, page_number=1, page_size=25, sort="date", direction="desc", currency="USD"):
+def transaction_records(profile, filters, view_key, page_number=1, page_size=25, sort="date", direction="desc", currency="USD", paginate=True):
     """Return an owner-scoped, filtered and server-paginated unified record list."""
     window = date_window(filters.get("range") or "this_month")
     bookings = ClientSession.objects.for_photographer(profile).exclude(status=ClientSession.Status.CANCELLED).order_by("-starts_at")
@@ -105,17 +108,25 @@ def transaction_records(profile, filters, view_key, page_number=1, page_size=25,
                 continue
             if kind == "invoice":
                 row["net"] = format_currency(invoice.balance, currency)
+                row["net_amount"] = invoice.balance
                 row["net_label"] = "Balance"
             elif kind == "payment":
-                row["net"] = format_currency(amount, currency)
+                row["fee_amount"] = item.processor_fee
+                row["net_amount"] = amount - item.processor_fee
+                row["fee"] = format_currency(item.processor_fee, currency)
+                row["net"] = format_currency(row["net_amount"], currency)
+                row["method"] = item.get_method_display()
+                row["source"] = "External" if item.method == InvoicePayment.Method.EXTERNAL else "Manual entry"
                 row["net_label"] = "Net"
             elif kind == "refund":
                 row["gross"] = format_currency(-amount, currency)
                 row["net"] = format_currency(-amount, currency)
+                row["net_amount"] = -amount
                 row["net_label"] = "Net"
             else:
                 remaining = amount if status == InvoiceCredit.Status.DRAFT else Decimal("0.00")
                 row["net"] = format_currency(remaining, currency)
+                row["net_amount"] = remaining
                 row["net_label"] = "Remaining"
             rows.append(row)
 
@@ -127,6 +138,6 @@ def transaction_records(profile, filters, view_key, page_number=1, page_size=25,
     except (TypeError, ValueError):
         page_size = 25
     page_size = page_size if page_size in PAGE_SIZES else 25
-    page = Paginator(rows, page_size).get_page(page_number)
+    page = Paginator(rows, page_size if paginate else max(len(rows), 1)).get_page(page_number)
     return {"page": page, "rows": page.object_list, "page_size": page_size, "page_sizes": PAGE_SIZES,
             "sort": sort, "direction": direction, "total": len(rows)}

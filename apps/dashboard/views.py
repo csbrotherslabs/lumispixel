@@ -37,6 +37,8 @@ from apps.dashboard.financial_analytics import financial_analytics
 from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
 from apps.dashboard.financial_transactions import transaction_records
+from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, csv_bytes, invoice_zip,
+                                           run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
@@ -2305,7 +2307,7 @@ def financial_transactions(request):
     if range_key not in {value for value, _ in range_options}:
         range_key = "this_month"
     page_state = request.GET.get("state", "ready")
-    if page_state not in {"ready", "loading", "empty", "permission", "error"}:
+    if page_state not in {"ready", "loading", "empty", "permission", "error", "export_error", "action_error"}:
         page_state = "ready"
 
     view_options = [
@@ -2395,8 +2397,59 @@ def financial_transactions(request):
         ],
         "payment_methods": InvoicePayment.Method.choices,
         "today": timezone.localdate(),
+        "export_columns": EXPORT_COLUMNS,
     })
     return render(request, "photographer_workspace/financial/transactions.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def financial_transaction_export(request):
+    """Export the current owner-scoped view or an explicit owner-scoped selection."""
+    profile = request.user.photographer_profile
+    filter_keys = ("q", "range", "status", "record_type", "client", "booking", "payment_method",
+                   "amount_min", "amount_max", "currency", "created_by", "source", "due_from",
+                   "due_to", "paid_from", "paid_to")
+    filters = {key: request.GET.get(key, "").strip() for key in filter_keys}
+    records = transaction_records(profile, filters, request.GET.get("view", "all"), 1, 25,
+                                  request.GET.get("sort", "date"), request.GET.get("direction", "desc"),
+                                  getattr(profile, "default_currency", "USD"), paginate=False)["rows"]
+    try:
+        selected = request.POST.getlist("records") if request.method == "POST" else []
+        if selected:
+            # Resolve first to enforce studio isolation even if an id is outside the current view.
+            selected_objects(profile, selected)
+            by_id = {row["id"]: row for row in transaction_records(
+                profile, {"range": "all_time"}, "all", 1, 25, "date", "desc",
+                getattr(profile, "default_currency", "USD"), paginate=False)["rows"]}
+            records = [by_id[value] for value in selected if value in by_id]
+        payload = csv_bytes(records, request.POST.getlist("columns") or request.GET.getlist("columns"))
+    except ValidationError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    response = HttpResponse(payload, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="lumispixel-financial-records.csv"'
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def financial_transaction_bulk(request):
+    """Validate the complete selection before performing a bulk mutation or download."""
+    values, action = request.POST.getlist("records"), request.POST.get("action", "")
+    try:
+        rows = selected_objects(request.user.photographer_profile, values)
+        if action == "capabilities":
+            return JsonResponse({"actions": available_actions(rows)})
+        if action == "download":
+            payload = invoice_zip(request.user.photographer_profile, values, lambda invoice:
+                render_to_string("photographer_workspace/invoices/print.html", {"invoice": invoice}))
+            response = HttpResponse(payload, content_type="application/zip")
+            response["Content-Disposition"] = 'attachment; filename="lumispixel-invoices.zip"'
+            return response
+        count = run_bulk_action(request.user.photographer_profile, values, action, request.POST.get("note", ""))
+        return JsonResponse({"ok": True, "count": count})
+    except ValidationError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
 
 
 def _action_errors(exc):
