@@ -32,6 +32,7 @@ from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, 
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary
 from apps.dashboard.financial_analytics import financial_analytics
+from apps.dashboard.financial_operations import financial_operations
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2262,9 +2263,14 @@ def financial_overview(request):
     profile = request.user.photographer_profile
     summary = financial_summary(profile, range_key, getattr(profile, "default_currency", "USD"))
     analytics = financial_analytics(profile, range_key, getattr(profile, "default_currency", "USD"))
+    operations_state = request.GET.get("operations_state", "ready")
+    if operations_state not in {"ready", "loading", "error"}:
+        operations_state = "ready"
+    operations = financial_operations(profile, getattr(profile, "default_currency", "USD"))
     context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options,
                     "financial_metrics": summary["cards"], "financial_has_activity": summary["has_activity"],
-                    "financial_analytics": analytics})
+                    "financial_analytics": analytics, "financial_operations": operations,
+                    "financial_operations_state": operations_state})
     return render(request, "photographer_workspace/financial/overview.html", context)
 
 

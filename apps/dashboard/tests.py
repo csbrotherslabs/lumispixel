@@ -676,6 +676,12 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Values are grouped daily.")
         self.assertContains(response, '?status=overdue')
         self.assertContains(response, "Your financial overview is ready for activity")
+        self.assertContains(response, "Upcoming Payments")
+        self.assertContains(response, "Attention Required")
+        self.assertContains(response, "No upcoming payments")
+        self.assertContains(response, "Everything is up to date")
+        self.assertContains(response, "?filter=upcoming")
+        self.assertContains(response, "?filter=attention")
         self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
 
         loading_url = f'{reverse("photographer_workspace:financial_overview")}?state=loading'
@@ -683,6 +689,12 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(loading_url), "Loading financial overview")
         self.assertContains(self.client.get(loading_url), "Loading revenue trend")
         self.assertContains(self.client.get(error_url), "Financial activity could not be loaded")
+        operations_loading = self.client.get(f'{reverse("photographer_workspace:financial_overview")}?operations_state=loading')
+        operations_error = self.client.get(f'{reverse("photographer_workspace:financial_overview")}?operations_state=error')
+        self.assertContains(operations_loading, "Loading upcoming payments")
+        self.assertContains(operations_loading, "Loading records requiring attention")
+        self.assertContains(operations_error, "Upcoming payments unavailable")
+        self.assertContains(operations_error, "Attention items unavailable")
 
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)

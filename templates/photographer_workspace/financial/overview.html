@@ -62,6 +62,7 @@
           </div>
         </article>
       </section>
+      {% include "photographer_workspace/financial/_operations.html" %}
       {% if not financial_has_activity %}<section class="lpw-financial-state lpw-financial-state--compact" aria-labelledby="financial-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="financial-empty-title">Your financial overview is ready for activity</h2><p>Invoices, payments, refunds, and credits will appear here as your business records grow.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create your first invoice</a></section>{% endif %}
     {% endif %}
   </div>
