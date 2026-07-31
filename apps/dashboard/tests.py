@@ -23,6 +23,31 @@ class PhotographerWorkspaceTests(TestCase):
         profile = PhotographerProfile.objects.create(user=user, slug=profile_kwargs.pop("slug", "photo"), onboarding_completed=completed, **profile_kwargs)
         return user, profile
 
+    def test_growth_overview_shell_navigation_filters_and_states(self):
+        user, _ = self.make_photographer(True, email="growth@example.com", slug="growth")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:growth")
+
+        response = self.client.get(url, {"range": "this_quarter", "compare": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<h1 id="workspace-page-title">Growth Overview</h1>', html=True)
+        self.assertContains(response, "Understand where clients come from, what converts, and how to grow your photography business.")
+        self.assertContains(response, "Promote your business")
+        self.assertContains(response, "Request reviews")
+        self.assertContains(response, "Create referral link")
+        self.assertContains(response, "Import leads")
+        self.assertContains(response, "Export growth report")
+        self.assertContains(response, 'value="this_quarter" selected')
+        self.assertContains(response, 'name="compare" value="1" checked')
+        self.assertContains(response, 'href="%s" class="is-active" aria-current="page"' % url)
+        for heading in ("Growth metrics", "Lead funnel", "Lead sources", "Service performance", "Reviews", "Referrals", "Client retention", "Growth opportunities", "Recent activity"):
+            self.assertContains(response, heading)
+        self.assertContains(self.client.get(url, {"state": "loading"}), "Loading your growth overview")
+        self.assertContains(self.client.get(url, {"state": "empty"}), "Your growth overview is ready")
+        self.assertContains(self.client.get(url, {"state": "permission"}), "You don’t have permission")
+        self.assertContains(self.client.get(url, {"state": "error"}), "Growth insights could not be loaded")
+
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")
         self.assertRedirects(self.client.get(url), f"{reverse('accounts:login')}?next={url}", fetch_redirect_response=False)

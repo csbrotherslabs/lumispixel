@@ -75,6 +75,7 @@ WORKSPACE_MODULES += [
     ]
 ]
 next(module for module in WORKSPACE_MODULES if module["key"] == "calendar")["url_name"] = "schedule"
+next(module for module in WORKSPACE_MODULES if module["key"] == "growth")["coming_soon"] = False
 MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 
 NAVIGATION = [
@@ -2290,6 +2291,45 @@ def financial_overview(request):
                     "financial_operations_state": operations_state, "financial_activity": activity,
                     "financial_activity_state": activity_state})
     return render(request, "photographer_workspace/financial/overview.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def growth_overview(request):
+    """Render the responsive Growth workspace shell and its page-level states."""
+    range_options = [
+        ("last_30_days", "Last 30 days"),
+        ("last_90_days", "Last 90 days"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "last_30_days")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "last_30_days"
+    page_state = request.GET.get("state", "ready")
+    if page_state not in {"ready", "loading", "empty", "permission", "error"}:
+        page_state = "ready"
+    sections = [
+        ("growth-metrics", "Growth metrics", "bi-graph-up-arrow", "Key acquisition and conversion signals will appear here."),
+        ("lead-funnel", "Lead funnel", "bi-funnel", "Follow inquiries as they progress toward a booking."),
+        ("lead-sources", "Lead sources", "bi-signpost-split", "See which channels introduce clients to your business."),
+        ("service-performance", "Service performance", "bi-camera", "Compare demand and conversion across your services."),
+        ("reviews", "Reviews", "bi-star", "Track client feedback and reputation signals."),
+        ("referrals", "Referrals", "bi-people", "Understand the clients and partners driving referrals."),
+        ("client-retention", "Client retention", "bi-arrow-repeat", "See how often clients return for another session."),
+        ("growth-opportunities", "Growth opportunities", "bi-lightbulb", "Find practical next steps based on business activity."),
+        ("recent-activity", "Recent activity", "bi-clock-history", "Review the latest growth-related activity."),
+    ]
+    context = _dashboard_context(request, "growth", "Growth Overview")
+    context.update({
+        "growth_state": page_state,
+        "range_key": range_key,
+        "range_options": range_options,
+        "compare_previous": request.GET.get("compare") == "1",
+        "growth_sections": sections,
+    })
+    return render(request, "photographer_workspace/growth/overview.html", context)
 
 
 @photographer_workspace_required
