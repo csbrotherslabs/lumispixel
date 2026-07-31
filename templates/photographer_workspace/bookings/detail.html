@@ -1,0 +1,40 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-bookings-page">
+  <header class="lpw-bookings-header">
+    <div class="lpw-bookings-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>LP-{{ booking.pk|stringformat:'04d' }}</strong></nav>
+      <h1 id="workspace-page-title">{{ booking.client }}</h1>
+      <p>{{ booking.session_type }} · {{ booking.starts_at|date:"F j, Y, g:i A" }}</p>
+    </div>
+    <a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?reschedule={{ booking.pk }}"><i class="bi bi-calendar3" aria-hidden="true"></i>Reschedule</a>
+  </header>
+
+  <nav class="lpw-detail-tabs" aria-label="Booking workspace">
+    <a href="{% url 'photographer_workspace:booking_detail' booking.pk %}"{% if booking_tab == 'overview' %} class="is-active" aria-current="page"{% endif %}>Overview</a>
+    <a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract"{% if booking_tab == 'contract' %} class="is-active" aria-current="page"{% endif %}>Contract <span class="lpw-mini-status">{{ contract_status }}</span></a>
+  </nav>
+
+  {% if booking_tab == 'contract' %}
+  <section id="contract" class="lpw-bookings-card" aria-labelledby="contract-title">
+    <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Send, review, and track the agreement for this booking.</p></div><span class="lpw-booking-status lpw-booking-status--tentative">{{ contract_status }}</span></div>
+    <dl class="lpw-pipeline-insights">
+      <div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div>
+      <div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div>
+      <div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd id="contract-signatures">Awaiting client</dd></div>
+    </dl>
+    <div class="lpw-bookings-actions">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="send_contract"><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send" aria-hidden="true"></i>Send contract</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="send_contract_reminder"><button class="lpw-btn" type="submit"><i class="bi bi-bell" aria-hidden="true"></i>Send reminder</button></form>
+      <a class="lpw-btn" href="#contract-signatures"><i class="bi bi-pen" aria-hidden="true"></i>View signatures</a>
+      {% if contract_is_signed %}<a class="lpw-btn" href="{{ signed_contract_pdf_url }}" download><i class="bi bi-download" aria-hidden="true"></i>Download signed PDF</a>{% else %}<button class="lpw-btn" type="button" disabled title="Available after all parties sign"><i class="bi bi-download" aria-hidden="true"></i>Download signed PDF</button>{% endif %}
+    </div>
+  </section>
+  {% else %}
+  <section class="lpw-bookings-card" aria-labelledby="booking-overview-title">
+    <div class="lpw-bookings-card-head"><div><span>Booking details</span><h2 id="booking-overview-title">Overview</h2><p>Session details and client contact information.</p></div><span class="lpw-booking-status lpw-booking-status--{{ booking.status }}">{{ booking.get_status_display }}</span></div>
+    <dl class="lpw-pipeline-insights"><div><dt>Date and time</dt><dd>{{ booking.starts_at|date:"F j, Y, g:i A" }}</dd></div><div><dt>Location</dt><dd>{{ booking.location|default:"To be confirmed" }}</dd></div><div><dt>Email</dt><dd><a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a></dd></div></dl>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

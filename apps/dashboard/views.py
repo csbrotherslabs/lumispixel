@@ -197,6 +197,11 @@ def _dashboard_tools():
 
 def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
     profile = request.user.photographer_profile
+    contract_booking = ClientSession.objects.filter(photographer=profile).order_by("-starts_at").first()
+    contract_workspace_url = (
+        f'{reverse("photographer_workspace:booking_detail", args=[contract_booking.pk])}?tab=contract#contract'
+        if contract_booking else reverse("photographer_workspace:bookings")
+    )
     hour = timezone.localtime().hour
     greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
     modules = [m | {"url": _reverse_module(m)} for m in WORKSPACE_MODULES if m["key"] != "dashboard"]
@@ -217,7 +222,7 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
             {"label": "New Leads", "count": 0, "icon": "bi-person-plus", "summary": "No new inquiries to review.", "action": "View leads", "url": reverse("photographer_workspace:leads")},
             {"label": "Recent Galleries", "count": _count_model("galleries", "Gallery", {"photographer": profile})[0], "icon": "bi-images", "summary": "Your latest client galleries appear here.", "action": "View galleries", "url": reverse("photographer_workspace:galleries")},
             {"label": "Outstanding Invoices", "count": 0, "icon": "bi-receipt", "summary": "You’re all caught up.", "action": "View invoices", "url": reverse("photographer_workspace:invoices")},
-            {"label": "Pending Contracts", "count": 0, "icon": "bi-file-earmark-check", "summary": "No contracts await signatures.", "action": "View contracts", "url": reverse("photographer_workspace:contracts")},
+            {"label": "Pending Contracts", "count": 0, "icon": "bi-file-earmark-check", "summary": "No contracts await signatures.", "action": "View booking contract", "url": contract_workspace_url},
         ],
         "tool_groups": _dashboard_tools(),
         "modules": modules, "theme_preview": _theme(profile), "overview_cards": _business_overview(profile),
@@ -1653,6 +1658,11 @@ def bookings_dashboard(request):
     ).exclude(status=ClientSession.Status.CANCELLED).select_related("client")
     if range_key != "all":
         sessions = sessions.filter(starts_at__lt=now + timedelta(days=int(range_key)))
+    contract_booking = sessions.order_by("starts_at").first()
+    contract_workspace_url = (
+        f'{reverse("photographer_workspace:booking_detail", args=[contract_booking.pk])}?tab=contract#contract'
+        if contract_booking else reverse("photographer_workspace:bookings")
+    )
 
     today_sessions = ClientSession.objects.filter(
         photographer=profile,
@@ -1790,7 +1800,7 @@ def bookings_dashboard(request):
     ).count()
     action_center = [
         {"count": awaiting_replies, "description": "new leads awaiting response", "icon": "bi-reply", "priority": "Urgent", "tone": "urgent", "related": "Newest unanswered leads", "action": "Reply now", "url": f"{reverse('photographer_workspace:leads')}?status={Lead.Status.NEW}"},
-        {"count": 4, "description": "contracts awaiting signature", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Client contracts requiring follow-up", "action": "Send reminder", "url": reverse("photographer_workspace:contracts")},
+        {"count": 4, "description": "contracts awaiting signature", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Client contracts requiring follow-up", "action": "Review booking contract", "url": contract_workspace_url},
         {"count": open_invoices.count(), "description": "outstanding payments", "icon": "bi-credit-card-2-front", "priority": "Urgent" if overdue_retainers else "Due Soon", "tone": "urgent" if overdue_retainers else "soon", "related": "Open client invoices", "action": "Review payments", "url": reverse("photographer_workspace:payments")},
         {"count": 2, "description": "questionnaires awaiting completion", "icon": "bi-ui-checks-grid", "priority": "Follow Up", "tone": "followup", "related": "Client preparation forms", "action": "View forms", "url": reverse("photographer_workspace:clients")},
         {"count": upcoming_session_count, "description": f"upcoming session{'s' if upcoming_session_count != 1 else ''} this week", "icon": "bi-calendar-event", "priority": "Upcoming", "tone": "followup", "related": "Confirmed sessions in the next 7 days", "action": "Open schedule", "url": reverse("photographer_workspace:calendar")},
@@ -1808,7 +1818,7 @@ def bookings_dashboard(request):
         "booking_metrics": [
             {"label": "Upcoming Bookings", "value": sessions.count(), "icon": "bi-calendar2-check", "support": range_options[range_key], "indicator": "Schedule", "tone": "neutral", "tooltip": "Non-cancelled sessions scheduled within the selected date range.", "link_label": "View bookings", "url": reverse("photographer_workspace:calendar")},
             {"label": "New Inquiries", "value": new_inquiries, "icon": "bi-chat-left-text", "support": "Awaiting first response", "indicator": "Needs review" if new_inquiries else "All caught up", "tone": "warning" if new_inquiries else "positive", "tooltip": "Active inquiries that have not yet moved beyond the new stage.", "link_label": "Review inquiries", "url": reverse("photographer_workspace:leads")},
-            {"label": "Pending Contracts", "value": 4, "icon": "bi-file-earmark-text", "support": "Awaiting signature", "indicator": "Sample data", "tone": "neutral", "tooltip": "Placeholder count of contracts awaiting a client signature; contract data will replace this sample when connected.", "link_label": "View contracts", "url": reverse("photographer_workspace:contracts")},
+            {"label": "Pending Contracts", "value": 4, "icon": "bi-file-earmark-text", "support": "Awaiting signature", "indicator": "Sample data", "tone": "neutral", "tooltip": "Placeholder count of contracts awaiting a client signature; contract data will replace this sample when connected.", "link_label": "Review booking", "url": contract_workspace_url},
             {"label": "Outstanding Payments", "value": f"{profile.default_currency} {outstanding:,.2f}", "icon": "bi-credit-card", "support": f"Across {open_invoices.count()} open invoice{'s' if open_invoices.count() != 1 else ''}", "indicator": "Action needed" if outstanding else "Up to date", "tone": "warning" if outstanding else "positive", "tooltip": "Remaining balance on invoices that are neither paid nor void.", "link_label": "Review payments", "url": reverse("photographer_workspace:payments")},
             {"label": "Booking Revenue", "value": f"{profile.default_currency} {paid_revenue:,.2f}", "icon": "bi-graph-up-arrow", "support": "Payments collected", "indicator": "All time", "tone": "positive", "tooltip": "Total payments recorded against your client invoices.", "link_label": "View revenue", "url": reverse("photographer_workspace:revenue")},
             {"label": "Conversion Rate", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel", "support": "Inquiries booked", "indicator": f"{all_leads.filter(status=Lead.Status.BOOKED).count()} converted", "tone": "positive" if conversion_rate else "neutral", "tooltip": "Percentage of active inquiries whose current status is booked.", "link_label": "View pipeline", "url": reverse("photographer_workspace:leads")},
@@ -1849,6 +1859,35 @@ def bookings_dashboard(request):
         ],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def booking_detail(request, pk):
+    """Keep booking-specific documents within the booking workspace."""
+    profile = request.user.photographer_profile
+    booking = get_object_or_404(
+        ClientSession.objects.select_related("client"), photographer=profile, pk=pk,
+    )
+    if request.method == "POST" and request.POST.get("action") in {"send_contract", "send_contract_reminder"}:
+        action = "Contract reminder" if request.POST["action"] == "send_contract_reminder" else "Contract"
+        messages.success(request, f"{action} queued for {booking.client}.")
+        return redirect(f'{reverse("photographer_workspace:booking_detail", args=[booking.pk])}?tab=contract#contract')
+
+    tab = request.GET.get("tab", "overview")
+    if tab not in {"overview", "contract"}:
+        tab = "overview"
+    context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
+    context.update({
+        "booking": booking,
+        "booking_tab": tab,
+        # Contract records are intentionally not duplicated here. The booking owns
+        # the document workflow; this presentation remains ready for the existing
+        # contract service to supply its status, signatures, and signed PDF.
+        "contract_status": "Awaiting signature",
+        "contract_is_signed": False,
+    })
+    return render(request, "photographer_workspace/bookings/detail.html", context)
 
 
 @photographer_workspace_required
@@ -1942,7 +1981,7 @@ def schedule(request):
         "photographer": owner, "status": session.get_status_display(),
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
         "persisted": True, "move_url": reverse("photographer_workspace:reschedule_session", args=[session.pk]),
-        "all_day": False, "url": reverse("photographer_workspace:bookings"),
+        "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
         "contact_email": session.client.email,
         "package": "Package not assigned", "contract_status": "Not signed",

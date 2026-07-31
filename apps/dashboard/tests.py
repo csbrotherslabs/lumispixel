@@ -3,7 +3,7 @@ from django.test import Client as TestClient, TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from io import BytesIO
-from django.urls import reverse
+from django.urls import Resolver404, resolve, reverse
 from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
@@ -168,6 +168,31 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, f'href="{url}" class="is-active"')
         self.assertContains(self.client.get(url, {"state": "loading"}), "Loading bookings")
         self.assertContains(self.client.get(url, {"state": "error"}), "Bookings could not be loaded")
+
+    def test_contracts_live_in_the_booking_detail_workspace(self):
+        user, profile = self.make_photographer(True, email="contract-booking@example.com", slug="contract-booking")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya.contract@example.com")
+        booking = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait",
+            starts_at=timezone.now() + timezone.timedelta(days=2),
+            status=ClientSession.Status.CONFIRMED,
+        )
+        self.client.force_login(user)
+        detail_url = reverse("photographer_workspace:booking_detail", args=[booking.pk])
+
+        dashboard = self.client.get(reverse("photographer_workspace:bookings"))
+        self.assertContains(dashboard, f'{detail_url}?tab=contract#contract')
+        self.assertNotContains(dashboard, 'href="/workspace/contracts/"')
+        with self.assertRaises(Resolver404):
+            resolve("/workspace/contracts/")
+
+        contract = self.client.get(detail_url, {"tab": "contract"})
+        self.assertContains(contract, "Send contract")
+        self.assertContains(contract, "Send reminder")
+        self.assertContains(contract, "View signatures")
+        self.assertContains(contract, "Download signed PDF")
+        response = self.client.post(detail_url, {"action": "send_contract"})
+        self.assertRedirects(response, f"{detail_url}?tab=contract#contract", fetch_redirect_response=False)
 
     def test_schedule_route_controls_and_navigation(self):
         user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
