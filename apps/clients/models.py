@@ -389,6 +389,7 @@ class ClientSession(PhotographerOwnedModel):
     duration_minutes = models.PositiveIntegerField(default=120)
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
+    booking_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -434,3 +435,71 @@ class ClientInvoice(PhotographerOwnedModel):
     @property
     def balance(self):
         return self.total - self.amount_paid
+
+
+class InvoicePayment(PhotographerOwnedModel):
+    """An actual cash movement received against an invoice."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        CANCELED = "canceled", "Canceled"
+
+    invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.COMPLETED)
+    paid_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["photographer", "status", "paid_at"], name="payment_owner_status_date")]
+
+    def clean(self):
+        if self.invoice_id and self.photographer_id != self.invoice.photographer_id:
+            raise ValidationError({"invoice": "The invoice must belong to this photographer."})
+
+
+class PaymentRefund(PhotographerOwnedModel):
+    """Cash returned for a payment; credits are deliberately modelled separately."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        CANCELED = "canceled", "Canceled"
+
+    payment = models.ForeignKey(InvoicePayment, on_delete=models.CASCADE, related_name="refunds")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.COMPLETED)
+    refunded_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["photographer", "status", "refunded_at"], name="refund_owner_status_date")]
+
+    def clean(self):
+        if self.payment_id and self.photographer_id != self.payment.photographer_id:
+            raise ValidationError({"payment": "The payment must belong to this photographer."})
+
+
+class InvoiceCredit(PhotographerOwnedModel):
+    """Non-cash value applied to an invoice."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        APPLIED = "applied", "Applied"
+        VOID = "void", "Void"
+
+    invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="credits")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPLIED)
+    applied_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["photographer", "status", "applied_at"], name="credit_owner_status_date")]
+
+    def clean(self):
+        if self.invoice_id and self.photographer_id != self.invoice.photographer_id:
+            raise ValidationError({"invoice": "The invoice must belong to this photographer."})

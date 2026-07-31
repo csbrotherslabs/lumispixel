@@ -7,7 +7,7 @@ from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncDate, TruncMonth, TruncWeek
 from django.utils import timezone
 
-from apps.clients.models import ClientInvoice
+from apps.clients.models import ClientInvoice, InvoiceCredit, InvoicePayment, PaymentRefund
 from apps.dashboard.financial import ZERO, date_window, format_currency
 
 MONEY_FIELD = DecimalField(max_digits=14, decimal_places=2)
@@ -46,10 +46,20 @@ def _bucket_start(day, grouping):
 
 
 def _series(profile, start, end, grouping, truncator):
-    rows = (_invoice_scope(profile, start, end).annotate(bucket=truncator)
-            .values("bucket").annotate(total=Coalesce(Sum("amount_paid"), Value(ZERO), output_field=MONEY_FIELD))
-            .order_by("bucket"))
+    truncator = type(truncator)("paid_at")
+    rows = (InvoicePayment.objects.for_photographer(profile).filter(
+        status=InvoicePayment.Status.COMPLETED, paid_at__date__gte=start, paid_at__date__lte=end
+    ).annotate(bucket=truncator).values("bucket").annotate(
+        total=Coalesce(Sum("amount"), Value(ZERO), output_field=MONEY_FIELD)).order_by("bucket"))
     values = {(row["bucket"].date() if hasattr(row["bucket"], "date") else row["bucket"]): row["total"] for row in rows}
+    refund_truncator = type(truncator)("refunded_at")
+    refund_rows = (PaymentRefund.objects.for_photographer(profile).filter(
+        status=PaymentRefund.Status.COMPLETED, refunded_at__date__gte=start, refunded_at__date__lte=end
+    ).annotate(bucket=refund_truncator).values("bucket").annotate(
+        total=Coalesce(Sum("amount"), Value(ZERO), output_field=MONEY_FIELD)))
+    for row in refund_rows:
+        bucket = row["bucket"].date() if hasattr(row["bucket"], "date") else row["bucket"]
+        values[bucket] = values.get(bucket, ZERO) - row["total"]
     cursor, result = _bucket_start(start, grouping), []
     final = _bucket_start(end, grouping)
     while cursor <= final:
@@ -89,7 +99,13 @@ def _status_rows(profile, start, end, currency, today):
     for key, label, queryset, amount in groups:
         total = queryset.aggregate(value=Coalesce(Sum(amount), Value(ZERO), output_field=MONEY_FIELD))["value"]
         raw.append((key, label, queryset.count(), total))
-    raw.append(("refunded", "Refunded or credited", 0, ZERO))
+    refunds = PaymentRefund.objects.for_photographer(profile).filter(
+        status=PaymentRefund.Status.COMPLETED, refunded_at__date__gte=start, refunded_at__date__lte=end)
+    credits = InvoiceCredit.objects.for_photographer(profile).filter(
+        status=InvoiceCredit.Status.APPLIED, applied_at__date__gte=start, applied_at__date__lte=end)
+    adjustment_total = refunds.aggregate(value=Coalesce(Sum("amount"), Value(ZERO), output_field=MONEY_FIELD))["value"]
+    adjustment_total += credits.aggregate(value=Coalesce(Sum("amount"), Value(ZERO), output_field=MONEY_FIELD))["value"]
+    raw.append(("refunded", "Refunded or credited", refunds.count() + credits.count(), adjustment_total))
     relevant_total = sum((item[3] for item in raw), ZERO)
     return [{"key": key, "label": label, "count": count, "total": total,
              "formatted_total": format_currency(total, currency),
