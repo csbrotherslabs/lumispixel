@@ -8,6 +8,9 @@
       <p>Manage invoices, payments, refunds, credits, and financial activity.</p>
     </div>
     <div class="lpw-financial-actions">
+      <button class="lpw-btn lpw-btn-primary" type="button" data-financial-open="payment"><i class="bi bi-cash-coin"></i>Record payment</button>
+      <button class="lpw-btn" type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise"></i>Issue refund</button>
+      <button class="lpw-btn" type="button" data-financial-open="credit"><i class="bi bi-wallet2"></i>Add credit</button>
       <form class="lpw-date-range" method="get">
         <label for="transaction-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Transaction date range</span></label>
         <select id="transaction-range" name="range" onchange="this.form.submit()">
@@ -90,9 +93,39 @@
     {% endif %}
   </div>
 </div>
+<div class="lpw-action-layer" data-financial-layer hidden>
+  <section class="lpw-action-dialog" role="dialog" aria-modal="true" aria-labelledby="financial-action-title">
+    <header><div><small>Financial action</small><h2 id="financial-action-title" data-action-title></h2><p data-action-subtitle></p></div><button type="button" data-financial-close aria-label="Close"><i class="bi bi-x-lg"></i></button></header>
+    <form method="post" data-financial-form data-endpoint="{% url 'photographer_workspace:financial_action' '__action__' %}">{% csrf_token %}<input type="hidden" name="submission_key"><input type="hidden" name="confirmed" value="no">
+      <div class="lpw-action-error" data-form-error hidden role="alert"></div>
+      <div data-action-fields="payment">
+        <label>Client<select name="client" required><option value="">Select client</option>{% for client in financial_clients %}<option value="{{ client.pk }}">{{ client }}</option>{% endfor %}</select></label>
+        <label>Related invoice<select name="invoice" required><option value="">Select invoice</option>{% for invoice in financial_invoices %}<option value="{{ invoice.pk }}" data-client="{{ invoice.client_id }}">{{ invoice.invoice_number|default:'Invoice' }} · {{ invoice.client }} · balance {{ invoice.balance }}</option>{% endfor %}</select></label>
+        <div class="lpw-action-pair"><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Payment date<input name="paid_at" type="date" value="{{ today|date:'Y-m-d' }}" required></label></div>
+        <label>Payment method<select name="method" required>{% for value,label in payment_methods %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+        <div class="lpw-action-pair"><label>External reference<input name="external_reference" maxlength="120"></label><label>Processor fee<input name="processor_fee" type="number" min="0" step="0.01" value="0.00"></label></div>
+        <label>Internal note<textarea name="internal_note" rows="3"></textarea></label>
+      </div>
+      <div data-action-fields="refund" hidden>
+        <label>Completed payment<select name="payment" required><option value="">Select payment</option>{% for item in refundable_payments %}{% if item.remaining > 0 %}<option value="{{ item.payment.pk }}" data-refundable="{{ item.remaining }}">PAY-{{ item.payment.pk|stringformat:'06d' }} · {{ item.payment.invoice.client }} · {{ item.remaining }} refundable</option>{% endif %}{% endfor %}</select></label>
+        <p class="lpw-refundable">Refundable amount: <strong data-refundable>—</strong></p>
+        <label>Refund amount<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Refund reason<textarea name="reason" rows="2" required></textarea></label><label>Internal note<textarea name="internal_note" rows="3"></textarea></label>
+      </div>
+      <div data-action-fields="credit" hidden>
+        <label>Client<select name="client" required><option value="">Select client</option>{% for client in financial_clients %}<option value="{{ client.pk }}">{{ client }}</option>{% endfor %}</select></label>
+        <label>Related invoice<select name="invoice" required><option value="">Select invoice</option>{% for invoice in financial_invoices %}<option value="{{ invoice.pk }}" data-client="{{ invoice.client_id }}">{{ invoice.invoice_number|default:'Invoice' }} · {{ invoice.client }}</option>{% endfor %}</select></label>
+        <label>Credit amount<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Reason<input name="reason" list="credit-reasons" required><datalist id="credit-reasons"><option value="Service recovery"><option value="Promotion"><option value="Overpayment"><option value="Cancellation"></datalist></label>
+        <label>Expiration date <small>Optional</small><input name="expires_at" type="date"></label><label>Internal note<textarea name="internal_note" rows="3"></textarea></label>
+      </div>
+      <section class="lpw-action-confirm" data-action-confirm hidden><i class="bi bi-exclamation-triangle"></i><div><strong>Confirm this action</strong><p data-confirm-copy></p></div></section>
+      <footer><button class="lpw-btn" type="button" data-financial-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="submit" data-submit>Review action</button></footer>
+    </form>
+  </section>
+</div>
 <div class="lpw-record-layer" data-record-layer data-endpoint="{% url 'photographer_workspace:financial_record_detail' '__type__' 0 %}" hidden>
   <aside class="lpw-record-drawer" data-record-panel role="dialog" aria-modal="true" aria-labelledby="financial-record-title" tabindex="-1"><div data-record-content></div></aside>
 </div>
 {% load static %}<script src="{% static 'js/financial_record_drawer.js' %}"></script>
+<script src="{% static 'js/financial_actions.js' %}"></script>
 <script>document.querySelector('[data-view-select]')?.addEventListener('change',function(){window.location.assign(this.value)});document.querySelectorAll('[data-row-url]').forEach(function(row){row.addEventListener('keydown',function(event){if((event.key==='Enter'||event.key===' ')&&!event.target.closest('a,button,input,select,details,summary')){event.preventDefault();row.click()}})});</script>
 {% endblock %}
