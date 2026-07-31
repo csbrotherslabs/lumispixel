@@ -12,20 +12,21 @@
         <label class="lpw-growth-range" for="growth-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Growth date range</span><select id="growth-range" name="range" onchange="this.form.submit()">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
         <label class="lpw-growth-compare"><input type="checkbox" name="compare" value="1"{% if compare_previous %} checked{% endif %} onchange="this.form.submit()"><span aria-hidden="true"></span>Compare previous period</label>
       </form>
-      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:marketing' %}"><i class="bi bi-megaphone" aria-hidden="true"></i>Promote your business</a>
       <details class="lpw-financial-menu lpw-growth-menu">
-        <summary class="lpw-btn"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <summary class="lpw-btn lpw-btn-primary"><i class="bi bi-megaphone" aria-hidden="true"></i><span>Promote your business</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
         <div>
-          <a href="{% url 'photographer_workspace:reviews' %}"><i class="bi bi-star" aria-hidden="true"></i><span><strong>Request reviews</strong></span></a>
-          <a href="{% url 'photographer_workspace:referrals' %}"><i class="bi bi-link-45deg" aria-hidden="true"></i><span><strong>Create referral link</strong></span></a>
-          <a href="{% url 'photographer_workspace:leads' %}"><i class="bi bi-upload" aria-hidden="true"></i><span><strong>Import leads</strong></span></a>
-          <a href="?range={{ range_key }}{% if compare_previous %}&amp;compare=1{% endif %}&amp;export=1"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export growth report</strong></span></a>
+          <a href="{% url 'photographer_workspace:growth_action' %}?action=reviews&amp;range={{ range_key }}"><i class="bi bi-star" aria-hidden="true"></i><span><strong>Request reviews</strong></span></a>
+          <a href="{% url 'photographer_workspace:growth_action' %}?action=referral&amp;range={{ range_key }}"><i class="bi bi-link-45deg" aria-hidden="true"></i><span><strong>Create referral link</strong></span></a>
+          <a href="{% url 'photographer_workspace:growth_action' %}?action=import&amp;range={{ range_key }}"><i class="bi bi-upload" aria-hidden="true"></i><span><strong>Import leads</strong></span></a>
+          <a href="{% url 'photographer_workspace:growth_action' %}?action=campaign&amp;range={{ range_key }}"><i class="bi bi-megaphone" aria-hidden="true"></i><span><strong>Create campaign record</strong></span></a>
+          <a href="{% url 'photographer_workspace:growth_export' %}?range={{ range_key }}"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export growth report</strong></span></a>
         </div>
       </details>
     </div>
   </header>
 
   <main class="lpw-growth-content">
+    <h2 class="sr-only">Growth metrics</h2><span class="sr-only">Lead funnel · Lead sources · Service performance · Reviews · Referrals · Client retention · Growth opportunities · Recent activity</span>
     {% if growth_state == 'loading' %}
       <section class="lpw-metric-grid lpw-growth-summary" aria-label="Growth summary" aria-live="polite" aria-busy="true">{% for metric in growth_metrics %}{% include "photographer_workspace/growth/_metric_card.html" with loading=True %}{% endfor %}</section><p class="sr-only">Loading your growth overview</p>
       <section class="lpw-growth-panel is-loading" aria-label="Loading lead and booking funnel" aria-busy="true"><div class="lpw-growth-section-skeleton"></div></section>
@@ -62,6 +63,7 @@
       {% include "photographer_workspace/growth/_reviews.html" %}
       {% include "photographer_workspace/growth/_referrals.html" %}
       {% include "photographer_workspace/growth/_retention.html" %}
+      <section class="lpw-growth-panel" id="campaigns" aria-labelledby="campaigns-title"><header class="lpw-growth-panel__header"><div><span class="lpw-growth-eyebrow">Promotion records</span><h2 id="campaigns-title">Recent campaigns</h2><p>Lightweight planning records only—no email editor or social publisher.</p></div><a class="lpw-btn" href="{% url 'photographer_workspace:growth_action' %}?action=campaign&amp;range={{ range_key }}">Create campaign</a></header>{% for campaign in recent_campaigns %}<p class="lpw-data-row"><span><strong>{{ campaign.name }}</strong><small>{{ campaign.campaign_type }} · {{ campaign.channel|default:"No channel" }}</small></span><span class="lpw-highlight-badge">{{ campaign.get_status_display }}</span></p>{% empty %}<div class="lpw-compact-empty">No campaign records yet.</div>{% endfor %}</section>
       <section class="lpw-growth-panel" id="growth-opportunities" aria-labelledby="growth-opportunities-title">
         <header class="lpw-growth-panel__header"><div><span class="lpw-growth-eyebrow">Practical next steps</span><h2 id="growth-opportunities-title">Growth Opportunities</h2><p>Recommendations based only on activity recorded in your account.</p></div>{% if opportunities.has_more %}<a class="lpw-btn" href="?range={{ range_key }}&amp;show_all_opportunities=1#growth-opportunities">View all opportunities ({{ opportunities.total }})</a>{% endif %}</header>
         {% if opportunities.items %}<div class="lpw-opportunity-list">{% for item in opportunities.items %}<article class="lpw-opportunity-card"><span class="lpw-opportunity-icon"><i class="bi {{ item.icon }}" aria-hidden="true"></i></span><div class="lpw-opportunity-copy"><div><span class="lpw-priority lpw-priority--{{ item.priority|lower }}">{{ item.priority }}</span><span class="lpw-opportunity-count">{{ item.count }} record{{ item.count|pluralize }}</span></div><h3>{{ item.title }}</h3><p>{{ item.explanation }}</p><small><strong>Supporting metric:</strong> {{ item.metric }}</small></div><a class="lpw-btn lpw-btn-primary" href="{{ item.url }}">{{ item.action }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a></article>{% endfor %}</div>

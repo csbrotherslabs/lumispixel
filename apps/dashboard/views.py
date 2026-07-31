@@ -5,6 +5,7 @@ import csv
 import io
 import mimetypes
 import zipfile
+import secrets
 from urllib.parse import urlencode
 
 from django.apps import apps
@@ -45,6 +46,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
                                              referral_summary, reputation_summary, retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
+from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2319,6 +2321,8 @@ def growth_overview(request):
     context = _dashboard_context(request, "growth", "Growth Overview")
     metrics = growth_summary(request.user.photographer_profile, range_key,
                              getattr(request.user.photographer_profile, "default_currency", "USD"))
+    for card in metrics["cards"]:
+        card["url"] = f'{card["url"]}?range={range_key}'
     source_sort = request.GET.get("source_sort", "leads")
     currency = getattr(request.user.photographer_profile, "default_currency", "USD")
     source_metric = request.GET.get("source_metric", "booking_value")
@@ -2333,7 +2337,8 @@ def growth_overview(request):
         "range_options": range_options,
         "compare_previous": request.GET.get("compare") == "1",
         "growth_metrics": metrics["cards"],
-        "funnel_stages": lead_funnel(request.user.photographer_profile, range_key, currency),
+        "funnel_stages": [stage | {"url": f'{stage["url"]}&range={range_key}'}
+                          for stage in lead_funnel(request.user.photographer_profile, range_key, currency)],
         "source_rows": lead_source_performance(request.user.photographer_profile, range_key, currency, source_sort),
         "source_sort": source_sort,
         "source_chart": booking_value_by_source(request.user.photographer_profile, range_key, source_metric,
@@ -2347,8 +2352,127 @@ def growth_overview(request):
         "opportunities": growth_opportunities(request.user.photographer_profile,
                                                 request.GET.get("show_all_opportunities") == "1"),
         "recent_growth_activity": recent_growth_activity(request.user.photographer_profile),
+        "recent_campaigns": GrowthCampaign.objects.for_photographer(request.user.photographer_profile)[:5],
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def growth_action(request):
+    """Create deliberately small, studio-scoped growth records."""
+    profile = request.user.photographer_profile
+    action = request.GET.get("action") or request.POST.get("action")
+    allowed = {"reviews", "referral", "import", "campaign"}
+    if action not in allowed:
+        return redirect("photographer_workspace:growth")
+    completed_bookings = (ClientSession.objects.for_photographer(profile)
+                          .filter(status=ClientSession.Status.COMPLETED)
+                          .select_related("client").order_by("-starts_at"))
+    if request.method == "POST":
+        if action == "reviews":
+            booking_ids = {value for value in request.POST.getlist("bookings") if value.isdigit()}
+            bookings = completed_bookings.filter(pk__in=booking_ids)
+            created = 0
+            with transaction.atomic():
+                for booking in bookings:
+                    review_request, was_created = ReviewRequest.objects.get_or_create(
+                        photographer=profile, booking=booking,
+                        defaults={"client": booking.client, "message": request.POST.get("message", "")[:500],
+                                  "status": ReviewRequest.Status.SENT, "sent_at": timezone.now()})
+                    if was_created:
+                        created += 1
+                        ClientActivity.objects.create(
+                            photographer=profile, client=booking.client,
+                            event_type=ClientActivity.EventType.EMAIL_SENT,
+                            description="Review request sent.",
+                            metadata={"growth_event": "review_request", "review_request_id": review_request.pk,
+                                      "booking_id": booking.pk})
+            if not booking_ids:
+                messages.error(request, "Select at least one completed booking.")
+            elif not created:
+                messages.info(request, "Those bookings already have review requests; no duplicates were sent.")
+            else:
+                messages.success(request, f"Created {created} review request{'s' if created != 1 else ''}.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#reviews')
+        elif action == "referral":
+            referral_type = request.POST.get("referral_type")
+            if referral_type not in ReferralLink.ReferralType.values:
+                messages.error(request, "Select a valid referral type.")
+            else:
+                client = Client.objects.for_photographer(profile).filter(pk=request.POST.get("client")).first()
+                campaign = GrowthCampaign.objects.for_photographer(profile).filter(pk=request.POST.get("campaign")).first()
+                code = secrets.token_urlsafe(9).replace("_", "").replace("-", "")
+                link = ReferralLink.objects.create(
+                    photographer=profile, label=request.POST.get("label", "Referral link")[:150], code=code,
+                    referral_type=referral_type, referrer_name=request.POST.get("referrer_name", "")[:150],
+                    client=client, campaign=campaign, status=request.POST.get("status")
+                    if request.POST.get("status") in ReferralLink.Status.values else ReferralLink.Status.ACTIVE)
+                messages.success(request, "Referral link created. Copy it from the referrals section.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#referrals')
+        elif action == "campaign":
+            name = request.POST.get("name", "").strip()
+            if not name:
+                messages.error(request, "Campaign name is required.")
+            else:
+                GrowthCampaign.objects.create(
+                    photographer=profile, name=name[:150], campaign_type=request.POST.get("campaign_type", "")[:80],
+                    status=request.POST.get("status") if request.POST.get("status") in GrowthCampaign.Status.values else GrowthCampaign.Status.DRAFT,
+                    start_date=request.POST.get("start_date") or None, end_date=request.POST.get("end_date") or None,
+                    target_audience=request.POST.get("target_audience", "")[:200], channel=request.POST.get("channel", "")[:80],
+                    tracking_link=request.POST.get("tracking_link", ""), spend=request.POST.get("spend") or None,
+                    notes=request.POST.get("notes", ""))
+                messages.success(request, "Campaign record created.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#campaigns')
+        else:
+            upload = request.FILES.get("file")
+            if not upload:
+                messages.error(request, "Choose a CSV file to import.")
+            else:
+                rows = csv.DictReader(io.StringIO(upload.read().decode("utf-8-sig")))
+                leads = [Lead(photographer=profile, first_name=(row.get("first_name") or "").strip(),
+                              last_name=(row.get("last_name") or "").strip(), email=(row.get("email") or "").strip(),
+                              phone=(row.get("phone") or "").strip(), lead_source=(row.get("lead_source") or "Import").strip())
+                         for row in rows if (row.get("first_name") or row.get("email"))]
+                Lead.objects.bulk_create(leads, batch_size=500)
+                messages.success(request, f"Imported {len(leads)} lead{'s' if len(leads) != 1 else ''}.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#lead-funnel')
+    context = _dashboard_context(request, "growth", "Promote your business")
+    context.update({"growth_action": action, "range_key": request.GET.get("range", "last_30_days"),
+                    "eligible_bookings": completed_bookings.exclude(review_requests__isnull=False),
+                    "clients": Client.objects.for_photographer(profile).order_by("first_name", "last_name"),
+                    "campaigns": GrowthCampaign.objects.for_photographer(profile),
+                    "referral_types": ReferralLink.ReferralType.choices, "referral_statuses": ReferralLink.Status.choices,
+                    "campaign_statuses": GrowthCampaign.Status.choices})
+    return render(request, "photographer_workspace/growth/action.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def growth_export(request):
+    """Export all date-scoped growth sections as a portable CSV report."""
+    profile, range_key = request.user.photographer_profile, request.GET.get("range", "last_30_days")
+    if range_key not in {"last_30_days", "last_90_days", "this_quarter", "this_year", "all_time"}:
+        range_key = "last_30_days"
+    currency = getattr(profile, "default_currency", "USD")
+    output = io.StringIO(); writer = csv.writer(output)
+    writer.writerow(["LumisPixel growth report", range_key]); writer.writerow([])
+    writer.writerow(["Key metric", "Value"])
+    for card in growth_summary(profile, range_key, currency)["cards"]:
+        writer.writerow([card["title"], card["formatted_value"]])
+    sections = [("Funnel stages", lead_funnel(profile, range_key, currency), ["label", "count", "overall_rate", "formatted_value"]),
+                ("Source performance", lead_source_performance(profile, range_key, currency), ["source", "leads", "bookings", "conversion_rate", "formatted_booking_value"]),
+                ("Service performance", service_performance(profile, range_key, currency), ["service", "leads", "bookings", "conversion_rate", "formatted_value"])]
+    for title, rows, fields in sections:
+        writer.writerow([]); writer.writerow([title]); writer.writerow(fields)
+        for row in rows: writer.writerow([row.get(field, "") for field in fields])
+    for title, data in (("Reviews", reputation_summary(profile, range_key)), ("Referrals", referral_summary(profile, range_key, currency)), ("Retention", retention_summary(profile, range_key, currency))):
+        writer.writerow([]); writer.writerow([title]);
+        for key, value in data.items():
+            if not isinstance(value, (list, dict)): writer.writerow([key, value])
+    response = HttpResponse(output.getvalue(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="lumispixel-growth-{range_key}.csv"'
+    return response
 
 
 @photographer_workspace_required
