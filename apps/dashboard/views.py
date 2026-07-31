@@ -1931,6 +1931,11 @@ def schedule(request):
         "photographer": owner, "status": session.get_status_display(),
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
         "all_day": False, "url": reverse("photographer_workspace:bookings"),
+        "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
+        "package": "Package not assigned", "contract_status": "Not signed",
+        "payment_status": "Retainer unpaid", "questionnaire_status": "Incomplete",
+        "notes": "No internal notes have been added.",
+        "warnings": ["Contract not signed", "Retainer unpaid", "Questionnaire incomplete"] if session.status == ClientSession.Status.TENTATIVE else [],
     } for session in sessions]
 
     # Until schedule-specific event models are connected, keep an empty calendar useful
@@ -1958,7 +1963,28 @@ def schedule(request):
                 "booking_number": f"LP-{1000 + offset:04d}", "location": "LumisPixel Studio" if kind != "vacation" else "Away",
                 "status": status, "kind": kind, "icon": icon, "warning": warning,
                 "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
+                "contact": "hello@example.com · (555) 014-2086", "package": "Signature Collection",
+                "contract_status": "Signed" if not warning else "Not signed",
+                "payment_status": "Paid" if not warning else "Retainer unpaid",
+                "questionnaire_status": "Complete" if not warning else "Incomplete",
+                "notes": "Confirm arrival instructions with the client before the event.",
+                "warnings": (["Contract not signed", "Retainer unpaid", "Questionnaire incomplete"] if kind == "booking" and warning else
+                             ["Scheduling conflict"] if kind == "consultation" and warning else
+                             ["Travel time may be insufficient"] if kind == "mini" else []),
             })
+
+    action_labels = {
+        "booking": ["Open Full Booking", "Contact Client", "Edit Booking", "Reschedule", "Mark Complete", "Create Gallery", "Cancel Booking"],
+        "consultation": ["Contact Client", "Edit Consultation", "Reschedule", "Convert to Booking", "Cancel Consultation"],
+        "editing": ["Open Gallery", "Edit Time", "Reschedule", "Mark Complete"],
+        "blocked": ["Edit Block", "Reschedule", "Remove Block"],
+        "vacation": ["Edit Vacation", "Change Dates", "Remove Vacation"],
+        "mini": ["Manage Mini Session", "View Registrations", "Edit Session", "Reschedule", "Contact Attendees", "Cancel Session"],
+    }
+    for index, event in enumerate(events):
+        event["drawer_id"] = f"schedule-event-{index}"
+        event["duration"] = str(event["ends_at"] - event["starts_at"]).removeprefix("0:")
+        event["actions"] = action_labels[event["kind"]]
 
     # Apply the same normalized filter state to illustrative and persisted events so
     # switching calendar modes never changes the result set.
