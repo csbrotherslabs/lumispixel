@@ -8,7 +8,7 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.clients.models import Client, ClientSession, InvoicePayment, Lead
+from apps.clients.models import Client, ClientActivity, ClientSession, InvoicePayment, Lead
 from apps.dashboard.financial import format_currency
 from apps.dashboard.models import ReferralAttribution, ReferralLink, Review, ReviewRequest
 
@@ -343,3 +343,79 @@ def retention_summary(profile, range_key, currency="USD", today=None):
                         ("Avg. client booking value", format_currency(total / len(eligible), currency) if eligible else "—"),
                         ("Clients potentially due", len(due))], "due": due[:5], "has_data": bool(histories),
             "rule": "Clients whose latest confirmed or completed session was at least 12 months ago."}
+
+
+def growth_opportunities(profile, show_all=False, today=None):
+    """Turn current, owner-scoped records into transparent next actions."""
+    today = today or timezone.localdate()
+    now = timezone.now()
+    leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
+    bookings = ClientSession.objects.for_photographer(profile)
+    items = []
+
+    def add(title, explanation, priority, count, metric, action, url, icon):
+        if count:
+            items.append({"title": title, "explanation": explanation, "priority": priority,
+                          "count": count, "metric": metric, "action": action, "url": url, "icon": icon})
+
+    overdue = leads.filter(status__in=(Lead.Status.NEW, Lead.Status.CONTACTED, Lead.Status.PROPOSAL_SENT)).filter(
+        Q(next_follow_up__lt=today) | Q(next_follow_up__isnull=True, created_at__lt=now - timedelta(days=3)))
+    add("Leads need a follow-up", "Open leads have an overdue follow-up or have waited at least three days without one.",
+        "High", overdue.count(), "Overdue or unscheduled follow-up", "Review and contact leads",
+        f'{reverse("photographer_workspace:leads")}?follow_up=overdue', "bi-person-check")
+    consultations = leads.filter(status=Lead.Status.CONSULTATION, updated_at__lt=now - timedelta(days=2))
+    add("Consultations need a decision", "Consultation-stage leads have had no recorded decision for at least two days.",
+        "High", consultations.count(), "2+ days in consultation", "Record the next decision",
+        f'{reverse("photographer_workspace:leads")}?status={Lead.Status.CONSULTATION}', "bi-chat-square-text")
+    completed_without_request = bookings.filter(status=ClientSession.Status.COMPLETED).exclude(
+        client__review_requests__isnull=False).values("client_id").distinct()
+    add("Ask completed clients for a review", "Clients with a completed session have no review request on record.",
+        "Medium", completed_without_request.count(), "No review request recorded", "Send review requests",
+        reverse("photographer_workspace:reviews"), "bi-star")
+    missing_source = bookings.filter(status=ClientSession.Status.CONFIRMED).filter(
+        Q(client__converted_lead__isnull=True) | Q(client__converted_lead__lead_source=""))
+    add("Add missing lead sources", "Confirmed bookings cannot be attributed because their lead source is blank.",
+        "Medium", missing_source.count(), "Confirmed bookings without source", "Record lead sources",
+        f'{reverse("photographer_workspace:bookings")}?source=missing', "bi-signpost-split")
+    referral_leads = leads.filter(referral_attribution__isnull=False).exclude(
+        status__in=(Lead.Status.BOOKED, Lead.Status.LOST)).filter(last_contacted_at__isnull=True)
+    add("Follow up with referral leads", "Referral-attributed leads have no contact recorded yet.",
+        "High", referral_leads.count(), "No contact recorded", "Contact referral leads",
+        reverse("photographer_workspace:referrals"), "bi-people")
+    due_ids = []
+    for client in Client.objects.for_photographer(profile):
+        latest = bookings.filter(client=client, status__in=(ClientSession.Status.CONFIRMED,
+                                 ClientSession.Status.COMPLETED)).order_by("-starts_at").first()
+        if latest and latest.starts_at.date() <= today - timedelta(days=365):
+            due_ids.append(client.pk)
+    add("Reconnect with past clients", "These clients’ latest confirmed or completed session was at least one year ago.",
+        "Informational", len(due_ids), "12+ months since latest session", "Review clients to reconnect with",
+        reverse("photographer_workspace:clients"), "bi-arrow-repeat")
+    rank = {"High": 0, "Medium": 1, "Informational": 2}
+    items.sort(key=lambda item: (rank[item["priority"]], -item["count"], item["title"]))
+    return {"items": items if show_all else items[:4], "total": len(items), "has_more": not show_all and len(items) > 4}
+
+
+def recent_growth_activity(profile, limit=12):
+    """Return CRM growth events already recorded by the workspace."""
+    supported = {
+        ClientActivity.EventType.LEAD_CREATED: "New lead received",
+        ClientActivity.EventType.EMAIL_SENT: "Lead contacted",
+        ClientActivity.EventType.CONSULTATION_SCHEDULED: "Consultation scheduled",
+        ClientActivity.EventType.LEAD_CONVERTED: "Lead converted",
+        ClientActivity.EventType.LEAD_BOOKED: "Lead converted",
+        ClientActivity.EventType.LEAD_LOST: "Lead marked lost",
+    }
+    records = (ClientActivity.objects.for_photographer(profile).filter(event_type__in=supported)
+               .select_related("lead", "client").order_by("-occurred_at")[:limit])
+    rows = []
+    for record in records:
+        person = record.lead or record.client
+        metadata = record.metadata if isinstance(record.metadata, dict) else {}
+        rows.append({"activity": supported[record.event_type], "person": str(person) if person else "—",
+                     "source": record.lead.lead_source if record.lead and record.lead.lead_source else "—",
+                     "related": metadata.get("booking") or metadata.get("campaign") or "—",
+                     "team_member": metadata.get("team_member") or "—", "occurred_at": record.occurred_at,
+                     "url": (f'{reverse("photographer_workspace:leads")}?lead={record.lead_id}' if record.lead_id
+                             else reverse("photographer_workspace:clients"))})
+    return rows
