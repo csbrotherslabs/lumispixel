@@ -40,6 +40,7 @@ from apps.dashboard.financial_transactions import transaction_records
 from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, csv_bytes, invoice_zip,
                                            run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
+from apps.dashboard.growth_analytics import growth_summary
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
@@ -2322,12 +2323,15 @@ def growth_overview(request):
         ("recent-activity", "Recent activity", "bi-clock-history", "Review the latest growth-related activity."),
     ]
     context = _dashboard_context(request, "growth", "Growth Overview")
+    metrics = growth_summary(request.user.photographer_profile, range_key,
+                             getattr(request.user.photographer_profile, "default_currency", "USD"))
     context.update({
         "growth_state": page_state,
         "range_key": range_key,
         "range_options": range_options,
         "compare_previous": request.GET.get("compare") == "1",
         "growth_sections": sections,
+        "growth_metrics": metrics["cards"],
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
 
