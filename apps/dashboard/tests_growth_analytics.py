@@ -2,14 +2,16 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientSession, Lead
 from apps.dashboard.growth_analytics import (
     booking_value_by_source, growth_opportunities, growth_summary, growth_window, lead_funnel,
-    lead_source_performance, recent_growth_activity, service_performance,
+    lead_source_performance, recent_growth_activity, reputation_summary, service_performance,
 )
+from apps.dashboard.models import Review
 
 
 class GrowthAnalyticsTests(TestCase):
@@ -22,7 +24,11 @@ class GrowthAnalyticsTests(TestCase):
 
     def _timestamp(self, instance, days_ago):
         stamp = timezone.make_aware(datetime.combine(self.today - timedelta(days=days_ago), datetime.min.time()))
-        type(instance).objects.filter(pk=instance.pk).update(created_at=stamp)
+        updates = {"created_at": stamp}
+        if isinstance(instance, ClientSession) and instance.status in (ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED):
+            updates["confirmed_at"] = stamp
+            instance.confirmed_at = stamp
+        type(instance).objects.filter(pk=instance.pk).update(**updates)
         instance.created_at = stamp
         return instance
 
@@ -129,3 +135,66 @@ class GrowthAnalyticsTests(TestCase):
         self.assertEqual(rows[0]["person"], "Ada")
         self.assertEqual(rows[0]["source"], "Website")
         self.assertEqual(rows[0]["team_member"], "Sam")
+
+    def test_booking_uses_confirmation_date_not_creation_or_session_date(self):
+        client = Client.objects.create(photographer=self.profile, first_name="Later")
+        booking = ClientSession.objects.create(
+            photographer=self.profile, client=client, session_type="Portrait",
+            starts_at=timezone.now() + timedelta(days=180), status=ClientSession.Status.CONFIRMED,
+            booking_value=Decimal("125.00"),
+        )
+        old = timezone.now() - timedelta(days=60)
+        ClientSession.objects.filter(pk=booking.pk).update(created_at=old)
+
+        self.assertEqual(growth_summary(self.profile, "last_30_days", today=self.today)["values"]["confirmed_bookings"], 1)
+
+    def test_previous_period_comparison_uses_equal_non_overlapping_windows(self):
+        current = self._timestamp(Lead.objects.create(photographer=self.profile, first_name="Current"), 2)
+        self._timestamp(Lead.objects.create(photographer=self.profile, first_name="Previous"), 32)
+
+        card = growth_summary(self.profile, "last_30_days", today=self.today)["cards"][0]
+
+        self.assertEqual(current.first_name, "Current")
+        self.assertEqual(card["percentage"], Decimal("0.0"))
+        self.assertEqual(card["trend"], "neutral")
+
+    def test_missing_source_is_unknown_without_mutating_lead(self):
+        lead = self._timestamp(Lead.objects.create(photographer=self.profile, first_name="No source", lead_source=""), 1)
+
+        row = lead_source_performance(self.profile, "last_30_days", today=self.today)[0]
+
+        self.assertEqual(row["source"], "Unknown")
+        self.assertIn("source=__unknown__", row["url"])
+        lead.refresh_from_db()
+        self.assertEqual(lead.lead_source, "")
+
+    def test_cancelled_booking_has_no_booking_value_and_is_reported_for_service(self):
+        client = Client.objects.create(photographer=self.profile, first_name="Cancelled")
+        booking = ClientSession.objects.create(
+            photographer=self.profile, client=client, session_type="Wedding", starts_at=timezone.now(),
+            status=ClientSession.Status.CANCELLED, booking_value=Decimal("900.00"),
+        )
+        self._timestamp(booking, 1)
+
+        summary = growth_summary(self.profile, "last_30_days", today=self.today)
+        service = service_performance(self.profile, "last_30_days", today=self.today)[0]
+
+        self.assertEqual(summary["values"]["confirmed_bookings"], 0)
+        self.assertEqual(service["booking_value"], Decimal("0.00"))
+        self.assertEqual(service["cancelled"], 1)
+
+    def test_review_metrics_use_review_date_and_owner_scope(self):
+        now = timezone.now()
+        Review.objects.create(photographer=self.profile, reviewer_name="Recent", rating=5, reviewed_at=now)
+        Review.objects.create(photographer=self.profile, reviewer_name="Old", rating=1,
+                              reviewed_at=now - timedelta(days=60))
+        Review.objects.create(photographer=self.other, reviewer_name="Private", rating=1, reviewed_at=now)
+
+        report = reputation_summary(self.profile, "last_30_days", today=self.today)
+
+        self.assertEqual(dict(report["metrics"])["Average rating"], "5.0 / 5")
+        self.assertEqual(dict(report["metrics"])["Total reviews"], 1)
+
+    def test_growth_export_requires_photographer_permission(self):
+        response = self.client.get(reverse("photographer_workspace:growth_export"))
+        self.assertEqual(response.status_code, 302)

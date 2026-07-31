@@ -390,11 +390,26 @@ class ClientSession(PhotographerOwnedModel):
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
     booking_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Reporting uses the business event date, not the row creation date.  Keeping
+    # this separate also means a tentative request confirmed later lands in the
+    # correct growth period.
+    confirmed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["starts_at"]
-        indexes = [models.Index(fields=["photographer", "status", "starts_at"], name="session_owner_status_start")]
+        indexes = [
+            models.Index(fields=["photographer", "status", "starts_at"], name="session_owner_status_start"),
+            models.Index(fields=["photographer", "status", "confirmed_at"], name="session_owner_confirmed"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.status in (self.Status.CONFIRMED, self.Status.COMPLETED) and self.confirmed_at is None:
+            self.confirmed_at = timezone.now()
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"confirmed_at"}
+        super().save(*args, **kwargs)
 
     def clean(self):
         if self.client_id and self.photographer_id != self.client.photographer_id:

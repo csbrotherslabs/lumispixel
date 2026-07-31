@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import Avg, Count, DecimalField, Q, Sum, Value
+from django.db.models import Avg, Count, DecimalField, IntegerField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
@@ -51,6 +51,11 @@ def _during(queryset, field, start, end):
     return queryset.filter(**filters)
 
 
+def _confirmed_during(queryset, start, end):
+    """Filter bookings by confirmation, independently of request/session dates."""
+    return _during(queryset, "confirmed_at", start, end)
+
+
 def _percent(numerator, denominator):
     if not denominator:
         return None
@@ -59,21 +64,23 @@ def _percent(numerator, denominator):
 
 def _period_values(profile, start, end):
     leads = _during(Lead.objects.for_photographer(profile), "created_at", start, end)
-    eligible_leads = leads.exclude(status=Lead.Status.LOST)
-    bookings = _during(ClientSession.objects.for_photographer(profile).filter(
-        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), "created_at", start, end)
+    bookings = _confirmed_during(ClientSession.objects.for_photographer(profile).filter(
+        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), start, end)
     booking_count = bookings.count()
     booking_total = bookings.aggregate(total=Coalesce(
         Sum("booking_value"), Value(ZERO), output_field=MONEY_FIELD))["total"]
-    referral_count = bookings.filter(client__converted_lead__lead_source__iregex=r"referr").count()
+    referral_count = bookings.filter(
+        Q(referral_attribution__isnull=False) |
+        Q(client__converted_lead__lead_source__iregex=r"referr")
+    ).distinct().count()
     repeat_count = 0
-    for booking in bookings.only("client_id", "created_at"):
+    for booking in bookings.only("client_id", "confirmed_at"):
         if ClientSession.objects.for_photographer(profile).filter(
             client_id=booking.client_id, status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED),
-            created_at__lt=booking.created_at).exists():
+            confirmed_at__lt=booking.confirmed_at).exists():
             repeat_count += 1
     return {"new_leads": leads.count(), "confirmed_bookings": booking_count,
-            "conversion_rate": _percent(eligible_leads.filter(status=Lead.Status.BOOKED).count(), eligible_leads.count()),
+            "conversion_rate": _percent(leads.filter(status=Lead.Status.BOOKED).count(), leads.count()),
             "average_booking_value": (booking_total / Decimal(booking_count)).quantize(Decimal("0.01")) if booking_count else None,
             "repeat_client_rate": _percent(repeat_count, booking_count), "referral_bookings": referral_count}
 
@@ -93,7 +100,7 @@ def growth_summary(profile, range_key, currency="USD", today=None):
     definitions = [
         ("New leads", "new_leads", "Leads created during the selected period.", "New inquiries received", "photographer_workspace:leads", "count"),
         ("Confirmed bookings", "confirmed_bookings", "Bookings confirmed during the selected period.", "Confirmed and completed sessions", "photographer_workspace:bookings", "count"),
-        ("Lead conversion rate", "conversion_rate", "Eligible converted leads divided by eligible leads.", "Lost leads are excluded", "photographer_workspace:leads", "rate"),
+        ("Lead conversion rate", "conversion_rate", "Booked leads divided by all leads created in the period.", "Each lead is counted once", "photographer_workspace:leads", "rate"),
         ("Average booking value", "average_booking_value", "Total confirmed booking value divided by confirmed bookings.", "Based on confirmed booking value", "photographer_workspace:bookings", "money"),
         ("Repeat client rate", "repeat_client_rate", "Bookings from returning clients divided by eligible bookings.", "Clients with an earlier confirmed booking", "photographer_workspace:clients", "rate"),
         ("Referral bookings", "referral_bookings", "Confirmed bookings attributed to a referral lead source.", "Referral-attributed confirmations", "photographer_workspace:referrals", "count"),
@@ -123,8 +130,11 @@ def lead_funnel(profile, range_key, currency="USD", today=None):
     window = growth_window(range_key, today)
     leads = _during(Lead.objects.for_photographer(profile).filter(archived_at__isnull=True),
                     "created_at", window.start, window.end)
-    sessions = _during(ClientSession.objects.for_photographer(profile), "created_at",
-                       window.start, window.end)
+    session_base = ClientSession.objects.for_photographer(profile)
+    sessions = _during(session_base.filter(status__in=(ClientSession.Status.TENTATIVE,
+                       ClientSession.Status.CANCELLED)), "created_at", window.start, window.end)
+    confirmed_sessions = _confirmed_during(session_base.filter(
+        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), window.start, window.end)
     now = timezone.now()
     stage_specs = [
         ("New lead", leads.filter(status=Lead.Status.NEW), "leads", Lead.Status.NEW, "estimated_value"),
@@ -132,7 +142,7 @@ def lead_funnel(profile, range_key, currency="USD", today=None):
         ("Consultation scheduled", leads.filter(status=Lead.Status.CONSULTATION), "leads", Lead.Status.CONSULTATION, "estimated_value"),
         ("Proposal or quote sent", leads.filter(status=Lead.Status.PROPOSAL_SENT), "leads", Lead.Status.PROPOSAL_SENT, "estimated_value"),
         ("Booking pending", sessions.filter(status=ClientSession.Status.TENTATIVE), "bookings", ClientSession.Status.TENTATIVE, "booking_value"),
-        ("Confirmed booking", sessions.filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), "bookings", ClientSession.Status.CONFIRMED, "booking_value"),
+        ("Confirmed booking", confirmed_sessions, "bookings", ClientSession.Status.CONFIRMED, "booking_value"),
     ]
     stages, first_count, previous_count = [], None, None
     for label, queryset, destination, status, value_field in stage_specs:
@@ -164,7 +174,7 @@ SOURCE_LABELS = {
 
 def _source_label(value):
     normalized = " ".join((value or "").strip().lower().replace("_", " ").replace("-", " ").split())
-    return SOURCE_LABELS.get(normalized, "Other")
+    return SOURCE_LABELS.get(normalized, "Unknown" if not normalized else "Other")
 
 
 def lead_source_performance(profile, range_key, currency="USD", sort_key="leads", today=None):
@@ -176,24 +186,32 @@ def lead_source_performance(profile, range_key, currency="USD", sort_key="leads"
     qualified = {Lead.Status.CONTACTED, Lead.Status.CONSULTATION, Lead.Status.PROPOSAL_SENT, Lead.Status.BOOKED}
     for lead in leads:
         label = _source_label(lead.lead_source)
-        row = rows.setdefault(label, {"source": label, "leads": 0, "qualified_leads": 0,
+        row = rows.setdefault(label, {"source": label, "source_value": lead.lead_source or "__unknown__",
+                                      "leads": 0, "qualified_leads": 0,
                                       "bookings": 0, "booking_value": ZERO})
         row["leads"] += 1
         row["qualified_leads"] += lead.status in qualified
-    bookings = _during(ClientSession.objects.for_photographer(profile).filter(
+    bookings = _confirmed_during(ClientSession.objects.for_photographer(profile).filter(
         status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED),
-        client__converted_lead__isnull=False), "created_at", window.start, window.end).select_related("client__converted_lead")
+        client__converted_lead__isnull=False), window.start, window.end).select_related("client__converted_lead")
+    converted_sources = set()
     for booking in bookings:
         label = _source_label(booking.client.converted_lead.lead_source)
-        row = rows.setdefault(label, {"source": label, "leads": 0, "qualified_leads": 0,
+        row = rows.setdefault(label, {"source": label, "source_value": booking.client.converted_lead.lead_source or "__unknown__",
+                                      "leads": 0, "qualified_leads": 0,
                                       "bookings": 0, "booking_value": ZERO})
-        row["bookings"] += 1
+        row["booking_records"] = row.get("booking_records", 0) + 1
+        attribution = (label, booking.client.converted_lead_id)
+        if attribution not in converted_sources:
+            row["bookings"] += 1
+            converted_sources.add(attribution)
         row["booking_value"] += booking.booking_value or ZERO
     for row in rows.values():
         row["conversion_rate"] = _percent(row["bookings"], row["leads"])
-        row["average_value"] = row["booking_value"] / row["bookings"] if row["bookings"] else None
+        row["average_value"] = row["booking_value"] / row.get("booking_records", 0) if row.get("booking_records") else None
         row["formatted_booking_value"] = format_currency(row["booking_value"], currency)
         row["formatted_average_value"] = format_currency(row["average_value"], currency) if row["average_value"] is not None else "—"
+        row["url"] = f'{reverse("photographer_workspace:leads")}?source={row["source_value"]}'
     sort_fields = {"leads": "leads", "bookings": "bookings", "conversion": "conversion_rate", "value": "booking_value"}
     field = sort_fields.get(sort_key, "leads")
     return sorted(rows.values(), key=lambda row: (row[field] is not None, row[field] or ZERO, row["source"]), reverse=True)
@@ -203,10 +221,10 @@ def booking_value_by_source(profile, range_key, metric="booking_value", show_all
     """Return chart-ready acquisition results with payments attributed in bulk."""
     window = growth_window(range_key, today)
     rows = {label: {"source": label, "booking_value": ZERO, "collected_revenue": ZERO, "bookings": 0}
-            for label in set(SOURCE_LABELS.values())} if show_all else {}
-    bookings = (_during(ClientSession.objects.for_photographer(profile).filter(
+            for label in set(SOURCE_LABELS.values()) | {"Unknown"}} if show_all else {}
+    bookings = (_confirmed_during(ClientSession.objects.for_photographer(profile).filter(
         status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED),
-        client__converted_lead__isnull=False), "created_at", window.start, window.end)
+        client__converted_lead__isnull=False), window.start, window.end)
         .values("client__converted_lead__lead_source").annotate(
             bookings=Count("id"), booking_value=Coalesce(Sum("booking_value"), Value(ZERO), output_field=MONEY_FIELD)))
     for result in bookings:
@@ -245,16 +263,19 @@ def service_performance(profile, range_key, currency="USD", today=None):
     leads = (_during(Lead.objects.for_photographer(profile).filter(archived_at__isnull=True),
                      "created_at", window.start, window.end).values("event_type").annotate(
         leads=Count("id"), converted=Count("id", filter=Q(status=Lead.Status.BOOKED))))
-    sessions = (_during(ClientSession.objects.for_photographer(profile), "created_at", window.start, window.end)
+    sessions = (_confirmed_during(ClientSession.objects.for_photographer(profile).filter(
+                status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), window.start, window.end)
                 .values("session_type").annotate(
-                    bookings=Count("id", filter=Q(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))),
-                    cancelled=Count("id", filter=Q(status=ClientSession.Status.CANCELLED)),
-                    booking_value=Coalesce(Sum("booking_value", filter=Q(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))), Value(ZERO), output_field=MONEY_FIELD)))
+                    bookings=Count("id", distinct=True), cancelled=Value(0, output_field=IntegerField()),
+                    booking_value=Coalesce(Sum("booking_value"), Value(ZERO), output_field=MONEY_FIELD)))
+    cancellations = (_during(ClientSession.objects.for_photographer(profile).filter(
+                     status=ClientSession.Status.CANCELLED), "created_at", window.start, window.end)
+                     .values("session_type").annotate(cancelled=Count("id", distinct=True)))
     previous = {}
     if previous_end:
         previous = {item["session_type"]: item["value"] for item in
-                    _during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)),
-                            "created_at", previous_start, previous_end).values("session_type").annotate(value=Sum("booking_value"))}
+                    _confirmed_during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)),
+                                      previous_start, previous_end).values("session_type").annotate(value=Sum("booking_value"))}
     rows = {}
     for item in leads:
         name = (item["event_type"] or "Unspecified service").strip()
@@ -263,6 +284,11 @@ def service_performance(profile, range_key, currency="USD", today=None):
         name = (item["session_type"] or "Unspecified service").strip()
         row = rows.setdefault(name, {"service": name, "leads": 0, "converted": 0, "bookings": 0, "cancelled": 0, "booking_value": ZERO})
         row.update({key: item[key] for key in ("bookings", "cancelled", "booking_value")})
+    for item in cancellations:
+        name = (item["session_type"] or "Unspecified service").strip()
+        row = rows.setdefault(name, {"service": name, "leads": 0, "converted": 0, "bookings": 0,
+                                     "cancelled": 0, "booking_value": ZERO})
+        row["cancelled"] = item["cancelled"]
     output = []
     for row in rows.values():
         total_sessions = row["bookings"] + row["cancelled"]
@@ -291,27 +317,30 @@ def reputation_summary(profile, range_key, today=None):
     reviews = _during(all_reviews, "reviewed_at", window.start, window.end)
     requests = _during(ReviewRequest.objects.for_photographer(profile), "sent_at", window.start, window.end)
     total_requests = requests.count()
-    distribution = {row["rating"]: row["count"] for row in all_reviews.values("rating").annotate(count=Count("id"))}
-    sources = list(all_reviews.values("source", "source_name").annotate(count=Count("id"), average=Avg("rating")).order_by("-count"))
+    distribution = {row["rating"]: row["count"] for row in reviews.values("rating").annotate(count=Count("id"))}
+    sources = list(reviews.values("source", "source_name").annotate(count=Count("id"), average=Avg("rating")).order_by("-count"))
     for source in sources:
         source["label"] = source["source_name"] or ("LumisPixel" if source["source"] == Review.Source.LUMISPIXEL else "External")
         source["average"] = Decimal(source["average"]).quantize(Decimal("0.1"))
-    average = all_reviews.aggregate(value=Avg("rating"))["value"]
+    average = reviews.aggregate(value=Avg("rating"))["value"]
     return {"metrics": [("Average rating", f'{Decimal(average).quantize(Decimal("0.1"))} / 5' if average else "—"),
-                        ("Total reviews", all_reviews.count()), ("New reviews", reviews.count()),
+                        ("Total reviews", reviews.count()), ("New reviews", reviews.count()),
                         ("Pending review requests", requests.filter(completed_at__isnull=True).count()),
                         ("Review-request conversion rate", f'{_percent(requests.filter(completed_at__isnull=False).count(), total_requests)}%' if total_requests else "—"),
-                        ("Reviews requiring a response", all_reviews.filter(source=Review.Source.LUMISPIXEL, response="").count())],
+                        ("Reviews requiring a response", reviews.filter(source=Review.Source.LUMISPIXEL, response="").count())],
             "distribution": [(stars, distribution.get(stars, 0)) for stars in range(5, 0, -1)],
-            "sources": sources, "recent": all_reviews.first(), "has_data": all_reviews.exists() or total_requests}
+            "sources": sources, "recent": reviews.first(), "has_data": reviews.exists() or total_requests}
 
 
 def referral_summary(profile, range_key, currency="USD", today=None):
     """Summarize referral records while retaining the lead and booking as sources of truth."""
     window = growth_window(range_key, today)
     links = _during(ReferralLink.objects.for_photographer(profile), "created_at", window.start, window.end)
-    attrs = _during(ReferralAttribution.objects.for_photographer(profile), "created_at", window.start, window.end)
-    bookings = attrs.filter(booking__status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))
+    owned_attrs = ReferralAttribution.objects.for_photographer(profile).select_related("lead", "booking", "referral_link")
+    attrs = _during(owned_attrs, "lead__created_at", window.start, window.end)
+    bookings = _during(owned_attrs.filter(
+        booking__status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)),
+        "booking__confirmed_at", window.start, window.end)
     value = bookings.aggregate(total=Coalesce(Sum("booking__booking_value"), Value(ZERO), output_field=MONEY_FIELD))["total"]
     top = attrs.values("referral_link__referrer_name", "referral_link__referral_type").annotate(
         leads=Count("id"), bookings=Count("booking", filter=Q(booking__status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)))).order_by("-bookings", "-leads")[:5]
@@ -328,7 +357,7 @@ def retention_summary(profile, range_key, currency="USD", today=None):
     today = today or timezone.localdate()
     window = growth_window(range_key, today)
     clients = _during(Client.objects.for_photographer(profile), "created_at", window.start, window.end)
-    eligible = list(_during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), "created_at", window.start, window.end).select_related("client"))
+    eligible = list(_confirmed_during(ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)), window.start, window.end).select_related("client"))
     histories = {}
     for booking in ClientSession.objects.for_photographer(profile).filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED)).select_related("client").order_by("starts_at"):
         histories.setdefault(booking.client_id, []).append(booking)
