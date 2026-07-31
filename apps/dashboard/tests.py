@@ -198,6 +198,31 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "Booking List view")
 
+    def test_schedule_filters_persist_across_views_and_filter_bookings(self):
+        user, profile = self.make_photographer(True, email="filters@example.com", slug="filters")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya.filters@example.com")
+        starts_at = timezone.now() + timezone.timedelta(days=2)
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", location="Studio A", starts_at=starts_at, status=ClientSession.Status.CONFIRMED)
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Wedding", location="Garden", starts_at=starts_at, status=ClientSession.Status.CANCELLED)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:schedule"), {
+            "view": "agenda", "q": "Studio A", "session_type": "Portrait", "status": "confirmed",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Maya Cole")
+        self.assertNotContains(response, "Wedding ·")
+        self.assertContains(response, "3 active")
+        self.assertContains(response, "q=Studio+A", count=None)
+        self.assertContains(response, "Save View")
+        self.assertContains(response, "Show Availability")
+
+        cancelled = self.client.get(reverse("photographer_workspace:schedule"), {
+            "view": "list", "status": "cancelled", "show_cancelled": "1",
+        })
+        self.assertContains(cancelled, "Wedding")
+        self.assertContains(cancelled, "Cancelled")
+
     def test_bookings_schedule_can_mark_an_owned_session_complete(self):
         user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
         client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya@example.com")

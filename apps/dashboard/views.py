@@ -5,6 +5,7 @@ import csv
 import io
 import mimetypes
 import zipfile
+from urllib.parse import urlencode
 
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
@@ -1877,16 +1878,56 @@ def schedule(request):
         previous_date, next_date = selected_date - timedelta(days=30), selected_date + timedelta(days=30)
         date_range_label = f'{selected_date.strftime("%b %-d")} – {(range_end - timedelta(days=1)).strftime("%b %-d, %Y")}'
 
-    sessions = list(ClientSession.objects.filter(
+    filter_values = {
+        "q": request.GET.get("q", "").strip(),
+        "member": request.GET.get("member", ""),
+        "session_type": request.GET.get("session_type", ""),
+        "status": request.GET.get("status", ""),
+        "event_type": request.GET.get("event_type", ""),
+        "location": request.GET.get("location", ""),
+        "scope": request.GET.get("scope", "studio"),
+        "availability": request.GET.get("availability", ""),
+        "show_completed": request.GET.get("show_completed", ""),
+        "show_cancelled": request.GET.get("show_cancelled", ""),
+    }
+    filter_query = urlencode([(key, value) for key, value in filter_values.items() if value])
+    sessions_queryset = ClientSession.objects.filter(
         photographer=profile,
         starts_at__date__gte=range_start,
         starts_at__date__lt=range_end,
-    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at"))
+    )
+    visible_statuses = [ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED]
+    if filter_values["show_completed"]:
+        visible_statuses.append(ClientSession.Status.COMPLETED)
+    if filter_values["show_cancelled"]:
+        visible_statuses.append(ClientSession.Status.CANCELLED)
+    if filter_values["status"]:
+        visible_statuses = [filter_values["status"]]
+    sessions_queryset = sessions_queryset.filter(status__in=visible_statuses)
+    if filter_values["q"]:
+        term = filter_values["q"]
+        booking_number = term.upper().removeprefix("LP-").removeprefix("#")
+        query = (Q(client__first_name__icontains=term) | Q(client__last_name__icontains=term) |
+                 Q(session_type__icontains=term) | Q(location__icontains=term))
+        if booking_number.isdigit():
+            query |= Q(pk=int(booking_number))
+        sessions_queryset = sessions_queryset.filter(query)
+    if filter_values["session_type"]:
+        sessions_queryset = sessions_queryset.filter(session_type=filter_values["session_type"])
+    if filter_values["location"]:
+        sessions_queryset = sessions_queryset.filter(location=filter_values["location"])
+    if filter_values["event_type"] and filter_values["event_type"] != "booking":
+        sessions_queryset = sessions_queryset.none()
+    all_profile_sessions = ClientSession.objects.filter(photographer=profile)
+    session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
+    locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
+    sessions = list(sessions_queryset.select_related("client").order_by("starts_at"))
     owner = request.user.full_name or "Studio photographer"
     events = [{
         "starts_at": timezone.localtime(session.starts_at),
         "ends_at": timezone.localtime(session.starts_at) + timedelta(hours=2),
         "name": str(session.client), "session_type": session.session_type,
+        "booking_number": f"LP-{session.pk:04d}", "location": session.location or "Location not set",
         "photographer": owner, "status": session.get_status_display(),
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
         "all_day": False, "url": reverse("photographer_workspace:bookings"),
@@ -1914,9 +1955,30 @@ def schedule(request):
             events.append({
                 "starts_at": starts_at, "ends_at": starts_at + timedelta(hours=duration),
                 "name": name, "session_type": session_type, "photographer": owner,
+                "booking_number": f"LP-{1000 + offset:04d}", "location": "LumisPixel Studio" if kind != "vacation" else "Away",
                 "status": status, "kind": kind, "icon": icon, "warning": warning,
                 "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
             })
+
+    # Apply the same normalized filter state to illustrative and persisted events so
+    # switching calendar modes never changes the result set.
+    if using_sample_events:
+        q = filter_values["q"].casefold()
+        def sample_matches(event):
+            searchable = " ".join(str(event.get(key, "")) for key in ("name", "booking_number", "session_type", "location")).casefold()
+            return (
+                (not q or q in searchable) and
+                (not filter_values["member"] or filter_values["member"] == "me") and
+                (not filter_values["session_type"] or event["session_type"] == filter_values["session_type"]) and
+                (not filter_values["status"] or event["status"].casefold().replace(" ", "_") == filter_values["status"]) and
+                (not filter_values["event_type"] or event["kind"] == filter_values["event_type"]) and
+                (not filter_values["location"] or event["location"] == filter_values["location"]) and
+                (filter_values["show_completed"] or event["status"] != "Completed") and
+                (filter_values["show_cancelled"] or event["status"] != "Cancelled")
+            )
+        events = [event for event in events if sample_matches(event)]
+        session_types = sorted({event["session_type"] for event in events} | {item[3] for item in samples})
+        locations = ["Away", "LumisPixel Studio"]
 
     events_by_date = {}
     for event in events:
@@ -1948,6 +2010,13 @@ def schedule(request):
         "schedule_events": events,
         "using_sample_events": using_sample_events,
         "week_days": [{"date": range_start + timedelta(days=offset), "events": events_by_date.get(range_start + timedelta(days=offset), [])} for offset in range((range_end - range_start).days)],
+        "filter_values": filter_values,
+        "session_type_options": session_types,
+        "location_options": locations,
+        "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
+        "booking_status_options": [("tentative", "Tentative"), ("confirmed", "Confirmed"), ("in_progress", "In Progress"), ("completed", "Completed"), ("cancelled", "Cancelled")],
+        "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
+        "filter_query": filter_query,
     })
     return render(request, "photographer_workspace/bookings/schedule.html", context)
 
