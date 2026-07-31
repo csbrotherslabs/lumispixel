@@ -680,6 +680,13 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Attention Required")
         self.assertContains(response, "No upcoming payments")
         self.assertContains(response, "Everything is up to date")
+        self.assertContains(response, "Recent Financial Activity")
+        self.assertContains(response, "View all transactions")
+        for activity in ("Invoice created", "Invoice sent", "Invoice viewed", "Payment received",
+                         "Payment failed", "Refund initiated", "Refund completed", "Credit issued",
+                         "Invoice voided", "Due date changed"):
+            self.assertContains(response, activity)
+        self.assertContains(response, "No financial activity yet")
         self.assertContains(response, "?filter=upcoming")
         self.assertContains(response, "?filter=attention")
         self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
@@ -695,6 +702,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(operations_loading, "Loading records requiring attention")
         self.assertContains(operations_error, "Upcoming payments unavailable")
         self.assertContains(operations_error, "Attention items unavailable")
+        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=loading'), "Loading financial activity")
+        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=error'), "Financial activity is unavailable")
+        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=permission'), "don't have permission")
+        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_type=payment_failed'), "No matching activity")
 
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)

@@ -33,6 +33,7 @@ from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary
 from apps.dashboard.financial_analytics import financial_analytics
 from apps.dashboard.financial_operations import financial_operations
+from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2267,10 +2268,19 @@ def financial_overview(request):
     if operations_state not in {"ready", "loading", "error"}:
         operations_state = "ready"
     operations = financial_operations(profile, getattr(profile, "default_currency", "USD"))
+    activity_type = request.GET.get("activity_type", "")
+    if activity_type not in TYPE_MAP:
+        activity_type = ""
+    activity_state = request.GET.get("activity_state", "ready")
+    if activity_state not in {"ready", "loading", "error", "permission"}:
+        activity_state = "ready"
+    activity = financial_activity(profile, range_key, request.GET.get("page", 1), activity_type,
+                                  getattr(profile, "default_currency", "USD"))
     context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options,
                     "financial_metrics": summary["cards"], "financial_has_activity": summary["has_activity"],
                     "financial_analytics": analytics, "financial_operations": operations,
-                    "financial_operations_state": operations_state})
+                    "financial_operations_state": operations_state, "financial_activity": activity,
+                    "financial_activity_state": activity_state})
     return render(request, "photographer_workspace/financial/overview.html", context)
 
 
