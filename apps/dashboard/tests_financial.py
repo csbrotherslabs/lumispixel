@@ -162,3 +162,42 @@ class FinancialDatabaseSelectorTests(TestCase):
         self.assertEqual(payments.context["transaction_records"]["total"], 0)
         self.assertEqual(payments.context["transaction_state"], "empty")
         self.assertContains(payments, "No matching transactions")
+
+    def test_record_detail_drawer_returns_reusable_owner_scoped_markup(self):
+        profile = self.profile("drawer-owner")
+        invoice = self.invoice(profile, status=ClientInvoice.Status.PARTIALLY_PAID,
+                               total=Decimal("325.00"), amount_paid=Decimal("100.00"))
+        payment = InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=Decimal("100.00"))
+        self.client.force_login(profile.user)
+
+        response = self.client.get(reverse("photographer_workspace:financial_record_detail", args=["payment", payment.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        markup = response.json()["html"]
+        for heading in ("Financial summary", "Client and booking", "Record details", "Related records",
+                        "Activity history", "Internal notes"):
+            self.assertIn(heading, markup)
+        self.assertIn(f"PAY-{payment.pk:06d}", markup)
+        self.assertIn("$100.00", markup)
+
+    def test_record_detail_does_not_disclose_another_studios_record(self):
+        owner, intruder = self.profile("drawer-private"), self.profile("drawer-intruder")
+        private_invoice = self.invoice(owner, suffix="private-client")
+        self.client.force_login(intruder.user)
+
+        response = self.client.get(reverse("photographer_workspace:financial_record_detail", args=["invoice", private_invoice.pk]))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, "private-client", status_code=404)
+
+    def test_transactions_include_direct_link_and_drawer_accessibility_shell(self):
+        profile = self.profile("drawer-shell")
+        invoice = self.invoice(profile, status=ClientInvoice.Status.SENT)
+        self.client.force_login(profile.user)
+
+        response = self.client.get(reverse("photographer_workspace:transactions"), {"range": "all_time", "invoice": invoice.pk})
+
+        self.assertContains(response, f"?invoice={invoice.pk}")
+        self.assertContains(response, 'role="dialog"')
+        self.assertContains(response, 'aria-modal="true"')
+        self.assertContains(response, "financial_record_drawer.js")

@@ -1,0 +1,14 @@
+<header class="lpw-record-drawer__header">
+  <div><span class="lpw-transaction-type lpw-transaction-type--{{ record.kind }}">{{ record.type_label }}</span><h2 id="financial-record-title">{{ record.reference }}</h2><span class="lpw-financial-badge lpw-financial-badge--{{ record.status }}">{{ record.status_label }}</span></div>
+  <strong class="lpw-record-drawer__amount">{{ record.amount }}</strong>
+  <details class="lpw-row-menu"><summary aria-label="Actions for {{ record.reference }}"><i class="bi bi-three-dots"></i></summary><div><a href="{{ record.client_url }}">Open client</a>{% if record.booking %}<a href="{{ record.booking_url }}">Open booking</a>{% endif %}<button type="button" disabled>More actions coming soon</button></div></details>
+  <button class="lpw-record-drawer__close" type="button" data-record-close aria-label="Close record details"><i class="bi bi-x-lg"></i></button>
+</header>
+<div class="lpw-record-drawer__body">
+  <section><h3>Financial summary</h3><dl>{% for label, value in record.summary %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl></section>
+  <section><h3>Client and booking</h3><dl><div><dt>Client</dt><dd><a href="{{ record.client_url }}">{{ record.client }}</a></dd></div><div><dt>Related booking</dt><dd>{% if record.booking %}<a href="{{ record.booking_url }}">{{ record.booking.session_type }}</a>{% else %}No booking linked{% endif %}</dd></div></dl></section>
+  <section><h3>Record details</h3><dl>{% for label, value in record.details %}<div><dt>{{ label }}</dt><dd>{% if value.isoformat %}<time datetime="{{ value|date:'c' }}">{{ value|date:'M j, Y, g:i A' }}</time>{% else %}{{ value }}{% endif %}</dd></div>{% endfor %}</dl></section>
+  <section><h3>Related records</h3><ul class="lpw-record-related">{% for related in record.related_records %}<li><a href="{{ related.url }}" data-related-record>{{ related.label }}<i class="bi bi-chevron-right"></i></a></li>{% empty %}<li>No related records</li>{% endfor %}</ul></section>
+  <section><h3>Activity history</h3><ol class="lpw-record-timeline">{% for event in record.timeline %}<li><i></i><div><strong>{{ event.label }}</strong>{% if event.detail %}<p>{{ event.detail }}</p>{% endif %}<time datetime="{{ event.at|date:'c' }}">{{ event.at|date:'M j, Y, g:i A' }}</time></div></li>{% endfor %}</ol></section>
+  <section><h3>Internal notes</h3><div class="lpw-record-empty"><i class="bi bi-sticky"></i><p>No internal notes have been added to this record.</p></div></section>
+</div>
