@@ -25,7 +25,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceLineItem, InvoicePayment, Lead
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
@@ -38,6 +38,7 @@ from apps.dashboard.financial_operations import financial_operations
 from apps.dashboard.financial_activity import TYPE_MAP, financial_activity
 from apps.dashboard.financial_transactions import transaction_records
 from apps.dashboard.financial_record_detail import financial_record_detail
+from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
 WORKSPACE_MODULES = [
@@ -2386,8 +2387,43 @@ def financial_transactions(request):
         "transaction_records": records,
         "sort_links": sort_links,
         "page_query": page_query.urlencode(),
+        "financial_clients": Client.objects.for_photographer(profile).filter(status=Client.Status.ACTIVE),
+        "financial_invoices": ClientInvoice.objects.for_photographer(profile).select_related("client").exclude(status__in=[ClientInvoice.Status.DRAFT, ClientInvoice.Status.VOID, ClientInvoice.Status.PAID]),
+        "refundable_payments": [
+            {"payment": payment, "remaining": payment.amount - (payment.refunds.filter(status=PaymentRefund.Status.COMPLETED).aggregate(total=Sum("amount"))["total"] or Decimal("0.00"))}
+            for payment in InvoicePayment.objects.for_photographer(profile).filter(status=InvoicePayment.Status.COMPLETED).select_related("invoice__client")
+        ],
+        "payment_methods": InvoicePayment.Method.choices,
+        "today": timezone.localdate(),
     })
     return render(request, "photographer_workspace/financial/transactions.html", context)
+
+
+def _action_errors(exc):
+    if hasattr(exc, "message_dict"):
+        return {key: values[0] for key, values in exc.message_dict.items()}
+    return {"form": str(exc)}
+
+
+@photographer_workspace_required
+@require_POST
+def financial_action(request, action):
+    """Run a confirmed financial mutation and return refresh targets to the client."""
+    handlers = {"payment": record_payment, "refund": issue_refund, "credit": add_credit}
+    if action not in handlers:
+        return JsonResponse({"error": "Unknown financial action."}, status=404)
+    if request.POST.get("confirmed") != "yes":
+        return JsonResponse({"errors": {"confirmation": "Confirm this financial action before continuing."}}, status=400)
+    try:
+        record, duplicate = handlers[action](request.user.photographer_profile, request.POST)
+    except ValidationError as exc:
+        return JsonResponse({"errors": _action_errors(exc)}, status=400)
+    invoice = record.payment.invoice if isinstance(record, PaymentRefund) else record.invoice
+    return JsonResponse({
+        "ok": True, "duplicate": duplicate, "record_type": record.__class__.__name__, "record_id": record.pk,
+        "invoice_id": invoice.pk, "detail_url": reverse("photographer_workspace:financial_record_detail", args=[action, record.pk]),
+        "message": {"payment": "Payment recorded.", "refund": "Refund completed.", "credit": "Credit added."}[action],
+    })
 
 
 @photographer_workspace_required

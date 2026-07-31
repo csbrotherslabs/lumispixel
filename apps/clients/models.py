@@ -515,14 +515,28 @@ class InvoicePayment(PhotographerOwnedModel):
         FAILED = "failed", "Failed"
         CANCELED = "canceled", "Canceled"
 
+    class Method(models.TextChoices):
+        CARD = "card", "Card"
+        BANK_TRANSFER = "bank_transfer", "Bank transfer"
+        CASH = "cash", "Cash"
+        CHECK = "check", "Check"
+        EXTERNAL = "external", "External payment"
+        OTHER = "other", "Other"
+
     invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="payments")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=Method.choices, default=Method.OTHER)
+    external_reference = models.CharField(max_length=120, blank=True)
+    processor_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    internal_note = models.TextField(blank=True)
+    submission_key = models.CharField(max_length=64, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.COMPLETED)
     paid_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "paid_at"], name="payment_owner_status_date")]
+        constraints = [models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="payment_owner_submission_unique")]
 
     def clean(self):
         if self.invoice_id and self.photographer_id != self.invoice.photographer_id:
@@ -540,12 +554,16 @@ class PaymentRefund(PhotographerOwnedModel):
 
     payment = models.ForeignKey(InvoicePayment, on_delete=models.CASCADE, related_name="refunds")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.CharField(max_length=255, default="")
+    internal_note = models.TextField(blank=True)
+    submission_key = models.CharField(max_length=64, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.COMPLETED)
     refunded_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "refunded_at"], name="refund_owner_status_date")]
+        constraints = [models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="refund_owner_submission_unique")]
 
     def clean(self):
         if self.payment_id and self.photographer_id != self.payment.photographer_id:
@@ -562,12 +580,23 @@ class InvoiceCredit(PhotographerOwnedModel):
 
     invoice = models.ForeignKey(ClientInvoice, on_delete=models.CASCADE, related_name="credits")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    original_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    remaining_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    reason = models.CharField(max_length=255, default="")
+    expires_at = models.DateField(blank=True, null=True)
+    internal_note = models.TextField(blank=True)
+    submission_key = models.CharField(max_length=64, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPLIED)
     applied_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "applied_at"], name="credit_owner_status_date")]
+        constraints = [
+            models.CheckConstraint(condition=Q(remaining_amount__gte=0), name="credit_remaining_nonnegative"),
+            models.CheckConstraint(condition=Q(remaining_amount__lte=F("original_amount")), name="credit_remaining_not_over_original"),
+            models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="credit_owner_submission_unique"),
+        ]
 
     def clean(self):
         if self.invoice_id and self.photographer_id != self.invoice.photographer_id:

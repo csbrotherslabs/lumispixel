@@ -71,6 +71,7 @@ urlpatterns = [
     path("financial/", views.financial_overview, name="financial_overview"),
     path("financial/transactions/", views.financial_transactions, name="transactions"),
     path("financial/transactions/<str:record_type>/<int:pk>/", views.financial_record_detail_view, name="financial_record_detail"),
+    path("financial/transactions/actions/<str:action>/", views.financial_action, name="financial_action"),
     path("growth/", views.module_placeholder, {"module_key": "growth"}, name="growth"),
     path("invoices/", views.invoices_workspace, name="invoices"),
     path("invoices/create/", views.invoice_create, name="invoice_create"),
