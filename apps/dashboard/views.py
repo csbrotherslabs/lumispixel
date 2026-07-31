@@ -1,5 +1,6 @@
 from decimal import Decimal
-from datetime import timedelta
+from calendar import Calendar
+from datetime import date, timedelta
 import csv
 import io
 import mimetypes
@@ -52,20 +53,21 @@ WORKSPACE_MODULES += [
     {"key": key, "url_name": key, "icon": "", "title": title, "description": f"{title} tools for your photography business are being prepared.", "coming_soon": True}
     for key, title in [
         ("crm", "CRM"), ("leads", "Leads"), ("ai_search", "AI Search"), ("albums", "Albums"),
-        ("calendar", "Calendar"), ("bookings", "Bookings"), ("contracts", "Contracts"),
+        ("calendar", "Schedule"), ("bookings", "Bookings"), ("contracts", "Contracts"),
         ("invoices", "Invoices"), ("payments", "Payments"), ("revenue", "Revenue"),
         ("reviews", "Reviews"), ("referrals", "Referrals"), ("workflows", "Workflows"),
         ("ai_assistant", "AI Assistant"), ("team", "Team"), ("equipment", "Equipment"),
         ("tasks", "Tasks"), ("notifications", "Notifications"), ("help", "Help"),
     ]
 ]
+next(module for module in WORKSPACE_MODULES if module["key"] == "calendar")["url_name"] = "schedule"
 MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
     {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("clients", "Clients", "bi-people-fill")]},
     {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_archive", "Gallery Archive", "bi-archive"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
-    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Overview", "bi-grid-1x2"), ("leads", "Leads", "bi-person-plus"), ("calendar", "Schedule", "bi-calendar3")]},
+    {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Dashboard", "bi-grid-1x2"), ("calendar", "Schedule", "bi-calendar3"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
     {"title": "Business Growth", "icon": "bi-rocket-takeoff", "items": [("marketing", "Marketing", "bi-megaphone"), ("reviews", "Reviews", "bi-star"), ("referrals", "Referrals", "bi-share")]},
     {"title": "Automation", "icon": "bi-lightning-charge", "items": [("workflows", "Workflows", "bi-diagram-3"), ("ai_assistant", "AI Assistant", "bi-chat-dots") ]},
@@ -1836,6 +1838,83 @@ def bookings_dashboard(request):
         ],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def schedule(request):
+    """Render the responsive schedule shell without adding scheduling mutations."""
+    profile = request.user.photographer_profile
+    today = timezone.localdate()
+    try:
+        selected_date = date.fromisoformat(request.GET.get("date", ""))
+    except ValueError:
+        selected_date = today
+
+    view = request.GET.get("view", "month")
+    view_labels = {
+        "month": "Month", "week": "Week", "day": "Day",
+        "agenda": "Agenda", "list": "Booking List",
+    }
+    if view not in view_labels:
+        view = "month"
+
+    month_start = selected_date.replace(day=1)
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    previous_month = (month_start - timedelta(days=1)).replace(day=1)
+    week_start = selected_date - timedelta(days=selected_date.weekday())
+    if view == "month":
+        range_start, range_end = month_start, next_month
+        previous_date, next_date = previous_month, next_month
+        date_range_label = selected_date.strftime("%B %Y")
+    elif view == "week":
+        range_start, range_end = week_start, week_start + timedelta(days=7)
+        previous_date, next_date = selected_date - timedelta(days=7), selected_date + timedelta(days=7)
+        date_range_label = f'{week_start.strftime("%b %-d")} – {(range_end - timedelta(days=1)).strftime("%b %-d, %Y")}'
+    elif view == "day":
+        range_start, range_end = selected_date, selected_date + timedelta(days=1)
+        previous_date, next_date = selected_date - timedelta(days=1), selected_date + timedelta(days=1)
+        date_range_label = selected_date.strftime("%A, %B %-d, %Y")
+    else:
+        range_start, range_end = selected_date, selected_date + timedelta(days=30)
+        previous_date, next_date = selected_date - timedelta(days=30), selected_date + timedelta(days=30)
+        date_range_label = f'{selected_date.strftime("%b %-d")} – {(range_end - timedelta(days=1)).strftime("%b %-d, %Y")}'
+
+    sessions = list(ClientSession.objects.filter(
+        photographer=profile,
+        starts_at__date__gte=range_start,
+        starts_at__date__lt=range_end,
+    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at"))
+    sessions_by_date = {}
+    for session in sessions:
+        sessions_by_date.setdefault(timezone.localtime(session.starts_at).date(), []).append(session)
+
+    calendar_weeks = []
+    for week in Calendar(firstweekday=0).monthdatescalendar(selected_date.year, selected_date.month):
+        calendar_weeks.append([
+            {
+                "date": day,
+                "in_month": day.month == selected_date.month,
+                "is_today": day == today,
+                "sessions": sessions_by_date.get(day, []),
+            }
+            for day in week
+        ])
+
+    context = _dashboard_context(request, "calendar", "Schedule")
+    context.update({
+        "schedule_view": view,
+        "schedule_view_label": view_labels[view],
+        "schedule_views": view_labels.items(),
+        "selected_date": selected_date,
+        "today": today,
+        "date_range_label": date_range_label,
+        "previous_date": previous_date,
+        "next_date": next_date,
+        "calendar_weeks": calendar_weeks,
+        "schedule_sessions": sessions,
+    })
+    return render(request, "photographer_workspace/bookings/schedule.html", context)
 
 
 @photographer_workspace_required
