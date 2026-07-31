@@ -106,7 +106,7 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing", "bookings"}:
+            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing", "bookings", "financial_overview"}:
                 self.assertContains(response, "Back to Dashboard")
 
     def test_bookings_dashboard_structure_navigation_and_states(self):
@@ -657,6 +657,25 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(invoice_page, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
         marketing_page = self.client.get(reverse("photographer_workspace:marketing"))
         self.assertContains(marketing_page, f'href="{reverse("photographer_workspace:growth")}" class="is-active"')
+
+    def test_financial_overview_renders_shell_header_actions_and_states(self):
+        user, _ = self.make_photographer(True, email="finance-shell@example.com", slug="finance-shell")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:financial_overview"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Financial Overview")
+        self.assertContains(response, "Track revenue, payments, balances, and financial activity.")
+        self.assertContains(response, "Create invoice")
+        for action in ("Record payment", "Issue refund", "Add credit"):
+            self.assertContains(response, action)
+        self.assertContains(response, "Your financial overview is ready for activity")
+        self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
+
+        loading_url = f'{reverse("photographer_workspace:financial_overview")}?state=loading'
+        error_url = f'{reverse("photographer_workspace:financial_overview")}?state=error'
+        self.assertContains(self.client.get(loading_url), "Loading financial overview")
+        self.assertContains(self.client.get(error_url), "Financial activity could not be loaded")
 
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)

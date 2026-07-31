@@ -1,0 +1,39 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-financial-page">
+  <header class="lpw-financial-header">
+    <div class="lpw-financial-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Overview</strong></nav>
+      <h1 id="workspace-page-title">Financial Overview</h1>
+      <p>Track revenue, payments, balances, and financial activity.</p>
+    </div>
+    <div class="lpw-financial-actions">
+      <form class="lpw-date-range" method="get">
+        <label for="financial-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Financial date range</span></label>
+        <select id="financial-range" name="range" onchange="this.form.submit()">
+          {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </form>
+      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-receipt" aria-hidden="true"></i>Create invoice</a>
+      <details class="lpw-financial-menu">
+        <summary class="lpw-btn" aria-label="More financial actions"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div>
+          <a href="{% url 'photographer_workspace:transactions' %}?action=record-payment"><i class="bi bi-cash-coin" aria-hidden="true"></i><span><strong>Record payment</strong><small>Add an offline or manual payment</small></span></a>
+          <a href="{% url 'photographer_workspace:transactions' %}?action=issue-refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue refund</strong><small>Return a completed payment</small></span></a>
+          <a href="{% url 'photographer_workspace:transactions' %}?action=add-credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add credit</strong><small>Apply credit to a client balance</small></span></a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <div class="lpw-financial-content">
+    {% if financial_state == 'loading' %}
+      <section class="lpw-financial-state" aria-live="polite" aria-busy="true"><span class="lpw-bookings-spinner" aria-hidden="true"></span><h2>Loading financial overview</h2><p>Gathering your latest invoices, payments, and balances.</p></section>
+    {% elif financial_state == 'error' %}
+      <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Financial activity could not be loaded</h2><p>Refresh the page to try again. Your financial records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:financial_overview' %}?range={{ range_key }}">Try again</a></section>
+    {% else %}
+      <section class="lpw-financial-state" aria-labelledby="financial-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="financial-empty-title">Your financial overview is ready for activity</h2><p>Invoices, payments, refunds, and credits will appear here as your business records grow.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create your first invoice</a></section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
