@@ -342,3 +342,36 @@
   select.addEventListener('change', draw);
   draw();
 }());
+
+(function () {
+  const form = document.querySelector('[data-schedule-filter-form]');
+  if (!form) return;
+  const trigger = document.querySelector('[data-schedule-filter-open]');
+  if (trigger) trigger.addEventListener('click', function () {
+    const open = trigger.getAttribute('aria-expanded') === 'true';
+    trigger.setAttribute('aria-expanded', String(!open));
+    form.classList.toggle('is-open', !open);
+    if (!open) form.querySelector('input:not([type="hidden"]), select').focus();
+  });
+  form.querySelectorAll('select, input[type="date"], input[type="radio"], input[type="checkbox"]').forEach(function (control) {
+    control.addEventListener('change', function () { form.requestSubmit(); });
+  });
+  document.querySelectorAll('[data-remove-filter]').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      const control = form.elements[chip.dataset.removeFilter];
+      if (!control) return;
+      if (control instanceof RadioNodeList) Array.from(control).forEach(function (item) { item.checked = item.value === 'studio'; });
+      else if (control.type === 'checkbox') control.checked = false;
+      else control.value = '';
+      form.requestSubmit();
+    });
+  });
+  const save = document.querySelector('[data-save-schedule-view]');
+  if (save) save.addEventListener('click', function () {
+    const state = {};
+    new FormData(form).forEach(function (value, key) { state[key] = value; });
+    window.localStorage.setItem('lpw-schedule-saved-view', JSON.stringify(state));
+    save.querySelector('span').textContent = 'View saved';
+    save.querySelector('i').className = 'bi bi-bookmark-check-fill';
+  });
+}());
