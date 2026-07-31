@@ -41,8 +41,8 @@ from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, cs
                                            run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
 from apps.dashboard.growth_analytics import (booking_value_by_source, growth_summary, lead_funnel,
-                                             lead_source_performance, referral_summary, reputation_summary,
-                                             retention_summary, service_performance)
+                                             growth_opportunities, lead_source_performance, recent_growth_activity,
+                                             referral_summary, reputation_summary, retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
@@ -2316,11 +2316,6 @@ def growth_overview(request):
     page_state = request.GET.get("state", "ready")
     if page_state not in {"ready", "loading", "empty", "permission", "error"}:
         page_state = "ready"
-    sections = [
-        ("growth-metrics", "Growth metrics", "bi-graph-up-arrow", "Key acquisition and conversion signals will appear here."),
-        ("growth-opportunities", "Growth opportunities", "bi-lightbulb", "Find practical next steps based on business activity."),
-        ("recent-activity", "Recent activity", "bi-clock-history", "Review the latest growth-related activity."),
-    ]
     context = _dashboard_context(request, "growth", "Growth Overview")
     metrics = growth_summary(request.user.photographer_profile, range_key,
                              getattr(request.user.photographer_profile, "default_currency", "USD"))
@@ -2337,7 +2332,6 @@ def growth_overview(request):
         "range_key": range_key,
         "range_options": range_options,
         "compare_previous": request.GET.get("compare") == "1",
-        "growth_sections": sections,
         "growth_metrics": metrics["cards"],
         "funnel_stages": lead_funnel(request.user.photographer_profile, range_key, currency),
         "source_rows": lead_source_performance(request.user.photographer_profile, range_key, currency, source_sort),
@@ -2350,6 +2344,9 @@ def growth_overview(request):
         "reviews": reputation_summary(request.user.photographer_profile, range_key),
         "referrals": referral_summary(request.user.photographer_profile, range_key, currency),
         "retention": retention_summary(request.user.photographer_profile, range_key, currency),
+        "opportunities": growth_opportunities(request.user.photographer_profile,
+                                                request.GET.get("show_all_opportunities") == "1"),
+        "recent_growth_activity": recent_growth_activity(request.user.photographer_profile),
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
 

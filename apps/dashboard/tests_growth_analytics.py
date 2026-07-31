@@ -5,10 +5,10 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientSession, Lead
+from apps.clients.models import Client, ClientActivity, ClientSession, Lead
 from apps.dashboard.growth_analytics import (
-    booking_value_by_source, growth_summary, growth_window, lead_funnel, lead_source_performance,
-    service_performance,
+    booking_value_by_source, growth_opportunities, growth_summary, growth_window, lead_funnel,
+    lead_source_performance, recent_growth_activity, service_performance,
 )
 
 
@@ -98,3 +98,34 @@ class GrowthAnalyticsTests(TestCase):
         self.assertEqual(portrait["bookings"], 1)
         self.assertEqual(portrait["formatted_value"], "$600.00")
         self.assertIn("Highest value", portrait["badges"])
+
+    def test_opportunities_are_data_based_ranked_and_owner_scoped(self):
+        old = timezone.now() - timedelta(days=5)
+        lead = Lead.objects.create(photographer=self.profile, first_name="Follow", status=Lead.Status.NEW)
+        Lead.objects.filter(pk=lead.pk).update(created_at=old)
+        private = Lead.objects.create(photographer=self.other, first_name="Private", status=Lead.Status.NEW)
+        Lead.objects.filter(pk=private.pk).update(created_at=old)
+
+        result = growth_opportunities(self.profile, today=self.today)
+
+        self.assertEqual(result["items"][0]["title"], "Leads need a follow-up")
+        self.assertEqual(result["items"][0]["priority"], "High")
+        self.assertEqual(result["items"][0]["count"], 1)
+        self.assertEqual(growth_opportunities(self.profile, today=self.today)["total"], 1)
+
+    def test_recent_activity_exposes_only_supported_owner_events(self):
+        lead = Lead.objects.create(photographer=self.profile, first_name="Ada", lead_source="Website")
+        ClientActivity.objects.create(photographer=self.profile, lead=lead,
+                                      event_type=ClientActivity.EventType.LEAD_CREATED,
+                                      metadata={"team_member": "Sam"})
+        other_lead = Lead.objects.create(photographer=self.other, first_name="Private")
+        ClientActivity.objects.create(photographer=self.other, lead=other_lead,
+                                      event_type=ClientActivity.EventType.LEAD_CREATED)
+
+        rows = recent_growth_activity(self.profile)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["activity"], "New lead received")
+        self.assertEqual(rows[0]["person"], "Ada")
+        self.assertEqual(rows[0]["source"], "Website")
+        self.assertEqual(rows[0]["team_member"], "Sam")
