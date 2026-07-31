@@ -65,7 +65,7 @@ MODULE_BY_KEY = {m["key"]: m for m in WORKSPACE_MODULES}
 
 NAVIGATION = [
     {"title": "", "icon": "bi-speedometer2", "items": [("dashboard", "Dashboard", "bi-grid-1x2")]},
-    {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("leads", "Leads", "bi-person-plus"), ("clients", "Clients", "bi-people-fill")]},
+    {"title": "Clients", "icon": "bi-people", "items": [("crm", "CRM", "bi-person-lines-fill"), ("clients", "Clients", "bi-people-fill")]},
     {"title": "Galleries", "icon": "bi-images", "items": [("galleries", "Galleries Dashboard", "bi-grid"), ("all_galleries", "All Galleries", "bi-images"), ("gallery_archive", "Gallery Archive", "bi-archive"), ("gallery_upload_queue", "Upload Queue", "bi-cloud-arrow-up"), ("ai_processing", "AI Processing", "bi-cpu"), ("ai_search", "AI Search", "bi-stars"), ("albums", "Albums", "bi-collection")]},
     {"title": "Bookings", "icon": "bi-calendar-check", "items": [("bookings", "Dashboard", "bi-grid-1x2"), ("calendar", "Schedule", "bi-calendar3"), ("contracts", "Contracts", "bi-file-earmark-text")]},
     {"title": "Financial", "icon": "bi-wallet2", "items": [("invoices", "Invoices", "bi-receipt"), ("payments", "Payments", "bi-credit-card"), ("revenue", "Revenue", "bi-graph-up-arrow")]},
@@ -1774,19 +1774,21 @@ def bookings_dashboard(request):
 
     overdue_retainers = open_invoices.filter(due_date__lt=timezone.localdate()).count()
     awaiting_replies = all_leads.filter(status=Lead.Status.NEW).count()
+    upcoming_session_count = sessions.filter(
+        starts_at__lt=now + timedelta(days=7), status=ClientSession.Status.CONFIRMED,
+    ).count()
     action_center = [
-        {"count": 4, "description": "contracts awaiting signatures", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Chen Wedding · Contract", "action": "Send reminder", "url": reverse("photographer_workspace:contracts")},
-        {"count": overdue_retainers, "description": "retainers overdue", "icon": "bi-credit-card-2-front", "priority": "Urgent", "tone": "urgent", "related": "Open client invoices", "action": "Review payments", "url": reverse("photographer_workspace:payments")},
-        {"count": 2, "description": "questionnaires incomplete", "icon": "bi-ui-checks-grid", "priority": "Follow Up", "tone": "followup", "related": "Harper Family · Portrait", "action": "View forms", "url": reverse("photographer_workspace:clients")},
-        {"count": awaiting_replies, "description": "inquiries awaiting replies", "icon": "bi-reply", "priority": "Urgent", "tone": "urgent", "related": "Newest unanswered inquiries", "action": "Reply now", "url": f"{reverse('photographer_workspace:leads')}?status={Lead.Status.NEW}"},
-        {"count": 1, "description": "potential scheduling conflict", "icon": "bi-calendar-x", "priority": "Urgent", "tone": "urgent", "related": "Oct 18 · Two sessions overlap", "action": "Resolve conflict", "url": reverse("photographer_workspace:calendar")},
-        {"count": 3, "description": "sessions without assigned staff", "icon": "bi-person-exclamation", "priority": "Due Soon", "tone": "soon", "related": "Upcoming studio sessions", "action": "Assign staff", "url": reverse("photographer_workspace:team")},
+        {"count": awaiting_replies, "description": "new leads awaiting response", "icon": "bi-reply", "priority": "Urgent", "tone": "urgent", "related": "Newest unanswered leads", "action": "Reply now", "url": f"{reverse('photographer_workspace:leads')}?status={Lead.Status.NEW}"},
+        {"count": 4, "description": "contracts awaiting signature", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Client contracts requiring follow-up", "action": "Send reminder", "url": reverse("photographer_workspace:contracts")},
+        {"count": open_invoices.count(), "description": "outstanding payments", "icon": "bi-credit-card-2-front", "priority": "Urgent" if overdue_retainers else "Due Soon", "tone": "urgent" if overdue_retainers else "soon", "related": "Open client invoices", "action": "Review payments", "url": reverse("photographer_workspace:payments")},
+        {"count": 2, "description": "questionnaires awaiting completion", "icon": "bi-ui-checks-grid", "priority": "Follow Up", "tone": "followup", "related": "Client preparation forms", "action": "View forms", "url": reverse("photographer_workspace:clients")},
+        {"count": upcoming_session_count, "description": f"upcoming session{'s' if upcoming_session_count != 1 else ''} this week", "icon": "bi-calendar-event", "priority": "Upcoming", "tone": "followup", "related": "Confirmed sessions in the next 7 days", "action": "Open schedule", "url": reverse("photographer_workspace:calendar")},
     ]
     action_center = [item for item in action_center if item["count"]]
     priority_rank = {"urgent": 0, "soon": 1, "followup": 2}
     action_center.sort(key=lambda item: (priority_rank[item["tone"]], -item["count"]))
 
-    context = _dashboard_context(request, "bookings", "Bookings")
+    context = _dashboard_context(request, "bookings", "Overview")
     context.update({
         "booking_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
         "range_key": range_key,
@@ -1800,8 +1802,14 @@ def bookings_dashboard(request):
             {"label": "Booking Revenue", "value": f"{profile.default_currency} {paid_revenue:,.2f}", "icon": "bi-graph-up-arrow", "support": "Payments collected", "indicator": "All time", "tone": "positive", "tooltip": "Total payments recorded against your client invoices.", "link_label": "View revenue", "url": reverse("photographer_workspace:revenue")},
             {"label": "Conversion Rate", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel", "support": "Inquiries booked", "indicator": f"{all_leads.filter(status=Lead.Status.BOOKED).count()} converted", "tone": "positive" if conversion_rate else "neutral", "tooltip": "Percentage of active inquiries whose current status is booked.", "link_label": "View pipeline", "url": reverse("photographer_workspace:leads")},
         ],
-        "upcoming_bookings": sessions.filter(status=ClientSession.Status.CONFIRMED).order_by("starts_at")[:8],
-        "today_sessions": today_sessions,
+        "upcoming_bookings": sessions.filter(status=ClientSession.Status.CONFIRMED).order_by("starts_at")[:5],
+        "today_sessions": today_sessions[:5],
+        "today_focus": [
+            {"icon": "bi-camera", "value": today_sessions.count(), "label": "shoots today"},
+            {"icon": "bi-pen", "value": 1, "label": "contract awaiting signature"},
+            {"icon": "bi-cash-stack", "value": f"{profile.default_currency} {outstanding:,.0f}", "label": "payment due"},
+            {"icon": "bi-images", "value": 1, "label": "gallery ready for delivery"},
+        ],
         "schedule_owner": profile.display_name or request.user.full_name or "Studio team",
         "recent_inquiries": inquiries.order_by("-created_at")[:5],
         "inquiry_pipeline": inquiry_pipeline,
@@ -1823,10 +1831,9 @@ def bookings_dashboard(request):
         "session_breakdown": session_breakdown,
         "recent_booking_activity": recent_activity,
         "booking_quick_actions": [
+            {"label": "New Lead", "icon": "bi-envelope-plus", "url": reverse("photographer_workspace:add_lead"), "help": "Capture a new lead"},
             {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:bookings")}?action=new', "help": "Start a client booking"},
-            {"label": "Add Inquiry", "icon": "bi-envelope-plus", "url": reverse("photographer_workspace:add_lead"), "help": "Capture a new lead"},
-            {"label": "Block Calendar Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
-            {"label": "Create Package", "icon": "bi-box-seam", "url": f'{reverse("photographer_workspace:bookings")}?action=package', "help": "Build a session package"},
+            {"label": "Block Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
             {"label": "Share Booking Link", "icon": "bi-link-45deg", "url": f'{reverse("photographer_workspace:bookings")}?action=share', "help": "Copy your public booking link"},
         ],
     })
