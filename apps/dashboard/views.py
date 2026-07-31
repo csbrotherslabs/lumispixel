@@ -1926,11 +1926,12 @@ def schedule(request):
     events = [{
         "id": session.pk,
         "starts_at": timezone.localtime(session.starts_at),
-        "ends_at": timezone.localtime(session.starts_at) + timedelta(hours=2),
+        "ends_at": timezone.localtime(session.starts_at) + timedelta(minutes=session.duration_minutes),
         "name": str(session.client), "session_type": session.session_type,
         "booking_number": f"LP-{session.pk:04d}", "location": session.location or "Location not set",
         "photographer": owner, "status": session.get_status_display(),
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
+        "persisted": True, "move_url": reverse("photographer_workspace:reschedule_session", args=[session.pk]),
         "all_day": False, "url": reverse("photographer_workspace:bookings"),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
         "contact_email": session.client.email,
@@ -1965,6 +1966,7 @@ def schedule(request):
                 "name": name, "session_type": session_type, "photographer": owner,
                 "booking_number": f"LP-{1000 + offset:04d}", "location": "LumisPixel Studio" if kind != "vacation" else "Away",
                 "status": status, "kind": kind, "icon": icon, "warning": warning,
+                "persisted": False, "move_url": "",
                 "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
                 "contact": "hello@example.com · (555) 014-2086", "package": "Signature Collection",
                 "contact_email": "hello@example.com",
@@ -2134,8 +2136,58 @@ def schedule(request):
         "todays_schedule": todays_schedule,
         "upcoming_shoots": upcoming_shoots,
         "scheduling_alerts": scheduling_alerts,
+        "schedule_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
     })
     return render(request, "photographer_workspace/bookings/schedule.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def reschedule_session(request, pk):
+    """Validate and atomically move one studio-owned booking."""
+    import json
+
+    profile = request.user.photographer_profile
+    session = get_object_or_404(ClientSession, pk=pk, photographer=profile)
+    try:
+        payload = json.loads(request.body or "{}")
+        starts_at = datetime.fromisoformat(payload["starts_at"].replace("Z", "+00:00"))
+        if timezone.is_naive(starts_at):
+            starts_at = timezone.make_aware(starts_at)
+        duration = int(payload.get("duration_minutes", session.duration_minutes))
+        if duration < 30 or duration > 1440 or duration % 15:
+            raise ValueError
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return JsonResponse({"error": "Enter a valid start time and a duration in 15-minute increments."}, status=400)
+
+    local_start = timezone.localtime(starts_at)
+    end = starts_at + timedelta(minutes=duration)
+    conflicts, travel_warning = [], False
+    for other in ClientSession.objects.filter(photographer=profile).exclude(pk=session.pk).exclude(status=ClientSession.Status.CANCELLED):
+        other_end = other.starts_at + timedelta(minutes=other.duration_minutes)
+        if other.starts_at < end + timedelta(minutes=30) and other_end + timedelta(minutes=30) > starts_at:
+            conflicts.append(f"{other.client} · {timezone.localtime(other.starts_at).strftime('%b %-d, %-I:%M %p')}")
+            travel_warning = travel_warning or bool(session.location and other.location and session.location != other.location)
+    available = local_start.weekday() < 5 and 9 <= local_start.hour < 17
+    checks = [
+        {"key": "conflict", "label": "Booking conflicts", "ok": not conflicts, "detail": "No overlapping bookings" if not conflicts else ", ".join(conflicts)},
+        {"key": "availability", "label": "Photographer availability", "ok": available, "detail": "Within default working hours" if available else "Outside default Monday–Friday, 9 AM–5 PM availability"},
+        {"key": "blocked", "label": "Blocked time & vacation", "ok": True, "detail": "No persisted blocked period applies"},
+        {"key": "buffer", "label": "30-minute buffer", "ok": not conflicts, "detail": "Buffer is clear" if not conflicts else "Required buffer overlaps another booking"},
+        {"key": "travel", "label": "Travel time", "ok": not travel_warning, "detail": "No travel issue detected" if not travel_warning else "Different locations may not leave enough travel time"},
+    ]
+    blocking = bool(conflicts)
+    response = {"starts_at": local_start.isoformat(), "ends_at": timezone.localtime(end).isoformat(), "checks": checks,
+                "blocking": blocking, "notify_recommended": session.status == ClientSession.Status.CONFIRMED}
+    if payload.get("preview", True):
+        return JsonResponse(response)
+    if blocking:
+        return JsonResponse(response | {"error": "Resolve booking and buffer conflicts before saving."}, status=409)
+    with transaction.atomic():
+        locked = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+        locked.starts_at, locked.duration_minutes = starts_at, duration
+        locked.save(update_fields=("starts_at", "duration_minutes"))
+    return JsonResponse(response | {"saved": True, "notified": bool(payload.get("notify_client"))})
 
 
 @photographer_workspace_required

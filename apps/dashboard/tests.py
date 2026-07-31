@@ -247,6 +247,35 @@ class PhotographerWorkspaceTests(TestCase):
         session.refresh_from_db()
         self.assertEqual(session.status, ClientSession.Status.COMPLETED)
 
+    def test_schedule_move_previews_conflicts_and_saves_duration(self):
+        user, profile = self.make_photographer(True, email="move@example.com", slug="move")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole")
+        start = timezone.now() + timezone.timedelta(days=3)
+        moving = ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", starts_at=start)
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Wedding", starts_at=start + timezone.timedelta(hours=1))
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:reschedule_session", args=[moving.pk])
+
+        conflict = self.client.post(url, data={"starts_at": start.isoformat(), "duration_minutes": 120, "preview": True}, content_type="application/json")
+        self.assertTrue(conflict.json()["blocking"])
+        self.assertEqual(conflict.json()["checks"][0]["key"], "conflict")
+
+        new_start = start + timezone.timedelta(days=2)
+        saved = self.client.post(url, data={"starts_at": new_start.isoformat(), "duration_minutes": 150, "preview": False}, content_type="application/json")
+        self.assertEqual(saved.status_code, 200)
+        moving.refresh_from_db()
+        self.assertEqual(moving.duration_minutes, 150)
+        self.assertEqual(moving.starts_at, new_start)
+
+    def test_schedule_move_is_studio_scoped(self):
+        user, _profile = self.make_photographer(True, email="owner@example.com", slug="owner")
+        _other_user, other = self.make_photographer(True, email="other-move@example.com", slug="other-move")
+        client = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        session = ClientSession.objects.create(photographer=other, client=client, session_type="Private", starts_at=timezone.now())
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:reschedule_session", args=[session.pk]), data={}, content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+
     def test_ai_processing_center_creates_scoped_jobs_and_supports_actions(self):
         user, profile = self.make_photographer(True, email="ai@example.com", slug="ai")
         _, other = self.make_photographer(True, email="other-ai@example.com", slug="other-ai")

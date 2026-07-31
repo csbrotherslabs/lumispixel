@@ -65,6 +65,7 @@ urlpatterns = [
     path("calendar/", views.schedule, name="calendar"),
     path("bookings/", views.bookings_dashboard, name="bookings"),
     path("bookings/schedule/", views.schedule, name="schedule"),
+    path("bookings/schedule/<int:pk>/move/", views.reschedule_session, name="reschedule_session"),
     path("contracts/", views.module_placeholder, {"module_key": "contracts"}, name="contracts"),
     path("invoices/", views.module_placeholder, {"module_key": "invoices"}, name="invoices"),
     path("payments/", views.module_placeholder, {"module_key": "payments"}, name="payments"),
