@@ -808,3 +808,12 @@
   });
   layer.querySelector('.lpw-move-dialog').addEventListener('keydown', function (event) { if (event.key === 'Escape') close(); });
 }());
+
+document.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-copy-text]');
+  if (!button) return;
+  await navigator.clipboard.writeText(button.dataset.copyText);
+  const label = button.textContent;
+  button.textContent = 'Copied';
+  window.setTimeout(() => { button.textContent = label; }, 1500);
+});
