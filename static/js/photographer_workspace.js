@@ -343,6 +343,49 @@
   draw();
 }());
 
+(function initBookingListView() {
+  const root = document.querySelector('[data-booking-list]');
+  if (!root) return;
+  const checks = Array.from(root.querySelectorAll('[data-select-booking]'));
+  const selectAll = root.querySelector('[data-select-all]');
+  const bulk = root.querySelector('[data-booking-bulk]');
+  const count = root.querySelector('[data-selected-count]');
+  function syncSelection(source) {
+    // Desktop rows and mobile cards represent the same bookings; mirror their state.
+    if (source) {
+      const index = checks.indexOf(source);
+      const pairSize = checks.length / 2;
+      const peer = checks[index < pairSize ? index + pairSize : index - pairSize];
+      if (peer) peer.checked = source.checked;
+    }
+    const selected = root.querySelectorAll('.lpw-booking-table-wrap [data-select-booking]:checked').length;
+    if (count) count.textContent = selected;
+    if (bulk) bulk.hidden = selected === 0;
+    if (selectAll) {
+      const total = root.querySelectorAll('.lpw-booking-table-wrap [data-select-booking]').length;
+      selectAll.checked = total > 0 && selected === total;
+      selectAll.indeterminate = selected > 0 && selected < total;
+    }
+  }
+  checks.forEach(function (check) { check.addEventListener('change', function () { syncSelection(check); }); });
+  if (selectAll) selectAll.addEventListener('change', function () {
+    checks.forEach(function (check) { check.checked = selectAll.checked; }); syncSelection();
+  });
+  const sort = root.querySelector('[data-booking-sort]');
+  if (sort) sort.addEventListener('change', function () {
+    const url = new URL(window.location.href); url.searchParams.set('sort', sort.value); url.searchParams.delete('page'); window.location.assign(url);
+  });
+  root.querySelectorAll('[data-booking-export]').forEach(function (button) { button.addEventListener('click', function () {
+    const headings = Array.from(root.querySelectorAll('table thead th')).slice(1, -1).map(function (cell) { return cell.textContent.trim(); });
+    const rows = Array.from(root.querySelectorAll('table tbody tr')).filter(function (row) {
+      const selected = root.querySelectorAll('.lpw-booking-table-wrap [data-select-booking]:checked').length;
+      return !selected || row.querySelector('[data-select-booking]').checked;
+    }).map(function (row) { return Array.from(row.cells).slice(1, -1).map(function (cell) { return '"' + cell.textContent.trim().replace(/\s+/g, ' ').replace(/"/g, '""') + '"'; }).join(','); });
+    const blob = new Blob([[headings.join(',')].concat(rows).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'lumispixel-bookings.csv'; link.click(); URL.revokeObjectURL(link.href);
+  }); });
+}());
+
 (function () {
   const form = document.querySelector('[data-schedule-filter-form]');
   if (!form) return;
