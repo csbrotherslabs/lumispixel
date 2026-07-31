@@ -1,0 +1,44 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-growth-page">
+  <header class="lpw-growth-header">
+    <div class="lpw-growth-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Growth</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Overview</strong></nav>
+      <h1 id="workspace-page-title">Growth Overview</h1>
+      <p>Understand where clients come from, what converts, and how to grow your photography business.</p>
+    </div>
+    <div class="lpw-growth-controls">
+      <form class="lpw-growth-filters" method="get">
+        <label class="lpw-growth-range" for="growth-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Growth date range</span><select id="growth-range" name="range" onchange="this.form.submit()">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="lpw-growth-compare"><input type="checkbox" name="compare" value="1"{% if compare_previous %} checked{% endif %} onchange="this.form.submit()"><span aria-hidden="true"></span>Compare previous period</label>
+      </form>
+      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:marketing' %}"><i class="bi bi-megaphone" aria-hidden="true"></i>Promote your business</a>
+      <details class="lpw-financial-menu lpw-growth-menu">
+        <summary class="lpw-btn"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div>
+          <a href="{% url 'photographer_workspace:reviews' %}"><i class="bi bi-star" aria-hidden="true"></i><span><strong>Request reviews</strong></span></a>
+          <a href="{% url 'photographer_workspace:referrals' %}"><i class="bi bi-link-45deg" aria-hidden="true"></i><span><strong>Create referral link</strong></span></a>
+          <a href="{% url 'photographer_workspace:leads' %}"><i class="bi bi-upload" aria-hidden="true"></i><span><strong>Import leads</strong></span></a>
+          <a href="?range={{ range_key }}{% if compare_previous %}&amp;compare=1{% endif %}&amp;export=1"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export growth report</strong></span></a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main class="lpw-growth-content">
+    {% if growth_state == 'loading' %}
+      <section class="lpw-growth-state" aria-live="polite" aria-busy="true"><span class="lpw-activity-spinner" aria-hidden="true"></span><h2>Loading your growth overview</h2><p>Gathering acquisition and conversion signals…</p><div class="lpw-growth-state-skeleton" aria-hidden="true"><i></i><i></i><i></i></div></section>
+    {% elif growth_state == 'empty' %}
+      <section class="lpw-growth-state"><span><i class="bi bi-bar-chart" aria-hidden="true"></i></span><h2>Your growth overview is ready</h2><p>Lead, booking, review, and referral activity will appear here as your business grows.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:leads' %}">Add your first lead</a></section>
+    {% elif growth_state == 'permission' %}
+      <section class="lpw-growth-state" role="status"><span><i class="bi bi-lock" aria-hidden="true"></i></span><h2>You don’t have permission to view growth insights</h2><p>Ask a workspace owner to give you access to business reporting.</p></section>
+    {% elif growth_state == 'error' %}
+      <section class="lpw-growth-state lpw-growth-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Growth insights could not be loaded</h2><p>Refresh the page to try again. No workspace data has been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:growth' %}?range={{ range_key }}">Try again</a></section>
+    {% else %}
+      <div class="lpw-growth-grid" aria-label="Growth overview sections">
+        {% for section_id, title, icon, description in growth_sections %}<section class="lpw-growth-card" id="{{ section_id }}" aria-labelledby="{{ section_id }}-title"><header><span><i class="bi {{ icon }}" aria-hidden="true"></i></span><span class="lpw-badge">Coming next</span></header><h2 id="{{ section_id }}-title">{{ title }}</h2><p>{{ description }}</p><div class="lpw-growth-placeholder" aria-hidden="true"><i></i><i></i><i></i></div></section>{% endfor %}
+      </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
