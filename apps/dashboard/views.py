@@ -40,7 +40,7 @@ from apps.dashboard.financial_transactions import transaction_records
 from apps.dashboard.financial_bulk import (EXPORT_COLUMNS, available_actions, csv_bytes, invoice_zip,
                                            run_bulk_action, selected_objects)
 from apps.dashboard.financial_record_detail import financial_record_detail
-from apps.dashboard.growth_analytics import growth_summary
+from apps.dashboard.growth_analytics import growth_summary, lead_funnel, lead_source_performance
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 
@@ -1670,6 +1670,9 @@ def bookings_dashboard(request):
     sessions = ClientSession.objects.filter(
         photographer=profile, starts_at__gte=now,
     ).exclude(status=ClientSession.Status.CANCELLED).select_related("client")
+    status = request.GET.get("status", "")
+    if status in ClientSession.Status.values:
+        sessions = sessions.filter(status=status)
     if range_key != "all":
         sessions = sessions.filter(starts_at__lt=now + timedelta(days=int(range_key)))
     contract_booking = sessions.order_by("starts_at").first()
@@ -2313,8 +2316,6 @@ def growth_overview(request):
         page_state = "ready"
     sections = [
         ("growth-metrics", "Growth metrics", "bi-graph-up-arrow", "Key acquisition and conversion signals will appear here."),
-        ("lead-funnel", "Lead funnel", "bi-funnel", "Follow inquiries as they progress toward a booking."),
-        ("lead-sources", "Lead sources", "bi-signpost-split", "See which channels introduce clients to your business."),
         ("service-performance", "Service performance", "bi-camera", "Compare demand and conversion across your services."),
         ("reviews", "Reviews", "bi-star", "Track client feedback and reputation signals."),
         ("referrals", "Referrals", "bi-people", "Understand the clients and partners driving referrals."),
@@ -2325,6 +2326,8 @@ def growth_overview(request):
     context = _dashboard_context(request, "growth", "Growth Overview")
     metrics = growth_summary(request.user.photographer_profile, range_key,
                              getattr(request.user.photographer_profile, "default_currency", "USD"))
+    source_sort = request.GET.get("source_sort", "leads")
+    currency = getattr(request.user.photographer_profile, "default_currency", "USD")
     context.update({
         "growth_state": page_state,
         "range_key": range_key,
@@ -2332,6 +2335,9 @@ def growth_overview(request):
         "compare_previous": request.GET.get("compare") == "1",
         "growth_sections": sections,
         "growth_metrics": metrics["cards"],
+        "funnel_stages": lead_funnel(request.user.photographer_profile, range_key, currency),
+        "source_rows": lead_source_performance(request.user.photographer_profile, range_key, currency, source_sort),
+        "source_sort": source_sort,
     })
     return render(request, "photographer_workspace/growth/overview.html", context)
 
