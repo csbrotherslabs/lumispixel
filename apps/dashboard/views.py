@@ -1924,6 +1924,7 @@ def schedule(request):
     sessions = list(sessions_queryset.select_related("client").order_by("starts_at"))
     owner = request.user.full_name or "Studio photographer"
     events = [{
+        "id": session.pk,
         "starts_at": timezone.localtime(session.starts_at),
         "ends_at": timezone.localtime(session.starts_at) + timedelta(hours=2),
         "name": str(session.client), "session_type": session.session_type,
@@ -1932,6 +1933,7 @@ def schedule(request):
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
         "all_day": False, "url": reverse("photographer_workspace:bookings"),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
+        "contact_email": session.client.email,
         "package": "Package not assigned", "contract_status": "Not signed",
         "payment_status": "Retainer unpaid", "questionnaire_status": "Incomplete",
         "notes": "No internal notes have been added.",
@@ -1958,12 +1960,14 @@ def schedule(request):
             event_date = anchor + timedelta(days=offset)
             starts_at = timezone.make_aware(datetime.combine(event_date, time(hour=hour)))
             events.append({
+                "id": 1000 + offset,
                 "starts_at": starts_at, "ends_at": starts_at + timedelta(hours=duration),
                 "name": name, "session_type": session_type, "photographer": owner,
                 "booking_number": f"LP-{1000 + offset:04d}", "location": "LumisPixel Studio" if kind != "vacation" else "Away",
                 "status": status, "kind": kind, "icon": icon, "warning": warning,
                 "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
                 "contact": "hello@example.com · (555) 014-2086", "package": "Signature Collection",
+                "contact_email": "hello@example.com",
                 "contract_status": "Signed" if not warning else "Not signed",
                 "payment_status": "Paid" if not warning else "Retainer unpaid",
                 "questionnaire_status": "Complete" if not warning else "Incomplete",
@@ -2010,6 +2014,37 @@ def schedule(request):
     for event in events:
         events_by_date.setdefault(event["starts_at"].date(), []).append(event)
 
+    agenda_groups = []
+    for event_date in sorted(events_by_date):
+        if event_date == today:
+            relative_label = "Today"
+        elif event_date == today + timedelta(days=1):
+            relative_label = "Tomorrow"
+        else:
+            relative_label = "Upcoming"
+        agenda_groups.append({
+            "date": event_date,
+            "relative_label": relative_label,
+            "events": events_by_date[event_date],
+        })
+
+    sort = request.GET.get("sort", "date")
+    sort_options = {
+        "date": lambda event: event["starts_at"],
+        "date_desc": lambda event: event["starts_at"],
+        "client": lambda event: event["name"].casefold(),
+        "status": lambda event: event["status"].casefold(),
+        "booking": lambda event: event["booking_number"],
+    }
+    if sort not in sort_options:
+        sort = "date"
+    booking_events = [event for event in events if event["kind"] == "booking" and event["status"].casefold() in ("confirmed", "tentative")]
+    booking_events.sort(key=sort_options[sort], reverse=sort == "date_desc")
+    booking_page = Paginator(booking_events, 10).get_page(request.GET.get("page", 1))
+    list_query_values = [(key, value) for key, value in filter_values.items() if value]
+    list_query_values.extend((("view", "list"), ("date", selected_date.isoformat()), ("sort", sort)))
+    list_query = urlencode(list_query_values)
+
     calendar_weeks = []
     for week in Calendar(firstweekday=0).monthdatescalendar(selected_date.year, selected_date.month):
         calendar_weeks.append([
@@ -2036,6 +2071,10 @@ def schedule(request):
         "schedule_events": events,
         "using_sample_events": using_sample_events,
         "week_days": [{"date": range_start + timedelta(days=offset), "events": events_by_date.get(range_start + timedelta(days=offset), [])} for offset in range((range_end - range_start).days)],
+        "agenda_groups": agenda_groups,
+        "booking_page": booking_page,
+        "booking_sort": sort,
+        "list_query": list_query,
         "filter_values": filter_values,
         "session_type_options": session_types,
         "location_options": locations,
