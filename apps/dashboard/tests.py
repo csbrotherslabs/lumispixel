@@ -193,6 +193,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Today")
         self.assertContains(response, "Schedule", count=None)
         self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'data-event-drawer role="dialog"')
+        self.assertContains(response, 'data-schedule-event="schedule-event-0"')
+        self.assertContains(response, "Open Full Booking")
+        self.assertContains(response, "Contract not signed")
 
         list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
         self.assertEqual(list_response.status_code, 200)

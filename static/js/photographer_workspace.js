@@ -375,3 +375,80 @@
     save.querySelector('i').className = 'bi bi-bookmark-check-fill';
   });
 }());
+
+(function () {
+  const layer = document.querySelector('[data-event-drawer-layer]');
+  const dataNode = document.getElementById('schedule-event-data');
+  if (!layer || !dataNode) return;
+  const events = JSON.parse(dataNode.textContent).reduce(function (byId, event) {
+    byId[event.drawer_id] = event;
+    return byId;
+  }, {});
+  const drawer = layer.querySelector('[data-event-drawer]');
+  let opener = null;
+
+  function escapeHtml(value) {
+    const node = document.createElement('span');
+    node.textContent = String(value);
+    return node.innerHTML;
+  }
+  function detail(label, value) {
+    if (!value) return '';
+    return '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
+  }
+  function closeDrawer() {
+    layer.classList.remove('is-open');
+    document.body.classList.remove('lpw-drawer-open');
+    window.setTimeout(function () { layer.hidden = true; }, 180);
+    if (opener) opener.focus();
+  }
+  function openDrawer(event, button) {
+    opener = button;
+    layer.querySelector('[data-event-kind]').textContent = event.kind === 'mini' ? 'Mini session' : event.kind;
+    layer.querySelector('[data-event-title]').textContent = event.name;
+    layer.querySelector('[data-event-summary]').textContent = event.session_type + ' · ' + event.status;
+    const bookingOnly = event.kind === 'booking';
+    const clientEvent = bookingOnly || event.kind === 'consultation' || event.kind === 'mini';
+    const details = [
+      clientEvent ? detail('Client / event', event.name) : '',
+      clientEvent && event.contact ? detail('Contact', event.contact) : '',
+      bookingOnly ? detail('Booking number', event.booking_number) : '',
+      detail(bookingOnly ? 'Session type' : 'Event type', event.session_type),
+      detail('Date and time', new Date(event.starts_at).toLocaleString([], {dateStyle: 'long', timeStyle: event.all_day ? undefined : 'short'})),
+      detail('Duration', event.all_day ? 'All day' : event.duration),
+      event.kind !== 'vacation' ? detail('Location', event.location) : '',
+      bookingOnly ? detail('Package', event.package) : '',
+      event.kind !== 'vacation' && event.kind !== 'blocked' ? detail('Assigned to', event.photographer) : '',
+      detail('Status', event.status),
+      bookingOnly ? detail('Contract', event.contract_status) + detail('Payment', event.payment_status) + detail('Questionnaire', event.questionnaire_status) : ''
+    ].join('');
+    layer.querySelector('[data-event-details]').innerHTML = details;
+    const warnings = layer.querySelector('[data-event-warnings]');
+    warnings.innerHTML = (event.warnings || []).map(function (warning) { return '<p><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>' + escapeHtml(warning) + '</span></p>'; }).join('');
+    warnings.hidden = !event.warnings || !event.warnings.length;
+    const notesWrap = layer.querySelector('[data-event-notes-wrap]');
+    notesWrap.hidden = !event.notes || event.kind === 'vacation';
+    layer.querySelector('[data-event-notes]').textContent = event.notes || '';
+    layer.querySelector('[data-event-actions]').innerHTML = event.actions.map(function (label, index) {
+      const danger = label.indexOf('Cancel') === 0 || label.indexOf('Remove') === 0;
+      return '<a class="lpw-btn ' + (index === 0 ? 'lpw-btn-primary ' : '') + (danger ? 'is-danger' : '') + '" href="' + encodeURI(event.url) + '">' + escapeHtml(label) + '</a>';
+    }).join('');
+    layer.hidden = false;
+    window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
+    document.body.classList.add('lpw-drawer-open');
+    drawer.focus();
+  }
+  document.querySelectorAll('[data-schedule-event]').forEach(function (button) {
+    button.addEventListener('click', function () { openDrawer(events[button.dataset.scheduleEvent], button); });
+  });
+  layer.querySelectorAll('[data-event-drawer-close]').forEach(function (button) { button.addEventListener('click', closeDrawer); });
+  drawer.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeDrawer();
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(drawer.querySelectorAll('a[href], button:not([disabled])'));
+    if (!focusable.length) return;
+    const first = focusable[0]; const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+}());
