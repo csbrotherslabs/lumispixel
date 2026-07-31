@@ -669,6 +669,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Create invoice")
         for action in ("Record payment", "Issue refund", "Add credit"):
             self.assertContains(response, action)
+        for metric in ("Total revenue", "Payments collected", "Outstanding balance", "Overdue balance", "Refunds", "Total booking value"):
+            self.assertContains(response, metric)
         self.assertContains(response, "Your financial overview is ready for activity")
         self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
 
