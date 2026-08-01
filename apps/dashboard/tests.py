@@ -14,6 +14,8 @@ from apps.galleries.models import AccessToken, Gallery, GalleryActivity, Gallery
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 from apps.dashboard.analytics_overview import _analytics_insights, _short_date
+from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
+from django.core.exceptions import PermissionDenied
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -126,10 +128,46 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-team-filter-open')
 
         self.assertContains(self.client.get(url, {"q": "nobody"}), "No members match these filters")
-        self.assertContains(self.client.get(url, {"state": "loading"}), "Loading team status")
-        self.assertContains(self.client.get(url, {"state": "empty"}), "Your team is ready to grow")
-        self.assertContains(self.client.get(url, {"state": "unavailable"}), "Some team data is unavailable")
-        self.assertContains(self.client.get(url, {"state": "error"}), "Team status could not be loaded")
+        # Development-only state query parameters never alter production output.
+        self.assertNotContains(self.client.get(url, {"state": "loading"}), "Loading team status")
+        self.assertContains(self.client.get(url, {"state": "error"}), "Solo photographer workspace")
+        self.assertContains(response, "Partial team data")
+        self.assertContains(response, "Last updated")
+
+    def test_team_summary_authorization_and_filter_allow_lists(self):
+        user, profile = self.make_photographer(True, email="authorized@example.com", slug="authorized")
+        self.assertEqual(authorized_studio(user), profile)
+        outsider = make_user("client-only@example.com", User.PrimaryRole.CLIENT)
+        with self.assertRaises(PermissionDenied):
+            authorized_studio(outsider)
+        filters = parse_team_filters({"date": "not-a-date", "location": "x" * 300,
+                                      "role": "administrator", "availability": "invented"})
+        self.assertEqual(filters["date"], timezone.localdate())
+        self.assertEqual(len(filters["location"]), 255)
+        self.assertEqual(filters["role"], "")
+        self.assertEqual(filters["availability"], "")
+
+    def test_team_overview_unknown_location_does_not_widen_results(self):
+        user, profile = self.make_photographer(True, email="location-scope@example.com", slug="location-scope")
+        client = Client.objects.create(photographer=profile, first_name="Scoped", last_name="Client")
+        starts = timezone.make_aware(datetime.combine(timezone.localdate(), time(9)))
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Scoped shoot",
+                                     starts_at=starts, location="Studio A")
+        self.client.force_login(user)
+        response = self.client.get(reverse("photographer_workspace:team_overview"), {"location": "Other studio"})
+        self.assertNotContains(response, "Scoped shoot")
+        self.assertContains(response, "No booking records match this date and location")
+
+    def test_team_overlap_uses_duration_and_ignores_same_record(self):
+        user, profile = self.make_photographer(True, email="overlap@example.com", slug="overlap")
+        client = Client.objects.create(photographer=profile, first_name="Schedule", last_name="Client")
+        starts = timezone.make_aware(datetime.combine(timezone.localdate(), time(9)))
+        first = ClientSession.objects.create(photographer=profile, client=client, session_type="First", starts_at=starts, duration_minutes=60)
+        overlapping = ClientSession.objects.create(photographer=profile, client=client, session_type="Second", starts_at=starts + timedelta(minutes=30), duration_minutes=30)
+        adjacent = ClientSession.objects.create(photographer=profile, client=client, session_type="Third", starts_at=starts + timedelta(minutes=60), duration_minutes=30)
+        self.assertTrue(sessions_overlap(first, overlapping))
+        self.assertFalse(sessions_overlap(first, adjacent))
+        self.assertFalse(sessions_overlap(first, first))
 
     def test_team_overview_assignment_details_attention_and_fourteen_day_window(self):
         user, profile = self.make_photographer(True, email="assignment-view@example.com", slug="assignment-view")

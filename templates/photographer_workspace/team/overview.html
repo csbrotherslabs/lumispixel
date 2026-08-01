@@ -8,14 +8,19 @@
       <p>Monitor today’s availability, assignments, workload, and team activity.</p>
     </div>
     <form class="lpt-controls" method="get" aria-label="Team overview controls">
+      {% if search_term %}<input type="hidden" name="q" value="{{ search_term }}">{% endif %}{% if selected_role %}<input type="hidden" name="role" value="{{ selected_role }}">{% endif %}{% if selected_availability %}<input type="hidden" name="availability" value="{{ selected_availability }}">{% endif %}
       {% if locations|length > 1 %}<label><span>Location</span><select name="location" aria-label="Filter by location" onchange="this.form.submit()"><option value="">All locations</option>{% for location in locations %}<option value="{{ location }}"{% if selected_location == location %} selected{% endif %}>{{ location }}</option>{% endfor %}</select></label>{% endif %}
       <label><span>Date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" aria-label="Overview date" onchange="this.form.submit()"></label>
-      <button class="lpt-icon-button" type="submit" aria-label="Refresh team overview"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></button>
+      <button class="lpt-icon-button" type="submit" aria-label="Refresh team overview data"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></button>
       <a class="lpt-primary" href="{% url 'photographer_workspace:team_members' %}"><i class="bi bi-person-plus" aria-hidden="true"></i>Invite Member</a>
     </form>
   </header>
 
   <main class="lpt-content">
+    <p class="lpt-data-note" role="status"><i class="bi bi-clock-history" aria-hidden="true"></i> Last updated <time datetime="{{ last_updated|date:'c' }}">{{ last_updated|date:'M j, Y, g:i:s A' }}</time>. Refresh reloads current saved records and preserves your filters.</p>
+    {% if is_solo %}<div class="lpt-state is-inline" role="status"><i class="bi bi-person" aria-hidden="true"></i><strong>Solo photographer workspace</strong><p>There are no additional team members in this studio. Today’s bookings are shown for awareness, but they are not treated as member assignments.</p></div>{% endif %}
+    {% if is_multi_location %}<div class="lpt-state is-inline" role="status"><i class="bi bi-geo-alt" aria-hidden="true"></i><strong>Multiple locations</strong><p>Choose a location to focus this operational snapshot; “All locations” combines saved booking locations.</p></div>{% endif %}
+    <div class="lpt-state is-inline" role="status"><i class="bi bi-info-circle" aria-hidden="true"></i><strong>Partial team data</strong><p>Bookings and gallery-delivery activity are current. Membership, assignments, working hours, leave, and availability are not stored yet, so related values remain unavailable rather than estimated.</p></div>
     <nav class="lpt-quick-actions" aria-label="Team quick actions">
       <a href="{% url 'photographer_workspace:team_members' %}"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Invite member</span></a>
       <span class="is-disabled" aria-disabled="true" title="Team assignment records are not available"><i class="bi bi-camera" aria-hidden="true"></i><span>Assign photographer</span></span>
