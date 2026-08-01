@@ -78,6 +78,18 @@ class PhotographerWorkspaceTests(TestCase):
                        "Bookings by time of day", "Booking seasonality", "Cancellation and reschedule trends",
                        "Booking status distribution", "Busy and quiet periods", "Top Services"):
             self.assertContains(response, report)
+        for report in ("Gallery views over time", "Engagement by gallery", "Engagement by service type",
+                       "Favorites and downloads trend", "Most active galleries", "Gallery delivery turnaround",
+                       "Client access and invitation completion", "Store conversion where gallery commerce exists",
+                       "Top Galleries"):
+            self.assertContains(response, report)
+        for metric in ("Total gallery views", "Unique gallery visitors", "Average gallery engagement",
+                       "Favorites or selections", "Downloads", "Shares", "Store orders",
+                       "Average gallery delivery time", "Client access completion", "Expired or inactive galleries"):
+            self.assertContains(response, metric)
+        for column in ("Published date", "Views", "Favorites", "Downloads", "Shares", "Engagement rate", "Status"):
+            self.assertContains(response, column)
+        self.assertContains(response, "visitor identifiers, invitation emails, and individual activity are never displayed")
         self.assertContains(response, "Open filtered Bookings")
         self.assertContains(response, "Open Schedule")
         self.assertContains(response, "not a booking calendar")
@@ -92,7 +104,10 @@ class PhotographerWorkspaceTests(TestCase):
         invoice = ClientInvoice.objects.create(photographer=profile, client=client, booking=booking, total=1200)
         InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=1200, processor_fee=36)
         gallery = Gallery.objects.create(photographer=profile, client=client, name="Maya portraits", slug="maya-portraits", status=Gallery.Status.PUBLISHED)
-        GalleryAnalyticsEvent.objects.create(photographer=profile, gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.VIEW)
+        GalleryAnalyticsEvent.objects.create(photographer=profile, gallery=gallery,
+            event_type=GalleryAnalyticsEvent.EventType.VIEW, visitor_identifier="opaque-visitor")
+        GalleryAnalyticsEvent.objects.create(photographer=profile, gallery=gallery,
+            event_type=GalleryAnalyticsEvent.EventType.FAVORITE, visitor_identifier="opaque-visitor")
         self.client.force_login(user)
 
         response = self.client.get(reverse("photographer_workspace:analytics"), {
@@ -131,6 +146,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Expenses, profit, and margins are not inferred")
         self.assertContains(response, "Financial Overview")
         self.assertContains(response, "Filtered Transactions")
+        self.assertContains(response, "Maya portraits")
+        self.assertContains(response, "100.0%")
+        self.assertNotContains(response, "opaque-visitor")
 
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")

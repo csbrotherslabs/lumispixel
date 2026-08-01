@@ -8,7 +8,7 @@ from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
 
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
-from apps.galleries.models import Gallery, GalleryAnalyticsEvent
+from apps.galleries.models import Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder
 
 
 RANGES = (("30_days", "Last 30 days"), ("this_month", "This month"),
@@ -453,6 +453,96 @@ def _revenue_intelligence(start, end, grouping, sessions, payments, refunds, pro
             "waterfall": waterfall, "financial_url": urls["financial"], "transactions_url": tx}
 
 
+def _gallery_experience(start, end, galleries, events, sessions, profile, urls):
+    """Build owner-scoped gallery reporting without exposing visitor or invitation PII."""
+    period_events = events.filter(occurred_at__date__gte=start, occurred_at__date__lte=end)
+    view_events = period_events.filter(event_type=GalleryAnalyticsEvent.EventType.VIEW)
+    gallery_ids = galleries.values_list("pk", flat=True)
+    invitations = GalleryInvitation.objects.filter(gallery_id__in=gallery_ids,
+        invited_at__date__gte=start, invited_at__date__lte=end)
+    orders = GalleryOrder.objects.filter(photographer=profile, gallery_id__in=gallery_ids,
+        created_at__date__gte=start, created_at__date__lte=end).exclude(
+        payment_status__in=(GalleryOrder.Status.CANCELLED, GalleryOrder.Status.REFUNDED))
+
+    views = view_events.count()
+    visitors = view_events.exclude(visitor_identifier="").values("visitor_identifier").distinct().count()
+    favorites = period_events.filter(event_type=GalleryAnalyticsEvent.EventType.FAVORITE).count()
+    downloads = period_events.filter(event_type__in=(GalleryAnalyticsEvent.EventType.DOWNLOAD,
+        GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD)).count()
+    shares = period_events.filter(event_type=GalleryAnalyticsEvent.EventType.SHARE).count()
+    engaged = favorites + downloads + shares
+    engagement = engaged * 100 / views if views else 0
+    accessed = invitations.filter(last_access_at__isnull=False).count()
+    access_completion = accessed * 100 / invitations.count() if invitations.exists() else 0
+
+    delivered = galleries.filter(published_at__date__gte=start, published_at__date__lte=end,
+                                 event_date__isnull=False).only("event_date", "published_at")
+    turnaround_days = [max(0, (gallery.published_at.date() - gallery.event_date).days) for gallery in delivered]
+    average_delivery = sum(turnaround_days) / len(turnaround_days) if turnaround_days else None
+    inactive_cutoff = timezone.now() - timedelta(days=90)
+    inactive_ids = events.filter(occurred_at__gte=inactive_cutoff).values("gallery_id")
+    expired_inactive = galleries.filter(Q(status=Gallery.Status.EXPIRED) |
+        Q(expires_at__lt=timezone.now()) | ~Q(pk__in=inactive_ids)).distinct().count()
+
+    daily = period_events.annotate(bucket=TruncDay("occurred_at")).values("bucket").annotate(
+        views=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.VIEW)),
+        favorites=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.FAVORITE)),
+        downloads=Count("pk", filter=Q(event_type__in=(GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD)))).order_by("bucket")
+    trend = [{"label": row["bucket"].strftime("%b %-d"), "views": row["views"],
+              "favorites": row["favorites"], "downloads": row["downloads"]} for row in daily]
+
+    event_rows = period_events.values("gallery_id").annotate(
+        views=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.VIEW)),
+        favorites=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.FAVORITE)),
+        downloads=Count("pk", filter=Q(event_type__in=(GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD))),
+        shares=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.SHARE)))
+    counts = {row["gallery_id"]: row for row in event_rows}
+    order_counts = dict(orders.values_list("gallery_id").annotate(total=Count("pk")))
+    service_by_client = {}
+    for client_id, service in sessions.exclude(client_id=None).order_by("client_id", "-starts_at").values_list("client_id", "session_type"):
+        service_by_client.setdefault(client_id, service or "Unspecified")
+    rows = []
+    for gallery in galleries.select_related("client"):
+        data = counts.get(gallery.pk, {})
+        gallery_views = data.get("views", 0)
+        interactions = data.get("favorites", 0) + data.get("downloads", 0) + data.get("shares", 0)
+        rows.append({"gallery": gallery.name, "client": gallery.client.first_name if gallery.client_id else "Private client",
+            "service": service_by_client.get(gallery.client_id, "Unspecified"),
+            "published": gallery.published_at, "views": gallery_views, "favorites": data.get("favorites", 0),
+            "downloads": data.get("downloads", 0), "shares": data.get("shares", 0),
+            "engagement": interactions * 100 / gallery_views if gallery_views else 0,
+            "status": gallery.get_status_display(), "orders": order_counts.get(gallery.pk, 0),
+            "url": f'{urls["galleries"]}{gallery.pk}/analytics/'})
+    rows.sort(key=lambda row: (row["views"], row["engagement"]), reverse=True)
+    service_rollup = {}
+    for row in rows:
+        item = service_rollup.setdefault(row["service"], {"label": row["service"], "views": 0, "engagement": 0})
+        item["views"] += row["views"]
+        item["engagement"] += row["favorites"] + row["downloads"] + row["shares"]
+    services = sorted(service_rollup.values(), key=lambda item: item["engagement"], reverse=True)
+    for item in services:
+        item["rate"] = item["engagement"] * 100 / item["views"] if item["views"] else 0
+
+    commerce_available = galleries.filter(store__isnull=False).exists()
+    order_count = orders.count()
+    metrics = [
+        ("Total gallery views", f"{views:,}", "bi-eye"), ("Unique gallery visitors", f"{visitors:,}", "bi-people"),
+        ("Average gallery engagement", f"{engagement:.1f}%", "bi-activity"), ("Favorites or selections", f"{favorites:,}", "bi-heart"),
+        ("Downloads", f"{downloads:,}", "bi-download"), ("Shares", f"{shares:,}", "bi-share"),
+        ("Store orders", f"{order_count:,}" if commerce_available else "Not available", "bi-bag-check"),
+        ("Average gallery delivery time", f"{average_delivery:.1f} days" if average_delivery is not None else "No delivery data", "bi-stopwatch"),
+        ("Client access completion", f"{access_completion:.1f}%", "bi-person-check"),
+        ("Expired or inactive galleries", f"{expired_inactive:,}", "bi-clock-history"),
+    ]
+    return {"metrics": [{"label": label, "value": value, "icon": icon} for label, value, icon in metrics],
+            "trend": trend, "galleries": rows[:10], "services": services[:8], "delivery": turnaround_days,
+            "invitations": {"sent": invitations.count(), "accessed": accessed, "rate": access_completion},
+            "commerce": {"available": commerce_available, "orders": order_count,
+                         "conversion": order_count * 100 / visitors if visitors else 0}, "urls": urls}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -556,6 +646,7 @@ def analytics_overview(profile, params, base_url, today=None):
         booked, clients, leads, payments, refunds, currency, urls)
     booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
     revenue_intelligence = _revenue_intelligence(start, end, grouping, sessions, payments, refunds, profile, currency, urls)
+    gallery_experience = _gallery_experience(start, end, galleries, events, sessions, profile, urls)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -604,4 +695,4 @@ def analytics_overview(profile, params, base_url, today=None):
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
             "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence,
-            "revenue_intelligence": revenue_intelligence}
+            "revenue_intelligence": revenue_intelligence, "gallery_experience": gallery_experience}
