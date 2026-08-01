@@ -4,6 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from io import BytesIO
 from decimal import Decimal
+from datetime import datetime, time, timedelta
 from django.urls import Resolver404, resolve, reverse
 from django.utils import timezone
 
@@ -38,14 +39,41 @@ class PhotographerWorkspaceTests(TestCase):
             url = reverse(f"photographer_workspace:{route}")
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, f'<h2 id="workspace-page-title">{title}</h2>', html=True)
-            self.assertContains(response, subtitle)
+            if route == "team_overview":
+                self.assertContains(response, '<h1 id="workspace-page-title">Team Overview</h1>', html=True)
+                self.assertContains(response, "Monitor today’s availability, assignments, workload, and team activity.")
+                for section in ("Team status summary", "Today’s availability", "Today’s assignments", "Upcoming shoots", "Workload and capacity", "Team alerts", "Recent activity"):
+                    self.assertContains(response, section)
+            else:
+                self.assertContains(response, f'<h2 id="workspace-page-title">{title}</h2>', html=True)
+                self.assertContains(response, subtitle)
             self.assertContains(response, f'href="{url}" class="is-active" aria-current="page"')
             for child_route, (child_title, _) in pages.items():
                 self.assertContains(response, reverse(f"photographer_workspace:{child_route}"))
                 self.assertContains(response, child_title)
             for removed_title in ("Schedule & Capacity", "Roles & Permissions", "Activity"):
                 self.assertNotContains(response, removed_title)
+
+    def test_team_overview_uses_owner_bookings_and_location_filter(self):
+        user, profile = self.make_photographer(True, email="team-data@example.com", slug="team-data")
+        other_user, other_profile = self.make_photographer(True, email="other-team@example.com", slug="other-team")
+        client = Client.objects.create(photographer=profile, first_name="Taylor", last_name="Client", email="taylor@example.com")
+        other_client = Client.objects.create(photographer=other_profile, first_name="Private", last_name="Client")
+        today = timezone.localdate()
+        starts = timezone.make_aware(datetime.combine(today, time.min)) + timedelta(hours=10)
+        session = ClientSession.objects.create(photographer=profile, client=client, session_type="Brand session", starts_at=starts, location="Downtown", status=ClientSession.Status.CONFIRMED, duration_minutes=180)
+        ClientSession.objects.create(photographer=other_profile, client=other_client, session_type="Private shoot", starts_at=starts, location="Downtown")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:team_overview"), {"date": today.isoformat(), "location": "Downtown"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Brand session")
+        self.assertContains(response, "Taylor Client")
+        self.assertContains(response, "3.0 booked hours")
+        self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[session.pk]))
+        self.assertNotContains(response, "Private shoot")
+        self.assertContains(response, "Availability isn’t connected yet.")
 
     def test_analytics_short_dates_are_cross_platform(self):
         self.assertEqual(_short_date(timezone.datetime(2026, 8, 1)), "Aug 1")
