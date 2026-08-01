@@ -48,6 +48,20 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(url, {"state": "permission"}), "You don’t have permission")
         self.assertContains(self.client.get(url, {"state": "error"}), "Growth insights could not be loaded")
 
+    def test_analytics_foundation_sections_filters_and_states(self):
+        user, _ = self.make_photographer(True, email="analytics-page@example.com", slug="analytics-page")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:analytics")
+        response = self.client.get(url, {"range": "this_quarter", "compare": "previous_year"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Understand business performance, trends, risks, and opportunities")
+        self.assertContains(response, 'value="this_quarter" selected')
+        self.assertContains(response, 'value="previous_year" selected')
+        for heading in ("Executive Overview", "Business Performance", "Customer Intelligence", "Booking Intelligence", "Revenue Intelligence", "Gallery and Client Experience", "Operational Intelligence", "Insights and Recommendations"):
+            self.assertContains(response, heading)
+        for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
+            self.assertContains(self.client.get(url, {"state": state}), copy)
+
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")
         self.assertRedirects(self.client.get(url), f"{reverse('accounts:login')}?next={url}", fetch_redirect_response=False)
