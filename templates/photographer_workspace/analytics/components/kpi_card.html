@@ -1,0 +1,4 @@
+<article class="lpa-kpi">
+  <div class="lpa-kpi-top"><span class="lpa-kpi-icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span><span class="lpa-kpi-change is-{{ metric.tone }}"><i class="bi bi-arrow-{% if metric.tone == 'negative' %}down{% else %}up{% endif %}-right"></i>{{ metric.change }}</span></div>
+  <p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small>
+</article>
