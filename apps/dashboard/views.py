@@ -2922,18 +2922,23 @@ def team_overview(request):
     upcoming_assignments = [assignment_row(session, upcoming, True) for session in upcoming]
     upcoming_assignments.sort(key=lambda row: (not row["needs_attention"], row["session"].starts_at))
 
-    client_activity = [
-        {"title": item.get_event_type_display(), "description": item.description, "at": item.occurred_at, "icon": "bi-person-check"}
-        for item in ClientActivity.objects.for_photographer(profile)[:6]
+    # Only activity types that describe team operations belong in this feed.  The
+    # application does not yet audit membership, assignments, availability, leave,
+    # or role changes; ordinary CRM/gallery events must not be presented as team
+    # activity. Gallery delivery is the sole compatible activity record today.
+    activity = [
+        {
+            "title": item.get_event_type_display(),
+            "description": item.description,
+            "at": item.occurred_at,
+            "icon": "bi-images",
+        }
+        for item in ClientActivity.objects.for_photographer(profile).filter(
+            event_type=ClientActivity.EventType.GALLERY_DELIVERED
+        )[:6]
     ]
-    gallery_activity = [
-        {"title": item.title, "description": item.description, "at": item.created_at, "icon": "bi-images"}
-        for item in GalleryActivity.objects.for_photographer(profile).select_related("gallery")[:6]
-    ]
-    activity = sorted(client_activity + gallery_activity, key=lambda item: item["at"], reverse=True)[:6]
     owner_name = request.user.full_name or profile.display_name or request.user.email
     initials = "".join(part[0] for part in owner_name.split()[:2]).upper() or "LP"
-    total_minutes = sum(session.duration_minutes for session in day_sessions)
     confirmed = sum(session.status == ClientSession.Status.CONFIRMED for session in day_sessions)
     owner_location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part) or "Location not configured"
     member_matches = (
@@ -2942,6 +2947,46 @@ def team_overview(request):
         and (not selected_location or selected_location == owner_location)
         and (not selected_availability or selected_availability == "not_configured")
     )
+    workload_rows = [{
+        "name": owner_name,
+        "initials": initials,
+        "role": "Owner",
+        "assigned_shoots": None,
+        "scheduled_hours": None,
+        "available_hours": None,
+        "utilization": None,
+        "overlaps": None,
+        "status": "Insufficient data",
+        "tone": "neutral",
+    }]
+
+    alerts = []
+    for row in today_assignments + upcoming_assignments:
+        session = row["session"]
+        timing = timezone.localtime(session.starts_at)
+        if row["status"] == "Conflict":
+            alerts.append({
+                "severity": "High", "tone": "danger", "icon": "bi-calendar2-x",
+                "title": "Scheduling conflict",
+                "explanation": "This booking overlaps another shoot. No member assignment exists to resolve coverage.",
+                "affected": f"{session.session_type} · {session.client}", "timing": timing,
+                "action": "Review booking", "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
+            })
+        if session.status != ClientSession.Status.COMPLETED:
+            alerts.append({
+                "severity": "Medium", "tone": "warning", "icon": "bi-person-exclamation",
+                "title": "Unassigned upcoming shoot" if session.starts_at >= day_end else "Unassigned shoot",
+                "explanation": "No photographer assignment is recorded for this booking.",
+                "affected": f"{session.session_type} · {session.client}", "timing": timing,
+                "action": "View booking", "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
+            })
+    alerts.append({
+        "severity": "Info", "tone": "neutral", "icon": "bi-clock-history",
+        "title": "Missing availability",
+        "explanation": "Working hours and time off are not configured, so capacity and leave conflicts cannot be calculated.",
+        "affected": owner_name, "timing_label": "Selected day",
+        "action": "View members", "url": reverse("photographer_workspace:team_members"),
+    })
     kpis = [
         {"label": "Total active team members", "value": "1", "definition": "Active people with access to this studio workspace.", "status": "Current", "tone": "success", "icon": "bi-people", "available": True},
         {"label": "Available today", "value": "—", "definition": "Members inside configured working hours with remaining capacity.", "status": "Not configured", "tone": "neutral", "icon": "bi-person-check", "available": False},
@@ -2970,11 +3015,13 @@ def team_overview(request):
         "upcoming_assignments": upcoming_assignments,
         "upcoming_end": upcoming_end.date(),
         "recent_activity": activity,
+        "workload_rows": workload_rows,
+        "team_alerts": alerts,
         "owner_name": owner_name,
         "owner_initials": initials,
         "confirmed_count": confirmed,
         "tentative_count": sum(session.status == ClientSession.Status.TENTATIVE for session in day_sessions),
-        "capacity_percent": min(round(total_minutes / 480 * 100), 100),
-        "total_hours": round(total_minutes / 60, 1),
+        "capacity_percent": None,
+        "total_hours": None,
     })
     return render(request, "photographer_workspace/team/overview.html", context)
