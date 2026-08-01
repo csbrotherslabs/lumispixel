@@ -76,7 +76,8 @@ WORKSPACE_MODULES += [
         ("financial_overview", "Financial Overview"), ("transactions", "Transactions"), ("growth", "Growth Overview"),
         ("invoices", "Invoices"), ("payments", "Payments"), ("revenue", "Revenue"),
         ("reviews", "Reviews"), ("referrals", "Referrals"), ("workflows", "Workflows"),
-        ("ai_assistant", "AI Assistant"), ("team", "Team"), ("equipment", "Equipment"),
+        ("ai_assistant", "AI Assistant"), ("team_overview", "Team Overview"),
+        ("team_members", "Team Members"), ("team_performance", "Team Performance"), ("equipment", "Equipment"),
         ("tasks", "Tasks"), ("notifications", "Notifications"), ("help", "Help"),
     ]
 ]
@@ -92,7 +93,11 @@ NAVIGATION = [
     {"title": "Financial", "icon": "bi-wallet2", "items": [("financial_overview", "Overview", "bi-pie-chart"), ("transactions", "Transactions", "bi-arrow-left-right")]},
     {"title": "Growth", "icon": "bi-rocket-takeoff", "items": [("growth", "Overview", "bi-graph-up-arrow")]},
     {"title": "", "icon": "bi-bar-chart", "items": [("analytics", "Analytics", "bi-bar-chart-line")]},
-    {"title": "", "icon": "bi-people", "items": [("team", "Team", "bi-person-workspace")]},
+    {"title": "Team", "icon": "bi-people", "items": [
+        ("team_overview", "Overview", "bi-grid-1x2"),
+        ("team_members", "Members", "bi-person-badge"),
+        ("team_performance", "Performance", "bi-graph-up-arrow"),
+    ]},
     {"title": "", "icon": "bi-gear", "items": [("settings", "Settings", "bi-gear")]},
 ]
 
@@ -2820,3 +2825,19 @@ def module_placeholder(request, module_key):
     context = _dashboard_context(request, module_key, module["title"])
     context["module"] = module | {"url": _reverse_module(module)}
     return render(request, "photographer_workspace/placeholder.html", context)
+
+
+TEAM_PAGES = {
+    "team_overview": ("Overview", "Monitor team workload, availability, assignments, capacity, and recent activity.", "bi-grid-1x2"),
+    "team_members": ("Members", "Manage team members, invitations, profiles, roles, permissions, locations, working hours, and time off.", "bi-person-badge"),
+    "team_performance": ("Performance", "Review productivity, booking contribution, revenue contribution, turnaround times, client experience, workload trends, and team activity.", "bi-graph-up-arrow"),
+}
+
+
+@photographer_workspace_required
+@require_GET
+def team_placeholder(request, page_key):
+    title, subtitle, icon = TEAM_PAGES[page_key]
+    context = _dashboard_context(request, page_key, title)
+    context["team_page"] = {"title": title, "subtitle": subtitle, "icon": icon}
+    return render(request, "photographer_workspace/team/temporary_page.html", context)

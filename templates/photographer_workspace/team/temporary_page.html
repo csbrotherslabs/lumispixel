@@ -1,0 +1,21 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpw-team-page">
+  <header class="lpw-team-header">
+    <nav class="lpw-breadcrumb" aria-label="Breadcrumb">
+      <a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{{ team_page.title }}</strong>
+    </nav>
+    <h2 id="workspace-page-title">{{ team_page.title }}</h2>
+    <p>{{ team_page.subtitle }}</p>
+  </header>
+  <section class="lpw-team-empty" aria-labelledby="team-empty-title">
+    <div class="lpw-team-empty__icon"><i class="bi {{ team_page.icon }}" aria-hidden="true"></i></div>
+    <span class="lpw-badge">In development</span>
+    <h3 id="team-empty-title">Team {{ team_page.title }} is on the way</h3>
+    <p>We’re creating a focused workspace that fits naturally into your Business Hub. There’s nothing you need to set up yet.</p>
+    <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:dashboard' %}">Return to dashboard</a>
+  </section>
+</div>
+{% endblock %}
