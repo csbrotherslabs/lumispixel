@@ -12,7 +12,7 @@ from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNot
 from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
-from apps.dashboard.analytics_overview import _analytics_insights
+from apps.dashboard.analytics_overview import _analytics_insights, _short_date
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -24,6 +24,9 @@ class PhotographerWorkspaceTests(TestCase):
         user = make_user(profile_kwargs.pop("email", "photo@example.com"))
         profile = PhotographerProfile.objects.create(user=user, slug=profile_kwargs.pop("slug", "photo"), onboarding_completed=completed, **profile_kwargs)
         return user, profile
+
+    def test_analytics_short_dates_are_cross_platform(self):
+        self.assertEqual(_short_date(timezone.datetime(2026, 8, 1)), "Aug 1")
 
     def test_growth_overview_shell_navigation_filters_and_states(self):
         user, _ = self.make_photographer(True, email="growth@example.com", slug="growth")
@@ -97,6 +100,19 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "not a booking calendar")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
+
+    def test_analytics_drilldowns_and_csv_export(self):
+        user, _ = self.make_photographer(True, email="analytics-export@example.com", slug="analytics-export")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:analytics")
+        page = self.client.get(url)
+        self.assertContains(page, "Metric definition")
+        self.assertContains(page, "Historical trend")
+        self.assertContains(page, "Print / save PDF")
+        export = self.client.get(url, {"export": "csv"})
+        self.assertEqual(export.status_code, 200)
+        self.assertEqual(export["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("Total revenue", export.content.decode("utf-8-sig"))
 
     def test_analytics_insights_are_deterministic_ranked_and_limited(self):
         current = {"revenue": Decimal("1500"), "net": Decimal("1450"), "bookings": 8,

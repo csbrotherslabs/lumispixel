@@ -18,6 +18,11 @@ COMPARES = (("previous_period", "Previous period"), ("previous_year", "Previous 
 GROUPINGS = (("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"))
 
 
+def _short_date(value):
+    """Format a compact date without POSIX-only ``strftime`` directives."""
+    return f"{value:%b} {value.day}"
+
+
 def _analytics_insights(current, previous, payment_ratio, invoiced, collected,
                         cancellation_rate, customer, gallery, operations, urls, currency):
     """Return at most six deterministic recommendations, ordered by business impact.
@@ -160,7 +165,7 @@ def _metric(label, value, previous, display, icon, tooltip, url, compare_label, 
         tone = "positive" if delta > 0 else "negative" if delta < 0 else "neutral"
         change, note = f"{delta:+.1f}%", f"vs {compare_label.lower()}"
     heights = [max(8, min(100, int((Decimal(str(point)) / max([Decimal(str(x)) for x in spark] + [Decimal('1')])) * 100))) for point in spark]
-    return {"label": label, "raw": value, "value": display(value), "change": change, "tone": tone,
+    return {"label": label, "raw": value, "value": display(value), "previous_value": display(previous) if previous is not None else "Unavailable", "change": change, "tone": tone,
             "direction": direction, "icon": icon, "note": note, "tooltip": tooltip, "url": url, "spark": heights}
 
 
@@ -249,7 +254,7 @@ def _business_trends(profile, start, end, comparison, grouping, sessions, client
                 "average": float(total / count) if count else 0, "engagement": engagement.get(bucket, {}).get("value", 0)}
     current_buckets = buckets(start, end)
     comparison_buckets = buckets(*comparison) if comparison[0] else []
-    labels = [b.strftime("%b %-d") if grouping != "monthly" else b.strftime("%b %Y") for b in current_buckets]
+    labels = [_short_date(b) if grouping != "monthly" else b.strftime("%b %Y") for b in current_buckets]
     current = [raw(b) for b in current_buckets]
     compared = [raw(b) for b in comparison_buckets]
     # Align comparisons by ordinal bucket, padding partial calendar ranges safely.
@@ -334,7 +339,7 @@ def _customer_intelligence(start, end, comparison, booked, clients, leads, payme
                 "tooltip": tip, "url": url} for label, key, formatter, icon, tip, url in metric_specs]
 
     acquisition_rows = in_period(clients, "created_at").annotate(bucket=TruncWeek("created_at")).values("bucket").annotate(value=Count("pk")).order_by("bucket")
-    acquisition = [{"label": row["bucket"].strftime("%b %-d"), "value": row["value"]} for row in acquisition_rows]
+    acquisition = [{"label": _short_date(row["bucket"]), "value": row["value"]} for row in acquisition_rows]
     source_rows = period_leads.values("lead_source").annotate(total=Count("pk"), booked=Count("pk", filter=Q(status=Lead.Status.BOOKED))).order_by("-total", "lead_source")
     sources = [{"label": row["lead_source"] or "Unspecified", "value": row["total"], "booked": row["booked"],
                 "conversion": float(pct(row["booked"], row["total"])),
@@ -421,7 +426,7 @@ def _booking_intelligence(start, end, sessions, leads, profile, currency, urls):
         return [{"label": labeler(row[field]), "value": row["value"]} for row in result]
 
     weekly = scheduled.annotate(bucket=TruncWeek("starts_at")).values("bucket").annotate(value=Count("pk")).order_by("bucket")
-    over_time = [{"label": row["bucket"].strftime("%b %-d"), "value": row["value"]} for row in weekly]
+    over_time = [{"label": _short_date(row["bucket"]), "value": row["value"]} for row in weekly]
     weekdays = rows("starts_at__week_day", lambda day: ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")[day - 1])
     hour_rows = rows("starts_at__hour", lambda hour: "Morning" if hour < 12 else "Afternoon" if hour < 17 else "Evening")
     time_totals = {}
@@ -434,7 +439,7 @@ def _booking_intelligence(start, end, sessions, leads, profile, currency, urls):
     trends = []
     for row in scheduled.annotate(bucket=TruncWeek("starts_at")).values("bucket").annotate(
             cancelled=Count("pk", filter=Q(status=ClientSession.Status.CANCELLED))).order_by("bucket"):
-        trends.append({"label": row["bucket"].strftime("%b %-d"), "value": row["cancelled"], "secondary": None})
+        trends.append({"label": _short_date(row["bucket"]), "value": row["cancelled"], "secondary": None})
 
     package_lines = InvoiceLineItem.objects.filter(invoice__photographer=profile,
         invoice__booking__in=scheduled, item_type=InvoiceLineItem.ItemType.PACKAGE)
@@ -590,7 +595,7 @@ def _gallery_experience(start, end, galleries, events, sessions, profile, urls):
         favorites=Count("pk", filter=Q(event_type=GalleryAnalyticsEvent.EventType.FAVORITE)),
         downloads=Count("pk", filter=Q(event_type__in=(GalleryAnalyticsEvent.EventType.DOWNLOAD,
             GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD)))).order_by("bucket")
-    trend = [{"label": row["bucket"].strftime("%b %-d"), "views": row["views"],
+    trend = [{"label": _short_date(row["bucket"]), "views": row["views"],
               "favorites": row["favorites"], "downloads": row["downloads"]} for row in daily]
 
     event_rows = period_events.values("gallery_id").annotate(
@@ -739,7 +744,7 @@ def _operational_intelligence(start, end, grouping, sessions, leads, galleries, 
 
     trunc = {"daily": TruncDay, "weekly": TruncWeek, "monthly": TruncMonth}[grouping]
     def trend(qs, field, value_name="value"):
-        return [{"label": row["bucket"].strftime("%b %-d"), "value": round(float(row[value_name] or 0), 1)}
+        return [{"label": _short_date(row["bucket"]), "value": round(float(row[value_name] or 0), 1)}
                 for row in qs.annotate(bucket=trunc(field)).values("bucket").annotate(
                     value=Count("pk")).order_by("bucket")]
     reports = [
@@ -859,6 +864,9 @@ def analytics_overview(profile, params, base_url, today=None):
     currency = getattr(profile, "default_currency", "USD")
     business_trends = _business_trends(profile, start, end, (previous_start, previous_end), grouping,
         booked, clients, leads, events, payments, refunds, currency, urls)
+    contributors = [item["label"] for item in business_trends.get("services", [])[:5]]
+    for metric in metrics:
+        metric["contributors"] = contributors
     customer_intelligence = _customer_intelligence(start, end, (previous_start, previous_end),
         booked, clients, leads, payments, refunds, currency, urls)
     booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
