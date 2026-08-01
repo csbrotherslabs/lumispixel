@@ -2853,6 +2853,12 @@ def team_overview(request):
     except ValueError:
         selected_date = timezone.localdate()
     selected_location = request.GET.get("location", "").strip()
+    search_term = request.GET.get("q", "").strip()
+    selected_role = request.GET.get("role", "").strip()
+    selected_availability = request.GET.get("availability", "").strip()
+    display_state = request.GET.get("state", "ready")
+    if display_state not in {"ready", "loading", "empty", "unavailable", "error"}:
+        display_state = "ready"
     day_start = timezone.make_aware(datetime.combine(selected_date, time.min), timezone.get_current_timezone())
     day_end = day_start + timedelta(days=1)
 
@@ -2879,12 +2885,34 @@ def team_overview(request):
     initials = "".join(part[0] for part in owner_name.split()[:2]).upper() or "LP"
     total_minutes = sum(session.duration_minutes for session in day_sessions)
     confirmed = sum(session.status == ClientSession.Status.CONFIRMED for session in day_sessions)
+    owner_location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part) or "Location not configured"
+    member_matches = (
+        (not search_term or search_term.casefold() in owner_name.casefold())
+        and (not selected_role or selected_role == "owner")
+        and (not selected_location or selected_location == owner_location)
+        and (not selected_availability or selected_availability == "not_configured")
+    )
+    kpis = [
+        {"label": "Total active team members", "value": "1", "definition": "Active people with access to this studio workspace.", "status": "Current", "tone": "success", "icon": "bi-people", "available": True},
+        {"label": "Available today", "value": "—", "definition": "Members inside configured working hours with remaining capacity.", "status": "Not configured", "tone": "neutral", "icon": "bi-person-check", "available": False},
+        {"label": "On assignment", "value": "—", "definition": "Members linked to an active shoot on the selected date.", "status": "Data unavailable", "tone": "neutral", "icon": "bi-camera", "available": False},
+        {"label": "Unavailable or on leave", "value": "—", "definition": "Members marked away, on leave, or outside working hours.", "status": "Not configured", "tone": "neutral", "icon": "bi-calendar-x", "available": False},
+        {"label": "Unassigned shoots today", "value": str(len(day_sessions)), "definition": "Non-cancelled shoots without member-assignment records.", "status": "Needs review" if day_sessions else "Clear", "tone": "warning" if day_sessions else "success", "icon": "bi-exclamation-diamond", "available": True},
+        {"label": "Team capacity utilization", "value": "—", "definition": "Assigned shoot time as a share of configured team working hours.", "status": "Data unavailable", "tone": "neutral", "icon": "bi-speedometer2", "available": False},
+    ]
 
     context = _dashboard_context(request, "team_overview", "Team Overview")
     context.update({
         "selected_date": selected_date,
         "is_today": selected_date == timezone.localdate(),
         "selected_location": selected_location,
+        "search_term": search_term,
+        "selected_role": selected_role,
+        "selected_availability": selected_availability,
+        "display_state": display_state,
+        "member_matches": member_matches,
+        "owner_location": owner_location,
+        "kpis": kpis,
         "locations": locations,
         "day_sessions": day_sessions,
         "upcoming_sessions": upcoming,
