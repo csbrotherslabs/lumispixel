@@ -160,7 +160,7 @@ def _metric(label, value, previous, display, icon, tooltip, url, compare_label, 
         tone = "positive" if delta > 0 else "negative" if delta < 0 else "neutral"
         change, note = f"{delta:+.1f}%", f"vs {compare_label.lower()}"
     heights = [max(8, min(100, int((Decimal(str(point)) / max([Decimal(str(x)) for x in spark] + [Decimal('1')])) * 100))) for point in spark]
-    return {"label": label, "raw": value, "value": display(value), "change": change, "tone": tone,
+    return {"label": label, "raw": value, "value": display(value), "previous_value": display(previous) if previous is not None else "Unavailable", "change": change, "tone": tone,
             "direction": direction, "icon": icon, "note": note, "tooltip": tooltip, "url": url, "spark": heights}
 
 
@@ -859,6 +859,9 @@ def analytics_overview(profile, params, base_url, today=None):
     currency = getattr(profile, "default_currency", "USD")
     business_trends = _business_trends(profile, start, end, (previous_start, previous_end), grouping,
         booked, clients, leads, events, payments, refunds, currency, urls)
+    contributors = [item["label"] for item in business_trends.get("services", [])[:5]]
+    for metric in metrics:
+        metric["contributors"] = contributors
     customer_intelligence = _customer_intelligence(start, end, (previous_start, previous_end),
         booked, clients, leads, payments, refunds, currency, urls)
     booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
