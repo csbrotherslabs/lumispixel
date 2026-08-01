@@ -25,6 +25,28 @@ class PhotographerWorkspaceTests(TestCase):
         profile = PhotographerProfile.objects.create(user=user, slug=profile_kwargs.pop("slug", "photo"), onboarding_completed=completed, **profile_kwargs)
         return user, profile
 
+    def test_team_temporary_pages_routes_copy_and_navigation(self):
+        user, _ = self.make_photographer(True, email="team@example.com", slug="team")
+        self.client.force_login(user)
+        pages = {
+            "team_overview": ("Overview", "Monitor team workload, availability, assignments, capacity, and recent activity."),
+            "team_members": ("Members", "Manage team members, invitations, profiles, roles, permissions, locations, working hours, and time off."),
+            "team_performance": ("Performance", "Review productivity, booking contribution, revenue contribution, turnaround times, client experience, workload trends, and team activity."),
+        }
+
+        for route, (title, subtitle) in pages.items():
+            url = reverse(f"photographer_workspace:{route}")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, f'<h2 id="workspace-page-title">{title}</h2>', html=True)
+            self.assertContains(response, subtitle)
+            self.assertContains(response, f'href="{url}" class="is-active" aria-current="page"')
+            for child_route, (child_title, _) in pages.items():
+                self.assertContains(response, reverse(f"photographer_workspace:{child_route}"))
+                self.assertContains(response, child_title)
+            for removed_title in ("Schedule & Capacity", "Roles & Permissions", "Activity"):
+                self.assertNotContains(response, removed_title)
+
     def test_analytics_short_dates_are_cross_platform(self):
         self.assertEqual(_short_date(timezone.datetime(2026, 8, 1)), "Aug 1")
 

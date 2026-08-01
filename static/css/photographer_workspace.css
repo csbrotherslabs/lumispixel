@@ -214,6 +214,18 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:720px){.lpw-global-search{flex:0 0 44px;width:44px;background:#fff;cursor:pointer}.lpw-global-search input{position:absolute;right:0;top:calc(100% + 12px);width:min(360px,calc(100vw - 32px));height:46px;padding:0 15px;border:1px solid var(--lpw-border);border-radius:13px;background:#fff;box-shadow:var(--lpw-shadow);opacity:0;visibility:hidden;transform:translateY(-5px);transition:.18s ease}.lpw-global-search:focus-within input{opacity:1;visibility:visible;transform:none}.lpw-global-search>i{margin:auto}.lpw-global-search kbd{display:none}.lpw-page-heading{margin-right:auto}.lpw-help-btn{display:none}}
 @media(max-width:480px){.lpw-topbar{gap:7px;padding:10px 12px}.lpw-menu-button,.lpw-icon-btn,.lpw-global-search{width:40px;height:40px;min-height:40px;flex-basis:40px}.lpw-topbar h1{font-size:18px}.lpw-breadcrumb{display:none}.lpw-profile-trigger{height:42px}.lpw-profile-trigger img,.lpw-profile-avatar{width:32px;height:32px}.lpw-top-actions{gap:5px}.lpw-profile-dropdown{position:fixed;right:10px;top:64px;width:min(250px,calc(100vw - 20px))}}
 
+/* Shared temporary Team pages */
+.lpw-team-page{min-height:calc(100vh - 84px);color:#201d1b}
+.lpw-team-header{position:sticky;top:72px;z-index:20;margin:-24px -28px 32px;padding:25px 28px 22px;background:rgba(249,247,245,.96);border-bottom:1px solid var(--lpw-border);backdrop-filter:blur(12px)}
+.lpw-team-header h2{margin:0 0 8px;font-size:clamp(30px,4vw,44px);line-height:1.08;letter-spacing:-.035em}
+.lpw-team-header>p{max-width:850px;margin:0;color:#655d58;font-size:15px;line-height:1.65}
+.lpw-team-header .lpw-breadcrumb a{color:#7b7069;text-decoration:none}.lpw-team-header .lpw-breadcrumb a:hover{color:var(--lpw-accent)}
+.lpw-team-empty{max-width:780px;margin:8vh auto 0;padding:clamp(32px,6vw,58px);text-align:center;background:#fff;border:1px solid var(--lpw-border);border-radius:24px;box-shadow:0 18px 55px rgba(46,34,27,.08)}
+.lpw-team-empty__icon{display:grid;place-items:center;width:68px;height:68px;margin:0 auto 18px;border-radius:20px;background:#fff2eb;color:var(--lpw-accent);font-size:29px}
+.lpw-team-empty h3{margin:18px 0 10px;font-size:clamp(23px,3vw,31px);letter-spacing:-.025em}.lpw-team-empty p{max-width:570px;margin:0 auto 25px;color:#69615c;line-height:1.7}
+@media(max-width:860px){.lpw-team-header{top:72px;margin:-16px -16px 24px;padding:20px 16px}.lpw-team-empty{margin-top:5vh}}
+@media(max-width:620px){.lpw-team-header{top:64px}.lpw-team-header .lpw-breadcrumb{display:none}.lpw-team-empty{margin-top:20px;padding:32px 20px;border-radius:18px}}
+
 /* Photographer business command center */
 .lpw-main:has(.lpw-command-header){gap:24px;max-width:1600px;margin-inline:auto;padding-top:26px}
 .lpw-command-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.lpw-command-header p{margin:0;color:var(--workspace-text-secondary);font-size:14px}.lpw-command-header .lpw-command-header__greeting{margin-bottom:3px;color:var(--workspace-text-primary);font-size:16px;font-weight:700}.lpw-command-header__actions{display:flex;gap:10px;flex-wrap:wrap}.lpw-command-header__actions .lpw-btn{min-height:42px;border-radius:11px;padding:9px 15px;font-size:14px}.lpw-command-header__actions .lpw-btn i{color:var(--lpw-accent)}
