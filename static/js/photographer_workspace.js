@@ -400,6 +400,15 @@
   serviceBars.forEach((bar) => { bar.style.width = Number(bar.style.getPropertyValue('--service-value')) / serviceMax * 100 + '%'; });
 }());
 
+(function initCustomerIntelligence() {
+  document.querySelectorAll('.lpa-ci-bars').forEach(function (chart) {
+    const bars = Array.from(chart.querySelectorAll('b[style*="--value"]'));
+    const values = bars.map((bar) => Number(bar.style.getPropertyValue('--value')) || 0);
+    const maximum = chart.classList.contains('is-percent') ? 100 : Math.max(1, ...values);
+    bars.forEach((bar, index) => bar.style.setProperty('--bar-width', Math.min(100, values[index] / maximum * 100) + '%'));
+  });
+}());
+
 (function initBookingListView() {
   const root = document.querySelector('[data-booking-list]');
   if (!root) return;

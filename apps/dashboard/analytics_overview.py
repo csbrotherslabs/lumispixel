@@ -1,6 +1,7 @@
 """Read-only, cross-product analytics assembled from LumisPixel source records."""
 from datetime import datetime, time, timedelta
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
@@ -179,6 +180,109 @@ def _business_trends(profile, start, end, comparison, grouping, sessions, client
             "currency": currency, "has_data": any(any(v for v in point.values()) for point in current)}
 
 
+def _customer_intelligence(start, end, comparison, booked, clients, leads, payments, refunds, currency, urls):
+    """Build privacy-safe customer aggregates from existing operational records."""
+    def in_period(qs, field, a=start, b=end):
+        return qs.filter(**{f"{field}__date__gte": a, f"{field}__date__lte": b})
+
+    period_bookings = in_period(booked, "confirmed_at")
+    booked_client_ids = set(period_bookings.values_list("client_id", flat=True))
+    returning_ids = set(booked.filter(confirmed_at__date__lt=start, client_id__in=booked_client_ids)
+                        .values_list("client_id", flat=True))
+    new_booked_ids = booked_client_ids - returning_ids
+    period_clients = in_period(clients, "created_at")
+    period_leads = in_period(leads, "created_at")
+    won_leads = period_leads.filter(status=Lead.Status.BOOKED).count()
+    referral_clients = period_clients.filter(converted_lead__lead_source__icontains="referr").count()
+
+    period_payments = in_period(payments, "paid_at")
+    period_refunds = in_period(refunds, "refunded_at")
+    collected = period_payments.aggregate(v=Sum("amount"))["v"] or Decimal("0")
+    returned = period_refunds.aggregate(v=Sum("amount"))["v"] or Decimal("0")
+    net_spend = collected - returned
+    paying_clients = period_payments.values("invoice__client_id").distinct().count()
+    booking_value = period_bookings.aggregate(v=Sum("booking_value"))["v"] or Decimal("0")
+    response_seconds = [
+        max(0, (last_contacted - created).total_seconds())
+        for created, last_contacted in period_leads.exclude(last_contacted_at=None)
+        .values_list("created_at", "last_contacted_at")
+    ]
+    average_response_hours = Decimal(str(sum(response_seconds) / len(response_seconds) / 3600)) if response_seconds else None
+
+    def pct(a, b): return Decimal(a * 100) / b if b else Decimal("0")
+    money = lambda value: _money(value, currency)
+    metric_values = {
+        "new": period_clients.count(), "returning": len(returning_ids),
+        "repeat": pct(len(returning_ids), len(booked_client_ids)),
+        "value": booking_value / len(booked_client_ids) if booked_client_ids else Decimal("0"),
+        "referral": pct(referral_clients, period_clients.count()),
+        "spend": net_spend / paying_clients if paying_clients else Decimal("0"),
+        "response": average_response_hours, "conversion": pct(won_leads, period_leads.count()),
+    }
+    metric_specs = (
+        ("New clients", "new", lambda v: f"{v:,}", "bi-person-plus", "Client records created in the selected period.", urls["clients"]),
+        ("Returning clients", "returning", lambda v: f"{v:,}", "bi-person-check", "Clients booked in this period who also had an earlier confirmed booking.", urls["clients"]),
+        ("Repeat booking rate", "repeat", lambda v: f"{v:.1f}%", "bi-arrow-repeat", "Returning booked clients divided by all distinct booked clients in this period.", urls["clients"]),
+        ("Average client value", "value", money, "bi-gem", "Recorded booking value divided by distinct booked clients in this period.", urls["clients"]),
+        ("Referral rate", "referral", lambda v: f"{v:.1f}%", "bi-share", "New client records whose converted lead source contains referral, divided by new clients.", urls["leads"] + "?source=Referral"),
+        ("Average client spend", "spend", money, "bi-wallet2", "Completed payments less refunds divided by clients who paid in this period.", urls["clients"]),
+        ("Lead response time", "response", lambda v: "—" if v is None else (f"{v:.1f} hrs" if v < 48 else f"{v / 24:.1f} days"), "bi-stopwatch", "Average time from lead creation to its recorded contact timestamp.", urls["leads"]),
+        ("Lead-to-booking conversion", "conversion", lambda v: f"{v:.1f}%", "bi-funnel", "Leads created in this period currently marked booked, divided by all leads created.", urls["leads"] + "?status=booked"),
+    )
+    metrics = [{"label": label, "value": formatter(metric_values[key]), "icon": icon,
+                "tooltip": tip, "url": url} for label, key, formatter, icon, tip, url in metric_specs]
+
+    acquisition_rows = in_period(clients, "created_at").annotate(bucket=TruncWeek("created_at")).values("bucket").annotate(value=Count("pk")).order_by("bucket")
+    acquisition = [{"label": row["bucket"].strftime("%b %-d"), "value": row["value"]} for row in acquisition_rows]
+    source_rows = period_leads.values("lead_source").annotate(total=Count("pk"), booked=Count("pk", filter=Q(status=Lead.Status.BOOKED))).order_by("-total", "lead_source")
+    sources = [{"label": row["lead_source"] or "Unspecified", "value": row["total"], "booked": row["booked"],
+                "conversion": float(pct(row["booked"], row["total"])),
+                "url": urls["leads"] + (f"?{urlencode({'source': row['lead_source']})}" if row["lead_source"] else "")}
+               for row in source_rows[:8]]
+    location_rows = period_bookings.values("location").annotate(value=Count("pk")).order_by("-value", "location")
+    locations = [{"label": row["location"] or "Unspecified", "value": row["value"]} for row in location_rows[:7]]
+
+    client_revenue = {row["invoice__client_id"]: row["value"] or Decimal("0") for row in period_payments.values("invoice__client_id").annotate(value=Sum("amount"))}
+    for row in period_refunds.values("payment__invoice__client_id").annotate(value=Sum("amount")):
+        client_id = row["payment__invoice__client_id"]
+        client_revenue[client_id] = client_revenue.get(client_id, Decimal("0")) - (row["value"] or Decimal("0"))
+    client_services = {}
+    for client_id, service in period_bookings.values_list("client_id", "session_type"):
+        client_services.setdefault(client_id, set()).add((service or "").lower())
+    all_segment_ids = set(period_clients.values_list("pk", flat=True)) | booked_client_ids | set(client_revenue)
+    referral_ids = set(clients.filter(pk__in=all_segment_ids, converted_lead__lead_source__icontains="referr").values_list("pk", flat=True))
+    segment_defs = [
+        ("New clients", set(period_clients.values_list("pk", flat=True))), ("Returning clients", returning_ids),
+        ("Referral clients", referral_ids),
+        ("Wedding clients", {pk for pk, names in client_services.items() if any("wedding" in name for name in names)}),
+        ("Portrait clients", {pk for pk, names in client_services.items() if any("portrait" in name for name in names)}),
+        ("Corporate clients", {pk for pk, names in client_services.items() if any(word in name for name in names for word in ("corporate", "brand"))}),
+    ]
+    revenue_values = sorted((client_revenue.get(pk, Decimal("0")) for pk in all_segment_ids), reverse=True)
+    high_value_floor = revenue_values[max(0, len(revenue_values) // 4 - 1)] if revenue_values else Decimal("0")
+    segment_defs.append(("High-value clients", {pk for pk in all_segment_ids if high_value_floor and client_revenue.get(pk, 0) >= high_value_floor}))
+    segments = []
+    for label, ids in segment_defs:
+        revenue = sum((client_revenue.get(pk, Decimal("0")) for pk in ids), Decimal("0"))
+        repeats = len(ids & returning_ids)
+        lead_ids = period_leads.filter(converted_client__pk__in=ids)
+        lead_total, converted = lead_ids.count(), lead_ids.filter(status=Lead.Status.BOOKED).count()
+        segments.append({"label": label, "clients": len(ids), "revenue": money(revenue),
+                         "raw_revenue": float(revenue), "average": money(revenue / len(ids) if ids else 0),
+                         "repeat": f"{pct(repeats, len(ids)):.1f}%", "conversion": f"{pct(converted, lead_total):.1f}%",
+                         "trend": "—", "url": urls["clients"]})
+    segments.sort(key=lambda row: row["raw_revenue"], reverse=True)
+
+    referral_sources = [row for row in sources if "referr" in row["label"].lower()]
+    return {"metrics": metrics, "new_count": len(new_booked_ids), "returning_count": len(returning_ids),
+            "new_percent": float(pct(len(new_booked_ids), len(booked_client_ids))), "acquisition": acquisition,
+            "sources": sources, "locations": locations, "segments": segments, "referrals": referral_sources,
+            "funnel": [{"label": "Booked clients", "value": len(booked_client_ids)},
+                       {"label": "Returning clients", "value": len(returning_ids)},
+                       {"label": "Booked again in period", "value": period_bookings.filter(client_id__in=returning_ids).count()}],
+            "urls": urls, "has_data": bool(period_clients or period_leads or period_bookings)}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -273,11 +377,13 @@ def analytics_overview(profile, params, base_url, today=None):
     cancellation_rate = Decimal(scheduled.filter(status=ClientSession.Status.CANCELLED).count() * 100) / scheduled_count if scheduled_count else None
     root = base_url.rsplit('/analytics/', 1)[0]
     urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/",
-            "galleries": f"{root}/galleries/", "clients": f"{root}/crm/"}
+            "galleries": f"{root}/galleries/", "clients": f"{root}/clients/", "leads": f"{root}/leads/"}
     business_health = _business_health(current, previous, payment_ratio, cancellation_rate, urls)
     currency = getattr(profile, "default_currency", "USD")
     business_trends = _business_trends(profile, start, end, (previous_start, previous_end), grouping,
         booked, clients, leads, events, payments, refunds, currency, urls)
+    customer_intelligence = _customer_intelligence(start, end, (previous_start, previous_end),
+        booked, clients, leads, payments, refunds, currency, urls)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -324,4 +430,5 @@ def analytics_overview(profile, params, base_url, today=None):
             "start": start, "end": end, "selected_filters": selected, "filter_options": options,
             "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
-            "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends}
+            "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
+            "customer_intelligence": customer_intelligence}

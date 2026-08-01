@@ -51,7 +51,7 @@
       </div>
     </section>
 
-    <section class="lpa-section" aria-labelledby="customer-title"><div class="lpa-section-heading"><div><span>Relationships</span><h2 id="customer-title">Customer Intelligence</h2><p>Understand acquisition, retention, and client value.</p></div></div><div class="lpa-three-grid"><article class="lpa-card lpa-stat-list"><header><div><span class="lpa-eyebrow">Client mix</span><h3>New vs returning clients</h3></div></header><div class="lpa-donut"><span><b>64%</b><small>New</small></span></div><ul><li><i></i>New clients <b>64%</b></li><li><i></i>Returning clients <b>36%</b></li></ul></article>{% include "photographer_workspace/analytics/components/chart_card.html" with eyebrow="Lifetime value" title="Client value trend" description="Placeholder until cohort queries are connected" card_class="lpa-span-two" %}</div></section>
+    {% include "photographer_workspace/analytics/components/customer_intelligence.html" %}
 
     <section class="lpa-section" aria-labelledby="booking-title"><div class="lpa-section-heading"><div><span>Demand</span><h2 id="booking-title">Booking Intelligence</h2><p>See what clients book, when they convert, and where demand is changing.</p></div></div>{% include "photographer_workspace/analytics/components/report_table.html" with title="Booking performance by service" description="Compare demand and value across photography services" first_column="Service" %}</section>
 

@@ -59,6 +59,14 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'value="previous_year" selected')
         for heading in ("Executive Overview", "Business Performance", "Customer Intelligence", "Booking Intelligence", "Revenue Intelligence", "Gallery and Client Experience", "Operational Intelligence", "Insights and Recommendations"):
             self.assertContains(response, heading)
+        for heading in ("New versus returning clients", "Client acquisition trend", "Leads by source",
+                        "Conversion rate by lead source", "Client value by segment", "Repeat-booking funnel",
+                        "Top client locations", "Referral performance", "High-value client segments"):
+            self.assertContains(response, heading)
+        for metric in ("New clients", "Returning clients", "Repeat booking rate", "Average client value",
+                       "Referral rate", "Average client spend", "Lead response time", "Lead-to-booking conversion"):
+            self.assertContains(response, metric)
+        self.assertContains(response, "names, contact details, and individual activity are intentionally excluded")
         for heading in ("Business Health and Summary", "Business Health", "Category contributions", "Business Summary"):
             self.assertContains(response, heading)
         self.assertContains(response, "No machine learning is used.")
