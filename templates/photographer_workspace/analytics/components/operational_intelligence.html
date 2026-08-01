@@ -1,0 +1,26 @@
+<div class="lpa-operations">
+  <div class="lpa-kpi-grid lpa-operations-metrics">
+    {% for metric in operational_intelligence.metrics %}
+      <article class="lpa-kpi" title="{{ metric.tooltip }}"><div class="lpa-kpi-top"><span class="lpa-kpi-icon"><i class="bi {{ metric.icon }}"></i></span><i class="bi bi-info-circle" aria-label="{{ metric.tooltip }}"></i></div><p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.tooltip }}</small></article>
+    {% endfor %}
+  </div>
+
+  <article class="lpa-card lpa-funnel-card">
+    <header><div><span class="lpa-eyebrow">End-to-end workflow</span><h3>Workflow funnel</h3><p>Counts follow leads created in the selected period through milestones that can be linked to their client record.</p></div><span class="lpa-bottleneck"><small>Main bottleneck</small><strong>{{ operational_intelligence.main_bottleneck }}</strong></span></header>
+    <div class="lpa-workflow-funnel" role="list" aria-label="End-to-end workflow funnel">
+      {% for stage in operational_intelligence.funnel %}<div role="listitem" class="lpa-funnel-stage"><span>{{ forloop.counter|stringformat:"02d" }}</span><div><strong>{{ stage.label }}</strong><b>{{ stage.count }}</b></div>{% if not forloop.first %}<dl><div><dt>From prior stage</dt><dd>{{ stage.conversion|floatformat:1 }}%</dd></div><div><dt>Average time</dt><dd>{{ stage.average }}</dd></div><div><dt>Drop-off</dt><dd>{{ stage.dropoff|floatformat:1 }}%</dd></div></dl>{% else %}<small>Cohort entry</small>{% endif %}</div>{% endfor %}
+    </div>
+    <p class="lpa-method-note"><i class="bi bi-info-circle"></i> Editing completion uses galleries currently marked ready or later. Because that milestone has no dedicated timestamp, average time is not estimated.</p>
+  </article>
+
+  <div class="lpa-operations-reports">
+    {% for report in operational_intelligence.reports %}<article class="lpa-card lpa-operation-report"><header><div><span class="lpa-eyebrow">Operational report {{ forloop.counter }}</span><h3>{{ report.title }}</h3><p>{{ report.description }}</p></div></header>
+      {% if report.rows %}<div class="lpa-report-list">{% for row in report.rows %}<div><span>{{ row.label }}</span><strong>{{ row.count }}</strong><small>{{ row.conversion|floatformat:1 }}% conversion · {{ row.dropoff|floatformat:1 }}% drop-off</small></div>{% endfor %}</div>{% endif %}
+      {% if report.stats %}<div class="lpa-report-stats">{% for label,value in report.stats %}<div><span>{{ label }}</span><strong>{{ value }}</strong></div>{% endfor %}</div>{% endif %}
+      {% if report.trend %}<div class="lpa-mini-trend" aria-label="{{ report.title }}">{% for point in report.trend %}<div><i style="--report-value:{{ point.value }}"></i><span>{{ point.label }}</span><b>{{ point.value }}</b></div>{% endfor %}</div>{% else %}{% if not report.rows and not report.stats and not report.locations %}<p class="lpa-no-report-data">No recorded data for this period.</p>{% endif %}{% endif %}
+      {% if report.locations %}<div class="lpa-report-list">{% for row in report.locations %}<div><span>{{ row.location|default:"Unspecified" }}</span><strong>{{ row.value }} shoot{{ row.value|pluralize }}</strong><small>{{ row.revenue|default:0 }} recorded booking value</small></div>{% empty %}<p>No location data for this period.</p>{% endfor %}</div>{% endif %}
+    </article>{% endfor %}
+  </div>
+
+  <article class="lpa-card lpa-team-context"><header><div><span class="lpa-eyebrow">Studio context</span><h3>Team-member metrics</h3><p>Neutral comparisons only, with data availability shown explicitly.</p></div><span class="lpa-data-badge">Data unavailable</span></header><p>{{ operational_intelligence.team.context }}</p><div>{% for column in operational_intelligence.team.columns %}<span><i class="bi bi-dash-circle"></i>{{ column }}<b>Not recorded by member</b></span>{% endfor %}</div><footer><i class="bi bi-shield-check"></i>No team ranking is calculated from incomplete assignments, turnaround, late-task, or satisfaction data.</footer></article>
+</div>

@@ -7,7 +7,8 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
 
-from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
+from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientSession, ClientTask,
+                                 InvoiceLineItem, InvoicePayment, Lead, PaymentRefund)
 from apps.galleries.models import Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder
 
 
@@ -543,6 +544,119 @@ def _gallery_experience(start, end, galleries, events, sessions, profile, urls):
                          "conversion": order_count * 100 / visitors if visitors else 0}, "urls": urls}
 
 
+def _operational_intelligence(start, end, grouping, sessions, leads, galleries, payments, profile, currency, urls):
+    """Summarize observable workflow events, clearly marking unavailable milestones."""
+    period_leads = leads.filter(created_at__date__gte=start, created_at__date__lte=end)
+    period_sessions = sessions.filter(starts_at__date__gte=start, starts_at__date__lte=end)
+    activities = ClientActivity.objects.for_photographer(profile)
+    tasks = ClientTask.objects.for_photographer(profile)
+    invoices = ClientInvoice.objects.for_photographer(profile).exclude(status=ClientInvoice.Status.VOID)
+
+    def average(values):
+        values = list(values)
+        return sum(values) / len(values) if values else None
+
+    def duration(value, unavailable="No recorded data"):
+        if value is None:
+            return unavailable
+        return f"{value:.1f} hrs" if value < 48 else f"{value / 24:.1f} days"
+
+    response = average(max(0, (contacted - created).total_seconds() / 3600)
+                       for created, contacted in period_leads.exclude(last_contacted_at=None)
+                       .values_list("created_at", "last_contacted_at"))
+    contract = average(max(0, (signed - created).total_seconds() / 3600)
+                       for created, signed in activities.filter(
+                           event_type=ClientActivity.EventType.CONTRACT_SIGNED,
+                           occurred_at__date__gte=start, occurred_at__date__lte=end,
+                           lead__isnull=False).values_list("lead__created_at", "occurred_at"))
+    booking_to_shoot = average(max(0, (shoot - booked).total_seconds() / 3600)
+                               for booked, shoot in period_sessions.exclude(confirmed_at=None)
+                               .values_list("confirmed_at", "starts_at"))
+    delivered = galleries.filter(published_at__date__gte=start, published_at__date__lte=end,
+                                 event_date__isnull=False)
+    delivery = average(max(0, (published.date() - event).days * 24)
+                       for event, published in delivered.values_list("event_date", "published_at"))
+    payment_delays = []
+    for paid_at, due_date, issue_date in payments.filter(paid_at__date__gte=start, paid_at__date__lte=end) \
+            .values_list("paid_at", "invoice__due_date", "invoice__issue_date"):
+        payment_delays.append((paid_at.date() - (due_date or issue_date)).days * 24)
+    payment_delay = average(payment_delays)
+    overdue_tasks = tasks.filter(due_date__lt=timezone.localdate()).exclude(status=ClientTask.Status.COMPLETED).count()
+    late_deliveries = galleries.filter(event_date__gte=start, event_date__lte=end,
+        published_at__isnull=True, event_date__lt=timezone.localdate()).count()
+    missed_consultations = period_sessions.filter(session_type__icontains="consult",
+        status=ClientSession.Status.CANCELLED).count()
+    available_minutes = max(1, (end - start).days + 1) * 8 * 60
+    used_minutes = period_sessions.exclude(status=ClientSession.Status.CANCELLED).aggregate(v=Sum("duration_minutes"))["v"] or 0
+    utilization = min(100, used_minutes * 100 / available_minutes)
+
+    metrics = [
+        ("Average lead response time", duration(response), "bi-reply", "Lead creation to recorded first/last contact timestamp."),
+        ("Average contract turnaround", duration(contract), "bi-file-earmark-check", "Lead creation to recorded contract-signed activity."),
+        ("Average booking-to-shoot time", duration(booking_to_shoot), "bi-calendar-event", "Booking confirmation to scheduled shoot start."),
+        ("Average editing turnaround", "Not tracked", "bi-magic", "Editing completion has no dedicated timestamp yet; no estimate is shown."),
+        ("Average gallery delivery time", duration(delivery), "bi-images", "Event date to gallery publication timestamp."),
+        ("Average invoice payment delay", duration(payment_delay), "bi-credit-card", "Invoice due date to payment; negative values indicate early payment."),
+        ("Overdue workflows", f"{overdue_tasks:,}", "bi-exclamation-diamond", "Open workflow tasks whose due date has passed."),
+        ("Late gallery deliveries", f"{late_deliveries:,}", "bi-clock-history", "Past-event galleries without a publication timestamp."),
+        ("Missed consultations", f"{missed_consultations:,}", "bi-calendar-x", "Cancelled sessions whose service name contains consultation."),
+        ("Schedule utilization", f"{utilization:.1f}%", "bi-speedometer2", "Scheduled non-cancelled minutes divided by an 8-hour daily capacity baseline."),
+    ]
+
+    leads_count = period_leads.count()
+    consulted_ids = set(activities.filter(event_type=ClientActivity.EventType.CONSULTATION_SCHEDULED,
+        lead__in=period_leads).values_list("lead_id", flat=True))
+    booked_ids = set(period_leads.filter(status=Lead.Status.BOOKED).values_list("pk", flat=True))
+    contract_ids = set(activities.filter(event_type=ClientActivity.EventType.CONTRACT_SIGNED,
+        lead__in=period_leads).values_list("lead_id", flat=True))
+    cohort_clients = Client.objects.for_photographer(profile).filter(converted_lead__in=period_leads)
+    client_ids = set(cohort_clients.values_list("pk", flat=True))
+    completed_sessions = sessions.filter(client_id__in=client_ids, status=ClientSession.Status.COMPLETED)
+    completed_client_ids = set(completed_sessions.values_list("client_id", flat=True))
+    edited_client_ids = set(galleries.filter(client_id__in=completed_client_ids,
+        status__in=(Gallery.Status.READY, Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED,
+                   Gallery.Status.ARCHIVED)).values_list("client_id", flat=True))
+    delivered_client_ids = set(galleries.filter(client_id__in=client_ids,
+        published_at__isnull=False).values_list("client_id", flat=True))
+    paid_client_ids = set(invoices.filter(client_id__in=client_ids, status=ClientInvoice.Status.PAID)
+                          .values_list("client_id", flat=True))
+    stage_specs = [("Lead", leads_count), ("Consultation", len(consulted_ids)), ("Booked", len(booked_ids)),
+                   ("Contract completed", len(contract_ids)), ("Shoot completed", len(completed_client_ids)),
+                   ("Editing completed", len(edited_client_ids)), ("Gallery delivered", len(delivered_client_ids)),
+                   ("Fully paid", len(paid_client_ids))]
+    funnel = []
+    prior = None
+    for label, count in stage_specs:
+        conversion = count * 100 / prior if prior else (100 if prior is None and count else 0)
+        funnel.append({"label": label, "count": count, "conversion": conversion,
+                       "dropoff": max(0, 100 - conversion) if prior is not None else 0,
+                       "average": "Not timestamped"})
+        prior = count
+    transitions = [row for row in funnel[1:] if row["count"] or row["dropoff"]]
+    bottleneck = max(transitions, key=lambda row: row["dropoff"], default=None)
+    main_bottleneck = bottleneck["label"] if bottleneck else "Not enough workflow data"
+
+    trunc = {"daily": TruncDay, "weekly": TruncWeek, "monthly": TruncMonth}[grouping]
+    def trend(qs, field, value_name="value"):
+        return [{"label": row["bucket"].strftime("%b %-d"), "value": round(float(row[value_name] or 0), 1)}
+                for row in qs.annotate(bucket=trunc(field)).values("bucket").annotate(
+                    value=Count("pk")).order_by("bucket")]
+    reports = [
+        {"title": "Workflow bottlenecks", "description": f"Largest observed stage drop-off: {main_bottleneck}.", "rows": funnel[1:]},
+        {"title": "Late or overdue work", "description": "Open overdue tasks and undelivered past-event galleries.", "stats": [("Overdue workflows", overdue_tasks), ("Late galleries", late_deliveries), ("Missed consultations", missed_consultations)]},
+        {"title": "Delivery turnaround trend", "description": "Published galleries by period; exact delivery-time trend uses recorded event dates.", "trend": trend(delivered, "published_at")},
+        {"title": "Lead response trend", "description": "Contacted leads by contact timestamp.", "trend": trend(period_leads.exclude(last_contacted_at=None), "last_contacted_at")},
+        {"title": "Payment delay trend", "description": "Completed payments by payment date; headline metric measures delay against due dates.", "trend": trend(payments.filter(paid_at__date__gte=start, paid_at__date__lte=end), "paid_at")},
+        {"title": "Team workload", "description": "Assignments are not recorded. Owner totals are shown neutrally; no ranking is produced.", "stats": [(str(profile), period_sessions.exclude(status=ClientSession.Status.CANCELLED).count())]},
+        {"title": "Location performance", "description": "Completed shoots grouped by recorded booking location.", "locations": list(period_sessions.values("location").annotate(value=Count("pk"), revenue=Sum("booking_value")).order_by("-value")[:8])},
+    ]
+    team = {"available": False, "context": "Team-member assignments and satisfaction scores are not recorded. Comparisons remain unavailable rather than attributing owner-level work unfairly.",
+            "columns": ("Shoots completed", "Revenue associated", "Average turnaround", "Workload", "Late tasks", "Client satisfaction")}
+    return {"metrics": [{"label": a, "value": b, "icon": c, "tooltip": d} for a, b, c, d in metrics],
+            "funnel": funnel, "main_bottleneck": main_bottleneck, "reports": reports, "team": team,
+            "currency": currency, "urls": urls}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -647,6 +761,9 @@ def analytics_overview(profile, params, base_url, today=None):
     booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
     revenue_intelligence = _revenue_intelligence(start, end, grouping, sessions, payments, refunds, profile, currency, urls)
     gallery_experience = _gallery_experience(start, end, galleries, events, sessions, profile, urls)
+    operational_intelligence = _operational_intelligence(
+        start, end, grouping, sessions, leads, galleries, payments, profile, currency, urls
+    )
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -695,4 +812,5 @@ def analytics_overview(profile, params, base_url, today=None):
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
             "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence,
-            "revenue_intelligence": revenue_intelligence, "gallery_experience": gallery_experience}
+            "revenue_intelligence": revenue_intelligence, "gallery_experience": gallery_experience,
+            "operational_intelligence": operational_intelligence}
