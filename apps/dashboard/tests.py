@@ -70,10 +70,46 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Brand session")
         self.assertContains(response, "Taylor Client")
-        self.assertContains(response, "3.0 booked hours")
+        self.assertContains(response, "Insufficient data")
+        self.assertContains(response, "does not attribute owner-level bookings")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[session.pk]))
         self.assertNotContains(response, "Private shoot")
         self.assertContains(response, "Availability isn’t connected yet.")
+
+    def test_team_overview_workload_alerts_actions_and_team_activity_are_source_backed(self):
+        user, profile = self.make_photographer(True, email="operations@example.com", slug="operations")
+        client = Client.objects.create(photographer=profile, first_name="Alex", last_name="Client")
+        today = timezone.localdate()
+        starts = timezone.make_aware(datetime.combine(today, time(10)))
+        booking = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait", starts_at=starts,
+            duration_minutes=120, status=ClientSession.Status.CONFIRMED,
+        )
+        ClientActivity.objects.create(
+            photographer=profile, client=client,
+            event_type=ClientActivity.EventType.GALLERY_DELIVERED,
+            description="Alex Client gallery delivered.",
+        )
+        ClientActivity.objects.create(
+            photographer=profile, client=client,
+            event_type=ClientActivity.EventType.NOTE_ADDED,
+            description="This CRM-only event must not appear in team activity.",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:team_overview"), {"date": today.isoformat()})
+
+        for heading in ("Assigned shoots", "Scheduled hours", "Available hours", "Utilization", "Overlaps", "Workload status"):
+            self.assertContains(response, heading)
+        for action in ("Invite member", "Assign photographer", "View schedule", "View all members", "Review performance"):
+            self.assertContains(response, action)
+        self.assertContains(response, "Unassigned shoot")
+        self.assertContains(response, "Missing availability")
+        self.assertContains(response, "Affected: Portrait · Alex Client")
+        self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[booking.pk]))
+        self.assertContains(response, "Gallery delivered")
+        self.assertContains(response, "Alex Client gallery delivered.")
+        self.assertNotContains(response, "This CRM-only event must not appear in team activity.")
 
     def test_team_overview_status_kpis_availability_filters_and_states(self):
         user, _ = self.make_photographer(True, email="solo-team@example.com", slug="solo-team")
