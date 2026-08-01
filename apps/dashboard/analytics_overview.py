@@ -376,6 +376,83 @@ def _booking_intelligence(start, end, sessions, leads, profile, currency, urls):
             "locations": rows("location"), "team_note": "Team-member grouping will populate when booking assignments are available."}
 
 
+def _revenue_intelligence(start, end, grouping, sessions, payments, refunds, profile, currency, urls):
+    """Analyze recorded revenue dimensions without inventing costs or profitability."""
+    paid = payments.filter(paid_at__date__gte=start, paid_at__date__lte=end)
+    returned = refunds.filter(refunded_at__date__gte=start, refunded_at__date__lte=end)
+    gross = paid.aggregate(v=Sum("amount"))["v"] or Decimal("0")
+    fees = paid.aggregate(v=Sum("processor_fee"))["v"] or Decimal("0")
+    refunded = returned.aggregate(v=Sum("amount"))["v"] or Decimal("0")
+    net = gross - refunded - fees
+    booking_ids = set(paid.exclude(invoice__booking_id=None).values_list("invoice__booking_id", flat=True))
+    client_count = paid.values("invoice__client_id").distinct().count()
+    booked_period = sessions.filter(confirmed_at__date__gte=start, confirmed_at__date__lte=end,
+        status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))
+    booking_count = len(booking_ids)
+    booking_value = booked_period.aggregate(v=Sum("booking_value"))["v"] or Decimal("0")
+    booking_total = booked_period.count()
+
+    invoices = ClientInvoice.objects.for_photographer(profile).exclude(status=ClientInvoice.Status.VOID)
+    period_invoices = invoices.filter(issue_date__gte=start, issue_date__lte=end)
+    outstanding = sum((invoice.balance for invoice in period_invoices), Decimal("0"))
+    collection_days = [(payment.paid_at.date() - payment.invoice.issue_date).days
+                       for payment in paid.select_related("invoice")]
+    average_days = sum(collection_days) / len(collection_days) if collection_days else None
+    refund_rate = refunded * 100 / gross if gross else Decimal("0")
+    tx = urls["transactions"]
+    money = lambda value: _money(value, currency)
+    metrics = [
+        ("Gross revenue", money(gross), "bi-cash-stack", "Completed payments before refunds and recorded processor fees.", tx + "?record=payment"),
+        ("Net revenue", money(net), "bi-wallet2", "Gross revenue less completed refunds and recorded processor fees only.", tx),
+        ("Average booking value", money(booking_value / booking_total if booking_total else 0), "bi-receipt", "Recorded booking value divided by confirmed and completed bookings.", urls["bookings"]),
+        ("Revenue per client", money((gross - refunded) / client_count if client_count else 0), "bi-person", "Collected revenue less refunds divided by paying clients.", tx),
+        ("Revenue per booking", money((gross - refunded) / booking_count if booking_count else 0), "bi-calendar2-check", "Collected revenue less refunds divided by bookings linked to payments.", tx),
+        ("Outstanding balance trend", money(outstanding), "bi-hourglass-split", "Current balance on non-void invoices issued in the selected period.", tx + "?status=outstanding"),
+        ("Payment collection time", "—" if average_days is None else f"{average_days:.1f} days", "bi-stopwatch", "Average days from invoice issue to completed payment.", tx + "?record=payment"),
+        ("Refund rate", f"{refund_rate:.1f}%", "bi-arrow-counterclockwise", "Completed refunds divided by gross completed payments.", tx + "?record=refund"),
+    ]
+
+    def grouped(title, field, description, limit=8):
+        rows = paid.values(field).annotate(value=Sum("amount"), count=Count("pk")).order_by("-value")[:limit]
+        return {"title": title, "description": description,
+                "rows": [{"label": row[field] or "Unspecified", "value": money(row["value"] or 0),
+                          "raw": float(row["value"] or 0), "count": row["count"], "url": tx} for row in rows]}
+
+    service = grouped("Revenue by service", "invoice__booking__session_type", "Collected payments grouped by linked booking service.")
+    location = grouped("Revenue by location", "invoice__booking__location", "Collected payments grouped by linked booking location.")
+    source = grouped("Revenue by lead source", "invoice__client__converted_lead__lead_source", "Collected payments grouped by recorded lead source.")
+    reports = [service]
+    package_rows = InvoiceLineItem.objects.filter(invoice__photographer=profile, invoice__issue_date__gte=start,
+        invoice__issue_date__lte=end, invoice__status__in=(ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID, ClientInvoice.Status.PAID),
+        item_type=InvoiceLineItem.ItemType.PACKAGE).values("description").annotate(value=Sum("total"), count=Count("pk")).order_by("-value")[:8]
+    reports.append({"title": "Revenue by package", "description": "Invoiced package line value; this is not presented as collected cash.",
+        "rows": [{"label": row["description"] or "Unspecified", "value": money(row["value"] or 0), "raw": float(row["value"] or 0), "count": row["count"], "url": tx} for row in package_rows]})
+    reports.extend([location, {"title": "Revenue by photographer or team member", "description": "Owner-level revenue is shown because booking assignments are unavailable.",
+        "rows": [{"label": str(profile), "value": money(gross), "raw": float(gross), "count": paid.count(), "url": tx}] if paid.exists() else []}, source,
+        grouped("Revenue by client type", "invoice__client__client_type", "Collected payments grouped by client type."),
+        grouped("Revenue by booking status", "invoice__booking__status", "Collected payments grouped by current booking status.")])
+    trunc = {"daily": TruncDay, "weekly": TruncWeek, "monthly": TruncMonth}[grouping]
+    time_rows = paid.annotate(bucket=trunc("paid_at")).values("bucket").annotate(value=Sum("amount"), count=Count("pk")).order_by("bucket")
+    time_report = {"title": "Revenue by month or season", "description": "Collected payments grouped by calendar period.",
+        "rows": [{"label": row["bucket"].strftime("%b %Y"), "value": money(row["value"] or 0), "raw": float(row["value"] or 0), "count": row["count"], "url": tx} for row in time_rows]}
+    reports.append(time_report)
+    charts = [("Revenue trend", time_report["rows"]), ("Revenue mix by service", service["rows"]),
+        ("Revenue by lead source", source["rows"]), ("Revenue by location", location["rows"]),
+        ("Revenue by team member", reports[3]["rows"]),
+        ("Average booking value trend", [{"label": "Selected period", "value": money(booking_value / booking_total if booking_total else 0), "raw": float(booking_value / booking_total) if booking_total else 0}]),
+        ("Outstanding balance trend", [{"label": "Selected period", "value": money(outstanding), "raw": float(outstanding)}])]
+    concentration = list(paid.values("invoice__client_id").annotate(value=Sum("amount")).order_by("-value"))
+    top_share = concentration[0]["value"] * 100 / gross if concentration and gross else 0
+    charts.append(("Revenue concentration", [{"label": "Largest client share", "value": f"{top_share:.1f}%", "raw": float(top_share)}]))
+    waterfall = None
+    if gross and (refunded or fees):
+        waterfall = [("Gross payments", money(gross)), ("Refunds", money(-refunded)),
+                     ("Processor fees", money(-fees)), ("Net revenue", money(net))]
+    return {"metrics": [{"label": a, "value": b, "icon": c, "tooltip": d, "url": e} for a, b, c, d, e in metrics],
+            "reports": reports, "charts": [{"title": title, "rows": rows[:8]} for title, rows in charts],
+            "waterfall": waterfall, "financial_url": urls["financial"], "transactions_url": tx}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -470,7 +547,7 @@ def analytics_overview(profile, params, base_url, today=None):
     cancellation_rate = Decimal(scheduled.filter(status=ClientSession.Status.CANCELLED).count() * 100) / scheduled_count if scheduled_count else None
     root = base_url.rsplit('/analytics/', 1)[0]
     urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/",
-            "galleries": f"{root}/galleries/", "clients": f"{root}/clients/", "leads": f"{root}/leads/"}
+            "galleries": f"{root}/galleries/", "clients": f"{root}/clients/", "leads": f"{root}/leads/", "transactions": f"{root}/financial/transactions/"}
     business_health = _business_health(current, previous, payment_ratio, cancellation_rate, urls)
     currency = getattr(profile, "default_currency", "USD")
     business_trends = _business_trends(profile, start, end, (previous_start, previous_end), grouping,
@@ -478,6 +555,7 @@ def analytics_overview(profile, params, base_url, today=None):
     customer_intelligence = _customer_intelligence(start, end, (previous_start, previous_end),
         booked, clients, leads, payments, refunds, currency, urls)
     booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
+    revenue_intelligence = _revenue_intelligence(start, end, grouping, sessions, payments, refunds, profile, currency, urls)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -525,4 +603,5 @@ def analytics_overview(profile, params, base_url, today=None):
             "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
-            "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence}
+            "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence,
+            "revenue_intelligence": revenue_intelligence}

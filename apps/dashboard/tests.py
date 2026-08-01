@@ -118,6 +118,19 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "100.0% of invoiced value collected")
         self.assertContains(response, "Healthy")
         self.assertContains(response, "Rules, not AI")
+        for label in ("Gross revenue", "Revenue per client", "Revenue per booking", "Outstanding balance trend",
+                      "Payment collection time", "Refund rate"):
+            self.assertContains(response, label)
+        for report in ("Revenue by service", "Revenue by package", "Revenue by location",
+                       "Revenue by photographer or team member", "Revenue by lead source", "Revenue by client type",
+                       "Revenue by booking status", "Revenue by month or season"):
+            self.assertContains(response, report)
+        for chart in ("Revenue trend", "Revenue mix by service", "Revenue by team member",
+                      "Average booking value trend", "Revenue concentration"):
+            self.assertContains(response, chart)
+        self.assertContains(response, "Expenses, profit, and margins are not inferred")
+        self.assertContains(response, "Financial Overview")
+        self.assertContains(response, "Filtered Transactions")
 
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")
