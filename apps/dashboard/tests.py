@@ -46,6 +46,9 @@ class PhotographerWorkspaceTests(TestCase):
                 self.assertContains(response, "Monitor today’s availability, assignments, workload, and team activity.")
                 for section in ("Team status summary", "Today’s availability", "Today’s assignments", "Upcoming shoots", "Workload and capacity", "Team alerts", "Recent activity"):
                     self.assertContains(response, section)
+            elif route == "team_members":
+                self.assertContains(response, '<h1 id="workspace-page-title">Team Members</h1>', html=True)
+                self.assertContains(response, "Manage team members, invitations, roles, access, locations, and availability.")
             else:
                 self.assertContains(response, f'<h2 id="workspace-page-title">{title}</h2>', html=True)
                 self.assertContains(response, subtitle)
@@ -53,8 +56,32 @@ class PhotographerWorkspaceTests(TestCase):
             for child_route, (child_title, _) in pages.items():
                 self.assertContains(response, reverse(f"photographer_workspace:{child_route}"))
                 self.assertContains(response, child_title)
-            for removed_title in ("Schedule & Capacity", "Roles & Permissions", "Activity"):
-                self.assertNotContains(response, removed_title)
+            if route == "team_performance":
+                for removed_title in ("Schedule & Capacity", "Roles & Permissions", "Activity"):
+                    self.assertNotContains(response, removed_title)
+
+    def test_team_members_uses_owner_profile_and_honest_missing_sources(self):
+        user, _ = self.make_photographer(True, email="owner@studio.example", slug="member-owner",
+                                         display_name="Avery Owner", city="Portland", state="Oregon")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:team_members")
+        response = self.client.get(url)
+
+        self.assertContains(response, "Avery Owner")
+        self.assertContains(response, "owner@studio.example")
+        self.assertContains(response, "Portland, Oregon")
+        for label in ("Active members", "Studio managers", "Photographers", "Pending invitations", "Inactive members"):
+            self.assertContains(response, label)
+        for role in ("Owner", "Studio Manager", "Photographer"):
+            self.assertContains(response, role)
+        self.assertNotContains(response, "Editor")
+        self.assertNotContains(response, "Accountant")
+        self.assertContains(response, "An invitation system is not available yet")
+        self.assertContains(response, "Working hours, availability, and time-off records do not exist")
+        self.assertContains(response, 'href="%s" class="is-active" aria-current="page"' % url)
+
+        filtered = self.client.get(url, {"q": "nobody", "role": "photographer"})
+        self.assertContains(filtered, "No members match your filters")
 
     def test_team_overview_uses_owner_bookings_and_location_filter(self):
         user, profile = self.make_photographer(True, email="team-data@example.com", slug="team-data")

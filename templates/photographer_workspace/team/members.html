@@ -1,0 +1,53 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpm-page" data-members-page>
+  <header class="lpm-header">
+    <div>
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right"></i><span>Team</span><i class="bi bi-chevron-right"></i><strong aria-current="page">Members</strong></nav>
+      <h1 id="workspace-page-title">Team Members</h1>
+      <p>Manage team members, invitations, roles, access, locations, and availability.</p>
+    </div>
+    <button class="lpm-primary" type="button" data-member-dialog-open="invite"><i class="bi bi-person-plus" aria-hidden="true"></i>Invite Member</button>
+  </header>
+
+  <main class="lpm-content">
+    <section class="lpm-summary" aria-label="Team member summary">
+      <article><span class="green"><i class="bi bi-person-check"></i></span><div><strong>{{ summary.active }}</strong><small>Active members</small></div></article>
+      <article><span class="purple"><i class="bi bi-shield-check"></i></span><div><strong>{{ summary.managers }}</strong><small>Studio managers</small></div></article>
+      <article><span class="blue"><i class="bi bi-camera"></i></span><div><strong>{{ summary.photographers }}</strong><small>Photographers</small></div></article>
+      <article><span class="amber"><i class="bi bi-envelope-paper"></i></span><div><strong>{{ summary.pending }}</strong><small>Pending invitations</small></div></article>
+      <article><span class="gray"><i class="bi bi-person-dash"></i></span><div><strong>{{ summary.inactive }}</strong><small>Inactive members</small></div></article>
+    </section>
+
+    <section class="lpm-panel" aria-labelledby="directory-title">
+      <div class="lpm-panel-head"><div><h2 id="directory-title">Team directory</h2><p>Everyone with access to this studio workspace.</p></div><span>{{ members|length }} member{{ members|length|pluralize }}</span></div>
+      <form class="lpm-toolbar" method="get" role="search">
+        <label class="lpm-search"><span class="sr-only">Search by name, email, or location</span><i class="bi bi-search"></i><input type="search" name="q" value="{{ query }}" placeholder="Search members by name, email, or location"></label>
+        <button type="button" class="lpm-filter-button" data-member-filters-toggle aria-expanded="false" aria-controls="member-filters"><i class="bi bi-sliders"></i>Filter{% if selected_role or selected_status %}<b>•</b>{% endif %}</button>
+        <div class="lpm-filters" id="member-filters" data-member-filters>
+          <label><span>Role</span><select name="role"><option value="">All roles</option><option value="owner"{% if selected_role == 'owner' %} selected{% endif %}>Owner</option><option value="studio_manager"{% if selected_role == 'studio_manager' %} selected{% endif %}>Studio Manager</option><option value="photographer"{% if selected_role == 'photographer' %} selected{% endif %}>Photographer</option></select></label>
+          <label><span>Status</span><select name="status"><option value="">All statuses</option><option value="active"{% if selected_status == 'active' %} selected{% endif %}>Active</option><option value="inactive"{% if selected_status == 'inactive' %} selected{% endif %}>Inactive</option></select></label>
+          <button type="submit">Apply</button>{% if query or selected_role or selected_status %}<a href="{% url 'photographer_workspace:team_members' %}">Clear</a>{% endif %}
+        </div>
+        <div class="lpm-view-toggle" role="group" aria-label="Directory view"><button type="button" class="is-active" data-member-view="cards" aria-pressed="true" title="Card view"><i class="bi bi-grid"></i></button><button type="button" data-member-view="table" aria-pressed="false" title="Table view"><i class="bi bi-list-ul"></i></button></div>
+      </form>
+
+      {% if members %}
+      <div class="lpm-cards" data-member-cards>{% for member in members %}<article class="lpm-member-card">
+        <button class="lpm-member-main" type="button" data-member-dialog-open="profile"><span class="lpm-avatar">{{ member.initials }}</span><span><strong>{{ member.name }}</strong><small>{{ member.email }}</small></span><i class="bi bi-chevron-right"></i></button>
+        <div class="lpm-badges"><span class="role">{{ member.role }}</span><span class="status"><i></i>{{ member.status }}</span></div>
+        <dl><div><dt>Location</dt><dd><i class="bi bi-geo-alt"></i>{{ member.location }}</dd></div><div><dt>Availability</dt><dd><i class="bi bi-clock"></i>{{ member.availability }}</dd></div></dl>
+        <footer><span>{% if member.last_active %}Last active {{ member.last_active|timesince }} ago{% else %}No sign-in recorded{% endif %}</span><button type="button" data-member-dialog-open="profile" aria-label="Manage {{ member.name }}">Manage</button></footer>
+      </article>{% endfor %}</div>
+      <div class="lpm-table" data-member-table hidden><table><thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Location</th><th>Availability</th><th></th></tr></thead><tbody>{% for member in members %}<tr><td><span class="lpm-avatar">{{ member.initials }}</span><span><strong>{{ member.name }}</strong><small>{{ member.email }}</small></span></td><td><span class="role">{{ member.role }}</span></td><td><span class="status"><i></i>{{ member.status }}</span></td><td>{{ member.location }}</td><td>{{ member.availability }}</td><td><button type="button" data-member-dialog-open="profile" aria-label="Manage {{ member.name }}"><i class="bi bi-three-dots"></i></button></td></tr>{% endfor %}</tbody></table></div>
+      {% else %}<div class="lpm-empty"><i class="bi bi-search"></i><h3>No members match your filters</h3><p>Try another name, role, or status.</p><a href="{% url 'photographer_workspace:team_members' %}">Clear filters</a></div>{% endif %}
+    </section>
+
+    <section class="lpm-panel" aria-labelledby="invitations-title"><div class="lpm-panel-head"><div><h2 id="invitations-title">Pending invitations</h2><p>Invitations waiting to be accepted.</p></div><button type="button" data-member-dialog-open="invite">Invite someone</button></div><div class="lpm-empty compact"><i class="bi bi-envelope-check"></i><h3>No pending invitations</h3><p>An invitation system is not available yet. No invitation records have been inferred or created.</p></div></section>
+  </main>
+</div>
+
+<div class="lpm-layer" data-member-layer="profile" hidden><button class="lpm-scrim" type="button" data-member-dialog-close aria-label="Close member profile"></button><aside class="lpm-drawer" role="dialog" aria-modal="true" aria-labelledby="member-profile-title" tabindex="-1"><header><div><span class="lpm-avatar">{{ owner.initials }}</span><div><h2 id="member-profile-title">{{ owner.name }}</h2><p>{{ owner.email }}</p></div></div><button type="button" data-member-dialog-close aria-label="Close"><i class="bi bi-x-lg"></i></button></header><div class="lpm-drawer-body"><section><h3>Member profile</h3><dl class="lpm-details"><div><dt>Role</dt><dd>Owner</dd></div><div><dt>Account access</dt><dd>{{ owner.status }}</dd></div><div><dt>Primary location</dt><dd>{{ owner.location }}</dd></div><div><dt>Availability</dt><dd>Not configured</dd></div></dl></section><section><h3>Role &amp; permission management</h3><label>Workspace role<select disabled><option>Owner</option></select></label><p class="lpm-note"><i class="bi bi-shield-lock"></i>The studio owner role comes from the authenticated photographer account and cannot be changed here.</p><div class="lpm-permissions"><span><i class="bi bi-check2"></i>Full workspace access</span><span><i class="bi bi-check2"></i>Manage team and invitations</span><span><i class="bi bi-check2"></i>Manage roles and access</span></div></section><section><h3>Availability &amp; time off</h3><div class="lpm-unavailable"><i class="bi bi-calendar2-week"></i><div><strong>Scheduling not configured</strong><p>Working hours, availability, and time-off records do not exist for this member yet.</p></div></div></section></div></aside></div>
+
+<div class="lpm-layer" data-member-layer="invite" hidden><button class="lpm-scrim" type="button" data-member-dialog-close aria-label="Close invite member dialog"></button><section class="lpm-modal" role="dialog" aria-modal="true" aria-labelledby="invite-title" tabindex="-1"><header><div><span><i class="bi bi-person-plus"></i></span><div><h2 id="invite-title">Invite a team member</h2><p>Add someone to your studio workspace.</p></div></div><button type="button" data-member-dialog-close aria-label="Close"><i class="bi bi-x-lg"></i></button></header><div class="lpm-modal-body"><div class="lpm-note warning"><i class="bi bi-info-circle"></i><p><strong>Invitations are not connected yet.</strong> This form previews the workflow and does not send or save an invitation.</p></div><label>Email address<input type="email" placeholder="teammate@example.com" disabled></label><label>Role<select disabled><option>Photographer</option><option>Studio Manager</option></select><small>Photographer includes assistants and second shooters.</small></label><label>Location<input type="text" placeholder="Assign a studio location" disabled></label><div class="lpm-access-preview"><strong>Access summary</strong><p>Permissions will be shown here when studio memberships and invitations are supported.</p></div></div><footer><button type="button" data-member-dialog-close>Cancel</button><button type="button" class="lpm-primary" disabled>Send Invitation</button></footer></section></div>
+{% endblock %}

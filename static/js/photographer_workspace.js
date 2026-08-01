@@ -446,6 +446,41 @@
   serviceBars.forEach((bar) => { bar.style.width = Number(bar.style.getPropertyValue('--service-value')) / serviceMax * 100 + '%'; });
 }());
 
+(function () {
+  const page = document.querySelector('[data-members-page]');
+  if (!page) return;
+  const filterButton = page.querySelector('[data-member-filters-toggle]');
+  const filters = page.querySelector('[data-member-filters]');
+  if (filterButton && filters) filterButton.addEventListener('click', function () {
+    const open = filters.classList.toggle('is-open');
+    filterButton.setAttribute('aria-expanded', String(open));
+  });
+  const cards = page.querySelector('[data-member-cards]');
+  const table = page.querySelector('[data-member-table]');
+  page.querySelectorAll('[data-member-view]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const showCards = button.dataset.memberView === 'cards';
+      if (cards) cards.hidden = !showCards;
+      if (table) table.hidden = showCards;
+      page.querySelectorAll('[data-member-view]').forEach(function (item) {
+        const active = item === button; item.classList.toggle('is-active', active); item.setAttribute('aria-pressed', String(active));
+      });
+    });
+  });
+  let opener;
+  function close(layer) { layer.hidden = true; document.body.classList.remove('lpw-drawer-open'); if (opener) opener.focus(); }
+  document.querySelectorAll('[data-member-dialog-open]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const layer = document.querySelector('[data-member-layer="' + button.dataset.memberDialogOpen + '"]');
+      if (!layer) return; opener = button; layer.hidden = false; document.body.classList.add('lpw-drawer-open'); layer.querySelector('[role="dialog"]').focus();
+    });
+  });
+  document.querySelectorAll('[data-member-layer]').forEach(function (layer) {
+    layer.querySelectorAll('[data-member-dialog-close]').forEach(function (button) { button.addEventListener('click', function () { close(layer); }); });
+    layer.addEventListener('keydown', function (event) { if (event.key === 'Escape') close(layer); });
+  });
+}());
+
 (function initCustomerIntelligence() {
   document.querySelectorAll('.lpa-ci-bars').forEach(function (chart) {
     const bars = Array.from(chart.querySelectorAll('b[style*="--value"]'));
