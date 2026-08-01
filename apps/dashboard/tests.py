@@ -98,6 +98,19 @@ class PhotographerWorkspaceTests(TestCase):
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
 
+    def test_analytics_drilldowns_and_csv_export(self):
+        user, _ = self.make_photographer(True, email="analytics-export@example.com", slug="analytics-export")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:analytics")
+        page = self.client.get(url)
+        self.assertContains(page, "Metric definition")
+        self.assertContains(page, "Historical trend")
+        self.assertContains(page, "Print / save PDF")
+        export = self.client.get(url, {"export": "csv"})
+        self.assertEqual(export.status_code, 200)
+        self.assertEqual(export["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("Total revenue", export.content.decode("utf-8-sig"))
+
     def test_analytics_insights_are_deterministic_ranked_and_limited(self):
         current = {"revenue": Decimal("1500"), "net": Decimal("1450"), "bookings": 8,
                    "clients": 5, "conversion": Decimal("10"), "average": Decimal("500"),

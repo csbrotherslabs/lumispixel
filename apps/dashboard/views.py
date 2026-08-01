@@ -2269,6 +2269,16 @@ def analytics_overview(request):
     """Render owner-scoped analytics directly from operational records."""
     context = _dashboard_context(request, "analytics", "Analytics")
     context.update(build_analytics_overview(request.user.photographer_profile, request.GET, request.path))
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="lumispixel-analytics.csv"'
+        response.write("\ufeff")
+        writer = csv.writer(response)
+        writer.writerow(("LumisPixel analytics report", context["start"], context["end"]))
+        writer.writerow(("Metric", "Selected period", "Comparison", "Change", "Definition", "Source workspace"))
+        for metric in context["analytics_metrics"]:
+            writer.writerow((metric["label"], metric["value"], metric["previous_value"], metric["change"], metric["tooltip"], metric["url"]))
+        return response
     context["analytics_state"] = request.GET.get("state") if request.GET.get("state") in {"loading", "error", "permission", "empty"} else "ready"
     return render(request, "photographer_workspace/analytics/overview.html", context)
 
