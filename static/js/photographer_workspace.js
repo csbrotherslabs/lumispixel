@@ -342,22 +342,62 @@
   });
 })();
 
-(function () {
-  const select = document.querySelector('[data-analytics-metric]');
-  const chart = document.querySelector('[data-analytics-chart]');
-  if (!select || !chart) return;
-  function draw() {
-    const metric = select.value;
-    const points = Array.from(chart.children);
-    const max = Math.max(1, ...points.map(function (point) { return Number(point.dataset[metric] || 0); }));
-    points.forEach(function (point) {
-      const value = Number(point.dataset[metric] || 0);
-      point.querySelector('b').style.height = Math.max(value ? 6 : 2, value / max * 100) + '%';
-      point.title = point.querySelector('small').textContent + ': ' + value + ' ' + select.options[select.selectedIndex].text.toLowerCase();
-    });
+(function initBusinessPerformance() {
+  const root = document.querySelector('[data-business-performance]');
+  const source = document.getElementById('business-performance-data');
+  if (!root || !source) return;
+  let data;
+  try { data = JSON.parse(source.textContent); } catch (error) {
+    root.querySelectorAll('[data-chart-state="error"]').forEach((state) => { state.hidden = false; }); return;
   }
-  select.addEventListener('change', draw);
-  draw();
+  const metricDetails = Object.fromEntries(data.metric_options.map((item) => [item.key, item]));
+  function formatted(value, format) {
+    if (format === 'money') return new Intl.NumberFormat(undefined, { style: 'currency', currency: data.currency, maximumFractionDigits: 0 }).format(value);
+    if (format === 'percent') return Number(value).toFixed(1) + '%';
+    return new Intl.NumberFormat().format(value);
+  }
+  function render(card, metric, values, comparison) {
+    const plot = card.querySelector('[data-trend-plot], [data-rolling-plot]');
+    if (!plot) return;
+    const detail = metricDetails[metric] || { label: 'Revenue', format: 'money' };
+    const hasCurrent = values.some((point) => Number(point[metric] || 0));
+    card.querySelector('[data-chart-state="empty"]')?.toggleAttribute('hidden', hasCurrent);
+    plot.hidden = !hasCurrent;
+    const max = Math.max(1, ...values.map((point) => Number(point[metric] || 0)), ...comparison.map((point) => Number(point[metric] || 0)));
+    plot.replaceChildren(...values.map(function (point, index) {
+      const group = document.createElement('span'); group.className = 'lpa-chart-point';
+      const current = Number(point[metric] || 0); const previous = Number((comparison[index] || {})[metric] || 0);
+      group.innerHTML = '<i class="is-current"></i><i class="is-comparison"></i><small></small><span class="lpa-chart-tooltip" role="tooltip"></span>';
+      group.querySelector('.is-current').style.height = Math.max(current ? 3 : 1, current / max * 100) + '%';
+      group.querySelector('.is-comparison').style.height = Math.max(previous ? 3 : 1, previous / max * 100) + '%';
+      group.querySelector('small').textContent = data.labels[index] || '';
+      group.querySelector('.lpa-chart-tooltip').innerHTML = '<strong>' + (data.labels[index] || '') + '</strong>Selected: ' + formatted(current, detail.format) + (data.comparison_available ? '<br>Comparison: ' + formatted(previous, detail.format) : '');
+      group.tabIndex = 0; group.setAttribute('aria-label', group.querySelector('.lpa-chart-tooltip').textContent); return group;
+    }));
+    const total = values.reduce((sum, point) => sum + Number(point[metric] || 0), 0);
+    const previousTotal = comparison.reduce((sum, point) => sum + Number(point[metric] || 0), 0);
+    card.querySelector('[data-chart-total]').textContent = formatted(metric === 'conversion' ? total / Math.max(values.length, 1) : total, detail.format);
+    const change = previousTotal ? (total - previousTotal) / previousTotal * 100 : null;
+    const indicator = card.querySelector('[data-comparison-indicator]');
+    if (indicator) indicator.textContent = change === null ? (data.comparison_available ? 'No prior value' : 'Comparison unavailable') : (change >= 0 ? '↑ ' : '↓ ') + Math.abs(change).toFixed(1) + '% vs comparison';
+    const summary = detail.label + ' from ' + data.labels[0] + ' to ' + data.labels[data.labels.length - 1] + ' totals ' + formatted(total, detail.format) + (change === null ? ', with no comparable prior value.' : ', ' + Math.abs(change).toFixed(1) + '% ' + (change >= 0 ? 'higher' : 'lower') + ' than the comparison period.');
+    card.querySelector('[data-chart-summary]').textContent = summary; plot.setAttribute('aria-label', summary);
+  }
+  root.querySelectorAll('[data-trend-card]').forEach((card) => render(card, card.dataset.metric, data.current, data.comparison));
+  root.querySelectorAll('[data-trend-metric]').forEach((button) => button.addEventListener('click', function () {
+    root.querySelectorAll('[data-trend-metric]').forEach((peer) => peer.setAttribute('aria-pressed', String(peer === button)));
+    const card = button.closest('[data-trend-card]'); card.dataset.metric = button.dataset.trendMetric; render(card, button.dataset.trendMetric, data.current, data.comparison);
+  }));
+  root.querySelectorAll('[data-series-toggle]').forEach((button) => button.addEventListener('click', function () {
+    const visible = button.getAttribute('aria-pressed') !== 'true'; button.setAttribute('aria-pressed', String(visible));
+    button.closest('[data-trend-card]').classList.toggle('hide-' + button.dataset.seriesToggle, !visible);
+  }));
+  root.querySelector('[data-trend-grouping]')?.addEventListener('change', (event) => event.target.form.requestSubmit());
+  const rolling = root.querySelector('[data-rolling-plot]');
+  if (rolling) render(rolling.closest('[data-rolling-card]'), 'revenue', data.rolling.map((value) => ({ revenue: value })), []);
+  const serviceBars = Array.from(root.querySelectorAll('.lpa-service-bars b'));
+  const serviceMax = Math.max(1, ...serviceBars.map((bar) => Number(bar.style.getPropertyValue('--service-value'))));
+  serviceBars.forEach((bar) => { bar.style.width = Number(bar.style.getPropertyValue('--service-value')) / serviceMax * 100 + '%'; });
 }());
 
 (function initBookingListView() {

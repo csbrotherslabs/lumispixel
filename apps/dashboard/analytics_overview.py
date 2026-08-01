@@ -2,7 +2,8 @@
 from datetime import datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
 
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
@@ -12,6 +13,7 @@ from apps.galleries.models import Gallery, GalleryAnalyticsEvent
 RANGES = (("30_days", "Last 30 days"), ("this_month", "This month"),
           ("this_quarter", "This quarter"), ("this_year", "This year"), ("custom", "Custom range"))
 COMPARES = (("previous_period", "Previous period"), ("previous_year", "Previous year"), ("none", "No comparison"))
+GROUPINGS = (("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"))
 
 
 def _window(params, today):
@@ -101,6 +103,82 @@ def _business_health(current, previous, payment_ratio, cancellation_rate, urls):
             "missing": missing, "tooltip": "Each available signal receives a fixed weight and a rule-based rating from 0–100. Points are divided by the weights available, so missing data never lowers the score. No machine learning is used."}
 
 
+def _business_trends(profile, start, end, comparison, grouping, sessions, clients, leads, events, payments, refunds, currency, urls):
+    """Build all chart series with grouped aggregate queries (never one query per point)."""
+    trunc = {"daily": TruncDay, "weekly": TruncWeek, "monthly": TruncMonth}[grouping]
+    step = timedelta(days=1 if grouping == "daily" else 7)
+
+    def key(value):
+        value = value.date() if hasattr(value, "date") else value
+        if grouping == "monthly": return value.replace(day=1)
+        if grouping == "weekly": return value - timedelta(days=value.weekday())
+        return value
+
+    def buckets(a, b):
+        cursor, result = key(a), []
+        while cursor <= b:
+            result.append(cursor)
+            if grouping == "monthly":
+                cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
+            else: cursor += step
+        return result
+
+    all_start = min(start, comparison[0]) if comparison[0] else start
+    all_end = max(end, comparison[1]) if comparison[1] else end
+    def grouped(qs, field, **aggregates):
+        rows = qs.filter(**{f"{field}__date__gte": all_start, f"{field}__date__lte": all_end}).annotate(bucket=trunc(field)).values("bucket").annotate(**aggregates).order_by("bucket")
+        return {key(row["bucket"]): row for row in rows}
+
+    revenue = grouped(payments, "paid_at", value=Sum("amount"))
+    returned = grouped(refunds, "refunded_at", value=Sum("amount"))
+    booking = grouped(sessions, "confirmed_at", value=Count("pk"), total=Sum("booking_value"))
+    client = grouped(clients, "created_at", value=Count("pk"))
+    lead = grouped(leads, "created_at", value=Count("pk"), won=Count("pk", filter=Q(status=Lead.Status.BOOKED)))
+    engagement = grouped(events, "occurred_at", value=Count("pk"))
+
+    def raw(bucket):
+        bookings = booking.get(bucket, {})
+        count, total = bookings.get("value", 0), bookings.get("total") or Decimal("0")
+        leads_row = lead.get(bucket, {})
+        lead_count, won = leads_row.get("value", 0), leads_row.get("won", 0)
+        return {"revenue": float((revenue.get(bucket, {}).get("value") or 0) - (returned.get(bucket, {}).get("value") or 0)),
+                "bookings": count, "clients": client.get(bucket, {}).get("value", 0), "leads": lead_count,
+                "conversion": round(won * 100 / lead_count, 1) if lead_count else 0,
+                "average": float(total / count) if count else 0, "engagement": engagement.get(bucket, {}).get("value", 0)}
+    current_buckets = buckets(start, end)
+    comparison_buckets = buckets(*comparison) if comparison[0] else []
+    labels = [b.strftime("%b %-d") if grouping != "monthly" else b.strftime("%b %Y") for b in current_buckets]
+    current = [raw(b) for b in current_buckets]
+    compared = [raw(b) for b in comparison_buckets]
+    # Align comparisons by ordinal bucket, padding partial calendar ranges safely.
+    compared += [{} for _ in range(max(0, len(current) - len(compared)))]
+    comparison_available = bool(comparison_buckets) and any(any(v for v in point.values()) for point in compared)
+
+    metric_specs = (
+        ("revenue", "Revenue", "money"), ("bookings", "Bookings", "number"),
+        ("clients", "New clients", "number"), ("leads", "Leads", "number"),
+        ("conversion", "Conversion rate", "percent"), ("average", "Average booking value", "money"),
+        ("engagement", "Gallery engagement", "number"),
+    )
+    metric_options = [{"key": k, "label": label, "format": fmt} for k, label, fmt in metric_specs]
+    service_rows = sessions.filter(confirmed_at__date__gte=start, confirmed_at__date__lte=end).values("session_type").annotate(bookings=Count("pk"), value=Sum("booking_value")).order_by("-value")[:5]
+    services = [{"label": row["session_type"] or "Unspecified", "value": float(row["value"] or 0), "bookings": row["bookings"]} for row in service_rows]
+    rolling = []
+    for index in range(len(current)):
+        beginning = max(0, index - (29 if grouping == "daily" else 3 if grouping == "weekly" else 0))
+        rolling.append(sum(point["revenue"] for point in current[beginning:index + 1]))
+    charts = [
+        {"title": "Revenue and bookings trend", "description": "Collected revenue and confirmed bookings over time.", "metrics": ["revenue", "bookings"], "url": urls["financial"]},
+        {"title": "Client growth", "description": "New client records added during each interval.", "metrics": ["clients"], "url": urls["clients"]},
+        {"title": "Lead-to-booking conversion trend", "description": "The share of new leads currently marked as booked.", "metrics": ["conversion", "leads"], "url": urls["growth"]},
+        {"title": "Average booking value", "description": "Recorded booking value divided by confirmed bookings.", "metrics": ["average"], "url": urls["bookings"]},
+    ]
+    return {"grouping_options": GROUPINGS, "grouping": grouping, "labels": labels, "current": current,
+            "comparison": compared[:len(current)], "comparison_available": comparison_available,
+            "metric_options": metric_options, "charts": charts, "services": services, "rolling": rolling,
+            "currency": currency, "has_data": any(any(v for v in point.values()) for point in current)}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -108,6 +186,8 @@ def analytics_overview(profile, params, base_url, today=None):
     compare_key = params.get("compare", "previous_period")
     if compare_key not in dict(COMPARES): compare_key = "previous_period"
     previous_start, previous_end = _comparison(compare_key, start, end)
+    grouping = params.get("grouping", "daily")
+    if grouping not in dict(GROUPINGS): grouping = "daily"
     selected = {key: params.get(key, "").strip() for key in
                 ("location", "member", "service", "package", "lead_source", "client_type", "booking_status", "gallery_status")}
 
@@ -156,8 +236,8 @@ def analytics_overview(profile, params, base_url, today=None):
         views = period(events.filter(event_type=GalleryAnalyticsEvent.EventType.VIEW), "occurred_at", a, b).count()
         distinct_clients = bs.values("client_id").distinct().count()
         # A repeat client has any earlier non-cancelled booking, without creating a reporting record.
-        repeat = sum(1 for client_id in bs.values_list("client_id", flat=True).distinct()
-                     if booked.filter(client_id=client_id, confirmed_at__date__lt=a).exists())
+        prior_client_ids = booked.filter(confirmed_at__date__lt=a).values("client_id")
+        repeat = bs.filter(client_id__in=prior_client_ids).values("client_id").distinct().count()
         return {"revenue": revenue - returned, "net": revenue - returned - fees, "bookings": booking_count,
                 "clients": new_clients, "conversion": Decimal(won * 100) / lead_count if lead_count else Decimal("0"),
                 "average": (bs.aggregate(v=Sum("booking_value"))["v"] or 0) / booking_count if booking_count else Decimal("0"),
@@ -195,6 +275,9 @@ def analytics_overview(profile, params, base_url, today=None):
     urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/",
             "galleries": f"{root}/galleries/", "clients": f"{root}/crm/"}
     business_health = _business_health(current, previous, payment_ratio, cancellation_rate, urls)
+    currency = getattr(profile, "default_currency", "USD")
+    business_trends = _business_trends(profile, start, end, (previous_start, previous_end), grouping,
+        booked, clients, leads, events, payments, refunds, currency, urls)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -241,4 +324,4 @@ def analytics_overview(profile, params, base_url, today=None):
             "start": start, "end": end, "selected_filters": selected, "filter_options": options,
             "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
-            "business_health": business_health, "business_summary": business_summary}
+            "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends}
