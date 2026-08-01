@@ -2840,10 +2840,59 @@ TEAM_PAGES = {
 def team_placeholder(request, page_key):
     if page_key == "team_overview":
         return team_overview(request)
+    if page_key == "team_members":
+        return team_members(request)
     title, subtitle, icon = TEAM_PAGES[page_key]
     context = _dashboard_context(request, page_key, title)
     context["team_page"] = {"title": title, "subtitle": subtitle, "icon": icon}
     return render(request, "photographer_workspace/team/temporary_page.html", context)
+
+
+def team_members(request):
+    """Owner-scoped directory using the account/profile records available today."""
+    profile = authorized_studio(request.user)
+    query = (request.GET.get("q", "") or "").strip()[:150]
+    role = request.GET.get("role", "")
+    status = request.GET.get("status", "")
+    if role not in {"", "owner", "studio_manager", "photographer"}:
+        role = ""
+    if status not in {"", "active", "inactive"}:
+        status = ""
+
+    name = request.user.full_name or profile.display_name or request.user.email
+    location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part)
+    owner = {
+        "name": name,
+        "email": request.user.email,
+        "initials": "".join(part[0] for part in name.split()[:2]).upper() or "LP",
+        "role": "Owner",
+        "status": "Active" if request.user.can_login else "Inactive",
+        "location": location or "Not configured",
+        "availability": "Not configured",
+        "last_active": request.user.last_login,
+    }
+    matches = (
+        (not query or query.casefold() in f"{name} {request.user.email} {location}".casefold())
+        and (not role or role == "owner")
+        and (not status or status == owner["status"].casefold())
+    )
+    members = [owner] if matches else []
+    context = _dashboard_context(request, "team_members", "Team Members")
+    context.update({
+        "members": members,
+        "owner": owner,
+        "query": query,
+        "selected_role": role,
+        "selected_status": status,
+        "summary": {
+            "active": 1 if request.user.can_login else 0,
+            "managers": 0,
+            "photographers": 0,
+            "pending": 0,
+            "inactive": 0 if request.user.can_login else 1,
+        },
+    })
+    return render(request, "photographer_workspace/team/members.html", context)
 
 
 def team_overview(request):
