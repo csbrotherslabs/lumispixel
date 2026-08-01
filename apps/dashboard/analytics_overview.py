@@ -283,6 +283,99 @@ def _customer_intelligence(start, end, comparison, booked, clients, leads, payme
             "urls": urls, "has_data": bool(period_clients or period_leads or period_bookings)}
 
 
+def _booking_intelligence(start, end, sessions, leads, profile, currency, urls):
+    """Summarize booking demand without inventing calendar or attendance data."""
+    scheduled = sessions.filter(starts_at__date__range=(start, end))
+    completed = scheduled.filter(status__in=(ClientSession.Status.CONFIRMED, ClientSession.Status.COMPLETED))
+    total = scheduled.count()
+    confirmed = completed.count()
+    cancelled = scheduled.filter(status=ClientSession.Status.CANCELLED).count()
+    period_leads = leads.filter(created_at__date__range=(start, end))
+    converted = period_leads.filter(status=Lead.Status.BOOKED).count()
+
+    def pct(value, denominator):
+        return Decimal(value * 100) / denominator if denominator else Decimal("0")
+
+    value = completed.aggregate(value=Sum("booking_value"))["value"] or Decimal("0")
+    lead_times = []
+    for created_at, confirmed_at in completed.exclude(confirmed_at=None).filter(
+            client__converted_lead__isnull=False).values_list("client__converted_lead__created_at", "confirmed_at"):
+        lead_times.append(max(0, (confirmed_at - created_at).total_seconds() / 86400))
+    average_lead = sum(lead_times) / len(lead_times) if lead_times else None
+    unavailable = "Not tracked"
+    metric_specs = [
+        ("Total bookings", f"{confirmed:,}", "Confirmed or completed bookings scheduled in this period."),
+        ("Booking conversion rate", f"{pct(converted, period_leads.count()):.1f}%", "Leads created in this period currently marked booked."),
+        ("Cancellation rate", f"{pct(cancelled, total):.1f}%", "Cancelled bookings divided by all bookings scheduled in this period."),
+        ("Reschedule rate", unavailable, "Reschedule history is not recorded by the current booking model."),
+        ("Average lead-to-book time", f"{average_lead:.1f} days" if average_lead is not None else "No linked data", "Time from a linked lead being created to its booking being confirmed."),
+        ("Average booking value", _money(value / confirmed if confirmed else 0, currency), "Recorded booking value divided by confirmed and completed bookings."),
+        ("Schedule utilization", unavailable, "Available working hours are not configured, so utilization cannot be calculated reliably."),
+        ("No-show rate", unavailable, "No-show attendance outcomes are not recorded by the current booking model."),
+    ]
+    metrics = [{"label": label, "value": display, "tooltip": tip} for label, display, tip in metric_specs]
+
+    def rows(field, labeler=lambda value: value or "Unspecified", queryset=scheduled):
+        result = queryset.values(field).annotate(value=Count("pk")).order_by(field)
+        return [{"label": labeler(row[field]), "value": row["value"]} for row in result]
+
+    weekly = scheduled.annotate(bucket=TruncWeek("starts_at")).values("bucket").annotate(value=Count("pk")).order_by("bucket")
+    over_time = [{"label": row["bucket"].strftime("%b %-d"), "value": row["value"]} for row in weekly]
+    weekdays = rows("starts_at__week_day", lambda day: ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")[day - 1])
+    hour_rows = rows("starts_at__hour", lambda hour: "Morning" if hour < 12 else "Afternoon" if hour < 17 else "Evening")
+    time_totals = {}
+    for row in hour_rows: time_totals[row["label"]] = time_totals.get(row["label"], 0) + row["value"]
+    times = [{"label": label, "value": time_totals.get(label, 0)} for label in ("Morning", "Afternoon", "Evening")]
+    months = scheduled.annotate(bucket=TruncMonth("starts_at")).values("bucket").annotate(value=Count("pk")).order_by("bucket")
+    seasonality = [{"label": row["bucket"].strftime("%b %Y"), "value": row["value"]} for row in months]
+    statuses = [{"label": dict(ClientSession.Status.choices).get(row["status"], row["status"]), "value": row["value"]}
+                for row in scheduled.values("status").annotate(value=Count("pk")).order_by("status")]
+    trends = []
+    for row in scheduled.annotate(bucket=TruncWeek("starts_at")).values("bucket").annotate(
+            cancelled=Count("pk", filter=Q(status=ClientSession.Status.CANCELLED))).order_by("bucket"):
+        trends.append({"label": row["bucket"].strftime("%b %-d"), "value": row["cancelled"], "secondary": None})
+
+    package_lines = InvoiceLineItem.objects.filter(invoice__photographer=profile,
+        invoice__booking__in=scheduled, item_type=InvoiceLineItem.ItemType.PACKAGE)
+    package_rows = package_lines.values("description").annotate(value=Count("invoice__booking", distinct=True)).order_by("-value")
+    packages = [{"label": row["description"] or "Unspecified", "value": row["value"]} for row in package_rows]
+
+    service_rows = scheduled.values("session_type").annotate(
+        bookings=Count("pk"), revenue=Sum("booking_value"),
+        cancelled=Count("pk", filter=Q(status=ClientSession.Status.CANCELLED))).order_by("-bookings", "session_type")
+    services = []
+    for row in service_rows:
+        service_leads = period_leads.filter(event_type=row["session_type"])
+        prior = sessions.filter(session_type=row["session_type"], starts_at__date__lt=start,
+                                starts_at__date__gte=start - (end - start + timedelta(days=1))).count()
+        bookings, revenue = row["bookings"], row["revenue"] or Decimal("0")
+        trend = bookings - prior
+        services.append({"service": row["session_type"] or "Unspecified", "bookings": bookings,
+            "revenue": _money(revenue, currency), "average": _money(revenue / bookings if bookings else 0, currency),
+            "cancellation": f"{pct(row['cancelled'], bookings):.1f}%",
+            "conversion": f"{pct(service_leads.filter(status=Lead.Status.BOOKED).count(), service_leads.count()):.1f}%" if service_leads.exists() else "No lead data",
+            "trend": f"{trend:+d}", "tone": "up" if trend > 0 else "down" if trend < 0 else "flat",
+            "url": f"{urls['bookings']}?{urlencode({'service': row['session_type']})}"})
+
+    heatmap = []
+    heat_counts = {(row["starts_at__week_day"], row["starts_at__hour"]): row["value"] for row in
+        scheduled.values("starts_at__week_day", "starts_at__hour").annotate(value=Count("pk"))}
+    maximum = max(heat_counts.values(), default=1)
+    for day, name in enumerate(("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"), 1):
+        cells = []
+        for hour, label in ((8, "8am"), (10, "10am"), (12, "12pm"), (14, "2pm"), (16, "4pm"), (18, "6pm")):
+            count = sum(heat_counts.get((day, candidate), 0) for candidate in range(hour, hour + 2))
+            cells.append({"label": label, "value": count, "level": round(count * 4 / maximum) if count else 0})
+        heatmap.append({"label": name, "cells": cells})
+    charts = [("Bookings over time", over_time), ("Bookings by service", rows("session_type")),
+              ("Bookings by package", packages), ("Bookings by weekday", weekdays),
+              ("Bookings by time of day", times), ("Booking seasonality", seasonality),
+              ("Cancellation and reschedule trends", trends), ("Booking status distribution", statuses)]
+    return {"metrics": metrics, "charts": charts, "heatmap": heatmap, "services": services,
+            "has_data": bool(total), "urls": urls, "groupings": ("Location", "Team member"),
+            "locations": rows("location"), "team_note": "Team-member grouping will populate when booking assignments are available."}
+
+
 def analytics_overview(profile, params, base_url, today=None):
     """Return filter choices and KPI values; every query remains owner scoped."""
     today = today or timezone.localdate()
@@ -384,6 +477,7 @@ def analytics_overview(profile, params, base_url, today=None):
         booked, clients, leads, events, payments, refunds, currency, urls)
     customer_intelligence = _customer_intelligence(start, end, (previous_start, previous_end),
         booked, clients, leads, payments, refunds, currency, urls)
+    booking_intelligence = _booking_intelligence(start, end, sessions, leads, profile, currency, urls)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -431,4 +525,4 @@ def analytics_overview(profile, params, base_url, today=None):
             "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
-            "customer_intelligence": customer_intelligence}
+            "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence}

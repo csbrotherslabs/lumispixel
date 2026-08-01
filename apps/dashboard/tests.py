@@ -71,6 +71,16 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, heading)
         self.assertContains(response, "No machine learning is used.")
         self.assertContains(response, "Missing categories are excluded, not scored as zero.")
+        for metric in ("Total bookings", "Booking conversion rate", "Cancellation rate", "Reschedule rate",
+                       "Average lead-to-book time", "Average booking value", "Schedule utilization", "No-show rate"):
+            self.assertContains(response, metric)
+        for report in ("Bookings over time", "Bookings by service", "Bookings by package", "Bookings by weekday",
+                       "Bookings by time of day", "Booking seasonality", "Cancellation and reschedule trends",
+                       "Booking status distribution", "Busy and quiet periods", "Top Services"):
+            self.assertContains(response, report)
+        self.assertContains(response, "Open filtered Bookings")
+        self.assertContains(response, "Open Schedule")
+        self.assertContains(response, "not a booking calendar")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
 
