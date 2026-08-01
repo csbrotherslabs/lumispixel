@@ -59,6 +59,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'value="previous_year" selected')
         for heading in ("Executive Overview", "Business Performance", "Customer Intelligence", "Booking Intelligence", "Revenue Intelligence", "Gallery and Client Experience", "Operational Intelligence", "Insights and Recommendations"):
             self.assertContains(response, heading)
+        for heading in ("Business Health and Summary", "Business Health", "Category contributions", "Business Summary"):
+            self.assertContains(response, heading)
+        self.assertContains(response, "No machine learning is used.")
+        self.assertContains(response, "Missing categories are excluded, not scored as zero.")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
 
@@ -92,6 +96,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-remove-filter="location"')
         self.assertContains(response, 'aria-label="Date range"')
         self.assertContains(response, 'aria-haspopup="dialog"')
+        self.assertContains(response, "Payment collection health")
+        self.assertContains(response, "100.0% of invoiced value collected")
+        self.assertContains(response, "Healthy")
+        self.assertContains(response, "Rules, not AI")
 
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")

@@ -1,0 +1,13 @@
+<div class="lpa-health-grid">
+  <article class="lpa-card lpa-health-card" aria-labelledby="business-health-title">
+    <header><div><span class="lpa-eyebrow">Rule-based score</span><h3 id="business-health-title">Business Health</h3></div><button class="lpa-tooltip" type="button" aria-label="How Business Health is calculated" aria-describedby="health-score-tip"><i class="bi bi-info-circle"></i></button><span id="health-score-tip" role="tooltip">{{ business_health.tooltip }}</span></header>
+    <div class="lpa-health-score {% if business_health.score != None %}is-scored{% endif %}" style="--score:{{ business_health.score|default:0 }}"><span><b>{% if business_health.score != None %}{{ business_health.score }}{% else %}—{% endif %}</b><small>out of 100</small></span></div>
+    <strong class="lpa-health-label">{{ business_health.label }}</strong>
+    <p>{{ business_health.available_weight }} of 95 possible signal weights available. The result is normalized across available categories.</p>
+  </article>
+  <article class="lpa-card lpa-contributions">
+    <header><div><span class="lpa-eyebrow">Score breakdown</span><h3>Category contributions</h3><p>Fixed points earned before normalization</p></div></header>
+    {% if business_health.contributions %}<ul>{% for item in business_health.contributions %}<li><div><a href="{{ item.url }}">{{ item.label }}</a><span>{{ item.detail }}</span></div><b>{{ item.points }}/{{ item.weight }}</b><meter min="0" max="100" value="{{ item.rating }}">{{ item.rating }}%</meter></li>{% endfor %}</ul>{% else %}<p class="lpa-health-empty">Add activity or enable a comparison period to calculate a score.</p>{% endif %}
+    {% if business_health.missing %}<details><summary>{{ business_health.missing|length }} unavailable categor{{ business_health.missing|length|pluralize:"y,ies" }}</summary><p>{{ business_health.missing|join:", " }}. Missing categories are excluded, not scored as zero.</p></details>{% endif %}
+  </article>
+</div>
