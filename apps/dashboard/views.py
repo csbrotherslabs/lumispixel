@@ -2837,7 +2837,63 @@ TEAM_PAGES = {
 @photographer_workspace_required
 @require_GET
 def team_placeholder(request, page_key):
+    if page_key == "team_overview":
+        return team_overview(request)
     title, subtitle, icon = TEAM_PAGES[page_key]
     context = _dashboard_context(request, page_key, title)
     context["team_page"] = {"title": title, "subtitle": subtitle, "icon": icon}
     return render(request, "photographer_workspace/team/temporary_page.html", context)
+
+
+def team_overview(request):
+    """Owner-scoped team snapshot built only from records that exist today."""
+    profile = request.user.photographer_profile
+    try:
+        selected_date = datetime.strptime(request.GET.get("date", ""), "%Y-%m-%d").date()
+    except ValueError:
+        selected_date = timezone.localdate()
+    selected_location = request.GET.get("location", "").strip()
+    day_start = timezone.make_aware(datetime.combine(selected_date, time.min), timezone.get_current_timezone())
+    day_end = day_start + timedelta(days=1)
+
+    sessions = ClientSession.objects.for_photographer(profile).select_related("client")
+    locations = list(sessions.exclude(location="").order_by("location").values_list("location", flat=True).distinct())
+    day_sessions = sessions.filter(starts_at__gte=day_start, starts_at__lt=day_end).exclude(status=ClientSession.Status.CANCELLED)
+    upcoming = sessions.filter(starts_at__gte=day_end).exclude(status=ClientSession.Status.CANCELLED)
+    if selected_location:
+        day_sessions = day_sessions.filter(location=selected_location)
+        upcoming = upcoming.filter(location=selected_location)
+    day_sessions = list(day_sessions.order_by("starts_at"))
+    upcoming = list(upcoming.order_by("starts_at")[:5])
+
+    client_activity = [
+        {"title": item.get_event_type_display(), "description": item.description, "at": item.occurred_at, "icon": "bi-person-check"}
+        for item in ClientActivity.objects.for_photographer(profile)[:6]
+    ]
+    gallery_activity = [
+        {"title": item.title, "description": item.description, "at": item.created_at, "icon": "bi-images"}
+        for item in GalleryActivity.objects.for_photographer(profile).select_related("gallery")[:6]
+    ]
+    activity = sorted(client_activity + gallery_activity, key=lambda item: item["at"], reverse=True)[:6]
+    owner_name = request.user.full_name or profile.display_name or request.user.email
+    initials = "".join(part[0] for part in owner_name.split()[:2]).upper() or "LP"
+    total_minutes = sum(session.duration_minutes for session in day_sessions)
+    confirmed = sum(session.status == ClientSession.Status.CONFIRMED for session in day_sessions)
+
+    context = _dashboard_context(request, "team_overview", "Team Overview")
+    context.update({
+        "selected_date": selected_date,
+        "is_today": selected_date == timezone.localdate(),
+        "selected_location": selected_location,
+        "locations": locations,
+        "day_sessions": day_sessions,
+        "upcoming_sessions": upcoming,
+        "recent_activity": activity,
+        "owner_name": owner_name,
+        "owner_initials": initials,
+        "confirmed_count": confirmed,
+        "tentative_count": sum(session.status == ClientSession.Status.TENTATIVE for session in day_sessions),
+        "capacity_percent": min(round(total_minutes / 480 * 100), 100),
+        "total_hours": round(total_minutes / 60, 1),
+    })
+    return render(request, "photographer_workspace/team/overview.html", context)

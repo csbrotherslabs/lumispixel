@@ -1,0 +1,64 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lpt-page">
+  <header class="lpt-header">
+    <div class="lpt-heading">
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Overview</strong></nav>
+      <h1 id="workspace-page-title">Team Overview</h1>
+      <p>Monitor today’s availability, assignments, workload, and team activity.</p>
+    </div>
+    <form class="lpt-controls" method="get" aria-label="Team overview controls">
+      {% if locations|length > 1 %}<label><span>Location</span><select name="location" aria-label="Filter by location" onchange="this.form.submit()"><option value="">All locations</option>{% for location in locations %}<option value="{{ location }}"{% if selected_location == location %} selected{% endif %}>{{ location }}</option>{% endfor %}</select></label>{% endif %}
+      <label><span>Date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" aria-label="Overview date" onchange="this.form.submit()"></label>
+      <button class="lpt-icon-button" type="submit" aria-label="Refresh team overview"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></button>
+      <a class="lpt-primary" href="{% url 'photographer_workspace:team_members' %}"><i class="bi bi-person-plus" aria-hidden="true"></i>Invite Member</a>
+    </form>
+  </header>
+
+  <main class="lpt-content">
+    <section aria-labelledby="team-status-title">
+      <div class="lpt-section-head"><div><h2 id="team-status-title">Team status summary</h2><p>{% if is_today %}How your team is doing today{% else %}Snapshot for {{ selected_date|date:'F j, Y' }}{% endif %}</p></div><span class="lpt-live"><i aria-hidden="true"></i>Current records</span></div>
+      <div class="lpt-summary-grid">
+        <article class="lpt-stat"><span class="lpt-stat-icon green"><i class="bi bi-person-check" aria-hidden="true"></i></span><div><strong>1</strong><span>Active member</span><small>Workspace owner</small></div></article>
+        <article class="lpt-stat"><span class="lpt-stat-icon red"><i class="bi bi-camera" aria-hidden="true"></i></span><div><strong>{{ confirmed_count }}</strong><span>Confirmed shoots</span><small>On selected date</small></div></article>
+        <article class="lpt-stat"><span class="lpt-stat-icon amber"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span><div><strong>{{ tentative_count }}</strong><span>Tentative shoots</span><small>Awaiting confirmation</small></div></article>
+        <article class="lpt-stat"><span class="lpt-stat-icon blue"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span><div><strong>{{ upcoming_sessions|length }}</strong><span>Upcoming shoots</span><small>Next scheduled records</small></div></article>
+      </div>
+    </section>
+
+    <div class="lpt-two-col">
+      <section class="lpt-card" aria-labelledby="availability-title">
+        <header><div><h2 id="availability-title">Today’s availability</h2><p>Working hours and time-off status</p></div><span class="lpt-badge neutral">Setup needed</span></header>
+        <div class="lpt-member"><span class="lpt-avatar">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><small>Owner · Availability not configured</small></div><span class="lpt-badge neutral">Unknown</span></div>
+        <div class="lpt-placeholder-note"><i class="bi bi-info-circle" aria-hidden="true"></i><p><strong>Availability isn’t connected yet.</strong> Working hours, schedules, studio memberships, and time-off records do not exist in the current workspace data model.</p></div>
+      </section>
+
+      <section class="lpt-card" aria-labelledby="assignments-title">
+        <header><div><h2 id="assignments-title">Today’s assignments</h2><p>{{ selected_date|date:'l, F j' }}{% if selected_location %} · {{ selected_location }}{% endif %}</p></div><a href="{% url 'photographer_workspace:schedule' %}">View schedule</a></header>
+        {% for session in day_sessions %}<a class="lpt-row" href="{% url 'photographer_workspace:booking_detail' session.pk %}"><time datetime="{{ session.starts_at|date:'c' }}">{{ session.starts_at|date:'g:i A' }}</time><div><strong>{{ session.session_type }}</strong><small>{{ session.client }}{% if session.location %} · {{ session.location }}{% endif %}</small></div><span class="lpt-badge {% if session.status == 'confirmed' %}success{% else %}warning{% endif %}">{{ session.get_status_display }}</span></a>{% empty %}<div class="lpt-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><strong>No shoots scheduled</strong><p>No booking records match this date and location.</p></div>{% endfor %}
+        {% if day_sessions %}<p class="lpt-data-note">Team assignment records are not available; these are owner-scoped bookings, not inferred member assignments.</p>{% endif %}
+      </section>
+    </div>
+
+    <div class="lpt-two-col lpt-two-col-wide">
+      <section class="lpt-card" aria-labelledby="upcoming-title"><header><div><h2 id="upcoming-title">Upcoming shoots</h2><p>Your next booking records</p></div><a href="{% url 'photographer_workspace:bookings' %}">All bookings</a></header>
+        {% for session in upcoming_sessions %}<a class="lpt-shoot" href="{% url 'photographer_workspace:booking_detail' session.pk %}"><span class="lpt-date"><strong>{{ session.starts_at|date:'d' }}</strong><small>{{ session.starts_at|date:'M' }}</small></span><div><strong>{{ session.session_type }}</strong><small>{{ session.starts_at|date:'D, g:i A' }} · {{ session.client }}</small><small><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ session.location|default:'Location not set' }}</small></div><span class="lpt-badge {% if session.status == 'confirmed' %}success{% else %}warning{% endif %}">{{ session.get_status_display }}</span></a>{% empty %}<div class="lpt-empty compact"><i class="bi bi-calendar-plus" aria-hidden="true"></i><strong>No upcoming shoots</strong><p>Future bookings will appear here.</p></div>{% endfor %}
+      </section>
+      <section class="lpt-card" aria-labelledby="workload-title"><header><div><h2 id="workload-title">Workload and capacity</h2><p>Selected day’s booked shoot time</p></div><span class="lpt-badge neutral">Owner view</span></header>
+        <div class="lpt-capacity"><div class="lpt-ring" style="--capacity:{{ capacity_percent }}"><strong>{{ capacity_percent }}%</strong><small>of 8h day</small></div><div><strong>{{ total_hours }} booked hours</strong><p>Calculated from existing booking durations.</p><span><i class="bi bi-record-fill" aria-hidden="true"></i> {{ day_sessions|length }} shoot{{ day_sessions|length|pluralize }}</span></div></div>
+        <div class="lpt-placeholder-note"><i class="bi bi-info-circle" aria-hidden="true"></i><p>Capacity uses an explicit 8-hour display baseline. Member working hours are not yet modeled.</p></div>
+      </section>
+    </div>
+
+    <div class="lpt-two-col">
+      <section class="lpt-card" aria-labelledby="alerts-title"><header><div><h2 id="alerts-title">Team alerts</h2><p>Items that may need attention</p></div></header>
+        <div class="lpt-alert"><i class="bi bi-person-exclamation" aria-hidden="true"></i><div><strong>Member assignments unavailable</strong><p>{{ day_sessions|length }} booking{{ day_sessions|length|pluralize }} on this date cannot be checked for staffing until team assignments exist.</p></div></div>
+        <div class="lpt-alert muted"><i class="bi bi-calendar-x" aria-hidden="true"></i><div><strong>Availability setup pending</strong><p>Schedules and time off are not yet available, so conflicts cannot be detected.</p></div></div>
+      </section>
+      <section class="lpt-card" aria-labelledby="activity-title"><header><div><h2 id="activity-title">Recent activity</h2><p>Latest client and gallery events</p></div></header>
+        {% for item in recent_activity %}<div class="lpt-activity"><span><i class="bi {{ item.icon }}" aria-hidden="true"></i></span><div><strong>{{ item.title }}</strong><p>{{ item.description|default:'Workspace record updated.' }}</p></div><time datetime="{{ item.at|date:'c' }}">{{ item.at|timesince }} ago</time></div>{% empty %}<div class="lpt-empty compact"><i class="bi bi-activity" aria-hidden="true"></i><strong>No recent activity</strong><p>Client and gallery events will appear here.</p></div>{% endfor %}
+      </section>
+    </div>
+  </main>
+</div>
+{% endblock %}
