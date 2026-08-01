@@ -326,6 +326,26 @@
 })();
 
 (() => {
+  const dialog = document.querySelector('[data-metric-dialog]');
+  if (!dialog) return;
+  let opener;
+  document.querySelectorAll('[data-metric-open]').forEach((button) => button.addEventListener('click', () => {
+    opener = button; const card = button.closest('[data-metric-card]');
+    ['label', 'definition', 'value', 'previous', 'change'].forEach((key) => { dialog.querySelector(`[data-detail-${key}]`).textContent = card.dataset[key]; });
+    dialog.querySelector('[data-detail-contributors]').textContent = card.dataset.contributors || 'No contributing service data is available for this period.';
+    const history = card.dataset.history.split(',').map(Number); const chart = dialog.querySelector('[data-detail-history]');
+    chart.replaceChildren(...history.map((value) => { const bar = document.createElement('i'); bar.style.height = value + '%'; return bar; }));
+    chart.setAttribute('aria-label', `Historical trend for ${card.dataset.label}: ${history.join(', ')} relative index values.`);
+    dialog.querySelector('[data-detail-source]').href = card.dataset.source;
+    dialog.showModal(); dialog.querySelector('[data-metric-close]').focus();
+  }));
+  const close = () => { dialog.close(); opener?.focus(); };
+  dialog.querySelector('[data-metric-close]').addEventListener('click', close);
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
+  document.querySelector('[data-print-report]')?.addEventListener('click', () => window.print());
+})();
+
+(() => {
   const form = document.querySelector('[data-analytics-form]');
   const dialog = document.querySelector('[data-analytics-filter-dialog]');
   if (!form || !dialog) return;
