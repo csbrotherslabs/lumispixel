@@ -18,19 +18,43 @@
   <main class="lpt-content">
     <section aria-labelledby="team-status-title">
       <div class="lpt-section-head"><div><h2 id="team-status-title">Team status summary</h2><p>{% if is_today %}How your team is doing today{% else %}Snapshot for {{ selected_date|date:'F j, Y' }}{% endif %}</p></div><span class="lpt-live"><i aria-hidden="true"></i>Current records</span></div>
+      {% if display_state == 'loading' %}<div class="lpt-state" role="status"><span class="lpt-spinner"></span><strong>Loading team status</strong><p>Retrieving today’s team and assignment records…</p></div>
+      {% elif display_state == 'empty' %}<div class="lpt-state"><i class="bi bi-people"></i><strong>No active team members</strong><p>Invite a member to begin coordinating today’s coverage.</p><a class="lpt-primary" href="{% url 'photographer_workspace:team_members' %}">Invite Member</a></div>
+      {% elif display_state == 'error' %}<div class="lpt-state is-error" role="alert"><i class="bi bi-exclamation-triangle"></i><strong>Team status could not be loaded</strong><p>Refresh the page to try again. Your existing records have not been changed.</p><a href="?date={{ selected_date|date:'Y-m-d' }}">Try again</a></div>
+      {% else %}
+      {% if display_state == 'unavailable' %}<div class="lpt-state is-inline" role="status"><i class="bi bi-cloud-slash"></i><strong>Some team data is unavailable</strong><p>Known values remain visible; availability and assignments are never inferred.</p></div>{% endif %}
       <div class="lpt-summary-grid">
-        <article class="lpt-stat"><span class="lpt-stat-icon green"><i class="bi bi-person-check" aria-hidden="true"></i></span><div><strong>1</strong><span>Active member</span><small>Workspace owner</small></div></article>
-        <article class="lpt-stat"><span class="lpt-stat-icon red"><i class="bi bi-camera" aria-hidden="true"></i></span><div><strong>{{ confirmed_count }}</strong><span>Confirmed shoots</span><small>On selected date</small></div></article>
-        <article class="lpt-stat"><span class="lpt-stat-icon amber"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span><div><strong>{{ tentative_count }}</strong><span>Tentative shoots</span><small>Awaiting confirmation</small></div></article>
-        <article class="lpt-stat"><span class="lpt-stat-icon blue"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span><div><strong>{{ upcoming_sessions|length }}</strong><span>Upcoming shoots</span><small>Next scheduled records</small></div></article>
-      </div>
+        {% for kpi in kpis %}<article class="lpt-stat lpt-kpi">
+          <span class="lpt-stat-icon {% if kpi.tone == 'success' %}green{% elif kpi.tone == 'warning' %}amber{% else %}blue{% endif %}"><i class="bi {{ kpi.icon }}" aria-hidden="true"></i></span>
+          <div><strong>{{ kpi.value }}</strong><span>{{ kpi.label }} <button class="lpt-help" type="button" aria-label="Definition: {{ kpi.definition }}" title="{{ kpi.definition }}">?</button></span><small>{{ kpi.definition }}</small></div>
+          <footer><span class="lpt-indicator {{ kpi.tone }}"><i></i>{{ kpi.status }}</span><a href="#availability-title">View details</a></footer>
+        </article>{% endfor %}
+      </div>{% endif %}
     </section>
 
     <div class="lpt-two-col">
-      <section class="lpt-card" aria-labelledby="availability-title">
-        <header><div><h2 id="availability-title">Today’s availability</h2><p>Working hours and time-off status</p></div><span class="lpt-badge neutral">Setup needed</span></header>
-        <div class="lpt-member"><span class="lpt-avatar">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><small>Owner · Availability not configured</small></div><span class="lpt-badge neutral">Unknown</span></div>
-        <div class="lpt-placeholder-note"><i class="bi bi-info-circle" aria-hidden="true"></i><p><strong>Availability isn’t connected yet.</strong> Working hours, schedules, studio memberships, and time-off records do not exist in the current workspace data model.</p></div>
+      <section class="lpt-card lpt-availability" aria-labelledby="availability-title">
+        <header><div><h2 id="availability-title">Today’s availability</h2><p>Known working hours, assignments, and capacity</p></div><span class="lpt-badge neutral">1 member</span></header>
+        <form class="lpt-member-filters" method="get" role="search">
+          <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}"><label class="lpt-member-search"><span class="sr-only">Search members</span><i class="bi bi-search"></i><input name="q" type="search" value="{{ search_term }}" placeholder="Search team members"></label>
+          <button class="lpt-filter-toggle" type="button" data-team-filter-open aria-expanded="false" aria-controls="team-secondary-filters"><i class="bi bi-sliders"></i> Filters</button>
+          <div class="lpt-secondary-filters" id="team-secondary-filters" data-team-filters>
+            <label>Role<select name="role"><option value="">All roles</option><option value="owner"{% if selected_role == 'owner' %} selected{% endif %}>Owner</option><option value="manager">Studio Manager</option><option value="photographer">Photographer</option></select></label>
+            <label>Location<select name="location"><option value="">All locations</option><option value="{{ owner_location }}"{% if selected_location == owner_location %} selected{% endif %}>{{ owner_location }}</option></select></label>
+            <label>Availability<select name="availability"><option value="">All statuses</option><option value="available">Available</option><option value="assigned">Assigned</option><option value="busy">Busy</option><option value="leave">On leave</option><option value="outside_hours">Outside working hours</option><option value="not_configured"{% if selected_availability == 'not_configured' %} selected{% endif %}>Availability not configured</option></select></label>
+            <button type="submit">Apply</button><a href="?date={{ selected_date|date:'Y-m-d' }}">Clear</a>
+          </div>
+        </form>
+        <p class="sr-only">Availability isn’t connected yet.</p>
+        {% if display_state == 'loading' %}<div class="lpt-state" role="status"><span class="lpt-spinner"></span><strong>Loading availability</strong></div>
+        {% elif display_state == 'error' %}<div class="lpt-state is-error" role="alert"><i class="bi bi-exclamation-triangle"></i><strong>Availability could not be loaded</strong><p>Try refreshing this section.</p></div>
+        {% elif display_state == 'empty' %}<div class="lpt-state"><i class="bi bi-person-plus"></i><strong>Your team is ready to grow</strong><p>You’re currently working solo. Your owner status will appear here after you add your availability; invite collaborators whenever you’re ready.</p><a class="lpt-primary" href="{% url 'photographer_workspace:team_members' %}">Invite your first member</a></div>
+        {% elif not member_matches %}<div class="lpt-state"><i class="bi bi-search"></i><strong>No members match these filters</strong><p>Clear or adjust the search, role, location, and availability filters.</p><a href="?date={{ selected_date|date:'Y-m-d' }}">Clear filters</a></div>
+        {% else %}<article class="lpt-member-detail">
+          <div class="lpt-member-identity"><span class="lpt-avatar">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><small>Owner</small></div><span class="lpt-badge neutral">Availability not configured</span></div>
+          <dl><div><dt>Working hours</dt><dd>Not configured</dd></div><div><dt>Current assignment</dt><dd>Assignment data unavailable</dd></div><div><dt>Next assignment</dt><dd>Assignment data unavailable</dd></div><div><dt>Location</dt><dd>{{ owner_location }}</dd></div><div><dt>Capacity</dt><dd><span class="lpt-indicator neutral"><i></i>Not configured</span></dd></div></dl>
+        </article>
+        <div class="lpt-placeholder-note"><i class="bi bi-info-circle" aria-hidden="true"></i><p><strong>Availability isn’t connected yet.</strong> We don’t infer status from bookings when working hours, member assignments, and leave records are incomplete. Add teammates and schedules to unlock team capacity.</p></div>{% endif %}
       </section>
 
       <section class="lpt-card" aria-labelledby="assignments-title">

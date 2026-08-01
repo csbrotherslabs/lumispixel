@@ -929,3 +929,13 @@ document.addEventListener('click', async (event) => {
   button.textContent = 'Copied';
   window.setTimeout(() => { button.textContent = label; }, 1500);
 });
+
+(function () {
+  const button = document.querySelector('[data-team-filter-open]');
+  const filters = document.querySelector('[data-team-filters]');
+  if (!button || !filters) return;
+  button.addEventListener('click', function () {
+    const open = filters.classList.toggle('is-open');
+    button.setAttribute('aria-expanded', String(open));
+  });
+})();

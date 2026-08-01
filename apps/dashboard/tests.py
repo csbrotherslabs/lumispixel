@@ -75,6 +75,26 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertNotContains(response, "Private shoot")
         self.assertContains(response, "Availability isn’t connected yet.")
 
+    def test_team_overview_status_kpis_availability_filters_and_states(self):
+        user, _ = self.make_photographer(True, email="solo-team@example.com", slug="solo-team")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:team_overview")
+
+        response = self.client.get(url)
+        for label in ("Total active team members", "Available today", "On assignment",
+                      "Unavailable or on leave", "Unassigned shoots today", "Team capacity utilization"):
+            self.assertContains(response, label)
+        for detail in ("Working hours", "Current assignment", "Next assignment", "Location", "Capacity"):
+            self.assertContains(response, detail)
+        self.assertContains(response, "Availability not configured")
+        self.assertContains(response, 'data-team-filter-open')
+
+        self.assertContains(self.client.get(url, {"q": "nobody"}), "No members match these filters")
+        self.assertContains(self.client.get(url, {"state": "loading"}), "Loading team status")
+        self.assertContains(self.client.get(url, {"state": "empty"}), "Your team is ready to grow")
+        self.assertContains(self.client.get(url, {"state": "unavailable"}), "Some team data is unavailable")
+        self.assertContains(self.client.get(url, {"state": "error"}), "Team status could not be loaded")
+
     def test_analytics_short_dates_are_cross_platform(self):
         self.assertEqual(_short_date(timezone.datetime(2026, 8, 1)), "Aug 1")
 
