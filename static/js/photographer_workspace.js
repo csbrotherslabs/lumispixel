@@ -325,6 +325,23 @@
   }
 })();
 
+(() => {
+  const form = document.querySelector('[data-analytics-form]');
+  const dialog = document.querySelector('[data-analytics-filter-dialog]');
+  if (!form || !dialog) return;
+  const opener = form.querySelector('[data-analytics-filter-open]');
+  opener?.addEventListener('click', () => { dialog.showModal(); dialog.querySelector('input, select, button')?.focus(); });
+  dialog.querySelectorAll('[data-analytics-filter-close]').forEach((button) => button.addEventListener('click', () => { dialog.close(); opener?.focus(); }));
+  document.querySelectorAll('[data-remove-filter]').forEach((button) => button.addEventListener('click', () => {
+    const control = form.elements.namedItem(button.dataset.removeFilter);
+    if (control) control.value = '';
+    form.requestSubmit();
+  }));
+  form.elements.namedItem('range')?.addEventListener('change', (event) => {
+    if (event.target.value === 'custom') dialog.showModal();
+  });
+})();
+
 (function () {
   const select = document.querySelector('[data-analytics-metric]');
   const chart = document.querySelector('[data-analytics-chart]');
