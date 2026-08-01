@@ -48,6 +48,7 @@ from apps.dashboard.financial_actions import add_credit, issue_refund, record_pa
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest
+from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2847,31 +2848,12 @@ def team_placeholder(request, page_key):
 
 def team_overview(request):
     """Owner-scoped team snapshot built only from records that exist today."""
-    profile = request.user.photographer_profile
-    try:
-        selected_date = datetime.strptime(request.GET.get("date", ""), "%Y-%m-%d").date()
-    except ValueError:
-        selected_date = timezone.localdate()
-    selected_location = request.GET.get("location", "").strip()
-    search_term = request.GET.get("q", "").strip()
-    selected_role = request.GET.get("role", "").strip()
-    selected_availability = request.GET.get("availability", "").strip()
-    display_state = request.GET.get("state", "ready")
-    if display_state not in {"ready", "loading", "empty", "unavailable", "error"}:
-        display_state = "ready"
-    day_start = timezone.make_aware(datetime.combine(selected_date, time.min), timezone.get_current_timezone())
-    day_end = day_start + timedelta(days=1)
-
-    sessions = ClientSession.objects.for_photographer(profile).select_related("client")
-    locations = list(sessions.exclude(location="").order_by("location").values_list("location", flat=True).distinct())
-    day_sessions = sessions.filter(starts_at__gte=day_start, starts_at__lt=day_end).exclude(status=ClientSession.Status.CANCELLED)
+    profile = authorized_studio(request.user)
+    filters = parse_team_filters(request.GET)
+    selected_date, selected_location = filters["date"], filters["location"]
+    search_term, selected_role, selected_availability = filters["q"], filters["role"], filters["availability"]
+    locations, day_sessions, upcoming, day_start, day_end = studio_sessions(profile, selected_date, selected_location)
     upcoming_end = day_end + timedelta(days=14)
-    upcoming = sessions.filter(starts_at__gte=day_end, starts_at__lt=upcoming_end).exclude(status=ClientSession.Status.CANCELLED)
-    if selected_location:
-        day_sessions = day_sessions.filter(location=selected_location)
-        upcoming = upcoming.filter(location=selected_location)
-    day_sessions = list(day_sessions.order_by("starts_at"))
-    upcoming = list(upcoming.order_by("starts_at"))
 
     # ClientSession is the booking/schedule source of truth. Team-member assignment
     # records do not exist yet, so this overview deliberately reports that gap and
@@ -2879,13 +2861,7 @@ def team_overview(request):
     now = timezone.now()
 
     def overlaps(candidate, collection):
-        candidate_end = candidate.starts_at + timedelta(minutes=candidate.duration_minutes)
-        return any(
-            other.pk != candidate.pk
-            and candidate.starts_at < other.starts_at + timedelta(minutes=other.duration_minutes)
-            and other.starts_at < candidate_end
-            for other in collection
-        )
+        return any(sessions_overlap(candidate, other) for other in collection)
 
     def assignment_row(session, collection, upcoming_row=False):
         ends_at = session.starts_at + timedelta(minutes=session.duration_minutes)
@@ -3004,7 +2980,7 @@ def team_overview(request):
         "search_term": search_term,
         "selected_role": selected_role,
         "selected_availability": selected_availability,
-        "display_state": display_state,
+        "display_state": "ready",
         "member_matches": member_matches,
         "owner_location": owner_location,
         "kpis": kpis,
@@ -3023,5 +2999,8 @@ def team_overview(request):
         "tentative_count": sum(session.status == ClientSession.Status.TENTATIVE for session in day_sessions),
         "capacity_percent": None,
         "total_hours": None,
+        "last_updated": timezone.now(),
+        "is_solo": True,
+        "is_multi_location": len(locations) > 1,
     })
     return render(request, "photographer_workspace/team/overview.html", context)
