@@ -47,7 +47,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
-from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest
+from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest, StudioMembership
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
 
 WORKSPACE_MODULES = [
@@ -2849,15 +2849,21 @@ def team_placeholder(request, page_key):
 
 
 def team_members(request):
-    """Owner-scoped directory using the account/profile records available today."""
+    """Paginated, owner-scoped directory backed by memberships and user records."""
     profile = authorized_studio(request.user)
     query = (request.GET.get("q", "") or "").strip()[:150]
     role = request.GET.get("role", "")
     status = request.GET.get("status", "")
-    if role not in {"", "owner", "studio_manager", "photographer"}:
-        role = ""
-    if status not in {"", "active", "inactive"}:
-        status = ""
+    location_filter = (request.GET.get("location", "") or "").strip()[:150]
+    availability = request.GET.get("availability", "")
+    specialty = request.GET.get("specialty", "")
+    sort = request.GET.get("sort", "name")
+    valid_roles = {"", "owner", *(choice[0] for choice in StudioMembership.Role.choices)}
+    valid_statuses = {"", *(choice[0] for choice in StudioMembership.Status.choices)}
+    if role not in valid_roles: role = ""
+    if status not in valid_statuses: status = ""
+    if availability not in {"", *(choice[0] for choice in StudioMembership.Availability.choices)}: availability = ""
+    if sort not in {"name", "role", "status", "location", "recent"}: sort = "name"
 
     name = request.user.full_name or profile.display_name or request.user.email
     location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part)
@@ -2869,14 +2875,64 @@ def team_members(request):
         "status": "Active" if request.user.can_login else "Inactive",
         "location": location or "Not configured",
         "availability": "Not configured",
+        "availability_code": "not_configured",
+        "specialties": list(profile.specialties.values_list("name", flat=True)),
+        "assignment": "No assignment recorded",
         "last_active": request.user.last_login,
+        "is_owner": True,
+        "can_manage": True,
     }
-    matches = (
-        (not query or query.casefold() in f"{name} {request.user.email} {location}".casefold())
+    owner_matches = (
+        (not query or query.casefold() in f"{name} {request.user.email}".casefold())
         and (not role or role == "owner")
         and (not status or status == owner["status"].casefold())
+        and (not location_filter or location_filter == (location or "Not configured"))
+        and (not availability or availability == "not_configured")
+        and (not specialty or specialty in {str(pk) for pk in profile.specialties.values_list("pk", flat=True)})
     )
-    members = [owner] if matches else []
+    memberships = StudioMembership.objects.filter(studio=profile).select_related("user").prefetch_related("specialties")
+    if query:
+        memberships = memberships.filter(Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) |
+                                         Q(user__email__icontains=query) | Q(invitation_email__icontains=query))
+    if role and role != "owner": memberships = memberships.filter(role=role)
+    elif role == "owner": memberships = memberships.none()
+    if status: memberships = memberships.filter(status=status)
+    if location_filter: memberships = memberships.filter(primary_location=location_filter)
+    if availability: memberships = memberships.filter(availability=availability)
+    if specialty: memberships = memberships.filter(specialties__pk=specialty)
+    ordering = {"name": ("user__first_name", "user__last_name", "invitation_email"), "role": ("role",),
+                "status": ("status",), "location": ("primary_location",), "recent": ("-created_at",)}[sort]
+    memberships = memberships.order_by(*ordering).distinct()
+    paginator = Paginator(memberships, 23 if owner_matches else 24)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    members = [owner] if owner_matches and page_obj.number == 1 else []
+    for membership in page_obj.object_list:
+        member_user = membership.user
+        member_name = (member_user.full_name or member_user.email) if member_user else membership.invitation_email
+        members.append({
+            "name": member_name, "email": membership.email,
+            "initials": "".join(part[0] for part in member_name.split()[:2]).upper() or "LP",
+            "role": membership.get_role_display(), "status": membership.get_status_display(),
+            "location": membership.primary_location or "Not configured",
+            "availability": membership.get_availability_display(), "availability_code": membership.availability,
+            "specialties": [item.name for item in membership.specialties.all()],
+            "assignment": membership.current_assignment or "No assignment recorded",
+            "last_active": member_user.last_login if member_user else None,
+            "is_owner": False, "can_manage": True,
+        })
+    locations = list(StudioMembership.objects.filter(studio=profile).exclude(primary_location="")
+                     .order_by("primary_location").values_list("primary_location", flat=True).distinct())
+    owner_location = location or "Not configured"
+    if owner_location not in locations: locations.insert(0, owner_location)
+    base_params = request.GET.copy(); base_params.pop("page", None)
+    active_filters = []
+    labels = {"q": query, "role": dict(StudioMembership.Role.choices).get(role, "Owner" if role == "owner" else ""),
+              "status": dict(StudioMembership.Status.choices).get(status, ""), "location": location_filter,
+              "availability": dict(StudioMembership.Availability.choices).get(availability, "")}
+    for key, label in labels.items():
+        if label:
+            params = base_params.copy(); params.pop(key, None)
+            active_filters.append({"label": label, "url": f"?{params.urlencode()}" if params else request.path})
     context = _dashboard_context(request, "team_members", "Team Members")
     context.update({
         "members": members,
@@ -2884,12 +2940,21 @@ def team_members(request):
         "query": query,
         "selected_role": role,
         "selected_status": status,
+        "selected_location": location_filter, "selected_availability": availability,
+        "selected_specialty": specialty, "selected_sort": sort,
+        "role_choices": [choice for choice in StudioMembership.Role.choices if choice[0] != StudioMembership.Role.EDITOR],
+        "status_choices": StudioMembership.Status.choices,
+        "availability_choices": StudioMembership.Availability.choices, "locations": locations,
+        "specialty_choices": profile.specialties.model.objects.all().order_by("name"),
+        "active_filters": active_filters, "page_obj": page_obj,
+        "pagination_query": base_params.urlencode(), "total_members": paginator.count + (1 if owner_matches else 0),
+        "is_solo": not StudioMembership.objects.filter(studio=profile).exists(), "can_invite": True,
         "summary": {
-            "active": 1 if request.user.can_login else 0,
-            "managers": 0,
-            "photographers": 0,
-            "pending": 0,
-            "inactive": 0 if request.user.can_login else 1,
+            "active": StudioMembership.objects.filter(studio=profile, status="active").count() + (1 if request.user.can_login else 0),
+            "managers": StudioMembership.objects.filter(studio=profile, role="studio_manager").count(),
+            "photographers": StudioMembership.objects.filter(studio=profile, role="photographer").count(),
+            "pending": StudioMembership.objects.filter(studio=profile, status="invited").count(),
+            "inactive": StudioMembership.objects.filter(studio=profile, status__in=("inactive", "access_suspended")).count() + (0 if request.user.can_login else 1),
         },
     })
     return render(request, "photographer_workspace/team/members.html", context)

@@ -5,6 +5,57 @@ from django.utils import timezone
 from apps.clients.models import PhotographerOwnedModel
 
 
+class StudioMembership(models.Model):
+    """A person's access and directory metadata within one photographer studio."""
+
+    class Role(models.TextChoices):
+        MANAGER = "studio_manager", "Studio Manager"
+        PHOTOGRAPHER = "photographer", "Photographer"
+        ASSISTANT = "assistant", "Assistant"
+        EDITOR = "editor", "Editor"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        INVITED = "invited", "Invited"
+        EXPIRED = "invitation_expired", "Invitation expired"
+        INACTIVE = "inactive", "Inactive"
+        SUSPENDED = "access_suspended", "Access suspended"
+
+    class Availability(models.TextChoices):
+        AVAILABLE = "available", "Available"
+        ASSIGNED = "assigned", "On assignment"
+        LIMITED = "limited", "Limited"
+        AWAY = "away", "Away"
+        UNKNOWN = "not_configured", "Not configured"
+
+    studio = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE,
+                               related_name="memberships")
+    user = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name="studio_memberships")
+    invitation_email = models.EmailField(blank=True)
+    role = models.CharField(max_length=24, choices=Role.choices, default=Role.PHOTOGRAPHER)
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.INVITED)
+    primary_location = models.CharField(max_length=150, blank=True)
+    specialties = models.ManyToManyField("accounts.PhotographerSpecialty", blank=True,
+                                         related_name="studio_memberships")
+    availability = models.CharField(max_length=24, choices=Availability.choices,
+                                    default=Availability.UNKNOWN)
+    current_assignment = models.CharField(max_length=180, blank=True)
+    invitation_expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        constraints = [models.UniqueConstraint(fields=["studio", "user"],
+                                                condition=models.Q(user__isnull=False),
+                                                name="unique_studio_user_membership")]
+
+    @property
+    def email(self):
+        return self.user.email if self.user_id else self.invitation_email
+
+
 class Review(PhotographerOwnedModel):
     """A native LumisPixel review or a manually recorded external review."""
 
