@@ -1,4 +1,7 @@
-<article class="lpa-kpi">
-  <div class="lpa-kpi-top"><span class="lpa-kpi-icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span><span class="lpa-kpi-change is-{{ metric.tone }}"><i class="bi bi-arrow-{% if metric.tone == 'negative' %}down{% else %}up{% endif %}-right"></i>{{ metric.change }}</span></div>
-  <p>{{ metric.label }}</p><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small>
+<article class="lpa-kpi" tabindex="0" aria-describedby="metric-tip-{{ forloop.counter }}">
+  <div class="lpa-kpi-top"><span class="lpa-kpi-icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span><span class="lpa-kpi-change is-{{ metric.tone }}"><i class="bi {% if metric.direction == 'up' %}bi-arrow-up-right{% elif metric.direction == 'down' %}bi-arrow-down-right{% else %}bi-dash{% endif %}" aria-hidden="true"></i>{{ metric.change }}</span></div>
+  <div class="lpa-kpi-label"><p>{{ metric.label }}</p><button class="lpa-tooltip" type="button" aria-label="About {{ metric.label }}" aria-describedby="metric-tip-{{ forloop.counter }}"><i class="bi bi-info-circle"></i></button><span id="metric-tip-{{ forloop.counter }}" role="tooltip">{{ metric.tooltip }}</span></div>
+  <strong>{{ metric.value }}</strong><small>{{ metric.note }}</small>
+  <div class="lpa-spark" aria-label="Compact trend for {{ metric.label }}">{% for height in metric.spark %}<i style="height:{{ height }}%"></i>{% endfor %}</div>
+  <a href="{{ metric.url }}" aria-label="View details for {{ metric.label }}">View details <i class="bi bi-arrow-right"></i></a>
 </article>

@@ -46,6 +46,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
                                              referral_summary, reputation_summary, retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
+from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest
 
 WORKSPACE_MODULES = [
@@ -2265,32 +2266,10 @@ def reschedule_session(request, pk):
 @photographer_workspace_required
 @require_GET
 def analytics_overview(request):
-    """Render the cross-business analytics foundation without creating parallel records."""
-    range_options = [("30_days", "Last 30 days"), ("this_month", "This month"),
-                     ("this_quarter", "This quarter"), ("this_year", "This year")]
-    compare_options = [("previous_period", "Previous period"), ("previous_year", "Previous year"),
-                       ("none", "No comparison")]
-    range_key = request.GET.get("range", "30_days")
-    compare_key = request.GET.get("compare", "previous_period")
-    if range_key not in dict(range_options):
-        range_key = "30_days"
-    if compare_key not in dict(compare_options):
-        compare_key = "previous_period"
-
+    """Render owner-scoped analytics directly from operational records."""
     context = _dashboard_context(request, "analytics", "Analytics")
-    context.update({
-        "range_options": range_options,
-        "range_key": range_key,
-        "compare_options": compare_options,
-        "compare_key": compare_key,
-        "analytics_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error", "permission", "empty"} else "ready",
-        "analytics_metrics": [
-            {"label": "Total revenue", "value": "$24,860", "change": "+12.4%", "tone": "positive", "icon": "bi-currency-dollar", "note": "vs previous period"},
-            {"label": "Confirmed bookings", "value": "32", "change": "+8.1%", "tone": "positive", "icon": "bi-calendar-check", "note": "vs previous period"},
-            {"label": "New clients", "value": "18", "change": "+5.9%", "tone": "positive", "icon": "bi-people", "note": "vs previous period"},
-            {"label": "Average booking value", "value": "$1,420", "change": "-2.3%", "tone": "negative", "icon": "bi-receipt", "note": "vs previous period"},
-        ],
-    })
+    context.update(build_analytics_overview(request.user.photographer_profile, request.GET, request.path))
+    context["analytics_state"] = request.GET.get("state") if request.GET.get("state") in {"loading", "error", "permission", "empty"} else "ready"
     return render(request, "photographer_workspace/analytics/overview.html", context)
 
 

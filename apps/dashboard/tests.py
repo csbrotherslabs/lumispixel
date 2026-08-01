@@ -7,8 +7,8 @@ from django.urls import Resolver404, resolve, reverse
 from django.utils import timezone
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
-from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
+from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoicePayment, Lead
+from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
 
@@ -61,6 +61,37 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, heading)
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
+
+    def test_analytics_overview_uses_owner_records_and_preserves_filters(self):
+        user, profile = self.make_photographer(True, email="analytics-data@example.com", slug="analytics-data")
+        client = Client.objects.create(photographer=profile, first_name="Maya", client_type=Client.ClientType.INDIVIDUAL)
+        booking = ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait",
+            location="Studio A", starts_at=timezone.now(), status=ClientSession.Status.CONFIRMED, booking_value=1200)
+        invoice = ClientInvoice.objects.create(photographer=profile, client=client, booking=booking, total=1200)
+        InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=1200, processor_fee=36)
+        gallery = Gallery.objects.create(photographer=profile, client=client, name="Maya portraits", slug="maya-portraits", status=Gallery.Status.PUBLISHED)
+        GalleryAnalyticsEvent.objects.create(photographer=profile, gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.VIEW)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:analytics"), {
+            "range": "30_days", "compare": "none", "location": "Studio A", "service": "Portrait",
+            "client_type": Client.ClientType.INDIVIDUAL, "booking_status": ClientSession.Status.CONFIRMED,
+            "gallery_status": Gallery.Status.PUBLISHED,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        for label in ("Total revenue", "Net revenue", "Total bookings", "New clients", "Lead-to-booking conversion",
+                      "Average booking value", "Gallery views", "Repeat booking rate"):
+            self.assertContains(response, label)
+        self.assertContains(response, "$1,200")
+        self.assertContains(response, "$1,164")
+        self.assertContains(response, "Not compared")
+        self.assertNotContains(response, "+0.0%")
+        self.assertContains(response, "Location:")
+        self.assertContains(response, "Studio A")
+        self.assertContains(response, 'data-remove-filter="location"')
+        self.assertContains(response, 'aria-label="Date range"')
+        self.assertContains(response, 'aria-haspopup="dialog"')
 
     def test_anonymous_client_and_incomplete_access_rules(self):
         url = reverse("photographer_workspace:dashboard")
