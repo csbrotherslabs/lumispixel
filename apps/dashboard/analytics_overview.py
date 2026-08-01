@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from apps.clients.models import Client, ClientSession, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
+from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
 from apps.galleries.models import Gallery, GalleryAnalyticsEvent
 
 
@@ -58,6 +58,47 @@ def _metric(label, value, previous, display, icon, tooltip, url, compare_label, 
     heights = [max(8, min(100, int((Decimal(str(point)) / max([Decimal(str(x)) for x in spark] + [Decimal('1')])) * 100))) for point in spark]
     return {"label": label, "raw": value, "value": display(value), "change": change, "tone": tone,
             "direction": direction, "icon": icon, "note": note, "tooltip": tooltip, "url": url, "spark": heights}
+
+
+def _business_health(current, previous, payment_ratio, cancellation_rate, urls):
+    """Build a normalized, rule-based score from only the signals we can observe."""
+    def trend(now, before):
+        if before is None or before == 0:
+            return None
+        change = (Decimal(str(now)) - Decimal(str(before))) / Decimal(str(before)) * 100
+        return (100 if change >= 10 else 80 if change >= 0 else 45 if change >= -10 else 10), change
+
+    rules = []
+    for label, key, weight, url in (
+        ("Revenue trend", "revenue", 20, urls["financial"]),
+        ("Booking trend", "bookings", 15, urls["bookings"]),
+        ("Lead conversion trend", "conversion", 15, urls["growth"]),
+        ("Gallery engagement", "views", 10, urls["galleries"]),
+    ):
+        result = trend(current[key], previous[key] if previous else None)
+        if result:
+            rating, change = result
+            rules.append((label, weight, rating, f"{change:+.1f}% vs comparison period", url))
+    if current["bookings"]:
+        rating = 100 if current["repeat"] >= 40 else 75 if current["repeat"] >= 25 else 45 if current["repeat"] >= 10 else 20
+        rules.append(("Repeat client rate", 10, rating, f'{current["repeat"]:.1f}% of booked clients returned', urls["clients"]))
+    if payment_ratio is not None:
+        rating = 100 if payment_ratio >= 90 else 75 if payment_ratio >= 75 else 40 if payment_ratio >= 50 else 10
+        rules.append(("Payment collection health", 15, rating, f"{payment_ratio:.1f}% of invoiced value collected", urls["financial"]))
+    if cancellation_rate is not None:
+        rating = 100 if cancellation_rate <= 5 else 75 if cancellation_rate <= 10 else 40 if cancellation_rate <= 20 else 10
+        rules.append(("Cancellation rate", 10, rating, f"{cancellation_rate:.1f}% of scheduled sessions cancelled", urls["bookings"]))
+
+    available_weight = sum(item[1] for item in rules)
+    score = round(sum(weight * rating for _, weight, rating, _, _ in rules) / available_weight) if available_weight else None
+    label = "No score" if score is None else "Excellent" if score >= 85 else "Healthy" if score >= 70 else "Needs Attention" if score >= 50 else "At Risk"
+    contributions = [{"label": name, "points": round(weight * rating / 100, 1), "weight": weight,
+                      "rating": rating, "detail": detail, "url": url} for name, weight, rating, detail, url in rules]
+    missing = [name for name in ("Revenue trend", "Booking trend", "Lead conversion trend", "Repeat client rate",
+               "Gallery engagement", "Payment collection health", "Delivery turnaround", "Cancellation rate")
+               if name not in {item["label"] for item in contributions}]
+    return {"score": score, "label": label, "contributions": contributions, "available_weight": available_weight,
+            "missing": missing, "tooltip": "Each available signal receives a fixed weight and a rule-based rating from 0–100. Points are divided by the weights available, so missing data never lowers the score. No machine learning is used."}
 
 
 def analytics_overview(profile, params, base_url, today=None):
@@ -140,6 +181,48 @@ def analytics_overview(profile, params, base_url, today=None):
                        [previous[key] if previous else current[key], current[key]])
                for label, key, formatter, icon, tip, target in specs]
 
+    period_invoices = ClientInvoice.objects.for_photographer(profile).filter(issue_date__gte=start, issue_date__lte=end)
+    if any(selected.values()):
+        period_invoices = period_invoices.filter(booking_id__in=session_ids)
+    invoiced = period_invoices.exclude(status=ClientInvoice.Status.VOID).aggregate(v=Sum("total"))["v"] or Decimal("0")
+    collected = InvoicePayment.objects.filter(invoice__in=period_invoices.exclude(status=ClientInvoice.Status.VOID),
+                                                status=InvoicePayment.Status.COMPLETED).aggregate(v=Sum("amount"))["v"] or Decimal("0")
+    payment_ratio = Decimal(collected * 100) / invoiced if invoiced else None
+    scheduled = sessions.filter(starts_at__date__gte=start, starts_at__date__lte=end)
+    scheduled_count = scheduled.count()
+    cancellation_rate = Decimal(scheduled.filter(status=ClientSession.Status.CANCELLED).count() * 100) / scheduled_count if scheduled_count else None
+    root = base_url.rsplit('/analytics/', 1)[0]
+    urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/",
+            "galleries": f"{root}/galleries/", "clients": f"{root}/crm/"}
+    business_health = _business_health(current, previous, payment_ratio, cancellation_rate, urls)
+
+    observations = []
+    def add_observation(priority, tone, title, change, why, action, url):
+        observations.append({"priority": priority, "tone": tone, "title": title, "change": change,
+                             "why": why, "action": action, "url": url})
+    if previous:
+        for key, title, why, action, url in (
+            ("revenue", "Revenue", "Revenue momentum affects cash available for upcoming work.", "Review revenue", urls["financial"]),
+            ("conversion", "Lead conversion", "Conversion determines how efficiently inquiries become paid work.", "Review lead funnel", urls["growth"]),
+            ("views", "Gallery engagement", "Engaged clients are more likely to favorite, share, and purchase.", "Review galleries", urls["galleries"]),
+            ("bookings", "Bookings", "Booking momentum indicates future workload and revenue.", "Review bookings", urls["bookings"]),
+        ):
+            before, now = previous[key], current[key]
+            if before and now != before:
+                delta = (Decimal(str(now)) - Decimal(str(before))) / Decimal(str(before)) * 100
+                direction = "increased" if delta > 0 else "declined"
+                add_observation(3 if delta < 0 else 2, "risk" if delta < 0 else "success", f"{title} {direction}",
+                                f"{title} {direction} {abs(delta):.1f}% compared with the previous period.", why, action, url)
+    service_counts = period(booked, "confirmed_at", start, end).values("session_type").annotate(total=Sum("booking_value")).order_by("-total")
+    if service_counts and service_counts[0]["session_type"]:
+        service = service_counts[0]["session_type"]
+        add_observation(1, "opportunity", f"{service} is the strongest service", f"{service} generated the most recorded booking value this period.",
+                        "Knowing the strongest service helps focus marketing and capacity.", "View service bookings", urls["bookings"])
+    if payment_ratio is not None and payment_ratio < 75:
+        add_observation(4, "risk", "Payment collection needs attention", f"Only {payment_ratio:.1f}% of invoiced value has been collected.",
+                        "Outstanding balances can constrain cash flow.", "Review outstanding invoices", urls["financial"])
+    business_summary = sorted(observations, key=lambda item: item["priority"], reverse=True)[:5]
+
     def choices(qs, field): return [x for x in qs.order_by(field).values_list(field, flat=True).distinct() if x]
     all_sessions = ClientSession.objects.for_photographer(profile)
     all_leads = Lead.objects.for_photographer(profile)
@@ -157,4 +240,5 @@ def analytics_overview(profile, params, base_url, today=None):
     return {"range_options": RANGES, "range_key": range_key, "compare_options": COMPARES, "compare_key": compare_key,
             "start": start, "end": end, "selected_filters": selected, "filter_options": options,
             "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
-            "partial_message": "Net revenue excludes operating expenses because expense records are not available."}
+            "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
+            "business_health": business_health, "business_summary": business_summary}
