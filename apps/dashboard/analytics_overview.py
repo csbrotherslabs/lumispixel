@@ -18,6 +18,106 @@ COMPARES = (("previous_period", "Previous period"), ("previous_year", "Previous 
 GROUPINGS = (("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"))
 
 
+def _analytics_insights(current, previous, payment_ratio, invoiced, collected,
+                        cancellation_rate, customer, gallery, operations, urls, currency):
+    """Return at most six deterministic recommendations, ordered by business impact.
+
+    Rule catalogue (thresholds are intentionally fixed and are not predictions):
+    growth opportunity: a lead source has >=3 leads and converts >=15 points above
+    the next source; revenue opportunity: revenue is >=10% above a non-zero prior
+    period; conversion issue: >=5 leads convert below 20% or conversion falls 10
+    points; client retention: >=3 bookings repeat below 20% or fall 10 points;
+    booking risk: cancellation is >=15%; gallery engagement: >=10 views engage
+    below 10%; operational bottleneck: >=3 overdue tasks; payment risk: collection
+    is below 85%; team capacity: utilization is above 85% or below 25% with work;
+    data quality issue: activity exists while editing/team assignment data is absent.
+
+    Scores combine fixed urgency and impact bands. Higher scores sort first, with
+    the stable rule id breaking ties. No random, predictive, or AI-generated text
+    is used.
+    """
+    insights = []
+
+    def add(rule_id, category, severity, urgency, impact, title, explanation,
+            metric, action, url, tone="risk", icon="bi-exclamation-circle", dismissible=True):
+        insights.append({"id": rule_id, "category": category, "severity": severity,
+                         "score": urgency * 10 + impact, "title": title,
+                         "explanation": explanation, "metric": metric, "action": action,
+                         "url": url, "tone": tone, "icon": icon, "dismissible": dismissible})
+
+    money = lambda value: _money(value, currency)
+    bookings = current["bookings"]
+    leads = sum(source["value"] for source in customer["sources"])
+    sources = sorted((source for source in customer["sources"] if source["value"] >= 3),
+                     key=lambda source: (-source["conversion"], source["label"]))
+    if len(sources) >= 2 and sources[0]["conversion"] - sources[1]["conversion"] >= 15:
+        best, difference = sources[0], sources[0]["conversion"] - sources[1]["conversion"]
+        add("growth-source", "Growth opportunity", "Opportunity", 3, min(9, best["value"]),
+            f'{best["label"]} leads convert better',
+            f'{best["label"]} has the strongest observed conversion rate among sources with at least three leads.',
+            f'{best["conversion"]:.1f}% conversion · {difference:.1f} points ahead',
+            f'Review {best["label"]} leads', best["url"], "opportunity", "bi-graph-up-arrow")
+    if previous and previous["revenue"] > 0:
+        change = (current["revenue"] - previous["revenue"]) * 100 / previous["revenue"]
+        if change >= 10:
+            add("revenue-growth", "Revenue opportunity", "High opportunity", 3, min(9, int(change / 5)),
+                "Revenue increased", "Collected revenue less refunds improved against the comparison period.",
+                f'{money(current["revenue"])} · +{change:.1f}%', "Review revenue drivers", urls["financial"],
+                "opportunity", "bi-currency-dollar")
+    conversion_drop = previous and previous["conversion"] - current["conversion"] >= 10
+    if leads >= 5 and (current["conversion"] < 20 or conversion_drop):
+        add("conversion-low", "Conversion issue", "Needs attention", 4, min(9, leads),
+            "Lead conversion needs attention", "A smaller-than-expected share of recorded leads is marked booked.",
+            f'{current["conversion"]:.1f}% · {leads} leads', "Review the lead funnel", urls["growth"])
+    repeat_drop = previous and previous["repeat"] - current["repeat"] >= 10
+    if bookings >= 3 and (current["repeat"] < 20 or repeat_drop):
+        add("retention-low", "Client retention", "Needs attention", 3, min(9, bookings),
+            "Repeat bookings are low", "Few clients booked this period after having booked previously.",
+            f'{current["repeat"]:.1f}% repeat booking rate', "Review returning clients", urls["clients"],
+            "risk", "bi-arrow-repeat")
+    if cancellation_rate is not None and cancellation_rate >= 15:
+        add("booking-cancellations", "Booking risk", "Urgent" if cancellation_rate >= 25 else "Watch closely",
+            5 if cancellation_rate >= 25 else 4, min(9, int(cancellation_rate / 5)), "Cancellations are elevated",
+            "The share of scheduled sessions marked cancelled is above the fixed 15% threshold.",
+            f'{cancellation_rate:.1f}% cancellation rate', "Review cancelled bookings", urls["bookings"])
+    raw_gallery = gallery["raw"]
+    if raw_gallery["views"] >= 10 and raw_gallery["engagement"] < 10:
+        add("gallery-engagement", "Gallery engagement", "Opportunity", 2, min(9, raw_gallery["views"] // 10),
+            "Gallery engagement is low", "Views are not translating into favorites, downloads, or shares.",
+            f'{raw_gallery["engagement"]:.1f}% engagement · {raw_gallery["views"]} views',
+            "Review gallery performance", urls["galleries"], "opportunity", "bi-images")
+    raw_ops = operations["raw"]
+    if raw_ops["overdue_tasks"] >= 3:
+        add("workflow-overdue", "Operational bottleneck", "Urgent" if raw_ops["overdue_tasks"] >= 8 else "Needs attention",
+            5 if raw_ops["overdue_tasks"] >= 8 else 4, min(9, raw_ops["overdue_tasks"]), "Overdue work is building up",
+            "Open workflow tasks have passed their due dates.", f'{raw_ops["overdue_tasks"]} overdue workflows',
+            "Review overdue work", urls["clients"], "risk", "bi-exclamation-diamond")
+    if raw_ops["late_deliveries"]:
+        add("gallery-delivery", "Operational bottleneck", "Urgent" if raw_ops["late_deliveries"] >= 3 else "Watch closely",
+            5 if raw_ops["late_deliveries"] >= 3 else 4, min(9, raw_ops["late_deliveries"] * 2),
+            "Gallery deliveries are late", "Past-event galleries remain unpublished, which can affect client experience.",
+            f'{raw_ops["late_deliveries"]} late gallery deliveries', "Review gallery delivery", urls["galleries"])
+    if payment_ratio is not None and payment_ratio < 85:
+        outstanding = max(Decimal("0"), invoiced - collected)
+        add("payment-collection", "Payment risk", "Urgent" if payment_ratio < 60 else "Needs attention",
+            5 if payment_ratio < 60 else 4, 9 if outstanding >= 1000 else 6,
+            "Outstanding balances need attention", "The collected share of issued invoice value is below the fixed 85% threshold.",
+            f'{money(outstanding)} outstanding · {payment_ratio:.1f}% collected',
+            "Review outstanding invoices", urls["financial"], "risk", "bi-credit-card")
+    if bookings and (raw_ops["utilization"] > 85 or raw_ops["utilization"] < 25):
+        high = raw_ops["utilization"] > 85
+        add("team-capacity", "Team capacity", "Needs attention" if high else "Opportunity", 3, 7,
+            "Schedule capacity is tight" if high else "Schedule capacity is underused",
+            "Recorded session minutes are compared with the documented eight-hour daily capacity baseline.",
+            f'{raw_ops["utilization"]:.1f}% schedule utilization', "Review the schedule", urls["bookings"],
+            "risk" if high else "opportunity", "bi-people")
+    if any(current.values()):
+        add("missing-operational-data", "Data quality issue", "Data needed", 1, 1,
+            "Some workflow insights are unavailable", "Editing completion and team assignments do not have dedicated records, so no estimates are shown.",
+            "2 operational fields not tracked", "Review operational data", urls["clients"], "info", "bi-database-check")
+    return sorted(insights, key=lambda item: (-item["score"], item["id"]))[:6]
+
+
 def _window(params, today):
     key = params.get("range", "30_days")
     if key == "custom":
@@ -541,7 +641,8 @@ def _gallery_experience(start, end, galleries, events, sessions, profile, urls):
             "trend": trend, "galleries": rows[:10], "services": services[:8], "delivery": turnaround_days,
             "invitations": {"sent": invitations.count(), "accessed": accessed, "rate": access_completion},
             "commerce": {"available": commerce_available, "orders": order_count,
-                         "conversion": order_count * 100 / visitors if visitors else 0}, "urls": urls}
+                         "conversion": order_count * 100 / visitors if visitors else 0},
+            "raw": {"views": views, "engagement": engagement, "average_delivery": average_delivery}, "urls": urls}
 
 
 def _operational_intelligence(start, end, grouping, sessions, leads, galleries, payments, profile, currency, urls):
@@ -654,7 +755,9 @@ def _operational_intelligence(start, end, grouping, sessions, leads, galleries, 
             "columns": ("Shoots completed", "Revenue associated", "Average turnaround", "Workload", "Late tasks", "Client satisfaction")}
     return {"metrics": [{"label": a, "value": b, "icon": c, "tooltip": d} for a, b, c, d in metrics],
             "funnel": funnel, "main_bottleneck": main_bottleneck, "reports": reports, "team": team,
-            "currency": currency, "urls": urls}
+            "currency": currency, "urls": urls,
+            "raw": {"overdue_tasks": overdue_tasks, "late_deliveries": late_deliveries,
+                    "missed_consultations": missed_consultations, "utilization": utilization}}
 
 
 def analytics_overview(profile, params, base_url, today=None):
@@ -764,6 +867,9 @@ def analytics_overview(profile, params, base_url, today=None):
     operational_intelligence = _operational_intelligence(
         start, end, grouping, sessions, leads, galleries, payments, profile, currency, urls
     )
+    insights = _analytics_insights(current, previous, payment_ratio, invoiced, collected,
+        cancellation_rate, customer_intelligence, gallery_experience, operational_intelligence,
+        urls, currency)
 
     observations = []
     def add_observation(priority, tone, title, change, why, action, url):
@@ -813,4 +919,4 @@ def analytics_overview(profile, params, base_url, today=None):
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
             "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence,
             "revenue_intelligence": revenue_intelligence, "gallery_experience": gallery_experience,
-            "operational_intelligence": operational_intelligence}
+            "operational_intelligence": operational_intelligence, "analytics_insights": insights}

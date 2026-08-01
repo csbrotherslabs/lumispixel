@@ -342,6 +342,32 @@
   });
 })();
 
+(() => {
+  const grid = document.querySelector('[data-insight-grid]');
+  if (!grid) return;
+  const empty = document.querySelector('[data-insights-dismissed]');
+  const storageKey = 'lumispixel.analytics.dismissed-insights';
+  let dismissed = {};
+  try { dismissed = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch (error) { dismissed = {}; }
+  function refresh() {
+    const visible = [...grid.querySelectorAll('[data-insight-card]')].some((card) => !card.hidden);
+    grid.hidden = !visible;
+    if (empty) empty.hidden = visible;
+  }
+  grid.querySelectorAll('[data-insight-card]').forEach((card) => {
+    const metric = card.querySelector('.lpa-insight-metric')?.textContent.trim() || '';
+    const signature = `${card.dataset.insightId}:${metric}`;
+    card.hidden = dismissed[card.dataset.insightId] === signature;
+    card.querySelector('[data-dismiss-insight], [data-acknowledge-insight]')?.addEventListener('click', () => {
+      dismissed[card.dataset.insightId] = signature;
+      localStorage.setItem(storageKey, JSON.stringify(dismissed));
+      card.hidden = true;
+      refresh();
+    });
+  });
+  refresh();
+})();
+
 (function initBusinessPerformance() {
   const root = document.querySelector('[data-business-performance]');
   const source = document.getElementById('business-performance-data');
