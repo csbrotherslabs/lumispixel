@@ -95,6 +95,31 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(url, {"state": "unavailable"}), "Some team data is unavailable")
         self.assertContains(self.client.get(url, {"state": "error"}), "Team status could not be loaded")
 
+    def test_team_overview_assignment_details_attention_and_fourteen_day_window(self):
+        user, profile = self.make_photographer(True, email="assignment-view@example.com", slug="assignment-view")
+        client = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone")
+        today = timezone.localdate()
+        start = timezone.make_aware(datetime.combine(today, time(18)))
+        first = ClientSession.objects.create(photographer=profile, client=client, session_type="Editorial", starts_at=start, duration_minutes=120, status=ClientSession.Status.CONFIRMED)
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Campaign", starts_at=start + timedelta(minutes=30), duration_minutes=60, location="Studio B", status=ClientSession.Status.CONFIRMED)
+        future = ClientSession.objects.create(photographer=profile, client=client, session_type="Wedding", starts_at=start + timedelta(days=10), location="Garden", status=ClientSession.Status.CONFIRMED)
+        ClientSession.objects.create(photographer=profile, client=client, session_type="Too distant", starts_at=start + timedelta(days=15), status=ClientSession.Status.CONFIRMED)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:team_overview"), {"date": today.isoformat()})
+        self.assertContains(response, "Editorial")
+        self.assertContains(response, "Conflict")
+        self.assertContains(response, "Overlaps another booking")
+        self.assertContains(response, "Location missing")
+        self.assertContains(response, "Photographer not assigned")
+        self.assertContains(response, "Assign photographer unavailable")
+        self.assertContains(response, "View booking")
+        self.assertContains(response, "Next 14 days")
+        self.assertContains(response, "Wedding")
+        self.assertNotContains(response, "Too distant")
+        self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[first.pk]))
+        self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[future.pk]))
+
     def test_analytics_short_dates_are_cross_platform(self):
         self.assertEqual(_short_date(timezone.datetime(2026, 8, 1)), "Aug 1")
 

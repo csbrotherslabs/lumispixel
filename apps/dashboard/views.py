@@ -2865,12 +2865,62 @@ def team_overview(request):
     sessions = ClientSession.objects.for_photographer(profile).select_related("client")
     locations = list(sessions.exclude(location="").order_by("location").values_list("location", flat=True).distinct())
     day_sessions = sessions.filter(starts_at__gte=day_start, starts_at__lt=day_end).exclude(status=ClientSession.Status.CANCELLED)
-    upcoming = sessions.filter(starts_at__gte=day_end).exclude(status=ClientSession.Status.CANCELLED)
+    upcoming_end = day_end + timedelta(days=14)
+    upcoming = sessions.filter(starts_at__gte=day_end, starts_at__lt=upcoming_end).exclude(status=ClientSession.Status.CANCELLED)
     if selected_location:
         day_sessions = day_sessions.filter(location=selected_location)
         upcoming = upcoming.filter(location=selected_location)
     day_sessions = list(day_sessions.order_by("starts_at"))
-    upcoming = list(upcoming.order_by("starts_at")[:5])
+    upcoming = list(upcoming.order_by("starts_at"))
+
+    # ClientSession is the booking/schedule source of truth. Team-member assignment
+    # records do not exist yet, so this overview deliberately reports that gap and
+    # links back to the established booking workflow rather than inventing one.
+    now = timezone.now()
+
+    def overlaps(candidate, collection):
+        candidate_end = candidate.starts_at + timedelta(minutes=candidate.duration_minutes)
+        return any(
+            other.pk != candidate.pk
+            and candidate.starts_at < other.starts_at + timedelta(minutes=other.duration_minutes)
+            and other.starts_at < candidate_end
+            for other in collection
+        )
+
+    def assignment_row(session, collection, upcoming_row=False):
+        ends_at = session.starts_at + timedelta(minutes=session.duration_minutes)
+        conflict = overlaps(session, collection)
+        missing_location = not bool(session.location.strip())
+        if session.status == ClientSession.Status.COMPLETED:
+            status, tone = "Completed", "success"
+        elif conflict:
+            status, tone = "Conflict", "danger"
+        elif not upcoming_row and session.starts_at <= now < ends_at:
+            status, tone = "In progress", "info"
+        elif not upcoming_row and now >= ends_at:
+            status, tone = "Delayed", "danger"
+        else:
+            status, tone = "Unassigned", "warning"
+        issues = []
+        if conflict:
+            issues.append("Overlaps another booking")
+        if missing_location:
+            issues.append("Location missing")
+        issues.append("Photographer not assigned")
+        return {
+            "session": session,
+            "ends_at": ends_at,
+            "status": status,
+            "tone": tone,
+            "assigned_names": [],
+            "issue": " · ".join(issues),
+            "needs_attention": conflict or missing_location or not session.status == ClientSession.Status.COMPLETED,
+            "readiness": "Needs attention" if conflict or missing_location else "Assignment needed",
+        }
+
+    today_assignments = [assignment_row(session, day_sessions) for session in day_sessions]
+    upcoming_assignments = [assignment_row(session, upcoming, True) for session in upcoming]
+    upcoming_assignments.sort(key=lambda row: (not row["needs_attention"], row["session"].starts_at))
 
     client_activity = [
         {"title": item.get_event_type_display(), "description": item.description, "at": item.occurred_at, "icon": "bi-person-check"}
@@ -2915,7 +2965,10 @@ def team_overview(request):
         "kpis": kpis,
         "locations": locations,
         "day_sessions": day_sessions,
+        "today_assignments": today_assignments,
         "upcoming_sessions": upcoming,
+        "upcoming_assignments": upcoming_assignments,
+        "upcoming_end": upcoming_end.date(),
         "recent_activity": activity,
         "owner_name": owner_name,
         "owner_initials": initials,
