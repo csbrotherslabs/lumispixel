@@ -1,1 +1,13 @@
-<article class="lpa-insight is-{{ tone|default:'info' }}"><span><i class="bi {{ icon }}" aria-hidden="true"></i></span><div><div><b>{{ label }}</b><small>{{ priority }}</small></div><h3>{{ title }}</h3><p>{{ copy }}</p><button type="button">View recommendation <i class="bi bi-arrow-right"></i></button></div></article>
+<article class="lpa-insight is-{{ insight.tone|default:'info' }}" data-insight-card data-insight-id="{{ insight.id }}">
+  <span><i class="bi {{ insight.icon }}" aria-hidden="true"></i></span>
+  <div>
+    <div><b>{{ insight.category }}</b><small class="lpa-insight-badge">{{ insight.severity }}</small></div>
+    <h3>{{ insight.title }}</h3>
+    <p>{{ insight.explanation }}</p>
+    <strong class="lpa-insight-metric">{{ insight.metric }}</strong>
+    <div class="lpa-insight-actions">
+      <a href="{{ insight.url }}">{{ insight.action }} <i class="bi bi-arrow-right"></i></a>
+      {% if insight.dismissible %}<button type="button" data-dismiss-insight aria-label="Dismiss {{ insight.title }}">Dismiss</button>{% else %}<button type="button" data-acknowledge-insight>Acknowledge</button>{% endif %}
+    </div>
+  </div>
+</article>

@@ -3,6 +3,7 @@ from django.test import Client as TestClient, TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from io import BytesIO
+from decimal import Decimal
 from django.urls import Resolver404, resolve, reverse
 from django.utils import timezone
 
@@ -11,6 +12,7 @@ from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNot
 from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.views import WORKSPACE_MODULES
+from apps.dashboard.analytics_overview import _analytics_insights
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -95,6 +97,43 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "not a booking calendar")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
+
+    def test_analytics_insights_are_deterministic_ranked_and_limited(self):
+        current = {"revenue": Decimal("1500"), "net": Decimal("1450"), "bookings": 8,
+                   "clients": 5, "conversion": Decimal("10"), "average": Decimal("500"),
+                   "views": 20, "repeat": Decimal("10")}
+        previous = {**current, "revenue": Decimal("1000"), "conversion": Decimal("35"),
+                    "repeat": Decimal("30")}
+        urls = {key: f"/{key}/" for key in ("financial", "bookings", "growth", "galleries", "clients")}
+        customer = {"sources": [
+            {"label": "Google", "value": 6, "conversion": 60.0, "url": "/google/"},
+            {"label": "Social", "value": 5, "conversion": 20.0, "url": "/social/"},
+        ]}
+        gallery = {"raw": {"views": 20, "engagement": 5.0}}
+        operations = {"raw": {"overdue_tasks": 9, "late_deliveries": 4, "utilization": 90.0}}
+
+        first = _analytics_insights(current, previous, Decimal("50"), Decimal("3000"),
+            Decimal("1500"), Decimal("30"), customer, gallery, operations, urls, "USD")
+        second = _analytics_insights(current, previous, Decimal("50"), Decimal("3000"),
+            Decimal("1500"), Decimal("30"), customer, gallery, operations, urls, "USD")
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 6)
+        self.assertEqual([item["score"] for item in first], sorted(
+            (item["score"] for item in first), reverse=True))
+        self.assertEqual(first[0]["category"], "Payment risk")
+        for item in first:
+            self.assertTrue(item["title"] and item["explanation"] and item["metric"])
+            self.assertTrue(item["severity"] and item["action"] and item["url"])
+
+    def test_analytics_insights_empty_state_requires_activity(self):
+        current = {key: Decimal("0") for key in
+                   ("revenue", "net", "bookings", "clients", "conversion", "average", "views", "repeat")}
+        urls = {key: f"/{key}/" for key in ("financial", "bookings", "growth", "galleries", "clients")}
+        insights = _analytics_insights(current, None, None, Decimal("0"), Decimal("0"), None,
+            {"sources": []}, {"raw": {"views": 0, "engagement": 0}},
+            {"raw": {"overdue_tasks": 0, "late_deliveries": 0, "utilization": 0}}, urls, "USD")
+        self.assertEqual(insights, [])
 
     def test_analytics_overview_uses_owner_records_and_preserves_filters(self):
         user, profile = self.make_photographer(True, email="analytics-data@example.com", slug="analytics-data")
