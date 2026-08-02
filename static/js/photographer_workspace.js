@@ -1006,3 +1006,26 @@ document.addEventListener('click', async (event) => {
     if (!window.confirm(access.textContent.trim() + ' this member’s studio access?')) event.preventDefault();
   });
 })();
+/* Team-performance metric methodology drawer. */
+(() => {
+  const layer = document.querySelector('[data-definition-layer]');
+  if (!layer) return;
+  const drawer = layer.querySelector('[role="dialog"]');
+  let returnFocus = null;
+  const open = (key, trigger) => {
+    returnFocus = trigger;
+    layer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    drawer.focus();
+    if (key) layer.querySelector(`[data-definition="${key}"]`)?.scrollIntoView({ block: 'start' });
+  };
+  const close = () => {
+    layer.hidden = true;
+    document.body.style.overflow = '';
+    returnFocus?.focus();
+  };
+  document.querySelectorAll('[data-definitions-open]').forEach(button => button.addEventListener('click', () => open(null, button)));
+  document.querySelectorAll('[data-definition-key]').forEach(button => button.addEventListener('click', () => open(button.dataset.definitionKey, button)));
+  layer.querySelectorAll('[data-definitions-close]').forEach(button => button.addEventListener('click', close));
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !layer.hidden) close(); });
+})();
