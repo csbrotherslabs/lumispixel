@@ -47,7 +47,9 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
-from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest, StudioMembership
+from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent, StudioMembership
+from apps.dashboard.team_invitations import (InvitationForm, ROLE_SUMMARIES, find_valid_invitation,
+                                             issue_token, record, send_invitation)
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
 
 WORKSPACE_MODULES = [
@@ -2851,6 +2853,9 @@ def team_placeholder(request, page_key):
 def team_members(request):
     """Paginated, owner-scoped directory backed by memberships and user records."""
     profile = authorized_studio(request.user)
+    StudioMembership.objects.filter(studio=profile, status=StudioMembership.Status.INVITED,
+                                    invitation_expires_at__lte=timezone.now()).update(
+        status=StudioMembership.Status.EXPIRED, invitation_token_digest="", updated_at=timezone.now())
     query = (request.GET.get("q", "") or "").strip()[:150]
     role = request.GET.get("role", "")
     status = request.GET.get("status", "")
@@ -2934,6 +2939,9 @@ def team_members(request):
             params = base_params.copy(); params.pop(key, None)
             active_filters.append({"label": label, "url": f"?{params.urlencode()}" if params else request.path})
     context = _dashboard_context(request, "team_members", "Team Members")
+    pending_invitations = StudioMembership.objects.filter(
+        studio=profile, status=StudioMembership.Status.INVITED
+    ).select_related("invited_by").order_by("-invitation_sent_at")
     context.update({
         "members": members,
         "owner": owner,
@@ -2949,6 +2957,9 @@ def team_members(request):
         "active_filters": active_filters, "page_obj": page_obj,
         "pagination_query": base_params.urlencode(), "total_members": paginator.count + (1 if owner_matches else 0),
         "is_solo": not StudioMembership.objects.filter(studio=profile).exists(), "can_invite": True,
+        "invitation_form": InvitationForm(studio=profile),
+        "role_summaries": ROLE_SUMMARIES,
+        "pending_invitations": pending_invitations,
         "summary": {
             "active": StudioMembership.objects.filter(studio=profile, status="active").count() + (1 if request.user.can_login else 0),
             "managers": StudioMembership.objects.filter(studio=profile, role="studio_manager").count(),
@@ -2958,6 +2969,108 @@ def team_members(request):
         },
     })
     return render(request, "photographer_workspace/team/members.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def invite_member(request):
+    profile = authorized_studio(request.user)
+    form = InvitationForm(request.POST, studio=profile)
+    if not form.is_valid():
+        # Do not disclose accounts outside this studio; errors only concern studio membership records.
+        for errors in form.errors.values():
+            for error in errors:
+                messages.error(request, error)
+        return redirect("photographer_workspace:team_members")
+    with transaction.atomic():
+        membership = StudioMembership.objects.create(
+            studio=profile, invitation_email=form.cleaned_data["email"],
+            invitation_first_name=form.cleaned_data["first_name"].strip(),
+            invitation_last_name=form.cleaned_data["last_name"].strip(),
+            invitation_phone=form.cleaned_data["phone"].strip(),
+            invitation_message=form.cleaned_data["message"].strip(),
+            primary_location=form.cleaned_data["primary_location"].strip(),
+            role=form.cleaned_data["role"], invited_by=request.user,
+        )
+        specialty_names = [value.strip() for value in form.cleaned_data["specialties"].split(",") if value.strip()]
+        if specialty_names:
+            membership.specialties.set(profile.specialties.model.objects.filter(name__in=specialty_names))
+        token = issue_token(membership)
+        record(membership, request.user, StudioInvitationEvent.Action.SENT)
+    try:
+        send_invitation(request, membership, token)
+    except RuntimeError:
+        messages.error(request, "The invitation was saved, but could not be sent. You can resend it below.")
+    else:
+        messages.success(request, f"Invitation sent to {membership.invitation_email}.")
+    return redirect("photographer_workspace:team_members")
+
+
+@photographer_workspace_required
+@require_POST
+def invitation_action(request, pk, action):
+    profile = authorized_studio(request.user)
+    membership = get_object_or_404(StudioMembership, pk=pk, studio=profile,
+                                   status=StudioMembership.Status.INVITED)
+    if action == "revoke":
+        membership.status = StudioMembership.Status.INACTIVE
+        membership.invitation_token_digest = ""
+        membership.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+        record(membership, request.user, StudioInvitationEvent.Action.REVOKED)
+        messages.success(request, "Invitation revoked.")
+    elif action == "resend":
+        token = issue_token(membership)
+        record(membership, request.user, StudioInvitationEvent.Action.RESENT)
+        try:
+            send_invitation(request, membership, token)
+        except RuntimeError:
+            messages.error(request, "The invitation could not be sent. Please try again.")
+        else:
+            messages.success(request, "Invitation resent with a new secure link and expiration date.")
+    else:
+        return HttpResponse(status=404)
+    return redirect("photographer_workspace:team_members")
+
+
+@require_http_methods(["GET", "POST"])
+def invitation_accept(request, token):
+    membership = find_valid_invitation(token)
+    if not membership:
+        return render(request, "photographer_workspace/team/invitation_invalid.html", status=410)
+    invited_email = User.objects.normalize_email(membership.invitation_email).lower()
+    if not request.user.is_authenticated:
+        return render(request, "photographer_workspace/team/invitation_accept.html", {
+            "membership": membership, "role_summary": ROLE_SUMMARIES[membership.role], "token": token,
+            "login_url": f'{reverse("accounts:login")}?{urlencode({"next": request.get_full_path()})}',
+            "signup_url": f'{reverse("accounts:photographer-signup")}?{urlencode({"next": request.get_full_path()})}',
+        })
+    email_matches = User.objects.normalize_email(request.user.email).lower() == invited_email
+    if request.method == "POST" and email_matches:
+        choice = request.POST.get("decision")
+        if choice not in {"accept", "decline"}:
+            return HttpResponse(status=400)
+        with transaction.atomic():
+            current = find_valid_invitation(token, lock=True)
+            if not current:
+                return render(request, "photographer_workspace/team/invitation_invalid.html", status=410)
+            current.invitation_token_digest = ""
+            if choice == "accept":
+                duplicate = StudioMembership.objects.filter(studio=current.studio, user=request.user).exclude(pk=current.pk).exists()
+                if duplicate:
+                    return render(request, "photographer_workspace/team/invitation_invalid.html", status=409)
+                current.user = request.user
+                current.status = StudioMembership.Status.ACTIVE
+                current.save(update_fields=["user", "status", "invitation_token_digest", "updated_at"])
+                record(current, request.user, StudioInvitationEvent.Action.ACCEPTED)
+            else:
+                current.status = StudioMembership.Status.INACTIVE
+                current.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+                record(current, request.user, StudioInvitationEvent.Action.DECLINED)
+        return render(request, "photographer_workspace/team/invitation_result.html", {"accepted": choice == "accept", "membership": current})
+    return render(request, "photographer_workspace/team/invitation_accept.html", {
+        "membership": membership, "role_summary": ROLE_SUMMARIES[membership.role], "token": token,
+        "email_mismatch": not email_matches,
+    })
 
 
 def team_overview(request):

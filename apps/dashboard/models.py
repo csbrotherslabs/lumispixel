@@ -33,6 +33,14 @@ class StudioMembership(models.Model):
     user = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
                              related_name="studio_memberships")
     invitation_email = models.EmailField(blank=True)
+    invitation_first_name = models.CharField(max_length=150, blank=True)
+    invitation_last_name = models.CharField(max_length=150, blank=True)
+    invitation_phone = models.CharField(max_length=30, blank=True)
+    invitation_message = models.TextField(blank=True)
+    invitation_token_digest = models.CharField(max_length=64, blank=True, editable=False)
+    invited_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="studio_invitations_sent")
+    invitation_sent_at = models.DateTimeField(null=True, blank=True)
     role = models.CharField(max_length=24, choices=Role.choices, default=Role.PHOTOGRAPHER)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.INVITED)
     primary_location = models.CharField(max_length=150, blank=True)
@@ -47,13 +55,38 @@ class StudioMembership(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        constraints = [models.UniqueConstraint(fields=["studio", "user"],
-                                                condition=models.Q(user__isnull=False),
-                                                name="unique_studio_user_membership")]
+        constraints = [
+            models.UniqueConstraint(fields=["studio", "user"], condition=models.Q(user__isnull=False),
+                                    name="unique_studio_user_membership"),
+            models.UniqueConstraint(fields=["studio", "invitation_email"],
+                                    condition=models.Q(status="invited"),
+                                    name="unique_pending_studio_invitation_email"),
+        ]
 
     @property
     def email(self):
         return self.user.email if self.user_id else self.invitation_email
+
+
+class StudioInvitationEvent(models.Model):
+    """Immutable audit entry for a studio invitation lifecycle action."""
+
+    class Action(models.TextChoices):
+        SENT = "sent", "Sent"
+        RESENT = "resent", "Resent"
+        REVOKED = "revoked", "Revoked"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+
+    membership = models.ForeignKey(StudioMembership, on_delete=models.CASCADE,
+                                   related_name="invitation_events")
+    actor = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name="studio_invitation_events")
+    action = models.CharField(max_length=12, choices=Action.choices)
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-occurred_at"]
 
 
 class Review(PhotographerOwnedModel):

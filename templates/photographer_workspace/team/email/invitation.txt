@@ -1,0 +1,10 @@
+You're invited to join {{ studio.display_name|default:"a photography studio" }} on LumisPixel as {{ membership.get_role_display }}.
+
+{{ role_summary }}
+{% if membership.invitation_message %}
+Message from your studio: {{ membership.invitation_message }}
+{% endif %}
+Review and respond before {{ membership.invitation_expires_at|date:"F j, Y, P T" }}:
+{{ invitation_url }}
+
+This secure link is single-use. You must sign in or create a LumisPixel account using this email address before accepting.
