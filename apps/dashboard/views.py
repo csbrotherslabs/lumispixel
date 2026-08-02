@@ -2870,14 +2870,22 @@ def team_placeholder(request, page_key):
 
 
 def team_performance(request):
-    report = team_performance_report(authorized_studio(request.user), request.GET)
+    can_view_financials = request.studio_access.allows("financials")
+    report = team_performance_report(authorized_studio(request.user), request.GET,
+                                     can_view_financials=can_view_financials)
     if request.GET.get("export") == "csv":
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="team-performance-{report["start"]}-{report["end"]}.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Team member", "Role", "Location", "Bookings", "Completed", "Completion rate", "Hours", "Galleries delivered", "Average turnaround days", "Attributed booking value"])
+        headers = ["Team member", "Role", "Location", "Bookings", "Completed", "Completion rate", "Hours", "Galleries delivered", "Average turnaround days"]
+        if can_view_financials:
+            headers.append("Revenue contribution")
+        writer.writerow(headers)
         for row in report["rows"]:
-            writer.writerow([row["name"], row["role"], row["location"], row["bookings"], row["completed"], row["completion_rate"] if row["completion_rate"] is not None else "", row["hours"], row["galleries"], row["turnaround"] if row["turnaround"] is not None else "", row["revenue"]])
+            values = [row["name"], row["role"], row["location"], row["bookings"], row["completed"], row["completion_rate"] if row["completion_rate"] is not None else "", row["hours"], row["galleries"], row["turnaround"] if row["turnaround"] is not None else ""]
+            if can_view_financials:
+                values.append(row["revenue"])
+            writer.writerow(values)
         return response
     context = _dashboard_context(request, "team_performance", "Team Performance")
     context.update(report)
