@@ -54,6 +54,7 @@ from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, Invitat
                                              ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
+from apps.dashboard.team_performance import team_performance_report
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -2860,10 +2861,27 @@ def team_placeholder(request, page_key):
         return team_overview(request)
     if page_key == "team_members":
         return team_members(request)
+    if page_key == "team_performance":
+        return team_performance(request)
     title, subtitle, icon = TEAM_PAGES[page_key]
     context = _dashboard_context(request, page_key, title)
     context["team_page"] = {"title": title, "subtitle": subtitle, "icon": icon}
     return render(request, "photographer_workspace/team/temporary_page.html", context)
+
+
+def team_performance(request):
+    report = team_performance_report(authorized_studio(request.user), request.GET)
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="team-performance-{report["start"]}-{report["end"]}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Team member", "Role", "Location", "Bookings", "Completed", "Completion rate", "Hours", "Galleries delivered", "Average turnaround days", "Attributed booking value"])
+        for row in report["rows"]:
+            writer.writerow([row["name"], row["role"], row["location"], row["bookings"], row["completed"], row["completion_rate"] if row["completion_rate"] is not None else "", row["hours"], row["galleries"], row["turnaround"] if row["turnaround"] is not None else "", row["revenue"]])
+        return response
+    context = _dashboard_context(request, "team_performance", "Team Performance")
+    context.update(report)
+    return render(request, "photographer_workspace/team/performance.html", context)
 
 
 def team_members(request):
