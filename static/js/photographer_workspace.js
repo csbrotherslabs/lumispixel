@@ -991,3 +991,18 @@ document.addEventListener('click', async (event) => {
     submit.disabled = true; submit.classList.add('is-sending'); submit.querySelector('span').textContent = 'Sending…';
   });
 }());
+
+(function () {
+  const form = document.querySelector('[data-dirty-form]');
+  if (!form) return;
+  let dirty = false;
+  const status = form.querySelector('[data-save-status]');
+  form.addEventListener('change', function () { dirty = true; if (status) status.textContent = 'Unsaved changes'; });
+  form.addEventListener('input', function () { dirty = true; if (status) status.textContent = 'Unsaved changes'; });
+  form.addEventListener('submit', function () { dirty = false; });
+  window.addEventListener('beforeunload', function (event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+  const access = form.querySelector('[data-confirm-access]');
+  if (access) access.addEventListener('click', function (event) {
+    if (!window.confirm(access.textContent.trim() + ' this member’s studio access?')) event.preventDefault();
+  });
+})();

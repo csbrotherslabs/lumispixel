@@ -92,6 +92,7 @@ urlpatterns = [
     path("team/", views.team_placeholder, {"page_key": "team_overview"}, name="team_overview"),
     path("team/members/", views.team_placeholder, {"page_key": "team_members"}, name="team_members"),
     path("team/members/invite/", views.invite_member, name="invite_member"),
+    path("team/members/<int:pk>/", views.team_member_detail, name="team_member_detail"),
     path("team/invitations/<int:pk>/<str:action>/", views.invitation_action, name="invitation_action"),
     path("team/invitations/accept/<str:token>/", views.invitation_accept, name="invitation_accept"),
     path("team/performance/", views.team_placeholder, {"page_key": "team_performance"}, name="team_performance"),

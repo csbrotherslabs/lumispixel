@@ -44,11 +44,18 @@ class StudioMembership(models.Model):
     role = models.CharField(max_length=24, choices=Role.choices, default=Role.PHOTOGRAPHER)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.INVITED)
     primary_location = models.CharField(max_length=150, blank=True)
+    additional_locations = models.JSONField(default=list, blank=True)
     specialties = models.ManyToManyField("accounts.PhotographerSpecialty", blank=True,
                                          related_name="studio_memberships")
     availability = models.CharField(max_length=24, choices=Availability.choices,
                                     default=Availability.UNKNOWN)
     current_assignment = models.CharField(max_length=180, blank=True)
+    internal_title = models.CharField(max_length=150, blank=True)
+    internal_notes = models.TextField(blank=True)
+    working_days = models.JSONField(default=list, blank=True)
+    working_hours_start = models.TimeField(null=True, blank=True)
+    working_hours_end = models.TimeField(null=True, blank=True)
+    time_zone = models.CharField(max_length=64, blank=True)
     invitation_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -83,6 +90,20 @@ class StudioInvitationEvent(models.Model):
     actor = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
                               related_name="studio_invitation_events")
     action = models.CharField(max_length=12, choices=Action.choices)
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-occurred_at"]
+
+
+class StudioMembershipEvent(models.Model):
+    """Immutable audit trail for material directory and access changes."""
+
+    membership = models.ForeignKey(StudioMembership, on_delete=models.CASCADE, related_name="change_events")
+    actor = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name="studio_membership_events")
+    action = models.CharField(max_length=40)
+    changes = models.JSONField(default=dict, blank=True)
     occurred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
