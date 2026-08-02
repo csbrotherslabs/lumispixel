@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import datetime, time, timedelta
 from decimal import Decimal
 
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 
@@ -17,6 +18,10 @@ from apps.galleries.models import Gallery, GalleryActivity
 
 RANGES = {"30d": 30, "90d": 90, "year": 365}
 MIN_SATISFACTION_RESPONSES = 3
+TREND_METRICS = tuple(METRIC for METRIC in (
+    "shoots", "galleries", "completion_rate", "editing_turnaround",
+    "gallery_delivery", "revenue", "satisfaction", "capacity",
+))
 
 
 def _bounds(params):
@@ -126,7 +131,8 @@ def calculate_period_metrics(studio, memberships, start, end, location=""):
 
     reviews = Review.objects.for_photographer(studio).filter(
         reviewed_at__gte=start_at, reviewed_at__lt=end_at)
-    ratings = list(reviews.values_list("rating", flat=True))
+    review_records = list(reviews.values("rating", "reviewed_at"))
+    ratings = [review["rating"] for review in review_records]
     availability = _availability_minutes(memberships, start, end)
     return {
         "shoots": len(completed),
@@ -144,7 +150,83 @@ def calculate_period_metrics(studio, memberships, start, end, location=""):
         "availability_minutes": availability,
         "sessions": assigned_sessions,
         "delivered_galleries": galleries,
+        "payments": payments,
+        "reviews": review_records,
     }
+
+
+def _grouping(start, end, requested):
+    days = (end - start).days + 1
+    allowed = ("daily", "weekly") if days <= 45 else (("weekly", "monthly") if days <= 180 else ("monthly", "quarterly"))
+    return requested if requested in allowed else allowed[0], allowed
+
+
+def _bucket(day, grouping):
+    if grouping == "daily":
+        return day
+    if grouping == "weekly":
+        return day - timedelta(days=day.weekday())
+    if grouping == "quarterly":
+        return day.replace(month=((day.month - 1) // 3) * 3 + 1, day=1)
+    return day.replace(day=1)
+
+
+def _trend_points(data, memberships, start, end, grouping, metric):
+    """Build chart buckets from prefetched records without issuing bucket-level queries."""
+    buckets = {}
+    cursor = _bucket(start, grouping)
+    while cursor <= end:
+        buckets[cursor] = {"shoots": 0, "eligible": 0, "galleries": 0, "delivery": [],
+                           "revenue": Decimal("0"), "scheduled": 0, "ratings": []}
+        cursor = (cursor + timedelta(days=1) if grouping == "daily" else
+                  cursor + timedelta(days=7) if grouping == "weekly" else
+                  (cursor.replace(month=cursor.month + 3) if cursor.month <= 9 else cursor.replace(year=cursor.year + 1, month=1)) if grouping == "quarterly" else
+                  (cursor.replace(month=cursor.month + 1) if cursor.month < 12 else cursor.replace(year=cursor.year + 1, month=1)))
+    for session in data["sessions"]:
+        point = buckets.get(_bucket(session.starts_at.date(), grouping))
+        if point:
+            point["eligible"] += 1
+            point["shoots"] += session.status == ClientSession.Status.COMPLETED
+            point["scheduled"] += session.duration_minutes * len(session.assigned_members.all())
+    for gallery in data["delivered_galleries"]:
+        point = buckets.get(_bucket(gallery.published_at.date(), grouping))
+        if point:
+            point["galleries"] += 1
+            if gallery.event_date:
+                point["delivery"].append(max(0, (gallery.published_at.date() - gallery.event_date).days))
+    for payment in data["payments"]:
+        point = buckets.get(_bucket(payment.paid_at.date(), grouping))
+        if point:
+            active = [member for member in payment.invoice.booking.assigned_members.all()
+                      if member.status == StudioMembership.Status.ACTIVE]
+            selected = sum(member.pk in {item.pk for item in memberships} for member in active)
+            if active and selected:
+                point["revenue"] += payment.amount * selected / len(active)
+    for review in data["reviews"]:
+        point = buckets.get(_bucket(review["reviewed_at"].date(), grouping))
+        if point:
+            point["ratings"].append(review["rating"])
+    points = []
+    for day, values in buckets.items():
+        bucket_end = min(end, (day + timedelta(days=6) if grouping == "weekly" else day))
+        if grouping in {"monthly", "quarterly"}:
+            next_day = (day.replace(month=day.month + (3 if grouping == "quarterly" else 1))
+                        if day.month <= (9 if grouping == "quarterly" else 11)
+                        else day.replace(year=day.year + 1, month=1))
+            bucket_end = min(end, next_day - timedelta(days=1))
+        availability = _availability_minutes(memberships, max(start, day), bucket_end)
+        value = {"shoots": values["shoots"], "galleries": values["galleries"],
+                 "completion_rate": values["shoots"] * 100 / values["eligible"] if values["eligible"] else None,
+                 "editing_turnaround": None,
+                 "gallery_delivery": sum(values["delivery"]) / len(values["delivery"]) if values["delivery"] else None,
+                 "revenue": values["revenue"],
+                 "satisfaction": sum(values["ratings"]) / len(values["ratings"]) if len(values["ratings"]) >= MIN_SATISFACTION_RESPONSES else None,
+                 "capacity": values["scheduled"] * 100 / availability if availability else None}[metric]
+        label = day.strftime("%b %-d" if grouping in {"daily", "weekly"} else ("Q%q %Y" if grouping == "quarterly" else "%b %Y"))
+        if grouping == "quarterly":
+            label = f"Q{(day.month - 1) // 3 + 1} {day.year}"
+        points.append({"label": label, "raw": value, "value": _display(metric, value)})
+    return points
 
 
 METRIC_DEFINITIONS = {
@@ -191,20 +273,73 @@ def build_summary_metrics(current, comparison, comparison_label, member_count):
     return metrics
 
 
+def _member_rows(memberships, current, previous):
+    """Fan prefetched report records into member rows in memory (constant query count)."""
+    rows = {member.pk: {"member": member, "bookings": 0, "completed": 0, "minutes": 0,
+                        "galleries": 0, "delivery": [], "revenue": Decimal("0")} for member in memberships}
+    for session in current["sessions"]:
+        for member in session.assigned_members.all():
+            if member.pk in rows:
+                rows[member.pk]["bookings"] += 1
+                rows[member.pk]["completed"] += session.status == ClientSession.Status.COMPLETED
+                rows[member.pk]["minutes"] += session.duration_minutes
+    for gallery in current["delivered_galleries"]:
+        for member in gallery.assigned_members.all():
+            if member.pk in rows:
+                rows[member.pk]["galleries"] += 1
+                if gallery.event_date:
+                    rows[member.pk]["delivery"].append(max(0, (gallery.published_at.date() - gallery.event_date).days))
+    for payment in current["payments"]:
+        assigned = [member for member in payment.invoice.booking.assigned_members.all() if member.pk in rows]
+        for member in assigned:
+            rows[member.pk]["revenue"] += payment.amount / len(assigned)
+    previous_shoots = defaultdict(int)
+    if previous:
+        for session in previous["sessions"]:
+            if session.status == ClientSession.Status.COMPLETED:
+                for member in session.assigned_members.all():
+                    previous_shoots[member.pk] += 1
+    output = []
+    for item in rows.values():
+        member = item["member"]
+        name = member.user.full_name if member.user_id else member.email
+        prior = previous_shoots[member.pk]
+        trend = item["completed"] - prior if previous else None
+        availability = _availability_minutes([member], current["sessions"][0].starts_at.date(), current["sessions"][-1].starts_at.date()) if current["sessions"] else None
+        output.append({"id": member.pk, "name": name, "initials": "".join(x[0] for x in name.split()[:2]).upper(),
+                       "role": member.get_role_display(), "role_key": member.role,
+                       "location": member.primary_location or "Not set", "status": member.get_status_display(),
+                       "bookings": item["bookings"], "completed": item["completed"],
+                       "completion_rate": round(item["completed"] * 100 / item["bookings"]) if item["bookings"] else None,
+                       "hours": round(item["minutes"] / 60, 1), "galleries": item["galleries"],
+                       "turnaround": round(sum(item["delivery"]) / len(item["delivery"]), 1) if item["delivery"] else None,
+                       "revenue": item["revenue"], "satisfaction": None,
+                       "capacity": round(item["minutes"] * 100 / availability) if availability else None,
+                       "trend": trend})
+    return output
+
+
 def team_performance_report(studio, params):
     range_key, start, end = _bounds(params)
     role = params.get("role", "") if params.get("role", "") in dict(StudioMembership.Role.choices) else ""
     location = (params.get("location", "") or "").strip()[:150]
     member_value = params.get("member", "")
-    memberships = list(StudioMembership.objects.filter(studio=studio, status=StudioMembership.Status.ACTIVE)
-                       .select_related("user").order_by("role", "user__first_name"))
-    all_memberships = list(memberships)
+    status = params.get("status", "active")
+    if status not in dict(StudioMembership.Status.choices):
+        status = "active"
+    specialty = params.get("specialty", "")
+    query = (StudioMembership.objects.filter(studio=studio, status=status)
+             .select_related("user").prefetch_related("specialties").order_by("role", "user__first_name"))
+    all_memberships = list(query)
+    memberships = list(all_memberships)
     if role:
         memberships = [member for member in memberships if member.role == role]
     if location:
         memberships = [member for member in memberships if location == member.primary_location or location in (member.additional_locations or [])]
     if member_value.isdigit():
         memberships = [member for member in memberships if member.pk == int(member_value)]
+    if specialty:
+        memberships = [member for member in memberships if any(str(item.pk) == specialty for item in member.specialties.all())]
     comparison_key = params.get("compare", "previous")
     if comparison_key not in {"previous", "year", "team", "none"}:
         comparison_key = "previous"
@@ -222,18 +357,31 @@ def team_performance_report(studio, params):
         comparison_label = "Team average"
     summary_metrics = build_summary_metrics(current, comparison, comparison_label, len(memberships))
 
-    # Preserve the established supporting sections while sourcing them from the same calculations.
-    rows = []
-    for member in memberships:
-        data = calculate_period_metrics(studio, [member], start, end, location)
-        name = member.user.full_name if member.user_id else member.email
-        rows.append({"id": member.pk, "name": name, "initials": "".join(x[0] for x in name.split()[:2]).upper(),
-                     "role": member.get_role_display(), "location": member.primary_location or "Not set",
-                     "bookings": data["eligible_assignments"], "completed": data["shoots"],
-                     "completion_rate": round(data["completion_rate"]) if data["completion_rate"] is not None else None,
-                     "hours": round(data["scheduled_minutes"] / 60, 1), "galleries": data["galleries"],
-                     "turnaround": round(data["gallery_delivery"], 1) if data["gallery_delivery"] is not None else None,
-                     "revenue": data["revenue"]})
+    rows = _member_rows(memberships, current, comparison if comparison_key in {"previous", "year"} else None)
+    search = (params.get("q", "") or "").strip().lower()[:100]
+    if search:
+        rows = [row for row in rows if search in f'{row["name"]} {row["role"]} {row["location"]}'.lower()]
+    sort = params.get("sort", "member")
+    sort_fields = {"member": "name", "role": "role", "location": "location", "shoots": "completed",
+                   "galleries": "galleries", "completion": "completion_rate", "turnaround": "turnaround",
+                   "revenue": "revenue", "capacity": "capacity", "trend": "trend"}
+    descending = params.get("direction", "asc") == "desc"
+    rows.sort(key=lambda row: (row.get(sort_fields.get(sort, "name")) is None,
+                               row.get(sort_fields.get(sort, "name")) or 0), reverse=descending)
+    paginator = Paginator(rows, 10)
+    page = paginator.get_page(params.get("page", 1))
+    trend_metric = params.get("metric", "shoots") if params.get("metric", "shoots") in TREND_METRICS else "shoots"
+    grouping, groupings = _grouping(start, end, params.get("grouping", ""))
+    trend = _trend_points(current, memberships, start, end, grouping, trend_metric)
+    previous_trend = _trend_points(comparison, memberships, compare_start, compare_end, grouping, trend_metric) if comparison_key in {"previous", "year"} else []
+    for index, point in enumerate(trend):
+        previous_point = previous_trend[index] if index < len(previous_trend) else None
+        point["previous_raw"] = previous_point["raw"] if previous_point else None
+        point["previous"] = previous_point["value"] if previous_point else "Unavailable"
+        point["average_raw"] = (point["raw"] / len(memberships)
+                                if point["raw"] is not None and memberships and trend_metric in {"shoots", "galleries", "revenue"}
+                                else None)
+        point["average"] = _display(trend_metric, point["average_raw"]) if point["average_raw"] is not None else None
     timeline = defaultdict(lambda: {"bookings": 0, "completed": 0, "galleries": 0})
     for session in current["sessions"]:
         bucket = session.starts_at.date().replace(day=1)
@@ -247,8 +395,13 @@ def team_performance_report(studio, params):
     locations = list(ClientSession.objects.for_photographer(studio).exclude(location="").order_by("location").values_list("location", flat=True).distinct())
     return {"range_key": range_key, "start": start, "end": end, "compare": comparison_key,
             "selected_role": role, "selected_location": location, "selected_member": member_value,
+            "selected_status": status, "selected_specialty": specialty, "statuses": StudioMembership.Status.choices,
+            "specialties": sorted({(item.pk, item.name) for member in all_memberships for item in member.specialties.all()}, key=lambda item: item[1]),
             "roles": StudioMembership.Role.choices, "locations": locations, "members": memberships,
-            "rows": rows, "summary_metrics": summary_metrics, "summary": {
+            "rows": page.object_list, "page_obj": page, "sort": sort, "direction": "desc" if descending else "asc",
+            "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0]) for key in TREND_METRICS],
+            "grouping": grouping, "groupings": groupings, "trend": trend, "previous_trend": previous_trend,
+            "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics, "summary": {
                 "members": len(memberships), "bookings": current["eligible_assignments"], "completed": current["shoots"],
                 "completion_rate": round(current["completion_rate"]) if current["completion_rate"] is not None else None,
                 "hours": round(current["scheduled_minutes"] / 60, 1), "revenue": current["revenue"],
