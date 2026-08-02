@@ -202,6 +202,16 @@ def _bucket(day, grouping):
     return day.replace(day=1)
 
 
+def _bucket_label(day, grouping):
+    """Format chart labels without platform-specific ``strftime`` directives."""
+    if grouping == "quarterly":
+        return f"Q{(day.month - 1) // 3 + 1} {day.year}"
+    if grouping in {"daily", "weekly"}:
+        # ``%-d`` works on POSIX but raises ValueError on Windows.
+        return f"{day.strftime('%b')} {day.day}"
+    return day.strftime("%b %Y")
+
+
 def _trend_points(data, memberships, start, end, grouping, metric):
     """Build chart buckets from prefetched records without issuing bucket-level queries."""
     buckets = {}
@@ -253,9 +263,7 @@ def _trend_points(data, memberships, start, end, grouping, metric):
                  "revenue": values["revenue"],
                  "satisfaction": sum(values["ratings"]) / len(values["ratings"]) if len(values["ratings"]) >= MIN_SATISFACTION_RESPONSES else None,
                  "capacity": values["scheduled"] * 100 / availability if availability else None}[metric]
-        label = day.strftime("%b %-d" if grouping in {"daily", "weekly"} else ("Q%q %Y" if grouping == "quarterly" else "%b %Y"))
-        if grouping == "quarterly":
-            label = f"Q{(day.month - 1) // 3 + 1} {day.year}"
+        label = _bucket_label(day, grouping)
         points.append({"label": label, "raw": value, "value": _display(metric, value)})
     return points
 
@@ -304,7 +312,7 @@ def build_summary_metrics(current, comparison, comparison_label, member_count):
     return metrics
 
 
-def _member_rows(memberships, current, previous):
+def _member_rows(memberships, current, previous, start, end):
     """Fan prefetched report records into member rows in memory (constant query count)."""
     rows = {member.pk: {"member": member, "bookings": 0, "completed": 0, "minutes": 0,
                         "galleries": 0, "delivery": [], "revenue": Decimal("0")} for member in memberships}
@@ -321,9 +329,16 @@ def _member_rows(memberships, current, previous):
                 if gallery.event_date:
                     rows[member.pk]["delivery"].append(max(0, (gallery.published_at.date() - gallery.event_date).days))
     for payment in current["payments"]:
-        assigned = [member for member in payment.invoice.booking.assigned_members.all() if member.pk in rows]
-        for member in assigned:
-            rows[member.pk]["revenue"] += payment.amount / len(assigned)
+        # Always use every active assignee as the denominator.  Filtering the
+        # report to one person must not turn their share of a shared booking
+        # into the whole payment.
+        active = [member for member in payment.invoice.booking.assigned_members.all()
+                  if member.status == StudioMembership.Status.ACTIVE]
+        if active:
+            share = payment.amount / len(active)
+            for member in active:
+                if member.pk in rows:
+                    rows[member.pk]["revenue"] += share
     previous_shoots = defaultdict(int)
     if previous:
         for session in previous["sessions"]:
@@ -336,7 +351,7 @@ def _member_rows(memberships, current, previous):
         name = member.user.full_name if member.user_id else member.email
         prior = previous_shoots[member.pk]
         trend = item["completed"] - prior if previous else None
-        availability = _availability_minutes([member], current["sessions"][0].starts_at.date(), current["sessions"][-1].starts_at.date()) if current["sessions"] else None
+        availability = _availability_minutes([member], start, end)
         output.append({"id": member.pk, "name": name, "initials": "".join(x[0] for x in name.split()[:2]).upper(),
                        "role": member.get_role_display(), "role_key": member.role,
                        "location": member.primary_location or "Not set", "status": member.get_status_display(),
@@ -389,7 +404,9 @@ def team_performance_report(studio, params, *, can_view_financials=True):
         comparison_label = "Team average"
     summary_metrics = build_summary_metrics(current, comparison, comparison_label, len(memberships))
 
-    rows = _member_rows(memberships, current, comparison if comparison_key in {"previous", "year"} else None)
+    rows = _member_rows(memberships, current,
+                        comparison if comparison_key in {"previous", "year"} else None,
+                        start, end)
     if not can_view_financials:
         for row in rows:
             row["revenue"] = None
@@ -401,8 +418,11 @@ def team_performance_report(studio, params, *, can_view_financials=True):
                    "galleries": "galleries", "completion": "completion_rate", "turnaround": "turnaround",
                    "revenue": "revenue", "capacity": "capacity", "trend": "trend"}
     descending = params.get("direction", "asc") == "desc"
-    rows.sort(key=lambda row: (row.get(sort_fields.get(sort, "name")) is None,
-                               row.get(sort_fields.get(sort, "name")) or 0), reverse=descending)
+    sort_field = sort_fields.get(sort, "name")
+    rows.sort(key=lambda row: (row.get(sort_field) is None,
+                               row.get(sort_field) if row.get(sort_field) is not None else 0),
+              reverse=descending)
+    export_rows = list(rows)
     paginator = Paginator(rows, 10)
     page = paginator.get_page(params.get("page", 1))
     trend_metric = params.get("metric", "shoots") if params.get("metric", "shoots") in TREND_METRICS else "shoots"
@@ -435,7 +455,8 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "selected_status": status, "selected_specialty": specialty, "statuses": StudioMembership.Status.choices,
             "specialties": sorted({(item.pk, item.name) for member in all_memberships for item in member.specialties.all()}, key=lambda item: item[1]),
             "roles": StudioMembership.Role.choices, "locations": locations, "members": memberships,
-            "rows": page.object_list, "page_obj": page, "sort": sort, "direction": "desc" if descending else "asc",
+            "rows": page.object_list, "export_rows": export_rows, "page_obj": page,
+            "sort": sort, "direction": "desc" if descending else "asc",
             "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0]) for key in TREND_METRICS],
             "grouping": grouping, "groupings": groupings, "trend": trend, "previous_trend": previous_trend,
             "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics,
