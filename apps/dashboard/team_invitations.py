@@ -17,6 +17,7 @@ from apps.dashboard.models import StudioInvitationEvent, StudioMembership
 from apps.dashboard.access import ROLE_SUMMARIES
 
 INVITATION_LIFETIME = timedelta(days=7)
+INVITATION_RESEND_COOLDOWN = timedelta(minutes=1)
 INVITABLE_ROLES = (StudioMembership.Role.MANAGER, StudioMembership.Role.PHOTOGRAPHER)
 
 

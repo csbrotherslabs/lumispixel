@@ -50,7 +50,8 @@ from apps.dashboard.analytics_overview import analytics_overview as build_analyt
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    StudioMembership, StudioMembershipEvent)
 from apps.dashboard.access import ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
-from apps.dashboard.team_invitations import (InvitationForm, ROLE_SUMMARIES, find_valid_invitation,
+from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, InvitationForm,
+                                             ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
 
@@ -3135,6 +3136,10 @@ def invitation_action(request, pk, action):
         record(membership, request.user, StudioInvitationEvent.Action.REVOKED)
         messages.success(request, "Invitation revoked.")
     elif action == "resend":
+        if (membership.invitation_sent_at and
+                timezone.now() - membership.invitation_sent_at < INVITATION_RESEND_COOLDOWN):
+            messages.error(request, "Please wait one minute before resending this invitation.")
+            return redirect("photographer_workspace:team_members")
         token = issue_token(membership)
         record(membership, request.user, StudioInvitationEvent.Action.RESENT)
         try:

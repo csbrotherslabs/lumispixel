@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.dashboard.models import StudioInvitationEvent, StudioMembership, StudioMembershipEvent
@@ -43,6 +46,13 @@ class TeamInvitationTests(TestCase):
         self.assertEqual(StudioMembership.objects.count(), 1)
         self.client.post(reverse("photographer_workspace:invitation_action", args=[invitation.pk, "resend"]))
         invitation.refresh_from_db()
+        self.assertEqual(invitation.invitation_token_digest, first_digest)
+        self.assertContains(self.client.get(reverse("photographer_workspace:team_members")),
+                            "Please wait one minute", status_code=200)
+        invitation.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        invitation.save(update_fields=["invitation_sent_at"])
+        self.client.post(reverse("photographer_workspace:invitation_action", args=[invitation.pk, "resend"]))
+        invitation.refresh_from_db()
         self.assertNotEqual(invitation.invitation_token_digest, first_digest)
         self.assertTrue(invitation.invitation_events.filter(action="resent", actor=self.owner).exists())
 
@@ -82,6 +92,7 @@ class TeamInvitationTests(TestCase):
             "primary_location": "Downtown", "additional_locations": "North, South",
             "internal_title": "Lead", "internal_notes": "Trusted", "working_days": ["mon", "fri"],
             "working_hours_start": "09:00", "working_hours_end": "17:00", "time_zone": "America/New_York",
+            "confirm": "yes",
         })
         self.assertRedirects(response, url)
         membership.refresh_from_db(); member_user.refresh_from_db()
