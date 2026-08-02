@@ -103,3 +103,85 @@ class TeamPerformanceMetricTests(TestCase):
         self.assertEqual(cards[0]["status"], "attention")
         self.assertTrue(all({"title", "explanation", "metric", "comparison", "status",
                              "action", "url"} <= card.keys() for card in cards))
+
+    def test_shared_booking_revenue_stays_equally_allocated_when_member_filtered(self):
+        colleague = StudioMembership.objects.create(
+            studio=self.studio, invitation_email="second@example.com", role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE)
+        starts_at = timezone.now() - timedelta(days=1)
+        booking = ClientSession.objects.create(
+            photographer=self.studio, client=self.client_record, starts_at=starts_at,
+            status=ClientSession.Status.COMPLETED)
+        booking.assigned_members.add(self.member, colleague)
+        invoice = ClientInvoice.objects.create(
+            photographer=self.studio, client=self.client_record, booking=booking,
+            total=Decimal("200.00"))
+        InvoicePayment.objects.create(
+            photographer=self.studio, invoice=invoice, amount=Decimal("200.00"),
+            status=InvoicePayment.Status.COMPLETED, paid_at=starts_at)
+
+        report = team_performance_report(self.studio, {"member": str(self.member.pk)})
+
+        self.assertEqual(report["summary"]["revenue"], Decimal("100.00"))
+        self.assertEqual(report["rows"][0]["revenue"], Decimal("100.00"))
+
+    def test_manager_can_view_team_but_never_receives_financial_fields(self):
+        manager_user = User.objects.create_user(
+            email="manager@example.com", password="test-pass",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER)
+        StudioMembership.objects.create(
+            studio=self.studio, user=manager_user, role=StudioMembership.Role.MANAGER,
+            status=StudioMembership.Status.ACTIVE)
+        self.client.force_login(manager_user)
+
+        response = self.client.get(reverse("photographer_workspace:team_performance"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Collected attributed revenue")
+        self.assertContains(response, "No revenue records are requested or returned")
+        self.assertTrue(all(row["revenue"] is None for row in response.context["export_rows"]))
+
+    def test_photographer_is_denied_team_wide_performance(self):
+        photographer = User.objects.create_user(
+            email="assigned@example.com", password="test-pass",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER)
+        StudioMembership.objects.create(
+            studio=self.studio, user=photographer, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE)
+        self.client.force_login(photographer)
+        response = self.client.get(reverse("photographer_workspace:team_performance"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_member_drilldown_rejects_membership_from_another_studio(self):
+        other_owner = User.objects.create_user(
+            email="other@example.com", password="test-pass",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER)
+        other_studio = PhotographerProfile.objects.create(
+            user=other_owner, slug="other-studio", onboarding_completed=True)
+        outsider = StudioMembership.objects.create(
+            studio=other_studio, user=other_owner, role=StudioMembership.Role.OWNER,
+            status=StudioMembership.Status.ACTIVE)
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("photographer_workspace:team_performance_member",
+                                           args=[outsider.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_filters_solo_state_and_large_team_pagination(self):
+        solo = team_performance_report(self.studio, {"role": StudioMembership.Role.OWNER})
+        self.assertTrue(solo["solo_mode"])
+        for index in range(12):
+            StudioMembership.objects.create(
+                studio=self.studio, invitation_email=f"person-{index}@example.com",
+                role=StudioMembership.Role.PHOTOGRAPHER,
+                status=StudioMembership.Status.ACTIVE,
+                primary_location="North" if index % 2 else "South")
+
+        report = team_performance_report(self.studio, {
+            "role": StudioMembership.Role.PHOTOGRAPHER, "location": "North", "page": "1"})
+
+        self.assertEqual(report["summary"]["members"], 6)
+        self.assertTrue(all(row["role_key"] == StudioMembership.Role.PHOTOGRAPHER
+                            and row["location"] == "North" for row in report["rows"]))
+        all_report = team_performance_report(self.studio, {})
+        self.assertEqual(all_report["page_obj"].paginator.num_pages, 2)
+        self.assertEqual(len(all_report["export_rows"]), 13)
