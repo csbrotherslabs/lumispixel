@@ -2,12 +2,14 @@ from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoicePayment
 from apps.dashboard.models import Review, StudioMembership
-from apps.dashboard.team_performance import calculate_period_metrics, team_performance_report
+from apps.dashboard.team_performance import (build_member_insights, calculate_period_metrics,
+                                             team_performance_report)
 from apps.galleries.models import Gallery
 
 
@@ -75,3 +77,29 @@ class TeamPerformanceMetricTests(TestCase):
         today = timezone.localdate()
         metrics = calculate_period_metrics(self.studio, [self.member], today - timedelta(days=1), today)
         self.assertIsNone(metrics["capacity"])
+
+    def test_member_drill_down_is_scoped_and_contains_all_sections(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("photographer_workspace:team_performance_member",
+                                           args=[self.member.pk]))
+        self.assertEqual(response.status_code, 200)
+        for heading in ("Overview", "Productivity", "Turnaround", "Contribution",
+                        "Client Experience", "Activity", "Performance insights"):
+            self.assertContains(response, heading)
+        self.assertContains(response, "Capacity analysis needs availability data", count=0)
+
+    def test_insights_are_deterministic_prioritized_and_limited(self):
+        current = {"overdue": 3, "capacity": 90, "gallery_delivery": 8, "completion_rate": 70,
+                   "shoots": 5, "eligible_assignments": 6, "satisfaction": 4.8}
+        previous = {"overdue": 1, "capacity": 60, "gallery_delivery": 10, "completion_rate": 90,
+                    "shoots": 2, "eligible_assignments": 3, "satisfaction": 4.2}
+        team = {"gallery_delivery": 5}
+        urls = {key: f"/{key}/" for key in ("bookings", "galleries", "schedule", "profile", "activity")}
+
+        cards = build_member_insights(current, previous, team, urls)
+
+        self.assertLessEqual(len(cards), 6)
+        self.assertEqual(cards[0]["rule"], "overdue_rising")
+        self.assertEqual(cards[0]["status"], "attention")
+        self.assertTrue(all({"title", "explanation", "metric", "comparison", "status",
+                             "action", "url"} <= card.keys() for card in cards))

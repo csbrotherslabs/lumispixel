@@ -18,6 +18,7 @@ from apps.galleries.models import Gallery, GalleryActivity
 
 RANGES = {"30d": 30, "90d": 90, "year": 365}
 MIN_SATISFACTION_RESPONSES = 3
+MIN_COMPARISON_ASSIGNMENTS = 1
 TREND_METRICS = tuple(METRIC for METRIC in (
     "shoots", "galleries", "completion_rate", "editing_turnaround",
     "gallery_delivery", "revenue", "satisfaction", "capacity",
@@ -454,3 +455,74 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "activity": activity[:10], "last_updated": timezone.now(),
             "has_assignments": bool(current["eligible_assignments"] or current["galleries"]),
             "summary_state": params.get("summary_state", "ready") if params.get("summary_state") in {"loading", "empty", "error"} else "ready"}
+
+
+# Insight rules are deliberately ordered by operational urgency.  They use only
+# persisted metrics, never a generated score or an employment recommendation.
+INSIGHT_RULES = {
+    "overdue_rising": "Current overdue assignments exceed the previous period.",
+    "capacity_high": "Configured capacity is at least 85%.",
+    "turnaround_high": "Member delivery time is over 20% slower than the team figure.",
+    "on_time_declined": "Completion rate declined by at least 10 percentage points.",
+    "shoots_up": "Completed shoots exceed the previous period.",
+    "delivery_improved": "Gallery delivery is at least 10% faster than the previous period.",
+    "satisfaction_up": "Supported satisfaction rose by at least 0.2 points.",
+    "availability_missing": "Working-day or working-hour data is incomplete.",
+}
+
+
+def build_member_insights(current, previous, team, urls, comparison_label="Previous period"):
+    """Return at most six deterministic, source-backed operational observations."""
+    cards = []
+
+    def add(key, title, explanation, metric, status, action, link_key):
+        cards.append({"rule": key, "title": title, "explanation": explanation,
+                      "metric": metric, "comparison": comparison_label, "status": status,
+                      "action": action, "url": urls[link_key]})
+
+    if current["overdue"] > previous["overdue"]:
+        add("overdue_rising", "Overdue assignments increased",
+            "The count of assigned work past its scheduled time is higher than in the comparison period.",
+            f'{current["overdue"]} now · {previous["overdue"]} previously', "attention",
+            "Review ownership and next steps for overdue work.", "bookings")
+    if current["capacity"] is not None and current["capacity"] >= 85:
+        add("capacity_high", "Member is approaching full capacity",
+            "Scheduled assignment time is using most configured working time for this period.",
+            f'{current["capacity"]:.1f}% configured capacity', "attention",
+            "Review upcoming coverage before assigning more work.", "schedule")
+    if (current["gallery_delivery"] is not None and team["gallery_delivery"] is not None
+            and team["gallery_delivery"] > 0 and current["gallery_delivery"] > team["gallery_delivery"] * 1.2):
+        add("turnaround_high", "Turnaround is above the team’s normal range",
+            "Average gallery delivery time is more than 20% above the team result for the same period.",
+            f'{current["gallery_delivery"]:.1f} days · team {team["gallery_delivery"]:.1f} days', "attention",
+            "Review the assigned gallery workflow and any blockers.", "galleries")
+    if (current["completion_rate"] is not None and previous["completion_rate"] is not None
+            and current["completion_rate"] <= previous["completion_rate"] - 10):
+        add("on_time_declined", "On-time delivery declined",
+            "Assignment completion rate fell by at least 10 percentage points; no promised-delivery timestamp is available.",
+            f'{current["completion_rate"]:.1f}% · previously {previous["completion_rate"]:.1f}%', "attention",
+            "Review incomplete assignments and confirm realistic handoffs.", "bookings")
+    if current["shoots"] > previous["shoots"] and previous["eligible_assignments"] >= MIN_COMPARISON_ASSIGNMENTS:
+        add("shoots_up", "Completed shoots increased",
+            "More explicitly assigned shoots reached Completed than in the previous period.",
+            f'{current["shoots"]} completed · previously {previous["shoots"]}', "positive",
+            "Check upcoming assignments and preserve the workflow supporting this change.", "bookings")
+    if (current["gallery_delivery"] is not None and previous["gallery_delivery"] is not None
+            and previous["gallery_delivery"] > 0 and current["gallery_delivery"] <= previous["gallery_delivery"] * .9):
+        improvement = (previous["gallery_delivery"] - current["gallery_delivery"]) / previous["gallery_delivery"] * 100
+        add("delivery_improved", "Gallery delivery time improved",
+            "Average event-to-publication time is at least 10% shorter than in the previous period.",
+            f'{current["gallery_delivery"]:.1f} days · {improvement:.0f}% faster', "positive",
+            "Review delivered galleries to identify a repeatable workflow.", "galleries")
+    if (current["satisfaction"] is not None and previous["satisfaction"] is not None
+            and current["satisfaction"] >= previous["satisfaction"] + .2):
+        add("satisfaction_up", "Client satisfaction improved",
+            "The supported studio-level review average increased; reviews are not attributed to one member.",
+            f'{current["satisfaction"]:.1f}/5 · previously {previous["satisfaction"]:.1f}/5', "positive",
+            "Review client feedback for practices the team can repeat.", "activity")
+    if current["capacity"] is None:
+        add("availability_missing", "Capacity analysis needs availability data",
+            "Working days or working hours are incomplete, so capacity cannot be calculated reliably.",
+            "Capacity · insufficient data", "insufficient-data",
+            "Complete the member’s availability before using capacity planning.", "profile")
+    return cards[:6]

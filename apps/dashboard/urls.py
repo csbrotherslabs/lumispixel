@@ -96,6 +96,7 @@ urlpatterns = [
     path("team/invitations/<int:pk>/<str:action>/", views.invitation_action, name="invitation_action"),
     path("team/invitations/accept/<str:token>/", views.invitation_accept, name="invitation_accept"),
     path("team/performance/", views.team_placeholder, {"page_key": "team_performance"}, name="team_performance"),
+    path("team/performance/members/<int:pk>/", views.team_performance_member, name="team_performance_member"),
     path("equipment/", views.module_placeholder, {"module_key": "equipment"}, name="equipment"),
     path("tasks/", views.module_placeholder, {"module_key": "tasks"}, name="tasks"),
     path("notifications/", views.module_placeholder, {"module_key": "notifications"}, name="notifications"),
