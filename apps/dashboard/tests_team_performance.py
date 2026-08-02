@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoicePayment
 from apps.dashboard.models import Review, StudioMembership
-from apps.dashboard.team_performance import (build_member_insights, calculate_period_metrics,
+from apps.dashboard.team_performance import (_bucket_label, build_member_insights, calculate_period_metrics,
                                              team_performance_report)
 from apps.galleries.models import Gallery
 
@@ -25,6 +25,14 @@ class TeamPerformanceMetricTests(TestCase):
             working_hours_start=time(9), working_hours_end=time(17),
         )
         self.client_record = Client.objects.create(photographer=self.studio, first_name="Client")
+
+    def test_trend_labels_use_cross_platform_date_formatting(self):
+        day = timezone.localdate().replace(month=7, day=4)
+
+        self.assertEqual(_bucket_label(day, "daily"), "Jul 4")
+        self.assertEqual(_bucket_label(day, "weekly"), "Jul 4")
+        self.assertEqual(_bucket_label(day, "monthly"), f"Jul {day.year}")
+        self.assertEqual(_bucket_label(day, "quarterly"), f"Q3 {day.year}")
 
     def test_summary_uses_completed_assignments_actual_delivery_and_collected_payment(self):
         today = timezone.localdate()

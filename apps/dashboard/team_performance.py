@@ -202,6 +202,16 @@ def _bucket(day, grouping):
     return day.replace(day=1)
 
 
+def _bucket_label(day, grouping):
+    """Format chart labels without platform-specific ``strftime`` directives."""
+    if grouping == "quarterly":
+        return f"Q{(day.month - 1) // 3 + 1} {day.year}"
+    if grouping in {"daily", "weekly"}:
+        # ``%-d`` works on POSIX but raises ValueError on Windows.
+        return f"{day.strftime('%b')} {day.day}"
+    return day.strftime("%b %Y")
+
+
 def _trend_points(data, memberships, start, end, grouping, metric):
     """Build chart buckets from prefetched records without issuing bucket-level queries."""
     buckets = {}
@@ -253,9 +263,7 @@ def _trend_points(data, memberships, start, end, grouping, metric):
                  "revenue": values["revenue"],
                  "satisfaction": sum(values["ratings"]) / len(values["ratings"]) if len(values["ratings"]) >= MIN_SATISFACTION_RESPONSES else None,
                  "capacity": values["scheduled"] * 100 / availability if availability else None}[metric]
-        label = day.strftime("%b %-d" if grouping in {"daily", "weekly"} else ("Q%q %Y" if grouping == "quarterly" else "%b %Y"))
-        if grouping == "quarterly":
-            label = f"Q{(day.month - 1) // 3 + 1} {day.year}"
+        label = _bucket_label(day, grouping)
         points.append({"label": label, "raw": value, "value": _display(metric, value)})
     return points
 
