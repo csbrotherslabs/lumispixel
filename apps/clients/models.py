@@ -187,6 +187,9 @@ class Lead(PhotographerOwnedModel):
 
 
 class Client(PhotographerOwnedModel):
+    assigned_members = models.ManyToManyField(
+        "dashboard.StudioMembership", blank=True, related_name="assigned_clients"
+    )
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
         INACTIVE = "inactive", "Inactive"
@@ -377,6 +380,9 @@ class ClientActivity(PhotographerOwnedModel):
 
 
 class ClientSession(PhotographerOwnedModel):
+    assigned_members = models.ManyToManyField(
+        "dashboard.StudioMembership", blank=True, related_name="assigned_bookings"
+    )
     class Status(models.TextChoices):
         TENTATIVE = "tentative", "Tentative"
         CONFIRMED = "confirmed", "Confirmed"

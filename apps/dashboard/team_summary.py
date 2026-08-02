@@ -15,12 +15,8 @@ from apps.clients.models import ClientSession
 
 def authorized_studio(user):
     """Return the only studio the actor may inspect, or deny access."""
-    if not user.is_authenticated or not getattr(user, "can_login", False):
-        raise PermissionDenied
-    profile = getattr(user, "photographer_profile", None)
-    if profile is None or profile.user_id != user.id:
-        raise PermissionDenied
-    return profile
+    from apps.dashboard.access import access_for
+    return access_for(user, require="team").studio
 
 
 def parse_team_filters(params):

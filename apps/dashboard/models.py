@@ -9,10 +9,9 @@ class StudioMembership(models.Model):
     """A person's access and directory metadata within one photographer studio."""
 
     class Role(models.TextChoices):
+        OWNER = "owner", "Owner"
         MANAGER = "studio_manager", "Studio Manager"
         PHOTOGRAPHER = "photographer", "Photographer"
-        ASSISTANT = "assistant", "Assistant"
-        EDITOR = "editor", "Editor"
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
