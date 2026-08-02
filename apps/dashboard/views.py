@@ -47,7 +47,8 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
-from apps.dashboard.models import GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent, StudioMembership
+from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
+                                   StudioMembership, StudioMembershipEvent)
 from apps.dashboard.team_invitations import (InvitationForm, ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
@@ -2915,6 +2916,7 @@ def team_members(request):
         member_user = membership.user
         member_name = (member_user.full_name or member_user.email) if member_user else membership.invitation_email
         members.append({
+            "id": membership.pk,
             "name": member_name, "email": membership.email,
             "initials": "".join(part[0] for part in member_name.split()[:2]).upper() or "LP",
             "role": membership.get_role_display(), "status": membership.get_status_display(),
@@ -2969,6 +2971,76 @@ def team_members(request):
         },
     })
     return render(request, "photographer_workspace/team/members.html", context)
+
+
+@photographer_workspace_required
+def team_member_detail(request, pk):
+    """Show and update studio-owned member metadata without touching account credentials."""
+    profile = authorized_studio(request.user)
+    membership = get_object_or_404(
+        StudioMembership.objects.select_related("user").prefetch_related("specialties", "change_events__actor"),
+        pk=pk, studio=profile,
+    )
+    errors = {}
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        before = {
+            "role": membership.role, "status": membership.status,
+            "primary_location": membership.primary_location,
+            "additional_locations": membership.additional_locations,
+            "specialties": list(membership.specialties.values_list("name", flat=True)),
+            "internal_title": membership.internal_title, "internal_notes": membership.internal_notes,
+            "working_days": membership.working_days, "working_hours_start": str(membership.working_hours_start or ""),
+            "working_hours_end": str(membership.working_hours_end or ""), "time_zone": membership.time_zone,
+            "availability": membership.availability,
+        }
+        if action in {"deactivate", "reactivate"}:
+            membership.status = StudioMembership.Status.INACTIVE if action == "deactivate" else StudioMembership.Status.ACTIVE
+            membership.save(update_fields=["status", "updated_at"])
+        else:
+            role = request.POST.get("role", "")
+            availability = request.POST.get("availability", "")
+            if role not in StudioMembership.Role.values: errors["role"] = "Choose a valid role."
+            if availability not in StudioMembership.Availability.values: errors["availability"] = "Choose a valid availability."
+            start, end = request.POST.get("working_hours_start", ""), request.POST.get("working_hours_end", "")
+            if bool(start) != bool(end): errors["working_hours"] = "Enter both a start and end time."
+            if start and end and start >= end: errors["working_hours"] = "End time must be later than start time."
+            days = [day for day in request.POST.getlist("working_days") if day in {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}]
+            if not errors:
+                membership.role, membership.availability = role, availability
+                membership.primary_location = request.POST.get("primary_location", "").strip()[:150]
+                membership.additional_locations = [v.strip()[:150] for v in request.POST.get("additional_locations", "").split(",") if v.strip()]
+                membership.internal_title = request.POST.get("internal_title", "").strip()[:150]
+                membership.internal_notes = request.POST.get("internal_notes", "").strip()[:4000]
+                membership.working_days, membership.working_hours_start, membership.working_hours_end = days, start or None, end or None
+                membership.time_zone = request.POST.get("time_zone", "").strip()[:64]
+                membership.save()
+                membership.specialties.set(profile.specialties.model.objects.filter(pk__in=request.POST.getlist("specialties")))
+                if membership.user:
+                    membership.user.first_name = request.POST.get("first_name", "").strip()[:150]
+                    membership.user.last_name = request.POST.get("last_name", "").strip()[:150]
+                    membership.user.save(update_fields=["first_name", "last_name", "updated_at"])
+        if not errors:
+            after = {**before, "role": membership.role, "status": membership.status,
+                     "primary_location": membership.primary_location, "additional_locations": membership.additional_locations,
+                     "specialties": list(membership.specialties.values_list("name", flat=True)),
+                     "internal_title": membership.internal_title, "internal_notes": membership.internal_notes,
+                     "working_days": membership.working_days, "working_hours_start": str(membership.working_hours_start or ""),
+                     "working_hours_end": str(membership.working_hours_end or ""), "time_zone": membership.time_zone,
+                     "availability": membership.availability}
+            changes = {key: {"from": before.get(key), "to": value} for key, value in after.items() if before.get(key) != value}
+            StudioMembershipEvent.objects.create(membership=membership, actor=request.user, action=action, changes=changes)
+            messages.success(request, "Member profile updated.")
+            return redirect("photographer_workspace:team_member_detail", pk=membership.pk)
+    user = membership.user
+    context = _dashboard_context(request, "team_members", "Member Profile")
+    context.update({"membership": membership, "member_user": user, "errors": errors,
+                    "specialty_choices": profile.specialties.model.objects.all().order_by("name"),
+                    "selected_specialties": set(membership.specialties.values_list("pk", flat=True)),
+                    "day_choices": [("mon", "Monday"), ("tue", "Tuesday"), ("wed", "Wednesday"), ("thu", "Thursday"),
+                                    ("fri", "Friday"), ("sat", "Saturday"), ("sun", "Sunday")],
+                    "schedule_url": reverse("photographer_workspace:schedule") + f"?member={membership.pk}"})
+    return render(request, "photographer_workspace/team/member_detail.html", context)
 
 
 @photographer_workspace_required
