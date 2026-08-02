@@ -2874,6 +2874,10 @@ def team_performance(request):
     can_view_financials = request.studio_access.allows("financials")
     report = team_performance_report(authorized_studio(request.user), request.GET,
                                      can_view_financials=can_view_financials)
+    preserved = request.GET.copy()
+    preserved.pop("page", None)
+    preserved.pop("export", None)
+    report["filter_query"] = preserved.urlencode()
     if request.GET.get("export") == "csv":
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="team-performance-{report["start"]}-{report["end"]}.csv"'
@@ -2882,7 +2886,8 @@ def team_performance(request):
         if can_view_financials:
             headers.append("Revenue contribution")
         writer.writerow(headers)
-        for row in report["rows"]:
+        # Export the complete filtered comparison, not merely the visible page.
+        for row in report["export_rows"]:
             values = [row["name"], row["role"], row["location"], row["bookings"], row["completed"], row["completion_rate"] if row["completion_rate"] is not None else "", row["hours"], row["galleries"], row["turnaround"] if row["turnaround"] is not None else ""]
             if can_view_financials:
                 values.append(row["revenue"])
