@@ -974,3 +974,20 @@ document.addEventListener('click', async (event) => {
     button.setAttribute('aria-expanded', String(open));
   });
 })();
+(function () {
+  const form = document.querySelector('[data-invitation-form]');
+  if (!form) return;
+  const role = form.querySelector('[data-invitation-role]');
+  const summary = form.querySelector('[data-role-summary]');
+  const submit = form.querySelector('[data-invitation-submit]');
+  const descriptions = {
+    studio_manager: ['Studio Manager access', 'Operational access to clients, galleries, bookings, scheduling, assignments, operational analytics, and permitted AI tools.'],
+    photographer: ['Photographer access', 'Access only to assigned bookings, clients, galleries, schedule, AI tools, and personal performance.']
+  };
+  role.addEventListener('change', function () {
+    const copy = descriptions[role.value]; summary.querySelector('strong').textContent = copy[0]; summary.querySelector('p').textContent = copy[1];
+  });
+  form.addEventListener('submit', function () {
+    submit.disabled = true; submit.classList.add('is-sending'); submit.querySelector('span').textContent = 'Sending…';
+  });
+}());
