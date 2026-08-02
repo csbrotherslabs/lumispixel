@@ -76,13 +76,13 @@ def _availability_minutes(memberships, start, end):
     return total or None
 
 
-def calculate_period_metrics(studio, memberships, start, end, location=""):
+def calculate_period_metrics(studio, memberships, start, end, location="", include_financials=True):
     """Calculate one period from persisted bookings, payments, galleries and reviews."""
     start_at, end_at = _aware_bounds(start, end)
     member_ids = {member.pk for member in memberships}
     sessions = list(ClientSession.objects.for_photographer(studio).filter(
         starts_at__gte=start_at, starts_at__lt=end_at
-    ).exclude(status=ClientSession.Status.CANCELLED).prefetch_related("assigned_members"))
+    ).prefetch_related("assigned_members"))
     if location:
         sessions = [session for session in sessions if session.location == location]
 
@@ -96,7 +96,8 @@ def calculate_period_metrics(studio, memberships, start, end, location=""):
             continue
         assigned_sessions.append(session)
         session_members[session.pk] = assigned
-        scheduled_minutes += session.duration_minutes * len(assigned)
+        if session.status != ClientSession.Status.CANCELLED:
+            scheduled_minutes += session.duration_minutes * len(assigned)
         if session.status == ClientSession.Status.COMPLETED:
             completed.append(session)
 
@@ -117,37 +118,66 @@ def calculate_period_metrics(studio, memberships, start, end, location=""):
             delivery_durations.append(max(0, (gallery.published_at - event_at).total_seconds() / 86400))
 
     completed_ids = [session.pk for session in completed]
-    payments = list(InvoicePayment.objects.for_photographer(studio).filter(
-        status=InvoicePayment.Status.COMPLETED, paid_at__gte=start_at, paid_at__lt=end_at,
-        invoice__booking_id__in=completed_ids,
-    ).select_related("invoice__booking").prefetch_related("invoice__booking__assigned_members"))
+    # This branch is intentionally query-free for callers without financial access.
+    payments = []
+    if include_financials:
+        payments = list(InvoicePayment.objects.for_photographer(studio).filter(
+            status=InvoicePayment.Status.COMPLETED, paid_at__gte=start_at, paid_at__lt=end_at,
+            invoice__booking_id__in=completed_ids,
+        ).select_related("invoice__booking").prefetch_related("invoice__booking__assigned_members"))
     revenue = Decimal("0")
+    revenue_by_service = defaultdict(lambda: Decimal("0"))
+    revenue_by_location = defaultdict(lambda: Decimal("0"))
     for payment in payments:
         all_assigned = [member for member in payment.invoice.booking.assigned_members.all()
                         if member.status == StudioMembership.Status.ACTIVE]
         selected_count = sum(member.pk in member_ids for member in all_assigned)
         if all_assigned and selected_count:
-            revenue += payment.amount * selected_count / len(all_assigned)
+            share = payment.amount * selected_count / len(all_assigned)
+            revenue += share
+            revenue_by_service[payment.invoice.booking.session_type or "Not specified"] += share
+            revenue_by_location[payment.invoice.booking.location or "Not specified"] += share
 
     reviews = Review.objects.for_photographer(studio).filter(
         reviewed_at__gte=start_at, reviewed_at__lt=end_at)
     review_records = list(reviews.values("rating", "reviewed_at"))
     ratings = [review["rating"] for review in review_records]
     availability = _availability_minutes(memberships, start, end)
+    eligible = [session for session in assigned_sessions if session.status != ClientSession.Status.CANCELLED]
+    cancelled = [session for session in assigned_sessions if session.status == ClientSession.Status.CANCELLED]
+    overdue = [session for session in eligible if session.starts_at < timezone.now()
+               and session.status != ClientSession.Status.COMPLETED]
+    completed_clients = [session.client_id for session in completed]
+    repeat_assignments = sum(completed_clients.count(client_id) > 1 for client_id in completed_clients)
+    status_distribution = [{"key": value, "label": label,
+                            "value": sum(session.status == value for session in assigned_sessions)}
+                           for value, label in ClientSession.Status.choices]
     return {
         "shoots": len(completed),
-        "eligible_assignments": len(assigned_sessions),
-        "completion_rate": (len(completed) * 100 / len(assigned_sessions)) if assigned_sessions else None,
+        "eligible_assignments": len(eligible),
+        "completion_rate": (len(completed) * 100 / len(eligible)) if eligible else None,
         "galleries": len(galleries),
         "editing_turnaround": None,
         "gallery_delivery": (sum(delivery_durations) / len(delivery_durations)) if delivery_durations else None,
-        "revenue": revenue,
+        "revenue": revenue if include_financials else None,
         "revenue_records": len(payments),
+        "completed_booking_value": (sum((session.booking_value *
+                                           len(session_members[session.pk]) /
+                                           len([member for member in session.assigned_members.all()
+                                                if member.status == StudioMembership.Status.ACTIVE])
+                                           for session in completed
+                                           if any(member.status == StudioMembership.Status.ACTIVE
+                                                  for member in session.assigned_members.all())), Decimal("0"))
+                                    if include_financials else None),
+        "revenue_by_service": sorted(revenue_by_service.items(), key=lambda item: item[1], reverse=True),
+        "revenue_by_location": sorted(revenue_by_location.items(), key=lambda item: item[1], reverse=True),
         "satisfaction": (sum(ratings) / len(ratings)) if len(ratings) >= MIN_SATISFACTION_RESPONSES else None,
         "review_count": len(ratings),
         "capacity": (scheduled_minutes * 100 / availability) if availability else None,
         "scheduled_minutes": scheduled_minutes,
         "availability_minutes": availability,
+        "cancelled": len(cancelled), "overdue": len(overdue),
+        "repeat_assignments": repeat_assignments, "status_distribution": status_distribution,
         "sessions": assigned_sessions,
         "delivered_galleries": galleries,
         "payments": payments,
@@ -319,7 +349,7 @@ def _member_rows(memberships, current, previous):
     return output
 
 
-def team_performance_report(studio, params):
+def team_performance_report(studio, params, *, can_view_financials=True):
     range_key, start, end = _bounds(params)
     role = params.get("role", "") if params.get("role", "") in dict(StudioMembership.Role.choices) else ""
     location = (params.get("location", "") or "").strip()[:150]
@@ -343,21 +373,25 @@ def team_performance_report(studio, params):
     comparison_key = params.get("compare", "previous")
     if comparison_key not in {"previous", "year", "team", "none"}:
         comparison_key = "previous"
-    current = calculate_period_metrics(studio, memberships, start, end, location)
+    current = calculate_period_metrics(studio, memberships, start, end, location, can_view_financials)
     comparison = None
     comparison_label = "No comparison"
     if comparison_key in {"previous", "year"}:
         compare_start, compare_end = _comparison_dates(start, end, comparison_key)
-        comparison = calculate_period_metrics(studio, memberships, compare_start, compare_end, location)
+        comparison = calculate_period_metrics(studio, memberships, compare_start, compare_end, location, can_view_financials)
         comparison_label = "Previous period" if comparison_key == "previous" else "Same period last year"
     elif comparison_key == "team":
-        comparison = calculate_period_metrics(studio, all_memberships, start, end, location)
+        comparison = calculate_period_metrics(studio, all_memberships, start, end, location, can_view_financials)
         for key in ("shoots", "galleries", "revenue"):
-            comparison[key] = comparison[key] / len(all_memberships) if all_memberships else None
+            comparison[key] = (comparison[key] / len(all_memberships)
+                               if all_memberships and comparison[key] is not None else None)
         comparison_label = "Team average"
     summary_metrics = build_summary_metrics(current, comparison, comparison_label, len(memberships))
 
     rows = _member_rows(memberships, current, comparison if comparison_key in {"previous", "year"} else None)
+    if not can_view_financials:
+        for row in rows:
+            row["revenue"] = None
     search = (params.get("q", "") or "").strip().lower()[:100]
     if search:
         rows = [row for row in rows if search in f'{row["name"]} {row["role"]} {row["location"]}'.lower()]
@@ -371,6 +405,8 @@ def team_performance_report(studio, params):
     paginator = Paginator(rows, 10)
     page = paginator.get_page(params.get("page", 1))
     trend_metric = params.get("metric", "shoots") if params.get("metric", "shoots") in TREND_METRICS else "shoots"
+    if trend_metric == "revenue" and not can_view_financials:
+        trend_metric = "shoots"
     grouping, groupings = _grouping(start, end, params.get("grouping", ""))
     trend = _trend_points(current, memberships, start, end, grouping, trend_metric)
     previous_trend = _trend_points(comparison, memberships, compare_start, compare_end, grouping, trend_metric) if comparison_key in {"previous", "year"} else []
@@ -401,13 +437,20 @@ def team_performance_report(studio, params):
             "rows": page.object_list, "page_obj": page, "sort": sort, "direction": "desc" if descending else "asc",
             "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0]) for key in TREND_METRICS],
             "grouping": grouping, "groupings": groupings, "trend": trend, "previous_trend": previous_trend,
-            "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics, "summary": {
+            "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics,
+            "can_view_financials": can_view_financials, "status_distribution": current["status_distribution"], "summary": {
                 "members": len(memberships), "bookings": current["eligible_assignments"], "completed": current["shoots"],
                 "completion_rate": round(current["completion_rate"]) if current["completion_rate"] is not None else None,
                 "hours": round(current["scheduled_minutes"] / 60, 1), "revenue": current["revenue"],
                 "galleries": current["galleries"], "turnaround": current["gallery_delivery"],
-                "rating": current["satisfaction"], "reviews": current["review_count"]},
+                "rating": current["satisfaction"], "reviews": current["review_count"],
+                "completed_booking_value": current["completed_booking_value"],
+                "cancelled": current["cancelled"], "overdue": current["overdue"],
+                "repeat_assignments": current["repeat_assignments"],
+                "completed_hours": round(sum(s.duration_minutes for s in current["sessions"] if s.status == ClientSession.Status.COMPLETED) / 60, 1)},
             "timeline": [{"label": day.strftime("%b %Y"), **values} for day, values in sorted(timeline.items())],
+            "revenue_by_service": current["revenue_by_service"],
+            "revenue_by_location": current["revenue_by_location"],
             "activity": activity[:10], "last_updated": timezone.now(),
             "has_assignments": bool(current["eligible_assignments"] or current["galleries"]),
             "summary_state": params.get("summary_state", "ready") if params.get("summary_state") in {"loading", "empty", "error"} else "ready"}
