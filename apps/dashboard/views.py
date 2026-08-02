@@ -54,7 +54,8 @@ from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, Invitat
                                              ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap, studio_sessions
-from apps.dashboard.team_performance import team_performance_report
+from apps.dashboard.team_performance import (INSIGHT_RULES, _comparison_dates, build_member_insights,
+                                             calculate_period_metrics, team_performance_report)
 
 WORKSPACE_MODULES = [
     {"key": "dashboard", "url_name": "dashboard", "icon": "bi-grid-1x2", "title": "Dashboard", "description": "Your business command center.", "coming_soon": False},
@@ -169,7 +170,7 @@ def photographer_workspace_required(view_func):
                       "invoice_view", "invoice_edit", "invoice_download", "invoice_action", "growth",
                       "settings", "revenue", "payments"}
         team_pages = {"team_overview", "team_members", "team_member_detail", "invite_member",
-                      "invitation_action", "team_performance"}
+                      "invitation_action", "team_performance", "team_performance_member"}
         if name in owner_only and not request.studio_access.allows("financials" if name not in {"growth"} else "growth"):
             raise PermissionDenied
         if name in team_pages and not request.studio_access.allows("team"):
@@ -2890,6 +2891,49 @@ def team_performance(request):
     context = _dashboard_context(request, "team_performance", "Team Performance")
     context.update(report)
     return render(request, "photographer_workspace/team/performance.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def team_performance_member(request, pk):
+    """Read-only performance drill-down; source tools remain the place for edits."""
+    studio = authorized_studio(request.user)
+    membership = get_object_or_404(StudioMembership.objects.select_related("user"), studio=studio, pk=pk)
+    can_view_financials = request.studio_access.allows("financials")
+    report = team_performance_report(studio, {**request.GET.dict(), "member": str(pk), "status": membership.status},
+                                     can_view_financials=can_view_financials)
+    start, end = report["start"], report["end"]
+    prior_start, prior_end = _comparison_dates(start, end, "previous")
+    current = calculate_period_metrics(studio, [membership], start, end, include_financials=can_view_financials)
+    previous = calculate_period_metrics(studio, [membership], prior_start, prior_end,
+                                        include_financials=can_view_financials)
+    active_team = list(StudioMembership.objects.filter(studio=studio, status=StudioMembership.Status.ACTIVE))
+    team = calculate_period_metrics(studio, active_team, start, end, include_financials=can_view_financials)
+    member_query = urlencode({"member": pk})
+    urls = {"bookings": f'{reverse("photographer_workspace:bookings")}?{member_query}',
+            "galleries": f'{reverse("photographer_workspace:galleries")}?{member_query}',
+            "schedule": f'{reverse("photographer_workspace:schedule")}?{member_query}',
+            "profile": reverse("photographer_workspace:team_member_detail", args=[pk]), "activity": "#activity"}
+    upcoming = list(ClientSession.objects.for_photographer(studio).filter(
+        assigned_members=membership, starts_at__gte=timezone.now()).exclude(
+        status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at")[:6])
+    period_sessions = sorted(current["sessions"], key=lambda item: item.starts_at, reverse=True)
+    completed = [item for item in period_sessions if item.status == ClientSession.Status.COMPLETED]
+    activity = [{"title": event.action.replace("_", " ").title(), "detail": "Member profile update",
+                 "at": event.occurred_at, "icon": "bi-person-gear"} for event in membership.change_events.all()[:8]]
+    activity += [{"title": session.get_status_display(), "detail": session.session_type or "Assigned booking",
+                  "at": session.starts_at, "icon": "bi-calendar-check"} for session in period_sessions[:5]]
+    activity.sort(key=lambda item: item["at"], reverse=True)
+    name = membership.user.full_name if membership.user_id else membership.email
+    context = _dashboard_context(request, "team_performance", f"{name} Performance")
+    context.update(report)
+    context.update({"membership": membership, "member_name": name,
+                    "member_initials": "".join(part[0] for part in name.split()[:2]).upper() or "TM",
+                    "current": current, "previous": previous, "upcoming": upcoming,
+                    "completed_assignments": completed[:6], "member_activity": activity[:10], "source_urls": urls,
+                    "insights": build_member_insights(current, previous, team, urls), "insight_rules": INSIGHT_RULES,
+                    "prior_start": prior_start, "prior_end": prior_end})
+    return render(request, "photographer_workspace/team/performance_member.html", context)
 
 
 def team_members(request):
