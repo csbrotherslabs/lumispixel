@@ -50,8 +50,12 @@ class PhotographerWorkspaceTests(TestCase):
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Members</h1>', html=True)
                 self.assertContains(response, "Manage team members, invitations, roles, access, locations, and availability.")
             else:
-                self.assertContains(response, f'<h2 id="workspace-page-title">{title}</h2>', html=True)
-                self.assertContains(response, subtitle)
+                self.assertContains(response, '<h1 id="workspace-page-title">Team Performance</h1>', html=True)
+                self.assertContains(response, "Review team productivity, contribution, turnaround, workload, and client experience over time.")
+                for section in ("Team performance summary", "Performance over time", "Team-member comparison",
+                                "Productivity and completion", "Turnaround and delivery", "Booking and revenue contribution",
+                                "Client experience", "Performance insights", "Recent performance activity"):
+                    self.assertContains(response, section)
             self.assertContains(response, f'href="{url}" class="is-active" aria-current="page"')
             for child_route, (child_title, _) in pages.items():
                 self.assertContains(response, reverse(f"photographer_workspace:{child_route}"))
