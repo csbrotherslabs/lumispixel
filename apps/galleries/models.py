@@ -22,6 +22,9 @@ class GalleryQuerySet(models.QuerySet):
 
 
 class Gallery(models.Model):
+    assigned_members = models.ManyToManyField(
+        "dashboard.StudioMembership", blank=True, related_name="assigned_galleries"
+    )
     """A photographer-owned collection prepared for client delivery."""
 
     class Status(models.TextChoices):

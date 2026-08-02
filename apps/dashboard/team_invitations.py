@@ -14,13 +14,10 @@ from django.utils import timezone
 
 from apps.accounts.models import User, phone_validator
 from apps.dashboard.models import StudioInvitationEvent, StudioMembership
+from apps.dashboard.access import ROLE_SUMMARIES
 
 INVITATION_LIFETIME = timedelta(days=7)
 INVITABLE_ROLES = (StudioMembership.Role.MANAGER, StudioMembership.Role.PHOTOGRAPHER)
-ROLE_SUMMARIES = {
-    StudioMembership.Role.MANAGER: "Operational access to clients, galleries, bookings, scheduling, assignments, operational analytics, and permitted AI tools.",
-    StudioMembership.Role.PHOTOGRAPHER: "Access only to assigned bookings, clients, galleries, schedule, AI tools, and personal performance.",
-}
 
 
 class InvitationForm(forms.Form):
