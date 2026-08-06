@@ -1,4 +1,4 @@
-:root{--lpw-bg:#f8f6f3;--lpw-card:#fff;--lpw-text:#191817;--lpw-muted:#6b625c;--lpw-border:#e7ded6;--lpw-accent:#d70006;--lpw-shadow:0 18px 50px rgba(25,18,14,.08);--workspace-text-primary:#191817;--workspace-text-secondary:#4f4742;--workspace-text-muted:#6b625c;--workspace-section-title-size:clamp(18px,1.6vw,20px);--workspace-card-title-size:16px;--workspace-metric-size:clamp(30px,3vw,36px);--workspace-section-gap:48px;--workspace-card-padding:22px;--lpw-space-page-top:32px;--lpw-space-page-bottom:48px;--lpw-space-hero-section:40px;--lpw-space-section:var(--workspace-section-gap);--lpw-space-section-header:16px;--lpw-space-grid-gap:20px}
+/* Design tokens and legacy compatibility aliases live in workspace_design_system.css. */
 *{box-sizing:border-box}
 .lumis-workspace-body{margin:0;background:var(--lpw-bg);color:var(--lpw-text);font-family:"DM Sans",Arial,sans-serif}
 .skip-link{position:absolute;left:-999px;top:8px;z-index:99;background:#fff;padding:10px;border-radius:8px}
