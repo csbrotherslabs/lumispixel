@@ -407,7 +407,7 @@ def complete_task(request, pk):
     task.status = ClientTask.Status.COMPLETED
     task.save(update_fields=["status", "updated_at"])
     messages.success(request, "Task marked complete.")
-    return redirect("photographer_workspace:crm")
+    return redirect("photographer_workspace:leads" if task.lead_id else "photographer_workspace:crm")
 
 
 @photographer_workspace_required
@@ -417,8 +417,15 @@ def update_lead_status(request, pk):
     status = request.POST.get("status")
     if status not in Lead.Status.values:
         messages.error(request, "Select a valid lead status.")
+    elif status == Lead.Status.LOST:
+        messages.error(request, "Use Mark lost so a loss reason can be recorded.")
     elif Client.objects.filter(converted_lead=lead).exists():
         messages.error(request, "A converted lead must remain booked.")
+    elif status == Lead.Status.BOOKED:
+        client, created = lead.convert_to_client()
+        _log_lead(request.studio, lead, ClientActivity.EventType.LEAD_CONVERTED,
+                  f"Lead {lead} converted to a client.", client=client)
+        messages.success(request, "Lead booked and converted to a client.")
     else:
         previous = lead.get_status_display()
         lead.status = status
@@ -437,11 +444,20 @@ def update_lead_status(request, pk):
 def leads_workspace(request):
     """Render the photographer-scoped lead pipeline in board or list form."""
     profile = request.studio
-    leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True).prefetch_related("activities").annotate(last_activity_at=Max("activities__occurred_at"))
+    base = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
+    leads = base.select_related("converted_client").annotate(last_activity_at=Max("activities__occurred_at"))
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
     source = request.GET.get("source", "").strip()
     event_type = request.GET.get("event_type", "").strip()
+    follow_up = request.GET.get("follow_up", "").strip()
+    created_from = request.GET.get("created_from", "").strip()
+    created_to = request.GET.get("created_to", "").strip()
+    terminal = request.GET.get("terminal", "recent").strip()
+    today = timezone.localdate()
+    if terminal != "all" and not status:
+        cutoff = timezone.now() - timedelta(days=90)
+        leads = leads.exclude(Q(status__in=[Lead.Status.BOOKED, Lead.Status.LOST]) & Q(updated_at__lt=cutoff))
     if query:
         leads = leads.filter(
             Q(first_name__icontains=query) | Q(last_name__icontains=query) |
@@ -455,6 +471,21 @@ def leads_workspace(request):
         leads = leads.filter(lead_source=source)
     if event_type:
         leads = leads.filter(event_type=event_type)
+    if follow_up == "overdue":
+        leads = leads.filter(next_follow_up__lt=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
+    elif follow_up == "today":
+        leads = leads.filter(next_follow_up=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
+    elif follow_up == "upcoming":
+        leads = leads.filter(next_follow_up__gt=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
+    elif follow_up == "unscheduled":
+        leads = leads.filter(next_follow_up__isnull=True).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
+    try:
+        if created_from:
+            leads = leads.filter(created_at__date__gte=date.fromisoformat(created_from))
+        if created_to:
+            leads = leads.filter(created_at__date__lte=date.fromisoformat(created_to))
+    except ValueError:
+        created_from = created_to = ""
 
     allowed_sorts = {
         "newest": "-created_at", "oldest": "created_at", "name": "first_name",
@@ -464,37 +495,46 @@ def leads_workspace(request):
     }
     sort = request.GET.get("sort", "newest")
     leads = leads.order_by(allowed_sorts.get(sort, "-created_at"))
-    today = timezone.localdate()
-    all_leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
+    all_leads = base
     booked = all_leads.filter(status=Lead.Status.BOOKED).count()
     total = all_leads.count()
     summary = [
         {"label": "New Leads", "value": all_leads.filter(status=Lead.Status.NEW).count(), "icon": "bi-person-plus", "note": "Awaiting first contact"},
         {"label": "Follow-ups Due", "value": all_leads.overdue_followups(today).count(), "icon": "bi-clock-history", "note": "Need your attention"},
-        {"label": "Pipeline Value", "value": f"{profile.default_currency} {all_leads.pipeline_value():,.0f}", "icon": "bi-cash-stack", "note": "Open and booked leads"},
-        {"label": "Conversion Rate", "value": f"{(booked / total * 100) if total else 0:.1f}%", "icon": "bi-graph-up-arrow", "note": "Leads moved to booked"},
+        {"label": "Active Pipeline Value", "value": f"{profile.default_currency} {all_leads.exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST]).pipeline_value():,.0f}", "icon": "bi-cash-stack", "note": "Estimated value of open leads"},
+        {"label": "Lead-to-Booking Conversion", "value": f"{(booked / total * 100) if total else 0:.1f}%", "icon": "bi-graph-up-arrow", "note": f"{booked} of {total} unarchived leads booked" if total else "No leads to measure yet"},
     ]
-    stages = [{"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
-               "leads": list(leads.filter(status=key)), "count": leads.filter(status=key).count(),
-               "value": leads.filter(status=key).aggregate(total=Coalesce(Sum("estimated_value"), Value(Decimal("0")), output_field=DecimalField()))["total"]}
-              for key, label in Lead.Status.choices]
+    filtered_leads = list(leads)
+    stage_records = {key: [] for key, _ in Lead.Status.choices}
+    for lead in filtered_leads:
+        stage_records[lead.status].append(lead)
+    stages = []
+    for key, label in Lead.Status.choices:
+        records = stage_records[key]
+        stages.append({"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
+                       "leads": records, "count": len(records),
+                       "value": sum((item.estimated_value or Decimal("0")) for item in records)})
     paginator = Paginator(leads, 10)
     page = paginator.get_page(request.GET.get("page"))
     sources = Lead.objects.for_photographer(profile).exclude(lead_source="").values_list("lead_source", flat=True).distinct().order_by("lead_source")
     event_types = Lead.objects.for_photographer(profile).exclude(event_type="").values_list("event_type", flat=True).distinct().order_by("event_type")
-    tasks_due = ClientTask.objects.filter(photographer=profile, lead__isnull=False, status__in=[ClientTask.Status.OPEN, ClientTask.Status.IN_PROGRESS]).select_related("lead").order_by(F("due_date").asc(nulls_last=True))[:5]
+    tasks_due = ClientTask.objects.filter(photographer=profile, lead__archived_at__isnull=True, status__in=[ClientTask.Status.OPEN, ClientTask.Status.IN_PROGRESS]).select_related("lead").order_by(F("due_date").asc(nulls_last=True), "-priority")[:6]
     recent_activity = ClientActivity.objects.filter(photographer=profile, lead__isnull=False).select_related("lead").order_by("-occurred_at")[:5]
-    source_rows = list(all_leads.exclude(lead_source="").values("lead_source").annotate(count=Count("id")).order_by("-count")[:5])
-    source_total = sum(row["count"] for row in source_rows)
+    source_rows = list(all_leads.exclude(lead_source="").values("lead_source").annotate(
+        count=Count("id"), booked=Count("id", filter=Q(status=Lead.Status.BOOKED)),
+        pipeline_value=Coalesce(Sum("estimated_value", filter=~Q(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])), Value(Decimal("0")), output_field=DecimalField())
+    ).order_by("-booked", "-count")[:5])
     for row in source_rows:
-        row["percent"] = round(row["count"] / source_total * 100) if source_total else 0
+        row["conversion"] = row["booked"] / row["count"] * 100 if row["count"] else 0
     context = _dashboard_context(request, "leads", "Leads")
     context.update({"lead_summary": summary, "lead_stages": stages, "lead_page": page,
                     "lead_sources": sources, "lead_query": query, "selected_status": status,
                     "selected_source": source, "selected_event_type": event_type, "event_types": event_types,
                     "selected_sort": sort, "today": today, "tasks_due": tasks_due,
                     "recent_activity": recent_activity, "source_rows": source_rows,
-                    "lead_status_choices": Lead.Status.choices})
+                    "lead_status_choices": Lead.Status.choices, "result_count": len(filtered_leads),
+                    "selected_follow_up": follow_up, "created_from": created_from, "created_to": created_to,
+                    "terminal": terminal, "has_filters": any([query, status, source, event_type, follow_up, created_from, created_to, terminal == "all"])})
     return render(request, "photographer_workspace/leads.html", context)
 
 
@@ -1609,10 +1649,13 @@ def create_lead_follow_up(request, pk):
 def mark_lead_booked(request, pk):
     profile = request.studio
     lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
-    lead.status, lead.lost_reason = Lead.Status.BOOKED, ""
-    lead.save(update_fields=["status", "lost_reason", "updated_at"])
-    _log_lead(profile, lead, ClientActivity.EventType.LEAD_BOOKED, f"Lead {lead} was marked booked.")
-    messages.success(request, "Lead marked booked.")
+    client, created = lead.convert_to_client()
+    if created:
+        _log_lead(profile, lead, ClientActivity.EventType.LEAD_CONVERTED,
+                  f"Lead {lead} was booked and converted to a client.", client=client)
+        messages.success(request, "Lead booked and converted to a client.")
+    else:
+        messages.info(request, "This booked lead is already linked to a client.")
     return redirect(_lead_destination(request))
 
 
