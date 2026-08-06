@@ -1,0 +1,178 @@
+/* LumisPixel Photographer Workspace design foundations.
+ * Load before photographer_workspace.css so legacy components can migrate
+ * incrementally without changing their current cascade.
+ */
+:root {
+  /* Brand and semantic color */
+  --lp-color-brand: #d70006;
+  --lp-color-brand-hover: #b90005;
+  --lp-color-brand-subtle: #fff1f1;
+  --lp-color-brand-border: #f2b8ba;
+  --lp-color-accent: #5b6472;
+  --lp-color-page: #f7f6f4;
+  --lp-color-surface: #ffffff;
+  --lp-color-surface-elevated: #ffffff;
+  --lp-color-text: #191817;
+  --lp-color-text-secondary: #514b47;
+  --lp-color-text-muted: #746d68;
+  --lp-color-text-disabled: #9c9691;
+  --lp-color-border: #e5e0dc;
+  --lp-color-border-strong: #cfc8c2;
+  --lp-color-success: #18794e;
+  --lp-color-success-subtle: #ecf8f1;
+  --lp-color-warning: #9a6700;
+  --lp-color-warning-subtle: #fff7d6;
+  --lp-color-danger: #b4232a;
+  --lp-color-danger-subtle: #fff0f0;
+  --lp-color-info: #175cd3;
+  --lp-color-info-subtle: #eff6ff;
+
+  /* Existing DM Sans remains the workspace UI face. */
+  --lp-font-sans: "DM Sans", Arial, sans-serif;
+  --lp-type-page-title: clamp(1.75rem, 2.4vw, 2.125rem);
+  --lp-type-section-title: 1.25rem;
+  --lp-type-card-title: 1rem;
+  --lp-type-kpi: clamp(1.875rem, 3vw, 2.25rem);
+  --lp-type-body: 0.9375rem;
+  --lp-type-body-small: 0.8125rem;
+  --lp-type-caption: 0.75rem;
+  --lp-type-label: 0.8125rem;
+  --lp-type-micro: 0.6875rem;
+  --lp-leading-tight: 1.2;
+  --lp-leading-body: 1.55;
+  --lp-leading-caption: 1.4;
+
+  /* Four-pixel spacing scale */
+  --lp-space-1: 0.25rem;
+  --lp-space-2: 0.5rem;
+  --lp-space-3: 0.75rem;
+  --lp-space-4: 1rem;
+  --lp-space-5: 1.25rem;
+  --lp-space-6: 1.5rem;
+  --lp-space-8: 2rem;
+  --lp-space-10: 2.5rem;
+  --lp-space-12: 3rem;
+
+  /* Shape, depth, motion, and layout */
+  --lp-radius-sm: 0.5rem;
+  --lp-radius-md: 0.75rem;
+  --lp-radius-lg: 1rem;
+  --lp-radius-pill: 999px;
+  --lp-shadow-subtle: 0 1px 2px rgba(25, 24, 23, 0.04);
+  --lp-shadow-standard: 0 8px 24px rgba(25, 24, 23, 0.07);
+  --lp-shadow-elevated: 0 16px 40px rgba(25, 24, 23, 0.11);
+  --lp-focus-ring: 0 0 0 3px rgba(215, 0, 6, 0.26);
+  --lp-transition-duration: 180ms;
+  --lp-transition-easing: cubic-bezier(0.2, 0, 0, 1);
+  --lp-container: 1280px;
+  --lp-container-wide: 1480px;
+  --lp-page-gutter: clamp(1rem, 2.5vw, 2rem);
+
+  /* Compatibility aliases used by the existing workspace stylesheet. */
+  --lpw-bg: var(--lp-color-page);
+  --lpw-card: var(--lp-color-surface);
+  --lpw-text: var(--lp-color-text);
+  --lpw-muted: var(--lp-color-text-muted);
+  --lpw-border: var(--lp-color-border);
+  --lpw-accent: var(--lp-color-brand);
+  --lpw-shadow: var(--lp-shadow-standard);
+  --workspace-text-primary: var(--lp-color-text);
+  --workspace-text-secondary: var(--lp-color-text-secondary);
+  --workspace-text-muted: var(--lp-color-text-muted);
+  --workspace-section-title-size: var(--lp-type-section-title);
+  --workspace-card-title-size: var(--lp-type-card-title);
+  --workspace-metric-size: var(--lp-type-kpi);
+  --workspace-section-gap: var(--lp-space-12);
+  --workspace-card-padding: var(--lp-space-6);
+  --lpw-space-page-top: var(--lp-space-8);
+  --lpw-space-page-bottom: var(--lp-space-12);
+  --lpw-space-hero-section: var(--lp-space-10);
+  --lpw-space-section: var(--workspace-section-gap);
+  --lpw-space-section-header: var(--lp-space-4);
+  --lpw-space-grid-gap: var(--lp-space-5);
+}
+
+/* Opt-in dark palette. It does not force a theme based on system preference. */
+[data-workspace-theme="dark"] {
+  --lp-color-page: #121212;
+  --lp-color-surface: #1a1a1a;
+  --lp-color-surface-elevated: #222222;
+  --lp-color-text: #f5f3f1;
+  --lp-color-text-secondary: #c8c2bd;
+  --lp-color-text-muted: #aaa39d;
+  --lp-color-text-disabled: #77716d;
+  --lp-color-border: #343230;
+  --lp-color-border-strong: #4a4643;
+  --lp-color-brand-subtle: #351719;
+  --lp-color-brand-border: #743033;
+}
+
+/* Reusable workspace layout primitives. */
+.lp-container {
+  width: min(100%, var(--lp-container));
+  margin-inline: auto;
+  padding-inline: var(--lp-page-gutter);
+}
+.lp-container--wide { max-width: var(--lp-container-wide); }
+.lp-page-header,
+.lp-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--lp-space-6);
+}
+.lp-page-heading { display: grid; gap: var(--lp-space-2); min-width: 0; }
+.lp-page-title {
+  margin: 0;
+  color: var(--lp-color-text);
+  font: 700 var(--lp-type-page-title)/var(--lp-leading-tight) var(--lp-font-sans);
+  letter-spacing: -0.025em;
+}
+.lp-page-description {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--lp-color-text-secondary);
+  font: 400 var(--lp-type-body)/var(--lp-leading-body) var(--lp-font-sans);
+}
+.lp-header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--lp-space-2); }
+.lp-dashboard-grid,
+.lp-card-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--lp-space-5); }
+.lp-card-grid > * { grid-column: span 4; }
+.lp-content-sidebar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr); gap: var(--lp-space-6); }
+.lp-full-width { grid-column: 1 / -1; width: 100%; }
+
+/* Baseline interaction and accessibility behavior, scoped to the workspace. */
+.lumis-workspace-body :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--lp-color-brand);
+  outline-offset: 2px;
+  box-shadow: var(--lp-focus-ring);
+}
+.lumis-workspace-body :where(button, [role="button"], input:not([type="checkbox"]):not([type="radio"]), select) {
+  min-height: 2.75rem;
+}
+.lumis-workspace-body :where(button, [aria-disabled="true"], :disabled) { touch-action: manipulation; }
+.lumis-workspace-body :where(:disabled, [aria-disabled="true"]) { cursor: not-allowed; opacity: 0.55; }
+
+@media (max-width: 860px) {
+  .lp-page-header,
+  .lp-section-header { align-items: flex-start; flex-direction: column; }
+  .lp-header-actions { justify-content: flex-start; width: 100%; }
+  .lp-content-sidebar { grid-template-columns: 1fr; }
+  .lp-card-grid > * { grid-column: span 6; }
+}
+@media (max-width: 620px) {
+  .lp-dashboard-grid,
+  .lp-card-grid { grid-template-columns: 1fr; gap: var(--lp-space-4); }
+  .lp-card-grid > * { grid-column: auto; }
+  .lp-header-actions > * { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lumis-workspace-body *,
+  .lumis-workspace-body *::before,
+  .lumis-workspace-body *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
