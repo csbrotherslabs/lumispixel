@@ -12,17 +12,29 @@
   --lp-color-page: #f7f6f4;
   --lp-color-surface: #ffffff;
   --lp-color-surface-elevated: #ffffff;
-  --lp-color-text: #191817;
-  --lp-color-text-secondary: #514b47;
-  --lp-color-text-muted: #746d68;
-  --lp-color-text-disabled: #9c9691;
+  /* Semantic foreground roles. Components should consume these names; the
+   * --lp-color-text* properties below remain compatibility aliases. */
+  --lp-text-primary: #191817;
+  --lp-text-secondary: #514b47;
+  --lp-text-muted: #6f6863;
+  --lp-text-subtle: #756e69;
+  --lp-text-disabled: #756e69;
+  --lp-text-inverse: #ffffff;
+  --lp-text-brand: #d70006;
+  --lp-text-success: #18794e;
+  --lp-text-warning: #8a5c00;
+  --lp-text-danger: #b4232a;
+  --lp-color-text: var(--lp-text-primary);
+  --lp-color-text-secondary: var(--lp-text-secondary);
+  --lp-color-text-muted: var(--lp-text-muted);
+  --lp-color-text-disabled: var(--lp-text-disabled);
   --lp-color-border: #e5e0dc;
   --lp-color-border-strong: #cfc8c2;
-  --lp-color-success: #18794e;
+  --lp-color-success: var(--lp-text-success);
   --lp-color-success-subtle: #ecf8f1;
-  --lp-color-warning: #9a6700;
+  --lp-color-warning: var(--lp-text-warning);
   --lp-color-warning-subtle: #fff7d6;
-  --lp-color-danger: #b4232a;
+  --lp-color-danger: var(--lp-text-danger);
   --lp-color-danger-subtle: #fff0f0;
   --lp-color-info: #175cd3;
   --lp-color-info-subtle: #eff6ff;
@@ -97,14 +109,42 @@
   --lp-color-page: #121212;
   --lp-color-surface: #1a1a1a;
   --lp-color-surface-elevated: #222222;
-  --lp-color-text: #f5f3f1;
-  --lp-color-text-secondary: #c8c2bd;
-  --lp-color-text-muted: #aaa39d;
-  --lp-color-text-disabled: #77716d;
+  --lp-text-primary: #f5f3f1;
+  --lp-text-secondary: #d1cbc6;
+  --lp-text-muted: #bbb4ae;
+  --lp-text-subtle: #aaa39d;
+  --lp-text-disabled: #aaa39d;
+  --lp-text-inverse: #ffffff;
+  --lp-text-brand: #ff7478;
+  --lp-text-success: #65d6a0;
+  --lp-text-warning: #f1c75b;
+  --lp-text-danger: #ff8d91;
   --lp-color-border: #343230;
   --lp-color-border-strong: #4a4643;
   --lp-color-brand-subtle: #351719;
   --lp-color-brand-border: #743033;
+}
+
+/* Public-site CSS loaded ahead of this file assigns white to every heading.
+ * Establish the authenticated workspace's semantic foreground context here so
+ * unclassed headings and copy cannot inherit marketing-theme colors onto light
+ * surfaces. Component rules can then opt into a more specific semantic role. */
+.lumis-workspace-body {
+  color: var(--lp-text-primary);
+}
+.lumis-workspace-body :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--lp-text-primary);
+}
+.lumis-workspace-body :where(input, select, textarea, button) {
+  color: var(--lp-text-primary);
+}
+.lumis-workspace-body :where(input, textarea)::placeholder {
+  color: var(--lp-text-subtle);
+  opacity: 1;
+}
+.lumis-workspace-body :where(input, select, textarea, button):disabled,
+.lumis-workspace-body :where([aria-disabled="true"]) {
+  color: var(--lp-text-disabled);
 }
 
 /* Reusable workspace layout primitives. */
@@ -184,13 +224,13 @@
 .lp-button--sm { min-height: 2.25rem !important; padding: var(--lp-space-2) var(--lp-space-3); }
 .lp-button--md { min-height: 2.75rem; padding: var(--lp-space-3) var(--lp-space-4); }
 .lp-button--lg { min-height: 3.25rem; padding: var(--lp-space-4) var(--lp-space-6); font-size: var(--lp-type-body); }
-.lp-button--primary { background: var(--lp-color-brand); color: #fff; }
-.lp-button--primary:hover { background: var(--lp-color-brand-hover); color: #fff; }
+.lp-button--primary { background: var(--lp-color-brand); color: var(--lp-text-inverse); }
+.lp-button--primary:hover { background: var(--lp-color-brand-hover); color: var(--lp-text-inverse); }
 .lp-button--secondary { background: var(--lp-color-text); color: var(--lp-color-surface); }
 .lp-button--outline { background: transparent; border-color: var(--lp-color-border-strong); color: var(--lp-color-text); }
 .lp-button--outline:hover, .lp-button--subtle:hover { border-color: var(--lp-color-brand-border); color: var(--lp-color-brand); }
 .lp-button--subtle { background: var(--lp-color-brand-subtle); color: var(--lp-color-brand); }
-.lp-button--destructive { background: var(--lp-color-danger); color: #fff; }
+.lp-button--destructive { background: var(--lp-color-danger); color: var(--lp-text-inverse); }
 .lp-button--ghost { background: transparent; color: var(--lp-color-text-secondary); padding-inline: var(--lp-space-2); }
 .lp-button--ghost:hover { background: var(--lp-color-page); color: var(--lp-color-text); }
 .lp-button--icon { background: transparent; border-color: var(--lp-color-border); color: var(--lp-color-text); padding: 0; width: 2.75rem; }

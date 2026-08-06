@@ -1,3 +1,4 @@
+from django.contrib.staticfiles import finders
 from django.test import TestCase
 from django.utils import timezone
 
@@ -71,3 +72,23 @@ class CrmOverviewTests(TestCase):
         overview = build_crm_overview(access_for(user))
 
         self.assertEqual([session.pk for session in overview["upcoming_sessions"]], [own.pk])
+
+    def test_workspace_semantic_text_tokens_guard_public_theme_inheritance(self):
+        css_path = finders.find("css/workspace_design_system.css")
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding="utf-8") as stylesheet:
+            css = stylesheet.read()
+
+        for token in (
+            "--lp-text-primary:", "--lp-text-secondary:", "--lp-text-muted:",
+            "--lp-text-subtle:", "--lp-text-disabled:", "--lp-text-inverse:",
+            "--lp-text-brand:", "--lp-text-success:", "--lp-text-warning:",
+            "--lp-text-danger:",
+        ):
+            self.assertIn(token, css)
+        self.assertIn(
+            ".lumis-workspace-body :where(h1, h2, h3, h4, h5, h6)", css
+        )
+        self.assertIn(
+            ".lumis-workspace-body :where(input, textarea)::placeholder", css
+        )
