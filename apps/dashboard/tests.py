@@ -17,6 +17,9 @@ from apps.dashboard.views import WORKSPACE_MODULES
 from apps.dashboard.analytics_overview import _analytics_insights, _short_date
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
 from django.core.exceptions import PermissionDenied
+from django.db import DatabaseError, connection
+from django.test.utils import CaptureQueriesContext
+from unittest.mock import patch
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -460,9 +463,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Good ")
         self.assertContains(response, "Alex.")
         self.assertContains(response, "Your schedule is clear")
-        self.assertContains(response, "Revenue this month")
-        self.assertContains(response, "Galleries awaiting delivery")
-        self.assertContains(response, "Upcoming bookings")
+        self.assertNotContains(response, "Business key performance indicators")
         self.assertContains(response, "Upcoming schedule")
         self.assertContains(response, "Recent activity")
         self.assertContains(response, "Gallery delivery queue")
@@ -470,7 +471,6 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Gallery storage")
         self.assertNotContains(response, "Your Website Preview")
         self.assertNotContains(response, "Help and Resources")
-        self.assertContains(response, "0")
         self.assertContains(response, f'href="{reverse("core:index")}" aria-label="LumisPixel home"')
 
     def test_missing_images_and_invalid_theme_fallback_do_not_error(self):
@@ -1318,3 +1318,28 @@ class DashboardInformationArchitectureTests(TestCase):
         self.assertContains(response, "No performance history yet")
         self.assertNotContains(response, "Needs attention")
         self.assertNotContains(response, "% from last month")
+        self.assertNotContains(response, "Business key performance indicators")
+        self.assertEqual(response.content.count(b"<h1"), 1)
+
+    def test_dashboard_aggregation_failure_is_safe_and_retryable(self):
+        owner, _ = self.make_studio("dashboard-error@example.com", "dashboard-error")
+        self.client.force_login(owner)
+        with patch("apps.dashboard.views.build_dashboard", side_effect=DatabaseError("private database detail")):
+            response = self.client.get(reverse("photographer_workspace:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard data could not be loaded")
+        self.assertContains(response, "Retry")
+        self.assertNotContains(response, "private database detail")
+        self.assertNotContains(response, "Gallery storage")
+
+    def test_dashboard_query_count_is_bounded_as_history_grows(self):
+        owner, studio = self.make_studio("dashboard-query@example.com", "dashboard-query")
+        client = Client.objects.create(photographer=studio, first_name="Query", last_name="Client")
+        for day in range(12):
+            ClientSession.objects.create(photographer=studio, client=client, session_type="Portrait", starts_at=timezone.now() + timedelta(days=day + 1))
+        self.client.force_login(owner)
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(reverse("photographer_workspace:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(queries), 35)
+        self.assertContains(response, "Query Client", count=5)

@@ -48,7 +48,9 @@ def build_dashboard(access, *, now=None):
     sessions = _sessions(access)
     galleries = _galleries(access)
 
-    upcoming = sessions.filter(starts_at__gte=now).exclude(status=ClientSession.Status.CANCELLED)
+    upcoming = sessions.filter(starts_at__gte=now).exclude(
+        status=ClientSession.Status.CANCELLED
+    ).order_by("starts_at", "pk")
     today_sessions = upcoming.filter(starts_at__date=today)
     queue = galleries.filter(status__in=OPEN_GALLERY_STATES)
 
@@ -67,8 +69,12 @@ def build_dashboard(access, *, now=None):
         outstanding = open_invoices.aggregate(value=Coalesce(Sum("balance"), Value(Decimal("0")), output_field=MONEY))["value"]
         overdue_invoices = open_invoices.filter(due_date__lt=today, balance__gt=0).count()
 
-    current_bookings = sessions.filter(starts_at__date__gte=month_start, starts_at__date__lte=today).exclude(status=ClientSession.Status.CANCELLED).count()
-    previous_bookings = sessions.filter(starts_at__date__range=(previous_start, previous_end)).exclude(status=ClientSession.Status.CANCELLED).count()
+    booking_totals = sessions.exclude(status=ClientSession.Status.CANCELLED).aggregate(
+        current=Count("pk", filter=Q(starts_at__date__range=(month_start, today))),
+        previous=Count("pk", filter=Q(starts_at__date__range=(previous_start, previous_end))),
+    )
+    current_bookings = booking_totals["current"]
+    previous_bookings = booking_totals["previous"]
     awaiting = queue.count()
 
     def comparison(current, previous, noun=""):
@@ -121,8 +127,8 @@ def build_dashboard(access, *, now=None):
         assigned_client_ids = scope_assigned(Client.objects.all(), access).values("pk")
         client_events = client_events.filter(client_id__in=assigned_client_ids)
         gallery_events = gallery_events.filter(gallery_id__in=galleries.values("pk"))
-    client_events = client_events[:6]
-    gallery_events = gallery_events[:6]
+    client_events = client_events.order_by("-occurred_at")[:6]
+    gallery_events = gallery_events.order_by("-created_at")[:6]
     for event in client_events:
         activity.append({"description": event.get_event_type_display(), "entity": str(event.client or event.lead or ""), "at": event.occurred_at,
                          "url": reverse("photographer_workspace:client_detail", args=[event.client_id]) if event.client_id else reverse("photographer_workspace:leads")})
@@ -131,14 +137,32 @@ def build_dashboard(access, *, now=None):
                          "url": reverse("photographer_workspace:gallery_workspace", args=[event.gallery_id])})
     activity = sorted(activity, key=lambda item: item["at"], reverse=True)[:6]
 
+    chart_start_month = today.replace(day=1)
+    for _ in range(5):
+        chart_start_month = (chart_start_month - timedelta(days=1)).replace(day=1)
+    booking_history = {
+        row["month"].date(): row["total"]
+        for row in sessions.exclude(status=ClientSession.Status.CANCELLED)
+        .filter(starts_at__date__gte=chart_start_month)
+        .annotate(month=TruncMonth("starts_at"))
+        .values("month").annotate(total=Count("pk"))
+    }
+    revenue_history = {}
+    if financial:
+        revenue_history = {
+            row["month"].date(): row["total"]
+            for row in payments.filter(paid_at__date__gte=chart_start_month)
+            .annotate(month=TruncMonth("paid_at"))
+            .values("month").annotate(total=Sum("amount"))
+        }
+
     chart = []
     for offset in range(5, -1, -1):
         year = today.year + (today.month - 1 - offset) // 12
         month = (today.month - 1 - offset) % 12 + 1
-        count = sessions.filter(starts_at__year=year, starts_at__month=month).exclude(status=ClientSession.Status.CANCELLED).count()
-        amount = None
-        if financial:
-            amount = payments.filter(paid_at__year=year, paid_at__month=month).aggregate(value=Coalesce(Sum("amount"), Value(Decimal("0")), output_field=MONEY))["value"]
+        month_key = today.replace(year=year, month=month, day=1)
+        count = booking_history.get(month_key, 0)
+        amount = revenue_history.get(month_key, Decimal("0")) if financial else None
         chart.append({"label": month_abbr[month], "bookings": count, "revenue": amount})
     max_bookings = max([point["bookings"] for point in chart] or [0])
     max_revenue = max([point["revenue"] or 0 for point in chart] or [0])
@@ -153,11 +177,17 @@ def build_dashboard(access, *, now=None):
         insight = {"label": "Business Insight", "title": f"{most_booked['session_type']} is your most-booked service",
                    "body": f"It appears in {most_booked['total']} saved bookings. Use this pattern when planning availability and packages."}
 
+    today_count = today_sessions.count()
     summary_parts = []
-    if today_sessions.count(): summary_parts.append(f"{today_sessions.count()} session{'s' if today_sessions.count() != 1 else ''} today")
+    if today_count: summary_parts.append(f"{today_count} session{'s' if today_count != 1 else ''} today")
     if awaiting: summary_parts.append(f"{awaiting} galler{'ies' if awaiting != 1 else 'y'} awaiting delivery")
     day_summary = "You have " + " and ".join(summary_parts) + "." if summary_parts else "Your schedule is clear; review the next steps to keep your workspace moving."
+    has_business_data = bool(schedule or gallery_queue or activity or attentions or revenue or outstanding)
+    # A new workspace gets one guided starting point instead of four zero-value
+    # cards. Low-data workspaces retain the complete, source-backed KPI row.
+    if not has_business_data:
+        kpis = []
     return {"today": today, "day_summary": day_summary, "attention_items": attentions[:3], "attention_total": len(attentions),
             "kpis": kpis, "schedule_items": schedule, "gallery_queue": gallery_queue, "activity_items": activity,
             "performance_chart": chart, "can_view_financials": financial, "storage_bytes": storage, "insight": insight,
-            "has_business_data": sessions.exists() or galleries.exists() or (financial and bool(revenue or outstanding))}
+            "has_business_data": has_business_data}
