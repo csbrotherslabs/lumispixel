@@ -48,6 +48,7 @@ from apps.dashboard.financial_actions import add_credit, issue_refund, record_pa
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.dashboard_data import build_dashboard
+from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    StudioMembership, StudioMembershipEvent)
 from apps.dashboard.access import ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
@@ -317,40 +318,8 @@ def photographer_dashboard(request):
 @photographer_workspace_required
 @require_GET
 def clients_crm(request):
-    profile = request.studio
-    today = timezone.localdate()
-    now = timezone.now()
-    leads = Lead.objects.for_photographer(profile)
-    clients = Client.objects.for_photographer(profile)
-    pipeline_counts = {row["status"]: row["count"] for row in leads.values("status").annotate(count=Count("id"))}
-    pipeline = [
-        {"key": key, "label": label, "count": pipeline_counts.get(key, 0),
-         "url": f"{reverse('photographer_workspace:leads')}?status={key}"}
-        for key, label in Lead.Status.choices
-    ]
-    outstanding = clients.outstanding_balances().aggregate(
-        total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    sessions = clients.upcoming_sessions(now).select_related("client")
-    metrics = [
-        ("Total Leads", leads.count(), "bi-person-plus"),
-        ("Active Clients", clients.active().count(), "bi-people"),
-        ("New Inquiries", leads.filter(created_at__date__gte=today - timezone.timedelta(days=30)).count(), "bi-envelope-open"),
-        ("Awaiting Response", leads.filter(status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]).count(), "bi-reply"),
-        ("Upcoming Sessions", sessions.count(), "bi-calendar-event"),
-        ("Outstanding Balance", f"{profile.default_currency} {outstanding:,.2f}", "bi-wallet2"),
-    ]
-    context = _dashboard_context(request, "crm", "Clients")
-    context.update({
-        "crm_metrics": [{"label": label, "value": value, "icon": icon} for label, value, icon in metrics],
-        "pipeline": pipeline,
-        "recent_leads": leads.order_by("-created_at")[:8],
-        "upcoming_sessions": sessions.order_by("starts_at")[:6],
-        "tasks": ClientTask.objects.for_photographer(profile).exclude(
-            status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]
-        ).select_related("client", "lead").order_by(F("due_date").asc(nulls_last=True), "-created_at")[:7],
-        "recent_activity": clients.recent_activity().select_related("client", "lead")[:8],
-    })
+    context = _dashboard_context(request, "crm", "Client CRM")
+    context.update(build_crm_overview(request.studio_access))
     return render(request, "photographer_workspace/clients_crm.html", context)
 
 

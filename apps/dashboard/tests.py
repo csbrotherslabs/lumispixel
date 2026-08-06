@@ -991,10 +991,10 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:crm"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Manage leads, clients, tasks, and upcoming activity.")
+        self.assertContains(response, "Manage inquiries, relationships, consultations, and follow-ups from one place.")
         self.assertContains(response, "Visible")
         self.assertNotContains(response, "Private")
-        self.assertContains(response, "USD 375.00")
+        self.assertContains(response, "Active Leads")
         self.assertContains(response, "?status=new")
 
     def test_active_navigation_item_is_correct(self):
