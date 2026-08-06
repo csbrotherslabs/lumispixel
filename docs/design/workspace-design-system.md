@@ -19,11 +19,14 @@ This document is the implementation reference for authenticated Photographer Wor
 | Brand / hover / subtle / border | `--lp-color-brand`, `--lp-color-brand-hover`, `--lp-color-brand-subtle`, `--lp-color-brand-border` |
 | Secondary accent | `--lp-color-accent` |
 | Page / surface / elevated surface | `--lp-color-page`, `--lp-color-surface`, `--lp-color-surface-elevated` |
-| Primary / secondary / muted / disabled text | `--lp-color-text`, `--lp-color-text-secondary`, `--lp-color-text-muted`, `--lp-color-text-disabled` |
+| Semantic text | `--lp-text-primary`, `--lp-text-secondary`, `--lp-text-muted`, `--lp-text-subtle`, `--lp-text-disabled`, `--lp-text-inverse` |
+| Semantic brand and status text | `--lp-text-brand`, `--lp-text-success`, `--lp-text-warning`, `--lp-text-danger` |
 | Default / strong border | `--lp-color-border`, `--lp-color-border-strong` |
 | Status | `--lp-color-success`, `--lp-color-warning`, `--lp-color-danger`, `--lp-color-info` plus each `-subtle` partner |
 
 Brand red is an attention signal: use it for the primary action, active navigation or filter state, links, focus, and small highlights. Do not use it as a large page surface, decorate every icon with it, or add gradients merely to make a section feel branded. Status colors describe status only and always require a text label or icon.
+
+Text components consume the `--lp-text-*` roles. The older `--lp-color-text*` properties are compatibility aliases only. Primary is for headings and body copy; secondary is for supporting copy; muted is for metadata; subtle is for placeholders and nonessential hints; disabled is only for unavailable controls; inverse is only for text on a contrasting filled surface. Brand and status text tokens must be used only with a surface on which that foreground has sufficient contrast. The workspace foundation deliberately resets heading and form-control foregrounds because the earlier-loaded public-site theme assigns white to unscoped headings.
 
 ### Typography
 
