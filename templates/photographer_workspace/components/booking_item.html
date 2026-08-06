@@ -1,0 +1,1 @@
+<a href="{{ item.url }}"><time datetime="{{ item.date|date:'c' }}">{{ item.date|date:"M j" }}<small>{{ item.date|time:"g:i A" }}</small></time><span><strong>{{ item.client }}</strong><small>{{ item.type }} · {{ item.location }}</small></span>{% include "photographer_workspace/components/badge.html" with label=item.status variant="neutral" only %}</a>
