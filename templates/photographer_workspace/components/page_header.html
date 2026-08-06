@@ -1,0 +1,9 @@
+<header class="lpw-command-header lpw-dashboard-header lp-page-header">
+  <div class="lp-page-heading">
+    {% if greeting %}<p class="lpw-command-header__greeting">{{ greeting }}</p>{% endif %}
+    {% if not visually_hidden_title %}<h1 id="workspace-page-title" class="lp-page-title">{{ title }}</h1>{% endif %}
+    {% if description %}<p class="lpw-dashboard-summary lp-page-description">{{ description }}</p>{% endif %}
+    {% if date %}<time datetime="{{ date|date:'Y-m-d' }}">{{ date|date:"l, F j, Y" }}</time>{% endif %}
+  </div>
+  {% if primary_url or secondary_url %}{% include "photographer_workspace/components/action_group.html" with primary_url=primary_url primary_label=primary_label primary_icon=primary_icon secondary_url=secondary_url secondary_label=secondary_label secondary_icon=secondary_icon only %}{% endif %}
+</header>

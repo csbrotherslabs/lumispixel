@@ -5,6 +5,11 @@
   var tooltip;
   var tooltipOwner;
 
+  document.querySelectorAll('[data-lp-bar-height]').forEach(function (bar) {
+    var height = Number(bar.getAttribute('data-lp-bar-height'));
+    bar.style.setProperty('--lp-data-height', Math.max(0, Math.min(100, height)) + '%');
+  });
+
   function hideTooltip() {
     if (tooltip) tooltip.remove();
     if (tooltipOwner) tooltipOwner.removeAttribute('aria-describedby');

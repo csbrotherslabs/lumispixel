@@ -152,3 +152,7 @@ Good incremental migration candidates are the legacy dashboard metric, workspace
 - Several feature areas define local visual systems (notably growth, CRM, gallery, financial, and team screens), and some templates contain inline custom-property values. These should be migrated incrementally rather than changed globally in Phase One.
 - Existing components mix square controls and 8–20px card radii, and use several near-identical reds and neutral palettes. Compatibility aliases preserve current rendering while future work converges on the new tokens.
 - The workspace has no active theme preference today. The opt-in dark token set preserves a migration path but existing hardcoded component colors require an audit before dark mode can be enabled product-wide.
+
+## Canonical page reference
+
+The normative page anatomy, complete component contracts, visual-governance rules, and page-migration checklist live in [`workspace-page-standard.md`](workspace-page-standard.md). The authenticated dashboard is the reference implementation; compatibility includes named `dashboard_*` preserve its stable visual presentation while exposing repeatable boundaries for later tokenized migration.
