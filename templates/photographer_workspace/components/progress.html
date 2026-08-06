@@ -1,0 +1,1 @@
+<div class="lp-progress" role="group" aria-label="{{ label }}"><div class="lp-progress__header"><span>{{ label }}</span><strong>{% if value_text %}{{ value_text }}{% else %}{{ value }}%{% endif %}</strong></div><progress max="{{ max|default:100 }}" value="{{ value }}" aria-label="{{ label }}">{{ value }}%</progress>{% if description %}<p>{{ description }}</p>{% endif %}</div>

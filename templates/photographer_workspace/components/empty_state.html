@@ -1,0 +1,4 @@
+<div class="lp-empty-state{% if compact %} lp-empty-state--compact{% endif %}">
+  {% if icon %}<div class="lp-empty-state__icon"><i class="bi {{ icon }}" aria-hidden="true"></i></div>{% endif %}<h3>{{ title }}</h3><p>{{ description }}</p>
+  {% if primary_url or secondary_url %}<div class="lp-empty-state__actions">{% if primary_url %}<a class="lp-button lp-button--primary lp-button--md" href="{{ primary_url }}">{{ primary_label }}</a>{% endif %}{% if secondary_url %}<a class="lp-button lp-button--ghost lp-button--md" href="{{ secondary_url }}">{{ secondary_label }}</a>{% endif %}</div>{% endif %}
+</div>
