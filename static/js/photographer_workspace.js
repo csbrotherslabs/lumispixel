@@ -243,9 +243,18 @@
   });
 
   let draggedLead = null;
+  const leadStatus = document.querySelector('[data-lead-status]');
   document.querySelectorAll('[data-lead-id]').forEach(function (card) {
-    card.addEventListener('dragstart', function () { draggedLead = card; card.classList.add('is-dragging'); });
-    card.addEventListener('dragend', function () { card.classList.remove('is-dragging'); draggedLead = null; });
+    card.addEventListener('dragstart', function () {
+      draggedLead = card;
+      card.classList.add('is-dragging');
+      if (leadStatus) leadStatus.textContent = 'Moving lead. Choose a pipeline stage.';
+    });
+    card.addEventListener('dragend', function () {
+      card.classList.remove('is-dragging');
+      draggedLead = null;
+      document.querySelectorAll('[data-lead-dropzone]').forEach(function (zone) { zone.classList.remove('is-drag-over'); });
+    });
   });
   document.querySelectorAll('[data-lead-dropzone]').forEach(function (zone) {
     zone.addEventListener('dragover', function (event) { event.preventDefault(); zone.classList.add('is-drag-over'); });
@@ -255,7 +264,19 @@
       if (!draggedLead) return;
       const status = zone.closest('[data-stage]').dataset.stage;
       const select = draggedLead.querySelector('[data-stage-form] select');
-      if (select && select.value !== status) { select.value = status; select.form.submit(); }
+      if (!select) {
+        if (leadStatus) leadStatus.textContent = 'This lead cannot be moved from its terminal stage.';
+        return;
+      }
+      if (select.value === status) {
+        if (leadStatus) leadStatus.textContent = 'Lead is already in this stage.';
+        return;
+      }
+      const stageName = zone.closest('[data-stage]').querySelector('h2').textContent;
+      draggedLead.setAttribute('aria-busy', 'true');
+      if (leadStatus) leadStatus.textContent = 'Saving lead in ' + stageName + '…';
+      select.value = status;
+      select.form.requestSubmit();
     });
   });
 
