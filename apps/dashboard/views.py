@@ -12,7 +12,7 @@ from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import FileResponse, HttpResponse, JsonResponse
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
@@ -288,7 +288,20 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
 @require_GET
 def photographer_dashboard(request):
     context = _dashboard_context(request)
-    context.update(build_dashboard(request.studio_access))
+    try:
+        context.update(build_dashboard(request.studio_access))
+    except DatabaseError:
+        # Contain aggregation outages and never expose exception details or
+        # synthetic business values in the response.
+        context.update({
+            "dashboard_error": True,
+            "day_summary": "Your workspace summary is temporarily unavailable.",
+            "today": timezone.localdate(),
+            "attention_items": [], "kpis": [], "schedule_items": [],
+            "gallery_queue": [], "activity_items": [], "performance_chart": [],
+            "can_view_financials": request.studio_access.allows("financials"),
+            "storage_bytes": 0, "insight": None, "has_business_data": False,
+        })
     context["quick_actions"] = [
         {"label": "Upload Photos", "icon": "bi-cloud-arrow-up", "url": reverse("photographer_workspace:galleries"), "emphasis": True},
         {"label": "Create Gallery", "icon": "bi-images", "url": reverse("photographer_workspace:create_gallery"), "emphasis": True},
