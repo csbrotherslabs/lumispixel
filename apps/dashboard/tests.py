@@ -1203,6 +1203,12 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-lead-view="board"')
         self.assertContains(response, 'data-stage="proposal_sent"')
 
+        self.assertContains(
+            response,
+            f'<a href="{reverse("photographer_workspace:add_lead")}" class="lp-button lp-button--primary lp-button--md">',
+        )
+        self.assertContains(response, '<span>Add Lead</span>', html=True)
+
     def test_lead_filters_followups_dates_and_source_aggregations_are_real(self):
         user, profile = self.make_photographer(True, email="filter-leads@example.com", slug="filter-leads")
         today = timezone.localdate()
