@@ -1,0 +1,5 @@
+<article class="lp-card lp-card--{{ variant|default:'standard' }}{% if loading %} is-loading{% endif %}"{% if interactive_label %} tabindex="0" aria-label="{{ interactive_label }}"{% endif %}>
+  {% if title or description or header_action %}<header class="lp-card__header"><div>{% if title %}<h3>{{ title }}</h3>{% endif %}{% if description %}<p>{{ description }}</p>{% endif %}</div>{% if header_action %}<div class="lp-card__action">{{ header_action }}</div>{% endif %}</header>{% endif %}
+  <div class="lp-card__body">{% if loading %}{% include "photographer_workspace/components/skeleton.html" with variant="card" %}{% elif empty_title %}{% include "photographer_workspace/components/empty_state.html" with title=empty_title description=empty_description compact=True %}{% else %}{{ body }}{% endif %}</div>
+  {% if footer %}<footer class="lp-card__footer">{{ footer }}</footer>{% endif %}
+</article>

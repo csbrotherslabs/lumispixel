@@ -67,6 +67,84 @@ The scale is named by its pixel multiple: `--lp-space-1` (4px), `-2` (8px), `-3`
 4. Use Bootstrap utilities only when they express the tokenized intent without overrides. Bootstrap 5, Bootstrap Icons, and the existing vanilla JavaScript are the supported stack; do not introduce another framework for presentation.
 5. Keep feature selectors shallow and component-scoped. Avoid `!important`, element-wide overrides, arbitrary pixels, and styling coupled to backend identifiers.
 
+## Shared components
+
+The reusable includes live in `templates/photographer_workspace/components/`, their token-only presentation lives in `workspace_design_system.css`, and overlay behavior lives in `workspace_components.js`. Includes receive display data from the caller; they contain no dashboard values or business decisions. Django's `{% include ... with ... %}` is the supported composition API. For rich body/legend/menu slots, prepare safe rendered markup in a parent include or use the component classes directly around semantic template markup.
+
+| Component | Include | Supported options |
+| --- | --- | --- |
+| Button | `button.html` | `primary`, `secondary`, `outline`, `subtle`, `destructive`, `ghost`, and `icon`; `sm`, `md`, `lg`; icons, loading, disabled, full width |
+| Card | `card.html` | `standard`, `elevated`, `interactive`, `muted`, `alert`, `flush`; header, action, body, footer, loading, empty |
+| KPI | `kpi_card.html` | icon, value, increase/decrease/neutral comparison, sparkline slot, footer, loading, unavailable |
+| Badge | `badge.html` | `neutral`, `brand`, `success`, `warning`, `danger`, `info`; dot and icon |
+| Empty state | `empty_state.html` | full/compact, icon, explanation, primary and secondary actions |
+| Section header | `section_header.html` | title, description, badge, action |
+| Quick action | `quick_action.html` | icon, title, supporting copy, shortcut/metadata, disabled state |
+| Activity item | `activity_item.html` | icon/avatar, description, entity, semantic time, status, destination; group items beneath a dated heading in the caller |
+| Progress | `progress.html` | accessible native progress value, maximum, display value, description |
+| Chart | `chart_container.html` | title, description, controls, legend, body, loading, empty, insight |
+| Skeleton | `skeleton.html` | `kpi`, `list`, `activity`, `chart`, `card` |
+| Dropdown | `dropdown_menu.html` | trigger label/tooltip and menu-items slot; Escape and arrow/Home/End navigation |
+| Tooltip | `data-tooltip` attribute | hover and focus activation, viewport-aware placement, automatic accessible description |
+
+### Examples
+
+```django
+{% include "photographer_workspace/components/button.html" with variant="primary" label="Create gallery" leading_icon="bi-plus-lg" href=create_url %}
+{% include "photographer_workspace/components/kpi_card.html" with label="Outstanding payments" value=outstanding_total icon="bi-receipt" change=payment_change trend="decrease" comparison="from last month" %}
+{% include "photographer_workspace/components/badge.html" with label="Processing" variant="info" dot=True %}
+{% include "photographer_workspace/components/progress.html" with label="Storage used" value=storage_percent value_text=storage_display %}
+{% include "photographer_workspace/components/empty_state.html" with icon="bi-calendar2-plus" title="No bookings yet" description="Create your first booking to reserve time and keep the client informed." primary_url=create_booking_url primary_label="Create booking" %}
+```
+
+Activity groups should use a heading and list around the repeated include:
+
+```django
+<section aria-labelledby="activity-today"><h3 id="activity-today">Today</h3><ol class="lp-activity-list">
+  {% for event in today_events %}{% include "photographer_workspace/components/activity_item.html" with description=event.description entity=event.entity timestamp=event.timestamp datetime=event.iso_time icon=event.icon %}{% endfor %}
+</ol></section>
+```
+
+Dropdown item markup must use menu semantics and clearly label destructive actions:
+
+```django
+<a role="menuitem" href="{{ edit_url }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit gallery</a>
+<button role="menuitem" class="is-destructive" type="submit"><i class="bi bi-trash" aria-hidden="true"></i>Delete gallery</button>
+```
+
+### Correct and incorrect usage
+
+- **Do** place one primary button beside supporting outline, subtle, or ghost actions. **Do not** render a row of equally dominant red actions or add gradients.
+- **Do** give icon buttons `accessible_label` and a concise tooltip. **Do not** rely on an icon's visual meaning or Bootstrap class name as its label.
+- **Do** let cards group a meaningful unit and use flush cards for charts/tables. **Do not** nest each sentence, control, or statistic in another card.
+- **Do** pass human-readable status text alongside the semantic badge variant. **Do not** expose a status as an unlabelled colored dot.
+- **Do** explain why a collection is empty and offer the most useful next step. **Do not** use “No data” as the complete empty state.
+- **Do** use a real `href` for navigation and a `button` for an in-page action. **Do not** attach click behavior to a non-interactive card or disabled link.
+- **Do** provide the chart's textual title, useful empty state, and an accessible summary/table when the graphic contains unique information. **Do not** make canvas color the only way to read a series.
+- **Do** show skeletons only while content is genuinely pending. **Do not** use them as permanent decoration or announce every skeleton shape.
+
+### Accessibility requirements
+
+- Icon-only buttons require `accessible_label`; their tooltip repeats or clarifies it. Decorative icons remain `aria-hidden`.
+- Loading buttons expose `aria-busy`, preserve their dimensions, and include screen-reader loading text. Disabled links use `aria-disabled` and leave the tab order; JavaScript callers must also suppress activation when applicable.
+- Status badges always include visible text. Trends include arrow/dash shape plus a value, while progress uses the native `progress` element with a visible numeric value.
+- Dropdown triggers expose `aria-haspopup`, `aria-expanded`, and a label. Menus restore focus on Escape, close on outside click, and support arrow, Home, and End keys. Callers give every item `role="menuitem"`.
+- Tooltips supplement rather than replace accessible names, appear on both focus and hover, and disappear on blur, pointer exit, scroll, or resize.
+- Skeleton shapes are hidden from assistive technology while a single “Loading content” label remains available. Motion is disabled under reduced-motion preferences.
+
+### Dashboard adoption guidance
+
+The next dashboard pass should compose KPI includes in the existing responsive card grid, follow with a restrained quick-action row, then use chart/card containers for analytics and the activity include inside date-grouped lists. Use an actionable empty state wherever a dashboard collection has no records and a skeleton matching the final component while asynchronous content loads. Preserve one dominant page-level primary action; secondary module actions belong in section headers. Do not copy the include markup into the dashboard.
+
+Good incremental migration candidates are the legacy dashboard metric, workspace-card, checklist, and empty-state includes; analytics KPI and insight cards; financial metric and recent-activity partials; gallery status chips and dashboard cards; and the top-bar/profile action menus. Migrate each feature when it is already being changed rather than globally aliasing every historical class.
+
+### Guidance for future Codex work
+
+1. Import these includes before creating a feature-local equivalent, and expand an existing component API only for a repeatable product need.
+2. Pass view-provided data through the include; never query, calculate financial values, or encode permissions in a presentation component.
+3. Keep new states tokenized and add light/dark semantic token pairs before adding a color. Test mouse, keyboard, narrow viewport, long translated copy, empty, loading, disabled, and error states.
+4. When migrating old markup, retain compatibility classes until all callers are verified, then remove them in a dedicated cleanup with visual regression coverage.
+
 ## Current technical debt
 
 - `photographer_workspace.css` is a large, single-file component layer with many compressed rule blocks and repeated hardcoded colors, radii, shadows, buttons, cards, tables, forms, headers, badges, and empty states.
