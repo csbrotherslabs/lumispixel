@@ -1195,13 +1195,64 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:leads"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Track inquiries and move prospects toward booking.")
+        self.assertContains(response, "Track inquiries, manage follow-ups, and move opportunities toward booking.")
         self.assertContains(response, "Morgan Ray")
         self.assertNotContains(response, "Private")
-        self.assertContains(response, "USD 4,000")
+        self.assertContains(response, "USD 2,400")
         self.assertContains(response, "50.0%")
         self.assertContains(response, 'data-lead-view="board"')
         self.assertContains(response, 'data-stage="proposal_sent"')
+
+    def test_lead_filters_followups_dates_and_source_aggregations_are_real(self):
+        user, profile = self.make_photographer(True, email="filter-leads@example.com", slug="filter-leads")
+        today = timezone.localdate()
+        visible = Lead.objects.create(
+            photographer=profile, first_name="Urgent", event_type="Wedding", lead_source="Referral",
+            estimated_value="2500", next_follow_up=today - timedelta(days=1),
+        )
+        Lead.objects.create(
+            photographer=profile, first_name="Future", event_type="Portrait", lead_source="Search",
+            estimated_value="900", next_follow_up=today + timedelta(days=4),
+        )
+        booked = Lead.objects.create(
+            photographer=profile, first_name="Booked", lead_source="Referral", status=Lead.Status.BOOKED,
+            estimated_value="5000",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:leads"), {
+            "q": "Urgent", "event_type": "Wedding", "source": "Referral", "follow_up": "overdue",
+            "created_from": today.isoformat(), "created_to": today.isoformat(),
+        })
+
+        self.assertContains(response, visible.first_name)
+        self.assertNotContains(response, "Future")
+        self.assertEqual(response.context["result_count"], 1)
+        referral = next(row for row in response.context["source_rows"] if row["lead_source"] == "Referral")
+        self.assertEqual((referral["count"], referral["booked"], referral["pipeline_value"]), (2, 1, Decimal("2500")))
+        self.assertEqual(referral["conversion"], 50)
+
+    def test_moving_to_booked_uses_conversion_and_lost_requires_reason_flow(self):
+        user, profile = self.make_photographer(True, email="workflow-leads@example.com", slug="workflow-leads")
+        lead = Lead.objects.create(photographer=profile, first_name="Conversion", email="conversion@example.com")
+        self.client.force_login(user)
+
+        self.client.post(reverse("photographer_workspace:update_lead_status", args=[lead.pk]), {
+            "status": Lead.Status.BOOKED, "next": reverse("photographer_workspace:leads"),
+        })
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.BOOKED)
+        self.assertTrue(Client.objects.filter(photographer=profile, converted_lead=lead).exists())
+
+        second = Lead.objects.create(photographer=profile, first_name="Loss")
+        self.client.post(reverse("photographer_workspace:update_lead_status", args=[second.pk]), {
+            "status": Lead.Status.LOST, "next": reverse("photographer_workspace:leads"),
+        })
+        second.refresh_from_db()
+        self.assertEqual(second.status, Lead.Status.NEW)
+        self.client.post(reverse("photographer_workspace:mark_lead_lost", args=[second.pk]), {"reason": "Timing"})
+        second.refresh_from_db()
+        self.assertEqual((second.status, second.lost_reason), (Lead.Status.LOST, "Timing"))
 
     def test_lead_stage_and_bulk_updates_are_scoped(self):
         user, profile = self.make_photographer(True, email="move@example.com", slug="move")
