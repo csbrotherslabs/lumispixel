@@ -47,6 +47,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
+from apps.dashboard.dashboard_data import build_dashboard
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    StudioMembership, StudioMembershipEvent)
 from apps.dashboard.access import ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
@@ -286,7 +287,18 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
 @photographer_workspace_required
 @require_GET
 def photographer_dashboard(request):
-    return render(request, "photographer_workspace/dashboard.html", _dashboard_context(request))
+    context = _dashboard_context(request)
+    context.update(build_dashboard(request.studio_access))
+    context["quick_actions"] = [
+        {"label": "Upload Photos", "icon": "bi-cloud-arrow-up", "url": reverse("photographer_workspace:galleries"), "emphasis": True},
+        {"label": "Create Gallery", "icon": "bi-images", "url": reverse("photographer_workspace:create_gallery"), "emphasis": True},
+        {"label": "Add Client", "icon": "bi-person-plus", "url": reverse("photographer_workspace:add_client")},
+        {"label": "Create Booking", "icon": "bi-calendar-plus", "url": reverse("photographer_workspace:bookings")},
+        *([{"label": "Send Invoice", "icon": "bi-send", "url": reverse("photographer_workspace:invoice_create")}]
+          if request.studio_access.allows("financials") else []),
+        {"label": "Block Time", "icon": "bi-calendar-x", "url": reverse("photographer_workspace:schedule")},
+    ]
+    return render(request, "photographer_workspace/dashboard.html", context)
 
 
 @photographer_workspace_required

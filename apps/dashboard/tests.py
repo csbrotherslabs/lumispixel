@@ -12,6 +12,7 @@ from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoicePayment, Lead
 from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
+from apps.dashboard.models import StudioMembership
 from apps.dashboard.views import WORKSPACE_MODULES
 from apps.dashboard.analytics_overview import _analytics_insights, _short_date
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
@@ -458,14 +459,15 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertNotContains(response, '<h2>Dashboard</h2>', html=True)
         self.assertContains(response, "Good ")
         self.assertContains(response, "Alex.")
-        self.assertContains(response, "Here’s what’s happening with your business today.")
-        self.assertContains(response, "Revenue This Month")
-        self.assertContains(response, "Active Clients")
-        self.assertContains(response, "Upcoming Bookings")
-        self.assertContains(response, "Today’s Schedule")
-        self.assertContains(response, "Recent Activity")
-        self.assertContains(response, "Business Snapshot")
-        self.assertContains(response, "Explore Business Tools")
+        self.assertContains(response, "Your schedule is clear")
+        self.assertContains(response, "Revenue this month")
+        self.assertContains(response, "Galleries awaiting delivery")
+        self.assertContains(response, "Upcoming bookings")
+        self.assertContains(response, "Upcoming schedule")
+        self.assertContains(response, "Recent activity")
+        self.assertContains(response, "Gallery delivery queue")
+        self.assertContains(response, "Quick actions")
+        self.assertContains(response, "Gallery storage")
         self.assertNotContains(response, "Your Website Preview")
         self.assertNotContains(response, "Help and Resources")
         self.assertContains(response, "0")
@@ -1249,3 +1251,70 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(response.status_code, 403)
         lead.refresh_from_db()
         self.assertEqual(lead.status, Lead.Status.NEW)
+
+class DashboardInformationArchitectureTests(TestCase):
+    def make_studio(self, email, slug):
+        user = make_user(email)
+        studio = PhotographerProfile.objects.create(user=user, slug=slug, onboarding_completed=True, default_currency="USD")
+        return user, studio
+
+    def test_dashboard_aggregates_are_real_and_workspace_isolated(self):
+        owner, studio = self.make_studio("dashboard-owner@example.com", "dashboard-owner")
+        other_owner, other = self.make_studio("dashboard-other@example.com", "dashboard-other")
+        client = Client.objects.create(photographer=studio, first_name="Visible", last_name="Client")
+        private_client = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        now = timezone.now()
+        booking = ClientSession.objects.create(photographer=studio, client=client, session_type="Portrait", starts_at=now + timedelta(hours=2), status=ClientSession.Status.CONFIRMED)
+        ClientSession.objects.create(photographer=other, client=private_client, session_type="Secret shoot", starts_at=now + timedelta(hours=2), status=ClientSession.Status.CONFIRMED)
+        invoice = ClientInvoice.objects.create(photographer=studio, client=client, invoice_number="DASH-1", total=Decimal("500"), amount_paid=Decimal("200"), status=ClientInvoice.Status.PARTIALLY_PAID, due_date=timezone.localdate() - timedelta(days=1))
+        InvoicePayment.objects.create(photographer=studio, invoice=invoice, amount=Decimal("200"), status=InvoicePayment.Status.COMPLETED)
+        other_invoice = ClientInvoice.objects.create(photographer=other, client=private_client, invoice_number="PRIVATE-1", total=Decimal("9000"), status=ClientInvoice.Status.SENT)
+        InvoicePayment.objects.create(photographer=other, invoice=other_invoice, amount=Decimal("9000"), status=InvoicePayment.Status.COMPLETED)
+        Gallery.objects.create(photographer=studio, client=client, name="Portrait proofs", slug="portrait-proofs", status=Gallery.Status.REVIEW, storage_used=2048)
+        Gallery.objects.create(photographer=other, client=private_client, name="Private gallery", slug="private-gallery", status=Gallery.Status.REVIEW)
+
+        self.client.force_login(owner)
+        response = self.client.get(reverse("photographer_workspace:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "USD 200.00")
+        self.assertContains(response, "USD 300.00")
+        self.assertContains(response, "Portrait proofs")
+        self.assertContains(response, "Visible Client")
+        self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[booking.pk]))
+        self.assertNotContains(response, "9000")
+        self.assertNotContains(response, "Private gallery")
+        self.assertNotContains(response, "Secret shoot")
+        self.assertContains(response, "Due date and progress not tracked")
+
+    def test_dashboard_hides_financial_data_from_assigned_photographer(self):
+        owner, studio = self.make_studio("studio-owner@example.com", "member-dashboard")
+        member_user = make_user("member@example.com")
+        membership = StudioMembership.objects.create(studio=studio, user=member_user, role=StudioMembership.Role.PHOTOGRAPHER, status=StudioMembership.Status.ACTIVE)
+        client = Client.objects.create(photographer=studio, first_name="Assigned", last_name="Client")
+        client.assigned_members.add(membership)
+        booking = ClientSession.objects.create(photographer=studio, client=client, session_type="Assigned session", starts_at=timezone.now() + timedelta(days=1))
+        booking.assigned_members.add(membership)
+        unassigned = ClientSession.objects.create(photographer=studio, client=client, session_type="Owner secret session", starts_at=timezone.now() + timedelta(days=2))
+        invoice = ClientInvoice.objects.create(photographer=studio, client=client, invoice_number="SECRET", total=Decimal("7777"), status=ClientInvoice.Status.SENT)
+        InvoicePayment.objects.create(photographer=studio, invoice=invoice, amount=Decimal("7777"), status=InvoicePayment.Status.COMPLETED)
+
+        self.client.force_login(member_user)
+        response = self.client.get(reverse("photographer_workspace:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Assigned session")
+        self.assertNotContains(response, "Owner secret session")
+        self.assertNotContains(response, "7777")
+        self.assertContains(response, "Financial access is required")
+        self.assertNotContains(response, "Send Invoice")
+
+    def test_new_account_has_prioritized_empty_state_without_fake_metrics(self):
+        owner, studio = self.make_studio("new-dashboard@example.com", "new-dashboard")
+        self.client.force_login(owner)
+        response = self.client.get(reverse("photographer_workspace:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Add your first client")
+        self.assertContains(response, "No performance history yet")
+        self.assertNotContains(response, "Needs attention")
+        self.assertNotContains(response, "% from last month")
