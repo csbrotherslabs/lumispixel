@@ -150,6 +150,12 @@
       filterDrawer.classList.toggle('is-open', !open);
       if (!open) filterDrawer.querySelector('input, select').focus();
     });
+    window.addEventListener('resize', function () {
+      if (window.matchMedia('(min-width: 701px)').matches) {
+        filterDrawer.classList.remove('is-open');
+        filterToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   const clientViewButtons = document.querySelectorAll('[data-client-view]');
