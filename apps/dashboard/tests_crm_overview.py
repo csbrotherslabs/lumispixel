@@ -30,6 +30,19 @@ class CrmOverviewTests(TestCase):
         self.assertEqual(sum(stage["count"] for stage in overview["pipeline"]), 2)
         self.assertNotIn("Private", [str(lead) for lead in overview["recent_leads"]])
 
+    def test_conversion_metric_has_an_honest_unavailable_state(self):
+        user, _ = self.studio("empty@example.com", "empty")
+
+        overview = build_crm_overview(access_for(user))
+
+        conversion = next(
+            metric for metric in overview["crm_metrics"]
+            if metric["label"] == "Lead-to-Booking Conversion"
+        )
+        self.assertTrue(conversion["unavailable"])
+        self.assertIsNone(conversion["value"])
+        self.assertEqual(conversion["unavailable_text"], "No leads recorded")
+
     def test_attention_and_task_ordering(self):
         user, studio = self.studio("attention@example.com", "attention")
         today = timezone.localdate()

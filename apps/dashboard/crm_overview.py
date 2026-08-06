@@ -24,7 +24,7 @@ def build_crm_overview(access, *, now=None):
         {"label": "Active Leads", "value": open_leads.count(), "icon": "bi-funnel", "context": "Excludes booked and lost leads"},
         {"label": "New Leads This Month", "value": leads.filter(created_at__date__gte=month_start).count(), "icon": "bi-person-plus", "context": "Created since the start of this month"},
         {"label": "Follow-ups Due", "value": followups_due, "icon": "bi-clock-history", "context": "Due today or overdue"},
-        {"label": "Lead-to-Booking Conversion", "value": f"{booked / total * 100:.1f}%" if total else "—", "icon": "bi-graph-up-arrow", "context": "Booked leads divided by all recorded leads" if total else "Unavailable until a lead is recorded"},
+        {"label": "Lead-to-Booking Conversion", "value": f"{booked / total * 100:.1f}%" if total else None, "icon": "bi-graph-up-arrow", "context": "Booked leads divided by all recorded leads" if total else None, "unavailable": not total, "unavailable_text": "No leads recorded"},
         {"label": "Active Clients", "value": clients.filter(status=Client.Status.ACTIVE).count(), "icon": "bi-people", "context": "Active client records you can access"},
     ]
     counts = {row["status"]: row["count"] for row in leads.values("status").annotate(count=Count("pk"))}
