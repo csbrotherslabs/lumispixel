@@ -84,13 +84,13 @@ def build_dashboard(access, *, now=None):
         if previous_revenue:
             pct = ((revenue - previous_revenue) / previous_revenue * 100).quantize(Decimal("1"))
             rev_compare = {"change": f"{abs(pct)}%", "trend": "increase" if pct > 0 else "decrease" if pct < 0 else "neutral", "comparison": "from last month"}
-        kpis.append({"label": "Revenue this month", "value": _money(access.studio.default_currency, revenue), "context": "Completed invoice payments", **(rev_compare or {})})
+        kpis.append({"label": "Revenue this month", "icon": "bi-cash-stack", "value": _money(access.studio.default_currency, revenue), "context": "Completed invoice payments", **(rev_compare or {})})
     else:
-        kpis.append({"label": "Revenue this month", "unavailable": True, "context": "Financial access is required"})
+        kpis.append({"label": "Revenue this month", "icon": "bi-cash-stack", "unavailable": True, "context": "Financial access is required"})
     kpis.extend([
-        {"label": "Upcoming bookings", "value": upcoming.count(), "context": "Future tentative and confirmed sessions", **(comparison(current_bookings, previous_bookings, "bookings") or {})},
-        {"label": "Galleries awaiting delivery", "value": awaiting, "context": "Active workflow stages; no delivery deadline is stored"},
-        {"label": "Outstanding payments", "value": _money(access.studio.default_currency, outstanding) if financial else None,
+        {"label": "Upcoming bookings", "icon": "bi-calendar2-check", "value": upcoming.count(), "context": "Future tentative and confirmed sessions", **(comparison(current_bookings, previous_bookings, "bookings") or {})},
+        {"label": "Galleries awaiting delivery", "icon": "bi-images", "value": awaiting, "context": "Active workflow stages; no delivery deadline is stored"},
+        {"label": "Outstanding payments", "icon": "bi-receipt", "value": _money(access.studio.default_currency, outstanding) if financial else None,
          "unavailable": not financial, "context": "Sent and partially paid invoice balances" if financial else "Financial access is required"},
     ])
 
