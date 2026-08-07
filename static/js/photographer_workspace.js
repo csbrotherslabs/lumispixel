@@ -609,9 +609,20 @@
     node.textContent = String(value);
     return node.innerHTML;
   }
-  function detail(label, value) {
+  function detail(label, value, icon) {
     if (!value) return '';
-    return '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
+    return '<div><dt>' + (icon ? '<i class="bi ' + icon + '" aria-hidden="true"></i>' : '') + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
+  }
+  function section(title, icon, rows, className) {
+    const content = rows.filter(Boolean).join('');
+    if (!content) return '';
+    return '<section class="lpw-event-detail-section ' + (className || '') + '"><h3><i class="bi ' + icon + '" aria-hidden="true"></i>' + escapeHtml(title) + '</h3><dl>' + content + '</dl></section>';
+  }
+  function readiness(label, value, icon) {
+    const normalized = String(value || '').toLowerCase();
+    const tone = normalized === 'paid' || normalized === 'signed' || normalized === 'complete' ? 'success' : normalized === 'not tracked' || normalized === 'not invoiced' ? 'neutral' : 'warning';
+    const stateIcon = tone === 'success' ? 'bi-check-circle-fill' : tone === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-dash-circle';
+    return '<div class="lpw-readiness-row"><dt><i class="bi ' + icon + '" aria-hidden="true"></i>' + escapeHtml(label) + '</dt><dd class="lpw-readiness-badge is-' + tone + '"><i class="bi ' + stateIcon + '" aria-hidden="true"></i>' + escapeHtml(value) + '</dd></div>';
   }
   function closeDrawer() {
     layer.classList.remove('is-open');
@@ -621,41 +632,58 @@
   }
   function openDrawer(event, button) {
     opener = button;
-    layer.querySelector('[data-event-kind]').textContent = event.kind === 'mini' ? 'Mini session' : event.kind;
+    layer.querySelector('[data-event-kind]').textContent = event.kind === 'booking' ? 'Booking' : event.kind === 'mini' ? 'Mini session' : event.kind;
     layer.querySelector('[data-event-title]').textContent = event.name;
     layer.querySelector('[data-event-summary]').textContent = event.session_type + ' · ' + event.status;
     const bookingOnly = event.kind === 'booking';
     const clientEvent = bookingOnly || event.kind === 'consultation' || event.kind === 'mini';
-    const details = [
-      clientEvent ? detail('Client / event', event.name) : '',
-      clientEvent && event.contact ? detail('Contact', event.contact) : '',
-      bookingOnly ? detail('Booking number', event.booking_number) : '',
-      detail(bookingOnly ? 'Session type' : 'Event type', event.session_type),
-      detail('Date and time', new Date(event.starts_at).toLocaleString([], {dateStyle: 'long', timeStyle: event.all_day ? undefined : 'short'})),
-      detail('Duration', event.all_day ? 'All day' : event.duration),
-      event.kind !== 'vacation' ? detail('Location', event.location) : '',
-      bookingOnly ? detail('Package', event.package) : '',
-      event.kind !== 'vacation' && event.kind !== 'blocked' ? detail('Assigned to', event.photographer) : '',
-      detail('Status', event.status),
-      bookingOnly ? detail('Contract', event.contract_status) + detail('Payment', event.payment_status) + detail('Questionnaire', event.questionnaire_status) : ''
-    ].join('');
+    const startsAt = new Date(event.starts_at);
+    const details = bookingOnly ? [
+      section('Session', 'bi-calendar-event', [
+        detail('Date', startsAt.toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})),
+        detail('Time', startsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})), detail('Duration', event.duration),
+        detail('Session type', event.session_type), detail('Package', event.package), detail('Location', event.location)
+      ]),
+      section('Client', 'bi-person', [detail('Client name', event.name), detail('Email', event.contact_email), detail('Phone', event.contact_phone)]),
+      section('Booking', 'bi-briefcase', [detail('Booking number', event.booking_number), detail('Assigned photographer', event.photographer), detail('Status', event.status)]),
+      section('Readiness', 'bi-clipboard-check', [readiness('Contract', event.contract_status, 'bi-file-earmark-text'), readiness('Payment', event.payment_status, 'bi-credit-card'), readiness('Questionnaire', event.questionnaire_status, 'bi-ui-checks-grid')], 'lpw-event-readiness')
+    ].join('') : section('Event details', 'bi-calendar-event', [
+      clientEvent ? detail('Client / event', event.name) : '', clientEvent ? detail('Contact', event.contact) : '',
+      detail('Event type', event.session_type), detail('Date and time', startsAt.toLocaleString([], {dateStyle: 'long', timeStyle: event.all_day ? undefined : 'short'})),
+      detail('Duration', event.all_day ? 'All day' : event.duration), event.kind !== 'vacation' ? detail('Location', event.location) : '',
+      event.kind !== 'vacation' && event.kind !== 'blocked' ? detail('Assigned to', event.photographer) : '', detail('Status', event.status)
+    ]);
     layer.querySelector('[data-event-details]').innerHTML = details;
     const warnings = layer.querySelector('[data-event-warnings]');
-    warnings.innerHTML = (event.warnings || []).map(function (warning) { return '<p><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>' + escapeHtml(warning) + '</span></p>'; }).join('');
-    warnings.hidden = !event.warnings || !event.warnings.length;
+    warnings.innerHTML = (event.warnings || []).length ? (event.warnings || []).map(function (warning) { return '<p><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>' + escapeHtml(warning) + '</span></p>'; }).join('') : (bookingOnly ? '<p class="is-ready"><i class="bi bi-check-circle" aria-hidden="true"></i><span>No active scheduling alerts</span></p>' : '');
+    warnings.hidden = !bookingOnly && (!event.warnings || !event.warnings.length);
     const notesWrap = layer.querySelector('[data-event-notes-wrap]');
     notesWrap.hidden = !event.notes || event.kind === 'vacation';
     layer.querySelector('[data-event-notes]').textContent = event.notes || '';
-    layer.querySelector('[data-event-actions]').innerHTML = event.actions.map(function (label, index) {
-      const danger = label.indexOf('Cancel') === 0 || label.indexOf('Remove') === 0;
-      const canEdit = label.indexOf('Edit ') === 0;
-      if (canEdit) return '<button type="button" class="lpw-btn" data-detail-edit="' + escapeHtml(event.drawer_id) + '">' + escapeHtml(label) + '</button>';
-      return '<a class="lpw-btn ' + (index === 0 ? 'lpw-btn-primary ' : '') + (danger ? 'is-danger' : '') + '" href="' + encodeURI(event.url) + '">' + escapeHtml(label) + '</a>';
-    }).join('');
+    function actionMarkup(action) {
+      const icon = action.icon ? '<i class="bi ' + escapeHtml(action.icon) + '" aria-hidden="true"></i>' : '';
+      const classes = 'lpw-btn ' + (action.priority === 'primary' ? 'lpw-btn-primary ' : '') + (action.priority === 'destructive' ? 'is-danger ' : '');
+      if (action.type === 'edit' || action.type === 'reschedule') return '<button type="button" class="' + classes + '" data-detail-' + action.type + '="' + escapeHtml(event.drawer_id) + '">' + icon + escapeHtml(action.label) + '</button>';
+      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.cookie.match(/(?:^|; )csrftoken=([^;]+)/) || [,''])[1]) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '">' + icon + escapeHtml(action.label) + '</button></form>';
+      return '<a class="' + classes + '" href="' + escapeHtml(action.url) + '">' + icon + escapeHtml(action.label) + '</a>';
+    }
+    const primaryActions = layer.querySelector('[data-event-primary-actions]');
+    const moreActions = layer.querySelector('[data-event-more-actions]');
+    primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary' || action.priority === 'secondary'; }).map(actionMarkup).join('');
+    moreActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(actionMarkup).join('');
     const editButton = layer.querySelector('[data-detail-edit]');
     if (editButton) editButton.addEventListener('click', function () {
       closeDrawer();
       window.setTimeout(function () { if (window.LumisScheduleEventForm) window.LumisScheduleEventForm.open(event.kind, button, event); }, 190);
+    });
+    const rescheduleButton = layer.querySelector('[data-detail-reschedule]');
+    if (rescheduleButton) rescheduleButton.addEventListener('click', function () {
+      closeDrawer();
+      window.setTimeout(function () { if (window.LumisScheduleEventForm) window.LumisScheduleEventForm.open(event.kind, button, event); }, 190);
+    });
+    const cancelForm = layer.querySelector('[data-confirm-cancel]');
+    if (cancelForm) cancelForm.addEventListener('submit', function (submitEvent) {
+      if (!window.confirm('Cancel this booking? This will remove it from the active schedule.')) submitEvent.preventDefault();
     });
     layer.hidden = false;
     window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
