@@ -835,7 +835,14 @@
   const editor = layer.querySelector('[data-exception-editor]');
   const type = form.elements.exception_type;
   const status = layer.querySelector('[data-availability-status]');
+  const saveButton = layer.querySelector('[data-availability-save]');
   let dirty = false;
+
+  function setDirty(value) {
+    dirty = value;
+    saveButton.disabled = !value;
+    if (value) status.textContent = 'Unsaved changes.';
+  }
 
   function open() {
     layer.hidden = false;
@@ -874,23 +881,42 @@
   });
   layer.querySelector('[data-copy-schedule]').addEventListener('click', function () {
     form.querySelectorAll('input[name="days"]').forEach(function (day) { day.checked = day.value !== 'Sun'; });
+    setDirty(true);
     flash('Monday’s schedule copied. Review selected days before saving.');
   });
   layer.querySelector('[data-save-exception]').addEventListener('click', function () {
-    if (!form.elements.exception_date.value) { form.elements.exception_date.focus(); return; }
+    if (!form.elements.exception_date.value) {
+      status.textContent = 'Choose a date before adding this exception.';
+      status.setAttribute('role', 'alert');
+      form.elements.exception_date.focus();
+      return;
+    }
+    status.removeAttribute('role');
     const labels = { override: 'Date-specific hours', unavailable: 'Temporarily unavailable', recurring: 'Recurring blocked time' };
     const item = document.createElement('li');
-    item.innerHTML = '<i class="bi bi-calendar2-x"></i><span><strong>' + labels[type.value] + '</strong><small>' + form.elements.exception_date.value + (type.value === 'unavailable' ? ' · All day' : ' · ' + form.elements.exception_start.value + '–' + form.elements.exception_end.value) + '</small></span><button type="button" aria-label="Remove exception"><i class="bi bi-trash"></i></button>';
+    item.innerHTML = '<i class="bi bi-calendar2-x" aria-hidden="true"></i><span><small>' + labels[type.value] + '</small><strong>' + labels[type.value] + '</strong><time>' + form.elements.exception_date.value + (type.value === 'unavailable' ? ' · All day' : ' · ' + form.elements.exception_start.value + '–' + form.elements.exception_end.value) + '</time></span><button type="button" aria-label="Remove ' + labels[type.value] + '"><i class="bi bi-trash" aria-hidden="true"></i></button>';
     layer.querySelector('[data-exception-list]').appendChild(item);
-    editor.hidden = true; dirty = true; flash('Exception added. Save to publish this change.');
+    editor.hidden = true; setDirty(true); flash('Exception added. Save to publish this change.');
   });
-  layer.querySelector('[data-exception-list]').addEventListener('click', function (event) { const button = event.target.closest('button'); if (button) { button.closest('li').remove(); dirty = true; } });
-  form.addEventListener('input', function () { dirty = true; });
+  layer.querySelector('[data-exception-list]').addEventListener('click', function (event) {
+    const button = event.target.closest('button');
+    if (button) { button.closest('li').remove(); setDirty(true); flash('Exception removed. Save to publish this change.'); }
+  });
+  form.addEventListener('input', function () { setDirty(true); });
+  form.addEventListener('change', function () { setDirty(true); });
   form.addEventListener('submit', function (event) {
     event.preventDefault();
+    if (!form.reportValidity()) return;
+    saveButton.disabled = true;
+    saveButton.setAttribute('aria-busy', 'true');
+    saveButton.textContent = 'Saving…';
+    status.textContent = 'Saving availability…';
     const member = form.elements.member.value;
     window.localStorage.setItem('lpw-availability-' + member, JSON.stringify(Object.fromEntries(new FormData(form).entries())));
-    dirty = false; flash('Availability saved. Client booking rules are now up to date.');
+    setDirty(false);
+    saveButton.removeAttribute('aria-busy');
+    saveButton.textContent = 'Save Availability';
+    flash('Availability saved. Client booking rules are now up to date.');
     window.setTimeout(close, 650);
   });
   drawer.addEventListener('keydown', function (event) {
