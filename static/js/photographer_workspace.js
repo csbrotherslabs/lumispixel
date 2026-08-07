@@ -188,12 +188,13 @@
   const galleryViewButtons = document.querySelectorAll('[data-gallery-view]');
   const galleryPanels = document.querySelectorAll('[data-gallery-panel]');
   function setGalleryView(view) {
+    if (view === 'list' && window.matchMedia('(max-width: 620px)').matches) view = 'grid';
     galleryViewButtons.forEach(function (button) { const active = button.dataset.galleryView === view; button.classList.toggle('is-active', active); button.setAttribute('aria-pressed', String(active)); });
     galleryPanels.forEach(function (panel) { panel.hidden = panel.dataset.galleryPanel !== view; });
-    window.localStorage.setItem('lpw-gallery-view', view);
+    window.sessionStorage.setItem('lpw-gallery-view', view);
   }
   if (galleryViewButtons.length) {
-    setGalleryView(window.localStorage.getItem('lpw-gallery-view') || 'grid');
+    setGalleryView(window.sessionStorage.getItem('lpw-gallery-view') || 'grid');
     galleryViewButtons.forEach(function (button) { button.addEventListener('click', function () { setGalleryView(button.dataset.galleryView); }); });
   }
 

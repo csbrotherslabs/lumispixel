@@ -836,6 +836,18 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(filtered, "Maya &amp; Rowan")
         self.assertContains(filtered, 'data-gallery-view="grid"')
         self.assertContains(filtered, 'data-gallery-view="list"')
+        self.assertContains(filtered, "Search gallery name or client")
+        self.assertContains(filtered, "More filters")
+        self.assertContains(filtered, "result")
+
+        empty_user, empty_profile = self.make_photographer(True, email="gallery-empty@example.com", slug="gallery-empty")
+        self.client.force_login(empty_user)
+        empty = self.client.get(reverse("photographer_workspace:all_galleries"))
+        self.assertContains(empty, "Create your first gallery")
+        self.assertContains(empty, "Build a beautiful space to upload, organize, and deliver photos to your clients.")
+        self.assertContains(empty, "Upload Photos")
+
+        self.client.force_login(user)
 
         self.client.post(reverse("photographer_workspace:gallery_actions"), {"gallery_ids": [gallery.pk], "action": "publish"})
         gallery.refresh_from_db()
