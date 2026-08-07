@@ -3,6 +3,7 @@
   <header><span class="lp-kpi-card__label">{{ label }}</span>{% if icon %}<span class="lp-kpi-card__icon"><i class="bi {{ icon }}" aria-hidden="true"></i></span>{% endif %}</header>
   {% if unavailable %}<p class="lp-kpi-card__unavailable">{{ unavailable_text|default:'Unavailable' }}</p>{% else %}<strong class="lp-kpi-card__value">{{ value }}</strong>
   {% if supporting_text %}<p class="lp-kpi-card__comparison">{{ supporting_text }}</p>{% elif context %}<p class="lp-kpi-card__comparison">{{ context }}</p>{% endif %}
+  {% if progress_value != None %}{% include "photographer_workspace/components/progress.html" with label=progress_label|default:label value=progress_value value_text=progress_value_text description=progress_description only %}{% endif %}
   {% if change %}<p class="lp-kpi-card__change is-{{ trend|default:'neutral' }}"><i class="bi {% if trend == 'increase' %}bi-arrow-up{% elif trend == 'decrease' %}bi-arrow-down{% else %}bi-dash{% endif %}" aria-hidden="true"></i><span>{{ change }}{% if comparison %} <span class="lp-kpi-card__comparison">{{ comparison }}</span>{% endif %}</span></p>{% endif %}
   {% if sparkline %}<div class="lp-kpi-card__sparkline" aria-label="{{ sparkline_label }}">{{ sparkline }}</div>{% endif %}{% endif %}
   {% if footer_url %}<footer><a class="lp-text-action" href="{{ footer_url }}">{{ footer_label }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a></footer>{% endif %}{% endif %}
