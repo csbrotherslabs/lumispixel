@@ -2490,12 +2490,11 @@ def financial_transactions(request):
     currency = getattr(profile, "default_currency", "USD")
     summary = financial_summary(profile, range_key, currency)
     values = summary["values"]
-    transaction_value = values["invoice_value"] + values["collected"] + values["refunds"] + values["credits"]
     summary_items = [
-        {"label": "Total transaction value", "value": format_currency(transaction_value, currency), "icon": "bi-arrow-left-right"},
-        {"label": "Payments collected", "value": format_currency(values["collected"], currency), "icon": "bi-cash-coin"},
-        {"label": "Outstanding balance", "value": format_currency(values["outstanding"], currency), "icon": "bi-hourglass-split"},
-        {"label": "Refund total", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
+        {"label": "Total Revenue", "value": format_currency(values["net_revenue"], currency), "icon": "bi-graph-up-arrow"},
+        {"label": "Payments Received", "value": format_currency(values["collected"], currency), "icon": "bi-cash-coin"},
+        {"label": "Outstanding Balance", "value": format_currency(values["outstanding"], currency), "icon": "bi-hourglass-split"},
+        {"label": "Refunded", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
     ]
     records = transaction_records(profile, selected_filters, view_key, request.GET.get("page", 1),
                                   request.GET.get("page_size", 25), request.GET.get("sort", "date"),
