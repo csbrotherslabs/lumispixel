@@ -581,7 +581,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-event-drawer role="dialog"')
         self.assertContains(response, 'data-schedule-event="schedule-event-0"')
         self.assertContains(response, "Open Full Booking")
-        self.assertContains(response, '"contract_status": "Not signed"')
+        self.assertContains(response, '"contract_status": "Not tracked"')
+        self.assertContains(response, '"label": "Mark Complete"')
+        self.assertContains(response, '"label": "Cancel Booking"')
         self.assertContains(response, "Today’s Schedule")
         self.assertContains(response, "Upcoming Shoots")
         self.assertContains(response, "Scheduling Alerts")
@@ -631,6 +633,30 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertRedirects(response, reverse("photographer_workspace:bookings"))
         session.refresh_from_db()
         self.assertEqual(session.status, ClientSession.Status.COMPLETED)
+
+    def test_schedule_inspector_actions_follow_booking_state_and_are_scoped(self):
+        user, profile = self.make_photographer(True, email="inspector@example.com", slug="inspector")
+        _other_user, other = self.make_photographer(True, email="other-inspector@example.com", slug="other-inspector")
+        client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya@example.com")
+        other_client = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        session = ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", starts_at=timezone.now(), status=ClientSession.Status.CONFIRMED)
+        private = ClientSession.objects.create(photographer=other, client=other_client, session_type="Private", starts_at=timezone.now())
+        self.client.force_login(user)
+
+        complete = self.client.post(reverse("photographer_workspace:booking_action", args=[session.pk]), {"action": "mark_complete"})
+        self.assertRedirects(complete, reverse("photographer_workspace:schedule"))
+        session.refresh_from_db()
+        self.assertEqual(session.status, ClientSession.Status.COMPLETED)
+        completed_page = self.client.get(reverse("photographer_workspace:schedule"), {"status": "completed", "show_completed": "1"})
+        self.assertNotContains(completed_page, '"label": "Mark Complete"')
+        self.assertContains(completed_page, '"label": "Create Gallery"')
+        self.assertNotContains(completed_page, '"label": "Reschedule"')
+
+        self.assertEqual(self.client.post(reverse("photographer_workspace:booking_action", args=[private.pk]), {"action": "cancel"}).status_code, 404)
+        cancel = self.client.post(reverse("photographer_workspace:booking_action", args=[session.pk]), {"action": "cancel"})
+        self.assertRedirects(cancel, reverse("photographer_workspace:schedule"))
+        session.refresh_from_db()
+        self.assertEqual(session.status, ClientSession.Status.CANCELLED)
 
     def test_schedule_move_previews_conflicts_and_saves_duration(self):
         user, profile = self.make_photographer(True, email="move@example.com", slug="move")
