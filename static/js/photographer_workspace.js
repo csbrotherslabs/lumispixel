@@ -1056,13 +1056,3 @@ document.addEventListener('click', async (event) => {
   layer.querySelectorAll('[data-definitions-close]').forEach(button => button.addEventListener('click', close));
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !layer.hidden) close(); });
 })();
-
-/* Keep the schedule usable on phone-sized screens by opening its supported agenda view. */
-(function () {
-  const schedule = document.querySelector('[data-calendar][data-mobile-agenda-url]');
-  if (!schedule || schedule.dataset.scheduleView !== 'month' || window.innerWidth > 620) return;
-  const key = 'lpw-schedule-mobile-agenda';
-  if (window.sessionStorage.getItem(key) === window.location.href) return;
-  window.sessionStorage.setItem(key, window.location.href);
-  window.location.replace(schedule.dataset.mobileAgendaUrl);
-}());
