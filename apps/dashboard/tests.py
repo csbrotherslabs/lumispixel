@@ -1062,48 +1062,26 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:financial_overview"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="lp-container lp-financial-overview"')
         self.assertContains(response, "Financial Overview")
         self.assertContains(response, "Track revenue, payments, balances, and financial activity.")
-        self.assertContains(response, "Create invoice")
+        self.assertContains(response, "Create Invoice")
+        self.assertContains(response, "View Transactions")
         for action in ("Record payment", "Issue refund", "Add credit"):
             self.assertContains(response, action)
-        for metric in ("Total revenue", "Payments collected", "Outstanding balance", "Overdue balance", "Refunds", "Total booking value"):
-            self.assertContains(response, metric)
-        for analytics_label in ("Revenue Trend", "Current period", "Previous period", "Payment Status", "Partially paid", "Awaiting payment", "Refunded or credited"):
-            self.assertContains(response, analytics_label)
-        self.assertContains(response, "Values are grouped daily.")
-        self.assertContains(response, '?status=overdue')
-        self.assertContains(response, "Your financial overview is ready for activity")
-        self.assertContains(response, "Upcoming Payments")
-        self.assertContains(response, "Attention Required")
-        self.assertContains(response, "No upcoming payments")
-        self.assertContains(response, "Everything is up to date")
-        self.assertContains(response, "Recent Financial Activity")
-        self.assertContains(response, "View all transactions")
-        for activity in ("Invoice created", "Invoice sent", "Invoice viewed", "Payment received",
-                         "Payment failed", "Refund initiated", "Refund completed", "Credit issued",
-                         "Invoice voided", "Due date changed"):
-            self.assertContains(response, activity)
-        self.assertContains(response, "No financial activity yet")
-        self.assertContains(response, "?filter=upcoming")
-        self.assertContains(response, "?filter=attention")
+        self.assertContains(response, "Your financial overview is ready")
+        self.assertContains(response, "Create an invoice or receive your first payment to begin tracking business performance.")
+        self.assertNotContains(response, "Revenue Performance")
+        self.assertNotContains(response, "No upcoming payments")
         self.assertContains(response, f'href="{reverse("photographer_workspace:financial_overview")}" class="is-active"')
 
         loading_url = f'{reverse("photographer_workspace:financial_overview")}?state=loading'
         error_url = f'{reverse("photographer_workspace:financial_overview")}?state=error'
-        self.assertContains(self.client.get(loading_url), "Loading financial overview")
-        self.assertContains(self.client.get(loading_url), "Loading revenue trend")
+        loading = self.client.get(loading_url)
+        self.assertContains(loading, "Loading financial overview")
+        for metric in ("Total Revenue", "Collected", "Outstanding", "Overdue"):
+            self.assertContains(loading, metric)
         self.assertContains(self.client.get(error_url), "Financial activity could not be loaded")
-        operations_loading = self.client.get(f'{reverse("photographer_workspace:financial_overview")}?operations_state=loading')
-        operations_error = self.client.get(f'{reverse("photographer_workspace:financial_overview")}?operations_state=error')
-        self.assertContains(operations_loading, "Loading upcoming payments")
-        self.assertContains(operations_loading, "Loading records requiring attention")
-        self.assertContains(operations_error, "Upcoming payments unavailable")
-        self.assertContains(operations_error, "Attention items unavailable")
-        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=loading'), "Loading financial activity")
-        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=error'), "Financial activity is unavailable")
-        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_state=permission'), "don't have permission")
-        self.assertContains(self.client.get(f'{reverse("photographer_workspace:financial_overview")}?activity_type=payment_failed'), "No matching activity")
 
     def test_client_cannot_access_module_url(self):
         client_user = make_user("client-module@example.com", User.PrimaryRole.CLIENT)

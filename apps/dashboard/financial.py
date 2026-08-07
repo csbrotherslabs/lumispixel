@@ -130,17 +130,18 @@ def financial_summary(profile, range_key, currency="USD", today=None):
     current = scoped_financial_records(profile, window.start, window.end, today)
     previous = scoped_financial_records(profile, window.previous_start, window.previous_end, today) if window.previous_end else None
     definitions = [
-        ("Total revenue", "net_revenue", "Completed cash payments less completed cash refunds."),
-        ("Payments collected", "collected", "Gross completed cash payments received in this period."),
-        ("Outstanding balance", "outstanding", "Unpaid invoice value after payments and applied credits."),
-        ("Overdue balance", "overdue", "Outstanding non-draft invoice balances past their due date."),
-        ("Refunds", "refunds", "Completed cash refunds issued in this period."),
-        ("Total booking value", "booking_value", "Value of confirmed or completed bookings scheduled in this period."),
+        ("Total Revenue", "net_revenue", "bi-graph-up-arrow", "Completed payments less completed refunds in the selected period."),
+        ("Collected", "collected", "bi-check2-circle", "Completed payments received in the selected period."),
+        ("Outstanding", "outstanding", "bi-hourglass-split", "Unpaid invoice value after payments and applied credits."),
+        ("Overdue", "overdue", "bi-exclamation-circle", "Outstanding non-draft invoice balances past their due date."),
     ]
     cards = []
-    for title, key, tooltip in definitions:
+    for title, key, icon, tooltip in definitions:
         value = current[key]
         percentage, trend = _comparison(value, previous[key] if previous else None)
         cards.append({"title": title, "value": value, "formatted_value": format_currency(value, currency), "percentage": percentage,
-                      "trend": trend, "period_label": window.label, "tooltip": tooltip, "supporting_value": None})
+                      "trend": trend, "period_label": window.label if percentage is not None else "", "tooltip": tooltip,
+                      "icon": icon, "supporting_text": tooltip,
+                      "change": f"{abs(percentage)}%" if percentage is not None else "",
+                      "display_trend": "increase" if trend == "positive" else "decrease" if trend == "negative" else "neutral"})
     return {"cards": cards, "has_activity": current["has_activity"], "window": window, "values": current}
