@@ -1720,7 +1720,7 @@ def convert_lead(request, pk):
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def bookings_dashboard(request):
-    """Render the lightweight bookings command view without introducing booking models."""
+    """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
         if request.POST.get("action") == "mark_complete":
@@ -1734,217 +1734,72 @@ def bookings_dashboard(request):
         return redirect("photographer_workspace:bookings")
 
     now = timezone.now()
-    range_key = request.GET.get("range", "30")
-    range_options = {"7": "Next 7 days", "30": "Next 30 days", "90": "Next 90 days", "all": "All upcoming"}
-    if range_key not in range_options:
-        range_key = "30"
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    all_sessions = ClientSession.objects.filter(photographer=profile).select_related("client")
+    upcoming = all_sessions.filter(starts_at__gte=now).exclude(status__in=[ClientSession.Status.CANCELLED, ClientSession.Status.COMPLETED]).order_by("starts_at")
+    today_sessions = list(all_sessions.filter(starts_at__date=today).exclude(status=ClientSession.Status.CANCELLED).order_by("starts_at")[:5])
 
-    sessions = ClientSession.objects.filter(
-        photographer=profile, starts_at__gte=now,
-    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client")
-    status = request.GET.get("status", "")
-    if status in ClientSession.Status.values:
-        sessions = sessions.filter(status=status)
-    if range_key != "all":
-        sessions = sessions.filter(starts_at__lt=now + timedelta(days=int(range_key)))
-    contract_booking = sessions.order_by("starts_at").first()
-    contract_workspace_url = (
-        f'{reverse("photographer_workspace:booking_detail", args=[contract_booking.pk])}?tab=contract#contract'
-        if contract_booking else reverse("photographer_workspace:bookings")
-    )
+    open_invoices = ClientInvoice.objects.filter(photographer=profile).exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
+    overdue_invoices = open_invoices.filter(due_date__lt=today)
+    tentative = upcoming.filter(status=ClientSession.Status.TENTATIVE)
 
-    today_sessions = ClientSession.objects.filter(
-        photographer=profile,
-        starts_at__date=timezone.localdate(),
-    ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at")
-    for session in today_sessions:
-        session.ends_at = session.starts_at + timedelta(hours=1, minutes=30)
+    focus = []
+    if today_sessions:
+        focus.append({"icon": "bi-camera", "tone": "info", "title": f"{len(today_sessions)} session{'s' if len(today_sessions) != 1 else ''} happening today", "detail": "Review locations and client details before each session.", "action": "View schedule", "url": reverse("photographer_workspace:calendar")})
+    if overdue_invoices.exists():
+        focus.append({"icon": "bi-credit-card", "tone": "danger", "title": f"{overdue_invoices.count()} overdue payment{'s' if overdue_invoices.count() != 1 else ''}", "detail": "Follow up on invoice balances that are past due.", "action": "Review payments", "url": reverse("photographer_workspace:payments")})
+    if tentative.exists():
+        focus.append({"icon": "bi-calendar-exclamation", "tone": "warning", "title": f"{tentative.count()} unconfirmed booking{'s' if tentative.count() != 1 else ''}", "detail": "Confirm tentative sessions so the calendar stays accurate.", "action": "Review bookings", "url": reverse("photographer_workspace:calendar")})
 
-    open_invoices = ClientInvoice.objects.filter(photographer=profile).exclude(
-        status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]
-    )
-    balance = ExpressionWrapper(F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2))
-    outstanding = open_invoices.aggregate(
-        total=Coalesce(Sum(balance), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    inquiries = Lead.objects.for_photographer(profile).filter(
-        archived_at__isnull=True, status__in=[Lead.Status.NEW, Lead.Status.CONTACTED]
-    )
-    all_leads = Lead.objects.for_photographer(profile).filter(archived_at__isnull=True)
-    new_inquiries = all_leads.filter(status=Lead.Status.NEW).count()
-    paid_revenue = ClientInvoice.objects.filter(photographer=profile).aggregate(
-        total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    month_start = timezone.localdate().replace(day=1)
-    previous_month_end = month_start - timedelta(days=1)
-    previous_month_start = previous_month_end.replace(day=1)
-    monthly_invoices = ClientInvoice.objects.filter(
-        photographer=profile, created_at__date__gte=month_start,
-    ).exclude(status=ClientInvoice.Status.VOID)
-    previous_invoices = ClientInvoice.objects.filter(
-        photographer=profile,
-        created_at__date__range=(previous_month_start, previous_month_end),
-    ).exclude(status=ClientInvoice.Status.VOID)
-    monthly_booked = monthly_invoices.aggregate(
-        total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    monthly_collected = monthly_invoices.aggregate(
-        total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    previous_booked = previous_invoices.aggregate(
-        total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
-    monthly_average = monthly_booked / monthly_invoices.count() if monthly_invoices.count() else Decimal("0.00")
-    period_change = ((monthly_booked - previous_booked) / previous_booked * 100) if previous_booked else None
+    revenue_periods = {"30": "30 days", "90": "90 days", "180": "6 months", "365": "12 months"}
+    revenue_period = request.GET.get("period", "30")
+    if revenue_period not in revenue_periods:
+        revenue_period = "30"
+    period_days = int(revenue_period)
+    period_start = today - timedelta(days=period_days - 1)
+    previous_start = period_start - timedelta(days=period_days)
+    invoices = ClientInvoice.objects.filter(photographer=profile, created_at__date__range=(period_start, today)).exclude(status=ClientInvoice.Status.VOID)
+    previous_total = ClientInvoice.objects.filter(photographer=profile, created_at__date__range=(previous_start, period_start - timedelta(days=1))).exclude(status=ClientInvoice.Status.VOID).aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    revenue_total = invoices.aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    collected = invoices.aggregate(total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    confirmed = invoices.exclude(status=ClientInvoice.Status.DRAFT).aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    change = ((revenue_total - previous_total) / previous_total * 100) if previous_total else None
 
-    # ClientInvoice currently has no service/category field. Session names provide
-    # the best server-rendered breakdown until a first-class Booking model lands.
-    session_categories = {name: 0 for name in ("Weddings", "Portraits", "Events", "Commercial", "Other")}
-    for session_type in ClientSession.objects.filter(photographer=profile).values_list("session_type", flat=True):
-        normalized = session_type.lower()
-        category = next((name for name in session_categories if name[:-1].lower() in normalized), "Other")
-        session_categories[category] += 1
-    category_total = sum(session_categories.values())
-    session_breakdown = [
-        {"label": label, "count": count, "percent": round(count / category_total * 100) if category_total else 0}
-        for label, count in session_categories.items()
-    ]
+    stage_counts = {row["status"]: row["count"] for row in all_sessions.values("status").annotate(count=Count("id"))}
+    stage_total = sum(stage_counts.values())
+    booking_stages = [{"key": key, "label": label, "count": stage_counts.get(key, 0), "percent": round(stage_counts.get(key, 0) / stage_total * 100) if stage_total else 0} for key, label in ClientSession.Status.choices]
 
-    # Six compact points keep the chart dependency-free and reusable. Values are
-    # derived from invoice records rather than embedded presentation data.
-    revenue_chart = []
-    for offset in range(5, -1, -1):
-        point_start = month_start
-        for _ in range(offset):
-            point_start = (point_start - timedelta(days=1)).replace(day=1)
-        next_month = (point_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-        point_end = min(next_month - timedelta(days=1), timezone.localdate())
-        point_value = ClientInvoice.objects.filter(
-            photographer=profile, created_at__date__gte=point_start,
-            created_at__date__lte=point_end,
-        ).exclude(status=ClientInvoice.Status.VOID).aggregate(
-            total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField())
-        )["total"]
-        revenue_chart.append({"label": point_start.strftime("%b"), "value": point_value})
-    chart_max = max((point["value"] for point in revenue_chart), default=Decimal("0.00")) or Decimal("1.00")
-    for index, point in enumerate(revenue_chart):
-        point["x"] = 8 + index * 18
-        point["y"] = round(88 - float(point["value"] / chart_max) * 72, 2)
+    for session in list(upcoming[:5]) + today_sessions:
+        session.badge_variant = "success" if session.status == ClientSession.Status.CONFIRMED else "warning" if session.status == ClientSession.Status.TENTATIVE else "neutral"
+    upcoming_bookings = list(upcoming[:5])
+    for session in upcoming_bookings:
+        invoice = open_invoices.filter(booking=session).order_by("due_date").first()
+        session.needs_attention = session.status == ClientSession.Status.TENTATIVE or bool(invoice and invoice.balance > 0)
+        session.attention_label = "Confirmation needed" if session.status == ClientSession.Status.TENTATIVE else "Payment due"
 
-    activity_styles = {
-        ClientActivity.EventType.LEAD_CREATED: ("bi-envelope-plus", "inquiry"),
-        ClientActivity.EventType.LEAD_BOOKED: ("bi-calendar2-check", "booking"),
-        ClientActivity.EventType.CONTRACT_SIGNED: ("bi-pen", "contract"),
-        ClientActivity.EventType.PAYMENT_RECEIVED: ("bi-credit-card", "payment"),
-        ClientActivity.EventType.CONSULTATION_SCHEDULED: ("bi-calendar-event", "schedule"),
-        ClientActivity.EventType.GALLERY_DELIVERED: ("bi-images", "gallery"),
-    }
-    recent_activity = []
-    for activity in ClientActivity.objects.filter(photographer=profile).select_related("lead", "client")[:7]:
-        icon, tone = activity_styles.get(activity.event_type, ("bi-activity", "default"))
-        related = str(activity.client or activity.lead or "Booking workspace")
-        recent_activity.append({"icon": icon, "tone": tone, "description": activity.description or activity.get_event_type_display(), "related": related, "occurred_at": activity.occurred_at})
-    conversion_rate = all_leads.conversion_rate()
-
-    # Keep the pipeline useful even while the surrounding booking modules are
-    # being connected: every stage is calculated from the photographer's own
-    # inquiry records and links back to the existing filtered leads view.
-    pipeline_rows = {
-        row["status"]: row
-        for row in all_leads.values("status").annotate(
-            count=Count("id"),
-            value=Coalesce(
-                Sum("estimated_value"),
-                Value(Decimal("0.00")),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            ),
-        )
-    }
-    inquiry_pipeline = [
-        {
-            "key": key,
-            "label": "Proposal Sent" if key == Lead.Status.PROPOSAL_SENT else label,
-            "count": pipeline_rows.get(key, {}).get("count", 0),
-            "value": pipeline_rows.get(key, {}).get("value", Decimal("0.00")),
-            "url": f"{reverse('photographer_workspace:leads')}?status={key}",
-        }
-        for key, label in Lead.Status.choices
-    ]
-    responded_leads = list(all_leads.filter(last_contacted_at__isnull=False).only("created_at", "last_contacted_at"))
-    if responded_leads:
-        average_response_seconds = sum(
-            max((lead.last_contacted_at - lead.created_at).total_seconds(), 0) for lead in responded_leads
-        ) / len(responded_leads)
-        average_response = f"{average_response_seconds / 3600:.1f} hrs" if average_response_seconds < 86400 else f"{average_response_seconds / 86400:.1f} days"
-    else:
-        average_response = "—"
-    open_pipeline_value = all_leads.exclude(
-        status__in=[Lead.Status.BOOKED, Lead.Status.LOST]
-    ).pipeline_value()
-
-    overdue_retainers = open_invoices.filter(due_date__lt=timezone.localdate()).count()
-    awaiting_replies = all_leads.filter(status=Lead.Status.NEW).count()
-    upcoming_session_count = sessions.filter(
-        starts_at__lt=now + timedelta(days=7), status=ClientSession.Status.CONFIRMED,
-    ).count()
-    action_center = [
-        {"count": awaiting_replies, "description": "new leads awaiting response", "icon": "bi-reply", "priority": "Urgent", "tone": "urgent", "related": "Newest unanswered leads", "action": "Reply now", "url": f"{reverse('photographer_workspace:leads')}?status={Lead.Status.NEW}"},
-        {"count": 4, "description": "contracts awaiting signature", "icon": "bi-pen", "priority": "Due Soon", "tone": "soon", "related": "Client contracts requiring follow-up", "action": "Review booking contract", "url": contract_workspace_url},
-        {"count": open_invoices.count(), "description": "outstanding payments", "icon": "bi-credit-card-2-front", "priority": "Urgent" if overdue_retainers else "Due Soon", "tone": "urgent" if overdue_retainers else "soon", "related": "Open client invoices", "action": "Review payments", "url": reverse("photographer_workspace:payments")},
-        {"count": 2, "description": "questionnaires awaiting completion", "icon": "bi-ui-checks-grid", "priority": "Follow Up", "tone": "followup", "related": "Client preparation forms", "action": "View forms", "url": reverse("photographer_workspace:clients")},
-        {"count": upcoming_session_count, "description": f"upcoming session{'s' if upcoming_session_count != 1 else ''} this week", "icon": "bi-calendar-event", "priority": "Upcoming", "tone": "followup", "related": "Confirmed sessions in the next 7 days", "action": "Open schedule", "url": reverse("photographer_workspace:calendar")},
-    ]
-    action_center = [item for item in action_center if item["count"]]
-    priority_rank = {"urgent": 0, "soon": 1, "followup": 2}
-    action_center.sort(key=lambda item: (priority_rank[item["tone"]], -item["count"]))
+    activity_styles = {ClientActivity.EventType.LEAD_BOOKED: "bi-calendar2-check", ClientActivity.EventType.CONTRACT_SIGNED: "bi-pen", ClientActivity.EventType.PAYMENT_RECEIVED: "bi-credit-card", ClientActivity.EventType.CONSULTATION_SCHEDULED: "bi-calendar-event"}
+    supported_events = list(activity_styles)
+    recent_activity = [{"icon": activity_styles[activity.event_type], "description": activity.description or activity.get_event_type_display(), "related": str(activity.client or activity.lead or "Booking workspace"), "occurred_at": activity.occurred_at} for activity in ClientActivity.objects.filter(photographer=profile, event_type__in=supported_events).select_related("lead", "client")[:5]]
 
     context = _dashboard_context(request, "bookings", "Overview")
     context.update({
         "booking_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
-        "range_key": range_key,
-        "range_label": range_options[range_key],
-        "range_options": range_options.items(),
         "booking_metrics": [
-            {"label": "Upcoming Bookings", "value": sessions.count(), "icon": "bi-calendar2-check", "support": range_options[range_key], "indicator": "Schedule", "tone": "neutral", "tooltip": "Non-cancelled sessions scheduled within the selected date range.", "link_label": "View bookings", "url": reverse("photographer_workspace:calendar")},
-            {"label": "New Inquiries", "value": new_inquiries, "icon": "bi-chat-left-text", "support": "Awaiting first response", "indicator": "Needs review" if new_inquiries else "All caught up", "tone": "warning" if new_inquiries else "positive", "tooltip": "Active inquiries that have not yet moved beyond the new stage.", "link_label": "Review inquiries", "url": reverse("photographer_workspace:leads")},
-            {"label": "Pending Contracts", "value": 4, "icon": "bi-file-earmark-text", "support": "Awaiting signature", "indicator": "Sample data", "tone": "neutral", "tooltip": "Placeholder count of contracts awaiting a client signature; contract data will replace this sample when connected.", "link_label": "Review booking", "url": contract_workspace_url},
-            {"label": "Outstanding Payments", "value": f"{profile.default_currency} {outstanding:,.2f}", "icon": "bi-credit-card", "support": f"Across {open_invoices.count()} open invoice{'s' if open_invoices.count() != 1 else ''}", "indicator": "Action needed" if outstanding else "Up to date", "tone": "warning" if outstanding else "positive", "tooltip": "Remaining balance on invoices that are neither paid nor void.", "link_label": "Review payments", "url": reverse("photographer_workspace:payments")},
-            {"label": "Booking Revenue", "value": f"{profile.default_currency} {paid_revenue:,.2f}", "icon": "bi-graph-up-arrow", "support": "Payments collected", "indicator": "All time", "tone": "positive", "tooltip": "Total payments recorded against your client invoices.", "link_label": "View revenue", "url": reverse("photographer_workspace:revenue")},
-            {"label": "Conversion Rate", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel", "support": "Inquiries booked", "indicator": f"{all_leads.filter(status=Lead.Status.BOOKED).count()} converted", "tone": "positive" if conversion_rate else "neutral", "tooltip": "Percentage of active inquiries whose current status is booked.", "link_label": "View pipeline", "url": reverse("photographer_workspace:leads")},
+            {"label": "Upcoming Bookings", "value": upcoming.count(), "icon": "bi-calendar2-check", "context": "Tentative and confirmed sessions"},
+            {"label": "Bookings This Month", "value": all_sessions.filter(starts_at__date__gte=month_start, starts_at__date__lt=next_month).exclude(status=ClientSession.Status.CANCELLED).count(), "icon": "bi-calendar3", "context": today.strftime("%B %Y")},
+            {"label": "Pending Confirmations", "value": tentative.count(), "icon": "bi-clock-history", "context": "Tentative upcoming sessions"},
+            {"label": "Booking Revenue", "value": f"{profile.default_currency} {revenue_total:,.2f}", "icon": "bi-graph-up-arrow", "context": revenue_periods[revenue_period]},
         ],
-        "upcoming_bookings": sessions.filter(status=ClientSession.Status.CONFIRMED).order_by("starts_at")[:5],
-        "today_sessions": today_sessions[:5],
-        "today_focus": [
-            {"icon": "bi-camera", "value": today_sessions.count(), "label": "shoots today"},
-            {"icon": "bi-pen", "value": 1, "label": "contract awaiting signature"},
-            {"icon": "bi-cash-stack", "value": f"{profile.default_currency} {outstanding:,.0f}", "label": "payment due"},
-            {"icon": "bi-images", "value": 1, "label": "gallery ready for delivery"},
-        ],
-        "schedule_owner": profile.display_name or request.user.full_name or "Studio team",
-        "recent_inquiries": inquiries.order_by("-created_at")[:5],
-        "inquiry_pipeline": inquiry_pipeline,
-        "pipeline_inquiry_count": all_leads.count(),
-        "pipeline_insights": [
-            {"label": "Inquiry-to-booking conversion", "value": f"{conversion_rate:.0f}%", "icon": "bi-funnel"},
-            {"label": "Average response time", "value": average_response, "icon": "bi-clock-history"},
-            {"label": "Estimated open-pipeline value", "value": f"{profile.default_currency} {open_pipeline_value:,.2f}", "icon": "bi-cash-stack"},
-        ],
-        "action_center": action_center,
-        "action_count": sum(item["count"] for item in action_center),
-        "revenue_summary": {
-            "booked": monthly_booked, "collected": monthly_collected,
-            "outstanding": monthly_booked - monthly_collected, "average": monthly_average,
-            "change": period_change,
-        },
-        "revenue_chart": revenue_chart,
-        "revenue_chart_points": " ".join(f'{point["x"]},{point["y"]}' for point in revenue_chart),
-        "session_breakdown": session_breakdown,
+        "today_focus": focus[:5], "today_sessions": today_sessions, "upcoming_bookings": upcoming_bookings,
+        "booking_stages": booking_stages, "revenue_period": revenue_period, "revenue_periods": revenue_periods.items(),
+        "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
         "recent_booking_activity": recent_activity,
         "booking_quick_actions": [
-            {"label": "New Lead", "icon": "bi-envelope-plus", "url": reverse("photographer_workspace:add_lead"), "help": "Capture a new lead"},
             {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:bookings")}?action=new', "help": "Start a client booking"},
             {"label": "Block Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
-            {"label": "Share Booking Link", "icon": "bi-link-45deg", "url": f'{reverse("photographer_workspace:bookings")}?action=share', "help": "Copy your public booking link"},
+            {"label": "Schedule Consultation", "icon": "bi-chat-square-text", "url": reverse("photographer_workspace:calendar"), "help": "Plan a client consultation"},
         ],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
