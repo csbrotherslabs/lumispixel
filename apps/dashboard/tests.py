@@ -1195,6 +1195,8 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:leads"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<nav class="lpw-breadcrumb" aria-label="Breadcrumb">')
+        self.assertContains(response, '<strong aria-current="page">Leads</strong>', html=True)
         self.assertContains(response, "Track inquiries, manage follow-ups, and move opportunities toward booking.")
         self.assertContains(response, "Morgan Ray")
         self.assertNotContains(response, "Private")
