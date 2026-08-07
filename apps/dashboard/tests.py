@@ -1062,7 +1062,8 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:financial_overview"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="lp-container lp-financial-overview"')
+        self.assertContains(response, 'class="lp-financial-overview"')
+        self.assertNotContains(response, 'class="lp-container lp-financial-overview"')
         self.assertContains(response, "Financial Overview")
         self.assertContains(response, "Track revenue, payments, balances, and financial activity.")
         self.assertContains(response, "Create Invoice")

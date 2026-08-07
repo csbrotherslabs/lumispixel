@@ -139,9 +139,19 @@ def financial_summary(profile, range_key, currency="USD", today=None):
     for title, key, icon, tooltip in definitions:
         value = current[key]
         percentage, trend = _comparison(value, previous[key] if previous else None)
+        # Direction and meaning are deliberately separate. An increasing overdue
+        # balance needs attention, while an increasing collected total is healthy;
+        # outstanding (but not overdue) remains informational in either direction.
+        direction = "increase" if trend == "positive" else "decrease" if trend == "negative" else "neutral"
+        if key == "outstanding":
+            change_variant = "neutral"
+        elif key == "overdue":
+            change_variant = "danger" if trend == "positive" else "success" if trend == "negative" else "neutral"
+        else:
+            change_variant = "success" if trend == "positive" else "danger" if trend == "negative" else "neutral"
         cards.append({"title": title, "value": value, "formatted_value": format_currency(value, currency), "percentage": percentage,
                       "trend": trend, "period_label": window.label if percentage is not None else "", "tooltip": tooltip,
                       "icon": icon, "supporting_text": tooltip,
                       "change": f"{abs(percentage)}%" if percentage is not None else "",
-                      "display_trend": "increase" if trend == "positive" else "decrease" if trend == "negative" else "neutral"})
+                      "display_trend": direction, "change_variant": change_variant})
     return {"cards": cards, "has_activity": current["has_activity"], "window": window, "values": current}
