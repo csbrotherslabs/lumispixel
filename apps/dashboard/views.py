@@ -1914,7 +1914,7 @@ def schedule(request):
     all_profile_sessions = ClientSession.objects.filter(photographer=profile)
     session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
     locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
-    sessions = list(sessions_queryset.select_related("client").order_by("starts_at"))
+    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user").order_by("starts_at"))
     owner = request.user.full_name or "Studio photographer"
     events = [{
         "id": session.pk,
@@ -1922,16 +1922,26 @@ def schedule(request):
         "ends_at": timezone.localtime(session.starts_at) + timedelta(minutes=session.duration_minutes),
         "name": str(session.client), "session_type": session.session_type,
         "booking_number": f"LP-{session.pk:04d}", "location": session.location or "Location not set",
-        "photographer": owner, "status": session.get_status_display(),
+        "photographer": ", ".join(
+            membership.user.full_name or membership.user.email
+            for membership in session.assigned_members.all()
+        ) or owner, "status": session.get_status_display(), "status_key": session.status,
         "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
         "persisted": True, "move_url": reverse("photographer_workspace:reschedule_session", args=[session.pk]),
         "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
-        "contact_email": session.client.email,
-        "package": "Package not assigned", "contract_status": "Not signed",
-        "payment_status": "Retainer unpaid", "questionnaire_status": "Incomplete",
+        "contact_email": session.client.email, "contact_phone": session.client.phone,
+        "package": "Not assigned", "contract_status": "Not tracked",
+        "payment_status": (
+            "Not invoiced" if not session.invoices.all()
+            else "Paid" if all(invoice.status in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all())
+            else "Payment due"
+        ), "questionnaire_status": "Not tracked",
         "notes": "No internal notes have been added.",
-        "warnings": ["Contract not signed", "Retainer unpaid", "Questionnaire incomplete"] if session.status == ClientSession.Status.TENTATIVE else [],
+        "warnings": (
+            (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])
+            + (["Payment requires attention"] if session.invoices.all() and any(invoice.status not in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all()) else [])
+        ),
     } for session in sessions]
 
     # Production schedule surfaces only persisted, studio-scoped records. Other event
@@ -1948,8 +1958,23 @@ def schedule(request):
     }
     for index, event in enumerate(events):
         event["drawer_id"] = f"schedule-event-{index}"
-        event["duration"] = str(event["ends_at"] - event["starts_at"]).removeprefix("0:")
-        event["actions"] = action_labels[event["kind"]]
+        minutes = round((event["ends_at"] - event["starts_at"]).total_seconds() / 60)
+        hours, remaining_minutes = divmod(minutes, 60)
+        event["duration"] = " ".join(part for part in (
+            f"{hours} hr" if hours else "", f"{remaining_minutes} min" if remaining_minutes else "",
+        ) if part)
+        if event["kind"] == "booking":
+            event["actions"] = [
+                {"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-box-arrow-up-right"},
+                *([{"label": "Contact Client", "type": "link", "url": f'mailto:{event["contact_email"]}', "priority": "secondary", "icon": "bi-envelope"}] if event["contact_email"] else []),
+                {"label": "Edit Booking", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                *([{"label": "Reschedule", "type": "reschedule", "priority": "secondary", "icon": "bi-calendar3"}] if event["status_key"] not in (ClientSession.Status.COMPLETED, ClientSession.Status.CANCELLED) else []),
+                *([{"label": "Mark Complete", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "mark_complete", "priority": "workflow", "icon": "bi-check2-circle"}] if event["status_key"] in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) else []),
+                *([{"label": "Create Gallery", "type": "link", "url": reverse("photographer_workspace:create_gallery"), "priority": "workflow", "icon": "bi-images"}] if event["status_key"] == ClientSession.Status.COMPLETED else []),
+                *([{"label": "Cancel Booking", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}] if event["status_key"] != ClientSession.Status.CANCELLED else []),
+            ]
+        else:
+            event["actions"] = [{"label": label, "type": "link", "url": event["url"], "priority": "secondary"} for label in action_labels[event["kind"]]]
 
     # Keep the schedule's operational summary intentionally narrow: what is next
     # today, the next confirmed shoots, and only issues that need intervention.
@@ -2127,6 +2152,25 @@ def reschedule_session(request, pk):
         locked.starts_at, locked.duration_minutes = starts_at, duration
         locked.save(update_fields=("starts_at", "duration_minutes"))
     return JsonResponse(response | {"saved": True, "notified": bool(payload.get("notify_client"))})
+
+
+@photographer_workspace_required
+@require_POST
+def booking_action(request, pk):
+    """Apply the state transitions supported by the schedule inspector."""
+    session = get_object_or_404(ClientSession, pk=pk, photographer=request.studio)
+    action = request.POST.get("action")
+    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
+        session.status = ClientSession.Status.COMPLETED
+        session.save(update_fields=("status",))
+        messages.success(request, f"{session.session_type} for {session.client} marked complete.")
+    elif action == "cancel" and session.status != ClientSession.Status.CANCELLED:
+        session.status = ClientSession.Status.CANCELLED
+        session.save(update_fields=("status",))
+        messages.success(request, f"{session.session_type} for {session.client} cancelled.")
+    else:
+        messages.error(request, "That booking action is not available in its current state.")
+    return redirect("photographer_workspace:schedule")
 
 
 @photographer_workspace_required
