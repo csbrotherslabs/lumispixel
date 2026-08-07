@@ -797,7 +797,7 @@ def all_galleries(request):
     if query:
         galleries = galleries.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(client__first_name__icontains=query) | Q(client__last_name__icontains=query))
     if status in Gallery.Status.values:
-        galleries = galleries.filter(status=status)
+        galleries = galleries.filter(status__in=[Gallery.Status.UPLOADING, Gallery.Status.PROCESSING]) if status == Gallery.Status.PROCESSING else galleries.filter(status=status)
     if client.isdigit():
         galleries = galleries.filter(client_id=client)
     if event_date:
