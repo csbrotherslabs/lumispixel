@@ -2,8 +2,9 @@
 {% block workspace_content %}
 {% url 'photographer_workspace:all_galleries' as all_galleries_url %}
 {% url 'photographer_workspace:gallery_upload_queue' as upload_url %}
-<div class="lp-container lp-gallery-dashboard">
-  {% include "photographer_workspace/components/page_header.html" with title="Galleries" visually_hidden_title=True description="Manage gallery delivery, client activity, uploads, and storage." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
+<div class="lp-gallery-dashboard">
+  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Galleries</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Dashboard</strong></nav>
+  {% include "photographer_workspace/components/page_header.html" with title="Dashboard" description="Manage gallery delivery, client activity, uploads, and storage." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
 
   <section class="lp-card-grid lp-gallery-kpis" aria-label="Gallery summary">
     {% if gallery_dashboard_loading %}

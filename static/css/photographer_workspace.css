@@ -430,6 +430,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Galleries dashboard: tokenized operations overview. */
 .lpw-main:has(.lp-gallery-dashboard){background:var(--lp-color-page)}
 .lp-gallery-dashboard{display:grid;gap:var(--lp-space-6)}
+.lp-gallery-dashboard>.lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}.lp-gallery-dashboard>.lpw-breadcrumb a{color:var(--lp-text-brand)}.lp-gallery-dashboard>.lpw-breadcrumb strong{color:var(--lp-text-primary)}
 .lp-gallery-dashboard :is(h1,h2,h3,strong){color:var(--lp-text-primary)}
 .lp-gallery-dashboard :is(p,small,time){color:var(--lp-text-muted)}
 .lp-gallery-kpis{grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--lp-space-4)}
