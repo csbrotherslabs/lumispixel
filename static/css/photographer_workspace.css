@@ -694,7 +694,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Leads premium pipeline presentation */
 .lp-leads-controls{padding:var(--lp-space-4);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-lg);background:var(--lp-color-surface);box-shadow:var(--lp-shadow-subtle)}
 .lp-leads-filters input,.lp-leads-filters select{min-height:2.75rem;transition:border-color var(--lp-transition-duration) var(--lp-transition-easing),box-shadow var(--lp-transition-duration) var(--lp-transition-easing)}
-.lp-leads-search{position:relative}.lp-leads-search input{padding-left:2.5rem}.lp-leads-search:after{position:absolute;bottom:.8rem;left:.85rem;color:var(--lp-text-muted);font-family:"bootstrap-icons";content:"\\f52a";pointer-events:none}
+.lp-leads-search input{padding-left:var(--lp-space-3)}
 .lp-leads-board-wrap{scrollbar-color:var(--lp-color-border-strong) transparent;scrollbar-width:thin;border-radius:var(--lp-radius-lg);background:var(--lp-color-page)}
 .lp-leads-board-wrap:focus-visible{outline:var(--lp-focus-ring);outline-offset:var(--lp-space-1)}
 /* .lp-leads-board{padding:var(--lp-space-3)} */
