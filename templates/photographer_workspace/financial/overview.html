@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% url 'photographer_workspace:invoices' as create_invoice_url %}{% url 'photographer_workspace:transactions' as transactions_url %}
-<div class="lp-container lp-financial-overview" id="main-content">
+<div class="lp-financial-overview" id="main-content">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Overview</strong></nav>
   <header class="lp-page-header">
     <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Financial Overview</h1><p class="lp-page-description">Track revenue, payments, balances, and financial activity.</p></div>
