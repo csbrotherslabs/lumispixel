@@ -593,10 +593,11 @@ def clients_workspace(request):
     outstanding_total = all_clients.outstanding_balances().aggregate(
         total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
     )["total"]
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     summary = [
         {"label": "Total Clients", "value": all_clients.count(), "icon": "bi-people", "note": "All client relationships"},
         {"label": "Active Clients", "value": all_clients.active().count(), "icon": "bi-person-check", "note": "Currently active"},
-        {"label": "Upcoming Sessions", "value": all_clients.upcoming_sessions(now).count(), "icon": "bi-calendar2-check", "note": "Scheduled from today"},
+        {"label": "New This Month", "value": all_clients.filter(created_at__gte=month_start).count(), "icon": "bi-person-plus", "note": "Added since the start of the month"},
         {"label": "Outstanding Balance", "value": f"{profile.default_currency} {outstanding_total:,.2f}", "icon": "bi-wallet2", "note": "Across open invoices"},
     ]
     tags = sorted({str(tag) for values in all_clients.values_list("tags", flat=True) for tag in (values or [])}, key=str.casefold)
@@ -610,7 +611,8 @@ def clients_workspace(request):
         "selected_status": status, "selected_client_type": client_type, "selected_tag": tag,
         "selected_upcoming": has_session, "selected_balance": has_balance, "client_tags": tags,
         "client_status_choices": Client.Status.choices, "client_type_choices": Client.ClientType.choices,
-        "retained_query": retained.urlencode(),
+        "retained_query": retained.urlencode(), "result_count": paginator.count,
+        "has_filters": any([query, status, client_type, tag, has_session, has_balance]),
     })
     return render(request, "photographer_workspace/clients.html", context)
 
