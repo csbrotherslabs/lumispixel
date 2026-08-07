@@ -1,6 +1,6 @@
 from decimal import Decimal
 from calendar import Calendar
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 import csv
 import io
 import mimetypes
@@ -1934,43 +1934,9 @@ def schedule(request):
         "warnings": ["Contract not signed", "Retainer unpaid", "Questionnaire incomplete"] if session.status == ClientSession.Status.TENTATIVE else [],
     } for session in sessions]
 
-    # Until schedule-specific event models are connected, keep an empty calendar useful
-    # with clearly disclosed, realistic sample work. Existing bookings always take priority.
-    using_sample_events = not events
-    if using_sample_events:
-        anchor = selected_date if view == "day" else (today if (selected_date.year, selected_date.month) == (today.year, today.month) else week_start)
-        samples = [
-            (0, 9, "Harper family", "Family portraits", "booking", "Confirmed", "bi-camera", False, False, 2),
-            (0, 10, "Maya & Theo", "Wedding consultation", "consultation", "Tentative", "bi-chat-square-text", True, False, 1),
-            (1, 13, "Rivera wedding", "Upcoming shoot", "booking", "Confirmed", "bi-camera", True, False, 3),
-            (2, 9, "Nora Chen", "Brand mini session", "mini", "6 slots open", "bi-people", False, False, 4),
-            (3, 8, "Miller gallery", "Editing day", "editing", "In progress", "bi-magic", False, True, 8),
-            (4, 12, "Studio maintenance", "Blocked time", "blocked", "Unavailable", "bi-slash-circle", False, False, 3),
-            (5, 0, "Summer break", "Vacation", "vacation", "Away", "bi-sun", False, True, 24),
-            (1, 10, "Olivia Bennett", "Newborn session", "booking", "Tentative", "bi-camera", True, False, 2),
-        ]
-        events = []
-        for offset, hour, name, session_type, kind, status, icon, warning, all_day, duration in samples:
-            event_date = anchor + timedelta(days=offset)
-            starts_at = timezone.make_aware(datetime.combine(event_date, time(hour=hour)))
-            events.append({
-                "id": 1000 + offset,
-                "starts_at": starts_at, "ends_at": starts_at + timedelta(hours=duration),
-                "name": name, "session_type": session_type, "photographer": owner,
-                "booking_number": f"LP-{1000 + offset:04d}", "location": "LumisPixel Studio" if kind != "vacation" else "Away",
-                "status": status, "kind": kind, "icon": icon, "warning": warning,
-                "persisted": False, "move_url": "",
-                "all_day": all_day, "url": reverse("photographer_workspace:bookings"),
-                "contact": "hello@example.com · (555) 014-2086", "package": "Signature Collection",
-                "contact_email": "hello@example.com",
-                "contract_status": "Signed" if not warning else "Not signed",
-                "payment_status": "Paid" if not warning else "Retainer unpaid",
-                "questionnaire_status": "Complete" if not warning else "Incomplete",
-                "notes": "Confirm arrival instructions with the client before the event.",
-                "warnings": (["Contract not signed", "Retainer unpaid", "Questionnaire incomplete"] if kind == "booking" and warning else
-                             ["Scheduling conflict"] if kind == "consultation" and warning else
-                             ["Travel time may be insufficient"] if kind == "mini" else []),
-            })
+    # Production schedule surfaces only persisted, studio-scoped records. Other event
+    # types remain available in the creation controls until their models are connected.
+    using_sample_events = False
 
     action_labels = {
         "booking": ["Open Full Booking", "Contact Client", "Edit Booking", "Reschedule", "Mark Complete", "Create Gallery", "Cancel Booking"],
@@ -1984,26 +1950,6 @@ def schedule(request):
         event["drawer_id"] = f"schedule-event-{index}"
         event["duration"] = str(event["ends_at"] - event["starts_at"]).removeprefix("0:")
         event["actions"] = action_labels[event["kind"]]
-
-    # Apply the same normalized filter state to illustrative and persisted events so
-    # switching calendar modes never changes the result set.
-    if using_sample_events:
-        q = filter_values["q"].casefold()
-        def sample_matches(event):
-            searchable = " ".join(str(event.get(key, "")) for key in ("name", "booking_number", "session_type", "location")).casefold()
-            return (
-                (not q or q in searchable) and
-                (not filter_values["member"] or filter_values["member"] == "me") and
-                (not filter_values["session_type"] or event["session_type"] == filter_values["session_type"]) and
-                (not filter_values["status"] or event["status"].casefold().replace(" ", "_") == filter_values["status"]) and
-                (not filter_values["event_type"] or event["kind"] == filter_values["event_type"]) and
-                (not filter_values["location"] or event["location"] == filter_values["location"]) and
-                (filter_values["show_completed"] or event["status"] != "Completed") and
-                (filter_values["show_cancelled"] or event["status"] != "Cancelled")
-            )
-        events = [event for event in events if sample_matches(event)]
-        session_types = sorted({event["session_type"] for event in events} | {item[3] for item in samples})
-        locations = ["Away", "LumisPixel Studio"]
 
     # Keep the schedule's operational summary intentionally narrow: what is next
     # today, the next confirmed shoots, and only issues that need intervention.

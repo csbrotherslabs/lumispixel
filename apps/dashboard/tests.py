@@ -581,7 +581,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-event-drawer role="dialog"')
         self.assertContains(response, 'data-schedule-event="schedule-event-0"')
         self.assertContains(response, "Open Full Booking")
-        self.assertContains(response, "Contract not signed")
+        self.assertContains(response, '"contract_status": "Not signed"')
         self.assertContains(response, "Today’s Schedule")
         self.assertContains(response, "Upcoming Shoots")
         self.assertContains(response, "Scheduling Alerts")

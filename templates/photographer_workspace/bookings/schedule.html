@@ -1,28 +1,28 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpw-schedule-page" data-calendar>
+<div class="lpw-schedule-page lp-container lp-container--wide" data-calendar>
   <p id="schedule-move-help" class="sr-only">Drag this booking to a month date to reschedule. With keyboard focus, use Alt plus left or right to move one day, or Alt plus up or down to resize by 15 minutes.</p>
   <a class="sr-only" href="{% url 'photographer_workspace:dashboard' %}">Back to Dashboard</a>
-  <header class="lpw-schedule-header">
-    <div class="lpw-bookings-heading"><nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Schedule</strong></nav><h1 id="workspace-page-title">Schedule</h1><p>View bookings, manage availability, and organize photography work.</p></div>
-    <div class="lpw-schedule-actions"><button class="lpw-btn lpw-btn-primary" type="button" data-event-form-open="booking"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</button><button class="lpw-btn" type="button" data-availability-open aria-expanded="false" aria-controls="availability-drawer"><i class="bi bi-clock-history" aria-hidden="true"></i>Manage Availability</button><button class="lpw-btn" type="button" data-event-form-open="blocked"><i class="bi bi-calendar-x" aria-hidden="true"></i>Block Time</button><details class="lpw-schedule-more"><summary class="lpw-btn" aria-label="More schedule actions"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary><div><button type="button" data-event-form-open="consultation"><i class="bi bi-chat-square-text"></i>Add Consultation</button><button type="button" data-event-form-open="editing"><i class="bi bi-magic"></i>Add Editing Time</button><button type="button" data-event-form-open="vacation"><i class="bi bi-sun"></i>Add Vacation</button><button type="button" data-event-form-open="mini"><i class="bi bi-people"></i>Create Mini Session</button></div></details></div>
+  <header class="lpw-schedule-header lp-page-header">
+    <div class="lpw-bookings-heading lp-page-heading"><nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Bookings</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Schedule</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Schedule</h1><p class="lp-page-description">View bookings, manage availability, and organize photography work.</p></div>
+    <div class="lpw-schedule-actions lp-header-actions" role="group" aria-label="Schedule actions"><button class="lp-button lp-button--primary lp-button--md" type="button" data-event-form-open="booking"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>New Booking</span></button><button class="lp-button lp-button--secondary lp-button--md" type="button" data-availability-open aria-expanded="false" aria-controls="availability-drawer"><i class="bi bi-clock-history" aria-hidden="true"></i><span>Manage Availability</span></button><button class="lp-button lp-button--secondary lp-button--md" type="button" data-event-form-open="blocked"><i class="bi bi-calendar-x" aria-hidden="true"></i><span>Block Time</span></button><details class="lpw-schedule-more"><summary class="lp-button lp-button--ghost lp-button--md" aria-label="More schedule actions"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary><div><button type="button" data-event-form-open="consultation"><i class="bi bi-chat-square-text"></i>Add Consultation</button><button type="button" data-event-form-open="editing"><i class="bi bi-magic"></i>Add Editing Time</button><button type="button" data-event-form-open="vacation"><i class="bi bi-sun"></i>Add Vacation</button><button type="button" data-event-form-open="mini"><i class="bi bi-people"></i>Create Mini Session</button></div></details></div>
   </header>
 
   <section class="lpw-schedule-filterbar" data-schedule-filters aria-labelledby="schedule-filters-title">
     <div class="lpw-filterbar-heading">
-      <div><span class="lpw-filter-eyebrow">Workspace view</span><h2 id="schedule-filters-title">Find what matters</h2></div>
+      <h2 id="schedule-filters-title"><i class="bi bi-funnel" aria-hidden="true"></i> Schedule tools</h2>
       <button class="lpw-filter-mobile-trigger" type="button" data-schedule-filter-open aria-expanded="false" aria-controls="schedule-filter-panel"><i class="bi bi-funnel" aria-hidden="true"></i>Filters{% if active_filter_count %}<span>{{ active_filter_count }}</span>{% endif %}</button>
     </div>
     <form id="schedule-filter-panel" class="lpw-schedule-filter-form" method="get" data-schedule-filter-form>
       <input type="hidden" name="view" value="{{ schedule_view }}">
-      <label class="lpw-schedule-search"><span>Search schedule</span><i class="bi bi-search" aria-hidden="true"></i><input name="q" value="{{ filter_values.q }}" placeholder="Client, booking #, session, or location"><kbd>⌘ K</kbd></label>
       <div class="lpw-filter-fields">
-        <label><span>Photographer</span><select name="member"><option value="">All team members</option><option value="me"{% if filter_values.member == 'me' %} selected{% endif %}>{{ request.user.full_name|default:'Me' }} (me)</option></select></label>
+        <label class="lpw-schedule-search"><span>Search schedule</span><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="{{ filter_values.q }}" placeholder="Client, booking #, session, or location"><kbd>⌘ K</kbd></label>
+        <label><span>Photographer / team member</span><select name="member"><option value="">All team members</option><option value="me"{% if filter_values.member == 'me' %} selected{% endif %}>{{ request.user.full_name|default:'Me' }} (me)</option></select></label>
         <label><span>Session type</span><select name="session_type"><option value="">All sessions</option>{% for option in session_type_options %}<option value="{{ option }}"{% if filter_values.session_type == option %} selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
         <label><span>Booking status</span><select name="status"><option value="">All active statuses</option>{% for value, label in booking_status_options %}<option value="{{ value }}"{% if filter_values.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
         <label><span>Event type</span><select name="event_type"><option value="">All event types</option>{% for value, label in event_type_options %}<option value="{{ value }}"{% if filter_values.event_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <label><span>Location</span><select name="location"><option value="">All locations</option>{% for option in location_options %}<option value="{{ option }}"{% if filter_values.location == option %} selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
-        <label><span>Date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></label>
+        <label class="lpw-filter-secondary"><span>Location</span><select name="location"><option value="">All locations</option>{% for option in location_options %}<option value="{{ option }}"{% if filter_values.location == option %} selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
+        <label class="lpw-filter-secondary"><span>Date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></label>
       </div>
       <fieldset class="lpw-schedule-toggles"><legend>Quick filters</legend>
         <div class="lpw-scope-toggle"><label><input type="radio" name="scope" value="me"{% if filter_values.scope == 'me' %} checked{% endif %}><span><i class="bi bi-person"></i>My Schedule</span></label><label><input type="radio" name="scope" value="studio"{% if filter_values.scope != 'me' %} checked{% endif %}><span><i class="bi bi-people"></i>Entire Studio</span></label></div>
@@ -49,6 +49,7 @@
   {% else %}
   <div class="lpw-schedule-workspace">
   <div class="lpw-schedule-calendar-area">
+  {% if not schedule_events and schedule_view != 'agenda' and schedule_view != 'list' %}<div class="lpw-calendar-empty" role="status"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span><strong>Your calendar is clear.</strong> No events match this date range and filter set.</span></div>{% endif %}
 
   {% if schedule_view == 'agenda' %}
   <section class="lpw-agenda" aria-label="Agenda for {{ date_range_label }}">
@@ -93,7 +94,7 @@
           <div class="lpw-today-time"><time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:"g:i A" }}</time><span>{{ event.ends_at|date:"g:i A" }}</span></div>
           <div class="lpw-today-copy"><strong>{{ event.name }}</strong><span>{{ event.session_type }}</span><small><i class="bi bi-geo-alt"></i>{{ event.location }}</small><small><i class="bi bi-person"></i>{{ event.photographer }}</small></div>
           <div class="lpw-today-action"><span class="lpw-booking-status lpw-booking-status--{{ event.status|lower }}">{{ event.status }}</span><button type="button" data-schedule-event="{{ event.drawer_id }}">View <i class="bi bi-arrow-right"></i></button></div>
-        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-calendar2-check"></i><strong>No more events today</strong><span>Your remaining schedule is clear.</span></div>{% endfor %}</div>
+        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-calendar2-check"></i><strong>Your schedule is open today.</strong><span>No bookings are scheduled for today.</span></div>{% endfor %}</div>
       </section>
 
       <section class="lpw-summary-panel" aria-labelledby="upcoming-summary-title">
@@ -102,7 +103,7 @@
           <div><strong>{{ event.name }}</strong><span>{{ event.session_type }}</span></div><time datetime="{{ event.starts_at|date:'c' }}">{{ event.starts_at|date:"M j" }}<small>{{ event.starts_at|date:"g:i A" }}</small></time>
           <p><i class="bi bi-geo-alt"></i>{{ event.location }}</p><div class="lpw-prep-status"><span class="{% if event.contract_status == 'Signed' %}is-ready{% endif %}"><i class="bi bi-file-earmark-text"></i>{{ event.contract_status }}</span><span class="{% if event.payment_status == 'Paid' %}is-ready{% endif %}"><i class="bi bi-credit-card"></i>{{ event.payment_status }}</span></div>
           {% if event.preparation_incomplete %}<button class="lpw-prep-warning" type="button" data-schedule-event="{{ event.drawer_id }}"><i class="bi bi-exclamation-triangle-fill"></i>Preparation incomplete <span>Review</span></button>{% endif %}
-        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-camera"></i><strong>No confirmed shoots ahead</strong><span>Confirmed sessions will appear here.</span></div>{% endfor %}</div>
+        </article>{% empty %}<div class="lpw-summary-empty"><i class="bi bi-camera"></i><strong>No upcoming sessions scheduled.</strong><span>Confirmed sessions will appear here.</span></div>{% endfor %}</div>
       </section>
 
       <section class="lpw-summary-panel lpw-alert-panel" aria-labelledby="alerts-summary-title">
