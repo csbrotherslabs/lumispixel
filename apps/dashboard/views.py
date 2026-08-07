@@ -15,7 +15,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.db import DatabaseError, transaction
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -787,7 +787,12 @@ def ai_job_action(request, pk):
 @require_GET
 def all_galleries(request):
     profile = request.studio
-    all_records = Gallery.objects.for_photographer(profile).active().select_related("client")
+    card_photos = GalleryPhoto.objects.for_photographer(profile).filter(
+        is_visible=True, status=GalleryPhoto.Status.COMPLETED
+    ).order_by("-is_cover", "-created_at")
+    all_records = Gallery.objects.for_photographer(profile).active().select_related("client").prefetch_related(
+        Prefetch("photos", queryset=card_photos, to_attr="card_photos")
+    )
     galleries = all_records
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
