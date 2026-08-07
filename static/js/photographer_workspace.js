@@ -224,6 +224,27 @@
   const modalCancel = document.querySelector('[data-modal-cancel]'); if (modalCancel) modalCancel.addEventListener('click', function () { galleryModal.close(); });
   document.querySelectorAll('[data-copy-link]').forEach(function (button) { button.addEventListener('click', function () { navigator.clipboard.writeText(new URL(button.dataset.copyLink, window.location.origin).href); button.innerHTML = '<i class="bi bi-check2"></i>Link copied'; }); });
 
+  document.querySelectorAll('[data-gallery-image]').forEach(function (image) {
+    image.addEventListener('error', function () {
+      const fallback = image.parentElement.querySelector('.lpw-gallery-image-error');
+      image.hidden = true;
+      if (fallback) fallback.hidden = false;
+    });
+  });
+  document.querySelectorAll('.lpw-gallery-menu').forEach(function (menu) {
+    menu.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        menu.open = false;
+        menu.querySelector('summary').focus();
+      }
+    });
+  });
+  document.addEventListener('click', function (event) {
+    document.querySelectorAll('.lpw-gallery-menu[open]').forEach(function (menu) {
+      if (!menu.contains(event.target)) menu.open = false;
+    });
+  });
+
   const coverDrop = document.querySelector('[data-cover-drop]');
   const coverInput = document.querySelector('[data-cover-input]');
   if (coverDrop && coverInput) {
