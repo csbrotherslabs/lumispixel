@@ -94,6 +94,21 @@ class FinancialDatabaseSelectorTests(TestCase):
         for key in ("invoice_value", "collected", "refunds", "credits", "net_revenue", "outstanding", "overdue", "booking_value"):
             self.assertEqual(values[key], ZERO)
 
+    def test_kpi_change_semantics_are_not_inferred_from_direction_alone(self):
+        profile = self.profile("semantic-kpis")
+        self.invoice(profile, suffix="previous", total=Decimal("100.00"), created=date(2026, 6, 1),
+                     status=ClientInvoice.Status.SENT, due_date=date(2026, 6, 15))
+        self.invoice(profile, suffix="current", total=Decimal("500.00"),
+                     status=ClientInvoice.Status.SENT, due_date=date(2026, 7, 1))
+
+        cards = {card["title"]: card for card in financial_summary(
+            profile, "this_month", today=self.today
+        )["cards"]}
+
+        self.assertEqual(cards["Outstanding"]["change_variant"], "neutral")
+        self.assertEqual(cards["Overdue"]["change_variant"], "danger")
+        self.assertEqual(cards["Overdue"]["display_trend"], "increase")
+
     def test_transactions_page_uses_real_view_summary_and_active_navigation(self):
         profile = self.profile("transactions")
         self.client.force_login(profile.user)
