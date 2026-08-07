@@ -796,7 +796,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lpw-filter-fields input::placeholder{color:var(--lp-text-subtle);opacity:1}
 .lpw-filter-fields .lpw-filter-secondary{display:none}
 .lpw-schedule-toggles{gap:var(--lp-space-4);margin-top:var(--lp-space-3);padding-top:var(--lp-space-3);border-color:var(--lp-color-border)}
-.lpw-scope-toggle{align-items:center;justify-content:center}.lpw-scope-toggle label{display:flex;align-items:center}.lpw-scope-toggle span{align-items:center;justify-content:center;text-align:center}
+.lpw-scope-toggle{align-items:center;justify-content:center}.lpw-scope-toggle label{display:flex;align-items:center; margin-top: 5px; margin-bottom: 6px;}.lpw-scope-toggle span{align-items:center;justify-content:center;text-align:center}
 .lpw-scope-toggle span,.lpw-switch{min-height:32px;color:var(--lp-text-secondary);font-size:var(--lp-type-caption)}
 .lpw-scope-toggle input:focus-visible+span,.lpw-switch input:focus-visible+span{outline:var(--lp-focus-ring);outline-offset:2px}
 .lpw-filter-actions{margin-top:var(--lp-space-2)}
