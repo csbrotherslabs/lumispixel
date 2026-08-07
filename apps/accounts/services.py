@@ -133,8 +133,5 @@ def send_verification_email(request, user):
     message.attach_alternative(html_body, "text/html")
     try:
         message.send()
-        print("here")
     except (OSError, SMTPException) as exc:
-        print("141")
-        print(exc)
         raise EmailDeliveryError from exc

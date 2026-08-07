@@ -143,7 +143,7 @@
   color: var(--lp-text-subtle);
   opacity: 1;
 }
-.lumis-workspace-body :where(input, select, textarea, button):disabled,
+/* .lumis-workspace-body :where(input, select, textarea, button):disabled, */
 .lumis-workspace-body :where([aria-disabled="true"]) {
   color: var(--lp-text-disabled);
 }
@@ -235,7 +235,10 @@
 .lp-button--primary { background: var(--lp-color-brand); }
 .lp-button--primary:hover,
 .lp-button--primary:active { background: var(--lp-color-brand-hover); }
-.lp-button--secondary { background: var(--lp-color-text); color: var(--lp-color-surface); }
+.lp-button--secondary { 
+  background: var(--lp-color-text); 
+  color: var(--lp-color-surface); 
+}
 .lp-button--outline { background: transparent; border-color: var(--lp-color-border-strong); color: var(--lp-color-text); }
 .lp-button--outline:hover, .lp-button--subtle:hover { border-color: var(--lp-color-brand-border); color: var(--lp-color-brand); }
 .lp-button--subtle { background: var(--lp-color-brand-subtle); color: var(--lp-color-brand); }
@@ -267,7 +270,7 @@
 .lp-kpi-card header { align-items: center; display: flex; justify-content: space-between; }
 .lp-kpi-card__label { color: var(--lp-color-text-secondary); font-size: var(--lp-type-label); font-weight: 600; }
 .lp-kpi-card__icon { align-items: center; background: var(--lp-color-brand-subtle); border-radius: var(--lp-radius-sm); color: var(--lp-color-brand); display: inline-flex; height: 2.5rem; justify-content: center; width: 2.5rem; }
-.lp-kpi-card__value { font-size: var(--lp-type-kpi); letter-spacing: -.03em; line-height: var(--lp-leading-tight); }
+.lp-kpi-card__value { font-size: var(--lp-type-section-title); letter-spacing: -.03em; line-height: var(--lp-leading-tight); }
 .lp-kpi-card__change { align-items: center; color: var(--lp-color-text-muted); display: flex; font-size: var(--lp-type-caption); gap: var(--lp-space-1); margin: 0; }
 .lp-kpi-card__change.is-increase { color: var(--lp-color-success); }.lp-kpi-card__change.is-decrease { color: var(--lp-color-danger); }
 .lp-kpi-card__comparison { color: var(--lp-color-text-muted); }.lp-kpi-card__unavailable { color: var(--lp-color-text-muted); margin: var(--lp-space-4) 0; }

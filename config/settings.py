@@ -31,8 +31,12 @@ SECRET_KEY = os.getenv(
     "django-insecure-development-only-change-me",
 )
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "510f-136-33-72-84.ngrok-free.app", "*"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://510f-136-33-72-84.ngrok-free.app",
+]
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
