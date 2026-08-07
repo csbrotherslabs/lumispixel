@@ -1,36 +1,35 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpw-financial-page lpw-transactions-page">
-  <header class="lpw-financial-header">
-    <div class="lpw-financial-heading">
+<div class="lp-container lp-container--wide lpw-transactions-page">
+  <header class="lp-page-header lpw-transactions-header">
+    <div class="lp-page-heading">
       <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Transactions</strong></nav>
-      <h1 id="workspace-page-title">Transactions</h1>
-      <p>Manage invoices, payments, refunds, credits, and financial activity.</p>
+      <h1 class="lp-page-title" id="workspace-page-title">Transactions</h1>
+      <p class="lp-page-description">Find and manage invoices, payments, refunds, credits, and financial activity.</p>
     </div>
-    <div class="lpw-financial-actions">
-      <button class="lpw-btn lpw-btn-primary" type="button" data-financial-open="payment"><i class="bi bi-cash-coin"></i>Record payment</button>
-      <button class="lpw-btn" type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise"></i>Issue refund</button>
-      <button class="lpw-btn" type="button" data-financial-open="credit"><i class="bi bi-wallet2"></i>Add credit</button>
-      <form class="lpw-date-range" method="get">
+    <div class="lpw-transactions-header__tools">
+      <form class="lpw-date-range lpw-transactions-period" method="get">
         <label for="transaction-range"><i class="bi bi-calendar3" aria-hidden="true"></i><span class="sr-only">Transaction date range</span></label>
         <select id="transaction-range" name="range" onchange="this.form.submit()">
           {% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </form>
-      <a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-receipt" aria-hidden="true"></i>Create invoice</a>
+      <div class="lp-header-actions lpw-transactions-actions">
+      <a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a>
+      <button class="lp-button lp-button--secondary lp-button--md" type="button" data-financial-open="payment"><i class="bi bi-cash-coin" aria-hidden="true"></i>Record Payment</button>
       <details class="lpw-financial-menu">
-        <summary class="lpw-btn"><span>More actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <summary class="lp-button lp-button--ghost lp-button--md"><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
         <div>
-          <a href="?range={{ range_key }}&amp;action=record-payment"><i class="bi bi-cash-coin" aria-hidden="true"></i><span><strong>Record payment</strong><small>Add an offline or manual payment</small></span></a>
-          <a href="?range={{ range_key }}&amp;action=issue-refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue refund</strong><small>Return a completed payment</small></span></a>
-          <a href="?range={{ range_key }}&amp;action=add-credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add credit</strong><small>Apply credit to a client balance</small></span></a>
+          <button type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue Refund</strong><small>Return a completed payment</small></span></button>
+          <button type="button" data-financial-open="credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add Credit</strong><small>Apply credit to a client balance</small></span></button>
           <a href="{% url 'photographer_workspace:financial_transaction_export' %}?{{ request.GET.urlencode }}"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export filtered view</strong><small>Download approved columns as CSV</small></span></a>
         </div>
       </details>
+      </div>
     </div>
   </header>
 
-  <div class="lpw-financial-content">
+  <div class="lpw-transactions-content">
     <section class="lpw-transaction-summary" aria-label="Transaction summary"{% if transaction_state == 'loading' %} aria-busy="true"{% endif %}>
       {% for item in transaction_summary %}<article>
         <span class="lpw-transaction-summary__icon"><i class="bi {{ item.icon }}" aria-hidden="true"></i></span>
@@ -89,13 +88,13 @@
     {% elif transaction_state == 'error' %}
       <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Transactions could not be loaded</h2><p>Financial activity is temporarily unavailable. Your records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:transactions' %}?range={{ range_key }}">Try again</a></section>
     {% elif active_filter_count and transaction_state == 'empty' %}
-      <section class="lpw-financial-state" aria-labelledby="transactions-no-results-title"><span><i class="bi bi-search" aria-hidden="true"></i></span><h2 id="transactions-no-results-title">No matching transactions</h2><p>Try changing or clearing filters to see more financial activity.</p><a class="lpw-btn" href="{{ clear_filters_url }}">Clear filters</a></section>
+      <section class="lpw-financial-state lpw-financial-state--compact" aria-labelledby="transactions-no-results-title"><span><i class="bi bi-search" aria-hidden="true"></i></span><h2 id="transactions-no-results-title">No matching transactions</h2><p>Try changing or clearing filters to see more financial activity.</p><a class="lp-button lp-button--primary lp-button--md" href="{{ clear_filters_url }}">Clear Filters</a></section>
     {% elif transaction_state == 'empty' and transaction_view != 'all' and not active_filter_count %}
-      <section class="lpw-financial-state"><span><i class="bi bi-inbox"></i></span><h2>No records in this view</h2><p>Choose another transaction view or create a new financial record.</p></section>
+      <section class="lpw-financial-state lpw-financial-state--compact"><span><i class="bi bi-inbox" aria-hidden="true"></i></span><h2>No records in this view</h2><p>Choose another transaction view or create a new financial record.</p></section>
     {% elif transaction_state == 'empty' and not transaction_has_activity and range_key == 'all_time' %}
-      <section class="lpw-financial-state"><span><i class="bi bi-stars"></i></span><h2>No financial records yet</h2><p>Create your first invoice to start tracking financial activity.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}">Create invoice</a></section>
+      <section class="lpw-financial-state lpw-financial-state--compact"><span><i class="bi bi-stars" aria-hidden="true"></i></span><h2>No financial records yet</h2><p>Create an invoice or record a payment to begin tracking financial activity.</p><div class="lpw-empty-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a><button class="lp-button lp-button--secondary lp-button--md" type="button" data-financial-open="payment">Record Payment</button></div></section>
     {% elif transaction_state == 'empty' or not transaction_has_activity %}
-      <section class="lpw-financial-state" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or adjust the date range to begin managing your financial activity here.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create invoice</a></section>
+      <section class="lpw-financial-state lpw-financial-state--compact" aria-labelledby="transactions-empty-title"><span><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span><h2 id="transactions-empty-title">No transactions in this date range</h2><p>Create an invoice or record a payment to begin tracking financial activity.</p><div class="lpw-empty-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a><button class="lp-button lp-button--secondary lp-button--md" type="button" data-financial-open="payment"><i class="bi bi-cash-coin" aria-hidden="true"></i>Record Payment</button></div></section>
     {% else %}
       {% include "photographer_workspace/financial/_transactions_table.html" %}
     {% endif %}
