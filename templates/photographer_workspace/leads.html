@@ -3,7 +3,10 @@
 {% url 'photographer_workspace:add_lead' as add_lead_url %}
 <div class="lp-crm-page lp-leads" id="main-content">
   <header class="lp-page-header">
-    <div class="lp-page-heading"><h1 class="lp-page-title">Leads</h1><p class="lp-page-description">Track inquiries, manage follow-ups, and move opportunities toward booking.</p></div>
+    <div class="lp-page-heading">
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Leads</strong></nav>
+      <h1 class="lp-page-title">Leads</h1><p class="lp-page-description">Track inquiries, manage follow-ups, and move opportunities toward booking.</p>
+    </div>
     <div class="lp-header-actions" role="group" aria-label="Lead actions">
       {% include "photographer_workspace/components/button.html" with variant="primary" label="Add Lead" leading_icon="bi-plus-lg" href=add_lead_url %}
       <button class="lp-button lp-button--secondary lp-button--md" type="button" disabled title="Lead import is not available yet"><i class="bi bi-upload" aria-hidden="true"></i><span>Import</span></button>
@@ -21,11 +24,11 @@
     <form method="get" class="lp-leads-filters" id="lead-filter-form" data-lead-filters>
       <div class="lp-leads-filter-bar">
         <label class="lp-leads-search"><span>Search leads</span><input type="search" name="q" value="{{ lead_query }}" placeholder="Name, email, or service"></label>
+        <label class="lp-leads-quick-filter"><span>Stage</span><select name="status"><option value="">All stages</option>{% for value,label in lead_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="lp-leads-quick-filter"><span>Source</span><select name="source"><option value="">All sources</option>{% for source in lead_sources %}<option value="{{ source }}"{% if selected_source == source %} selected{% endif %}>{{ source }}</option>{% endfor %}</select></label>
         <button class="lp-button lp-button--secondary lp-button--md lp-leads-filter-toggle" type="button" data-filter-open aria-expanded="false" aria-controls="lead-filter-drawer"><i class="bi bi-funnel" aria-hidden="true"></i><span>Filters</span>{% if has_filters %}<span class="lp-filter-dot" aria-label="Filters active"></span>{% endif %}</button>
       </div>
       <div class="lp-leads-filter-fields" id="lead-filter-drawer">
-        <label><span>Stage</span><select name="status"><option value="">All stages</option>{% for value,label in lead_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <label><span>Source</span><select name="source"><option value="">All sources</option>{% for source in lead_sources %}<option value="{{ source }}"{% if selected_source == source %} selected{% endif %}>{{ source }}</option>{% endfor %}</select></label>
         <label><span>Service</span><select name="event_type"><option value="">All services</option>{% for event in event_types %}<option value="{{ event }}"{% if selected_event_type == event %} selected{% endif %}>{{ event }}</option>{% endfor %}</select></label>
         <label><span>Follow-up</span><select name="follow_up"><option value="">Any status</option><option value="overdue"{% if selected_follow_up == 'overdue' %} selected{% endif %}>Overdue</option><option value="today"{% if selected_follow_up == 'today' %} selected{% endif %}>Due today</option><option value="upcoming"{% if selected_follow_up == 'upcoming' %} selected{% endif %}>Upcoming</option><option value="unscheduled"{% if selected_follow_up == 'unscheduled' %} selected{% endif %}>Not scheduled</option></select></label>
         <label class="lp-leads-date"><span>Created from</span><input type="date" name="created_from" value="{{ created_from }}"></label>
