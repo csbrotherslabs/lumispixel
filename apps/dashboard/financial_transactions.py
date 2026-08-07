@@ -47,6 +47,21 @@ def _base_row(kind, item, invoice, occurred_at, amount, currency, booking):
     }
 
 
+def _amount_semantics(kind, status):
+    """Describe ledger meaning without assuming a numeric sign is good or bad."""
+    if kind == "payment":
+        return ("Cash received", "Cash into the business") if status == InvoicePayment.Status.COMPLETED else ("Payment amount", "Cash not yet received")
+    if kind == "refund":
+        return ("Refund pending", "Cash scheduled to leave the business") if status == PaymentRefund.Status.PENDING else ("Cash refunded", "Cash out of the business")
+    if kind == "credit":
+        return ("Client credit", "Non-cash reduction to the client balance")
+    if status == ClientInvoice.Status.PAID:
+        return ("Invoice total", "Revenue received through related payments")
+    if status == ClientInvoice.Status.VOID:
+        return ("Voided total", "Not collectible revenue")
+    return ("Amount due", "Outstanding; not received revenue")
+
+
 def transaction_records(profile, filters, view_key, page_number=1, page_size=25, sort="date", direction="desc", currency="USD", paginate=True):
     """Return an owner-scoped, filtered and server-paginated unified record list."""
     window = date_window(filters.get("range") or "this_month")
@@ -100,6 +115,7 @@ def transaction_records(profile, filters, view_key, page_number=1, page_size=25,
             booking_item = invoice.client.transaction_bookings[0] if invoice.client.transaction_bookings else None
             row = _base_row(kind, item, invoice, getattr(item, date_field), -amount if kind == "refund" else amount, currency, booking_item)
             row.update({"status": status, "status_label": status_label})
+            row["amount_label"], row["amount_meaning"] = _amount_semantics(kind, status)
             searchable = " ".join((row["reference"], row["client"], row["booking"], row["description"], row["gross"])).casefold()
             if query and query.casefold() not in searchable:
                 continue

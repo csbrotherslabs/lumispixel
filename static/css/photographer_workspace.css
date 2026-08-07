@@ -993,3 +993,15 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:1000px){.lp-financial-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.lp-financial-layout{grid-template-columns:1fr}.lp-financial-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.lp-financial-overview{gap:var(--lp-space-5)}.lp-financial-overview .lp-header-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.lp-financial-overview .lp-header-actions>a:first-child{grid-column:1/-1}.lp-financial-more>summary{width:100%}.lp-financial-kpis,.lp-financial-side{grid-template-columns:1fr}.lp-financial-kpis .lp-kpi-card{padding:var(--lp-space-3)}.lp-financial-panel__header{padding:var(--lp-space-4)}.lp-financial-panel__header p{display:none}.lp-financial-chart{padding-inline:var(--lp-space-4)}.lp-financial-chart svg{height:8rem}.lp-financial-payment-list>li{grid-template-columns:minmax(0,1fr) auto;padding:var(--lp-space-4)}.lp-financial-payment-list>li>div:nth-child(2){grid-column:1}.lp-financial-payment-amount{grid-row:1;grid-column:2}.lp-financial-payment-list>li>a{grid-column:2}.lp-financial-legend{display:none}.lp-financial-performance__summary{padding-inline:var(--lp-space-4)}}
 @media(prefers-reduced-motion:reduce){.lp-financial-overview *{scroll-behavior:auto}}
+
+/* Final transaction hierarchy and ledger semantics. */
+.lpw-transactions-table tbody tr:has(.lpw-financial-badge--overdue),.lpw-transactions-table tbody tr:has(.lpw-financial-badge--failed){box-shadow:inset 3px 0 0 var(--lp-text-danger)}
+.lpw-transaction-reference strong{font:var(--lp-type-body);font-weight:800}.lpw-transactions-table td:nth-child(4)>a{font-weight:650}.lpw-money small{color:var(--lp-text-secondary);font:var(--lp-type-caption);text-align:right}
+.lpw-money--refund strong,.lpw-money--payment strong{color:var(--lp-text-primary)}
+.lpw-transaction-type{border:1px solid var(--lp-color-border);background:var(--lp-color-surface-elevated);color:var(--lp-text-secondary)}
+.lpw-transaction-type--invoice,.lpw-transaction-type--refund,.lpw-transaction-type--credit,.lpw-transaction-type--adjustment{background:var(--lp-color-surface-elevated);color:var(--lp-text-secondary)}
+.lpw-transaction-type--payment{border-color:var(--lp-color-border);background:var(--lp-color-brand-subtle);color:var(--lp-text-brand)}
+.lpw-card-money{font-variant-numeric:tabular-nums}.lpw-card-money small{display:block;margin-top:var(--lp-space-1);color:var(--lp-text-secondary);font:var(--lp-type-caption);font-weight:500}
+.lpw-record-drawer__amount{font-variant-numeric:tabular-nums}.lpw-record-notes{margin:0;color:var(--lp-text-primary);font:var(--lp-type-body-small);line-height:1.6;overflow-wrap:anywhere}
+.lpw-row-menu>div [role=menuitem]:focus-visible,.lpw-transaction-pagination a:focus-visible{outline:var(--lp-focus-ring);outline-offset:2px}
+@media(max-width:430px){.lpw-transaction-cards>article{padding:var(--lp-space-3)}.lpw-transaction-cards dl{gap:var(--lp-space-3) var(--lp-space-2)}.lpw-card-money{overflow-wrap:anywhere}}
