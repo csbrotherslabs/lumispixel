@@ -3263,7 +3263,7 @@ def team_overview(request):
         timing = timezone.localtime(session.starts_at)
         if row["status"] == "Conflict":
             alerts.append({
-                "severity": "High", "tone": "danger", "icon": "bi-calendar2-x",
+                "severity": "Critical", "tone": "critical", "icon": "bi-calendar2-x",
                 "title": "Scheduling conflict",
                 "explanation": "This booking overlaps another shoot. No member assignment exists to resolve coverage.",
                 "affected": f"{session.session_type} · {session.client}", "timing": timing,
@@ -3271,15 +3271,15 @@ def team_overview(request):
             })
         if session.status != ClientSession.Status.COMPLETED:
             alerts.append({
-                "severity": "Medium", "tone": "warning", "icon": "bi-person-exclamation",
+                "severity": "Attention", "tone": "attention", "icon": "bi-person-exclamation",
                 "title": "Unassigned upcoming shoot" if session.starts_at >= day_end else "Unassigned shoot",
                 "explanation": "No photographer assignment is recorded for this booking.",
                 "affected": f"{session.session_type} · {session.client}", "timing": timing,
                 "action": "View booking", "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
             })
     alerts.append({
-        "severity": "Info", "tone": "neutral", "icon": "bi-clock-history",
-        "title": "Missing availability",
+        "severity": "Information", "tone": "information", "icon": "bi-info-circle",
+        "title": "Availability not configured",
         "explanation": "Working hours and time off are not configured, so capacity and leave conflicts cannot be calculated.",
         "affected": owner_name, "timing_label": "Selected day",
         "action": "View members", "url": reverse("photographer_workspace:team_members"),
