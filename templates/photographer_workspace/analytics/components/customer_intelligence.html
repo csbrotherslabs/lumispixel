@@ -1,5 +1,5 @@
-<section class="lpa-section lpa-customer" aria-labelledby="customer-title">
-  <div class="lpa-section-heading"><div><span>Relationships</span><h2 id="customer-title">Customer Intelligence</h2><p>Understand acquisition, retention, lead quality, and client value without exposing personal client details.</p></div><a class="lpa-view-details" href="{{ customer_intelligence.urls.clients }}">Open Clients workspace <i class="bi bi-arrow-right"></i></a></div>
+<section class="lpa-section lpa-domain lpa-customer" aria-labelledby="customer-title">
+  <div class="lpa-section-heading"><div><span>Clients &amp; retention</span><h2 id="customer-title">Clients &amp; Retention</h2><p>Understand acquisition, repeat behavior, booking frequency, and aggregate client value without exposing personal details.</p></div><a class="lpa-view-details" href="{{ customer_intelligence.urls.clients }}">Open Clients workspace <i class="bi bi-arrow-right"></i></a></div>
   <div class="lpa-customer-kpis" aria-label="Customer intelligence metrics">
     {% for metric in customer_intelligence.metrics %}<article class="lpa-customer-kpi"><span><i class="bi {{ metric.icon }}"></i></span><div><small>{{ metric.label }} <i class="bi bi-info-circle" title="{{ metric.tooltip }}"></i></small><strong>{{ metric.value }}</strong></div><a href="{{ metric.url }}" aria-label="Drill down into {{ metric.label }}"><i class="bi bi-arrow-up-right"></i></a></article>{% endfor %}
   </div>
