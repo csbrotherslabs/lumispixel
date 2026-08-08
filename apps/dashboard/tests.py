@@ -1283,6 +1283,14 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertRedirects(created, reverse("photographer_workspace:crm"))
         self.assertContains(created, "Lead created.")
 
+        invalid = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": ""})
+        self.assertContains(invalid, 'aria-invalid="true"')
+        self.assertContains(invalid, 'aria-describedby="id_first_name-error"')
+
+        created = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": "Avery", "email": "avery-lead@example.com"}, follow=True)
+        self.assertRedirects(created, reverse("photographer_workspace:crm"))
+        self.assertContains(created, "Lead created.")
+
     def test_crm_mutations_require_authentication_and_post(self):
         user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
         lead = Lead.objects.create(photographer=profile, first_name="Secure")
