@@ -92,6 +92,75 @@ class PhotographerWorkspaceTests(TestCase):
         filtered = self.client.get(url, {"q": "nobody", "role": "photographer"})
         self.assertContains(filtered, "No members match your filters")
 
+    def test_team_member_management_is_source_backed_and_protects_owner(self):
+        owner, studio = self.make_photographer(True, email="manage-owner@example.com", slug="manage-owner")
+        member_user = make_user("magdalene@example.com")
+        member_user.first_name, member_user.last_name = "Magdalene", "Golomeke"
+        member_user.save(update_fields=["first_name", "last_name"])
+        membership = StudioMembership.objects.create(
+            studio=studio, user=member_user, role=StudioMembership.Role.OWNER,
+            status=StudioMembership.Status.ACTIVE, primary_location="Overland Park, KS",
+        )
+        client = Client.objects.create(photographer=studio, first_name="Taylor", last_name="Client")
+        assignment = ClientSession.objects.create(
+            photographer=studio, client=client, session_type="Brand session",
+            starts_at=timezone.now() + timedelta(days=2), location="Main studio",
+            status=ClientSession.Status.CONFIRMED,
+        )
+        assignment.assigned_members.add(membership)
+        other_owner, other_studio = self.make_photographer(True, email="private-owner@example.com", slug="private-owner")
+        private_client = Client.objects.create(photographer=other_studio, first_name="Private", last_name="Client")
+        private_session = ClientSession.objects.create(
+            photographer=other_studio, client=private_client, session_type="Private session",
+            starts_at=timezone.now() + timedelta(days=1),
+        )
+        private_session.assigned_members.add(membership)
+        self.client.force_login(owner)
+        url = reverse("photographer_workspace:team_member_detail", args=[membership.pk])
+
+        response = self.client.get(url)
+
+        self.assertContains(response, "Magdalene Golomeke")
+        self.assertContains(response, 'href="mailto:magdalene@example.com"')
+        self.assertContains(response, "Overland Park, KS")
+        for section in ("Profile", "Role &amp; Access", "Availability", "Upcoming assignments"):
+            self.assertContains(response, section)
+        for group in ("Clients", "Bookings", "Galleries", "Financial", "Growth", "Analytics", "Team", "Settings"):
+            self.assertContains(response, group)
+        self.assertContains(response, "Brand session")
+        self.assertContains(response, "Taylor Client")
+        self.assertNotContains(response, "Private session")
+        self.assertNotContains(response, "Deactivate")
+        self.assertNotContains(response, "Suspend")
+        self.assertContains(response, "Owner account protected")
+
+        changed = self.client.post(url, {
+            "action": "save", "role": StudioMembership.Role.PHOTOGRAPHER,
+            "availability": StudioMembership.Availability.UNKNOWN,
+        })
+        self.assertEqual(changed.status_code, 200)
+        self.assertContains(changed, "Transfer ownership before changing the Owner role.")
+        membership.refresh_from_db()
+        self.assertEqual(membership.role, StudioMembership.Role.OWNER)
+
+    def test_team_member_management_requires_manage_members_access(self):
+        owner, studio = self.make_photographer(True, email="access-owner@example.com", slug="access-owner")
+        viewer = make_user("viewer@example.com")
+        target = make_user("target@example.com")
+        StudioMembership.objects.create(
+            studio=studio, user=viewer, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        target_membership = StudioMembership.objects.create(
+            studio=studio, user=target, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        self.client.force_login(viewer)
+
+        response = self.client.get(reverse("photographer_workspace:team_member_detail", args=[target_membership.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
     def test_team_overview_uses_owner_bookings_and_location_filter(self):
         user, profile = self.make_photographer(True, email="team-data@example.com", slug="team-data")
         other_user, other_profile = self.make_photographer(True, email="other-team@example.com", slug="other-team")
