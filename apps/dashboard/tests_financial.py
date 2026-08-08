@@ -161,6 +161,10 @@ class FinancialDatabaseSelectorTests(TestCase):
         self.assertEqual([row["type"] for row in records["rows"]], ["invoice", "payment", "credit", "refund"])
         refund = next(row for row in records["rows"] if row["type"] == "refund")
         self.assertEqual(refund["gross"], "-$10.10")
+        self.assertEqual(refund["amount_label"], "Cash refunded")
+        self.assertEqual(refund["amount_meaning"], "Cash out of the business")
+        invoice_row = next(row for row in records["rows"] if row["type"] == "invoice")
+        self.assertEqual(invoice_row["amount_meaning"], "Outstanding; not received revenue")
         self.assertContains(response, "Transaction records")
         self.assertContains(response, "Rows per page")
         self.assertContains(response, "data-row-url")
@@ -182,7 +186,9 @@ class FinancialDatabaseSelectorTests(TestCase):
         profile = self.profile("drawer-owner")
         invoice = self.invoice(profile, status=ClientInvoice.Status.PARTIALLY_PAID,
                                total=Decimal("325.00"), amount_paid=Decimal("100.00"))
-        payment = InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=Decimal("100.00"))
+        payment = InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=Decimal("100.00"),
+                                                method=InvoicePayment.Method.CARD, processor_fee=Decimal("3.25"),
+                                                internal_note="Reconciled against the card settlement.")
         self.client.force_login(profile.user)
 
         response = self.client.get(reverse("photographer_workspace:financial_record_detail", args=["payment", payment.pk]))
@@ -194,6 +200,11 @@ class FinancialDatabaseSelectorTests(TestCase):
             self.assertIn(heading, markup)
         self.assertIn(f"PAY-{payment.pk:06d}", markup)
         self.assertIn("$100.00", markup)
+        self.assertIn("$3.25", markup)
+        self.assertIn("$96.75", markup)
+        self.assertIn("Card", markup)
+        self.assertIn("Reconciled against the card settlement.", markup)
+        self.assertIn("Issue refund", markup)
 
     def test_record_detail_does_not_disclose_another_studios_record(self):
         owner, intruder = self.profile("drawer-private"), self.profile("drawer-intruder")
