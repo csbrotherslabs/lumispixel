@@ -24,6 +24,17 @@
         </div>
       </section>
 
+      <section class="form-section-card lp-gallery-client-experience" aria-labelledby="cover-image-title">
+        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+        <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
+          <img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>
+          <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>Add a signature image</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
+          {{ form.cover_image }}
+          <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
+        </div>
+        {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
+      </section>
+
       <section class="form-section-card" aria-labelledby="publishing-access-title">
         <header><i class="bi bi-sliders" aria-hidden="true"></i><div><h2 id="publishing-access-title">Publishing &amp; Access</h2><p>Choose how this gallery begins its journey.</p></div></header>
         <div class="form-grid">
@@ -34,18 +45,7 @@
       </section>
     </div>
 
-    <aside class="contextual-panel lp-gallery-create-side" aria-label="Gallery setup preview">
-      <section aria-labelledby="cover-image-title">
-        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2></div></header>
-        <p>Choose the first image your client will see.</p>
-        <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
-          <img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>
-          <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>Add a signature image</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
-          {{ form.cover_image }}
-          <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
-        </div>
-        {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
-      </section>
+    <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
       <section class="lp-gallery-create__preview" aria-labelledby="gallery-preview-title">
         <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-preview-title">Gallery Preview</h2></div></header>
         <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>

@@ -968,6 +968,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(create_page, "Gallery Details")
         self.assertContains(create_page, "Cover Image")
         self.assertContains(create_page, "Publishing &amp; Access")
+        self.assertLess(create_page.content.index(b"Gallery Details"), create_page.content.index(b"Client experience"))
+        self.assertLess(create_page.content.index(b"Client experience"), create_page.content.index(b"Publishing &amp; Access"))
+        self.assertContains(create_page, 'aria-label="Live gallery preview"')
         self.assertContains(create_page, 'data-cover-remove')
         self.assertContains(create_page, '<span>Create Gallery</span>', count=1, html=True)
 
