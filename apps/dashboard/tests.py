@@ -881,6 +881,10 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, "Summer Portraits")
             self.assertNotContains(response, "Private Collection")
 
+            if url_name == "gallery_upload_queue":
+                self.assertContains(response, '<nav class="lpw-breadcrumb" aria-label="Breadcrumb">')
+                self.assertContains(response, 'class="lp-gallery-picker__controls"')
+
         dashboard = self.client.get(reverse("photographer_workspace:galleries"))
         self.assertContains(dashboard, "Manage gallery delivery, client activity, uploads, and storage.")
         self.assertContains(dashboard, "Active Galleries")
