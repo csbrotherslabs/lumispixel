@@ -1234,11 +1234,14 @@ class PhotographerWorkspaceTests(TestCase):
         user, profile = self.make_photographer(True, email="form@example.com", slug="form")
         self.client.force_login(user)
         response = self.client.get(reverse("photographer_workspace:add_client"))
-        self.assertContains(response, 'class="workspace-form-page"')
+        self.assertContains(response, 'class="workspace-form-page lp-container lp-add-lead"')
         self.assertContains(response, 'class="form-section-card"')
         self.assertContains(response, 'data-upload-dropzone')
         self.assertContains(response, 'data-submit-button')
-        self.assertContains(response, '<h1 id="workspace-page-title">Add Client</h1>', count=1, html=True)
+        self.assertContains(response, 'aria-label="Breadcrumb"')
+        self.assertContains(response, f'href="{reverse("photographer_workspace:crm")}">CRM</a>')
+        self.assertContains(response, 'class="lp-button lp-button--primary lp-button--md"')
+        self.assertContains(response, '<h1 class="lp-page-title" id="workspace-page-title">Add Client</h1>', count=1, html=True)
 
         response = self.client.post(reverse("photographer_workspace:add_client"), {
             "first_name": "Avery", "email": "avery@example.com", "status": Client.Status.ACTIVE,

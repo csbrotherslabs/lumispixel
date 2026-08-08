@@ -1,10 +1,10 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% if is_client_form %}
-<form class="workspace-form-page" method="post" enctype="multipart/form-data" data-crm-form novalidate>{% csrf_token %}
-  <header class="form-page-header">
-    <p>Create a complete client profile so every conversation and project starts with the right context.</p>
-    <div class="sticky-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:crm' %}">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit" data-submit-button><i class="bi bi-check2"></i><span>Save Client</span></button></div>
+<form class="workspace-form-page{% if is_add_client %} lp-container lp-add-lead{% endif %}" method="post" enctype="multipart/form-data" data-crm-form novalidate>{% csrf_token %}
+  <header class="form-page-header{% if is_add_client %} lp-page-header{% endif %}">
+    {% if is_add_client %}<div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Add Client</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Add Client</h1><p class="lp-page-description">Create a complete client profile so every conversation and project starts with the right context.</p></div>{% else %}<p>Create a complete client profile so every conversation and project starts with the right context.</p>{% endif %}
+    <div class="sticky-form-actions"><a class="{% if is_add_client %}lp-button lp-button--secondary lp-button--md{% else %}lpw-btn{% endif %}" href="{% url 'photographer_workspace:crm' %}">Cancel</a><button class="{% if is_add_client %}lp-button lp-button--primary lp-button--md{% else %}lpw-btn lpw-btn-primary{% endif %}" type="submit" data-submit-button><i class="bi bi-check2" aria-hidden="true"></i><span>Save Client</span></button></div>
   </header>
   {% if form.non_field_errors %}<div class="form-alert" role="alert"><i class="bi bi-exclamation-circle"></i><div><strong>Please review the form.</strong>{{ form.non_field_errors }}</div></div>{% endif %}
   <div class="workspace-form-layout"><div class="workspace-form-main">
