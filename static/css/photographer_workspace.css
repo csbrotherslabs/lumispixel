@@ -273,6 +273,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Add Lead: compact canonical workspace data-entry layout. */
 .lpw-main:has(.lp-add-lead){padding-top:var(--lp-space-6);background:var(--lp-color-page)}
 .lp-add-lead{max-width:var(--lp-container);padding-inline:var(--lp-page-gutter);color:var(--lp-text-primary)}
+.lp-clients-main-width{width:100%;max-width:none;margin-inline:0}
 .lp-add-lead .form-page-header{position:sticky;z-index:8;top:73px;margin:0 0 var(--lp-space-6);padding:var(--lp-space-3) 0;border:0;background:color-mix(in srgb,var(--lp-color-page) 94%,transparent);backdrop-filter:blur(12px)}
 .lp-add-lead .sticky-form-actions{order:2;padding:var(--lp-space-2);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-lg);background:var(--lp-color-surface-elevated);box-shadow:var(--lp-shadow-standard)}
 .lp-add-lead .sticky-form-actions .lp-button{min-height:2.75rem;border-radius:var(--lp-radius-md)}

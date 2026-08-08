@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% url 'photographer_workspace:add_lead' as add_lead_url %}{% url 'photographer_workspace:add_client' as add_client_url %}{% url 'photographer_workspace:create_task' as create_task_url %}{% url 'photographer_workspace:schedule' as schedule_url %}
-<div class="lp-crm-page">
+<div class="lp-crm-page lp-clients-main-width">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Clients</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">CRM</strong></nav>
   {% include "photographer_workspace/components/page_header.html" with title="Client CRM" description="Manage inquiries, relationships, consultations, and follow-ups from one place." primary_url=add_lead_url primary_label="Add Lead" primary_icon="bi-person-plus" secondary_url=add_client_url secondary_label="Add Client" secondary_icon="bi-person-check" only %}
 
