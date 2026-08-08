@@ -313,6 +313,49 @@ def build_summary_metrics(current, comparison, comparison_label, member_count):
     return metrics
 
 
+def build_operational_insights(current, previous, memberships, start, end):
+    """Return concise, deterministic observations backed by persisted records."""
+    insights = []
+
+    def add(key, text, detail):
+        insights.append({"key": key, "text": text, "detail": detail})
+
+    if (current["gallery_delivery"] is not None and previous
+            and previous["gallery_delivery"] is not None and previous["gallery_delivery"] > 0):
+        change = ((current["gallery_delivery"] - previous["gallery_delivery"])
+                  / previous["gallery_delivery"] * 100)
+        if abs(change) >= 5:
+            direction = "improved" if change < 0 else "increased"
+            add("gallery_delivery", f"Gallery turnaround {direction} {abs(change):.0f}% this period.",
+                f'{current["gallery_delivery"]:.1f} days now; {previous["gallery_delivery"]:.1f} days previously.')
+
+    completed = [session for session in current["sessions"]
+                 if session.status == ClientSession.Status.COMPLETED]
+    weekend_peak = sum(session.starts_at.weekday() in (4, 5) for session in completed)
+    if len(completed) >= 4 and weekend_peak / len(completed) >= .5:
+        share = round(weekend_peak * 100 / len(completed))
+        add("demand_days", f"Friday and Saturday account for {share}% of completed shoots.",
+            f"{weekend_peak} of {len(completed)} recorded completions.")
+
+    if memberships and all(member.working_days and member.working_hours_start and member.working_hours_end
+                           for member in memberships):
+        high_capacity_days = 0
+        for offset in range((end - start).days + 1):
+            day = start + timedelta(days=offset)
+            daily = _trend_points(current, memberships, day, day, "daily", "capacity")
+            if daily and daily[0]["raw"] is not None and daily[0]["raw"] > 90:
+                high_capacity_days += 1
+        if high_capacity_days:
+            add("capacity_days", f"Team capacity exceeded 90% on {high_capacity_days} day{'' if high_capacity_days == 1 else 's'}.",
+                "Based on assigned booking time and configured working hours.")
+
+    if current["overdue"]:
+        verb = "is" if current["overdue"] == 1 else "are"
+        add("overdue", f'{current["overdue"]} assignment{'' if current["overdue"] == 1 else 's'} {verb} overdue.',
+            "Recorded assignments past their scheduled time and not completed.")
+    return insights[:4]
+
+
 def _member_rows(memberships, current, previous, start, end):
     """Fan prefetched report records into member rows in memory (constant query count)."""
     rows = {member.pk: {"member": member, "bookings": 0, "completed": 0, "minutes": 0,
@@ -406,6 +449,12 @@ def team_performance_report(studio, params, *, can_view_financials=True):
                                if all_memberships and comparison[key] is not None else None)
         comparison_label = "Team average"
     summary_metrics = build_summary_metrics(current, comparison, comparison_label, len(memberships))
+    comparison_has_activity = bool(comparison and (
+        comparison["eligible_assignments"] or comparison["galleries"] or
+        comparison["review_count"] or comparison["revenue_records"]
+    ))
+    if comparison_key in {"previous", "year"} and not comparison_has_activity:
+        summary_metrics = build_summary_metrics(current, None, comparison_label, len(memberships))
 
     rows = _member_rows(memberships, current,
                         comparison if comparison_key in {"previous", "year"} else None,
@@ -441,11 +490,12 @@ def team_performance_report(studio, params, *, can_view_financials=True):
         trend_metric = "shoots"
     grouping, groupings = _grouping(start, end, params.get("grouping", ""))
     trend = _trend_points(current, memberships, start, end, grouping, trend_metric)
-    previous_trend = _trend_points(comparison, memberships, compare_start, compare_end, grouping, trend_metric) if comparison_key in {"previous", "year"} else []
+    previous_trend = (_trend_points(comparison, memberships, compare_start, compare_end, grouping, trend_metric)
+                      if comparison_key in {"previous", "year"} and comparison_has_activity else [])
     for index, point in enumerate(trend):
         previous_point = previous_trend[index] if index < len(previous_trend) else None
         point["previous_raw"] = previous_point["raw"] if previous_point else None
-        point["previous"] = previous_point["value"] if previous_point else "Unavailable"
+        point["previous"] = previous_point["value"] if previous_point and previous_point["raw"] is not None else None
         point["average_raw"] = (point["raw"] / len(memberships)
                                 if point["raw"] is not None and memberships and trend_metric in {"shoots", "galleries", "revenue"}
                                 else None)
@@ -457,6 +507,8 @@ def team_performance_report(studio, params, *, can_view_financials=True):
     )]
     trend_has_enough_data = len(meaningful_trend_points) >= 2
     trend_max = max((point["raw"] or 0 for point in trend), default=0) or 1
+    operational_insights = build_operational_insights(
+        current, comparison if comparison_has_activity else None, memberships, start, end)
     timeline = defaultdict(lambda: {"bookings": 0, "completed": 0, "galleries": 0})
     for session in current["sessions"]:
         bucket = session.starts_at.date().replace(day=1)
@@ -487,6 +539,8 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "grouping": grouping, "groupings": groupings, "trend": trend,
             "trend_has_enough_data": trend_has_enough_data, "trend_max": trend_max,
             "previous_trend": previous_trend,
+            "comparison_has_activity": comparison_has_activity,
+            "operational_insights": operational_insights,
             "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics,
             "can_view_financials": can_view_financials, "status_distribution": current["status_distribution"], "summary": {
                 "members": len(memberships), "bookings": current["eligible_assignments"], "completed": current["shoots"],
@@ -503,7 +557,9 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "revenue_by_location": current["revenue_by_location"],
             "activity": activity[:10], "last_updated": timezone.now(),
             "has_assignments": bool(current["eligible_assignments"] or current["galleries"]),
-            "summary_state": params.get("summary_state", "ready") if params.get("summary_state") in {"loading", "empty", "error"} else "ready"}
+            **{f"{section}_state": (params.get(f"{section}_state", "ready")
+                                    if params.get(f"{section}_state") in {"loading", "error"} else "ready")
+               for section in ("summary", "trend", "comparison", "insights")}}
 
 
 # Insight rules are deliberately ordered by operational urgency.  They use only

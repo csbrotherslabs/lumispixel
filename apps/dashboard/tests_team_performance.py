@@ -8,7 +8,8 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoicePayment
 from apps.dashboard.models import Review, StudioMembership
-from apps.dashboard.team_performance import (_bucket_label, build_member_insights, calculate_period_metrics,
+from apps.dashboard.team_performance import (_bucket_label, build_member_insights,
+                                             build_operational_insights, calculate_period_metrics,
                                              team_performance_report)
 from apps.galleries.models import Gallery
 
@@ -78,6 +79,32 @@ class TeamPerformanceMetricTests(TestCase):
         self.assertEqual(metrics["editing_turnaround"]["value"], "Not available")
         self.assertIn("Editing timestamps are not currently recorded", metrics["editing_turnaround"]["excluded"])
         self.assertEqual(metrics["satisfaction"]["value"], "Not available")
+        self.assertFalse(report["comparison_has_activity"])
+        self.assertEqual(metrics["shoots"]["change"], "No comparison")
+
+    def test_operational_insights_use_recorded_delivery_and_demand_facts(self):
+        today = timezone.localdate()
+        friday = today - timedelta(days=(today.weekday() - 4) % 7)
+        sessions = []
+        for offset in (0, -1, 7, 6):
+            session = ClientSession.objects.create(
+                photographer=self.studio, client=self.client_record,
+                starts_at=timezone.make_aware(datetime.combine(friday - timedelta(days=offset), time(10))),
+                status=ClientSession.Status.COMPLETED,
+            )
+            session.assigned_members.add(self.member)
+            sessions.append(session)
+        current = calculate_period_metrics(self.studio, [self.member], today - timedelta(days=29), today)
+        current["gallery_delivery"] = 4
+        previous = {"gallery_delivery": 5}
+
+        insights = build_operational_insights(
+            current, previous, [self.member], today - timedelta(days=29), today)
+
+        copy = " ".join(item["text"] for item in insights)
+        self.assertIn("Gallery turnaround improved 20%", copy)
+        self.assertIn("Friday and Saturday account for 100%", copy)
+        self.assertTrue(all({"key", "text", "detail"} <= item.keys() for item in insights))
 
     def test_capacity_is_insufficient_when_member_availability_is_incomplete(self):
         self.member.working_hours_end = None
@@ -159,6 +186,19 @@ class TeamPerformanceMetricTests(TestCase):
         self.client.force_login(photographer)
         response = self.client.get(reverse("photographer_workspace:team_performance"))
         self.assertEqual(response.status_code, 403)
+
+    def test_performance_breadcrumb_matches_team_workspace_pages(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("photographer_workspace:team_performance"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("photographer_workspace:dashboard")}">Business Hub</a>',
+            html=False,
+        )
+        self.assertContains(response, '<span>Team</span>', html=False)
+        self.assertContains(response, '<strong aria-current="page">Performance</strong>', html=False)
 
     def test_member_drilldown_rejects_membership_from_another_studio(self):
         other_owner = User.objects.create_user(
