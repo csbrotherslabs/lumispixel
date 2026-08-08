@@ -1104,9 +1104,10 @@ document.addEventListener('click', async (event) => {
   form.addEventListener('input', function () { dirty = true; if (status) status.textContent = 'Unsaved changes'; });
   form.addEventListener('submit', function () { dirty = false; });
   window.addEventListener('beforeunload', function (event) { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-  const access = form.querySelector('[data-confirm-access]');
-  if (access) access.addEventListener('click', function (event) {
-    if (!window.confirm(access.textContent.trim() + ' this member’s studio access?')) event.preventDefault();
+  form.querySelectorAll('[data-confirm-access]').forEach(function (access) {
+    access.addEventListener('click', function (event) {
+      if (!window.confirm(access.textContent.trim() + ' this member’s studio access?')) event.preventDefault();
+    });
   });
 })();
 /* Team-performance metric methodology drawer. */

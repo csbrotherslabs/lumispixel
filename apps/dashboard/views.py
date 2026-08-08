@@ -51,7 +51,7 @@ from apps.dashboard.dashboard_data import build_dashboard
 from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    StudioMembership, StudioMembershipEvent)
-from apps.dashboard.access import ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
+from apps.dashboard.access import ROLE_PERMISSIONS, ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
 from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, InvitationForm,
                                              ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
@@ -2996,6 +2996,7 @@ def team_members(request):
 def team_member_detail(request, pk):
     """Show and update studio-owned member metadata without touching account credentials."""
     profile = authorized_studio(request.user)
+    actor_access = access_for(request.user, studio=profile, require="manage_members")
     membership = get_object_or_404(
         StudioMembership.objects.select_related("user").prefetch_related("specialties", "change_events__actor"),
         pk=pk, studio=profile,
@@ -3003,7 +3004,6 @@ def team_member_detail(request, pk):
     errors = {}
     if request.method == "POST":
         action = request.POST.get("action", "save")
-        actor_access = access_for(request.user, studio=profile, require="manage_members")
         before = {
             "role": membership.role, "status": membership.status,
             "primary_location": membership.primary_location,
@@ -3026,13 +3026,7 @@ def team_member_detail(request, pk):
                 "suspend": StudioMembership.Status.SUSPENDED,
             }[action]
             if membership.role == StudioMembership.Role.OWNER and target_status != StudioMembership.Status.ACTIVE:
-                other_owners = StudioMembership.objects.filter(
-                    studio=profile, role=StudioMembership.Role.OWNER,
-                    status=StudioMembership.Status.ACTIVE,
-                ).exclude(pk=membership.pk).exists()
-                # The profile owner is always an active owner while their account can log in.
-                if not other_owners and not profile.user.can_login:
-                    errors["owner"] = "The last active Owner cannot be deactivated or suspended."
+                errors["owner"] = "Owner access can only be changed through an ownership transfer."
             if not errors:
                 membership.status = target_status
                 membership.save(update_fields=["status", "updated_at"])
@@ -3042,6 +3036,8 @@ def team_member_detail(request, pk):
             if role not in StudioMembership.Role.values: errors["role"] = "Choose a valid role."
             if membership.user_id == request.user.id and role != membership.role:
                 errors["role"] = "You cannot change your own role."
+            if membership.role == StudioMembership.Role.OWNER and role != membership.role:
+                errors["role"] = "Transfer ownership before changing the Owner role."
             if role == StudioMembership.Role.OWNER and not actor_access.allows("assign_owner"):
                 errors["role"] = "Only an Owner can assign Owner access."
             if role != membership.role and request.POST.get("confirm") != "yes":
@@ -3078,9 +3074,23 @@ def team_member_detail(request, pk):
             messages.success(request, "Member profile updated.")
             return redirect("photographer_workspace:team_member_detail", pk=membership.pk)
     user = membership.user
+    permissions = ROLE_PERMISSIONS[membership.role]
+    permission_groups = [
+        ("Clients", "clients"), ("Bookings", "bookings"), ("Galleries", "galleries"),
+        ("Financial", "financials"), ("Growth", "growth"), ("Analytics", "analytics"),
+        ("Team", "team"), ("Settings", "settings"),
+    ]
+    upcoming_assignments = list(
+        ClientSession.objects.for_photographer(profile).filter(
+            assigned_members=membership, starts_at__gte=timezone.now(),
+        ).exclude(status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at")[:6]
+    )
     context = _dashboard_context(request, "team_members", "Member Profile")
     context.update({"membership": membership, "member_user": user, "errors": errors,
                     "permission_summary": ACCESS_SUMMARIES[membership.role],
+                    "permission_groups": [(label, key in permissions) for label, key in permission_groups],
+                    "is_protected_owner": membership.role == StudioMembership.Role.OWNER,
+                    "upcoming_assignments": upcoming_assignments,
                     "future_assignment_count": membership.assigned_bookings.filter(starts_at__gte=timezone.now()).count(),
                     "specialty_choices": profile.specialties.model.objects.all().order_by("name"),
                     "selected_specialties": set(membership.specialties.values_list("pk", flat=True)),
