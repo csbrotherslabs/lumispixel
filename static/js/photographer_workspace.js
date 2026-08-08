@@ -848,7 +848,8 @@
         field.required = visible && field.dataset.requiredFor.split(' ').includes(type);
       });
     });
-    if (!editing) title.textContent = 'Create ' + form.elements.event_type.closest('fieldset').querySelector('input[value="' + type + '"] + span').textContent.trim();
+    const selectedType = form.querySelector('input[name="event_type"]:checked');
+    if (!editing && selectedType) title.textContent = 'Create ' + selectedType.nextElementSibling.textContent.trim();
     checkConflict();
   }
   function syncAllDay() {
@@ -938,11 +939,44 @@
   document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () { open(button.dataset.eventFormOpen, button); }); });
   form.addEventListener('input', function (event) { dirty = true; event.target.classList.remove('has-error'); checkConflict(); });
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
-  form.addEventListener('submit', function (event) {
+  form.addEventListener('submit', async function (event) {
     event.preventDefault();
     if (!validate()) return;
     const another = event.submitter && event.submitter.value === 'another';
-    toast(editing ? 'Event updated.' : 'Event saved to your schedule.');
+    if (currentType() !== 'booking') {
+      alert.querySelector('span').textContent = 'Only booking events can be saved here.';
+      alert.hidden = false;
+      return;
+    }
+    const submitters = form.querySelectorAll('button[type="submit"]');
+    submitters.forEach(function (button) { button.disabled = true; });
+    let response;
+    try {
+      response = await fetch(form.action, {
+        method: 'POST', body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        Object.keys(result.errors || {}).forEach(function (name) {
+          const field = form.elements[name];
+          if (!field) return;
+          field.classList.add('has-error');
+          const error = field.parentElement.querySelector('.lpw-field-error');
+          if (error) error.textContent = result.errors[name];
+        });
+        alert.querySelector('span').textContent = 'Please review the highlighted fields.';
+        alert.hidden = false;
+        return;
+      }
+    } catch (error) {
+      alert.querySelector('span').textContent = 'The booking could not be saved. Try again.';
+      alert.hidden = false;
+      return;
+    } finally {
+      submitters.forEach(function (button) { button.disabled = false; });
+    }
+    toast(editing ? 'Booking updated.' : 'Booking saved to your schedule.');
     dirty = false;
     if (another) { const type = currentType(); open(type, opener); }
     else close(true);

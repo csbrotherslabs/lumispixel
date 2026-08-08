@@ -1775,6 +1775,50 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
+        if request.POST.get("action") == "create_booking":
+            errors = {}
+            client = Client.objects.filter(
+                photographer=profile, pk=request.POST.get("client")
+            ).first()
+            if client is None:
+                errors["client"] = "Select a client from this workspace."
+            session_type = request.POST.get("session_type", "").strip()
+            if not session_type:
+                errors["session_type"] = "Enter a session type."
+            try:
+                starts_at = timezone.make_aware(datetime.fromisoformat(
+                    f'{request.POST.get("start_date", "")}T{request.POST.get("start_time", "")}'
+                ), timezone.get_current_timezone())
+                ends_at = timezone.make_aware(datetime.fromisoformat(
+                    f'{request.POST.get("end_date", "")}T{request.POST.get("end_time", "")}'
+                ), timezone.get_current_timezone())
+                if ends_at <= starts_at:
+                    errors["end_date"] = "The end must be after the start."
+            except (TypeError, ValueError):
+                starts_at = ends_at = None
+                errors["start_date"] = "Enter a valid start and end date and time."
+            status = request.POST.get("booking_status", ClientSession.Status.TENTATIVE)
+            if status not in ClientSession.Status.values:
+                errors["booking_status"] = "Select a valid booking status."
+            try:
+                booking_value = Decimal(request.POST.get("price") or "0")
+                if booking_value < 0:
+                    raise ValueError
+            except (ValueError, ArithmeticError):
+                errors["price"] = "Enter a valid non-negative price."
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            session = ClientSession.objects.create(
+                photographer=profile, client=client, session_type=session_type,
+                starts_at=starts_at,
+                duration_minutes=max(1, round((ends_at - starts_at).total_seconds() / 60)),
+                location=request.POST.get("location", "").strip(), status=status,
+                booking_value=booking_value,
+            )
+            return JsonResponse({
+                "ok": True,
+                "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
+            }, status=201)
         if request.POST.get("action") == "mark_complete":
             session = get_object_or_404(
                 ClientSession.objects.filter(photographer=profile).exclude(status=ClientSession.Status.CANCELLED),
@@ -1848,6 +1892,7 @@ def bookings_dashboard(request):
         "booking_stages": booking_stages, "revenue_period": revenue_period, "revenue_periods": revenue_periods.items(),
         "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
         "recent_booking_activity": recent_activity,
+        "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
         # Keep booking creation on the shared schedule drawer rather than
         # introducing an overview-specific form or client-side workflow.
         "selected_date": today,
@@ -2157,6 +2202,7 @@ def schedule(request):
         "location_options": locations,
         "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
         "event_form_types": [("booking", "Booking", "bi-camera"), ("consultation", "Consultation", "bi-chat-square-text"), ("editing", "Editing Time", "bi-magic"), ("blocked", "Blocked Time", "bi-slash-circle"), ("vacation", "Vacation", "bi-sun"), ("mini", "Mini Session", "bi-people")],
+        "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
         "booking_status_options": [("tentative", "Tentative"), ("confirmed", "Confirmed"), ("in_progress", "In Progress"), ("completed", "Completed"), ("cancelled", "Cancelled")],
         "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
         "filter_query": filter_query,

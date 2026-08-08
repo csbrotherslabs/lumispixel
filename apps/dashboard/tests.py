@@ -736,6 +736,42 @@ class PhotographerWorkspaceTests(TestCase):
         session.refresh_from_db()
         self.assertEqual(session.status, ClientSession.Status.COMPLETED)
 
+    def test_shared_booking_drawer_creates_a_scoped_booking(self):
+        user, profile = self.make_photographer(True, email="create-booking@example.com", slug="create-booking")
+        client = Client.objects.create(
+            photographer=profile, first_name="Avery", last_name="Stone",
+            email="avery@example.com",
+        )
+        _other_user, other = self.make_photographer(True, email="other-booking@example.com", slug="other-booking")
+        private_client = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:bookings")
+
+        page = self.client.get(url)
+        self.assertContains(page, f'<option value="{client.pk}">Avery Stone</option>')
+        self.assertNotContains(page, "Private Client")
+        response = self.client.post(url, {
+            "action": "create_booking", "client": client.pk,
+            "session_type": "Family portrait", "start_date": "2026-08-12",
+            "start_time": "09:00", "end_date": "2026-08-12", "end_time": "10:30",
+            "location": "Studio A", "booking_status": "confirmed", "price": "425.00",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 201)
+        booking = ClientSession.objects.get(photographer=profile, client=client)
+        self.assertEqual(booking.duration_minutes, 90)
+        self.assertEqual(booking.booking_value, Decimal("425.00"))
+        self.assertEqual(booking.status, ClientSession.Status.CONFIRMED)
+        self.assertIn(str(booking.pk), response.json()["booking_url"])
+
+        rejected = self.client.post(url, {
+            "action": "create_booking", "client": private_client.pk,
+            "session_type": "Private", "start_date": "2026-08-12",
+            "start_time": "09:00", "end_date": "2026-08-12", "end_time": "10:00",
+            "booking_status": "tentative",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(ClientSession.objects.filter(photographer=profile).count(), 1)
+
     def test_schedule_inspector_actions_follow_booking_state_and_are_scoped(self):
         user, profile = self.make_photographer(True, email="inspector@example.com", slug="inspector")
         _other_user, other = self.make_photographer(True, email="other-inspector@example.com", slug="other-inspector")
