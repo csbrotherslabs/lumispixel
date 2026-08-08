@@ -98,21 +98,21 @@ def growth_summary(profile, range_key, currency="USD", today=None):
     current = _period_values(profile, window.start, window.end)
     previous = _period_values(profile, window.previous_start, window.previous_end) if window.previous_end else None
     definitions = [
-        ("New leads", "new_leads", "Leads created during the selected period.", "New inquiries received", "photographer_workspace:leads", "count"),
-        ("Confirmed bookings", "confirmed_bookings", "Bookings confirmed during the selected period.", "Confirmed and completed sessions", "photographer_workspace:bookings", "count"),
-        ("Lead conversion rate", "conversion_rate", "Booked leads divided by all leads created in the period.", "Each lead is counted once", "photographer_workspace:leads", "rate"),
-        ("Average booking value", "average_booking_value", "Total confirmed booking value divided by confirmed bookings.", "Based on confirmed booking value", "photographer_workspace:bookings", "money"),
-        ("Repeat client rate", "repeat_client_rate", "Bookings from returning clients divided by eligible bookings.", "Clients with an earlier confirmed booking", "photographer_workspace:clients", "rate"),
-        ("Referral bookings", "referral_bookings", "Confirmed bookings attributed to a referral lead source.", "Referral-attributed confirmations", "photographer_workspace:referrals", "count"),
+        ("New leads", "new_leads", "Leads created during the selected period.", "New inquiries received", "photographer_workspace:leads", "count", "bi-person-plus"),
+        ("Confirmed bookings", "confirmed_bookings", "Bookings confirmed during the selected period.", "Confirmed and completed sessions", "photographer_workspace:bookings", "count", "bi-calendar-check"),
+        ("Lead conversion rate", "conversion_rate", "Booked leads divided by all leads created in the period.", "Each lead is counted once", "photographer_workspace:leads", "rate", "bi-funnel"),
+        ("Average booking value", "average_booking_value", "Total confirmed booking value divided by confirmed bookings.", "Based on confirmed booking value", "photographer_workspace:bookings", "money", "bi-cash-stack"),
+        ("Repeat client rate", "repeat_client_rate", "Bookings from returning clients divided by eligible bookings.", "Clients with an earlier confirmed booking", "photographer_workspace:clients", "rate", "bi-arrow-repeat"),
+        ("Referral bookings", "referral_bookings", "Confirmed bookings attributed to a referral lead source.", "Referral-attributed confirmations", "photographer_workspace:referrals", "count", "bi-people"),
     ]
     cards = []
-    for title, key, tooltip, detail, url_name, kind in definitions:
+    for title, key, tooltip, detail, url_name, kind, icon in definitions:
         value = current[key]
         percentage, trend = _comparison(value, previous[key] if previous else None)
         formatted = "—" if value is None else (format_currency(value, currency) if kind == "money" else f"{value}%" if kind == "rate" else f"{value:,}")
         cards.append({"title": title, "value": value, "formatted_value": formatted, "percentage": percentage,
                       "trend": trend, "period_label": window.label, "tooltip": tooltip,
-                      "supporting_value": detail, "url": reverse(url_name)})
+                      "supporting_value": detail, "url": reverse(url_name), "icon": icon})
     return {"cards": cards, "values": current, "window": window}
 
 
