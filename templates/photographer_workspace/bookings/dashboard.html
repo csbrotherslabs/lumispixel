@@ -6,7 +6,7 @@
   <header class="lpw-command-header lpw-dashboard-header lp-page-header">
     <div class="lp-page-heading"><h1 id="workspace-page-title" class="lp-page-title">Overview</h1><p class="lpw-dashboard-summary lp-page-description">Manage upcoming sessions, confirmations, payments, and scheduling activity.</p></div>
     <div class="lpw-command-header__actions lp-header-actions" role="group" aria-label="Page actions">
-      <a class="lpw-btn lpw-btn-primary" href="{{ bookings_url }}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
+      <button class="lpw-btn lpw-btn-primary" type="button" data-event-form-open="booking"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</button>
       <a class="lpw-btn" href="{{ schedule_url }}"><i class="bi bi-calendar3" aria-hidden="true"></i>View Schedule</a>
       <a class="lp-button lp-button--ghost lp-button--md" href="{{ add_lead_url }}"><i class="bi bi-person-plus" aria-hidden="true"></i>New Lead</a>
     </div>
@@ -50,4 +50,5 @@
   </div>
   {% endif %}
 </div>
+{% include "photographer_workspace/bookings/components/event_form_drawer.html" %}
 {% endblock %}

@@ -1848,6 +1848,17 @@ def bookings_dashboard(request):
         "booking_stages": booking_stages, "revenue_period": revenue_period, "revenue_periods": revenue_periods.items(),
         "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
         "recent_booking_activity": recent_activity,
+        # Keep booking creation on the shared schedule drawer rather than
+        # introducing an overview-specific form or client-side workflow.
+        "selected_date": today,
+        "event_form_types": [
+            ("booking", "Booking", "bi-camera"),
+            ("consultation", "Consultation", "bi-chat-square-text"),
+            ("editing", "Editing Time", "bi-magic"),
+            ("blocked", "Blocked Time", "bi-slash-circle"),
+            ("vacation", "Vacation", "bi-sun"),
+            ("mini", "Mini Session", "bi-people"),
+        ],
         "booking_quick_actions": [
             {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:bookings")}?action=new', "help": "Start a client booking"},
             {"label": "Block Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
