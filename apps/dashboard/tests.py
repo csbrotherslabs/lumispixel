@@ -332,6 +332,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(page, "Metric definition")
         self.assertContains(page, "Historical trend")
         self.assertContains(page, "Print / save PDF")
+        self.assertContains(page, "Export approved metrics for the active date range and filters")
+        self.assertContains(page, "Open the current analytics view in the browser print dialog")
         export = self.client.get(url, {"export": "csv"})
         self.assertEqual(export.status_code, 200)
         self.assertEqual(export["Content-Type"], "text/csv; charset=utf-8")
