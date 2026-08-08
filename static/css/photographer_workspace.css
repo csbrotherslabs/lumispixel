@@ -324,7 +324,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lp-add-lead .lead-setup-progress ol{grid-column:2;grid-row:1/3;display:flex;justify-content:flex-end;gap:var(--lp-space-4);margin:0;padding:0;list-style:none;color:var(--lp-text-muted);font-size:var(--lp-type-caption)}
 .lp-add-lead .lead-setup-progress li{display:flex;align-items:center;gap:var(--lp-space-1)}.lp-add-lead .lead-setup-progress li::before{width:.45rem;height:.45rem;border:1px solid var(--lp-color-border-strong);border-radius:50%;content:""}.lp-add-lead .lead-setup-progress li.is-complete{color:var(--lp-text-success)}.lp-add-lead .lead-setup-progress li.is-complete::before{border-color:var(--lp-color-success);background:var(--lp-color-success)}
 .lp-add-lead .workspace-form-layout{grid-template-columns:minmax(0,7fr) minmax(16rem,3fr)}
-.lp-add-lead .form-section-card{border-width:0 0 1px;border-radius:0;background:transparent;box-shadow:none}.lp-add-lead .form-section-card:last-child{border-bottom:0}
+.lp-add-lead .form-section-card{border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-lg);background:var(--lp-color-surface);box-shadow:var(--lp-shadow-subtle)}
 .lp-add-lead .form-section-card>header{border:0}.lp-add-lead .form-section-card>header>i{background:var(--lp-color-surface-elevated);box-shadow:var(--lp-shadow-subtle)}
 .lp-add-lead .form-field :is(input,select,textarea){border-color:transparent;background:var(--lp-color-surface-elevated);box-shadow:inset 0 0 0 1px var(--lp-color-border),var(--lp-shadow-subtle)}
 .lp-add-lead .form-field select{padding-right:2.5rem;background-color:var(--lp-color-surface-elevated);cursor:pointer}
