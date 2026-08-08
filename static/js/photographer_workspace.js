@@ -325,8 +325,16 @@
     clientForm.addEventListener('submit', function () {
       if (submitButton.disabled) return;
       submitButton.disabled = true;
+      if (clientForm.classList.contains('lp-add-lead')) {
+        submitButton.setAttribute('aria-busy', 'true');
+        submitButton.querySelector('i').className = 'lp-spinner';
+      }
       submitButton.querySelector('span').textContent = 'Saving…';
     });
+    const firstError = clientForm.classList.contains('lp-add-lead') && clientForm.querySelector('[aria-invalid="true"]');
+    if (firstError) {
+      window.requestAnimationFrame(function () { firstError.focus(); });
+    }
     const notes = clientForm.querySelector('#id_notes');
     const noteCount = clientForm.querySelector('[data-note-count]');
     function updateCount() { if (notes && noteCount) noteCount.textContent = notes.value.length; }
@@ -344,12 +352,12 @@
         if (!item) return;
         item.classList.toggle('is-complete', complete);
         item.querySelector('i').className = 'bi ' + (complete ? 'bi-check-circle-fill' : 'bi-circle');
-        item.querySelector('span').textContent = complete ? completeText : incompleteText;
+        item.querySelector('strong').textContent = complete ? completeText : incompleteText;
       }
       function updateReadiness() {
-        setReadiness(readinessItems.contact, hasValue('#id_email') || hasValue('#id_phone'), 'Contact information added', 'Contact method missing');
-        setReadiness(readinessItems.inquiry, hasValue('#id_event_type') || hasValue('#id_event_date') || hasValue('#id_lead_source') || hasValue('#id_estimated_value'), 'Inquiry details added', 'Inquiry details incomplete');
-        setReadiness(readinessItems.followup, hasValue('#id_next_follow_up'), 'Follow-up scheduled', 'Follow-up not scheduled');
+        setReadiness(readinessItems.contact, hasValue('#id_email') || hasValue('#id_phone'), 'Added', 'Incomplete');
+        setReadiness(readinessItems.inquiry, hasValue('#id_event_type') || hasValue('#id_event_date') || hasValue('#id_lead_source') || hasValue('#id_estimated_value'), 'Added', 'Incomplete');
+        setReadiness(readinessItems.followup, hasValue('#id_next_follow_up'), 'Scheduled', 'Not scheduled');
       }
       ['#id_email', '#id_phone', '#id_event_type', '#id_event_date', '#id_lead_source', '#id_estimated_value', '#id_next_follow_up'].forEach(function (selector) {
         const field = clientForm.querySelector(selector);

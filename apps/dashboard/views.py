@@ -354,6 +354,16 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
             ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
         messages.success(request, success_message)
         return redirect("photographer_workspace:crm")
+    if is_add_lead:
+        for field_name, field in form.fields.items():
+            described_by = []
+            if field.help_text:
+                described_by.append(f"id_{field_name}-help")
+            if field_name in form.errors:
+                field.widget.attrs["aria-invalid"] = "true"
+                described_by.append(f"id_{field_name}-error")
+            if described_by:
+                field.widget.attrs["aria-describedby"] = " ".join(described_by)
     context = _dashboard_context(request, "crm", title)
     context.update({
         "form": form,
@@ -380,7 +390,7 @@ def _log_lead(profile, lead, event_type, description, metadata=None, client=None
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def add_lead(request):
-    return _crm_form_page(request, LeadForm, "Add Lead", "Lead added successfully.", ClientActivity.EventType.LEAD_CREATED)
+    return _crm_form_page(request, LeadForm, "Add Lead", "Lead created.", ClientActivity.EventType.LEAD_CREATED)
 
 
 @photographer_workspace_required
