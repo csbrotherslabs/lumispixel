@@ -250,24 +250,74 @@
   if (coverDrop && coverInput) {
     const preview = coverDrop.querySelector('[data-cover-preview]'); const prompt = coverDrop.querySelector('[data-cover-prompt]');
     const actions = coverDrop.querySelector('[data-cover-actions]'); const remove = coverDrop.querySelector('[data-cover-remove]');
+    const coverHeading = coverDrop.querySelector('[data-cover-heading]');
     let previewUrl = null;
     function previewCover(file) {
       if (!file || !file.type.startsWith('image/')) return;
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(file); preview.src = previewUrl; preview.hidden = false; prompt.hidden = true;
       if (actions) actions.hidden = false;
+      document.dispatchEvent(new CustomEvent('gallery:cover-preview', { detail: { url: previewUrl } }));
     }
     function removeCover() {
       coverInput.value = '';
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = null; preview.src = ''; preview.hidden = true; prompt.hidden = false;
       if (actions) actions.hidden = true;
+      document.dispatchEvent(new CustomEvent('gallery:cover-preview', { detail: { url: '' } }));
     }
     coverInput.addEventListener('change', function () { previewCover(coverInput.files[0]); });
-    ['dragenter', 'dragover'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.add('is-dragging'); }); });
-    ['dragleave', 'drop'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.remove('is-dragging'); }); });
+    ['dragenter', 'dragover'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.add('is-dragging'); if (coverHeading) coverHeading.textContent = 'Drop image to upload'; }); });
+    ['dragleave', 'drop'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.remove('is-dragging'); if (coverHeading) coverHeading.textContent = 'Add a signature image'; }); });
     coverDrop.addEventListener('drop', function (event) { if (event.dataTransfer.files.length) { coverInput.files = event.dataTransfer.files; previewCover(event.dataTransfer.files[0]); } });
     if (remove) remove.addEventListener('click', removeCover);
+  }
+
+  const galleryCreateForm = document.querySelector('[data-gallery-create-form]');
+  if (galleryCreateForm) {
+    const nameInput = galleryCreateForm.querySelector('[name="name"]');
+    const clientInput = galleryCreateForm.querySelector('[name="client"]');
+    const dateInput = galleryCreateForm.querySelector('[name="event_date"]');
+    const visibilityInput = galleryCreateForm.querySelector('[name="visibility"]');
+    const statusInput = galleryCreateForm.querySelector('[name="status"]');
+    const previewName = document.querySelector('[data-gallery-preview-name]');
+    const previewClient = document.querySelector('[data-gallery-preview-client]');
+    const previewDate = document.querySelector('[data-gallery-preview-date]');
+    const previewVisibility = document.querySelector('[data-gallery-preview-visibility]');
+    const previewStatus = document.querySelector('[data-gallery-preview-status]');
+    const previewCover = document.querySelector('[data-gallery-preview-cover]');
+    function selectedLabel(select) { return select && select.selectedIndex >= 0 ? select.options[select.selectedIndex].text : ''; }
+    function updateGalleryPreview() {
+      previewName.textContent = nameInput.value.trim() || 'Untitled gallery';
+      const client = selectedLabel(clientInput);
+      previewClient.textContent = clientInput.value ? client : '';
+      previewClient.hidden = !clientInput.value;
+      if (dateInput.value) {
+        previewDate.textContent = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(dateInput.value + 'T00:00:00'));
+        previewDate.setAttribute('datetime', dateInput.value); previewDate.hidden = false;
+      } else { previewDate.textContent = ''; previewDate.removeAttribute('datetime'); previewDate.hidden = true; }
+      previewVisibility.textContent = selectedLabel(visibilityInput);
+      previewStatus.textContent = selectedLabel(statusInput);
+    }
+    [nameInput, clientInput, dateInput, visibilityInput, statusInput].forEach(function (control) {
+      if (control) { control.addEventListener('input', updateGalleryPreview); control.addEventListener('change', updateGalleryPreview); }
+    });
+    document.addEventListener('gallery:cover-preview', function (event) {
+      previewCover.replaceChildren();
+      if (event.detail.url) { const image = document.createElement('img'); image.src = event.detail.url; image.alt = ''; previewCover.appendChild(image); }
+      else { const icon = document.createElement('i'); icon.className = 'bi bi-image'; icon.setAttribute('aria-hidden', 'true'); const text = document.createElement('span'); text.textContent = 'Your cover will appear here'; previewCover.append(icon, text); }
+    });
+    updateGalleryPreview();
+    galleryCreateForm.addEventListener('submit', function (event) {
+      if (galleryCreateForm.dataset.submitting === 'true') { event.preventDefault(); return; }
+      galleryCreateForm.dataset.submitting = 'true'; galleryCreateForm.setAttribute('aria-busy', 'true');
+      document.querySelectorAll('[data-gallery-submit]').forEach(function (button) {
+        button.disabled = true; button.setAttribute('aria-disabled', 'true');
+        button.replaceChildren();
+        const spinner = document.createElement('span'); spinner.className = 'lp-gallery-create__spinner'; spinner.setAttribute('aria-hidden', 'true');
+        button.append(spinner, document.createTextNode('Creating…'));
+      });
+    });
   }
 
   document.querySelectorAll('[data-mutation-form]').forEach(function (form) {
