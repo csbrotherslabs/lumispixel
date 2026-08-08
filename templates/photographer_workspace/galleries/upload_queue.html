@@ -1,8 +1,11 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<main class="lp-container lp-upload-page" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
-  <header class="lp-page-header">
-    <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Upload photos to a gallery and monitor transfer progress.</p></div>
+<main class="workspace-form-page lp-container lp-upload-page lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
+  <header class="form-page-header lp-page-header">
+    <div class="lp-page-heading">
+      <nav class="form-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
+      <h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Upload photos to a gallery and monitor transfer progress.</p>
+    </div>
   </header>
 
   <section class="lp-upload-stats" aria-label="Upload status summary">
