@@ -187,21 +187,17 @@ class TeamPerformanceMetricTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:team_performance"))
         self.assertEqual(response.status_code, 403)
 
-    def test_performance_breadcrumb_links_workspace_and_team_overview(self):
+    def test_performance_breadcrumb_matches_team_workspace_pages(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("photographer_workspace:team_performance"))
 
         self.assertContains(
             response,
-            f'href="{reverse("photographer_workspace:dashboard")}">Photographer Workspace</a>',
+            f'href="{reverse("photographer_workspace:dashboard")}">Business Hub</a>',
             html=False,
         )
-        self.assertContains(
-            response,
-            f'href="{reverse("photographer_workspace:team_overview")}">Team</a>',
-            html=False,
-        )
+        self.assertContains(response, '<span>Team</span>', html=False)
         self.assertContains(response, '<strong aria-current="page">Performance</strong>', html=False)
 
     def test_member_drilldown_rejects_membership_from_another_studio(self):
