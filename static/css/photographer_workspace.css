@@ -1022,7 +1022,10 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 
 /* Growth Overview — canonical workspace shell and compact analytical hierarchy. */
 .lpw-main:has(.lp-growth-overview){background:var(--lp-color-page);padding-top:var(--lp-space-6)}
-.lp-growth-overview{display:grid;gap:var(--lp-space-6);padding-bottom:var(--lp-space-10);color:var(--lp-text-primary)}
+.lp-growth-overview{display:grid;width:min(100%,var(--lp-container-wide));max-width:var(--lp-container-wide);gap:var(--lp-space-6);padding-bottom:var(--lp-space-10);color:var(--lp-text-primary)}
+.lp-growth-overview>.lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}
+.lp-growth-overview>.lpw-breadcrumb a{color:var(--lp-text-brand)}
+.lp-growth-overview>.lpw-breadcrumb strong{color:var(--lp-text-primary)}
 .lp-growth-header{padding-bottom:var(--lp-space-2)}
 .lp-growth-filters,.lp-growth-select,.lp-growth-compare{display:flex;align-items:center;gap:var(--lp-space-2)}
 .lp-growth-filters{flex-wrap:wrap}.lp-growth-select{min-height:2.75rem;padding-inline:var(--lp-space-3);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);background:var(--lp-color-surface);color:var(--lp-text-secondary)}
