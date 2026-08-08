@@ -962,12 +962,17 @@ class PhotographerWorkspaceTests(TestCase):
 
         create_page = self.client.get(reverse("photographer_workspace:create_gallery"))
         self.assertContains(create_page, "Set up the gallery now. Add photos and delivery settings next.")
-        self.assertContains(create_page, 'class="lp-container lp-gallery-create"')
+        self.assertContains(create_page, 'class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-clients-main-width"')
+        self.assertContains(create_page, 'aria-label="Breadcrumb"')
+        self.assertContains(create_page, f'href="{reverse("photographer_workspace:all_galleries")}">Galleries</a>')
         self.assertContains(create_page, "Gallery Details")
         self.assertContains(create_page, "Cover Image")
         self.assertContains(create_page, "Publishing &amp; Access")
+        self.assertLess(create_page.content.index(b"Gallery Details"), create_page.content.index(b"Client experience"))
+        self.assertLess(create_page.content.index(b"Client experience"), create_page.content.index(b"Publishing &amp; Access"))
+        self.assertContains(create_page, 'aria-label="Live gallery preview"')
         self.assertContains(create_page, 'data-cover-remove')
-        self.assertEqual(create_page.content.count(b'>Create Gallery</button>'), 1)
+        self.assertContains(create_page, '<span>Create Gallery</span>', count=1, html=True)
 
         create = self.client.post(reverse("photographer_workspace:create_gallery"), {
             "name": "Maya & Rowan", "client": client.pk, "event_date": "2026-08-12",
