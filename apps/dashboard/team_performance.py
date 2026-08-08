@@ -351,7 +351,9 @@ def _member_rows(memberships, current, previous, start, end):
         member = item["member"]
         name = member.user.full_name if member.user_id else member.email
         prior = previous_shoots[member.pk]
-        trend = item["completed"] - prior if previous else None
+        # A trend is a percentage only when the prior period supplies a valid
+        # denominator.  A zero/missing baseline is not presented as a change.
+        trend = round((item["completed"] - prior) * 100 / prior) if previous and prior else None
         availability = _availability_minutes([member], start, end)
         output.append({"id": member.pk, "name": name, "initials": "".join(x[0] for x in name.split()[:2]).upper(),
                        "role": member.get_role_display(), "role_key": member.role,
@@ -424,6 +426,13 @@ def team_performance_report(studio, params, *, can_view_financials=True):
                                row.get(sort_field) if row.get(sort_field) is not None else 0),
               reverse=descending)
     export_rows = list(rows)
+    supported_comparison_metrics = ["shoots", "galleries", "turnaround", "capacity", "client", "trend", "completion"]
+    if can_view_financials:
+        supported_comparison_metrics.append("revenue")
+    requested_metrics = params.getlist("columns") if hasattr(params, "getlist") else []
+    comparison_metrics = [key for key in supported_comparison_metrics if key in requested_metrics]
+    if not comparison_metrics:
+        comparison_metrics = ["shoots", "galleries", "turnaround", "capacity", "client", "trend"]
     paginator = Paginator(rows, 10)
     page = paginator.get_page(params.get("page", 1))
     trend_metric = (params.get("metric", "shoots")
@@ -466,6 +475,13 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "roles": StudioMembership.Role.choices, "locations": locations, "members": memberships,
             "rows": page.object_list, "export_rows": export_rows, "page_obj": page,
             "sort": sort, "direction": "desc" if descending else "asc",
+            "comparison_metrics": comparison_metrics,
+            "comparison_metric_options": [
+                ("shoots", "Shoots"), ("galleries", "Galleries"),
+                ("turnaround", "Turnaround"), ("capacity", "Capacity"),
+                ("client", "Client experience"), ("trend", "Trend"),
+                ("completion", "Completion rate"),
+            ] + ([("revenue", "Associated revenue")] if can_view_financials else []),
             "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0])
                                                               for key in PERFORMANCE_TREND_METRICS],
             "grouping": grouping, "groupings": groupings, "trend": trend,
