@@ -1261,6 +1261,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Inquiry Details")
         self.assertContains(response, 'aria-label="Lead readiness"')
         self.assertContains(response, "Capture a new inquiry and the details needed for follow-up.")
+        self.assertContains(response, 'aria-label="Breadcrumb"')
+        self.assertContains(response, f'href="{reverse("photographer_workspace:crm")}">CRM</a>')
         self.assertContains(response, f'<span aria-hidden="true">{profile.default_currency}</span>', html=True)
         self.assertContains(response, "Lead Readiness")
         self.assertContains(response, "Contact")
@@ -1271,7 +1273,15 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'data-submit-button')
         self.assertContains(response, 'class="lp-button lp-button--primary lp-button--md"')
         self.assertContains(response, "Save Lead")
-        self.assertContains(response, '<h1 id="workspace-page-title">Add Lead</h1>', count=1, html=True)
+        self.assertContains(response, '<h1 class="lp-page-title" id="workspace-page-title">Add Lead</h1>', count=1, html=True)
+
+        invalid = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": ""})
+        self.assertContains(invalid, 'aria-invalid="true"')
+        self.assertContains(invalid, 'aria-describedby="id_first_name-error"')
+
+        created = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": "Avery", "email": "avery-lead@example.com"}, follow=True)
+        self.assertRedirects(created, reverse("photographer_workspace:crm"))
+        self.assertContains(created, "Lead created.")
 
         invalid = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": ""})
         self.assertContains(invalid, 'aria-invalid="true"')

@@ -371,6 +371,7 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         "is_client_form": form_class is CrmClientForm,
         "is_lead_form": form_class is LeadForm,
         "is_add_lead": is_add_lead,
+        "hide_topbar_heading": is_add_lead,
     })
     return render(request, "photographer_workspace/crm_form.html", context)
 
