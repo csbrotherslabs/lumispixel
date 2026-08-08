@@ -145,7 +145,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Availability not configured")
         self.assertContains(response, "Portrait · Alex Client")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[booking.pk]))
-        self.assertContains(response, "No team activity recorded yet.")
+        self.assertContains(response, "No recent team activity.")
+        self.assertNotContains(response, "Saved team events.")
+        self.assertNotContains(response, "New membership and assignment events will appear here.")
         self.assertNotContains(response, "Alex Client gallery delivered.")
         self.assertNotContains(response, "This CRM-only event must not appear in team activity.")
 
@@ -159,10 +161,12 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, label)
         for removed_label in ("Unavailable or on leave", "Team capacity utilization"):
             self.assertNotContains(response, removed_label)
-        for detail in ("Working hours / capacity", "Current assignment", "Location", "Capacity"):
+        for detail in ("Member", "Availability", "Assignment", "Capacity", "Location", "Action"):
             self.assertContains(response, detail)
-        self.assertContains(response, "Availability not configured")
-        self.assertContains(response, "Configure Availability")
+        self.assertContains(response, "Not configured")
+        self.assertContains(response, "Unavailable")
+        self.assertContains(response, "Configure")
+        self.assertNotContains(response, "Assignment data unavailable")
 
         self.assertContains(self.client.get(url, {"q": "nobody"}), "No members match these filters")
         # Development-only state query parameters never alter production output.
