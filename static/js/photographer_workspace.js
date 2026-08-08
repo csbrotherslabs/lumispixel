@@ -342,12 +342,31 @@
 
     const readiness = clientForm.querySelector('[data-lead-readiness]');
     if (readiness) {
+      const summary = clientForm.querySelector('[data-lead-summary]');
+      const progress = clientForm.querySelector('[data-lead-progress]');
       const readinessItems = {
         contact: readiness.querySelector('[data-readiness-contact]'),
         inquiry: readiness.querySelector('[data-readiness-inquiry]'),
         followup: readiness.querySelector('[data-readiness-followup]')
       };
-      function hasValue(selector) { const field = clientForm.querySelector(selector); return Boolean(field && field.value.trim()); }
+      function field(selector) { return clientForm.querySelector(selector); }
+      function value(selector) { const input = field(selector); return input ? input.value.trim() : ''; }
+      function hasValue(selector) { return Boolean(value(selector)); }
+      function selectedText(selector) {
+        const select = field(selector);
+        return select && select.value && select.selectedOptions.length ? select.selectedOptions[0].text.trim() : '';
+      }
+      function shortDate(raw) {
+        if (!raw) return '';
+        const parts = raw.split('-').map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return raw;
+        return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(parts[0], parts[1] - 1, parts[2]));
+      }
+      function setSummary(selector, text, fallback) {
+        if (!summary) return;
+        const output = summary.querySelector(selector);
+        if (output) output.textContent = text || fallback;
+      }
       function setReadiness(item, complete, completeText, incompleteText) {
         if (!item) return;
         item.classList.toggle('is-complete', complete);
@@ -355,11 +374,42 @@
         item.querySelector('strong').textContent = complete ? completeText : incompleteText;
       }
       function updateReadiness() {
-        setReadiness(readinessItems.contact, hasValue('#id_email') || hasValue('#id_phone'), 'Added', 'Incomplete');
-        setReadiness(readinessItems.inquiry, hasValue('#id_event_type') || hasValue('#id_event_date') || hasValue('#id_lead_source') || hasValue('#id_estimated_value'), 'Added', 'Incomplete');
-        setReadiness(readinessItems.followup, hasValue('#id_next_follow_up'), 'Scheduled', 'Not scheduled');
+        const contactComplete = hasValue('#id_first_name') && (hasValue('#id_email') || hasValue('#id_phone'));
+        const inquiryComplete = hasValue('#id_event_type') || hasValue('#id_event_date') || hasValue('#id_lead_source') || hasValue('#id_estimated_value');
+        const followupComplete = hasValue('#id_next_follow_up');
+        setReadiness(readinessItems.contact, contactComplete, 'Complete', 'Incomplete');
+        setReadiness(readinessItems.inquiry, inquiryComplete, 'Complete', 'Incomplete');
+        setReadiness(readinessItems.followup, followupComplete, 'Scheduled', 'Not scheduled');
+
+        const firstName = value('#id_first_name');
+        const lastName = value('#id_last_name');
+        const eventDate = shortDate(value('#id_event_date'));
+        const followupDate = shortDate(value('#id_next_follow_up'));
+        const amount = value('#id_estimated_value');
+        const currency = summary ? summary.dataset.currency : '';
+        setSummary('[data-summary-name]', [firstName, lastName].filter(Boolean).join(' '), '\u2014');
+        setSummary('[data-summary-email]', value('#id_email') || value('#id_phone'), '\u2014');
+        setSummary('[data-summary-event]', value('#id_event_type'), '\u2014');
+        setSummary('[data-summary-event-date]', eventDate, '');
+        const eventDateOutput = summary && summary.querySelector('[data-summary-event-date]');
+        if (eventDateOutput) eventDateOutput.hidden = !eventDate;
+        setSummary('[data-summary-value]', amount ? [currency, amount].filter(Boolean).join(' ') : '', '\u2014');
+        setSummary('[data-summary-source]', selectedText('#id_lead_source'), '\u2014');
+        setSummary('[data-summary-followup]', followupDate, 'Not scheduled');
+        setSummary('[data-summary-status]', selectedText('#id_status'), '\u2014');
+        if (summary) summary.classList.toggle('has-details', Boolean(firstName || lastName || value('#id_email') || value('#id_phone') || inquiryComplete || followupComplete));
+
+        if (progress) {
+          const completed = [contactComplete, inquiryComplete, followupComplete];
+          const count = completed.filter(Boolean).length;
+          progress.querySelector('[data-progress-bar]').value = count;
+          progress.querySelector('[data-progress-label]').textContent = Math.round(count / completed.length * 100) + '% complete';
+          ['contact', 'inquiry', 'followup'].forEach(function (name, index) {
+            progress.querySelector('[data-progress-' + name + ']').classList.toggle('is-complete', completed[index]);
+          });
+        }
       }
-      ['#id_email', '#id_phone', '#id_event_type', '#id_event_date', '#id_lead_source', '#id_estimated_value', '#id_next_follow_up'].forEach(function (selector) {
+      ['#id_first_name', '#id_last_name', '#id_email', '#id_phone', '#id_event_type', '#id_event_date', '#id_lead_source', '#id_estimated_value', '#id_status', '#id_next_follow_up'].forEach(function (selector) {
         const field = clientForm.querySelector(selector);
         if (field) { field.addEventListener('input', updateReadiness); field.addEventListener('change', updateReadiness); }
       });
