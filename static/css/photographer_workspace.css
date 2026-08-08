@@ -1065,11 +1065,10 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:768px){.lp-growth-loading__sections{grid-template-columns:1fr}}
 
 /* Analytics overview — canonical workspace shell and executive hierarchy. */
-.lpw-main:has(.lpa-page){background:var(--lp-color-page);padding-top:var(--lp-space-6)}
-.lpa-page.lp-container{display:grid;width:min(100%,var(--lp-container));max-width:var(--lp-container);margin:0 auto;gap:var(--lp-space-6);padding:0 0 var(--lp-space-10);background:transparent;color:var(--lp-text-primary);min-height:0}
+.lpw-main:has(.lpa-page){max-width:none;background:var(--lp-color-page);padding-top:var(--lp-space-6)}
+.lpa-page.lp-container{display:grid;width:min(100%,var(--lp-container-wide));max-width:var(--lp-container-wide);margin:0 auto;gap:var(--lp-space-6);padding:0 0 var(--lp-space-10);background:transparent;color:var(--lp-text-primary);min-height:0}
 .lpa-page .lpa-header{position:static;align-items:flex-end;padding:0 0 var(--lp-space-2);border:0;background:transparent;box-shadow:none;backdrop-filter:none}
-.lpa-page .lpa-heading nav{margin-bottom:var(--lp-space-2);color:var(--lp-text-muted);font:var(--lp-type-caption)}.lpa-page .lpa-heading nav a{color:var(--lp-text-brand)}
-.lpa-page .lpa-heading h1{color:var(--lp-text-primary);font:var(--lp-type-page-title);line-height:var(--lp-leading-tight)}.lpa-page .lpa-heading p{margin-top:var(--lp-space-2);color:var(--lp-text-secondary);font:var(--lp-type-body)}
+.lpa-page>.lpw-breadcrumb{margin:0}.lpa-page .lpa-heading h1{color:var(--lp-text-primary)}.lpa-page .lpa-heading p{color:var(--lp-text-secondary)}
 .lpa-page .lpa-header-actions{gap:var(--lp-space-2)}.lpa-page .lpa-header-actions>label{box-sizing:border-box;height:44px;min-height:44px;padding-left:var(--lp-space-3);border-color:var(--lp-color-border);border-radius:var(--lp-radius-md);background:var(--lp-color-surface);color:var(--lp-text-secondary)}.lpa-page .lpa-header-actions select{height:42px;color:var(--lp-text-primary);font:600 var(--lp-type-body-small)/1 var(--lp-font-sans)}
 .lpa-page .lpa-header-actions>.lp-button,.lpa-page .lpa-export>summary{min-height:44px}.lpa-action-divider{width:1px;height:28px;margin-inline:var(--lp-space-1);background:var(--lp-color-border)}
 .lpa-page .lpa-content{gap:var(--lp-space-8);padding:0}.lpa-page .lpa-section{gap:var(--lp-space-4)}

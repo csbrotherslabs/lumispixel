@@ -274,6 +274,8 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(url, {"range": "this_quarter", "compare": "previous_year"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Understand business performance, trends, risks, and opportunities")
+        self.assertContains(response, "Photographer Workspace")
+        self.assertContains(response, 'class="lpa-page lp-container lp-container--wide"')
         self.assertContains(response, 'value="this_quarter" selected')
         self.assertContains(response, 'value="previous_year" selected')
         for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights &amp; Recommended Actions"):
