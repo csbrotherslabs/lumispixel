@@ -332,6 +332,32 @@
     function updateCount() { if (notes && noteCount) noteCount.textContent = notes.value.length; }
     if (notes) { notes.addEventListener('input', updateCount); updateCount(); }
 
+    const readiness = clientForm.querySelector('[data-lead-readiness]');
+    if (readiness) {
+      const readinessItems = {
+        contact: readiness.querySelector('[data-readiness-contact]'),
+        inquiry: readiness.querySelector('[data-readiness-inquiry]'),
+        followup: readiness.querySelector('[data-readiness-followup]')
+      };
+      function hasValue(selector) { const field = clientForm.querySelector(selector); return Boolean(field && field.value.trim()); }
+      function setReadiness(item, complete, completeText, incompleteText) {
+        if (!item) return;
+        item.classList.toggle('is-complete', complete);
+        item.querySelector('i').className = 'bi ' + (complete ? 'bi-check-circle-fill' : 'bi-circle');
+        item.querySelector('span').textContent = complete ? completeText : incompleteText;
+      }
+      function updateReadiness() {
+        setReadiness(readinessItems.contact, hasValue('#id_email') || hasValue('#id_phone'), 'Contact information added', 'Contact method missing');
+        setReadiness(readinessItems.inquiry, hasValue('#id_event_type') || hasValue('#id_event_date') || hasValue('#id_lead_source') || hasValue('#id_estimated_value'), 'Inquiry details added', 'Inquiry details incomplete');
+        setReadiness(readinessItems.followup, hasValue('#id_next_follow_up'), 'Follow-up scheduled', 'Follow-up not scheduled');
+      }
+      ['#id_email', '#id_phone', '#id_event_type', '#id_event_date', '#id_lead_source', '#id_estimated_value', '#id_next_follow_up'].forEach(function (selector) {
+        const field = clientForm.querySelector(selector);
+        if (field) { field.addEventListener('input', updateReadiness); field.addEventListener('change', updateReadiness); }
+      });
+      updateReadiness();
+    }
+
     const tagInput = clientForm.querySelector('#id_tags_input');
     const tagList = clientForm.querySelector('[data-tag-list]');
     let tags = tagInput ? tagInput.value.split(',').map(function (tag) { return tag.trim(); }).filter(Boolean) : [];

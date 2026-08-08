@@ -1,6 +1,6 @@
 <div class="form-field{% if wide %} form-field--wide{% endif %}{% if field.errors %} has-error{% endif %}">
   <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="sr-only"> (required)</span>{% endif %}</label>
-  {{ field }}
+  {% if prefix %}<div class="form-field-prefix"><span aria-hidden="true">{{ prefix }}</span>{{ field }}</div>{% else %}{{ field }}{% endif %}
   {% if field.help_text %}<small id="{{ field.id_for_label }}-help">{{ field.help_text }}</small>{% endif %}
   {% if field.errors %}<div class="field-error" id="{{ field.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ field.errors|striptags }}</div>{% endif %}
 </div>
