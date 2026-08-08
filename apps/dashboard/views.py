@@ -2871,6 +2871,10 @@ def team_members(request):
 
     name = request.user.full_name or profile.display_name or request.user.email
     location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part)
+    # Keep directory locations concise while retaining the persisted value for filtering and tooltips.
+    us_states = {"Kansas": "KS", "Oregon": "OR"}
+    compact_state = us_states.get(profile.state, profile.state)
+    compact_location = ", ".join(part for part in (profile.city, compact_state) if part) or "Not configured"
     owner = {
         "name": name,
         "email": request.user.email,
@@ -2878,9 +2882,11 @@ def team_members(request):
         "role": "Owner",
         "permission_summary": ACCESS_SUMMARIES[StudioMembership.Role.OWNER],
         "status": "Active" if request.user.can_login else "Inactive",
-        "location": location or "Not configured",
+        "location": compact_location,
+        "full_location": location or "Not configured",
         "availability": "Not configured",
         "availability_code": "not_configured",
+        "status_code": "active" if request.user.can_login else "inactive",
         "specialties": list(profile.specialties.values_list("name", flat=True)),
         "assignment": "No assignment recorded",
         "last_active": request.user.last_login,
@@ -2895,7 +2901,9 @@ def team_members(request):
         and (not availability or availability == "not_configured")
         and (not specialty or specialty in {str(pk) for pk in profile.specialties.values_list("pk", flat=True)})
     )
-    memberships = StudioMembership.objects.filter(studio=profile).select_related("user").prefetch_related("specialties")
+    memberships = StudioMembership.objects.filter(studio=profile).exclude(
+        status=StudioMembership.Status.INVITED
+    ).select_related("user").prefetch_related("specialties")
     if query:
         memberships = memberships.filter(Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) |
                                          Q(user__email__icontains=query) | Q(invitation_email__icontains=query))
@@ -2920,8 +2928,14 @@ def team_members(request):
             "initials": "".join(part[0] for part in member_name.split()[:2]).upper() or "LP",
             "role": membership.get_role_display(), "status": membership.get_status_display(),
             "permission_summary": ACCESS_SUMMARIES[membership.role],
-            "location": membership.primary_location or "Not configured",
-            "availability": membership.get_availability_display(), "availability_code": membership.availability,
+            "location": (membership.primary_location or "Not configured").replace(", Kansas, United States", ", KS").replace(", Oregon, United States", ", OR"),
+            "full_location": membership.primary_location or "Not configured",
+            "availability": {
+                StudioMembership.Availability.LIMITED: "Unavailable",
+                StudioMembership.Availability.AWAY: "On leave",
+            }.get(membership.availability, membership.get_availability_display()),
+            "availability_code": membership.availability,
+            "status_code": membership.status,
             "specialties": [item.name for item in membership.specialties.all()],
             "assignment": membership.current_assignment or "No assignment recorded",
             "last_active": member_user.last_login if member_user else None,
@@ -2954,7 +2968,11 @@ def team_members(request):
         "selected_specialty": specialty, "selected_sort": sort,
         "role_choices": [choice for choice in StudioMembership.Role.choices if choice[0] != StudioMembership.Role.OWNER],
         "status_choices": StudioMembership.Status.choices,
-        "availability_choices": StudioMembership.Availability.choices, "locations": locations,
+        "availability_choices": [
+            (value, {StudioMembership.Availability.LIMITED: "Unavailable",
+                     StudioMembership.Availability.AWAY: "On leave"}.get(value, label))
+            for value, label in StudioMembership.Availability.choices
+        ], "locations": locations,
         "specialty_choices": profile.specialties.model.objects.all().order_by("name"),
         "active_filters": active_filters, "page_obj": page_obj,
         "pagination_query": base_params.urlencode(), "total_members": paginator.count + (1 if owner_matches else 0),
@@ -2963,6 +2981,7 @@ def team_members(request):
         "role_summaries": ROLE_SUMMARIES,
         "pending_invitations": pending_invitations,
         "summary": {
+            "total": StudioMembership.objects.filter(studio=profile).exclude(status="invited").count() + 1,
             "active": StudioMembership.objects.filter(studio=profile, status="active").count() + (1 if request.user.can_login else 0),
             "managers": StudioMembership.objects.filter(studio=profile, role="studio_manager").count(),
             "photographers": StudioMembership.objects.filter(studio=profile, role="photographer").count(),
