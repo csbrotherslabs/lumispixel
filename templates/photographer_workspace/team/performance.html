@@ -2,7 +2,7 @@
 {% block workspace_content %}
 <div class="lp-container lpf-page">
   <header class="lp-page-header lpf-header"><div class="lp-page-heading">
-    <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Performance</strong></nav>
+    <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:team_overview' %}">Team</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Performance</strong></nav>
     <h1 class="lp-page-title" id="workspace-page-title">Team Performance</h1><p class="lp-page-description">Track team workload, delivery, and client experience over time.</p>
   </div><div class="lp-header-actions"><a class="lp-button lp-button--secondary lpf-export" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}export=csv"><i class="bi bi-download" aria-hidden="true"></i>Export</a></div></header>
   <main class="lpf-content">
