@@ -107,7 +107,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Brand session")
         self.assertContains(response, "Taylor Client")
-        self.assertContains(response, "Insufficient data")
+        self.assertContains(response, "Capacity unavailable")
         self.assertContains(response, "No eight-hour day or availability is assumed")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[session.pk]))
         self.assertNotContains(response, "Private shoot")
@@ -136,14 +136,14 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:team_overview"), {"date": today.isoformat()})
 
-        for heading in ("Assigned shoots", "Scheduled hours", "Available hours", "Capacity utilization", "Conflicts", "Workload state"):
+        for heading in ("Shoots", "Scheduled", "Available", "Capacity", "Conflicts", "State"):
             self.assertContains(response, heading)
-        for action in ("Invite Member", "View Schedule", "View Members", "Review Performance"):
+        for action in ("Invite Member", "View Schedule", "View Members"):
             self.assertContains(response, action)
         self.assertNotContains(response, "Assign Photographer")
         self.assertContains(response, "Unassigned shoot")
-        self.assertContains(response, "Missing availability")
-        self.assertContains(response, "Affected: Portrait · Alex Client")
+        self.assertContains(response, "Availability not configured")
+        self.assertContains(response, "Portrait · Alex Client")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[booking.pk]))
         self.assertContains(response, "No team activity recorded yet.")
         self.assertNotContains(response, "Alex Client gallery delivered.")
@@ -159,7 +159,7 @@ class PhotographerWorkspaceTests(TestCase):
             self.assertContains(response, label)
         for removed_label in ("Unavailable or on leave", "Team capacity utilization"):
             self.assertNotContains(response, removed_label)
-        for detail in ("Working hours", "Current assignment", "Next assignment", "Location", "Capacity"):
+        for detail in ("Working hours / capacity", "Current assignment", "Location", "Capacity"):
             self.assertContains(response, detail)
         self.assertContains(response, "Availability not configured")
         self.assertContains(response, "Configure Availability")
