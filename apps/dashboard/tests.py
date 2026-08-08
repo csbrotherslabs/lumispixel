@@ -274,9 +274,11 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(url, {"range": "this_quarter", "compare": "previous_year"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Understand business performance, trends, risks, and opportunities")
+        self.assertContains(response, "Photographer Workspace")
+        self.assertContains(response, 'class="lpa-page lp-container lp-container--wide"')
         self.assertContains(response, 'value="this_quarter" selected')
         self.assertContains(response, 'value="previous_year" selected')
-        for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights and Recommendations"):
+        for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights &amp; Recommended Actions"):
             self.assertContains(response, heading)
         self.assertContains(response, "Booking Patterns")
         self.assertContains(response, "More booking history is needed to identify seasonality.")
@@ -316,6 +318,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Open filtered Bookings")
         self.assertContains(response, "Open Schedule")
         self.assertContains(response, "not a booking calendar")
+        self.assertContains(response, "Team analytics needs more operational data")
+        self.assertContains(response, "revenue alone is never treated as employee performance")
+        self.assertContains(response, "View Team")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
 
@@ -327,6 +332,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(page, "Metric definition")
         self.assertContains(page, "Historical trend")
         self.assertContains(page, "Print / save PDF")
+        self.assertContains(page, "Export approved metrics for the active date range and filters")
+        self.assertContains(page, "Open the current analytics view in the browser print dialog")
         export = self.client.get(url, {"export": "csv"})
         self.assertEqual(export.status_code, 200)
         self.assertEqual(export["Content-Type"], "text/csv; charset=utf-8")

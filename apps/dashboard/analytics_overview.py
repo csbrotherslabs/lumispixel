@@ -117,9 +117,9 @@ def _analytics_insights(current, previous, payment_ratio, invoiced, collected,
             f'{raw_ops["utilization"]:.1f}% schedule utilization', "Review the schedule", urls["bookings"],
             "risk" if high else "opportunity", "bi-people")
     if any(current.values()):
-        add("missing-operational-data", "Data quality issue", "Data needed", 1, 1,
-            "Some workflow insights are unavailable", "Editing completion and team assignments do not have dedicated records, so no estimates are shown.",
-            "2 operational fields not tracked", "Review operational data", urls["clients"], "info", "bi-database-check")
+        add("missing-operational-data", "Data Quality", "Informational", 1, 1,
+            "Missing operational tracking", "Editing completion and team assignments do not have dedicated records, so unavailable workflow analysis is not estimated.",
+            "2 operational fields not tracked", "View Team", urls.get("team", urls["clients"]), "info", "bi-database-check")
     return sorted(insights, key=lambda item: (-item["score"], item["id"]))[:6]
 
 
@@ -761,8 +761,8 @@ def _operational_intelligence(start, end, grouping, sessions, leads, galleries, 
         {"title": "Team workload", "description": "Assignments are not recorded. Owner totals are shown neutrally; no ranking is produced.", "stats": [(str(profile), period_sessions.exclude(status=ClientSession.Status.CANCELLED).count())]},
         {"title": "Location performance", "description": "Completed shoots grouped by recorded booking location.", "locations": list(period_sessions.values("location").annotate(value=Count("pk"), revenue=Sum("booking_value")).order_by("-value")[:8])},
     ]
-    team = {"available": False, "context": "Team-member assignments and satisfaction scores are not recorded. Comparisons remain unavailable rather than attributing owner-level work unfairly.",
-            "columns": ("Shoots completed", "Revenue associated", "Average turnaround", "Workload", "Late tasks", "Client satisfaction")}
+    team = {"available": False, "context": "Assignments, turnaround, late-task, and satisfaction data are not tracked by member. Shoots, workload, and revenue therefore cannot be attributed fairly.",
+            "url": urls["team"]}
     return {"metrics": [{"label": a, "value": b, "icon": c, "tooltip": d} for a, b, c, d in metrics],
             "funnel": funnel, "main_bottleneck": main_bottleneck, "reports": reports, "team": team,
             "currency": currency, "urls": urls,
@@ -867,7 +867,7 @@ def analytics_overview(profile, params, base_url, today=None):
     scheduled_count = scheduled.count()
     cancellation_rate = Decimal(scheduled.filter(status=ClientSession.Status.CANCELLED).count() * 100) / scheduled_count if scheduled_count else None
     root = base_url.rsplit('/analytics/', 1)[0]
-    urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/",
+    urls = {"financial": f"{root}/financial/", "bookings": f"{root}/bookings/", "growth": f"{root}/growth/", "team": f"{root}/team/",
             "galleries": f"{root}/galleries/", "clients": f"{root}/clients/", "leads": f"{root}/leads/", "transactions": f"{root}/financial/transactions/"}
     business_health = _business_health(current, previous, payment_ratio, cancellation_rate, urls)
     currency = getattr(profile, "default_currency", "USD")
