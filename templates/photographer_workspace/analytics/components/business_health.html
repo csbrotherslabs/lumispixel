@@ -1,9 +1,7 @@
 <div class="lpa-health-grid">
   <article class="lpa-card lpa-health-card" aria-labelledby="business-health-title">
     <header><div><span class="lpa-eyebrow">Rule-based score</span><h3 id="business-health-title">Business Health</h3></div><button class="lpa-tooltip" type="button" aria-label="How Business Health is calculated" aria-describedby="health-score-tip"><i class="bi bi-info-circle"></i></button><span id="health-score-tip" role="tooltip">{{ business_health.tooltip }}</span></header>
-    <div class="lpa-health-score {% if business_health.score != None %}is-scored{% endif %}" style="--score:{{ business_health.score|default:0 }}"><span><b>{% if business_health.score != None %}{{ business_health.score }}{% else %}—{% endif %}</b><small>out of 100</small></span></div>
-    <strong class="lpa-health-label">{{ business_health.label }}</strong>
-    <p>{{ business_health.available_weight }} of 95 possible signal weights available. The result is normalized across available categories.</p>
+    {% if business_health.score != None %}<div class="lpa-health-value"><strong>{{ business_health.score }}</strong><span>/ 100</span></div><strong class="lpa-health-label">{{ business_health.label }}</strong><p><b>{{ business_health.available_weight }} of 95</b> possible signal weights available. The result is normalized across available categories.</p>{% else %}<div class="lpa-health-unavailable"><i class="bi bi-clipboard-data" aria-hidden="true"></i><div><strong>Not enough data to calculate Business Health yet.</strong><p>Add activity in the selected and comparison periods, including revenue, bookings, leads, gallery engagement, invoices, or scheduled sessions.</p></div></div>{% endif %}
   </article>
   <article class="lpa-card lpa-contributions">
     <header><div><span class="lpa-eyebrow">Score breakdown</span><h3>Category contributions</h3><p>Fixed points earned before normalization</p></div></header>
