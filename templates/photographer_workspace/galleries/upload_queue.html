@@ -3,7 +3,7 @@
 <main class="workspace-form-page lp-container lp-upload-page lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
   <header class="form-page-header lp-page-header">
     <div class="lp-page-heading">
-      <nav class="form-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Upload photos to a gallery and monitor transfer progress.</p>
     </div>
   </header>
@@ -21,9 +21,11 @@
         <div class="lp-section-header"><div><h2 id="destination-title">Select gallery</h2><p>Choose the destination for these photos.</p></div></div>
         <div class="lp-gallery-picker" data-gallery-picker {% if selected_gallery %}hidden{% endif %}>
           <label for="upload-gallery-search">Find a gallery</label>
-          <div class="lp-gallery-search"><i class="bi bi-search" aria-hidden="true"></i><input id="upload-gallery-search" type="search" autocomplete="off" placeholder="Search galleries" data-gallery-search></div>
-          <label class="visually-hidden" for="upload-gallery">Gallery</label>
-          <select id="upload-gallery" data-upload-gallery><option value="">Select gallery</option>{% for gallery in gallery_choices %}<option value="{{ gallery.pk }}" data-name="{{ gallery.name }}" data-client="{{ gallery.client|default:'' }}" data-event="{% if gallery.client %}{{ gallery.client.event_type }}{% endif %}" data-date="{{ gallery.event_date|date:'M j, Y' }}" data-thumbnail="{% if gallery.cover_image %}{{ gallery.cover_image.url }}{% endif %}" data-gallery-url="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=photos" {% if selected_gallery.pk == gallery.pk %}selected{% endif %}>{{ gallery.name }}{% if gallery.client %} — {{ gallery.client }}{% endif %}{% if gallery.event_date %} · {{ gallery.event_date|date:"M j, Y" }}{% endif %}</option>{% endfor %}</select>
+          <div class="lp-gallery-picker__controls">
+            <div class="lp-gallery-search"><i class="bi bi-search" aria-hidden="true"></i><input id="upload-gallery-search" type="search" autocomplete="off" placeholder="Search galleries" data-gallery-search></div>
+            <label class="visually-hidden" for="upload-gallery">Gallery</label>
+            <select id="upload-gallery" data-upload-gallery><option value="">Select gallery</option>{% for gallery in gallery_choices %}<option value="{{ gallery.pk }}" data-name="{{ gallery.name }}" data-client="{{ gallery.client|default:'' }}" data-event="{% if gallery.client %}{{ gallery.client.event_type }}{% endif %}" data-date="{{ gallery.event_date|date:'M j, Y' }}" data-thumbnail="{% if gallery.cover_image %}{{ gallery.cover_image.url }}{% endif %}" data-gallery-url="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=photos" {% if selected_gallery.pk == gallery.pk %}selected{% endif %}>{{ gallery.name }}{% if gallery.client %} — {{ gallery.client }}{% endif %}{% if gallery.event_date %} · {{ gallery.event_date|date:"M j, Y" }}{% endif %}</option>{% endfor %}</select>
+          </div>
           {% if not gallery_choices %}<p class="lp-gallery-picker-empty">No galleries available.</p>{% endif %}
         </div>
         <article class="lp-selected-gallery" data-selected-gallery {% if not selected_gallery %}hidden{% endif %}>
