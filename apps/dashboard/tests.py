@@ -256,6 +256,16 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(self.client.get(url, {"state": "empty"}), "Your growth overview is ready")
         self.assertContains(self.client.get(url, {"state": "permission"}), "You don’t have permission")
         self.assertContains(self.client.get(url, {"state": "error"}), "Growth insights could not be loaded")
+        section_states = self.client.get(url, {
+            "funnel_state": "error", "sources_state": "loading",
+            "services_state": "error", "reviews_state": "loading",
+            "activity_state": "error",
+        })
+        self.assertContains(section_states, "Lead funnel is unavailable")
+        self.assertContains(section_states, "Service performance is unavailable")
+        self.assertContains(section_states, "Recent activity is unavailable")
+        self.assertContains(section_states, "lp-skeleton--list", count=2)
+        self.assertContains(response, '<input type="hidden" name="compare" value="1">', html=True)
 
     def test_analytics_foundation_sections_filters_and_states(self):
         user, _ = self.make_photographer(True, email="analytics-page@example.com", slug="analytics-page")
