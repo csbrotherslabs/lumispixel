@@ -44,18 +44,17 @@
 
       <form class="lpw-transaction-filter-form" method="get" role="search">
         <input type="hidden" name="view" value="{{ transaction_view }}">
-        <div class="lpw-transaction-primary-filters">
-          <label class="lpw-transaction-search"><span>Search transactions</span><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="{{ selected_filters.q }}" placeholder="Client, booking, reference, invoice, or amount"></label>
+        <label class="lpw-transaction-search"><i class="bi bi-search" aria-hidden="true"></i><span class="sr-only">Search transactions</span><input type="search" name="q" value="{{ selected_filters.q }}" placeholder="Search client, booking, reference, invoice or amount"></label>
+        <label class="lpw-transaction-mobile-view"><span>View</span><select aria-label="View" data-view-select>{% for item in transaction_views %}<option value="{{ item.url }}"{% if item.active %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
+        <div class="lpw-transaction-quick-filters">
           <label><span>Date range</span><select name="range">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
           <label><span>Status</span><select name="status"><option value="">Any status</option><option value="draft"{% if selected_filters.status == 'draft' %} selected{% endif %}>Draft</option><option value="pending"{% if selected_filters.status == 'pending' %} selected{% endif %}>Pending</option><option value="completed"{% if selected_filters.status == 'completed' %} selected{% endif %}>Completed</option><option value="failed"{% if selected_filters.status == 'failed' %} selected{% endif %}>Failed</option><option value="overdue"{% if selected_filters.status == 'overdue' %} selected{% endif %}>Overdue</option></select></label>
           <label><span>Record type</span><select name="record_type"><option value="">All records</option><option value="invoice"{% if selected_filters.record_type == 'invoice' %} selected{% endif %}>Invoice</option><option value="payment"{% if selected_filters.record_type == 'payment' %} selected{% endif %}>Payment</option><option value="refund"{% if selected_filters.record_type == 'refund' %} selected{% endif %}>Refund</option><option value="credit"{% if selected_filters.record_type == 'credit' %} selected{% endif %}>Credit</option></select></label>
-          <label><span>Payment method</span><select name="payment_method"><option value="">Any method</option><option value="card"{% if selected_filters.payment_method == 'card' %} selected{% endif %}>Card</option><option value="bank"{% if selected_filters.payment_method == 'bank' %} selected{% endif %}>Bank transfer</option><option value="cash"{% if selected_filters.payment_method == 'cash' %} selected{% endif %}>Cash</option><option value="other"{% if selected_filters.payment_method == 'other' %} selected{% endif %}>Other</option></select></label>
-        </div>
-        <label class="lpw-transaction-mobile-view"><span>View</span><select aria-label="View" data-view-select>{% for item in transaction_views %}<option value="{{ item.url }}"{% if item.active %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
-        <div class="lpw-transaction-secondary-filters">
           <label><span>Client</span><input name="client" value="{{ selected_filters.client }}" placeholder="All clients"></label>
           <label><span>Booking</span><input name="booking" value="{{ selected_filters.booking }}" placeholder="All bookings"></label>
-          <details class="lpw-transaction-advanced">
+          <label><span>Payment method</span><select name="payment_method"><option value="">Any method</option><option value="card"{% if selected_filters.payment_method == 'card' %} selected{% endif %}>Card</option><option value="bank"{% if selected_filters.payment_method == 'bank' %} selected{% endif %}>Bank transfer</option><option value="cash"{% if selected_filters.payment_method == 'cash' %} selected{% endif %}>Cash</option><option value="other"{% if selected_filters.payment_method == 'other' %} selected{% endif %}>Other</option></select></label>
+        </div>
+        <details class="lpw-transaction-advanced">
           <summary><i class="bi bi-sliders" aria-hidden="true"></i><span class="lpw-desktop-filter-label">More filters</span><span class="lpw-mobile-filter-label">Filters</span>{% if active_filter_count %}<b>{{ active_filter_count }}</b>{% endif %}</summary>
           <div>
             <header><div><strong>Advanced filters</strong><span>Narrow financial activity with additional criteria.</span></div></header>
@@ -71,10 +70,9 @@
               <label><span>Payment date to</span><input type="date" name="paid_to" value="{{ selected_filters.paid_to }}"></label>
             </div>
           </div>
-          </details>
-          <button class="lpw-apply-filters" type="submit">Apply</button>
-          <a class="lpw-clear-filters" href="{{ clear_filters_url }}">Clear filters</a>
-        </div>
+        </details>
+        <button class="lpw-apply-filters" type="submit">Apply</button>
+        <a class="lpw-clear-filters" href="{{ clear_filters_url }}">Clear filters</a>
       </form>
       {% if active_filters %}<div class="lpw-active-filters" aria-label="Active filters"><span>Active filters</span>{% for filter in active_filters %}<a href="{{ filter.remove_url }}">{{ filter.label }}: {{ filter.value }} <i class="bi bi-x" aria-hidden="true"></i><span class="sr-only">Remove</span></a>{% endfor %}</div>{% endif %}
     </section>
