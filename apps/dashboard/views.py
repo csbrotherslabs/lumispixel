@@ -331,6 +331,7 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         kwargs["photographer"] = profile
     form = form_class(request.POST or None, request.FILES or None, **kwargs)
     is_add_lead = form_class is LeadForm and title == "Add Lead"
+    is_add_client = form_class is CrmClientForm and title == "Add Client"
     if is_add_lead:
         for field_name, label in {
             "event_type": "Event Type",
@@ -371,7 +372,8 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         "is_client_form": form_class is CrmClientForm,
         "is_lead_form": form_class is LeadForm,
         "is_add_lead": is_add_lead,
-        "hide_topbar_heading": is_add_lead,
+        "is_add_client": is_add_client,
+        "hide_topbar_heading": is_add_lead or is_add_client,
     })
     return render(request, "photographer_workspace/crm_form.html", context)
 
