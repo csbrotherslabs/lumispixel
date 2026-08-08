@@ -604,6 +604,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "View Schedule")
         self.assertContains(response, "Manage upcoming sessions, confirmations, payments, and scheduling activity.")
         self.assertContains(response, "New Booking")
+        self.assertContains(response, f'href="{reverse("photographer_workspace:calendar")}?action=new"')
         self.assertContains(response, "New Lead")
         self.assertContains(response, "Upcoming Bookings")
         self.assertContains(response, "Bookings This Month")
@@ -687,6 +688,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Scheduling Alerts")
         self.assertContains(response, 'data-schedule-summary')
         self.assertContains(response, "Preparation incomplete")
+
+        new_booking_response = self.client.get(reverse("photographer_workspace:schedule"), {"action": "new"})
+        self.assertContains(new_booking_response, 'data-schedule-action="new"')
 
         list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
         self.assertEqual(list_response.status_code, 200)
