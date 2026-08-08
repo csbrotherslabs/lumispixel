@@ -3,32 +3,66 @@
 {% if is_create_gallery %}
 <div class="lp-container lp-gallery-create">
   <header class="lp-page-header">
-    <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Create Gallery</h1><p class="lp-page-description">Set up the gallery now. Add photos and delivery settings next.</p></div>
-    <div class="lp-header-actions"><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit" form="gallery-form">Create Gallery</button></div>
+    <div class="lp-page-heading">
+      <a class="lp-gallery-create__back" href="{% url 'photographer_workspace:all_galleries' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Galleries</a>
+      <h1 class="lp-page-title" id="workspace-page-title">Create Gallery</h1>
+      <p class="lp-page-description">Set up the gallery now. Add photos and delivery settings next.</p>
+    </div>
+    <div class="lp-header-actions"><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit" form="gallery-form" data-gallery-submit>Create Gallery</button></div>
   </header>
-  <form method="post" enctype="multipart/form-data" id="gallery-form" class="lp-gallery-create__form" novalidate>{% csrf_token %}
-    {% if form.non_field_errors %}<div class="lp-gallery-create__alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
-    <section class="lp-gallery-create__card" aria-labelledby="gallery-details-title">
-      <header><h2 id="gallery-details-title">Gallery Details</h2></header>
-      <div class="lp-gallery-create__grid">
-        {% for field in form %}{% if field.name == 'name' or field.name == 'client' or field.name == 'event_date' or field.name == 'description' %}<div class="lp-gallery-create__field{% if field.name == 'description' %} lp-gallery-create__field--wide{% endif %}{% if field.errors %} has-error{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<p class="lp-gallery-create__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors.0 }}</p>{% elif field.help_text %}<p class="lp-gallery-create__help">{{ field.help_text }}</p>{% endif %}</div>{% endif %}{% endfor %}
+
+  <div class="lp-gallery-create__layout">
+    <form method="post" enctype="multipart/form-data" id="gallery-form" class="lp-gallery-create__form" novalidate data-gallery-create-form>{% csrf_token %}
+      {% if form.non_field_errors %}<div class="lp-gallery-create__alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+      <section class="lp-gallery-create__section" aria-labelledby="gallery-details-title">
+        <header><span class="lp-gallery-create__step" aria-hidden="true">01</span><div><h2 id="gallery-details-title">Gallery Details</h2><p>Name the collection and connect it to your client.</p></div></header>
+        <div class="lp-gallery-create__grid">
+          {% for field in form %}{% if field.name == 'name' or field.name == 'client' or field.name == 'event_date' or field.name == 'description' %}
+          <div class="lp-gallery-create__field{% if field.name == 'description' %} lp-gallery-create__field--wide{% endif %}{% if field.errors %} has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}<p class="lp-gallery-create__error" id="{{ field.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ field.errors.0 }}</p>{% elif field.help_text %}<p class="lp-gallery-create__help">{{ field.help_text }}</p>{% endif %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+      </section>
+
+      <section class="lp-gallery-create__section" aria-labelledby="cover-image-title">
+        <header><span class="lp-gallery-create__step" aria-hidden="true">02</span><div><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+        <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
+          <img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>
+          <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt>
+            <span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span>
+            <strong data-cover-heading>Add a signature image</strong>
+            <span data-cover-instruction>Drag and drop or <u>choose a file</u></span>
+            <small>JPG, PNG, or WEBP</small>
+          </label>
+          {{ form.cover_image }}
+          <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
+        </div>
+        {% if form.cover_image.errors %}<p class="lp-gallery-create__error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors.0 }}</p>{% endif %}
+      </section>
+
+      <section class="lp-gallery-create__section" aria-labelledby="publishing-access-title">
+        <header><span class="lp-gallery-create__step" aria-hidden="true">03</span><div><h2 id="publishing-access-title">Publishing &amp; Access</h2><p>Choose how this gallery begins its journey.</p></div></header>
+        <div class="lp-gallery-create__grid lp-gallery-create__grid--publishing">{% for field in form %}{% if field.name == 'status' or field.name == 'visibility' or field.name == 'expiration_date' %}
+          <div class="lp-gallery-create__field{% if field.errors %} has-error{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<p class="lp-gallery-create__error" id="{{ field.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ field.errors.0 }}</p>{% endif %}</div>
+        {% endif %}{% endfor %}</div>
+      </section>
+    </form>
+
+    <aside class="lp-gallery-create__preview" aria-labelledby="gallery-preview-title">
+      <div class="lp-gallery-create__preview-label"><span>Gallery Preview</span><i class="bi bi-stars" aria-hidden="true"></i></div>
+      <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>
+      <div class="lp-gallery-create__preview-copy">
+        <p data-gallery-preview-client hidden></p>
+        <h2 id="gallery-preview-title" data-gallery-preview-name>Untitled gallery</h2>
+        <time data-gallery-preview-date hidden></time>
+        <div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility></span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status></span></div>
       </div>
-    </section>
-    <section class="lp-gallery-create__card" aria-labelledby="cover-image-title">
-      <header><h2 id="cover-image-title">Cover Image</h2><p>The first image your client will see.</p></header>
-      <div class="lp-gallery-create__cover" data-cover-drop>
-        <img src="" alt="Selected cover image preview" data-cover-preview hidden>
-        <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt><i class="bi bi-image" aria-hidden="true"></i><strong>Add cover image</strong><span>Drag &amp; drop or <u>browse</u></span><small>JPG, PNG, or WEBP</small></label>
-        {{ form.cover_image }}
-        <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}">Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove>Remove</button></div>
-      </div>
-      {% if form.cover_image.errors %}<p class="lp-gallery-create__error" role="alert">{{ form.cover_image.errors.0 }}</p>{% endif %}
-    </section>
-    <section class="lp-gallery-create__card" aria-labelledby="publishing-access-title">
-      <header><h2 id="publishing-access-title">Publishing &amp; Access</h2></header>
-      <div class="lp-gallery-create__grid lp-gallery-create__grid--publishing">{% for field in form %}{% if field.name == 'status' or field.name == 'visibility' or field.name == 'expiration_date' %}<div class="lp-gallery-create__field{% if field.errors %} has-error{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<p class="lp-gallery-create__error" role="alert">{{ field.errors.0 }}</p>{% endif %}</div>{% endif %}{% endfor %}</div>
-    </section>
-  </form>
+    </aside>
+  </div>
 </div>
 {% else %}
 <header class="lpw-gallery-form-head"><div><a href="{% url 'photographer_workspace:all_galleries' %}"><i class="bi bi-arrow-left"></i>All Galleries</a><h1 id="workspace-page-title">{{ form_title }}</h1><p>{{ form_subtitle }}</p></div><div><a class="lpw-btn" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit" form="gallery-form">{{ submit_label }}</button></div></header>
@@ -37,7 +71,7 @@
   <section class="lpw-gallery-form-card"><header><span><i class="bi bi-info-circle"></i></span><div><h2>Gallery details</h2><p>Name the collection and connect it to your client.</p></div></header><div class="lpw-gallery-form-grid">{% for field in form %}{% if field.name == 'name' or field.name == 'client' or field.name == 'event_date' or field.name == 'description' %}<label class="{% if field.name == 'description' %}is-wide{% endif %}" for="{{ field.id_for_label }}"><span>{{ field.label }}{% if field.field.required %}<b>*</b>{% endif %}</span>{{ field }}{% if field.errors %}<em>{{ field.errors.0 }}</em>{% elif field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</label>{% endif %}{% endfor %}</div></section>
   <section class="lpw-gallery-form-card"><header><span><i class="bi bi-image"></i></span><div><h2>Cover image</h2><p>Choose the first image your client will see.</p></div></header><label class="lpw-cover-drop" for="{{ form.cover_image.id_for_label }}" data-cover-drop>{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="Current cover" data-cover-preview>{% else %}<img src="" alt="Cover preview" data-cover-preview hidden>{% endif %}<span data-cover-prompt><i class="bi bi-cloud-arrow-up"></i><strong>Drag and drop a cover image</strong><small>or click to browse · JPG, PNG, or WebP</small></span>{{ form.cover_image }}</label>{% if form.cover_image.errors %}<em class="lpw-field-error">{{ form.cover_image.errors.0 }}</em>{% endif %}</section>
   <section class="lpw-gallery-form-card"><header><span><i class="bi bi-sliders"></i></span><div><h2>Publishing &amp; access</h2><p>Control availability and who can view this gallery.</p></div></header><div class="lpw-gallery-form-grid">{% for field in form %}{% if field.name == 'status' or field.name == 'visibility' or field.name == 'expiration_date' %}<label for="{{ field.id_for_label }}"><span>{{ field.label }}{% if field.field.required %}<b>*</b>{% endif %}</span>{{ field }}{% if field.errors %}<em>{{ field.errors.0 }}</em>{% endif %}</label>{% endif %}{% endfor %}</div></section>
-  <footer class="lpw-gallery-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit">{{ submit_label }}</button></footer>
+  <footer class="lpw-gallery-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lpw-btn lpw-btn-primary">{{ submit_label }}</button></footer>
 </form>
 {% endif %}
 {% endblock %}
