@@ -1849,7 +1849,7 @@ def bookings_dashboard(request):
         "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
         "recent_booking_activity": recent_activity,
         "booking_quick_actions": [
-            {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:calendar")}?action=new', "help": "Start a client booking"},
+            {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:bookings")}?action=new', "help": "Start a client booking"},
             {"label": "Block Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:calendar")}?action=block', "help": "Reserve unavailable time"},
             {"label": "Schedule Consultation", "icon": "bi-chat-square-text", "url": reverse("photographer_workspace:calendar"), "help": "Plan a client consultation"},
         ],
@@ -2153,7 +2153,6 @@ def schedule(request):
         "upcoming_shoots": upcoming_shoots,
         "scheduling_alerts": scheduling_alerts,
         "schedule_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
-        "schedule_action": request.GET.get("action") if request.GET.get("action") == "new" else "",
     })
     return render(request, "photographer_workspace/bookings/schedule.html", context)
 

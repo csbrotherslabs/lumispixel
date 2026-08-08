@@ -6,7 +6,7 @@
   <header class="lpw-command-header lpw-dashboard-header lp-page-header">
     <div class="lp-page-heading"><h1 id="workspace-page-title" class="lp-page-title">Overview</h1><p class="lpw-dashboard-summary lp-page-description">Manage upcoming sessions, confirmations, payments, and scheduling activity.</p></div>
     <div class="lpw-command-header__actions lp-header-actions" role="group" aria-label="Page actions">
-      <a class="lpw-btn lpw-btn-primary" href="{{ schedule_url }}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
+      <a class="lpw-btn lpw-btn-primary" href="{{ bookings_url }}?action=new"><i class="bi bi-plus-lg" aria-hidden="true"></i>New Booking</a>
       <a class="lpw-btn" href="{{ schedule_url }}"><i class="bi bi-calendar3" aria-hidden="true"></i>View Schedule</a>
       <a class="lp-button lp-button--ghost lp-button--md" href="{{ add_lead_url }}"><i class="bi bi-person-plus" aria-hidden="true"></i>New Lead</a>
     </div>
@@ -26,7 +26,7 @@
 
       <section class="lp-booking-panel" aria-labelledby="upcoming-title"><header><div><span>Next on the calendar</span><h2 id="upcoming-title">Upcoming Bookings</h2></div><a href="{{ schedule_url }}">View All Bookings</a></header>
         {% if upcoming_bookings %}<ul class="lp-booking-session-list">{% for booking in upcoming_bookings %}<li><time datetime="{{ booking.starts_at|date:'c' }}"><strong>{{ booking.starts_at|date:"M j" }}</strong><span>{{ booking.starts_at|date:"g:i A" }}</span></time><div><strong><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">{{ booking.client }}</a></strong><span>{{ booking.session_type }} · {{ booking.location|default:"Location not set" }}</span></div>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking.badge_variant %}{% if booking.needs_attention %}<span class="lp-booking-attention"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ booking.attention_label }}</span>{% endif %}</li>{% endfor %}</ul>
-        {% else %}{% include "photographer_workspace/components/empty_state.html" with variant="compact" icon="bi-calendar2-plus" title="No upcoming bookings" description="Create a booking to reserve your next client session." primary_url=schedule_url|add:"?action=new" primary_label="New Booking" %}{% endif %}
+        {% else %}{% include "photographer_workspace/components/empty_state.html" with variant="compact" icon="bi-calendar2-plus" title="No upcoming bookings" description="Create a booking to reserve your next client session." primary_url=bookings_url primary_label="New Booking" %}{% endif %}
       </section>
 
       <section class="lp-booking-panel lp-booking-revenue" aria-labelledby="revenue-title"><header><div><span>Financial performance</span><h2 id="revenue-title">Booking Revenue</h2><p>Invoice-backed revenue for the selected period.</p></div><form method="get"><label for="revenue-period" class="lp-sr-only">Revenue period</label><select id="revenue-period" name="period" onchange="this.form.submit()">{% for value,label in revenue_periods %}<option value="{{ value }}"{% if revenue_period == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></form></header>

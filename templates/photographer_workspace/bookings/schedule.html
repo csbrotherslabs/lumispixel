@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpw-schedule-page lp-container lp-container--wide" data-calendar{% if schedule_action %} data-schedule-action="{{ schedule_action }}"{% endif %}>
+<div class="lpw-schedule-page lp-container lp-container--wide" data-calendar>
   <p id="schedule-move-help" class="sr-only">Drag this booking to a month date to reschedule. With keyboard focus, use Alt plus left or right to move one day, or Alt plus up or down to resize by 15 minutes.</p>
   <a class="sr-only" href="{% url 'photographer_workspace:dashboard' %}">Back to Dashboard</a>
   <header class="lpw-schedule-header lp-page-header">
