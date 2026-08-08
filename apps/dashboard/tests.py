@@ -120,6 +120,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(url)
 
+        self.assertContains(response, 'class="lpm-page lpm-profile-page lp-container lp-container--wide"')
         self.assertContains(response, "Magdalene Golomeke")
         self.assertContains(response, 'href="mailto:magdalene@example.com"')
         self.assertContains(response, "Overland Park, KS")

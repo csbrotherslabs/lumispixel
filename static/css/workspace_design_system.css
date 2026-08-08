@@ -154,7 +154,7 @@
   margin-inline: auto;
   padding-inline: var(--lp-page-gutter);
 }
-.lp-container--wide { max-width: var(--lp-container-wide); }
+.lp-container--wide { width: min(100%, var(--lp-container-wide)); }
 .lp-page-header,
 .lp-section-header {
   display: flex;
