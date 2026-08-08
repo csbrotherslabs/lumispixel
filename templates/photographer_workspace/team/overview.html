@@ -34,10 +34,17 @@
         <section class="lp-card lpt-panel lpt-team-panel" aria-labelledby="team-title">
           <header><div><h2 id="team-title">Today’s Team</h2><p>Availability, assignments, and capacity from saved records.</p></div><a href="{% url 'photographer_workspace:team_members' %}">View Members</a></header>
           {% if not member_matches %}<div class="lpt-empty"><strong>No members match these filters.</strong><a href="?date={{ selected_date|date:'Y-m-d' }}">Clear filters</a></div>{% else %}
-          <article class="lpt-member-card">
-            <div class="lpt-member-name"><span class="lpt-avatar" aria-hidden="true">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><span>Owner</span></div></div>
-            <div class="lpt-member-status"><span class="lpt-state lpt-state--information"><i class="bi bi-info-circle" aria-hidden="true"></i><span><strong>Availability not configured</strong><small>Working hours and leave have not been set.</small></span></span><dl><div><dt>Current assignment</dt><dd>Assignment data unavailable</dd></div><div><dt>Working hours / capacity</dt><dd><strong>Capacity unavailable</strong><small>Configure working hours to calculate capacity.</small></dd></div><div><dt>Location</dt><dd>{{ owner_location }}</dd></div></dl><a class="lpt-row-action" href="{% url 'photographer_workspace:team_members' %}">Configure Availability <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-          </article>{% endif %}
+          <div class="lpt-member-table" role="table" aria-label="Today’s team status">
+            <div class="lpt-member-head" role="row"><span role="columnheader">Member</span><span role="columnheader">Availability</span><span role="columnheader">Assignment</span><span role="columnheader">Capacity</span><span role="columnheader">Location</span><span role="columnheader">Action</span></div>
+            <article class="lpt-member-card" role="row">
+              <div class="lpt-member-name" role="cell"><span class="lpt-avatar" aria-hidden="true">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><span>Owner</span></div></div>
+              <div class="lpt-member-value" role="cell" data-label="Availability"><span class="lp-badge lp-badge--neutral">Not configured</span><button class="lpt-info" type="button" aria-label="About availability" data-tooltip="Working hours or leave haven't been configured."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+              <div class="lpt-member-value" role="cell" data-label="Assignment"><span>Unavailable</span><button class="lpt-info" type="button" aria-label="About assignment status" data-tooltip="Member assignment records aren't available."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+              <div class="lpt-member-value" role="cell" data-label="Capacity"><span aria-label="Unavailable">—</span><button class="lpt-info" type="button" aria-label="About capacity" data-tooltip="Configure working hours to calculate capacity."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+              <div class="lpt-member-location" role="cell" data-label="Location" data-tooltip="{{ owner_location }}" tabindex="0">{{ owner_location }}</div>
+              <a class="lp-button lp-button--secondary lp-button--sm lpt-row-action" role="cell" href="{% url 'photographer_workspace:team_members' %}">Configure</a>
+            </article>
+          </div>{% endif %}
         </section>
 
         <section class="lp-card lpt-panel" aria-labelledby="assignments-title">
@@ -68,7 +75,7 @@
 
     <div class="lpt-bottom-grid">
       <section class="lp-card lpt-panel" aria-labelledby="alerts-title"><header><div><h2 id="alerts-title">Team Alerts</h2><p>Operational items for the selected date.</p></div></header>{% for alert in team_alerts|slice:':5' %}<article class="lpt-alert lpt-alert--{{ alert.tone }}"><i class="bi {{ alert.icon }}" aria-hidden="true"></i><div><span class="lpt-alert-level">{{ alert.severity }}</span><strong>{{ alert.title }}</strong><p>{{ alert.explanation }}</p><small>{{ alert.affected }}</small><a href="{{ alert.url }}">{{ alert.action }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></article>{% empty %}<div class="lpt-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i><strong>No team issues need attention.</strong></div>{% endfor %}</section>
-      <section class="lp-card lpt-panel" aria-labelledby="activity-title"><header><div><h2 id="activity-title">Recent Activity</h2><p>Saved team events.</p></div></header><ol class="lp-activity-list lpt-activity-list">{% for item in recent_activity %}{% include "photographer_workspace/components/activity_item.html" with description=item.description entity=item.title timestamp=item.at|timesince datetime=item.at|date:'c' icon=item.icon only %}{% empty %}<li class="lpt-empty"><i class="bi bi-activity" aria-hidden="true"></i><strong>No team activity recorded yet.</strong><span>New membership and assignment events will appear here.</span></li>{% endfor %}</ol></section>
+      <section class="lp-card lpt-panel lpt-activity-panel" aria-labelledby="activity-title"><header><div><h2 id="activity-title">Recent Activity</h2></div></header><ol class="lp-activity-list lpt-activity-list">{% for item in recent_activity %}{% include "photographer_workspace/components/activity_item.html" with description=item.description entity=item.title timestamp=item.at|timesince datetime=item.at|date:'c' icon=item.icon only %}{% empty %}<li class="lpt-empty"><i class="bi bi-activity" aria-hidden="true"></i><strong>No recent team activity.</strong></li>{% endfor %}</ol></section>
     </div>
   </div>
 </div>
