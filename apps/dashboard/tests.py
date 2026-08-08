@@ -52,7 +52,7 @@ class PhotographerWorkspaceTests(TestCase):
                     self.assertContains(response, section)
             elif route == "team_members":
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Members</h1>', html=True)
-                self.assertContains(response, "Manage team members, invitations, roles, access, locations, and availability.")
+                self.assertContains(response, "Manage your team, roles, access, and availability.")
             else:
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Performance</h1>', html=True)
                 self.assertContains(response, "Review team productivity, contribution, turnaround, workload, and client experience over time.")
@@ -76,16 +76,17 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.get(url)
 
         self.assertContains(response, "Avery Owner")
-        self.assertContains(response, "owner@studio.example")
-        self.assertContains(response, "Portland, Oregon")
-        for label in ("Active members", "Studio managers", "Photographers", "Pending invitations", "Inactive members"):
+        self.assertNotContains(response, "owner@studio.example")
+        self.assertContains(response, "Portland, OR")
+        for label in ("Team Members", "Active", "Pending"):
             self.assertContains(response, label)
+        for removed in ("Build your studio team", "Active members", "Inactive members", "Everyone with access"):
+            self.assertNotContains(response, removed)
         for role in ("Owner", "Studio Manager", "Photographer"):
             self.assertContains(response, role)
         self.assertNotContains(response, "Editor")
         self.assertNotContains(response, "Accountant")
-        self.assertContains(response, "An invitation system is not available yet")
-        self.assertContains(response, "Working hours, availability, and time-off records do not exist")
+        self.assertContains(response, "Working hours have not been configured.")
         self.assertContains(response, 'href="%s" class="is-active" aria-current="page"' % url)
 
         filtered = self.client.get(url, {"q": "nobody", "role": "photographer"})
