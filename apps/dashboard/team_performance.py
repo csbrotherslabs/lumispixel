@@ -23,6 +23,7 @@ TREND_METRICS = tuple(METRIC for METRIC in (
     "shoots", "galleries", "completion_rate", "editing_turnaround",
     "gallery_delivery", "revenue", "satisfaction", "capacity",
 ))
+PERFORMANCE_TREND_METRICS = ("shoots", "galleries", "gallery_delivery", "capacity", "satisfaction")
 
 
 def _bounds(params):
@@ -425,7 +426,8 @@ def team_performance_report(studio, params, *, can_view_financials=True):
     export_rows = list(rows)
     paginator = Paginator(rows, 10)
     page = paginator.get_page(params.get("page", 1))
-    trend_metric = params.get("metric", "shoots") if params.get("metric", "shoots") in TREND_METRICS else "shoots"
+    trend_metric = (params.get("metric", "shoots")
+                    if params.get("metric", "shoots") in PERFORMANCE_TREND_METRICS else "shoots")
     if trend_metric == "revenue" and not can_view_financials:
         trend_metric = "shoots"
     grouping, groupings = _grouping(start, end, params.get("grouping", ""))
@@ -439,6 +441,13 @@ def team_performance_report(studio, params, *, can_view_financials=True):
                                 if point["raw"] is not None and memberships and trend_metric in {"shoots", "galleries", "revenue"}
                                 else None)
         point["average"] = _display(trend_metric, point["average_raw"]) if point["average_raw"] is not None else None
+    # Generated empty buckets are not a useful trend. Presentation only draws
+    # the visualization when at least two periods contain supported activity.
+    meaningful_trend_points = [point for point in trend if point["raw"] is not None and (
+        trend_metric not in {"shoots", "galleries"} or point["raw"] > 0
+    )]
+    trend_has_enough_data = len(meaningful_trend_points) >= 2
+    trend_max = max((point["raw"] or 0 for point in trend), default=0) or 1
     timeline = defaultdict(lambda: {"bookings": 0, "completed": 0, "galleries": 0})
     for session in current["sessions"]:
         bucket = session.starts_at.date().replace(day=1)
@@ -457,8 +466,11 @@ def team_performance_report(studio, params, *, can_view_financials=True):
             "roles": StudioMembership.Role.choices, "locations": locations, "members": memberships,
             "rows": page.object_list, "export_rows": export_rows, "page_obj": page,
             "sort": sort, "direction": "desc" if descending else "asc",
-            "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0]) for key in TREND_METRICS],
-            "grouping": grouping, "groupings": groupings, "trend": trend, "previous_trend": previous_trend,
+            "trend_metric": trend_metric, "trend_metrics": [(key, METRIC_DEFINITIONS[key][0])
+                                                              for key in PERFORMANCE_TREND_METRICS],
+            "grouping": grouping, "groupings": groupings, "trend": trend,
+            "trend_has_enough_data": trend_has_enough_data, "trend_max": trend_max,
+            "previous_trend": previous_trend,
             "solo_mode": len(all_memberships) == 1, "summary_metrics": summary_metrics,
             "can_view_financials": can_view_financials, "status_distribution": current["status_distribution"], "summary": {
                 "members": len(memberships), "bookings": current["eligible_assignments"], "completed": current["shoots"],
