@@ -1009,7 +1009,7 @@ def create_gallery(request):
                 field.widget.attrs["aria-invalid"] = "true"
                 field.widget.attrs["aria-describedby"] = f"{field.widget.attrs.get('id', f'id_{field_name}')}-error"
     context = _dashboard_context(request, "all_galleries", "Create Gallery")
-    context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the gallery now. Add photos and delivery settings next.", "submit_label": "Create Gallery", "is_create_gallery": True})
+    context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the gallery now. Add photos and delivery settings next.", "submit_label": "Create Gallery", "is_create_gallery": True, "hide_topbar_heading": True})
     return render(request, "photographer_workspace/galleries/form.html", context)
 
 
