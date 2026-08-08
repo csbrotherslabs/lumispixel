@@ -164,9 +164,11 @@ def _metric(label, value, previous, display, icon, tooltip, url, compare_label, 
         direction = "up" if delta > 0 else "down" if delta < 0 else "neutral"
         tone = "positive" if delta > 0 else "negative" if delta < 0 else "neutral"
         change, note = f"{delta:+.1f}%", f"vs {compare_label.lower()}"
-    heights = [max(8, min(100, int((Decimal(str(point)) / max([Decimal(str(x)) for x in spark] + [Decimal('1')])) * 100))) for point in spark]
+    heights = []  # Two aggregate period values are not sufficient history for an honest sparkline.
     return {"label": label, "raw": value, "value": display(value), "previous_value": display(previous) if previous is not None else "Unavailable", "change": change, "tone": tone,
-            "direction": direction, "icon": icon, "note": note, "tooltip": tooltip, "url": url, "spark": heights}
+            "direction": direction, "icon": icon, "note": note, "tooltip": tooltip, "url": url, "spark": heights,
+            "available": True, "comparison_valid": previous not in (None, 0),
+            "neutral_state": "Comparison unavailable" if previous == 0 else "Not compared"}
 
 
 def _business_health(current, previous, payment_ratio, cancellation_rate, urls):
@@ -846,6 +848,10 @@ def analytics_overview(profile, params, base_url, today=None):
                        tip, f"{base_url.rsplit('/analytics/', 1)[0]}/{target}/", compare_label,
                        [previous[key] if previous else current[key], current[key]])
                for label, key, formatter, icon, tip, target in specs]
+    for metric, spec in zip(metrics, specs):
+        metric["key"] = spec[1]
+    primary_metrics = [metrics[index] for index in (0, 2, 3, 4)]
+    secondary_metrics = [metrics[index] for index in (1, 5, 6, 7)]
 
     period_invoices = ClientInvoice.objects.for_photographer(profile).filter(issue_date__gte=start, issue_date__lte=end)
     if any(selected.values()):
@@ -922,7 +928,8 @@ def analytics_overview(profile, params, base_url, today=None):
     has_any_data = any(m["raw"] for m in metrics)
     return {"range_options": RANGES, "range_key": range_key, "compare_options": COMPARES, "compare_key": compare_key,
             "start": start, "end": end, "selected_filters": selected, "filter_options": options,
-            "active_chips": chips, "analytics_metrics": metrics, "has_any_data": has_any_data,
+            "active_chips": chips, "analytics_metrics": metrics, "primary_metrics": primary_metrics,
+            "secondary_metrics": secondary_metrics, "has_any_data": has_any_data,
             "partial_message": "Net revenue excludes operating expenses because expense records are not available.",
             "business_health": business_health, "business_summary": business_summary, "business_trends": business_trends,
             "customer_intelligence": customer_intelligence, "booking_intelligence": booking_intelligence,
