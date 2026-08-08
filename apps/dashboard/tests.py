@@ -13,7 +13,7 @@ from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNot
 from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryInvitation, GalleryPermission, GalleryPhoto, GallerySettings
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.models import StudioMembership
-from apps.dashboard.views import WORKSPACE_MODULES
+from apps.dashboard.views import GALLERY_STORAGE_LIMIT, WORKSPACE_MODULES
 from apps.dashboard.analytics_overview import _analytics_insights, _short_date
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
 from django.core.exceptions import PermissionDenied
@@ -954,6 +954,25 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(other_user)
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_photo_media", args=[photo.pk])).status_code, 404)
         self.assertEqual(self.client.post(reverse("photographer_workspace:gallery_upload_queue"), {"gallery": gallery.pk}).status_code, 404)
+
+    def test_gallery_upload_rejects_files_when_workspace_storage_is_insufficient(self):
+        user, profile = self.make_photographer(True, email="storage-upload@example.com", slug="storage-upload")
+        gallery = Gallery.objects.create(
+            photographer=profile, name="Nearly Full", slug="nearly-full",
+            storage_used=GALLERY_STORAGE_LIMIT - 1,
+        )
+        image = BytesIO()
+        Image.new("RGB", (8, 8), "blue").save(image, "JPEG")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("photographer_workspace:gallery_upload_queue"), {
+            "gallery": gallery.pk,
+            "files": SimpleUploadedFile("photo.jpg", image.getvalue(), content_type="image/jpeg"),
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["errors"][0]["error"], "Not enough storage to upload these files.")
+        self.assertFalse(GalleryPhoto.objects.filter(gallery=gallery).exists())
 
     def test_gallery_create_edit_filters_and_bulk_actions(self):
         user, profile = self.make_photographer(True, email="gallery-crud@example.com", slug="gallery-crud")

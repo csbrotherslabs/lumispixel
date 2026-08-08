@@ -1094,9 +1094,16 @@ def gallery_upload_queue(request):
         created, errors = [], []
         allowed = {"image/jpeg", "image/png", "image/webp"}
         max_size = 25 * 1024 * 1024
+        storage_used = galleries.aggregate(
+            total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
+        )["total"]
+        storage_remaining = max(GALLERY_STORAGE_LIMIT - storage_used, 0)
         for upload in files:
             if upload.content_type not in allowed or upload.size > max_size:
                 errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
+                continue
+            if upload.size > storage_remaining:
+                errors.append({"name": upload.name, "error": "Not enough storage to upload these files."})
                 continue
             try:
                 image = Image.open(upload)
@@ -1113,6 +1120,7 @@ def gallery_upload_queue(request):
                 errors.append({"name": upload.name, "error": "The image could not be validated."})
                 continue
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
+            storage_remaining -= upload.size
         if created:
             Gallery.objects.filter(pk=gallery.pk).update(image_count=F("image_count") + len(created), storage_used=F("storage_used") + sum(item["size"] for item in created))
             log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
@@ -1130,6 +1138,7 @@ def gallery_upload_queue(request):
                     "selected_gallery": selected_gallery,
                     "storage": {"used": _format_storage(storage_used),
                                 "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)),
+                                "available_bytes": max(GALLERY_STORAGE_LIMIT - storage_used, 0),
                                 "percent": storage_percent}})
     return render(request, "photographer_workspace/galleries/upload_queue.html", context)
 
