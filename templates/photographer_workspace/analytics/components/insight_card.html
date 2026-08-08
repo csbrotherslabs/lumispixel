@@ -3,10 +3,13 @@
   <div>
     <div><b>{{ insight.category }}</b><small class="lpa-insight-badge">{{ insight.severity }}</small></div>
     <h3>{{ insight.title }}</h3>
-    <p>{{ insight.explanation }}</p>
-    <strong class="lpa-insight-metric">{{ insight.metric }}</strong>
+    <dl class="lpa-insight-detail">
+      <div><dt>Why it matters</dt><dd>{{ insight.explanation }}</dd></div>
+      <div><dt>Supporting evidence</dt><dd class="lpa-insight-metric">{{ insight.metric }}</dd></div>
+      <div><dt>Recommended action</dt><dd>{{ insight.action }}</dd></div>
+    </dl>
     <div class="lpa-insight-actions">
-      <a href="{{ insight.url }}">{{ insight.action }} <i class="bi bi-arrow-right"></i></a>
+      <a href="{{ insight.url }}">{{ insight.action }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
       {% if insight.dismissible %}<button type="button" data-dismiss-insight aria-label="Dismiss {{ insight.title }}">Dismiss</button>{% else %}<button type="button" data-acknowledge-insight>Acknowledge</button>{% endif %}
     </div>
   </div>

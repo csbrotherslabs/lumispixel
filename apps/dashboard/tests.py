@@ -276,7 +276,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Understand business performance, trends, risks, and opportunities")
         self.assertContains(response, 'value="this_quarter" selected')
         self.assertContains(response, 'value="previous_year" selected')
-        for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights and Recommendations"):
+        for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights &amp; Recommended Actions"):
             self.assertContains(response, heading)
         self.assertContains(response, "Booking Patterns")
         self.assertContains(response, "More booking history is needed to identify seasonality.")
@@ -316,6 +316,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Open filtered Bookings")
         self.assertContains(response, "Open Schedule")
         self.assertContains(response, "not a booking calendar")
+        self.assertContains(response, "Team analytics needs more operational data")
+        self.assertContains(response, "revenue alone is never treated as employee performance")
+        self.assertContains(response, "View Team")
         for state, copy in (("loading", "Loading analytics"), ("error", "Analytics could not be loaded"), ("permission", "You don’t have permission"), ("empty", "Your analytics workspace is ready")):
             self.assertContains(self.client.get(url, {"state": state}), copy)
 
