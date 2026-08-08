@@ -1123,9 +1123,14 @@ def gallery_upload_queue(request):
     counts = {status: upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
     uploads = upload_records.select_related("gallery")[:100]
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
+    storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
+    selected_gallery = galleries.filter(pk=request.GET.get("gallery")).first() if request.GET.get("gallery") else None
     context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
     context.update({"gallery_choices": galleries, "uploads": uploads, "upload_counts": counts,
-                    "storage": {"used": _format_storage(storage_used), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)}})
+                    "selected_gallery": selected_gallery,
+                    "storage": {"used": _format_storage(storage_used),
+                                "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)),
+                                "percent": storage_percent}})
     return render(request, "photographer_workspace/galleries/upload_queue.html", context)
 
 
