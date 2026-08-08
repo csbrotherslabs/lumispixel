@@ -936,11 +936,6 @@
   }
 
   document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () { open(button.dataset.eventFormOpen, button); }); });
-  const initialAction = document.querySelector('[data-calendar]')?.dataset.scheduleAction;
-  if (initialAction === 'new') {
-    const bookingOpener = document.querySelector('[data-event-form-open="booking"]');
-    open('booking', bookingOpener);
-  }
   form.addEventListener('input', function (event) { dirty = true; event.target.classList.remove('has-error'); checkConflict(); });
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
   form.addEventListener('submit', function (event) {
