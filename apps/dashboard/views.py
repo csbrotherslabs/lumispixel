@@ -3228,22 +3228,12 @@ def team_overview(request):
     today_assignments = [assignment_row(session, day_sessions) for session in day_sessions]
     upcoming_assignments = [assignment_row(session, upcoming, True) for session in upcoming]
     upcoming_assignments.sort(key=lambda row: (not row["needs_attention"], row["session"].starts_at))
+    upcoming_assignments = upcoming_assignments[:5]
 
-    # Only activity types that describe team operations belong in this feed.  The
-    # application does not yet audit membership, assignments, availability, leave,
-    # or role changes; ordinary CRM/gallery events must not be presented as team
-    # activity. Gallery delivery is the sole compatible activity record today.
-    activity = [
-        {
-            "title": item.get_event_type_display(),
-            "description": item.description,
-            "at": item.occurred_at,
-            "icon": "bi-images",
-        }
-        for item in ClientActivity.objects.for_photographer(profile).filter(
-            event_type=ClientActivity.EventType.GALLERY_DELIVERED
-        )[:6]
-    ]
+    # Membership, assignment, availability, leave, and role-change audit records
+    # do not exist yet. Keep the activity timeline empty rather than repurposing
+    # CRM or gallery events as team activity.
+    activity = []
     owner_name = request.user.full_name or profile.display_name or request.user.email
     initials = "".join(part[0] for part in owner_name.split()[:2]).upper() or "LP"
     confirmed = sum(session.status == ClientSession.Status.CONFIRMED for session in day_sessions)
@@ -3295,12 +3285,10 @@ def team_overview(request):
         "action": "View members", "url": reverse("photographer_workspace:team_members"),
     })
     kpis = [
-        {"label": "Total active team members", "value": "1", "definition": "Active people with access to this studio workspace.", "status": "Current", "tone": "success", "icon": "bi-people", "available": True},
-        {"label": "Available today", "value": "—", "definition": "Members inside configured working hours with remaining capacity.", "status": "Not configured", "tone": "neutral", "icon": "bi-person-check", "available": False},
-        {"label": "On assignment", "value": "—", "definition": "Members linked to an active shoot on the selected date.", "status": "Data unavailable", "tone": "neutral", "icon": "bi-camera", "available": False},
-        {"label": "Unavailable or on leave", "value": "—", "definition": "Members marked away, on leave, or outside working hours.", "status": "Not configured", "tone": "neutral", "icon": "bi-calendar-x", "available": False},
-        {"label": "Unassigned shoots today", "value": str(len(day_sessions)), "definition": "Non-cancelled shoots without member-assignment records.", "status": "Needs review" if day_sessions else "Clear", "tone": "warning" if day_sessions else "success", "icon": "bi-exclamation-diamond", "available": True},
-        {"label": "Team capacity utilization", "value": "—", "definition": "Assigned shoot time as a share of configured team working hours.", "status": "Data unavailable", "tone": "neutral", "icon": "bi-speedometer2", "available": False},
+        {"label": "Active Team Members", "value": "1", "definition": "Active people with access to this studio workspace.", "status": "Current", "tone": "success", "icon": "bi-people", "available": True},
+        {"label": "Available Today", "value": "—", "definition": "Members inside configured working hours with remaining capacity.", "status": "Not configured", "tone": "neutral", "icon": "bi-person-check", "available": False},
+        {"label": "On Assignment", "value": "—", "definition": "Members linked to an active shoot on the selected date.", "status": "Data unavailable", "tone": "neutral", "icon": "bi-camera", "available": False},
+        {"label": "Unassigned shoots", "value": str(len(day_sessions)), "definition": "Non-cancelled shoots without member-assignment records.", "status": "Needs review" if day_sessions else "Clear", "tone": "warning" if day_sessions else "success", "icon": "bi-exclamation-diamond", "available": True},
     ]
 
     context = _dashboard_context(request, "team_overview", "Team Overview")
