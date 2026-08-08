@@ -249,11 +249,25 @@
   const coverInput = document.querySelector('[data-cover-input]');
   if (coverDrop && coverInput) {
     const preview = coverDrop.querySelector('[data-cover-preview]'); const prompt = coverDrop.querySelector('[data-cover-prompt]');
-    function previewCover(file) { if (!file || !file.type.startsWith('image/')) return; preview.src = URL.createObjectURL(file); preview.hidden = false; prompt.hidden = true; }
+    const actions = coverDrop.querySelector('[data-cover-actions]'); const remove = coverDrop.querySelector('[data-cover-remove]');
+    let previewUrl = null;
+    function previewCover(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file); preview.src = previewUrl; preview.hidden = false; prompt.hidden = true;
+      if (actions) actions.hidden = false;
+    }
+    function removeCover() {
+      coverInput.value = '';
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = null; preview.src = ''; preview.hidden = true; prompt.hidden = false;
+      if (actions) actions.hidden = true;
+    }
     coverInput.addEventListener('change', function () { previewCover(coverInput.files[0]); });
     ['dragenter', 'dragover'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.add('is-dragging'); }); });
     ['dragleave', 'drop'].forEach(function (name) { coverDrop.addEventListener(name, function (event) { event.preventDefault(); coverDrop.classList.remove('is-dragging'); }); });
     coverDrop.addEventListener('drop', function (event) { if (event.dataTransfer.files.length) { coverInput.files = event.dataTransfer.files; previewCover(event.dataTransfer.files[0]); } });
+    if (remove) remove.addEventListener('click', removeCover);
   }
 
   document.querySelectorAll('[data-mutation-form]').forEach(function (form) {

@@ -989,6 +989,8 @@ def gallery_archive_actions(request):
 def create_gallery(request):
     profile = request.studio
     form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile)
+    form.fields["description"].widget.attrs["rows"] = 3
+    form.fields["cover_image"].widget.attrs["accept"] = "image/jpeg,image/png,image/webp"
     if request.method == "POST" and form.is_valid():
         gallery = form.save(commit=False)
         gallery.photographer = profile
@@ -1000,7 +1002,7 @@ def create_gallery(request):
         messages.success(request, "Gallery created. Your workspace is ready.")
         return redirect("photographer_workspace:gallery_workspace", pk=gallery.pk)
     context = _dashboard_context(request, "all_galleries", "Create Gallery")
-    context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the essentials now—you can add photos and delivery settings next.", "submit_label": "Create Gallery"})
+    context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the gallery now. Add photos and delivery settings next.", "submit_label": "Create Gallery", "is_create_gallery": True})
     return render(request, "photographer_workspace/galleries/form.html", context)
 
 
