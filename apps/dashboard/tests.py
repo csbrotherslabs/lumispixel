@@ -48,7 +48,7 @@ class PhotographerWorkspaceTests(TestCase):
             if route == "team_overview":
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Overview</h1>', html=True)
                 self.assertContains(response, "Monitor today’s availability, assignments, workload, and team activity.")
-                for section in ("Team status summary", "Today’s availability", "Today’s assignments", "Upcoming shoots", "Workload and capacity", "Team alerts", "Recent activity"):
+                for section in ("Today at a glance", "Today’s Team", "Today’s Assignments", "Upcoming Shoots", "Workload &amp; Capacity", "Team Alerts", "Recent Activity"):
                     self.assertContains(response, section)
             elif route == "team_members":
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Members</h1>', html=True)
@@ -56,8 +56,8 @@ class PhotographerWorkspaceTests(TestCase):
             else:
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Performance</h1>', html=True)
                 self.assertContains(response, "Review team productivity, contribution, turnaround, workload, and client experience over time.")
-                for section in ("Team performance summary", "Performance over time", "Team-member comparison",
-                                "Productivity and completion", "Turnaround and delivery", "Booking and revenue contribution",
+                for section in ("Team performance summary", "Performance over time",
+                                "Productivity and completion", "Turnaround and delivery", "Revenue Contribution",
                                 "Client experience", "Performance insights", "Recent performance activity"):
                     self.assertContains(response, section)
             self.assertContains(response, f'href="{url}" class="is-active" aria-current="page"')
@@ -108,10 +108,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Brand session")
         self.assertContains(response, "Taylor Client")
         self.assertContains(response, "Insufficient data")
-        self.assertContains(response, "does not attribute owner-level bookings")
+        self.assertContains(response, "No eight-hour day or availability is assumed")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[session.pk]))
         self.assertNotContains(response, "Private shoot")
-        self.assertContains(response, "Availability isn’t connected yet.")
+        self.assertContains(response, "Not configured")
 
     def test_team_overview_workload_alerts_actions_and_team_activity_are_source_backed(self):
         user, profile = self.make_photographer(True, email="operations@example.com", slug="operations")
@@ -136,16 +136,17 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:team_overview"), {"date": today.isoformat()})
 
-        for heading in ("Assigned shoots", "Scheduled hours", "Available hours", "Utilization", "Overlaps", "Workload status"):
+        for heading in ("Assigned shoots", "Scheduled hours", "Available hours", "Capacity utilization", "Conflicts", "Workload state"):
             self.assertContains(response, heading)
-        for action in ("Invite member", "Assign photographer", "View schedule", "View all members", "Review performance"):
+        for action in ("Invite Member", "View Schedule", "View Members", "Review Performance"):
             self.assertContains(response, action)
+        self.assertNotContains(response, "Assign Photographer")
         self.assertContains(response, "Unassigned shoot")
         self.assertContains(response, "Missing availability")
         self.assertContains(response, "Affected: Portrait · Alex Client")
         self.assertContains(response, reverse("photographer_workspace:booking_detail", args=[booking.pk]))
-        self.assertContains(response, "Gallery delivered")
-        self.assertContains(response, "Alex Client gallery delivered.")
+        self.assertContains(response, "No team activity recorded yet.")
+        self.assertNotContains(response, "Alex Client gallery delivered.")
         self.assertNotContains(response, "This CRM-only event must not appear in team activity.")
 
     def test_team_overview_status_kpis_availability_filters_and_states(self):
@@ -154,20 +155,21 @@ class PhotographerWorkspaceTests(TestCase):
         url = reverse("photographer_workspace:team_overview")
 
         response = self.client.get(url)
-        for label in ("Total active team members", "Available today", "On assignment",
-                      "Unavailable or on leave", "Unassigned shoots today", "Team capacity utilization"):
+        for label in ("Active Team Members", "Available Today", "On Assignment", "Unassigned shoots"):
             self.assertContains(response, label)
+        for removed_label in ("Unavailable or on leave", "Team capacity utilization"):
+            self.assertNotContains(response, removed_label)
         for detail in ("Working hours", "Current assignment", "Next assignment", "Location", "Capacity"):
             self.assertContains(response, detail)
         self.assertContains(response, "Availability not configured")
-        self.assertContains(response, 'data-team-filter-open')
+        self.assertContains(response, "Configure Availability")
 
         self.assertContains(self.client.get(url, {"q": "nobody"}), "No members match these filters")
         # Development-only state query parameters never alter production output.
         self.assertNotContains(self.client.get(url, {"state": "loading"}), "Loading team status")
-        self.assertContains(self.client.get(url, {"state": "error"}), "Solo photographer workspace")
+        self.assertContains(self.client.get(url, {"state": "error"}), "Partial team data")
         self.assertContains(response, "Partial team data")
-        self.assertContains(response, "Last updated")
+        self.assertContains(response, "Updated")
 
     def test_team_summary_authorization_and_filter_allow_lists(self):
         user, profile = self.make_photographer(True, email="authorized@example.com", slug="authorized")
@@ -191,7 +193,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(user)
         response = self.client.get(reverse("photographer_workspace:team_overview"), {"location": "Other studio"})
         self.assertNotContains(response, "Scoped shoot")
-        self.assertContains(response, "No booking records match this date and location")
+        self.assertContains(response, "Your team has no shoots scheduled today.")
 
     def test_team_overlap_uses_duration_and_ignores_same_record(self):
         user, profile = self.make_photographer(True, email="overlap@example.com", slug="overlap")
@@ -221,8 +223,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Overlaps another booking")
         self.assertContains(response, "Location missing")
         self.assertContains(response, "Photographer not assigned")
-        self.assertContains(response, "Assign photographer unavailable")
-        self.assertContains(response, "View booking")
+        self.assertNotContains(response, "Assign Photographer")
+        self.assertContains(response, 'aria-label="View Editorial booking"')
         self.assertContains(response, "Next 14 days")
         self.assertContains(response, "Wedding")
         self.assertNotContains(response, "Too distant")
