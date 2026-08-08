@@ -2286,7 +2286,7 @@ def growth_overview(request):
     source_metric = request.GET.get("source_metric", "booking_value")
     show_all_sources = request.GET.get("show_all_sources") == "1"
     section_states = {}
-    for section in ("reviews", "referrals", "retention"):
+    for section in ("funnel", "sources", "services", "reviews", "activity"):
         state = request.GET.get(f"{section}_state", "ready")
         section_states[section] = state if state in {"ready", "loading", "empty", "error", "permission"} else "ready"
     context.update({
