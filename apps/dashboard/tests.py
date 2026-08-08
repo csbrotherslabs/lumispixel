@@ -1263,12 +1263,23 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Capture a new inquiry and the details needed for follow-up.")
         self.assertContains(response, f'<span aria-hidden="true">{profile.default_currency}</span>', html=True)
         self.assertContains(response, "Lead Readiness")
-        self.assertContains(response, "Lead tips")
+        self.assertContains(response, "Contact")
+        self.assertContains(response, "Not scheduled")
+        self.assertNotContains(response, "Lead tips")
         self.assertNotContains(response, "Quick tips")
         self.assertNotContains(response, "Start strong")
         self.assertContains(response, 'data-submit-button')
+        self.assertContains(response, 'class="lp-button lp-button--primary lp-button--md"')
         self.assertContains(response, "Save Lead")
         self.assertContains(response, '<h1 id="workspace-page-title">Add Lead</h1>', count=1, html=True)
+
+        invalid = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": ""})
+        self.assertContains(invalid, 'aria-invalid="true"')
+        self.assertContains(invalid, 'aria-describedby="id_first_name-error"')
+
+        created = self.client.post(reverse("photographer_workspace:add_lead"), {"first_name": "Avery", "email": "avery-lead@example.com"}, follow=True)
+        self.assertRedirects(created, reverse("photographer_workspace:crm"))
+        self.assertContains(created, "Lead created.")
 
     def test_crm_mutations_require_authentication_and_post(self):
         user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
