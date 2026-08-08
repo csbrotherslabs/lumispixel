@@ -276,8 +276,12 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Understand business performance, trends, risks, and opportunities")
         self.assertContains(response, 'value="this_quarter" selected')
         self.assertContains(response, 'value="previous_year" selected')
-        for heading in ("Executive Overview", "Business Performance", "Customer Intelligence", "Booking Intelligence", "Revenue Intelligence", "Gallery and Client Experience", "Operational Intelligence", "Insights and Recommendations"):
+        for heading in ("Executive Overview", "Revenue &amp; Sales", "Clients &amp; Retention", "Bookings &amp; Demand", "Galleries / Engagement", "Capacity &amp; Operations", "Insights and Recommendations"):
             self.assertContains(response, heading)
+        self.assertContains(response, "Booking Patterns")
+        self.assertContains(response, "More booking history is needed to identify seasonality.")
+        self.assertContains(response, "More booking activity is needed to identify busy and quiet periods.")
+        self.assertContains(response, "Reschedule history is not currently tracked.")
         for heading in ("New versus returning clients", "Client acquisition trend", "Leads by source",
                         "Conversion rate by lead source", "Client value by segment", "Repeat-booking funnel",
                         "Top client locations", "Referral performance", "High-value client segments"):

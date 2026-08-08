@@ -479,7 +479,10 @@ def _booking_intelligence(start, end, sessions, leads, profile, currency, urls):
               ("Bookings by package", packages), ("Bookings by weekday", weekdays),
               ("Bookings by time of day", times), ("Booking seasonality", seasonality),
               ("Cancellation and reschedule trends", trends), ("Booking status distribution", statuses)]
+    history_months = sessions.filter(starts_at__date__lte=end).annotate(
+        bucket=TruncMonth("starts_at")).values("bucket").distinct().count()
     return {"metrics": metrics, "charts": charts, "heatmap": heatmap, "services": services,
+            "seasonality_available": history_months >= 6, "heatmap_available": total >= 3,
             "has_data": bool(total), "urls": urls, "groupings": ("Location", "Team member"),
             "locations": rows("location"), "team_note": "Team-member grouping will populate when booking assignments are available."}
 

@@ -1082,3 +1082,20 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:700px){.lpw-main:has(.lpa-page){padding-top:var(--lp-space-4);padding-inline:var(--lp-space-4)}.lpa-page.lp-container{gap:var(--lp-space-4)}.lpa-page .lpa-header-actions{display:grid;width:100%;grid-template-columns:1fr 1fr}.lpa-page .lpa-header-actions>label{min-width:0}.lpa-page .lpa-header-actions select{min-width:0;width:100%}.lpa-action-divider{display:none}.lpa-page .lpa-header-actions>.lp-button{width:100%}.lpa-page .lpa-export{min-width:0}.lpa-page .lpa-export>summary{width:100%}.lpa-page .lpa-health-grid{grid-template-columns:1fr}.lpa-additional>summary small{display:none}}
 @media(max-width:480px){.lpa-page .lpa-header-actions{grid-template-columns:1fr}.lpa-page .lpa-kpi-grid{grid-template-columns:1fr}.lpa-page .lpa-section-heading{align-items:flex-start;flex-direction:column}.lpa-kpi-grid--secondary{padding-inline:var(--lp-space-3)}}
 @media(prefers-reduced-motion:reduce){.lpa-page *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Analytics domains — question-led hierarchy and content-sized visualizations. */
+.lpa-domain{padding-top:var(--lp-space-2);border-top:1px solid var(--lp-color-border)}
+.lpa-analysis-group{display:grid;gap:var(--lp-space-3);padding-block:var(--lp-space-2)}
+.lpa-analysis-heading h3{margin:0;color:var(--lp-text-primary);font:700 var(--lp-type-card-title)/var(--lp-leading-tight) var(--lp-font-sans)}
+.lpa-analysis-heading p{margin:var(--lp-space-1) 0 0;color:var(--lp-text-secondary);font:var(--lp-type-body-small)}
+.lpa-page .lpa-analytical-card{align-self:start;padding:var(--lp-space-4)}
+.lpa-page .lpa-pattern-grid{align-items:start}
+.lpa-page .lpa-pattern-grid .lpa-booking-bars{max-height:15rem;overflow:auto}
+.lpa-page .lpa-heatmap-card{overflow:visible}
+.lpa-heatmap-wrap{max-width:48rem;overflow-x:auto;overscroll-behavior-inline:contain}
+.lpa-page .lpa-heatmap{min-width:34rem;gap:var(--lp-space-1);margin-top:var(--lp-space-4)}
+.lpa-page .lpa-heatmap>i{height:var(--lp-space-5);border:1px solid transparent}
+.lpa-page .lpa-heatmap>i:focus-visible{outline:var(--lp-focus-ring);outline-offset:1px}
+.lpa-page .lpa-heat-legend{max-width:48rem}
+@media(max-width:768px){.lpa-page .lpa-pattern-grid{grid-template-columns:1fr}.lpa-page .lpa-heatmap{min-width:31rem}.lpa-page .lpa-heatmap-card>header{align-items:flex-start;flex-direction:column}}
+@media(max-width:430px){.lpa-page .lpa-booking-bars>div{grid-template-columns:minmax(5.5rem,7rem) minmax(3.5rem,1fr) auto}.lpa-page .lpa-heatmap{min-width:29rem}.lpa-page .lpa-analytical-card{padding:var(--lp-space-3)}}
