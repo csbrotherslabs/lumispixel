@@ -163,6 +163,12 @@ class Lead(PhotographerOwnedModel):
             raise ValidationError("Save the lead before converting it.")
         with transaction.atomic():
             lead = type(self).objects.select_for_update().get(pk=self.pk, photographer=self.photographer)
+            if lead.email.strip() and Client.objects.for_photographer(lead.photographer).filter(
+                email__iexact=lead.email.strip()
+            ).exclude(converted_lead=lead).exists():
+                raise ValidationError(
+                    "A client with this email address already exists. Open that client instead."
+                )
             client, created = Client.objects.get_or_create(
                 converted_lead=lead,
                 defaults={

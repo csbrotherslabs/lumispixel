@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
@@ -8,6 +9,7 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 
 from .models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, Lead
+from .services import convert_lead_to_client
 
 
 class CrmModelTests(TestCase):
@@ -107,6 +109,77 @@ class CrmModelTests(TestCase):
         self.assertEqual(client.photographer, self.owner)
         self.assertEqual(client.tags, lead.tags)
         self.assertEqual(Lead.objects.get(pk=lead.pk).status, Lead.Status.BOOKED)
+
+    def test_conversion_blocks_existing_workspace_client_with_same_email(self):
+        Client.objects.create(
+            photographer=self.owner, first_name="Existing", email="ADA@EXAMPLE.COM"
+        )
+        lead = Lead.objects.create(
+            photographer=self.owner, first_name="Ada", email="ada@example.com"
+        )
+
+        with self.assertRaises(ValidationError):
+            lead.convert_to_client()
+
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
+        self.assertFalse(Client.objects.filter(converted_lead=lead).exists())
+
+    def test_conversion_identity_is_scoped_to_workspace(self):
+        Client.objects.create(
+            photographer=self.other, first_name="Other Ada", email="ada@example.com"
+        )
+        lead = Lead.objects.create(
+            photographer=self.owner, first_name="Ada", email="ada@example.com"
+        )
+
+        client, created = convert_lead_to_client(lead=lead, actor=self.owner_user)
+
+        self.assertTrue(created)
+        self.assertEqual(client.photographer, self.owner)
+
+    def test_conversion_rolls_back_client_and_lead_when_audit_write_fails(self):
+        lead = Lead.objects.create(
+            photographer=self.owner, first_name="Ada", email="atomic@example.com"
+        )
+
+        with patch.object(ClientActivity.objects, "create", side_effect=RuntimeError("audit failed")):
+            with self.assertRaises(RuntimeError):
+                convert_lead_to_client(lead=lead, actor=self.owner_user)
+
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
+        self.assertFalse(Client.objects.filter(converted_lead=lead).exists())
+
+    def test_conversion_service_is_idempotent_and_writes_one_complete_audit_event(self):
+        lead = Lead.objects.create(
+            photographer=self.owner,
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+            phone="555-0100",
+            event_type="Wedding",
+            lead_source="referral",
+            notes="Keep linked context",
+            tags=["priority"],
+        )
+
+        client, created = convert_lead_to_client(lead=lead, actor=self.owner_user)
+        repeated, repeated_created = convert_lead_to_client(lead=lead, actor=self.owner_user)
+
+        self.assertTrue(created)
+        self.assertFalse(repeated_created)
+        self.assertEqual(repeated, client)
+        self.assertEqual(
+            (client.first_name, client.last_name, client.email, client.phone, client.tags),
+            (lead.first_name, lead.last_name, lead.email, lead.phone, lead.tags),
+        )
+        activity = ClientActivity.objects.get(event_type=ClientActivity.EventType.LEAD_CONVERTED)
+        self.assertEqual(activity.actor, self.owner_user)
+        self.assertEqual(activity.photographer, self.owner)
+        self.assertEqual(activity.lead, lead)
+        self.assertEqual(activity.client, client)
+        self.assertEqual(activity.metadata["client_id"], client.pk)
 
     def test_lead_validation_rejects_invalid_value_tags_and_lost_reason(self):
         lead = Lead(

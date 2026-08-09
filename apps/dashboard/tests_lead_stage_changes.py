@@ -85,6 +85,59 @@ class LeadStageChangeTests(TestCase):
         self.assertEqual(self.lead.status, Lead.Status.NEW)
         self.assertEqual(private_lead.status, Lead.Status.NEW)
 
+    def test_convert_endpoint_is_tenant_scoped_idempotent_and_audited(self):
+        other_owner = make_user("convert-other@example.com")
+        other_studio = PhotographerProfile.objects.create(
+            user=other_owner, slug="convert-other", onboarding_completed=True
+        )
+        private_lead = Lead.objects.create(
+            photographer=other_studio, first_name="Private", email="private@example.com"
+        )
+        private_url = reverse(
+            "photographer_workspace:convert_lead", args=[private_lead.pk]
+        )
+        self.assertEqual(self.client.post(private_url).status_code, 404)
+        self.assertFalse(Client.objects.filter(converted_lead=private_lead).exists())
+
+        url = reverse("photographer_workspace:convert_lead", args=[self.lead.pk])
+        self.client.post(url, {"photographer": other_studio.pk})
+        self.client.post(url)
+
+        self.lead.refresh_from_db()
+        converted = Client.objects.get(converted_lead=self.lead)
+        self.assertEqual(converted.photographer, self.studio)
+        self.assertEqual(self.lead.status, Lead.Status.BOOKED)
+        self.assertEqual(Client.objects.filter(converted_lead=self.lead).count(), 1)
+        activity = ClientActivity.objects.get(
+            lead=self.lead, event_type=ClientActivity.EventType.LEAD_CONVERTED
+        )
+        self.assertEqual(activity.actor, self.owner)
+        self.assertEqual(activity.client, converted)
+
+        self.client.logout()
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Client.objects.filter(converted_lead=self.lead).count(), 1)
+
+    def test_booking_stage_blocks_duplicate_client_identity(self):
+        Client.objects.create(
+            photographer=self.studio,
+            first_name="Existing",
+            email="PIPELINE@EXAMPLE.COM",
+        )
+
+        response = self.client.post(self.url, {"status": Lead.Status.BOOKED}, follow=True)
+
+        self.assertContains(response, "A client with this email address already exists")
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.status, Lead.Status.NEW)
+        self.assertFalse(Client.objects.filter(converted_lead=self.lead).exists())
+        self.assertFalse(
+            ClientActivity.objects.filter(
+                lead=self.lead, event_type=ClientActivity.EventType.LEAD_CONVERTED
+            ).exists()
+        )
+
     def test_bulk_change_skips_unchanged_stage_and_records_actor(self):
         second = Lead.objects.create(
             photographer=self.studio, first_name="Second", status=Lead.Status.CONTACTED
