@@ -103,8 +103,9 @@
   </div>
 </div>
 <div class="lpw-action-layer" data-financial-layer hidden>
-  <section class="lpw-action-dialog" role="dialog" aria-modal="true" aria-labelledby="financial-action-title">
-    <header><div><small>Financial action</small><h2 id="financial-action-title" data-action-title></h2><p data-action-subtitle></p></div><button type="button" data-financial-close aria-label="Close"><i class="bi bi-x-lg"></i></button></header>
+  <button class="lpw-action-scrim" type="button" data-financial-close tabindex="-1" aria-label="Close financial action"></button>
+  <aside class="lpw-action-dialog" role="dialog" aria-modal="true" aria-labelledby="financial-action-title" aria-describedby="financial-action-description" tabindex="-1">
+    <header><div><small>Financial action</small><h2 id="financial-action-title" data-action-title></h2><p id="financial-action-description" data-action-subtitle></p></div><button class="lpw-action-close" type="button" data-financial-close aria-label="Close financial action"><i class="bi bi-x-lg" aria-hidden="true"></i></button></header>
     <form method="post" data-financial-form data-endpoint="{% url 'photographer_workspace:financial_action' '__action__' %}">{% csrf_token %}<input type="hidden" name="submission_key"><input type="hidden" name="confirmed" value="no">
       <div class="lpw-action-error" data-form-error hidden role="alert"></div>
       <div data-action-fields="payment">
@@ -127,9 +128,9 @@
         <label>Expiration date <small>Optional</small><input name="expires_at" type="date"></label><label>Internal note<textarea name="internal_note" rows="3"></textarea></label>
       </div>
       <section class="lpw-action-confirm" data-action-confirm hidden><i class="bi bi-exclamation-triangle"></i><div><strong>Confirm this action</strong><p data-confirm-copy></p></div></section>
-      <footer><button class="lpw-btn" type="button" data-financial-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="submit" data-submit>Review action</button></footer>
+      <footer><button class="lpw-btn lpw-action-cancel" type="button" data-financial-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="submit" data-submit>Review action</button></footer>
     </form>
-  </section>
+  </aside>
 </div>
 <div class="lpw-record-layer" data-record-layer data-endpoint="{% url 'photographer_workspace:financial_record_detail' '__type__' 0 %}" hidden>
   <aside class="lpw-record-drawer" data-record-panel role="dialog" aria-modal="true" aria-labelledby="financial-record-title" tabindex="-1"><div data-record-content></div></aside>
