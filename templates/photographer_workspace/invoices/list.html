@@ -1,2 +1,64 @@
-{% extends "photographer_workspace/base.html" %}{% block workspace_content %}<div class="lpw-financial-page"><header class="lpw-financial-header"><div class="lpw-financial-heading"><nav class="lpw-bookings-breadcrumb">Business Hub <i class="bi bi-chevron-right"></i> Financial</nav><h1 id="workspace-page-title">Invoices</h1><p>Create, deliver, and manage client invoices.</p></div><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg"></i>Create invoice</a></header><div class="lpw-financial-content">
-{% if invoices %}<section class="lpw-invoice-list"><header><strong>All invoices</strong><span>{{ invoices|length }} records</span></header>{% for invoice in invoices %}<article><div><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}">{{ invoice.invoice_number }}</a><small>{{ invoice.client }}{% if invoice.booking %} · {{ invoice.booking.session_type }}{% endif %}</small></div><time>{{ invoice.issue_date|date:"M j, Y" }}</time><span class="lpw-activity-badge lpw-activity-badge--{{ invoice.status }}">{{ invoice.get_status_display }}</span><strong>{{ invoice.currency }} {{ invoice.total }}</strong><details class="lpw-row-menu"><summary><i class="bi bi-three-dots"></i></summary><div><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}">View</a>{% if invoice.status == 'draft' %}<a href="{% url 'photographer_workspace:invoice_edit' invoice.pk %}">Edit</a>{% endif %}<a href="{% url 'photographer_workspace:invoice_download' invoice.pk %}">Download</a></div></details></article>{% endfor %}</section>{% else %}<section class="lpw-financial-state"><span><i class="bi bi-receipt"></i></span><h2>No invoices yet</h2><p>Create a polished invoice and send it to your first client.</p><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:invoice_create' %}">Create invoice</a></section>{% endif %}</div></div>{% endblock %}
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lp-container lp-container--wide lpw-invoices-page">
+  <header class="lp-page-header lpw-invoices-header">
+    <div class="lp-page-heading">
+      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Invoices</strong></nav>
+      <h1 class="lp-page-title" id="workspace-page-title">Invoices</h1>
+      <p class="lp-page-description">Create, send, and manage client invoices.</p>
+    </div>
+    <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a></div>
+  </header>
+
+  <main class="lpw-invoices-content">
+    {% if invoice_total_count %}
+    <section class="lpw-invoice-summary-strip" aria-label="Invoice summary">
+      <article><span>Draft</span><strong>{{ invoice_summary.draft }}</strong></article>
+      <article><span>Sent</span><strong>{{ invoice_summary.sent }}</strong></article>
+      <article><span>Outstanding</span><strong>{{ invoice_summary.outstanding }}</strong></article>
+      <article class="is-overdue"><span>Overdue</span><strong>{{ invoice_summary.overdue }}</strong></article>
+      <article class="is-paid"><span>Paid</span><strong>{{ invoice_summary.paid }}</strong></article>
+    </section>
+
+    <section class="lpw-invoice-workspace" aria-labelledby="invoice-list-title">
+      <header><div><h2 id="invoice-list-title">All invoices</h2><p>{{ invoice_total_count }} invoice{{ invoice_total_count|pluralize }} total</p></div></header>
+      <form class="lpw-invoice-filters" method="get" role="search">
+        <label class="lpw-invoice-search"><span>Search invoices</span><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="{{ invoice_filters.q }}" placeholder="Invoice, client, or description"></label>
+        <label><span>Status</span><select name="status"><option value="">All statuses</option><option value="draft"{% if invoice_filters.status == 'draft' %} selected{% endif %}>Draft</option><option value="sent"{% if invoice_filters.status == 'sent' %} selected{% endif %}>Sent</option><option value="partially_paid"{% if invoice_filters.status == 'partially_paid' %} selected{% endif %}>Partially paid</option><option value="paid"{% if invoice_filters.status == 'paid' %} selected{% endif %}>Paid</option><option value="void"{% if invoice_filters.status == 'void' %} selected{% endif %}>Void</option><option value="overdue"{% if invoice_filters.status == 'overdue' %} selected{% endif %}>Overdue</option></select></label>
+        <label><span>Client</span><select name="client"><option value="">All clients</option>{% for client in invoice_clients %}<option value="{{ client.pk }}"{% if invoice_filters.client == client.pk|stringformat:'s' %} selected{% endif %}>{{ client }}</option>{% endfor %}</select></label>
+        <label><span>Due from</span><input type="date" name="due_from" value="{{ invoice_filters.due_from }}"></label>
+        <label><span>Due to</span><input type="date" name="due_to" value="{{ invoice_filters.due_to }}"></label>
+        <button class="lp-button lp-button--secondary lp-button--md" type="submit">Apply</button>
+        {% if invoice_filters_active %}<a class="lpw-invoice-clear" href="{% url 'photographer_workspace:invoices' %}">Clear filters</a>{% endif %}
+      </form>
+
+      {% if invoices %}
+      <div class="lpw-invoice-table-wrap">
+        <table class="lpw-invoice-table">
+          <thead><tr><th>Invoice</th><th>Client</th><th>Issue date</th><th>Due date</th><th class="is-numeric">Amount</th><th class="is-numeric">Balance</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>{% for invoice in invoices %}<tr>
+            <td data-label="Invoice"><a class="lpw-invoice-primary" href="{% url 'photographer_workspace:invoice_view' invoice.pk %}">{{ invoice.invoice_number }}</a>{% if invoice.booking %}<small>{{ invoice.booking.session_type }}</small>{% endif %}</td>
+            <td data-label="Client"><strong>{{ invoice.client }}</strong></td>
+            <td class="lpw-invoice-secondary" data-label="Issued"><time datetime="{{ invoice.issue_date|date:'Y-m-d' }}">{{ invoice.issue_date|date:"M j, Y" }}</time></td>
+            <td class="lpw-invoice-secondary" data-label="Due">{% if invoice.due_date %}<time datetime="{{ invoice.due_date|date:'Y-m-d' }}">{{ invoice.due_date|date:"M j, Y" }}</time>{% else %}—{% endif %}</td>
+            <td class="is-numeric" data-label="Amount">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</td>
+            <td class="is-numeric lpw-invoice-balance" data-label="Balance">{{ invoice.currency }} {{ invoice.balance|floatformat:2 }}</td>
+            <td data-label="Status"><span class="lpw-financial-badge lpw-financial-badge--{% if invoice.is_overdue %}overdue{% else %}{{ invoice.status }}{% endif %}">{% if invoice.is_overdue %}<i class="bi bi-exclamation-circle" aria-hidden="true"></i>Overdue{% else %}{{ invoice.get_status_display }}{% endif %}</span></td>
+            <td class="lpw-invoice-actions-cell"><details class="lpw-invoice-row-menu"><summary aria-label="Actions for {{ invoice.invoice_number }}"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}"><i class="bi bi-eye" aria-hidden="true"></i>View</a>{% if invoice.status == 'draft' %}<a href="{% url 'photographer_workspace:invoice_edit' invoice.pk %}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit</a>{% endif %}<a href="{% url 'photographer_workspace:invoice_download' invoice.pk %}"><i class="bi bi-download" aria-hidden="true"></i>Download</a></div></details></td>
+          </tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      <div class="lpw-invoice-cards">{% for invoice in invoices %}<article>
+        <header><div><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}">{{ invoice.invoice_number }}</a><p>{{ invoice.client }}</p></div><span class="lpw-financial-badge lpw-financial-badge--{% if invoice.is_overdue %}overdue{% else %}{{ invoice.status }}{% endif %}">{% if invoice.is_overdue %}<i class="bi bi-exclamation-circle" aria-hidden="true"></i>Overdue{% else %}{{ invoice.get_status_display }}{% endif %}</span></header>
+        <dl><div><dt>Amount</dt><dd>{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</dd></div><div><dt>Due date</dt><dd>{% if invoice.due_date %}{{ invoice.due_date|date:"M j, Y" }}{% else %}—{% endif %}</dd></div></dl>
+        <footer><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}">View invoice <i class="bi bi-arrow-right" aria-hidden="true"></i></a><details class="lpw-invoice-row-menu"><summary aria-label="Actions for {{ invoice.invoice_number }}"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div>{% if invoice.status == 'draft' %}<a href="{% url 'photographer_workspace:invoice_edit' invoice.pk %}">Edit</a>{% endif %}<a href="{% url 'photographer_workspace:invoice_download' invoice.pk %}">Download</a></div></details></footer>
+      </article>{% endfor %}</div>
+      <nav class="lpw-invoice-pagination" aria-label="Invoice pagination"><span>Showing {{ invoices.start_index }}–{{ invoices.end_index }} of {{ invoices.paginator.count }}</span><span>Page {{ invoices.number }} of {{ invoices.paginator.num_pages }}</span><div>{% if invoices.has_previous %}<a href="?page={{ invoices.previous_page_number }}{% if invoice_filters_query %}&amp;{{ invoice_filters_query }}{% endif %}">Previous</a>{% else %}<span aria-disabled="true">Previous</span>{% endif %}{% if invoices.has_next %}<a href="?page={{ invoices.next_page_number }}{% if invoice_filters_query %}&amp;{{ invoice_filters_query }}{% endif %}">Next</a>{% else %}<span aria-disabled="true">Next</span>{% endif %}</div></nav>
+      {% else %}<section class="lpw-invoice-empty" aria-labelledby="invoice-filter-empty"><i class="bi bi-search" aria-hidden="true"></i><h2 id="invoice-filter-empty">No invoices match these filters.</h2><p>Try changing or clearing your filters to see more invoices.</p><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:invoices' %}">Clear Filters</a></section>{% endif %}
+    </section>
+    {% else %}
+    <section class="lpw-invoice-empty" aria-labelledby="invoice-empty-title"><i class="bi bi-receipt" aria-hidden="true"></i><h2 id="invoice-empty-title">No invoices yet</h2><p>Create your first invoice to start tracking client payments.</p><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a></section>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

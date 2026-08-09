@@ -1,7 +1,9 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, InvoiceActivity, InvoiceLineItem, InvoicePayment
@@ -61,3 +63,36 @@ class InvoiceWorkspaceTests(TestCase):
         PhotographerProfile.objects.create(user=other_user, slug="other-invoice", onboarding_completed=True)
         self.client.force_login(other_user)
         self.assertEqual(self.client.get(reverse("photographer_workspace:invoice_view", args=[invoice.pk])).status_code, 404)
+
+    def test_invoice_hub_distinguishes_empty_and_filtered_states(self):
+        url = reverse("photographer_workspace:invoices")
+        response = self.client.get(url)
+        self.assertContains(response, "No invoices yet")
+        self.assertNotContains(response, "Invoice summary")
+
+        ClientInvoice.objects.create(photographer=self.profile, client=self.client_record,
+            invoice_number="INV-OPEN", total=Decimal("125.00"), status=ClientInvoice.Status.SENT)
+        response = self.client.get(url, {"q": "does-not-exist"})
+        self.assertContains(response, "No invoices match these filters.")
+        self.assertContains(response, "Clear Filters")
+        self.assertNotContains(response, "Create your first invoice")
+
+    def test_invoice_hub_filters_overdue_and_keeps_tenant_isolation(self):
+        overdue = ClientInvoice.objects.create(photographer=self.profile, client=self.client_record,
+            invoice_number="INV-OVERDUE", total=Decimal("250.00"), status=ClientInvoice.Status.SENT,
+            due_date=timezone.localdate() - timedelta(days=2))
+        ClientInvoice.objects.create(photographer=self.profile, client=self.client_record,
+            invoice_number="INV-FUTURE", total=Decimal("100.00"), status=ClientInvoice.Status.SENT,
+            due_date=timezone.localdate() + timedelta(days=2))
+        other_user = User.objects.create_user(email="private@example.com", password="test", email_verified=True,
+            account_status=User.AccountStatus.ACTIVE, primary_role=User.PrimaryRole.PHOTOGRAPHER)
+        other_profile = PhotographerProfile.objects.create(user=other_user, slug="private-studio", onboarding_completed=True)
+        other_client = Client.objects.create(photographer=other_profile, first_name="Private")
+        ClientInvoice.objects.create(photographer=other_profile, client=other_client,
+            invoice_number="PRIVATE-INVOICE", total=Decimal("9999"), status=ClientInvoice.Status.SENT)
+
+        response = self.client.get(reverse("photographer_workspace:invoices"), {"status": "overdue"})
+        self.assertContains(response, overdue.invoice_number)
+        self.assertContains(response, "Overdue")
+        self.assertNotContains(response, "INV-FUTURE")
+        self.assertNotContains(response, "PRIVATE-INVOICE")
