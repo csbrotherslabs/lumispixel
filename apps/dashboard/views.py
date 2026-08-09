@@ -2513,15 +2513,17 @@ def schedule(request):
     elif view == "week":
         range_start, range_end = week_start, week_start + timedelta(days=7)
         previous_date, next_date = selected_date - timedelta(days=7), selected_date + timedelta(days=7)
-        date_range_label = f'{week_start.strftime("%b %-d")} – {(range_end - timedelta(days=1)).strftime("%b %-d, %Y")}'
+        range_last_day = range_end - timedelta(days=1)
+        date_range_label = f"{week_start:%b} {week_start.day} – {range_last_day:%b} {range_last_day.day}, {range_last_day.year}"
     elif view == "day":
         range_start, range_end = selected_date, selected_date + timedelta(days=1)
         previous_date, next_date = selected_date - timedelta(days=1), selected_date + timedelta(days=1)
-        date_range_label = selected_date.strftime("%A, %B %-d, %Y")
+        date_range_label = f"{selected_date:%A, %B} {selected_date.day}, {selected_date.year}"
     else:
         range_start, range_end = selected_date, selected_date + timedelta(days=30)
         previous_date, next_date = selected_date - timedelta(days=30), selected_date + timedelta(days=30)
-        date_range_label = f'{selected_date.strftime("%b %-d")} – {(range_end - timedelta(days=1)).strftime("%b %-d, %Y")}'
+        range_last_day = range_end - timedelta(days=1)
+        date_range_label = f"{selected_date:%b} {selected_date.day} – {range_last_day:%b} {range_last_day.day}, {range_last_day.year}"
 
     filter_values = {
         "q": request.GET.get("q", "").strip(),
@@ -2889,8 +2891,11 @@ def reschedule_session(request, pk):
     member_ids = set(session.assigned_members.values_list("pk", flat=True))
     result = availability_for(studio=profile, starts_at=starts_at, duration_minutes=duration,
                               member_ids=member_ids, exclude_pk=session.pk)
-    conflicts = [f"{other.client} · {timezone.localtime(other.starts_at).strftime('%b %-d, %-I:%M %p')}"
-                 for other in result["conflicts"]]
+    conflicts = []
+    for other in result["conflicts"]:
+        conflict_start = timezone.localtime(other.starts_at)
+        conflict_time = conflict_start.strftime("%I:%M %p").lstrip("0")
+        conflicts.append(f"{other.client} · {conflict_start:%b} {conflict_start.day}, {conflict_time}")
     checks = [
         {"key": "conflict", "label": "Booking conflicts", "ok": not conflicts, "detail": "No overlapping bookings" if not conflicts else ", ".join(conflicts)},
         {"key": "availability", "label": "Photographer availability", "ok": result["working_hours_ok"], "detail": "Within configured working hours" if result["working_hours_ok"] else "Outside the photographer's configured working hours"},

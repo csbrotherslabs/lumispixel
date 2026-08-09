@@ -689,7 +689,8 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:schedule"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Business Hub")
+        self.assertContains(response, "Photographer Workspace")
+        self.assertContains(response, reverse("photographer_workspace:bookings"))
         self.assertContains(response, "View bookings, manage availability, and organize photography work.")
         self.assertContains(response, "New Booking")
         self.assertContains(response, "Block Time")
@@ -716,6 +717,22 @@ class PhotographerWorkspaceTests(TestCase):
         list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "Booking List view")
+
+        fixed_date = "2026-08-15"
+        expected_ranges = {
+            "week": "Aug 10 – Aug 16, 2026",
+            "day": "Saturday, August 15, 2026",
+            "agenda": "Aug 15 – Sep 13, 2026",
+            "list": "Aug 15 – Sep 13, 2026",
+        }
+        for schedule_view, expected_range in expected_ranges.items():
+            with self.subTest(schedule_view=schedule_view):
+                dated_response = self.client.get(
+                    reverse("photographer_workspace:schedule"),
+                    {"view": schedule_view, "date": fixed_date},
+                )
+                self.assertEqual(dated_response.status_code, 200)
+                self.assertContains(dated_response, expected_range)
 
     def test_schedule_filters_persist_across_views_and_filter_bookings(self):
         user, profile = self.make_photographer(True, email="filters@example.com", slug="filters")
