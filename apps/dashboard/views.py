@@ -2304,7 +2304,7 @@ def bookings_dashboard(request):
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
                         "location": session.location, "status": session.status,
-                        "booking_value": str(session.booking_value), "notes": session.notes,
+                        "booking_value": str(session.booking_value.quantize(Decimal("0.01"))), "notes": session.notes,
                         "member_ids": sorted(session.assigned_members.values_list("pk", flat=True)),
                     }
                     for field, value in values.items():
@@ -2315,7 +2315,7 @@ def bookings_dashboard(request):
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
                         "location": session.location, "status": session.status,
-                        "booking_value": str(session.booking_value), "notes": session.notes,
+                        "booking_value": str(session.booking_value.quantize(Decimal("0.01"))), "notes": session.notes,
                         "member_ids": sorted(member_ids),
                     }
                     changes = {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}
@@ -2333,7 +2333,8 @@ def bookings_dashboard(request):
                     session.assigned_members.set(member_ids)
                     ClientActivity.objects.create(
                         photographer=profile, actor=request.user, client=client, booking=session,
-                        event_type=ClientActivity.EventType.BOOKING_CREATED,
+                        event_type=(ClientActivity.EventType.CONSULTATION_SCHEDULED
+                                    if is_consultation else ClientActivity.EventType.BOOKING_CREATED),
                         description=f"{session.session_type} was created.",
                     )
             return JsonResponse({
@@ -2396,7 +2397,16 @@ def bookings_dashboard(request):
         session.needs_attention = session.status == ClientSession.Status.TENTATIVE or bool(invoice and invoice.balance > 0)
         session.attention_label = "Confirmation needed" if session.status == ClientSession.Status.TENTATIVE else "Payment due"
 
-    activity_styles = {ClientActivity.EventType.LEAD_BOOKED: "bi-calendar2-check", ClientActivity.EventType.CONTRACT_SIGNED: "bi-pen", ClientActivity.EventType.PAYMENT_RECEIVED: "bi-credit-card", ClientActivity.EventType.CONSULTATION_SCHEDULED: "bi-calendar-event"}
+    activity_styles = {
+        ClientActivity.EventType.LEAD_BOOKED: "bi-calendar2-check",
+        ClientActivity.EventType.BOOKING_CREATED: "bi-calendar2-check",
+        ClientActivity.EventType.BOOKING_UPDATED: "bi-pencil-square",
+        ClientActivity.EventType.BOOKING_RESCHEDULED: "bi-calendar3",
+        ClientActivity.EventType.BOOKING_CANCELLED: "bi-calendar2-x",
+        ClientActivity.EventType.CONTRACT_SIGNED: "bi-pen",
+        ClientActivity.EventType.PAYMENT_RECEIVED: "bi-credit-card",
+        ClientActivity.EventType.CONSULTATION_SCHEDULED: "bi-calendar-event",
+    }
     supported_events = list(activity_styles)
     recent_activity = [{"icon": activity_styles[activity.event_type], "description": activity.description or activity.get_event_type_display(), "related": str(activity.client or activity.lead or "Booking workspace"), "occurred_at": activity.occurred_at} for activity in ClientActivity.objects.filter(photographer=profile, event_type__in=supported_events).select_related("lead", "client")[:5]]
 
@@ -2528,7 +2538,8 @@ def schedule(request):
     if filter_values["show_cancelled"]:
         visible_statuses.append(ClientSession.Status.CANCELLED)
     if filter_values["status"]:
-        visible_statuses = [filter_values["status"]]
+        visible_statuses = ([filter_values["status"]]
+                            if filter_values["status"] in ClientSession.Status.values else [])
     sessions_queryset = sessions_queryset.filter(status__in=visible_statuses)
     if filter_values["q"]:
         term = filter_values["q"]
@@ -2542,10 +2553,26 @@ def schedule(request):
         sessions_queryset = sessions_queryset.filter(session_type=filter_values["session_type"])
     if filter_values["location"]:
         sessions_queryset = sessions_queryset.filter(location=filter_values["location"])
+    if filter_values["scope"] == "me":
+        # Owners do not have a StudioMembership row, so their personal schedule
+        # is represented by the bookings with no explicit team assignment.
+        if request.studio_access.membership:
+            sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
+        else:
+            sessions_queryset = sessions_queryset.filter(assigned_members__isnull=True)
+    elif filter_values["scope"] not in ("", "studio"):
+        sessions_queryset = sessions_queryset.none()
     if filter_values["member"].isdigit():
-        sessions_queryset = sessions_queryset.filter(assigned_members__pk=int(filter_values["member"]))
+        member_id = int(filter_values["member"])
+        if StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk=member_id).exists():
+            sessions_queryset = sessions_queryset.filter(assigned_members__pk=member_id)
+        else:
+            sessions_queryset = sessions_queryset.none()
     elif filter_values["member"] == "me" and request.studio_access.membership:
         sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
+    elif filter_values["member"]:
+        sessions_queryset = sessions_queryset.none()
     if filter_values["event_type"] in ClientSession.EventKind.values:
         sessions_queryset = sessions_queryset.filter(event_kind=filter_values["event_type"])
     elif filter_values["event_type"]:

@@ -59,6 +59,15 @@ class ClientActivityAdmin(PhotographerOwnedAdmin):
     search_fields = ("description", "client__first_name", "client__last_name", "lead__first_name", "lead__last_name")
     date_hierarchy = "occurred_at"
 
+    def get_readonly_fields(self, request, obj=None):
+        return tuple(field.name for field in self.model._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(ClientSession)
 class ClientSessionAdmin(PhotographerOwnedAdmin):
