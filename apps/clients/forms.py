@@ -131,6 +131,8 @@ class LeadForm(forms.ModelForm):
     def clean(self):
         data = super().clean()
         data["status"] = data.get("status") or Lead.Status.NEW
+        if data["status"] == Lead.Status.LOST:
+            self.add_error("status", "Use Mark lost so a loss reason can be recorded.")
         if not data.get("email") and not data.get("phone"):
             raise forms.ValidationError("Provide an email address or phone number.")
         return data

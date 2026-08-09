@@ -400,6 +400,25 @@ def _log_lead(profile, lead, event_type, description, metadata=None, client=None
     )
 
 
+def _record_stage_change(profile, lead, previous_status, *, actor, event_type=None, metadata=None, client=None):
+    """Record one auditable event for an actual persisted stage transition."""
+    if previous_status == lead.status:
+        return None
+    old_label = Lead.Status(previous_status).label
+    new_label = lead.get_status_display()
+    details = {"from": previous_status, "to": lead.status}
+    details.update(metadata or {})
+    return _log_lead(
+        profile,
+        lead,
+        event_type or ClientActivity.EventType.STAGE_CHANGED,
+        f"Lead stage changed from {old_label} to {new_label}.",
+        details,
+        client=client,
+        actor=actor,
+    )
+
+
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def add_lead(request):
@@ -457,6 +476,18 @@ def edit_lead(request, pk):
                         {"changes": changes},
                         actor=request.user,
                     )
+                    if "status" in changed_fields:
+                        if updated.status == Lead.Status.BOOKED:
+                            client, _created = updated.convert_to_client()
+                            _record_stage_change(
+                                profile, updated, original_values["status"], actor=request.user,
+                                event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
+                                metadata={"client_id": client.pk},
+                            )
+                        else:
+                            _record_stage_change(
+                                profile, updated, original_values["status"], actor=request.user
+                            )
                 messages.success(request, "Lead updated successfully.")
                 return redirect("photographer_workspace:leads")
     context = _dashboard_context(request, "leads", "Edit Lead")
@@ -489,27 +520,36 @@ def complete_task(request, pk):
 @photographer_workspace_required
 @require_POST
 def update_lead_status(request, pk):
-    lead = get_object_or_404(Lead.objects.for_photographer(request.studio), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    lead = get_object_or_404(
+        Lead.objects.for_photographer(request.studio), pk=pk, archived_at__isnull=True
+    )
     status = request.POST.get("status")
     if status not in Lead.Status.values:
         messages.error(request, "Select a valid lead status.")
     elif status == Lead.Status.LOST:
         messages.error(request, "Use Mark lost so a loss reason can be recorded.")
+    elif status == lead.status:
+        messages.info(request, "Lead is already in that stage.")
     elif Client.objects.filter(converted_lead=lead).exists():
         messages.error(request, "A converted lead must remain booked.")
     elif status == Lead.Status.BOOKED:
+        previous_status = lead.status
         client, created = lead.convert_to_client()
-        _log_lead(request.studio, lead, ClientActivity.EventType.LEAD_CONVERTED,
-                  f"Lead {lead} converted to a client.", client=client)
+        _record_stage_change(
+            request.studio, lead, previous_status, actor=request.user,
+            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
+            metadata={"client_id": client.pk},
+        )
         messages.success(request, "Lead booked and converted to a client.")
     else:
-        previous = lead.get_status_display()
+        previous_status = lead.status
         lead.status = status
         if status != Lead.Status.LOST:
             lead.lost_reason = ""
         lead.save(update_fields=["status", "lost_reason", "updated_at"])
-        _log_lead(request.studio, lead, ClientActivity.EventType.STAGE_CHANGED,
-                  f"Stage changed from {previous} to {lead.get_status_display()}.", {"from": previous, "to": status})
+        _record_stage_change(request.studio, lead, previous_status, actor=request.user)
         messages.success(request, "Lead status updated.")
     destination = "photographer_workspace:leads" if request.POST.get("next") == reverse("photographer_workspace:leads") else "photographer_workspace:crm"
     return redirect(destination)
@@ -587,7 +627,7 @@ def leads_workspace(request):
     stages = []
     for key, label in Lead.Status.choices:
         records = stage_records[key]
-        stages.append({"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
+        stages.append({"key": key, "label": label,
                        "leads": records, "count": len(records),
                        "value": sum((item.estimated_value or Decimal("0")) for item in records)})
     paginator = Paginator(leads, 10)
@@ -1709,21 +1749,24 @@ def add_client_task(request, pk):
 @require_POST
 def bulk_update_leads(request):
     profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     leads = Lead.objects.for_photographer(profile).filter(pk__in=request.POST.getlist("lead_ids"), archived_at__isnull=True)
     action = request.POST.get("action")
-    if action == Lead.Status.LOST:
-        messages.error(request, "Mark leads lost individually so a reason can be recorded.")
+    if action in (Lead.Status.LOST, Lead.Status.BOOKED):
+        messages.error(request, "Book or mark leads lost individually so the required client or loss details are recorded.")
     elif action in Lead.Status.values:
         updated = 0
         with transaction.atomic():
             for lead in leads.select_for_update():
                 if hasattr(lead, "converted_client") and action != Lead.Status.BOOKED:
                     continue
-                previous = lead.get_status_display()
+                if lead.status == action:
+                    continue
+                previous_status = lead.status
                 lead.status = action
                 lead.save(update_fields=["status", "updated_at"])
-                _log_lead(profile, lead, ClientActivity.EventType.STAGE_CHANGED,
-                          f"Stage changed from {previous} to {lead.get_status_display()}.", {"from": previous, "to": action})
+                _record_stage_change(profile, lead, previous_status, actor=request.user)
                 updated += 1
         messages.success(request, f"Updated {updated} lead{'s' if updated != 1 else ''}.")
     else:
@@ -1775,11 +1818,17 @@ def create_lead_follow_up(request, pk):
 @require_POST
 def mark_lead_booked(request, pk):
     profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    previous_status = lead.status
     client, created = lead.convert_to_client()
     if created:
-        _log_lead(profile, lead, ClientActivity.EventType.LEAD_CONVERTED,
-                  f"Lead {lead} was booked and converted to a client.", client=client)
+        _record_stage_change(
+            profile, lead, previous_status, actor=request.user,
+            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
+            metadata={"client_id": client.pk},
+        )
         messages.success(request, "Lead booked and converted to a client.")
     else:
         messages.info(request, "This booked lead is already linked to a client.")
@@ -1790,16 +1839,24 @@ def mark_lead_booked(request, pk):
 @require_POST
 def mark_lead_lost(request, pk):
     profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Provide a reason before marking this lead lost.")
     elif len(reason) > 255:
         messages.error(request, "Lost reason must be 255 characters or fewer.")
+    elif lead.status == Lead.Status.LOST and lead.lost_reason == reason:
+        messages.info(request, "This lead is already marked lost.")
     else:
+        previous_status = lead.status
         lead.status, lead.lost_reason = Lead.Status.LOST, reason
         lead.save(update_fields=["status", "lost_reason", "updated_at"])
-        _log_lead(profile, lead, ClientActivity.EventType.LEAD_LOST, f"Lead marked lost: {reason}", {"reason": reason})
+        _record_stage_change(
+            profile, lead, previous_status, actor=request.user,
+            event_type=ClientActivity.EventType.LEAD_LOST, metadata={"reason": reason},
+        )
         messages.success(request, "Lead marked lost.")
     return redirect(_lead_destination(request))
 
@@ -1826,18 +1883,23 @@ def add_lead_note(request, pk):
 @require_POST
 def convert_lead(request, pk):
     profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     with transaction.atomic():
         lead = get_object_or_404(Lead.objects.select_for_update().for_photographer(profile), pk=pk)
         if Client.objects.filter(converted_lead=lead).exists():
             messages.error(request, "This lead has already been converted.")
             return redirect(_lead_destination(request))
+        previous_status = lead.status
         client, created = lead.convert_to_client()
         if not created:
             messages.error(request, "This lead has already been converted.")
             return redirect(_lead_destination(request))
-        ClientActivity.objects.create(photographer=profile, lead=lead, client=client,
-                                      event_type=ClientActivity.EventType.LEAD_CONVERTED,
-                                      description=f"Lead {lead} converted to a client.")
+        _record_stage_change(
+            profile, lead, previous_status, actor=request.user,
+            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
+            metadata={"client_id": client.pk},
+        )
     messages.success(request, "Lead converted to a client.")
     return redirect(_lead_destination(request))
 

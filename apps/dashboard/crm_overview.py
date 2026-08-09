@@ -28,7 +28,7 @@ def build_crm_overview(access, *, now=None):
         {"label": "Active Clients", "value": clients.filter(status=Client.Status.ACTIVE).count(), "icon": "bi-people", "context": "Active client records you can access"},
     ]
     counts = {row["status"]: row["count"] for row in leads.values("status").annotate(count=Count("pk"))}
-    pipeline = [{"key": key, "label": "New Inquiry" if key == Lead.Status.NEW else label,
+    pipeline = [{"key": key, "label": label,
                  "count": counts.get(key, 0), "url": f'{reverse("photographer_workspace:leads")}?status={key}'}
                 for key, label in Lead.Status.choices]
 
