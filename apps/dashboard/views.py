@@ -393,10 +393,10 @@ def _lead_destination(request):
     return "photographer_workspace:leads" if request.POST.get("next") == reverse("photographer_workspace:leads") else "photographer_workspace:crm"
 
 
-def _log_lead(profile, lead, event_type, description, metadata=None, client=None):
+def _log_lead(profile, lead, event_type, description, metadata=None, client=None, actor=None):
     return ClientActivity.objects.create(
         photographer=profile, lead=lead, client=client, event_type=event_type,
-        description=description, metadata=metadata or {},
+        description=description, metadata=metadata or {}, actor=actor,
     )
 
 
@@ -412,16 +412,53 @@ def add_lead(request):
 @require_http_methods(["GET", "POST"])
 def edit_lead(request, pk):
     profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
     form = LeadForm(request.POST or None, instance=lead)
     if request.method == "POST" and form.is_valid():
-        updated = form.save(commit=False)
-        updated.photographer = profile
-        updated.full_clean()
-        updated.save()
-        _log_lead(profile, updated, ClientActivity.EventType.LEAD_UPDATED, f"Lead {updated} was updated.")
-        messages.success(request, "Lead updated successfully.")
-        return redirect("photographer_workspace:leads")
+        with transaction.atomic():
+            # Re-read under a lock so a repeated/stale submission cannot produce
+            # duplicate activity or overwrite a change committed just before it.
+            current = get_object_or_404(
+                Lead.objects.select_for_update().for_photographer(profile),
+                pk=pk,
+                archived_at__isnull=True,
+            )
+            original_values = {
+                field: getattr(current, field) for field in LeadForm._meta.fields
+            }
+            locked_form = LeadForm(request.POST, instance=current)
+            if not locked_form.is_valid():
+                form = locked_form
+            else:
+                changed_fields = locked_form.changed_data
+                changes = {
+                    field: {
+                        "old": str(original_values[field] or ""),
+                        "new": str(locked_form.cleaned_data.get(field) or ""),
+                    }
+                    for field in changed_fields
+                }
+                updated = locked_form.save(commit=False)
+                updated.photographer = profile
+                updated.full_clean()
+                if changes:
+                    updated.save()
+                    labels = [
+                        locked_form.fields[field].label or field.replace("_", " ").title()
+                        for field in changed_fields
+                    ]
+                    _log_lead(
+                        profile,
+                        updated,
+                        ClientActivity.EventType.LEAD_UPDATED,
+                        f"Lead {updated} was updated: {', '.join(labels)}.",
+                        {"changes": changes},
+                        actor=request.user,
+                    )
+                messages.success(request, "Lead updated successfully.")
+                return redirect("photographer_workspace:leads")
     context = _dashboard_context(request, "leads", "Edit Lead")
     context.update({"form": form, "form_title": "Edit Lead", "is_lead_form": True, "editing_lead": lead})
     return render(request, "photographer_workspace/crm_form.html", context)
