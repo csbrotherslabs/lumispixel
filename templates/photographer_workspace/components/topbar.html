@@ -3,7 +3,7 @@
     <button class="lpw-menu-button" type="button" data-workspace-open aria-controls="workspace-sidebar" aria-label="Toggle navigation">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
     </button>
-    {% if not hide_topbar_heading %}<div class="lpw-page-heading"><h1 id="workspace-page-title">{{ page_title }}</h1></div>{% endif %}
+    {% if not hide_topbar_heading %}<div class="lpw-page-heading"><p class="lpw-breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right" aria-hidden="true"></i>{{ page_title }}</p><h1 id="workspace-page-title">{{ page_title }}</h1></div>{% endif %}
   </div>
   <form class="lpw-global-search" role="search" data-workspace-search>
     <i class="bi bi-search" aria-hidden="true"></i>
