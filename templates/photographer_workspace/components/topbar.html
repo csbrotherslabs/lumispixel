@@ -2,27 +2,18 @@
   <button class="lpw-menu-button" type="button" data-workspace-open aria-controls="workspace-sidebar" aria-label="Toggle navigation">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
   </button>
-  {% if not hide_topbar_heading %}<div class="lpw-page-heading">
-    <p class="lpw-workspace-label">Photographer Workspace</p>
-    <nav class="lpw-topbar-breadcrumb" aria-label="Breadcrumb">
-      <a href="{% url 'photographer_workspace:dashboard' %}">Workspace</a>
-      <i class="bi bi-chevron-right" aria-hidden="true"></i>
-      {% if breadcrumb_section %}<span>{{ breadcrumb_section }}</span><i class="bi bi-chevron-right" aria-hidden="true"></i>{% endif %}
-      <strong aria-current="page">{{ page_title }}</strong>
-    </nav>
-    <h1 id="workspace-page-title" title="{{ page_title }}">{{ page_title }}</h1>
-  </div>{% endif %}
+  {% if not hide_topbar_heading %}<div class="lpw-page-heading"><p class="lpw-breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right" aria-hidden="true"></i>{{ page_title }}</p><h1 id="workspace-page-title">{{ page_title }}</h1></div>{% endif %}
   <form class="lpw-global-search" role="search" data-workspace-search>
-    <button type="button" class="lpw-search-button" aria-label="Search workspace" data-workspace-search-button data-tooltip="Search workspace"><i class="bi bi-search" aria-hidden="true"></i></button>
+    <i class="bi bi-search" aria-hidden="true"></i>
     <input type="search" aria-label="Search workspace" placeholder="Search workspace..." autocomplete="off" data-workspace-search-input>
-    <kbd data-workspace-search-shortcut>⌘ K</kbd>
+    <kbd>⌘ K</kbd>
   </form>
   <div class="lpw-top-actions">
-    <a class="lpw-icon-btn" href="{% url 'photographer_workspace:notifications' %}" aria-label="Notifications" data-tooltip="Notifications">
-      {% if unread_notification_count %}<span class="lpw-notification-dot" aria-hidden="true"></span><span class="visually-hidden">{{ unread_notification_count }} unread</span>{% endif %}
+    <a class="lpw-icon-btn" href="{% url 'photographer_workspace:notifications' %}" aria-label="Notifications">
+      <span class="lpw-notification-dot" aria-hidden="true"></span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.857 17.082a23.85 23.85 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022 23.85 23.85 0 0 0 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
     </a>
-    <a class="lpw-icon-btn lpw-help-btn" href="{% url 'photographer_workspace:help' %}" aria-label="Help" data-tooltip="Help"><i class="bi bi-question-circle" aria-hidden="true"></i></a>
+    <a class="lpw-icon-btn lpw-help-btn" href="{% url 'photographer_workspace:help' %}" aria-label="Help and support"><i class="bi bi-question-circle" aria-hidden="true"></i></a>
     <div class="lpw-profile-menu" data-profile-menu>
       <button class="lpw-profile-trigger" type="button" data-profile-toggle aria-expanded="false" aria-haspopup="menu">
         {% if identity.image_url %}<img src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">{% else %}<span class="lpw-profile-avatar" aria-hidden="true">{{ identity.initials }}</span>{% endif %}
