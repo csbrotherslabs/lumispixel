@@ -52,7 +52,7 @@ from apps.dashboard.dashboard_data import build_dashboard
 from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    StudioMembership, StudioMembershipEvent)
-from apps.dashboard.access import ROLE_PERMISSIONS, ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for
+from apps.dashboard.access import ROLE_PERMISSIONS, ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for, scope_assigned
 from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, InvitationForm,
                                              ROLE_SUMMARIES, find_valid_invitation,
                                              issue_token, record, send_invitation)
@@ -523,7 +523,13 @@ def create_task(request):
 @photographer_workspace_required
 @require_POST
 def complete_task(request, pk):
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     task = get_object_or_404(ClientTask.objects.for_photographer(request.studio), pk=pk)
+    if task.client_id:
+        get_object_or_404(
+            scope_assigned(Client.objects.all(), request.studio_access), pk=task.client_id
+        )
     task.status = ClientTask.Status.COMPLETED
     task.save(update_fields=["status", "updated_at"])
     messages.success(request, "Task marked complete.")
@@ -673,21 +679,25 @@ def leads_workspace(request):
 @require_GET
 def clients_workspace(request):
     """Render the searchable, photographer-scoped client directory."""
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     profile = request.studio
     now = timezone.now()
     balance = ExpressionWrapper(F("total") - F("amount_paid"), output_field=DecimalField(max_digits=12, decimal_places=2))
-    upcoming = ClientSession.objects.filter(
-        photographer=profile, client=OuterRef("pk"), starts_at__gte=now,
+    upcoming = scope_assigned(ClientSession.objects.all(), request.studio_access).filter(
+        client=OuterRef("pk"), starts_at__gte=now,
     ).exclude(status=ClientSession.Status.CANCELLED).order_by("starts_at")
+    can_view_financials = request.studio_access.allows("financials")
     invoices = ClientInvoice.objects.filter(
         photographer=profile, client=OuterRef("pk"),
-    ).exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]).values("client").annotate(
+    ) if can_view_financials else ClientInvoice.objects.none()
+    invoices = invoices.exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID]).values("client").annotate(
         due=Sum(balance)
     )
     activity = ClientActivity.objects.filter(
         photographer=profile, client=OuterRef("pk")
     ).order_by("-occurred_at")
-    clients = Client.objects.for_photographer(profile).annotate(
+    clients = scope_assigned(Client.objects.all(), request.studio_access).annotate(
         next_session_at=Subquery(upcoming.values("starts_at")[:1]),
         next_session_type=Subquery(upcoming.values("session_type")[:1]),
         outstanding_balance=Coalesce(Subquery(invoices.values("due")[:1]), Value(Decimal("0.00")), output_field=DecimalField()),
@@ -720,17 +730,18 @@ def clients_workspace(request):
         clients = clients.filter(outstanding_balance=0)
     clients = clients.order_by("last_name", "first_name")
 
-    all_clients = Client.objects.for_photographer(profile)
-    outstanding_total = all_clients.outstanding_balances().aggregate(
+    all_clients = scope_assigned(Client.objects.all(), request.studio_access)
+    outstanding_total = (all_clients.outstanding_balances().aggregate(
         total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
-    )["total"]
+    )["total"] if can_view_financials else Decimal("0.00"))
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     summary = [
         {"label": "Total Clients", "value": all_clients.count(), "icon": "bi-people", "note": "All client relationships"},
         {"label": "Active Clients", "value": all_clients.active().count(), "icon": "bi-person-check", "note": "Currently active"},
         {"label": "New This Month", "value": all_clients.filter(created_at__gte=month_start).count(), "icon": "bi-person-plus", "note": "Added since the start of the month"},
-        {"label": "Outstanding Balance", "value": f"{profile.default_currency} {outstanding_total:,.2f}", "icon": "bi-wallet2", "note": "Across open invoices"},
     ]
+    if can_view_financials:
+        summary.append({"label": "Outstanding Balance", "value": f"{profile.default_currency} {outstanding_total:,.2f}", "icon": "bi-wallet2", "note": "Across open invoices"})
     tags = sorted({str(tag) for values in all_clients.values_list("tags", flat=True) for tag in (values or [])}, key=str.casefold)
     paginator = Paginator(clients, 12)
     page = paginator.get_page(request.GET.get("page"))
@@ -1654,14 +1665,16 @@ def gallery_photo_action(request, pk):
 @require_http_methods(["GET", "POST"])
 def edit_client(request, pk):
     profile = request.studio
-    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
     form = CrmClientForm(request.POST or None, request.FILES or None, instance=client)
     if request.method == "POST" and form.is_valid():
         client = form.save(commit=False)
         client.photographer = profile
         client.full_clean()
         client.save()
-        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.CLIENT_UPDATED, description=f"Client {client} was updated.")
+        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.CLIENT_UPDATED, description=f"Client {client} was updated.")
         messages.success(request, "Client updated.")
         return redirect("photographer_workspace:client_detail", pk=client.pk)
     context = _dashboard_context(request, "clients", "Edit Client")
@@ -1669,38 +1682,49 @@ def edit_client(request, pk):
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
-CLIENT_DETAIL_TABS = ("overview", "projects", "sessions", "galleries", "contracts", "invoices", "questionnaires", "files", "activity")
+CLIENT_DETAIL_TABS = ("overview", "sessions", "galleries", "invoices", "activity")
 
 
 @photographer_workspace_required
 @require_GET
 def client_detail(request, pk):
     profile = request.studio
-    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
     now, today = timezone.now(), timezone.localdate()
-    sessions = ClientSession.objects.for_photographer(profile).filter(client=client)
-    invoices = ClientInvoice.objects.for_photographer(profile).filter(client=client)
+    sessions = scope_assigned(ClientSession.objects.all(), request.studio_access).filter(client=client)
+    galleries = scope_assigned(Gallery.objects.all(), request.studio_access).filter(
+        client=client, deleted_at__isnull=True
+    )
+    can_view_financials = request.studio_access.allows("financials")
+    invoices = ClientInvoice.objects.for_photographer(profile).filter(client=client) if can_view_financials else ClientInvoice.objects.none()
     open_invoices = invoices.exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
     outstanding = sum((invoice.balance for invoice in open_invoices), Decimal("0.00"))
     upcoming = sessions.filter(starts_at__gte=now).exclude(status=ClientSession.Status.CANCELLED).first()
     overdue = open_invoices.filter(due_date__lt=today)
     soon = sessions.filter(starts_at__gte=now, starts_at__lte=now + timezone.timedelta(days=7)).exclude(status=ClientSession.Status.CANCELLED)
+    detail_tabs = tuple(
+        tab_name for tab_name in CLIENT_DETAIL_TABS
+        if tab_name != "invoices" or can_view_financials
+    )
     tab = request.GET.get("tab", "overview")
-    if tab not in CLIENT_DETAIL_TABS:
+    if tab not in detail_tabs:
         tab = "overview"
     activities = ClientActivity.objects.for_photographer(profile).filter(client=client)
     context = _dashboard_context(request, "clients", str(client))
     context.update({
-        "client_record": client, "detail_tabs": CLIENT_DETAIL_TABS, "active_tab": tab,
-        "sessions": sessions, "invoices": invoices, "upcoming_session": upcoming,
+        "client_record": client, "detail_tabs": detail_tabs, "active_tab": tab,
+        "sessions": sessions, "galleries": galleries, "invoices": invoices, "upcoming_session": upcoming,
         "outstanding_balance": outstanding, "recent_notes": client.notes.all()[:5],
         "client_tasks": client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]),
         "activities": activities[:30],
-        "operational_alerts": [
+        "can_view_financials": can_view_financials,
+        "operational_alerts": ([
             {"label": "Overdue invoices", "count": overdue.count(), "icon": "bi-receipt", "urgent": overdue.exists()},
-            {"label": "Unsigned contracts", "count": 0, "icon": "bi-file-earmark-signature", "urgent": False},
+        ] if can_view_financials else []) + [
             {"label": "Sessions in 7 days", "count": soon.count(), "icon": "bi-calendar-event", "urgent": soon.exists()},
-            {"label": "Galleries awaiting delivery", "count": 0, "icon": "bi-images", "urgent": False},
+            {"label": "Galleries awaiting delivery", "count": galleries.filter(status=Gallery.Status.READY).count(), "icon": "bi-images", "urgent": galleries.filter(status=Gallery.Status.READY).exists()},
         ],
     })
     return render(request, "photographer_workspace/client_detail.html", context)
@@ -1710,13 +1734,15 @@ def client_detail(request, pk):
 @require_POST
 def client_archive_restore(request, pk):
     profile = request.studio
-    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
     restoring = client.status == Client.Status.ARCHIVED
     client.status = Client.Status.ACTIVE if restoring else Client.Status.ARCHIVED
     client.save(update_fields=["status", "updated_at"])
     event = ClientActivity.EventType.CLIENT_RESTORED if restoring else ClientActivity.EventType.CLIENT_ARCHIVED
     verb = "restored" if restoring else "archived"
-    ClientActivity.objects.create(photographer=profile, client=client, event_type=event, description=f"Client {client} was {verb}.")
+    ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=event, description=f"Client {client} was {verb}.")
     messages.success(request, f"Client {verb}.")
     return redirect("photographer_workspace:client_detail", pk=client.pk)
 
@@ -1725,7 +1751,9 @@ def client_archive_restore(request, pk):
 @require_POST
 def add_client_note(request, pk):
     profile = request.studio
-    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
     content = request.POST.get("content", "").strip()
     if not content:
         messages.error(request, "Enter a note before saving.")
@@ -1733,7 +1761,7 @@ def add_client_note(request, pk):
         messages.error(request, "Notes must be 5,000 characters or fewer.")
     else:
         ClientNote.objects.create(photographer=profile, client=client, content=content)
-        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.NOTE_ADDED, description="A client note was added.")
+        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.NOTE_ADDED, description="A client note was added.")
         messages.success(request, "Note added.")
     return redirect("photographer_workspace:client_detail", pk=client.pk)
 
@@ -1742,7 +1770,9 @@ def add_client_note(request, pk):
 @require_POST
 def add_client_task(request, pk):
     profile = request.studio
-    client = get_object_or_404(Client.objects.for_photographer(profile), pk=pk)
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
     data = request.POST.copy()
     data["client"] = client.pk
     data.pop("lead", None)
@@ -1752,7 +1782,7 @@ def add_client_task(request, pk):
         task.photographer = profile
         task.full_clean()
         task.save()
-        ClientActivity.objects.create(photographer=profile, client=client, event_type=ClientActivity.EventType.FOLLOW_UP_CREATED, description=f"Task created: {task.title}.")
+        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.FOLLOW_UP_CREATED, description=f"Task created: {task.title}.")
         messages.success(request, "Task created.")
     else:
         messages.error(request, "Enter valid task details.")
