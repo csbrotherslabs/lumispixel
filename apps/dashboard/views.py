@@ -28,6 +28,7 @@ from PIL import Image, UnidentifiedImageError
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
+from apps.clients.services import DuplicateClientError, convert_lead_to_client
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
@@ -478,12 +479,7 @@ def edit_lead(request, pk):
                     )
                     if "status" in changed_fields:
                         if updated.status == Lead.Status.BOOKED:
-                            client, _created = updated.convert_to_client()
-                            _record_stage_change(
-                                profile, updated, original_values["status"], actor=request.user,
-                                event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
-                                metadata={"client_id": client.pk},
-                            )
+                            convert_lead_to_client(lead=updated, actor=request.user)
                         else:
                             _record_stage_change(
                                 profile, updated, original_values["status"], actor=request.user
@@ -535,14 +531,12 @@ def update_lead_status(request, pk):
     elif Client.objects.filter(converted_lead=lead).exists():
         messages.error(request, "A converted lead must remain booked.")
     elif status == Lead.Status.BOOKED:
-        previous_status = lead.status
-        client, created = lead.convert_to_client()
-        _record_stage_change(
-            request.studio, lead, previous_status, actor=request.user,
-            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
-            metadata={"client_id": client.pk},
-        )
-        messages.success(request, "Lead booked and converted to a client.")
+        try:
+            convert_lead_to_client(lead=lead, actor=request.user)
+        except DuplicateClientError as error:
+            messages.error(request, error.messages[0])
+        else:
+            messages.success(request, "Lead booked and converted to a client.")
     else:
         previous_status = lead.status
         lead.status = status
@@ -1821,17 +1815,15 @@ def mark_lead_booked(request, pk):
     if not request.studio_access.allows("clients"):
         raise PermissionDenied
     lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
-    previous_status = lead.status
-    client, created = lead.convert_to_client()
-    if created:
-        _record_stage_change(
-            profile, lead, previous_status, actor=request.user,
-            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
-            metadata={"client_id": client.pk},
-        )
-        messages.success(request, "Lead booked and converted to a client.")
+    try:
+        client, created = convert_lead_to_client(lead=lead, actor=request.user)
+    except DuplicateClientError as error:
+        messages.error(request, error.messages[0])
     else:
-        messages.info(request, "This booked lead is already linked to a client.")
+        if created:
+            messages.success(request, "Lead booked and converted to a client.")
+        else:
+            messages.info(request, "This booked lead is already linked to a client.")
     return redirect(_lead_destination(request))
 
 
@@ -1890,16 +1882,14 @@ def convert_lead(request, pk):
         if Client.objects.filter(converted_lead=lead).exists():
             messages.error(request, "This lead has already been converted.")
             return redirect(_lead_destination(request))
-        previous_status = lead.status
-        client, created = lead.convert_to_client()
+        try:
+            _client, created = convert_lead_to_client(lead=lead, actor=request.user)
+        except DuplicateClientError as error:
+            messages.error(request, error.messages[0])
+            return redirect(_lead_destination(request))
         if not created:
             messages.error(request, "This lead has already been converted.")
             return redirect(_lead_destination(request))
-        _record_stage_change(
-            profile, lead, previous_status, actor=request.user,
-            event_type=ClientActivity.EventType.LEAD_CONVERTED, client=client,
-            metadata={"client_id": client.pk},
-        )
     messages.success(request, "Lead converted to a client.")
     return redirect(_lead_destination(request))
 

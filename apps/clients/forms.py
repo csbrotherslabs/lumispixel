@@ -133,6 +133,18 @@ class LeadForm(forms.ModelForm):
         data["status"] = data.get("status") or Lead.Status.NEW
         if data["status"] == Lead.Status.LOST:
             self.add_error("status", "Use Mark lost so a loss reason can be recorded.")
+        if (
+            data.get("status") == Lead.Status.BOOKED
+            and data.get("email")
+            and self.instance.photographer_id
+            and Client.objects.for_photographer(self.instance.photographer).filter(
+                email__iexact=data["email"].strip()
+            ).exclude(converted_lead=self.instance).exists()
+        ):
+            self.add_error(
+                "email",
+                "A client with this email address already exists. Open that client instead.",
+            )
         if not data.get("email") and not data.get("phone"):
             raise forms.ValidationError("Provide an email address or phone number.")
         return data
