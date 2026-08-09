@@ -16,7 +16,7 @@ from django.db import DatabaseError, transaction
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, OuterRef, Prefetch, Q, Subquery, Sum, Value
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Concat
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -703,29 +703,50 @@ def clients_workspace(request):
     activity = ClientActivity.objects.filter(
         photographer=profile, client=OuterRef("pk")
     ).order_by("-occurred_at")
-    clients = scope_assigned(Client.objects.all(), request.studio_access).annotate(
+    all_clients = scope_assigned(Client.objects.all(), request.studio_access)
+    clients = all_clients.annotate(
         next_session_at=Subquery(upcoming.values("starts_at")[:1]),
         next_session_type=Subquery(upcoming.values("session_type")[:1]),
         outstanding_balance=Coalesce(Subquery(invoices.values("due")[:1]), Value(Decimal("0.00")), output_field=DecimalField()),
         last_activity_at=Subquery(activity.values("occurred_at")[:1]),
         last_activity_label=Subquery(activity.values("description")[:1]),
     )
-    query = request.GET.get("q", "").strip()
+    # Keep directory parameters bounded and allowlisted before they reach the
+    # queryset.  The form advertises "name", which includes the persisted full
+    # name rather than only either name component in isolation.
+    query = request.GET.get("q", "").strip()[:200]
     status = request.GET.get("status", "").strip()
     client_type = request.GET.get("client_type", "").strip()
-    tag = request.GET.get("tag", "").strip()
+    tag = request.GET.get("tag", "").strip()[:50]
     has_session = request.GET.get("upcoming", "").strip()
     has_balance = request.GET.get("balance", "").strip()
+    status = status if status in Client.Status.values else ""
+    client_type = client_type if client_type in Client.ClientType.values else ""
+    has_session = has_session if has_session in {"yes", "no"} else ""
+    has_balance = has_balance if has_balance in {"yes", "no"} else ""
     if query:
-        clients = clients.filter(Q(first_name__icontains=query) | Q(last_name__icontains=query) |
-                                 Q(email__icontains=query) | Q(phone__icontains=query) | Q(company__icontains=query))
-    if status in Client.Status.values:
+        clients = clients.annotate(
+            search_full_name=Concat("first_name", Value(" "), "last_name")
+        ).filter(Q(first_name__icontains=query) | Q(last_name__icontains=query) |
+                 Q(search_full_name__icontains=query) | Q(email__icontains=query) |
+                 Q(phone__icontains=query) | Q(company__icontains=query))
+    if status:
         clients = clients.filter(status=status)
-    if client_type in Client.ClientType.values:
+    if client_type:
         clients = clients.filter(client_type=client_type)
+    tags = sorted({str(item) for values in all_clients.values_list("tags", flat=True)
+                   for item in (values or [])}, key=str.casefold)
+    canonical_tag = next((item for item in tags if item.casefold() == tag.casefold()), None) if tag else None
     if tag:
-        matching_ids = [client.pk for client in clients.only("pk", "tags") if tag.casefold() in {str(item).casefold() for item in client.tags}]
-        clients = clients.filter(pk__in=matching_ids)
+        if canonical_tag is None:
+            clients = clients.none()
+        else:
+            # JSON containment is not portable to every supported test database.
+            # Keep this scoped projection small (only id/tags) and never load a
+            # global client collection into application memory.
+            matching_ids = [client.pk for client in clients.only("pk", "tags")
+                            if canonical_tag.casefold() in {str(item).casefold() for item in client.tags}]
+            clients = clients.filter(pk__in=matching_ids)
     if has_session == "yes":
         clients = clients.filter(next_session_at__isnull=False)
     elif has_session == "no":
@@ -736,7 +757,6 @@ def clients_workspace(request):
         clients = clients.filter(outstanding_balance=0)
     clients = clients.order_by("last_name", "first_name")
 
-    all_clients = scope_assigned(Client.objects.all(), request.studio_access)
     outstanding_total = (all_clients.outstanding_balances().aggregate(
         total=Coalesce(Sum("balance_due"), Value(Decimal("0.00")), output_field=DecimalField())
     )["total"] if can_view_financials else Decimal("0.00"))
@@ -748,15 +768,21 @@ def clients_workspace(request):
     ]
     if can_view_financials:
         summary.append({"label": "Outstanding Balance", "value": f"{profile.default_currency} {outstanding_total:,.2f}", "icon": "bi-wallet2", "note": "Across open invoices"})
-    tags = sorted({str(tag) for values in all_clients.values_list("tags", flat=True) for tag in (values or [])}, key=str.casefold)
     paginator = Paginator(clients, 12)
     page = paginator.get_page(request.GET.get("page"))
     retained = request.GET.copy()
+    for key, value in (("q", query), ("status", status), ("client_type", client_type),
+                       ("tag", canonical_tag or tag), ("upcoming", has_session),
+                       ("balance", has_balance)):
+        if value:
+            retained[key] = value
+        else:
+            retained.pop(key, None)
     retained.pop("page", None)
     context = _dashboard_context(request, "clients", "Clients")
     context.update({
         "client_summary": summary, "client_page": page, "client_query": query,
-        "selected_status": status, "selected_client_type": client_type, "selected_tag": tag,
+        "selected_status": status, "selected_client_type": client_type, "selected_tag": canonical_tag or tag,
         "selected_upcoming": has_session, "selected_balance": has_balance, "client_tags": tags,
         "client_status_choices": Client.Status.choices, "client_type_choices": Client.ClientType.choices,
         "retained_query": retained.urlencode(), "result_count": paginator.count,
