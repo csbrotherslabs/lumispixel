@@ -37,6 +37,15 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertEqual(invoice.line_items.count(), 2)
         self.assertTrue(invoice.invoice_number.startswith("INV-2026-"))
 
+    def test_create_page_uses_compact_builder_and_real_readiness_hooks(self):
+        response = self.client.get(reverse("photographer_workspace:invoice_create"))
+        self.assertContains(response, "Invoice Summary")
+        self.assertContains(response, "Client &amp; Booking")
+        self.assertContains(response, "Payment Schedule")
+        self.assertContains(response, "data-ready-send")
+        self.assertContains(response, 'data-has-email="true"')
+        self.assertContains(response, "Totals verified when saved")
+
     def test_invalid_item_is_rejected_without_partial_invoice(self):
         response = self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(**{"item_quantity[]": ["-1", "1"]}))
         self.assertEqual(response.status_code, 400)
