@@ -44,6 +44,7 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, reverse("photographer_workspace:dashboard"))
         self.assertContains(response, reverse("photographer_workspace:invoices"))
         self.assertContains(response, 'class="lpw-breadcrumb"')
+        self.assertContains(response, "lp-add-invoice")
         self.assertContains(response, 'class="lpw-invoice-header form-page-header lp-page-header"')
         self.assertContains(response, "Client &amp; Booking")
         self.assertContains(response, "Payment Schedule")
@@ -54,6 +55,18 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, 'aria-label="Line item total"')
         self.assertContains(response, "data-schedule-balance")
         self.assertContains(response, "data-preview-dialog")
+
+    def test_edit_page_does_not_use_create_page_layout(self):
+        invoice = ClientInvoice.objects.create(
+            photographer=self.profile,
+            client=self.client_record,
+            invoice_number="INV-EDIT",
+            total=Decimal("10.00"),
+        )
+
+        response = self.client.get(reverse("photographer_workspace:invoice_edit", args=[invoice.pk]))
+
+        self.assertNotContains(response, "lp-add-invoice")
 
     def test_draft_reopens_with_items_and_can_be_sent(self):
         response = self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())

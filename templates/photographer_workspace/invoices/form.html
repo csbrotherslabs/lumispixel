@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}{% load static %}
 {% block workspace_content %}
-<form class="lpw-invoice workspace-form-page lp-container lp-clients-main-width" method="post" data-invoice-form novalidate>{% csrf_token %}
+<form class="lpw-invoice workspace-form-page lp-container lp-clients-main-width{% if not invoice %} lp-add-lead lp-add-invoice{% endif %}" method="post" data-invoice-form novalidate>{% csrf_token %}
   <header class="lpw-invoice-header form-page-header lp-page-header">
     <div class="lpw-invoice-heading lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:invoices' %}">Invoices</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{% if invoice %}Edit Invoice{% else %}Create Invoice{% endif %}</strong></nav>
