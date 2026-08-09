@@ -192,6 +192,12 @@ class TeamPerformanceMetricTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:team_performance"))
 
+        self.assertContains(response, 'class="lp-container lpt-page lpf-page"', html=False)
+        self.assertContains(
+            response,
+            'class="lp-page-header lpt-header lpf-header"',
+            html=False,
+        )
         self.assertContains(
             response,
             f'href="{reverse("photographer_workspace:dashboard")}">Business Hub</a>',
