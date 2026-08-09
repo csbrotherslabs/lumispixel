@@ -330,6 +330,8 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
     kwargs = {"instance": model(photographer=profile)}
     if form_class is ClientTaskForm:
         kwargs["photographer"] = profile
+    if form_class is CrmClientForm:
+        kwargs["photographer"] = profile
     form = form_class(request.POST or None, request.FILES or None, **kwargs)
     is_add_lead = form_class is LeadForm and title == "Add Lead"
     is_add_client = form_class is CrmClientForm and title == "Add Client"
@@ -1668,15 +1670,70 @@ def edit_client(request, pk):
     if not request.studio_access.allows("clients"):
         raise PermissionDenied
     client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
-    form = CrmClientForm(request.POST or None, request.FILES or None, instance=client)
+    form = CrmClientForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=client,
+        photographer=profile,
+    )
     if request.method == "POST" and form.is_valid():
-        client = form.save(commit=False)
-        client.photographer = profile
-        client.full_clean()
-        client.save()
-        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.CLIENT_UPDATED, description=f"Client {client} was updated.")
-        messages.success(request, "Client updated.")
-        return redirect("photographer_workspace:client_detail", pk=client.pk)
+        with transaction.atomic():
+            current = get_object_or_404(
+                scope_assigned(Client.objects.select_for_update(), request.studio_access),
+                pk=pk,
+            )
+            locked_form = CrmClientForm(
+                request.POST,
+                request.FILES or None,
+                instance=current,
+                photographer=profile,
+            )
+            if not locked_form.is_valid():
+                form = locked_form
+            else:
+                changed_fields = list(locked_form.changed_data)
+                notes = locked_form.cleaned_data.get("notes", "").strip()
+                model_fields = set(CrmClientForm._meta.fields)
+                changes = {
+                    field: {
+                        "old": str(locked_form.initial.get(field) or ""),
+                        "new": str(locked_form.cleaned_data.get(field) or ""),
+                    }
+                    for field in changed_fields
+                    if field in model_fields or field in {"tags_input", "lead_source", "city", "state_province", "postal_code", "country"}
+                }
+                updated = locked_form.save(commit=False)
+                # Ownership and system-managed relationships always come from the
+                # locked row/authenticated workspace, never submitted data.
+                updated.photographer = current.photographer
+                updated.full_clean()
+                if changes:
+                    updated.save()
+                note_created = False
+                if notes and not current.notes.filter(content=notes).exists():
+                    ClientNote.objects.create(
+                        photographer=profile, client=updated, content=notes
+                    )
+                    note_created = True
+                    changes["notes"] = {"old": "", "new": notes}
+                if changes:
+                    labels = [
+                        locked_form.fields[field].label or field.replace("_", " ").title()
+                        for field in changed_fields
+                        if field in locked_form.fields and field != "notes"
+                    ]
+                    if note_created:
+                        labels.append("Notes")
+                    ClientActivity.objects.create(
+                        photographer=profile,
+                        client=updated,
+                        actor=request.user,
+                        event_type=ClientActivity.EventType.CLIENT_UPDATED,
+                        description=f"Client {updated} was updated: {', '.join(labels)}.",
+                        metadata={"changes": changes},
+                    )
+                messages.success(request, "Client updated successfully.")
+                return redirect("photographer_workspace:client_detail", pk=updated.pk)
     context = _dashboard_context(request, "clients", "Edit Client")
     context.update({"form": form, "form_title": "Edit Client", "is_client_form": True})
     return render(request, "photographer_workspace/crm_form.html", context)
