@@ -7,7 +7,7 @@
       <h1 class="lp-page-title" id="workspace-page-title">{{ booking.client }}</h1>
       <p class="lp-page-description">{{ booking.session_type }} · {{ booking.starts_at|date:"F j, Y, g:i A" }}</p>
     </div>
-    <div class="lp-header-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>{% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lpw-btn is-danger" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}</div>
+    <div class="lpw-command-header__actions lp-header-actions" role="group" aria-label="Booking actions"><a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>{% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lpw-btn lpw-btn-danger" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}</div>
   </header>
 
   <nav class="lpw-detail-tabs" aria-label="Booking workspace">
