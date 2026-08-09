@@ -48,6 +48,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
+from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
 from apps.dashboard.dashboard_data import build_dashboard
 from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
@@ -157,6 +158,9 @@ def _photographer_workspace_response(request):
         return redirect("accounts:post-login-redirect")
     request.studio_access = access
     request.studio = access.studio
+    # Booking wall times are entered and displayed in the studio's configured
+    # zone while Django continues to persist aware datetimes in UTC.
+    timezone.activate(studio_timezone(access.studio))
     if access.membership is None and not access.studio.onboarding_completed:
         return redirect("photographers:setup-dashboard")
     return None
@@ -2083,12 +2087,8 @@ def bookings_dashboard(request):
             if not session_type:
                 errors["session_type"] = "Enter a session type."
             try:
-                starts_at = timezone.make_aware(datetime.fromisoformat(
-                    f'{request.POST.get("start_date", "")}T{request.POST.get("start_time", "")}'
-                ), timezone.get_current_timezone())
-                ends_at = timezone.make_aware(datetime.fromisoformat(
-                    f'{request.POST.get("end_date", "")}T{request.POST.get("end_time", "")}'
-                ), timezone.get_current_timezone())
+                starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                ends_at = parse_local_datetime(profile, request.POST.get("end_date", ""), request.POST.get("end_time", ""))
                 if ends_at <= starts_at:
                     errors["end_date"] = "The end must be after the start."
             except (TypeError, ValueError):
@@ -2103,6 +2103,17 @@ def bookings_dashboard(request):
                     raise ValueError
             except (ValueError, ArithmeticError):
                 errors["price"] = "Enter a valid non-negative price."
+            member_ids = set()
+            for raw_id in request.POST.getlist("team"):
+                try:
+                    member_ids.add(int(raw_id))
+                except (TypeError, ValueError):
+                    errors["team"] = "Select active photographers from this workspace."
+            valid_member_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids
+            ).values_list("pk", flat=True))
+            if valid_member_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
             if errors:
                 return JsonResponse({"ok": False, "errors": errors}, status=400)
             values = {
@@ -2112,21 +2123,39 @@ def bookings_dashboard(request):
                 "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
             }
             with transaction.atomic():
+                # Serialize scheduling writes per studio. This closes the usual
+                # empty-slot check/create race where there is no booking row to lock.
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                availability = availability_for(
+                    studio=profile, starts_at=starts_at,
+                    duration_minutes=values["duration_minutes"], member_ids=member_ids,
+                    exclude_pk=session.pk if session else None, lock=True,
+                )
+                if not availability["available"]:
+                    conflict_error = (
+                        "This photographer already has a booking during that time."
+                        if availability["conflicts"] else
+                        "This time is outside the assigned photographer's working hours."
+                    )
+                    return JsonResponse({"ok": False, "errors": {"start_time": conflict_error}}, status=409)
                 if is_edit:
                     before = {
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
                         "location": session.location, "status": session.status,
                         "booking_value": str(session.booking_value), "notes": session.notes,
+                        "member_ids": sorted(session.assigned_members.values_list("pk", flat=True)),
                     }
                     for field, value in values.items():
                         setattr(session, field, value)
                     session.save()
+                    session.assigned_members.set(member_ids)
                     after = before | {
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
                         "location": session.location, "status": session.status,
                         "booking_value": str(session.booking_value), "notes": session.notes,
+                        "member_ids": sorted(member_ids),
                     }
                     changes = {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}
                     if changes:
@@ -2140,6 +2169,7 @@ def bookings_dashboard(request):
                         )
                 else:
                     session = ClientSession.objects.create(photographer=profile, **values)
+                    session.assigned_members.set(member_ids)
                     ClientActivity.objects.create(
                         photographer=profile, actor=request.user, client=client, booking=session,
                         event_type=ClientActivity.EventType.BOOKING_CREATED,
@@ -2223,6 +2253,10 @@ def bookings_dashboard(request):
         "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
         "recent_booking_activity": recent_activity,
         "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
         # Keep booking creation on the shared schedule drawer rather than
         # introducing an overview-specific form or client-side workflow.
         "selected_date": today,
@@ -2323,8 +2357,7 @@ def schedule(request):
         "show_cancelled": request.GET.get("show_cancelled", ""),
     }
     filter_query = urlencode([(key, value) for key, value in filter_values.items() if value])
-    sessions_queryset = ClientSession.objects.filter(
-        photographer=profile,
+    sessions_queryset = scope_assigned(ClientSession.objects.all(), request.studio_access).filter(
         starts_at__date__gte=range_start,
         starts_at__date__lt=range_end,
     )
@@ -2348,6 +2381,10 @@ def schedule(request):
         sessions_queryset = sessions_queryset.filter(session_type=filter_values["session_type"])
     if filter_values["location"]:
         sessions_queryset = sessions_queryset.filter(location=filter_values["location"])
+    if filter_values["member"].isdigit():
+        sessions_queryset = sessions_queryset.filter(assigned_members__pk=int(filter_values["member"]))
+    elif filter_values["member"] == "me" and request.studio_access.membership:
+        sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
     if filter_values["event_type"] and filter_values["event_type"] != "booking":
         sessions_queryset = sessions_queryset.none()
     all_profile_sessions = ClientSession.objects.filter(photographer=profile)
@@ -2378,6 +2415,7 @@ def schedule(request):
         ), "questionnaire_status": "Not tracked",
         "notes": session.notes,
         "client_id": session.client_id, "booking_value": str(session.booking_value),
+        "member_ids": [membership.pk for membership in session.assigned_members.all()],
         "warnings": (
             (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])
             + (["Payment requires attention"] if session.invoices.all() and any(invoice.status not in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all()) else [])
@@ -2535,6 +2573,10 @@ def schedule(request):
         "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
         "event_form_types": [("booking", "Booking", "bi-camera"), ("consultation", "Consultation", "bi-chat-square-text"), ("editing", "Editing Time", "bi-magic"), ("blocked", "Blocked Time", "bi-slash-circle"), ("vacation", "Vacation", "bi-sun"), ("mini", "Mini Session", "bi-people")],
         "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
         "booking_status_options": ClientSession.Status.choices,
         "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
         "filter_query": filter_query,
@@ -2565,31 +2607,34 @@ def reschedule_session(request, pk):
     except (ValueError, TypeError, KeyError, json.JSONDecodeError):
         return JsonResponse({"error": "Enter a valid start time and a duration in 15-minute increments."}, status=400)
 
-    local_start = timezone.localtime(starts_at)
+    local_start = timezone.localtime(starts_at, studio_timezone(profile))
     end = starts_at + timedelta(minutes=duration)
-    conflicts, travel_warning = [], False
-    for other in ClientSession.objects.filter(photographer=profile).exclude(pk=session.pk).exclude(status=ClientSession.Status.CANCELLED):
-        other_end = other.starts_at + timedelta(minutes=other.duration_minutes)
-        if other.starts_at < end + timedelta(minutes=30) and other_end + timedelta(minutes=30) > starts_at:
-            conflicts.append(f"{other.client} · {timezone.localtime(other.starts_at).strftime('%b %-d, %-I:%M %p')}")
-            travel_warning = travel_warning or bool(session.location and other.location and session.location != other.location)
-    available = local_start.weekday() < 5 and 9 <= local_start.hour < 17
+    member_ids = set(session.assigned_members.values_list("pk", flat=True))
+    result = availability_for(studio=profile, starts_at=starts_at, duration_minutes=duration,
+                              member_ids=member_ids, exclude_pk=session.pk)
+    conflicts = [f"{other.client} · {timezone.localtime(other.starts_at).strftime('%b %-d, %-I:%M %p')}"
+                 for other in result["conflicts"]]
     checks = [
         {"key": "conflict", "label": "Booking conflicts", "ok": not conflicts, "detail": "No overlapping bookings" if not conflicts else ", ".join(conflicts)},
-        {"key": "availability", "label": "Photographer availability", "ok": available, "detail": "Within default working hours" if available else "Outside default Monday–Friday, 9 AM–5 PM availability"},
-        {"key": "blocked", "label": "Blocked time & vacation", "ok": True, "detail": "No persisted blocked period applies"},
-        {"key": "buffer", "label": "30-minute buffer", "ok": not conflicts, "detail": "Buffer is clear" if not conflicts else "Required buffer overlaps another booking"},
-        {"key": "travel", "label": "Travel time", "ok": not travel_warning, "detail": "No travel issue detected" if not travel_warning else "Different locations may not leave enough travel time"},
+        {"key": "availability", "label": "Photographer availability", "ok": result["working_hours_ok"], "detail": "Within configured working hours" if result["working_hours_ok"] else "Outside the photographer's configured working hours"},
     ]
-    blocking = bool(conflicts)
+    blocking = not result["available"]
     response = {"starts_at": local_start.isoformat(), "ends_at": timezone.localtime(end).isoformat(), "checks": checks,
                 "blocking": blocking, "notify_recommended": session.status == ClientSession.Status.CONFIRMED}
     if payload.get("preview", True):
         return JsonResponse(response)
     if blocking:
-        return JsonResponse(response | {"error": "Resolve booking and buffer conflicts before saving."}, status=409)
+        return JsonResponse(response | {"error": "Resolve booking conflicts or working hours before saving."}, status=409)
     with transaction.atomic():
+        PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
         locked = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+        locked_members = set(locked.assigned_members.values_list("pk", flat=True))
+        locked_result = availability_for(
+            studio=profile, starts_at=starts_at, duration_minutes=duration,
+            member_ids=locked_members, exclude_pk=locked.pk, lock=True,
+        )
+        if not locked_result["available"]:
+            return JsonResponse(response | {"blocking": True, "error": "The slot became unavailable. Refresh and choose another time."}, status=409)
         before = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
         locked.starts_at, locked.duration_minutes = starts_at, duration
         locked.save(update_fields=("starts_at", "duration_minutes", "updated_at"))

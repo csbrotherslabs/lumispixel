@@ -966,6 +966,9 @@
       setValue('client', event.client_id);
       setValue('booking_status', event.status_key);
       setValue('price', event.booking_value);
+      Array.from(form.elements.team.options).forEach(function (option) {
+        option.selected = (event.member_ids || []).includes(Number(option.value));
+      });
       setValue('contact', event.name);
       setValue('related_work', event.name);
       setValue('reason', event.name);
@@ -1077,6 +1080,13 @@
   if (!layer || !opener) return;
   const drawer = layer.querySelector('.lpw-availability-drawer');
   const form = layer.querySelector('[data-availability-form]');
+  if (!form) {
+    function openReadonly() { layer.hidden = false; window.requestAnimationFrame(function () { layer.classList.add('is-open'); }); opener.setAttribute('aria-expanded', 'true'); document.body.classList.add('lpw-drawer-open'); layer.querySelector('.lpw-availability-drawer').focus(); }
+    function closeReadonly() { layer.classList.remove('is-open'); opener.setAttribute('aria-expanded', 'false'); document.body.classList.remove('lpw-drawer-open'); window.setTimeout(function () { layer.hidden = true; opener.focus(); }, 220); }
+    opener.addEventListener('click', openReadonly);
+    layer.querySelectorAll('[data-availability-close]').forEach(function (button) { button.addEventListener('click', closeReadonly); });
+    return;
+  }
   const editor = layer.querySelector('[data-exception-editor]');
   const type = form.elements.exception_type;
   const status = layer.querySelector('[data-availability-status]');

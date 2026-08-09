@@ -30,9 +30,9 @@
             <label><span>End date <b aria-hidden="true">*</b></span><input type="date" name="end_date" required value="{{ selected_date|date:'Y-m-d' }}"><small class="lpw-field-error"></small></label>
             <label data-time-field><span>End time <b aria-hidden="true">*</b></span><input type="time" name="end_time" required value="10:00"><small class="lpw-field-error"></small></label>
             <label class="lpw-check is-wide"><input type="checkbox" name="all_day"><span><b>All-day event</b><small>Hide event times and reserve the full day.</small></span></label>
-            <label><span>Time zone</span><select name="timezone"><option>Eastern Time (UTC−05:00)</option><option>Central Time (UTC−06:00)</option><option>Mountain Time (UTC−07:00)</option><option>Pacific Time (UTC−08:00)</option><option>UTC</option></select></label>
+            <label><span>Time zone</span><input value="{{ studio_timezone|default:'UTC' }}" readonly aria-describedby="booking-timezone-help"><small id="booking-timezone-help">Configured in your studio profile.</small></label>
             <label><span>Location</span><input name="location" placeholder="Studio, venue, or address"></label>
-            <label class="is-wide"><span>Photographer</span><select name="team" multiple><option selected>{{ request.user.full_name|default:'Me' }} (me)</option><option>Mia Rodriguez — Editor</option><option>Jordan Lee — Second photographer</option></select><small>Hold Ctrl or ⌘ to select more than one.</small></label>
+            <label class="is-wide"><span>Photographer</span><select name="team" multiple>{% for member in schedule_members %}<option value="{{ member.pk }}">{{ member.user.full_name|default:member.email }} — {{ member.get_role_display }}</option>{% endfor %}</select><small>Leave empty for the studio owner, or select the assigned photographer(s). Hold Ctrl or ⌘ to select more than one.</small><small class="lpw-field-error"></small></label>
           </div>
         </section>
 
