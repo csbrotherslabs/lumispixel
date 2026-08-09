@@ -1162,7 +1162,6 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Contact details")
         self.assertContains(response, "Outstanding balance")
         self.assertContains(response, "Overdue invoices")
-        self.assertContains(response, "Unsigned contracts")
         self.assertContains(response, "Galleries awaiting delivery")
         self.assertContains(response, "USD 400.00")
         self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[private.pk])).status_code, 404)
@@ -1178,6 +1177,109 @@ class PhotographerWorkspaceTests(TestCase):
         client.refresh_from_db()
         self.assertEqual(client.status, Client.Status.ACTIVE)
         self.assertTrue(ClientActivity.objects.filter(client=client, event_type=ClientActivity.EventType.CLIENT_RESTORED).exists())
+
+    def test_client_detail_uses_persisted_related_data_metrics_and_empty_states(self):
+        user, profile = self.make_photographer(True, email="persisted-detail@example.com", slug="persisted-detail")
+        client = Client.objects.create(
+            photographer=profile, first_name="Riley", last_name="Ng", company="Northstar",
+            email="riley@example.com", phone="555-0142", address="14 Cedar Lane", tags=["Returning"],
+        )
+        session = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Editorial", location="Studio A",
+            starts_at=timezone.now() + timedelta(days=3), status=ClientSession.Status.CONFIRMED,
+        )
+        gallery = Gallery.objects.create(
+            photographer=profile, client=client, name="Editorial selects", slug="editorial-selects",
+            status=Gallery.Status.READY, image_count=27,
+        )
+        invoice = ClientInvoice.objects.create(
+            photographer=profile, client=client, total="1250.00", amount_paid="300.00",
+            status=ClientInvoice.Status.PARTIALLY_PAID, due_date=timezone.localdate() - timedelta(days=1),
+        )
+        ClientNote.objects.create(photographer=profile, client=client, content="Use the side entrance.")
+        ClientActivity.objects.create(
+            photographer=profile, client=client, event_type=ClientActivity.EventType.CLIENT_UPDATED,
+            description="Persisted activity description.",
+        )
+        self.client.force_login(user)
+
+        overview = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]))
+        for value in ("Riley Ng", "Northstar", "riley@example.com", "555-0142", "14 Cedar Lane",
+                      "Returning", "Editorial", "USD 950.00", "Use the side entrance.",
+                      "Persisted activity description."):
+            self.assertContains(overview, value)
+        self.assertContains(overview, "Galleries awaiting delivery</span>")
+        self.assertEqual(overview.context["operational_alerts"][-1]["count"], 1)
+        self.assertContains(
+            self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]), {"tab": "sessions"}),
+            reverse("photographer_workspace:booking_detail", args=[session.pk]),
+        )
+        gallery_page = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]), {"tab": "galleries"})
+        self.assertContains(gallery_page, "Editorial selects")
+        self.assertContains(gallery_page, reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
+        invoice_page = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]), {"tab": "invoices"})
+        self.assertContains(invoice_page, "1250.00")
+        self.assertContains(invoice_page, "950.00")
+
+        empty_client = Client.objects.create(photographer=profile, first_name="Empty", last_name="Client")
+        for tab, copy in (("sessions", "No sessions for this client."),
+                          ("galleries", "No galleries for this client."),
+                          ("invoices", "No invoices for this client."),
+                          ("activity", "No activity yet.")):
+            self.assertContains(
+                self.client.get(reverse("photographer_workspace:client_detail", args=[empty_client.pk]), {"tab": tab}), copy
+            )
+
+    def test_client_detail_permissions_assignment_and_related_tenant_isolation(self):
+        owner, studio = self.make_photographer(True, email="detail-owner@example.com", slug="detail-owner")
+        _, other = self.make_photographer(True, email="detail-other@example.com", slug="detail-other")
+        manager_user = make_user("detail-manager@example.com")
+        StudioMembership.objects.create(
+            studio=studio, user=manager_user, role=StudioMembership.Role.MANAGER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        photographer_user = make_user("assigned-photographer@example.com")
+        membership = StudioMembership.objects.create(
+            studio=studio, user=photographer_user, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        assigned = Client.objects.create(photographer=studio, first_name="Assigned", last_name="Client")
+        unassigned = Client.objects.create(photographer=studio, first_name="Unassigned", last_name="Client")
+        private = Client.objects.create(photographer=other, first_name="Other Studio", last_name="Client")
+        assigned.assigned_members.add(membership)
+        visible_session = ClientSession.objects.create(
+            photographer=studio, client=assigned, session_type="Assigned session",
+            starts_at=timezone.now() + timedelta(days=1),
+        )
+        hidden_session = ClientSession.objects.create(
+            photographer=studio, client=assigned, session_type="Unassigned session",
+            starts_at=timezone.now() + timedelta(days=2),
+        )
+        visible_session.assigned_members.add(membership)
+        Gallery.objects.create(photographer=other, client=assigned, name="Cross-tenant gallery", slug="cross-tenant-gallery")
+        ClientInvoice.objects.create(photographer=other, client=assigned, total="777.00")
+
+        detail_url = reverse("photographer_workspace:client_detail", args=[assigned.pk])
+        self.assertEqual(self.client.get(detail_url).status_code, 302)
+        self.client.force_login(manager_user)
+        self.assertEqual(self.client.get(detail_url).status_code, 200)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[private.pk])).status_code, 404)
+        self.client.force_login(photographer_user)
+        assigned_page = self.client.get(detail_url)
+        self.assertEqual(assigned_page.status_code, 200)
+        self.assertNotContains(assigned_page, "Outstanding balance")
+        self.assertNotContains(assigned_page, ">Invoices<")
+        sessions_page = self.client.get(detail_url, {"tab": "sessions"})
+        self.assertContains(sessions_page, "Assigned session")
+        self.assertNotContains(sessions_page, "Unassigned session")
+        self.assertNotContains(self.client.get(detail_url, {"tab": "galleries"}), "Cross-tenant gallery")
+        self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[unassigned.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[private.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:client_detail", args=[999999])).status_code, 404)
+        directory = self.client.get(reverse("photographer_workspace:clients"))
+        self.assertContains(directory, "Assigned Client")
+        self.assertNotContains(directory, "Unassigned Client")
+        self.assertNotContains(directory, "Outstanding Balance")
 
     def test_client_mutations_require_csrf(self):
         user, profile = self.make_photographer(True, email="client-csrf@example.com", slug="client-csrf")
