@@ -6,7 +6,7 @@
       <button class="lpw-event-drawer-close" type="button" data-event-form-close aria-label="Close event editor"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </header>
     <form data-event-form method="post" action="{% url 'photographer_workspace:bookings' %}" novalidate>
-      {% csrf_token %}<input type="hidden" name="action" value="create_booking">
+      {% csrf_token %}<input type="hidden" name="action" value="create_booking"><input type="hidden" name="booking_id" value="">
       <div class="lpw-event-form-body">
         <fieldset class="lpw-event-types"><legend>Event type</legend>
           {% for value,label,icon in event_form_types %}<label><input type="radio" name="event_type" value="{{ value }}"{% if value == 'booking' %} checked{% endif %}><span><i class="bi {{ icon }}" aria-hidden="true"></i>{{ label }}</span></label>{% endfor %}

@@ -7,7 +7,7 @@
       <h1 id="workspace-page-title">{{ booking.client }}</h1>
       <p>{{ booking.session_type }} · {{ booking.starts_at|date:"F j, Y, g:i A" }}</p>
     </div>
-    <a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?reschedule={{ booking.pk }}"><i class="bi bi-calendar3" aria-hidden="true"></i>Reschedule</a>
+    <div class="lp-header-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>{% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lpw-btn is-danger" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}</div>
   </header>
 
   <nav class="lpw-detail-tabs" aria-label="Booking workspace">
@@ -33,8 +33,9 @@
   {% else %}
   <section class="lpw-bookings-card" aria-labelledby="booking-overview-title">
     <div class="lpw-bookings-card-head"><div><span>Booking details</span><h2 id="booking-overview-title">Overview</h2><p>Session details and client contact information.</p></div><span class="lpw-booking-status lpw-booking-status--{{ booking.status }}">{{ booking.get_status_display }}</span></div>
-    <dl class="lpw-pipeline-insights"><div><dt>Date and time</dt><dd>{{ booking.starts_at|date:"F j, Y, g:i A" }}</dd></div><div><dt>Location</dt><dd>{{ booking.location|default:"To be confirmed" }}</dd></div><div><dt>Email</dt><dd><a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a></dd></div></dl>
+    <dl class="lpw-pipeline-insights"><div><dt>Date and time</dt><dd>{{ booking.starts_at|date:"F j, Y, g:i A" }}</dd></div><div><dt>Duration</dt><dd>{{ booking.duration_minutes }} minutes</dd></div><div><dt>Location</dt><dd>{{ booking.location|default:"To be confirmed" }}</dd></div><div><dt>Client</dt><dd>{{ booking.client }}</dd></div><div><dt>Email</dt><dd>{% if booking.client.email %}<a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a>{% else %}Not provided{% endif %}</dd></div><div><dt>Booking value</dt><dd>{{ request.studio.default_currency }} {{ booking.booking_value }}</dd></div>{% if booking.notes %}<div><dt>Notes</dt><dd>{{ booking.notes|linebreaksbr }}</dd></div>{% endif %}{% if booking.cancelled_at %}<div><dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"F j, Y, g:i A" }}{% if booking.cancellation_reason %}<br>{{ booking.cancellation_reason }}{% endif %}</dd></div>{% endif %}</dl>
   </section>
+  <section class="lpw-bookings-card" aria-labelledby="booking-activity-title"><div class="lpw-bookings-card-head"><div><span>History</span><h2 id="booking-activity-title">Activity</h2></div></div>{% if booking_activity %}<ol class="lp-activity-list">{% for activity in booking_activity %}<li><strong>{{ activity.get_event_type_display }}</strong> — {{ activity.description }} <time datetime="{{ activity.occurred_at|date:'c' }}">{{ activity.occurred_at|date:"M j, Y, g:i A" }}</time></li>{% endfor %}</ol>{% else %}<p>No booking activity has been recorded.</p>{% endif %}</section>
   {% endif %}
 </div>
 {% endblock %}
