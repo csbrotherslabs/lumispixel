@@ -52,7 +52,7 @@ from apps.dashboard.scheduling import availability_for, parse_local_datetime, st
 from apps.dashboard.dashboard_data import build_dashboard
 from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
-                                   StudioMembership, StudioMembershipEvent)
+                                   ScheduleConstraint, StudioMembership, StudioMembershipEvent)
 from apps.dashboard.access import ROLE_PERMISSIONS, ROLE_SUMMARIES as ACCESS_SUMMARIES, access_for, scope_assigned
 from apps.dashboard.team_invitations import (INVITATION_RESEND_COOLDOWN, InvitationForm,
                                              ROLE_SUMMARIES, find_valid_invitation,
@@ -2069,6 +2069,77 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
+        if request.POST.get("action") in {"create_constraint", "edit_constraint"}:
+            if not request.studio_access.allows("schedule"):
+                raise PermissionDenied
+            kind = request.POST.get("event_type")
+            errors = {}
+            if kind not in ScheduleConstraint.Kind.values:
+                errors["event_type"] = "Choose a supported schedule event."
+            title = request.POST.get("title", "").strip()
+            reason = request.POST.get("reason", "").strip()
+            if not title:
+                errors["title"] = "Enter an event title."
+            if kind in {ScheduleConstraint.Kind.BLOCKED, ScheduleConstraint.Kind.VACATION} and not reason:
+                errors["reason"] = "Enter why this time is unavailable."
+            all_day = request.POST.get("all_day") == "on"
+            try:
+                if all_day:
+                    start_date = date.fromisoformat(request.POST.get("start_date", ""))
+                    end_date = date.fromisoformat(request.POST.get("end_date", ""))
+                    starts_at = parse_local_datetime(profile, start_date.isoformat(), "00:00")
+                    ends_at = parse_local_datetime(profile, (end_date + timedelta(days=1)).isoformat(), "00:00")
+                else:
+                    starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                    ends_at = parse_local_datetime(profile, request.POST.get("end_date", ""), request.POST.get("end_time", ""))
+                if ends_at <= starts_at:
+                    errors["end_date"] = "The end must be after the start."
+            except (TypeError, ValueError):
+                starts_at = ends_at = None
+                errors["start_date"] = "Enter a valid start and end date and time."
+            member_ids = set()
+            for raw_id in request.POST.getlist("team"):
+                try:
+                    member_ids.add(int(raw_id))
+                except (TypeError, ValueError):
+                    errors["team"] = "Select active photographers from this workspace."
+            valid_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids,
+            ).values_list("pk", flat=True))
+            entire_team = request.POST.get("availability_scope") == "entire_team"
+            if valid_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                if entire_team or member_ids != {own_id}:
+                    raise PermissionDenied
+            constraint = None
+            if request.POST["action"] == "edit_constraint":
+                constraint = get_object_or_404(ScheduleConstraint, studio=profile,
+                                               pk=request.POST.get("constraint_id"))
+                if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER and not constraint.assigned_members.filter(pk=request.studio_access.membership.pk).exists():
+                    raise PermissionDenied
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            values = {
+                "kind": kind, "title": title, "reason": reason,
+                "notes": request.POST.get("notes", "").strip(), "starts_at": starts_at,
+                "ends_at": ends_at, "all_day": all_day, "entire_team": entire_team,
+                # Editing time is deliberately informational under the existing design.
+                "blocks_booking": kind in {ScheduleConstraint.Kind.BLOCKED, ScheduleConstraint.Kind.VACATION}
+                                  and request.POST.get("prevent_booking") == "on",
+            }
+            with transaction.atomic():
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                if constraint:
+                    for field, value in values.items():
+                        setattr(constraint, field, value)
+                    constraint.save()
+                else:
+                    constraint = ScheduleConstraint.objects.create(studio=profile, created_by=request.user, **values)
+                constraint.assigned_members.set(member_ids)
+            return JsonResponse({"ok": True, "schedule_url": reverse("photographer_workspace:schedule")},
+                                status=200 if request.POST["action"] == "edit_constraint" else 201)
         if request.POST.get("action") in {"create_booking", "edit_booking"}:
             is_edit = request.POST["action"] == "edit_booking"
             session = None
@@ -2135,6 +2206,8 @@ def bookings_dashboard(request):
                     conflict_error = (
                         "This photographer already has a booking during that time."
                         if availability["conflicts"] else
+                        "This time is blocked by a schedule constraint."
+                        if availability["constraint_conflicts"] else
                         "This time is outside the assigned photographer's working hours."
                     )
                     return JsonResponse({"ok": False, "errors": {"start_time": conflict_error}}, status=409)
@@ -2422,6 +2495,42 @@ def schedule(request):
         ),
     } for session in sessions]
 
+    range_starts_at = parse_local_datetime(profile, range_start.isoformat(), "00:00")
+    range_ends_at = parse_local_datetime(profile, range_end.isoformat(), "00:00")
+    constraints_queryset = ScheduleConstraint.objects.filter(
+        studio=profile, starts_at__lt=range_ends_at, ends_at__gt=range_starts_at,
+    ).prefetch_related("assigned_members__user")
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        constraints_queryset = constraints_queryset.filter(
+            Q(entire_team=True) | Q(assigned_members=request.studio_access.membership)
+        ).distinct()
+    if filter_values["event_type"] == "booking":
+        constraints_queryset = constraints_queryset.none()
+    elif filter_values["event_type"]:
+        constraints_queryset = constraints_queryset.filter(kind=filter_values["event_type"])
+    constraint_icons = {"blocked": "bi-slash-circle", "editing": "bi-magic", "vacation": "bi-sun"}
+    for constraint in constraints_queryset:
+        local_start = timezone.localtime(constraint.starts_at, studio_timezone(profile))
+        local_end = timezone.localtime(constraint.ends_at, studio_timezone(profile))
+        members = list(constraint.assigned_members.all())
+        events.append({
+            "id": f"constraint-{constraint.pk}", "constraint_id": constraint.pk,
+            "starts_at": local_start, "ends_at": local_end,
+            "name": constraint.title, "session_type": constraint.get_kind_display(),
+            "booking_number": "", "location": "Away" if constraint.kind == "vacation" else "",
+            "photographer": "Entire team" if constraint.entire_team else ", ".join(
+                member.user.full_name or member.email for member in members
+            ) or owner,
+            "status": "Blocks bookings" if constraint.blocks_booking else "Informational",
+            "status_key": "blocking" if constraint.blocks_booking else "informational",
+            "kind": constraint.kind, "icon": constraint_icons[constraint.kind], "warning": False,
+            "persisted": True, "all_day": constraint.all_day, "url": "",
+            "contact": "", "contact_email": "", "contact_phone": "", "package": "",
+            "contract_status": "", "payment_status": "", "questionnaire_status": "",
+            "notes": constraint.notes, "reason": constraint.reason, "client_id": None,
+            "booking_value": "", "member_ids": [member.pk for member in members], "warnings": [],
+        })
+
     # Production schedule surfaces only persisted, studio-scoped records. Other event
     # types remain available in the creation controls until their models are connected.
     using_sample_events = False
@@ -2452,7 +2561,12 @@ def schedule(request):
                 *([{"label": "Cancel Booking", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}] if event["status_key"] != ClientSession.Status.CANCELLED else []),
             ]
         else:
-            event["actions"] = [{"label": label, "type": "link", "url": event["url"], "priority": "secondary"} for label in action_labels[event["kind"]]]
+            event["actions"] = [
+                {"label": f"Edit {event['session_type']}", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                {"label": "Remove", "type": "post",
+                 "url": reverse("photographer_workspace:constraint_action", args=[event["constraint_id"]]),
+                 "value": "delete", "priority": "destructive", "icon": "bi-trash"},
+            ]
 
     # Keep the schedule's operational summary intentionally narrow: what is next
     # today, the next confirmed shoots, and only issues that need intervention.
@@ -2504,7 +2618,11 @@ def schedule(request):
 
     events_by_date = {}
     for event in events:
-        events_by_date.setdefault(event["starts_at"].date(), []).append(event)
+        event_day = event["starts_at"].date()
+        final_day = (event["ends_at"] - timedelta(microseconds=1)).date()
+        while event_day <= final_day:
+            events_by_date.setdefault(event_day, []).append(event)
+            event_day += timedelta(days=1)
 
     agenda_groups = []
     for event_date in sorted(events_by_date):
@@ -2673,6 +2791,24 @@ def booking_action(request, pk):
         messages.success(request, f"{session.session_type} for {session.client} cancelled.")
     else:
         messages.error(request, "That booking action is not available in its current state.")
+    return redirect("photographer_workspace:schedule")
+
+
+@photographer_workspace_required
+@require_POST
+def constraint_action(request, pk):
+    """Delete a studio-scoped schedule constraint with role/resource enforcement."""
+    if not request.studio_access.allows("schedule"):
+        raise PermissionDenied
+    constraint = get_object_or_404(ScheduleConstraint, pk=pk, studio=request.studio)
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        membership = request.studio_access.membership
+        if constraint.entire_team or not constraint.assigned_members.filter(pk=membership.pk).exists():
+            raise PermissionDenied
+    if request.POST.get("action") != "delete":
+        return HttpResponseBadRequest("Unsupported schedule action.")
+    constraint.delete()
+    messages.success(request, "Schedule event removed. The time is available again.")
     return redirect("photographer_workspace:schedule")
 
 

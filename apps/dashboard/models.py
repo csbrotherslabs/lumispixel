@@ -109,6 +109,45 @@ class StudioMembershipEvent(models.Model):
         ordering = ["-occurred_at"]
 
 
+class ScheduleConstraint(models.Model):
+    """Persisted non-booking work on a studio schedule.
+
+    Editing time is informational by default; blocked time and vacation are
+    availability constraints. Intervals are half-open so adjacent bookings are
+    valid.
+    """
+
+    class Kind(models.TextChoices):
+        BLOCKED = "blocked", "Blocked Time"
+        EDITING = "editing", "Editing Time"
+        VACATION = "vacation", "Vacation"
+
+    studio = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE,
+                               related_name="schedule_constraints")
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    title = models.CharField(max_length=180)
+    reason = models.CharField(max_length=500, blank=True)
+    notes = models.TextField(blank=True)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    all_day = models.BooleanField(default=False)
+    blocks_booking = models.BooleanField(default=False)
+    entire_team = models.BooleanField(default=False)
+    assigned_members = models.ManyToManyField(StudioMembership, blank=True,
+                                               related_name="schedule_constraints")
+    created_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True,
+                                   related_name="created_schedule_constraints")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["starts_at", "pk"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(ends_at__gt=models.F("starts_at")),
+                                   name="schedule_constraint_positive_interval"),
+        ]
+
+
 class Review(PhotographerOwnedModel):
     """A native LumisPixel review or a manually recorded external review."""
 

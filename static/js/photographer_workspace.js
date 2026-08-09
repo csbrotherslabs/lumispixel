@@ -958,6 +958,7 @@
     if (event) {
       form.elements.action.value = 'edit_booking';
       setValue('booking_id', event.id);
+      setValue('constraint_id', event.constraint_id);
       title.textContent = 'Edit ' + (type === 'mini' ? 'Mini Session' : type.charAt(0).toUpperCase() + type.slice(1));
       setValue('title', event.name);
       setValue('location', event.location === 'Away' ? '' : event.location);
@@ -971,16 +972,18 @@
       });
       setValue('contact', event.name);
       setValue('related_work', event.name);
-      setValue('reason', event.name);
+      setValue('reason', event.reason || event.name);
       setValue('mini_name', event.name);
       const start = new Date(event.starts_at); const end = new Date(event.ends_at);
+      if (event.all_day) end.setDate(end.getDate() - 1);
       setValue('start_date', start.toISOString().slice(0, 10)); setValue('end_date', end.toISOString().slice(0, 10));
       setValue('start_time', start.toTimeString().slice(0, 5)); setValue('end_time', end.toTimeString().slice(0, 5));
       form.elements.all_day.checked = event.all_day;
     }
     else {
-      form.elements.action.value = 'create_booking';
+      form.elements.action.value = type === 'booking' ? 'create_booking' : 'create_constraint';
       setValue('booking_id', '');
+      setValue('constraint_id', '');
     }
     syncType(); syncAllDay();
     layer.hidden = false;
@@ -1023,11 +1026,9 @@
     event.preventDefault();
     if (!validate()) return;
     const another = event.submitter && event.submitter.value === 'another';
-    if (currentType() !== 'booking') {
-      alert.querySelector('span').textContent = 'Only booking events can be saved here.';
-      alert.hidden = false;
-      return;
-    }
+    form.elements.action.value = currentType() === 'booking'
+      ? (editing ? 'edit_booking' : 'create_booking')
+      : (editing ? 'edit_constraint' : 'create_constraint');
     const submitters = form.querySelectorAll('button[type="submit"]');
     submitters.forEach(function (button) { button.disabled = true; });
     let response;
@@ -1050,16 +1051,16 @@
         return;
       }
     } catch (error) {
-      alert.querySelector('span').textContent = 'The booking could not be saved. Try again.';
+      alert.querySelector('span').textContent = 'The schedule event could not be saved. Try again.';
       alert.hidden = false;
       return;
     } finally {
       submitters.forEach(function (button) { button.disabled = false; });
     }
-    toast(editing ? 'Booking updated.' : 'Booking saved to your schedule.');
+    toast(editing ? 'Schedule event updated.' : 'Event saved to your schedule.');
     dirty = false;
     if (another && !editing) { const type = currentType(); open(type, opener); }
-    else window.location.assign(result.booking_url);
+    else window.location.assign(result.booking_url || result.schedule_url);
   });
   layer.querySelectorAll('[data-event-form-close]').forEach(function (button) { button.addEventListener('click', function () { close(false); }); });
   drawer.addEventListener('keydown', function (event) {

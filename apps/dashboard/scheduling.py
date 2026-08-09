@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.clients.models import ClientSession
-from apps.dashboard.models import StudioMembership
+from apps.dashboard.models import ScheduleConstraint, StudioMembership
 
 
 def studio_timezone(studio):
@@ -39,6 +39,21 @@ def conflicting_sessions(*, studio, starts_at, duration_minutes, member_ids=(), 
     return [row for row in queryset if row.starts_at + timedelta(minutes=row.duration_minutes) > starts_at]
 
 
+def conflicting_constraints(*, studio, starts_at, duration_minutes, member_ids=(), lock=False):
+    """Return blocking constraints on the same resource using half-open intervals."""
+    ends_at = starts_at + timedelta(minutes=duration_minutes)
+    member_ids = set(member_ids)
+    resource = Q(entire_team=True)
+    if member_ids:
+        resource |= Q(assigned_members__in=member_ids)
+    else:
+        resource |= Q(entire_team=False, assigned_members__isnull=True)
+    queryset = ScheduleConstraint.objects.filter(
+        studio=studio, blocks_booking=True, starts_at__lt=ends_at, ends_at__gt=starts_at,
+    ).filter(resource).distinct()
+    return queryset.select_for_update() if lock else queryset
+
+
 def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), exclude_pk=None,
                      lock=False):
     """Evaluate persisted working hours and active booking conflicts."""
@@ -47,7 +62,7 @@ def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), excl
         studio=studio, pk__in=member_ids, status=StudioMembership.Status.ACTIVE
     ))
     if len(members) != len(member_ids):
-        return {"available": False, "working_hours_ok": False, "conflicts": [],
+        return {"available": False, "working_hours_ok": False, "conflicts": [], "constraint_conflicts": [],
                 "error": "Select active photographers from this workspace."}
 
     zone = studio_timezone(studio)
@@ -65,8 +80,13 @@ def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), excl
         studio=studio, starts_at=starts_at, duration_minutes=duration_minutes,
         member_ids=member_ids, exclude_pk=exclude_pk, lock=lock,
     )
-    return {"available": working_hours_ok and not conflicts,
-            "working_hours_ok": working_hours_ok, "conflicts": conflicts}
+    constraints = list(conflicting_constraints(
+        studio=studio, starts_at=starts_at, duration_minutes=duration_minutes,
+        member_ids=member_ids, lock=lock,
+    ))
+    return {"available": working_hours_ok and not conflicts and not constraints,
+            "working_hours_ok": working_hours_ok, "conflicts": conflicts,
+            "constraint_conflicts": constraints}
 
 
 def parse_local_datetime(studio, date_value, time_value):
