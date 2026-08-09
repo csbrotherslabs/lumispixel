@@ -45,6 +45,29 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, "data-ready-send")
         self.assertContains(response, 'data-has-email="true"')
         self.assertContains(response, "Totals verified when saved")
+        self.assertContains(response, "Item / Description")
+        self.assertContains(response, 'aria-label="Line item total"')
+        self.assertContains(response, "data-schedule-balance")
+        self.assertContains(response, "data-preview-dialog")
+
+    def test_draft_reopens_with_items_and_can_be_sent(self):
+        response = self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())
+        self.assertEqual(response.status_code, 302)
+        invoice = ClientInvoice.objects.get()
+        self.assertEqual(invoice.status, ClientInvoice.Status.DRAFT)
+
+        response = self.client.get(reverse("photographer_workspace:invoice_edit", args=[invoice.pk]))
+        self.assertContains(response, "Portrait session")
+        self.assertContains(response, "Travel")
+
+        response = self.client.post(
+            reverse("photographer_workspace:invoice_edit", args=[invoice.pk]),
+            self.payload(intent="send"),
+        )
+        self.assertEqual(response.status_code, 302)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
+        self.assertEqual(invoice.total, Decimal("284.63"))
 
     def test_invalid_item_is_rejected_without_partial_invoice(self):
         response = self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(**{"item_quantity[]": ["-1", "1"]}))
