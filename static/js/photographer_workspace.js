@@ -1047,7 +1047,10 @@
     submitters.forEach(function (button) { button.disabled = true; });
     let response;
     try {
-      response = await fetch(form.action, {
+      // `action` is also the hidden operation field's name. HTML form named
+      // access can therefore resolve `form.action` to that input element rather
+      // than to the form's URL, producing a request for "[object HTMLInputElement]".
+      response = await fetch(form.getAttribute('action'), {
         method: 'POST', body: new FormData(form),
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });

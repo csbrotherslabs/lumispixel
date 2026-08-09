@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib import admin
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -282,6 +284,13 @@ class BookingOperationsAuditTests(TestCase):
             event_type=ClientActivity.EventType.BOOKING_CREATED,
         ).count(), 1)
         self.assertEqual(ClientSession.objects.filter(photographer=self.studio).count(), 1)
+
+    def test_booking_drawer_uses_form_action_attribute_not_named_action_control(self):
+        """The hidden ``action`` input must not shadow the form submission URL."""
+        javascript = Path(settings.BASE_DIR, "static/js/photographer_workspace.js").read_text()
+
+        self.assertIn("fetch(form.getAttribute('action')", javascript)
+        self.assertNotIn("fetch(form.action", javascript)
 
     def test_photographer_cannot_view_or_mutate_unassigned_booking_or_client(self):
         member_user = User.objects.create_user(
