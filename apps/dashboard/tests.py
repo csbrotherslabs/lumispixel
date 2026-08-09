@@ -1391,6 +1391,77 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertRedirects(created, reverse("photographer_workspace:crm"))
         self.assertContains(created, "Lead created.")
 
+    def test_add_lead_persists_supported_fields_in_authenticated_studio(self):
+        user, profile = self.make_photographer(True, email="owner-lead@example.com", slug="owner-lead")
+        _, other = self.make_photographer(True, email="other-lead@example.com", slug="other-lead")
+        self.client.force_login(user)
+        data = {
+            "first_name": "Avery", "last_name": "Morgan", "email": "avery@example.com",
+            "phone": "+1 555 010 2040", "event_type": "Wedding", "event_date": "2026-10-12",
+            "lead_source": "referral", "estimated_value": "4200.50", "status": Lead.Status.CONTACTED,
+            "next_follow_up": "2026-08-15", "notes": "Prefers an outdoor ceremony.",
+            # Neither a submitted studio nor an unsupported related ID may control ownership.
+            "photographer": other.pk, "workspace_id": other.pk, "assigned_user": other.user_id,
+            "next": reverse("photographer_workspace:leads"),
+        }
+
+        response = self.client.post(reverse("photographer_workspace:add_lead"), data)
+
+        self.assertRedirects(response, reverse("photographer_workspace:leads"), fetch_redirect_response=False)
+        lead = Lead.objects.get(email="avery@example.com")
+        self.assertEqual(lead.photographer, profile)
+        self.assertEqual(lead.first_name, "Avery")
+        self.assertEqual(lead.last_name, "Morgan")
+        self.assertEqual(lead.phone, "+1 555 010 2040")
+        self.assertEqual(lead.event_type, "Wedding")
+        self.assertEqual(str(lead.event_date), "2026-10-12")
+        self.assertEqual(lead.lead_source, "referral")
+        self.assertEqual(lead.estimated_value, Decimal("4200.50"))
+        self.assertEqual(lead.status, Lead.Status.CONTACTED)
+        self.assertEqual(str(lead.next_follow_up), "2026-08-15")
+        self.assertEqual(lead.notes, "Prefers an outdoor ceremony.")
+        self.assertTrue(ClientActivity.objects.filter(
+            photographer=profile, lead=lead, event_type=ClientActivity.EventType.LEAD_CREATED,
+        ).exists())
+        self.assertFalse(Lead.objects.for_photographer(other).filter(pk=lead.pk).exists())
+
+    def test_add_lead_validation_does_not_persist_invalid_input(self):
+        user, profile = self.make_photographer(True, email="invalid-lead@example.com", slug="invalid-lead")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("photographer_workspace:add_lead"), {
+            "first_name": "", "email": "not-an-email", "estimated_value": "-1",
+            "status": "not-a-stage", "event_type": "x" * 101,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter a valid email address.")
+        self.assertContains(response, "Ensure this value has at most 100 characters")
+        self.assertContains(response, "Select a valid choice")
+        self.assertContains(response, "Estimated value cannot be negative.")
+        self.assertFalse(Lead.objects.for_photographer(profile).exists())
+
+    def test_add_lead_access_for_owner_manager_photographer_and_unauthorized_users(self):
+        owner, studio = self.make_photographer(True, email="role-owner@example.com", slug="role-owner")
+        url = reverse("photographer_workspace:add_lead")
+        self.assertRedirects(self.client.get(url), f"{reverse('accounts:login')}?next={url}", fetch_redirect_response=False)
+
+        for role in (StudioMembership.Role.MANAGER, StudioMembership.Role.PHOTOGRAPHER):
+            member = make_user(f"{role}@example.com")
+            StudioMembership.objects.create(studio=studio, user=member, role=role, status=StudioMembership.Status.ACTIVE)
+            self.client.force_login(member)
+            response = self.client.post(url, {"first_name": role, "email": f"{role}-lead@example.com"})
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(Lead.objects.for_photographer(studio).filter(email=f"{role}-lead@example.com").exists())
+            self.client.logout()
+
+        client_user = make_user("lead-client@example.com", User.PrimaryRole.CLIENT)
+        ClientProfile.objects.create(user=client_user)
+        self.client.force_login(client_user)
+        response = self.client.post(url, {"first_name": "No", "email": "unauthorized@example.com"})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Lead.objects.filter(email="unauthorized@example.com").exists())
+
     def test_crm_mutations_require_authentication_and_post(self):
         user, profile = self.make_photographer(True, email="secure@example.com", slug="secure")
         lead = Lead.objects.create(photographer=profile, first_name="Secure")
@@ -1426,7 +1497,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         self.assertContains(
             response,
-            f'<a href="{reverse("photographer_workspace:add_lead")}" class="lp-button lp-button--primary lp-button--md">',
+            f'<a href="{reverse("photographer_workspace:add_lead")}?next=%2Fphotographer%2Fworkspace%2Fleads%2F" class="lp-button lp-button--primary lp-button--md">',
         )
         self.assertContains(response, '<span>Add Lead</span>', html=True)
 

@@ -345,15 +345,20 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
             "Preferences, budget, follow-up context, or other useful details…"
         )
     if request.method == "POST" and form.is_valid():
-        record = form.save(commit=False)
-        record.photographer = profile
-        record.full_clean()
-        record.save()
-        if isinstance(form, CrmClientForm) and form.cleaned_data.get("notes"):
-            ClientNote.objects.create(photographer=profile, client=record, content=form.cleaned_data["notes"])
-        if activity_type:
-            ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
+        # Persist the record and its existing CRM activity as one operation. The
+        # studio always comes from the authenticated access context, never POST.
+        with transaction.atomic():
+            record = form.save(commit=False)
+            record.photographer = profile
+            record.full_clean()
+            record.save()
+            if isinstance(form, CrmClientForm) and form.cleaned_data.get("notes"):
+                ClientNote.objects.create(photographer=profile, client=record, content=form.cleaned_data["notes"])
+            if activity_type:
+                ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
         messages.success(request, success_message)
+        if is_add_lead:
+            return redirect(_lead_destination(request))
         return redirect("photographer_workspace:crm")
     if is_add_lead:
         for field_name, field in form.fields.items():
@@ -374,13 +379,18 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
         "is_add_lead": is_add_lead,
         "is_add_client": is_add_client,
         "hide_topbar_heading": is_add_lead or is_add_client,
+        "form_next": (
+            reverse("photographer_workspace:leads")
+            if is_add_lead and (request.POST.get("next") or request.GET.get("next")) == reverse("photographer_workspace:leads")
+            else ""
+        ),
     })
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
 def _lead_destination(request):
     """Only allow redirects back to known workspace pages."""
-    return "photographer_workspace:crm" if request.POST.get("next") == reverse("photographer_workspace:crm") else "photographer_workspace:leads"
+    return "photographer_workspace:leads" if request.POST.get("next") == reverse("photographer_workspace:leads") else "photographer_workspace:crm"
 
 
 def _log_lead(profile, lead, event_type, description, metadata=None, client=None):
@@ -393,6 +403,8 @@ def _log_lead(profile, lead, event_type, description, metadata=None, client=None
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def add_lead(request):
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
     return _crm_form_page(request, LeadForm, "Add Lead", "Lead created.", ClientActivity.EventType.LEAD_CREATED)
 
 
@@ -555,6 +567,7 @@ def leads_workspace(request):
         row["conversion"] = row["booked"] / row["count"] * 100 if row["count"] else 0
     context = _dashboard_context(request, "leads", "Leads")
     context.update({"lead_summary": summary, "lead_stages": stages, "lead_page": page,
+                    "add_lead_url": f'{reverse("photographer_workspace:add_lead")}?{urlencode({"next": reverse("photographer_workspace:leads")})}',
                     "lead_sources": sources, "lead_query": query, "selected_status": status,
                     "selected_source": source, "selected_event_type": event_type, "event_types": event_types,
                     "selected_sort": sort, "today": today, "tasks_due": tasks_due,
