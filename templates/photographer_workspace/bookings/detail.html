@@ -17,17 +17,14 @@
 
   {% if booking_tab == 'contract' %}
   <section id="contract" class="lpw-bookings-card" aria-labelledby="contract-title">
-    <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Send, review, and track the agreement for this booking.</p></div><span class="lpw-booking-status lpw-booking-status--tentative">{{ contract_status }}</span></div>
+    <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Contract management is not implemented for workspace bookings.</p></div><span class="lpw-booking-status">{{ contract_status }}</span></div>
     <dl class="lpw-pipeline-insights">
       <div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div>
       <div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div>
-      <div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd id="contract-signatures">Awaiting client</dd></div>
+      <div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd id="contract-signatures">Not tracked</dd></div>
     </dl>
     <div class="lpw-bookings-actions">
-      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="send_contract"><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send" aria-hidden="true"></i>Send contract</button></form>
-      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="send_contract_reminder"><button class="lpw-btn" type="submit"><i class="bi bi-bell" aria-hidden="true"></i>Send reminder</button></form>
-      <a class="lpw-btn" href="#contract-signatures"><i class="bi bi-pen" aria-hidden="true"></i>View signatures</a>
-      {% if contract_is_signed %}<a class="lpw-btn" href="{{ signed_contract_pdf_url }}" download><i class="bi bi-download" aria-hidden="true"></i>Download signed PDF</a>{% else %}<button class="lpw-btn" type="button" disabled title="Available after all parties sign"><i class="bi bi-download" aria-hidden="true"></i>Download signed PDF</button>{% endif %}
+      <button class="lpw-btn" type="button" disabled><i class="bi bi-send" aria-hidden="true"></i>Send contract unavailable</button>
     </div>
   </section>
   {% else %}

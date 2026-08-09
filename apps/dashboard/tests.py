@@ -671,12 +671,11 @@ class PhotographerWorkspaceTests(TestCase):
             resolve("/workspace/contracts/")
 
         contract = self.client.get(detail_url, {"tab": "contract"})
-        self.assertContains(contract, "Send contract")
-        self.assertContains(contract, "Send reminder")
-        self.assertContains(contract, "View signatures")
-        self.assertContains(contract, "Download signed PDF")
+        self.assertContains(contract, "Contract management is not implemented")
+        self.assertContains(contract, "Send contract unavailable")
+        self.assertNotContains(contract, "Send reminder")
         response = self.client.post(detail_url, {"action": "send_contract"})
-        self.assertRedirects(response, f"{detail_url}?tab=contract#contract", fetch_redirect_response=False)
+        self.assertEqual(response.status_code, 400)
 
     def test_schedule_route_controls_and_navigation(self):
         user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")

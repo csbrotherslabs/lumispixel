@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.admin import ClientActivityAdmin
 from apps.clients.models import Client, ClientActivity, ClientSession
-from apps.dashboard.models import StudioMembership
+from apps.dashboard.models import ScheduleConstraint, StudioMembership
 
 
 class BookingOperationsAuditTests(TestCase):
@@ -188,3 +188,123 @@ class BookingOperationsAuditTests(TestCase):
         self.assertFalse(admin_view.has_delete_permission(request, activity))
         self.assertEqual(set(admin_view.get_readonly_fields(request, activity)),
                          {field.name for field in ClientActivity._meta.fields})
+
+    def test_role_permission_matrix_is_enforced_at_server_endpoints(self):
+        """Owners/managers manage the studio; photographers manage assigned resources only."""
+        for role in (StudioMembership.Role.MANAGER, StudioMembership.Role.PHOTOGRAPHER):
+            with self.subTest(role=role):
+                user = User.objects.create_user(
+                    email=f"{role}@example.test", password="pass12345",
+                    primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+                    account_status=User.AccountStatus.ACTIVE,
+                )
+                member = StudioMembership.objects.create(
+                    studio=self.studio, user=user, role=role, status=StudioMembership.Status.ACTIVE,
+                )
+                assigned_client = Client.objects.create(
+                    photographer=self.studio, first_name=role, email=f"client-{role}@example.test",
+                )
+                assigned_client.assigned_members.add(member)
+                booking = self.make_booking(client=assigned_client, offset=4)
+                booking.assigned_members.add(member)
+                block = ScheduleConstraint.objects.create(
+                    studio=self.studio, kind=ScheduleConstraint.Kind.BLOCKED, title="Own block",
+                    starts_at=self.start + timedelta(days=1), ends_at=self.start + timedelta(days=1, hours=1),
+                    blocks_booking=True, created_by=self.user,
+                )
+                block.assigned_members.add(member)
+                self.client.force_login(user)
+
+                self.assertEqual(self.client.get(reverse("photographer_workspace:schedule")).status_code, 200)
+                self.assertEqual(self.client.get(reverse("photographer_workspace:booking_detail", args=[booking.pk])).status_code, 200)
+                payload = {
+                    "action": "create_booking", "client": assigned_client.pk, "session_type": "Role test",
+                    "start_date": "2026-08-14", "start_time": "10:00", "end_date": "2026-08-14",
+                    "end_time": "11:00", "booking_status": "confirmed", "team": [member.pk],
+                }
+                self.assertEqual(self.client.post(reverse("photographer_workspace:bookings"), payload).status_code, 201)
+                created = ClientSession.objects.get(session_type="Role test", assigned_members=member)
+                self.assertEqual(self.client.post(reverse("photographer_workspace:bookings"), payload | {
+                    "action": "edit_booking", "booking_id": created.pk, "start_time": "12:00", "end_time": "13:00",
+                }).status_code, 200)
+                self.assertEqual(self.client.post(
+                    reverse("photographer_workspace:reschedule_session", args=[created.pk]),
+                    data='{"starts_at":"2026-08-14T14:00:00Z","duration_minutes":60,"preview":false}',
+                    content_type="application/json",
+                ).status_code, 200)
+                self.assertEqual(self.client.post(
+                    reverse("photographer_workspace:booking_action", args=[created.pk]), {"action": "cancel"},
+                ).status_code, 302)
+                constraint_payload = {
+                    "action": "edit_constraint", "constraint_id": block.pk, "event_type": "blocked",
+                    "title": "Edited", "reason": "Role check", "start_date": "2026-08-13",
+                    "start_time": "10:00", "end_date": "2026-08-13", "end_time": "11:00",
+                    "prevent_booking": "on", "availability_scope": "selected", "team": [member.pk],
+                }
+                self.assertEqual(self.client.post(reverse("photographer_workspace:bookings"), constraint_payload).status_code, 200)
+                self.assertEqual(self.client.post(
+                    reverse("photographer_workspace:constraint_action", args=[block.pk]), {"action": "delete"},
+                ).status_code, 302)
+
+    def test_photographer_cannot_view_or_mutate_unassigned_booking_or_client(self):
+        member_user = User.objects.create_user(
+            email="restricted-booker@example.test", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE,
+        )
+        member = StudioMembership.objects.create(
+            studio=self.studio, user=member_user, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        private_booking = self.make_booking(offset=6)
+        self.client.force_login(member_user)
+        detail = reverse("photographer_workspace:booking_detail", args=[private_booking.pk])
+        action = reverse("photographer_workspace:booking_action", args=[private_booking.pk])
+        move = reverse("photographer_workspace:reschedule_session", args=[private_booking.pk])
+        self.assertEqual(self.client.get(detail).status_code, 404)
+        self.assertEqual(self.client.post(action, {"action": "cancel"}).status_code, 404)
+        self.assertEqual(self.client.post(move, data="{}", content_type="application/json").status_code, 404)
+        response = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "create_booking", "client": self.client_record.pk, "session_type": "Injected",
+            "start_date": "2026-08-15", "start_time": "10:00", "end_date": "2026-08-15",
+            "end_time": "11:00", "booking_status": "confirmed", "team": [member.pk],
+        })
+        self.assertEqual(response.status_code, 400)
+        page = self.client.get(self.url, {"view": "list", "date": "2026-08-01", "q": "Avery"})
+        self.assertEqual(page.context["schedule_events"], [])
+        self.assertNotIn(self.client_record, page.context["booking_clients"])
+
+    def test_cross_workspace_url_form_payload_and_related_id_attacks_fail_closed(self):
+        other_user = User.objects.create_user(
+            email="attack-b@example.test", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE,
+        )
+        other = PhotographerProfile.objects.create(user=other_user, slug="attack-b", onboarding_completed=True)
+        foreign_client = Client.objects.create(photographer=other, first_name="TenantSecret")
+        foreign_booking = ClientSession.objects.create(
+            photographer=other, client=foreign_client, session_type="Secret service",
+            starts_at=self.start, status=ClientSession.Status.CONFIRMED,
+        )
+        foreign_member = StudioMembership.objects.create(
+            studio=other, user=other_user, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        foreign_block = ScheduleConstraint.objects.create(
+            studio=other, kind=ScheduleConstraint.Kind.VACATION, title="Secret vacation",
+            starts_at=self.start, ends_at=self.start + timedelta(hours=1), created_by=other_user,
+        )
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:booking_detail", args=[foreign_booking.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:booking_action", args=[foreign_booking.pk]), {"action": "cancel"}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:reschedule_session", args=[foreign_booking.pk]), data="{}", content_type="application/json").status_code, 404)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:constraint_action", args=[foreign_block.pk]), {"action": "delete"}).status_code, 404)
+        injected = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "create_booking", "client": foreign_client.pk, "session_type": "Injected",
+            "start_date": "2026-08-15", "start_time": "10:00", "end_date": "2026-08-15",
+            "end_time": "11:00", "booking_status": "confirmed", "team": [foreign_member.pk],
+        })
+        self.assertEqual(injected.status_code, 400)
+        page = self.client.get(self.url, {"view": "list", "date": "2026-08-01", "q": "TenantSecret", "member": foreign_member.pk})
+        self.assertEqual(page.context["schedule_events"], [])
+        self.assertNotIn(foreign_client, page.context["booking_clients"])
