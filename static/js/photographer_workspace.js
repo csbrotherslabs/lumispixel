@@ -959,6 +959,7 @@
       form.elements.action.value = 'edit_booking';
       setValue('booking_id', event.id);
       setValue('constraint_id', event.constraint_id);
+      setValue('mini_id', event.mini_id);
       title.textContent = 'Edit ' + (type === 'mini' ? 'Mini Session' : type.charAt(0).toUpperCase() + type.slice(1));
       setValue('title', event.name);
       setValue('location', event.location === 'Away' ? '' : event.location);
@@ -970,10 +971,15 @@
       Array.from(form.elements.team.options).forEach(function (option) {
         option.selected = (event.member_ids || []).includes(Number(option.value));
       });
-      setValue('contact', event.name);
+      setValue('contact', event.client_id);
       setValue('related_work', event.name);
       setValue('reason', event.reason || event.name);
       setValue('mini_name', event.name);
+      setValue('mini_location', event.location);
+      setValue('slot_duration', event.slot_duration);
+      setValue('slot_count', event.slot_count);
+      setValue('buffer', event.buffer);
+      setValue('capacity', event.capacity);
       const start = new Date(event.starts_at); const end = new Date(event.ends_at);
       if (event.all_day) end.setDate(end.getDate() - 1);
       setValue('start_date', start.toISOString().slice(0, 10)); setValue('end_date', end.toISOString().slice(0, 10));
@@ -981,9 +987,12 @@
       form.elements.all_day.checked = event.all_day;
     }
     else {
-      form.elements.action.value = type === 'booking' ? 'create_booking' : 'create_constraint';
+      form.elements.action.value = type === 'booking' ? 'create_booking'
+        : type === 'consultation' ? 'create_consultation'
+        : type === 'mini' ? 'create_mini' : 'create_constraint';
       setValue('booking_id', '');
       setValue('constraint_id', '');
+      setValue('mini_id', '');
     }
     syncType(); syncAllDay();
     layer.hidden = false;
@@ -1026,9 +1035,14 @@
     event.preventDefault();
     if (!validate()) return;
     const another = event.submitter && event.submitter.value === 'another';
-    form.elements.action.value = currentType() === 'booking'
+    const type = currentType();
+    form.elements.action.value = type === 'booking'
       ? (editing ? 'edit_booking' : 'create_booking')
-      : (editing ? 'edit_constraint' : 'create_constraint');
+      : type === 'consultation'
+        ? (editing ? 'edit_consultation' : 'create_consultation')
+        : type === 'mini'
+          ? (editing ? 'edit_mini' : 'create_mini')
+          : (editing ? 'edit_constraint' : 'create_constraint');
     const submitters = form.querySelectorAll('button[type="submit"]');
     submitters.forEach(function (button) { button.disabled = true; });
     let response;

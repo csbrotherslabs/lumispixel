@@ -422,7 +422,12 @@ class ClientSession(PhotographerOwnedModel):
         COMPLETED = "completed", "Completed"
         CANCELLED = "cancelled", "Cancelled"
 
+    class EventKind(models.TextChoices):
+        BOOKING = "booking", "Booking"
+        CONSULTATION = "consultation", "Consultation"
+
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="sessions")
+    event_kind = models.CharField(max_length=16, choices=EventKind.choices, default=EventKind.BOOKING)
     session_type = models.CharField(max_length=120)
     starts_at = models.DateTimeField()
     duration_minutes = models.PositiveIntegerField(default=120)
@@ -460,6 +465,78 @@ class ClientSession(PhotographerOwnedModel):
 
     def __str__(self):
         return f"{self.client} — {self.session_type}"
+
+
+class MiniSession(PhotographerOwnedModel):
+    """A tenant-owned schedule block whose bookable children are ``MiniSessionSlot`` rows."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        CANCELLED = "cancelled", "Cancelled"
+
+    assigned_members = models.ManyToManyField(
+        "dashboard.StudioMembership", blank=True, related_name="assigned_mini_sessions"
+    )
+    name = models.CharField(max_length=120)
+    starts_at = models.DateTimeField()
+    slot_duration_minutes = models.PositiveSmallIntegerField()
+    slot_count = models.PositiveSmallIntegerField()
+    buffer_minutes = models.PositiveSmallIntegerField(default=0)
+    capacity_per_slot = models.PositiveSmallIntegerField(default=1)
+    location = models.CharField(max_length=255)
+    service = models.CharField(max_length=120, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ("starts_at", "pk")
+        indexes = [models.Index(fields=("photographer", "status", "starts_at"), name="mini_owner_status_start")]
+
+    @property
+    def duration_minutes(self):
+        return self.slot_count * self.slot_duration_minutes + max(0, self.slot_count - 1) * self.buffer_minutes
+
+    def clean(self):
+        if self.slot_duration_minutes < 1 or self.slot_count < 1 or self.capacity_per_slot < 1:
+            raise ValidationError("Slot duration, count, and capacity must be positive.")
+
+
+class MiniSessionSlot(models.Model):
+    mini_session = models.ForeignKey(MiniSession, on_delete=models.CASCADE, related_name="slots")
+    starts_at = models.DateTimeField()
+    duration_minutes = models.PositiveSmallIntegerField()
+    position = models.PositiveSmallIntegerField()
+    clients = models.ManyToManyField(Client, through="MiniSessionSlotBooking", related_name="mini_session_slots")
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ("position",)
+        constraints = [
+            models.UniqueConstraint(fields=("mini_session", "position"), name="mini_slot_parent_position_unique"),
+            models.UniqueConstraint(fields=("mini_session", "starts_at"), name="mini_slot_parent_start_unique"),
+        ]
+
+
+class MiniSessionSlotBooking(PhotographerOwnedModel):
+    slot = models.ForeignKey(MiniSessionSlot, on_delete=models.CASCADE, related_name="bookings")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="mini_session_bookings")
+    created_at = models.DateTimeField(auto_now_add=True)
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("slot", "client"), name="mini_slot_client_unique")]
+
+    def clean(self):
+        errors = {}
+        if self.slot_id and self.photographer_id != self.slot.mini_session.photographer_id:
+            errors["slot"] = "The slot must belong to this workspace."
+        if self.client_id and self.photographer_id != self.client.photographer_id:
+            errors["client"] = "The client must belong to this workspace."
+        if errors:
+            raise ValidationError(errors)
 
 
 class ClientInvoice(PhotographerOwnedModel):

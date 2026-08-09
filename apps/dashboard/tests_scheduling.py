@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientSession
+from apps.clients.models import Client, ClientSession, MiniSession, MiniSessionSlotBooking
 from apps.dashboard.models import ScheduleConstraint, StudioMembership
 from apps.dashboard.scheduling import availability_for
 
@@ -225,3 +225,80 @@ class SchedulingIntegrationTests(TestCase):
         self.assertTrue(result["available"])
         move = self.client.post(reverse("photographer_workspace:reschedule_session", args=[private.pk]), data={}, content_type="application/json")
         self.assertEqual(move.status_code, 404)
+
+    def test_consultation_create_reschedule_conflict_cancel_and_persistence(self):
+        payload = self.payload(action="create_consultation", contact=self.client_record.pk,
+                               meeting_type="Discovery call", meeting_format="Video",
+                               meeting_location="https://meet.example.test")
+        response = self.client.post(self.url, payload)
+        self.assertEqual(response.status_code, 201)
+        consultation = ClientSession.objects.get(event_kind=ClientSession.EventKind.CONSULTATION)
+        self.assertEqual(consultation.client, self.client_record)
+        self.assertIn("Video", consultation.location)
+        self.assertEqual(self.client.post(self.url, self.payload("10:30", "11:30")).status_code, 409)
+        edited = self.client.post(self.url, payload | {
+            "action": "edit_consultation", "booking_id": consultation.pk,
+            "start_time": "12:00", "end_time": "12:45",
+        })
+        self.assertEqual(edited.status_code, 200)
+        consultation.refresh_from_db()
+        self.assertEqual(consultation.duration_minutes, 45)
+        self.assertContains(self.client.get(reverse("photographer_workspace:schedule"), {
+            "view": "day", "date": "2026-08-12",
+        }), "Discovery call")
+        self.client.post(reverse("photographer_workspace:booking_action", args=[consultation.pk]), {"action": "cancel"})
+        consultation.refresh_from_db()
+        self.assertEqual(consultation.status, ClientSession.Status.CANCELLED)
+
+    def test_consultation_rejects_foreign_client_and_foreign_mutation(self):
+        other_user = User.objects.create_user(email="consult-other@example.com", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE)
+        other = PhotographerProfile.objects.create(user=other_user, slug="consult-other", onboarding_completed=True)
+        foreign_client = Client.objects.create(photographer=other, first_name="Foreign")
+        response = self.client.post(self.url, self.payload(
+            action="create_consultation", contact=foreign_client.pk, meeting_type="Discovery call"))
+        self.assertEqual(response.status_code, 400)
+
+    def mini_payload(self, **values):
+        payload = {"action": "create_mini", "mini_name": "Autumn minis", "mini_location": "Orchard",
+                   "start_date": "2026-08-12", "start_time": "14:00", "slot_duration": "20",
+                   "slot_count": "3", "buffer": "10", "capacity": "1", "mini_package": "Mini Collection"}
+        payload.update(values)
+        return payload
+
+    def test_mini_session_generates_idempotent_slots_enforces_capacity_and_cancels(self):
+        self.assertEqual(self.client.post(self.url, self.mini_payload()).status_code, 201)
+        mini = MiniSession.objects.get(photographer=self.studio)
+        self.assertEqual(list(mini.slots.values_list("position", flat=True)), [0, 1, 2])
+        self.assertEqual([timezone.localtime(slot.starts_at).strftime("%H:%M") for slot in mini.slots.all()],
+                         ["14:00", "14:30", "15:00"])
+        slot = mini.slots.first()
+        booked = self.client.post(reverse("photographer_workspace:mini_slot_book", args=[slot.pk]),
+                                  {"client": self.client_record.pk})
+        self.assertEqual(booked.status_code, 201)
+        second_client = Client.objects.create(photographer=self.studio, first_name="Second")
+        self.assertEqual(self.client.post(reverse("photographer_workspace:mini_slot_book", args=[slot.pk]),
+                                          {"client": second_client.pk}).status_code, 409)
+        harmless_edit = self.client.post(self.url, self.mini_payload(
+            action="edit_mini", mini_id=mini.pk, mini_location="New orchard"))
+        self.assertEqual(harmless_edit.status_code, 200)
+        self.assertTrue(MiniSessionSlotBooking.objects.filter(slot=slot, cancelled_at__isnull=True).exists())
+        protected_edit = self.client.post(self.url, self.mini_payload(
+            action="edit_mini", mini_id=mini.pk, start_time="15:00"))
+        self.assertEqual(protected_edit.status_code, 409)
+        self.client.post(reverse("photographer_workspace:mini_session_action", args=[mini.pk]), {"action": "cancel"})
+        mini.refresh_from_db()
+        self.assertEqual(mini.status, MiniSession.Status.CANCELLED)
+        self.assertIsNotNone(MiniSessionSlotBooking.objects.get().cancelled_at)
+
+    def test_mini_session_is_tenant_scoped(self):
+        self.client.post(self.url, self.mini_payload())
+        mini = MiniSession.objects.get()
+        other_user = User.objects.create_user(email="mini-other@example.com", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE)
+        PhotographerProfile.objects.create(user=other_user, slug="mini-other", onboarding_completed=True)
+        self.client.force_login(other_user)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:mini_session_action", args=[mini.pk]),
+                                          {"action": "cancel"}).status_code, 404)

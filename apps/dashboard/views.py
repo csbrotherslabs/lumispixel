@@ -26,7 +26,9 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
+from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
+                                InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
+                                MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
@@ -2069,6 +2071,88 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
+        if request.POST.get("action") in {"create_mini", "edit_mini"}:
+            if not request.studio_access.allows("schedule"):
+                raise PermissionDenied
+            is_edit = request.POST["action"] == "edit_mini"
+            mini_queryset = MiniSession.objects.for_photographer(profile)
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                mini_queryset = mini_queryset.filter(assigned_members=request.studio_access.membership)
+            mini = get_object_or_404(mini_queryset, pk=request.POST.get("mini_id")) if is_edit else None
+            errors = {}
+            name = request.POST.get("mini_name", "").strip()
+            location = request.POST.get("mini_location", "").strip()
+            if not name:
+                errors["mini_name"] = "Enter a mini-session name."
+            if not location:
+                errors["mini_location"] = "Enter a location."
+            try:
+                starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                slot_duration = int(request.POST.get("slot_duration", "20"))
+                slot_count = int(request.POST.get("slot_count", "6"))
+                buffer_minutes = int(request.POST.get("buffer", "0"))
+                capacity = int(request.POST.get("capacity", "1"))
+                if min(slot_duration, slot_count, capacity) < 1 or buffer_minutes < 0 or slot_count > 100:
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors["slot_count"] = "Enter valid positive slot settings (up to 100 slots)."
+            member_ids = {int(value) for value in request.POST.getlist("team") if value.isdigit()}
+            valid_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids
+            ).values_list("pk", flat=True))
+            if valid_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                if member_ids != {own_id}:
+                    raise PermissionDenied
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            duration = slot_count * slot_duration + max(0, slot_count - 1) * buffer_minutes
+            with transaction.atomic():
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                changing_grid = mini is None
+                if mini:
+                    mini = MiniSession.objects.select_for_update().get(pk=mini.pk, photographer=profile)
+                    changing_grid = (mini.starts_at != starts_at or mini.slot_duration_minutes != slot_duration or
+                                     mini.slot_count != slot_count or mini.buffer_minutes != buffer_minutes)
+                    if changing_grid and mini.slots.filter(bookings__cancelled_at__isnull=True).exists():
+                        return JsonResponse({"ok": False, "errors": {"start_time":
+                            "Booked slots exist. Cancel or move those bookings before changing the slot grid."}}, status=409)
+                    if mini.slots.annotate(active_count=Count(
+                            "bookings", filter=Q(bookings__cancelled_at__isnull=True)
+                        )).filter(active_count__gt=capacity).exists():
+                        return JsonResponse({"ok": False, "errors": {"capacity":
+                            "Capacity cannot be lower than an existing slot's active bookings."}}, status=409)
+                available = availability_for(
+                    studio=profile, starts_at=starts_at, duration_minutes=duration, member_ids=member_ids,
+                    exclude_mini_pk=mini.pk if mini else None, lock=True,
+                )
+                if not available["available"]:
+                    return JsonResponse({"ok": False, "errors": {"start_time": "This photographer is unavailable during the mini-session block."}}, status=409)
+                values = {"name": name, "starts_at": starts_at, "slot_duration_minutes": slot_duration,
+                          "slot_count": slot_count, "buffer_minutes": buffer_minutes,
+                          "capacity_per_slot": capacity, "location": location,
+                          "service": request.POST.get("mini_package", "").strip(),
+                          "notes": request.POST.get("notes", "").strip()}
+                if mini:
+                    for field, value in values.items():
+                        setattr(mini, field, value)
+                    mini.save()
+                else:
+                    mini = MiniSession.objects.create(photographer=profile, **values)
+                mini.assigned_members.set(member_ids)
+                if changing_grid:
+                    # Idempotent regeneration: only an unbooked changed grid is replaced.
+                    mini.slots.all().delete()
+                    step = slot_duration + buffer_minutes
+                    MiniSessionSlot.objects.bulk_create([
+                        MiniSessionSlot(mini_session=mini, position=index,
+                                        starts_at=starts_at + timedelta(minutes=index * step),
+                                        duration_minutes=slot_duration)
+                        for index in range(slot_count)
+                    ])
+            return JsonResponse({"ok": True, "schedule_url": reverse("photographer_workspace:schedule")}, status=200 if is_edit else 201)
         if request.POST.get("action") in {"create_constraint", "edit_constraint"}:
             if not request.studio_access.allows("schedule"):
                 raise PermissionDenied
@@ -2140,21 +2224,23 @@ def bookings_dashboard(request):
                 constraint.assigned_members.set(member_ids)
             return JsonResponse({"ok": True, "schedule_url": reverse("photographer_workspace:schedule")},
                                 status=200 if request.POST["action"] == "edit_constraint" else 201)
-        if request.POST.get("action") in {"create_booking", "edit_booking"}:
-            is_edit = request.POST["action"] == "edit_booking"
+        if request.POST.get("action") in {"create_booking", "edit_booking", "create_consultation", "edit_consultation"}:
+            is_consultation = request.POST["action"].endswith("consultation")
+            is_edit = request.POST["action"].startswith("edit_")
             session = None
             if is_edit:
-                session = get_object_or_404(
-                    ClientSession.objects.all(),
-                    photographer=profile, pk=request.POST.get("booking_id"),
-                )
+                editable_sessions = ClientSession.objects.filter(photographer=profile)
+                if is_consultation:
+                    editable_sessions = scope_assigned(editable_sessions, request.studio_access)
+                session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
             errors = {}
             client = Client.objects.filter(
-                photographer=profile, pk=request.POST.get("client")
+                photographer=profile, pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
             ).first()
             if client is None:
                 errors["client"] = "Select a client from this workspace."
-            session_type = request.POST.get("session_type", "").strip()
+            session_type = (request.POST.get("meeting_type", "").strip() if is_consultation
+                            else request.POST.get("session_type", "").strip())
             if not session_type:
                 errors["session_type"] = "Enter a session type."
             try:
@@ -2189,8 +2275,10 @@ def bookings_dashboard(request):
                 return JsonResponse({"ok": False, "errors": errors}, status=400)
             values = {
                 "client": client, "session_type": session_type, "starts_at": starts_at,
+                "event_kind": ClientSession.EventKind.CONSULTATION if is_consultation else ClientSession.EventKind.BOOKING,
                 "duration_minutes": max(1, round((ends_at - starts_at).total_seconds() / 60)),
-                "location": request.POST.get("location", "").strip(), "status": status,
+                "location": ((request.POST.get("meeting_format", "") + ": " + request.POST.get("meeting_location", "")).strip(": ")
+                             if is_consultation else request.POST.get("location", "").strip()), "status": status,
                 "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
             }
             with transaction.atomic():
@@ -2458,7 +2546,9 @@ def schedule(request):
         sessions_queryset = sessions_queryset.filter(assigned_members__pk=int(filter_values["member"]))
     elif filter_values["member"] == "me" and request.studio_access.membership:
         sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
-    if filter_values["event_type"] and filter_values["event_type"] != "booking":
+    if filter_values["event_type"] in ClientSession.EventKind.values:
+        sessions_queryset = sessions_queryset.filter(event_kind=filter_values["event_type"])
+    elif filter_values["event_type"]:
         sessions_queryset = sessions_queryset.none()
     all_profile_sessions = ClientSession.objects.filter(photographer=profile)
     session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
@@ -2475,7 +2565,9 @@ def schedule(request):
             membership.user.full_name or membership.user.email
             for membership in session.assigned_members.all()
         ) or owner, "status": session.get_status_display(), "status_key": session.status,
-        "kind": "booking", "icon": "bi-camera", "warning": session.status == ClientSession.Status.TENTATIVE,
+        "kind": session.event_kind,
+        "icon": "bi-chat-square-text" if session.event_kind == ClientSession.EventKind.CONSULTATION else "bi-camera",
+        "warning": session.status == ClientSession.Status.TENTATIVE,
         "persisted": True, "move_url": reverse("photographer_workspace:reschedule_session", args=[session.pk]),
         "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
@@ -2494,6 +2586,34 @@ def schedule(request):
             + (["Payment requires attention"] if session.invoices.all() and any(invoice.status not in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all()) else [])
         ),
     } for session in sessions]
+
+    if not filter_values["event_type"] or filter_values["event_type"] == "mini":
+        minis = MiniSession.objects.for_photographer(profile).filter(
+            starts_at__date__gte=range_start, starts_at__date__lt=range_end,
+        )
+        if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+            minis = minis.filter(assigned_members=request.studio_access.membership)
+        if not filter_values["show_cancelled"]:
+            minis = minis.exclude(status=MiniSession.Status.CANCELLED)
+        for mini in minis.prefetch_related("assigned_members__user", "slots__bookings"):
+            members = list(mini.assigned_members.all())
+            events.append({
+                "id": f"mini-{mini.pk}", "mini_id": mini.pk,
+                "starts_at": timezone.localtime(mini.starts_at, studio_timezone(profile)),
+                "ends_at": timezone.localtime(mini.starts_at, studio_timezone(profile)) + timedelta(minutes=mini.duration_minutes),
+                "name": mini.name, "session_type": mini.service or "Mini session",
+                "booking_number": "", "location": mini.location,
+                "photographer": ", ".join(member.user.full_name or member.user.email for member in members) or owner,
+                "status": mini.get_status_display(), "status_key": mini.status, "kind": "mini", "icon": "bi-people",
+                "warning": False, "persisted": True, "move_url": "", "all_day": False, "url": "",
+                "contact": f"{mini.slots.count()} slots · capacity {mini.capacity_per_slot} each",
+                "contact_email": "", "contact_phone": "", "package": mini.service or "Not assigned",
+                "contract_status": "Not tracked", "payment_status": "Not tracked", "questionnaire_status": "Not tracked",
+                "notes": mini.notes, "client_id": "", "booking_value": "0",
+                "member_ids": [member.pk for member in members], "warnings": [],
+                "slot_duration": mini.slot_duration_minutes, "slot_count": mini.slot_count,
+                "buffer": mini.buffer_minutes, "capacity": mini.capacity_per_slot,
+            })
 
     range_starts_at = parse_local_datetime(profile, range_start.isoformat(), "00:00")
     range_ends_at = parse_local_datetime(profile, range_end.isoformat(), "00:00")
@@ -2531,8 +2651,7 @@ def schedule(request):
             "booking_value": "", "member_ids": [member.pk for member in members], "warnings": [],
         })
 
-    # Production schedule surfaces only persisted, studio-scoped records. Other event
-    # types remain available in the creation controls until their models are connected.
+    # Production schedule surfaces only persisted, studio-scoped records.
     using_sample_events = False
 
     action_labels = {
@@ -2550,15 +2669,24 @@ def schedule(request):
         event["duration"] = " ".join(part for part in (
             f"{hours} hr" if hours else "", f"{remaining_minutes} min" if remaining_minutes else "",
         ) if part)
-        if event["kind"] == "booking":
+        if event["kind"] in ("booking", "consultation"):
+            noun = "Consultation" if event["kind"] == "consultation" else "Booking"
             event["actions"] = [
-                {"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-box-arrow-up-right"},
+                *([{"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-box-arrow-up-right"}] if event["kind"] == "booking" else []),
                 *([{"label": "Contact Client", "type": "link", "url": f'mailto:{event["contact_email"]}', "priority": "secondary", "icon": "bi-envelope"}] if event["contact_email"] else []),
-                {"label": "Edit Booking", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                {"label": f"Edit {noun}", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
                 *([{"label": "Reschedule", "type": "reschedule", "priority": "secondary", "icon": "bi-calendar3"}] if event["status_key"] not in (ClientSession.Status.COMPLETED, ClientSession.Status.CANCELLED) else []),
                 *([{"label": "Mark Complete", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "mark_complete", "priority": "workflow", "icon": "bi-check2-circle"}] if event["status_key"] in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) else []),
                 *([{"label": "Create Gallery", "type": "link", "url": reverse("photographer_workspace:create_gallery"), "priority": "workflow", "icon": "bi-images"}] if event["status_key"] == ClientSession.Status.COMPLETED else []),
-                *([{"label": "Cancel Booking", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}] if event["status_key"] != ClientSession.Status.CANCELLED else []),
+                *([{"label": f"Cancel {noun}", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}] if event["status_key"] != ClientSession.Status.CANCELLED else []),
+            ]
+        elif event["kind"] == "mini":
+            event["actions"] = [
+                {"label": "Edit Mini Session", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                *([{"label": "Cancel Mini Session", "type": "post",
+                   "url": reverse("photographer_workspace:mini_session_action", args=[event["mini_id"]]),
+                   "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}]
+                  if event["status_key"] != MiniSession.Status.CANCELLED else []),
             ]
         else:
             event["actions"] = [
@@ -2771,7 +2899,11 @@ def reschedule_session(request, pk):
 @require_POST
 def booking_action(request, pk):
     """Apply the state transitions supported by the schedule inspector."""
-    session = get_object_or_404(ClientSession, pk=pk, photographer=request.studio)
+    sessions = ClientSession.objects.filter(photographer=request.studio)
+    candidate = get_object_or_404(sessions, pk=pk)
+    if candidate.event_kind == ClientSession.EventKind.CONSULTATION:
+        candidate = get_object_or_404(scope_assigned(sessions, request.studio_access), pk=pk)
+    session = candidate
     action = request.POST.get("action")
     if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
         session.status = ClientSession.Status.COMPLETED
@@ -2791,6 +2923,58 @@ def booking_action(request, pk):
         messages.success(request, f"{session.session_type} for {session.client} cancelled.")
     else:
         messages.error(request, "That booking action is not available in its current state.")
+    return redirect("photographer_workspace:schedule")
+
+
+@photographer_workspace_required
+@require_POST
+def mini_slot_book(request, pk):
+    """Atomically assign a workspace client without exceeding persisted slot capacity."""
+    profile = request.studio
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=request.POST.get("client"))
+    with transaction.atomic():
+        PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+        slot = get_object_or_404(
+            MiniSessionSlot.objects.select_for_update().select_related("mini_session"),
+            pk=pk, mini_session__photographer=profile, mini_session__status=MiniSession.Status.ACTIVE,
+            cancelled_at__isnull=True,
+        )
+        if (request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER and
+                not slot.mini_session.assigned_members.filter(pk=request.studio_access.membership.pk).exists()):
+            raise PermissionDenied
+        if slot.bookings.filter(cancelled_at__isnull=True).count() >= slot.mini_session.capacity_per_slot:
+            return JsonResponse({"ok": False, "error": "This mini-session slot is full."}, status=409)
+        booking, created = MiniSessionSlotBooking.objects.get_or_create(
+            photographer=profile, slot=slot, client=client,
+        )
+        if not created and booking.cancelled_at is None:
+            return JsonResponse({"ok": False, "error": "This client is already booked into the slot."}, status=409)
+        if not created:
+            booking.cancelled_at = None
+            booking.save(update_fields=("cancelled_at",))
+    return JsonResponse({"ok": True}, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def mini_session_action(request, pk):
+    minis = MiniSession.objects.for_photographer(request.studio)
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        minis = minis.filter(assigned_members=request.studio_access.membership)
+    mini = get_object_or_404(minis, pk=pk)
+    action = request.POST.get("action")
+    if action == "cancel":
+        now = timezone.now()
+        with transaction.atomic():
+            mini.status = MiniSession.Status.CANCELLED
+            mini.cancelled_at = now
+            mini.save(update_fields=("status", "cancelled_at", "updated_at"))
+            MiniSessionSlotBooking.objects.filter(
+                photographer=request.studio, slot__mini_session=mini, cancelled_at__isnull=True,
+            ).update(cancelled_at=now)
+        messages.success(request, "Mini session and its active slot bookings cancelled.")
+    else:
+        return HttpResponseBadRequest("Unsupported mini-session action.")
     return redirect("photographer_workspace:schedule")
 
 
