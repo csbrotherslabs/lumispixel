@@ -48,7 +48,11 @@
 
   const searchForm = document.querySelector('[data-workspace-search]');
   const searchInput = document.querySelector('[data-workspace-search-input]');
+  const searchButton = document.querySelector('[data-workspace-search-button]');
+  const searchShortcut = document.querySelector('[data-workspace-search-shortcut]');
   if (searchForm && searchInput) {
+    if (searchShortcut && !/(Mac|iPhone|iPad)/i.test(navigator.platform)) searchShortcut.textContent = 'Ctrl K';
+    if (searchButton) searchButton.addEventListener('click', function () { searchInput.focus(); });
     searchForm.addEventListener('submit', function (event) {
       event.preventDefault();
       const query = searchInput.value.trim().toLowerCase();
@@ -117,12 +121,31 @@
     document.addEventListener('click', function (event) {
       if (!profileMenu.contains(event.target)) closeProfile();
     });
+    profileToggle.addEventListener('keydown', function (event) {
+      if (event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      profileToggle.setAttribute('aria-expanded', 'true');
+      profileDropdown.hidden = false;
+      const firstItem = profileDropdown.querySelector('[role="menuitem"]');
+      if (firstItem) firstItem.focus();
+    });
+    profileDropdown.addEventListener('keydown', function (event) {
+      const items = Array.from(profileDropdown.querySelectorAll('[role="menuitem"]'));
+      const index = items.indexOf(document.activeElement);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        items[(index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+      }
+    });
   }
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
     if (sidebar && sidebar.classList.contains('is-open')) closeDrawer(true);
-    closeProfile();
+    if (profileToggle && profileToggle.getAttribute('aria-expanded') === 'true') {
+      closeProfile();
+      profileToggle.focus();
+    }
   });
 
   const viewButtons = document.querySelectorAll('[data-lead-view]');
