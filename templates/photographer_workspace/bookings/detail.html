@@ -8,7 +8,7 @@
       <p class="lp-page-description">Booking for {{ booking.client }} · LP-{{ booking.pk|stringformat:'04d' }}</p>
     </div>
     <div class="lp-header-actions" role="group" aria-label="Booking actions">
-      <a class="lp-button lp-button--secondary" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>
+      <a class="lp-button lp-button--secondary lp-booking-edit-action" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>
       {% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lp-button lp-button--destructive" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}
     </div>
   </header>
