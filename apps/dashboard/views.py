@@ -2753,9 +2753,46 @@ def _invoice_context(request, invoice=None, errors=None):
 @require_GET
 def invoices_workspace(request):
     profile = request.studio
-    invoices = ClientInvoice.objects.for_photographer(profile).select_related("client", "booking").prefetch_related("line_items")
+    today = timezone.localdate()
+    invoices = ClientInvoice.objects.for_photographer(profile).select_related("client", "booking")
+    total_count = invoices.count()
+    overdue_query = Q(due_date__lt=today, status__in=[ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID])
+    summary = {
+        "draft": invoices.filter(status=ClientInvoice.Status.DRAFT).count(),
+        "sent": invoices.filter(status=ClientInvoice.Status.SENT).exclude(overdue_query).count(),
+        "outstanding": invoices.filter(status__in=[ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID]).count(),
+        "overdue": invoices.filter(overdue_query).count(),
+        "paid": invoices.filter(status=ClientInvoice.Status.PAID).count(),
+    }
+    selected = {key: request.GET.get(key, "").strip() for key in ("q", "status", "client", "due_from", "due_to")}
+    if selected["q"]:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=selected["q"]) | Q(client__first_name__icontains=selected["q"]) |
+            Q(client__last_name__icontains=selected["q"]) | Q(client__company__icontains=selected["q"]) |
+            Q(booking__session_type__icontains=selected["q"])
+        )
+    if selected["status"] == "overdue":
+        invoices = invoices.filter(overdue_query)
+    elif selected["status"] in ClientInvoice.Status.values:
+        invoices = invoices.filter(status=selected["status"])
+    if selected["client"].isdigit():
+        invoices = invoices.filter(client_id=selected["client"])
+    for key, lookup in (("due_from", "due_date__gte"), ("due_to", "due_date__lte")):
+        if selected[key]:
+            try:
+                invoices = invoices.filter(**{lookup: date.fromisoformat(selected[key])})
+            except ValueError:
+                selected[key] = ""
+    active_filters = any(selected.values())
+    page = Paginator(invoices.order_by("due_date", "-created_at"), 15).get_page(request.GET.get("page"))
+    for invoice in page:
+        invoice.is_overdue = invoice.due_date and invoice.due_date < today and invoice.status in {
+            ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID}
     context = _dashboard_context(request, "invoices", "Invoices")
-    context["invoices"] = invoices
+    context.update({"invoices": page, "invoice_total_count": total_count, "invoice_summary": summary,
+                    "invoice_filters": selected, "invoice_filters_active": active_filters,
+                    "invoice_filters_query": urlencode({key: value for key, value in selected.items() if value}),
+                    "invoice_clients": Client.objects.for_photographer(profile).filter(invoices__isnull=False).distinct().order_by("first_name", "last_name")})
     return render(request, "photographer_workspace/invoices/list.html", context)
 
 
