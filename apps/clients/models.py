@@ -352,6 +352,13 @@ class ClientActivity(PhotographerOwnedModel):
         CLIENT_RESTORED = "client_restored", "Client restored"
 
     event_type = models.CharField(max_length=32, choices=EventType.choices)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="client_activities",
+        blank=True,
+        null=True,
+    )
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
     description = models.TextField(blank=True)
