@@ -142,15 +142,6 @@ def _workspace_nav(active_key):
     return groups
 
 
-def _workspace_breadcrumb_section(active_key):
-    """Return the shared navigation section for the top-bar breadcrumb."""
-    canonical_key = NAV_ACTIVE_ALIASES.get(active_key, active_key)
-    for group in NAVIGATION:
-        if group["title"] and any(key == canonical_key for key, _title, _icon in group["items"]):
-            return group["title"]
-    return ""
-
-
 def _photographer_workspace_response(request):
     user = request.user
     if not user.is_authenticated:
@@ -263,7 +254,6 @@ def _dashboard_context(request, active_key="dashboard", title="Dashboard"):
     modules = [m | {"url": _reverse_module(m)} for m in WORKSPACE_MODULES if m["key"] != "dashboard"]
     context = {
         "active_key": active_key, "page_title": title, "workspace_nav": _workspace_nav(active_key),
-        "breadcrumb_section": _workspace_breadcrumb_section(active_key),
         "photographer_profile": profile, "identity": _identity(profile, request.user), "greeting": greeting,
         "welcome_name": request.user.first_name or (request.user.full_name.split()[0] if request.user.full_name else "Photographer"),
         "summary_cards": _dashboard_summary(profile),
