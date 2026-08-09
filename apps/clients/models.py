@@ -277,7 +277,14 @@ class Client(PhotographerOwnedModel):
 
 class ClientNote(PhotographerOwnedModel):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="notes")
-    content = models.TextField()
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="client_notes",
+        blank=True,
+        null=True,
+    )
+    content = models.TextField(max_length=5000)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -286,8 +293,13 @@ class ClientNote(PhotographerOwnedModel):
         indexes = [models.Index(fields=["photographer", "client", "-created_at"], name="note_owner_client_created")]
 
     def clean(self):
+        errors = {}
         if self.client_id and self.photographer_id != self.client.photographer_id:
-            raise ValidationError({"client": "The client must belong to this photographer."})
+            errors["client"] = "The client must belong to this photographer."
+        if not self.content or not self.content.strip():
+            errors["content"] = "Enter a note before saving."
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return f"Note for {self.client}"
@@ -373,7 +385,7 @@ class ClientActivity(PhotographerOwnedModel):
     occurred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-occurred_at"]
+        ordering = ["-occurred_at", "-pk"]
         verbose_name_plural = "client activities"
         indexes = [
             models.Index(fields=["photographer", "-occurred_at"], name="activity_owner_occurred"),

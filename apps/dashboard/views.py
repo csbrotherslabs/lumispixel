@@ -28,7 +28,7 @@ from PIL import Image, UnidentifiedImageError
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask, InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead, PaymentRefund
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
-from apps.clients.services import DuplicateClientError, convert_lead_to_client
+from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
@@ -356,7 +356,11 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
             record.full_clean()
             record.save()
             if isinstance(form, CrmClientForm) and form.cleaned_data.get("notes"):
-                ClientNote.objects.create(photographer=profile, client=record, content=form.cleaned_data["notes"])
+                create_client_note(
+                    client=record,
+                    content=form.cleaned_data["notes"],
+                    actor=request.user,
+                )
             if activity_type:
                 ClientActivity.objects.create(
                     photographer=profile,
@@ -1711,9 +1715,7 @@ def edit_client(request, pk):
                     updated.save()
                 note_created = False
                 if notes and not current.notes.filter(content=notes).exists():
-                    ClientNote.objects.create(
-                        photographer=profile, client=updated, content=notes
-                    )
+                    create_client_note(client=updated, content=notes, actor=request.user)
                     note_created = True
                     changes["notes"] = {"old": "", "new": notes}
                 if changes:
@@ -1768,12 +1770,13 @@ def client_detail(request, pk):
     tab = request.GET.get("tab", "overview")
     if tab not in detail_tabs:
         tab = "overview"
-    activities = ClientActivity.objects.for_photographer(profile).filter(client=client)
+    notes = ClientNote.objects.for_photographer(profile).filter(client=client).select_related("author")
+    activities = ClientActivity.objects.for_photographer(profile).filter(client=client).select_related("actor")
     context = _dashboard_context(request, "clients", str(client))
     context.update({
         "client_record": client, "detail_tabs": detail_tabs, "active_tab": tab,
         "sessions": sessions, "galleries": galleries, "invoices": invoices, "upcoming_session": upcoming,
-        "outstanding_balance": outstanding, "recent_notes": client.notes.all()[:5],
+        "outstanding_balance": outstanding, "recent_notes": notes[:5],
         "client_tasks": client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]),
         "activities": activities[:30],
         "can_view_financials": can_view_financials,
@@ -1817,9 +1820,12 @@ def add_client_note(request, pk):
     elif len(content) > 5000:
         messages.error(request, "Notes must be 5,000 characters or fewer.")
     else:
-        ClientNote.objects.create(photographer=profile, client=client, content=content)
-        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.NOTE_ADDED, description="A client note was added.")
-        messages.success(request, "Note added.")
+        try:
+            create_client_note(client=client, content=content, actor=request.user)
+        except ValidationError as error:
+            messages.error(request, "; ".join(error.messages))
+        else:
+            messages.success(request, "Note added.")
     return redirect("photographer_workspace:client_detail", pk=client.pk)
 
 
