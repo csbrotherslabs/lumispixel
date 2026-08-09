@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib import admin
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -245,6 +247,50 @@ class BookingOperationsAuditTests(TestCase):
                 self.assertEqual(self.client.post(
                     reverse("photographer_workspace:constraint_action", args=[block.pk]), {"action": "delete"},
                 ).status_code, 302)
+
+    def test_photographer_booking_without_team_uses_authenticated_membership(self):
+        """The shared browser form may omit team; the server supplies the trusted assignment."""
+        member_user = User.objects.create_user(
+            email="default-assignment@example.test", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE,
+        )
+        member = StudioMembership.objects.create(
+            studio=self.studio, user=member_user, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        assigned_client = Client.objects.create(
+            photographer=self.studio, first_name="Morgan", last_name="Lee",
+            email="morgan@example.test",
+        )
+        assigned_client.assigned_members.add(member)
+        self.client.force_login(member_user)
+
+        response = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "create_booking", "event_type": "booking",
+            "client": assigned_client.pk, "title": "Morgan brand portraits",
+            "session_type": "Brand portrait", "start_date": "2026-08-12",
+            "start_time": "14:00", "end_date": "2026-08-12", "end_time": "15:30",
+            "location": "North Studio", "booking_status": "confirmed", "price": "475.00",
+            "notes": "Two wardrobe changes.",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+        self.assertEqual(response.status_code, 201)
+        booking = ClientSession.objects.get(photographer=self.studio, client=assigned_client)
+        self.assertEqual(list(booking.assigned_members.all()), [member])
+        self.assertEqual(booking.duration_minutes, 90)
+        self.assertEqual(booking.booking_value, 475)
+        self.assertEqual(booking.activities.filter(
+            event_type=ClientActivity.EventType.BOOKING_CREATED,
+        ).count(), 1)
+        self.assertEqual(ClientSession.objects.filter(photographer=self.studio).count(), 1)
+
+    def test_booking_drawer_uses_form_action_attribute_not_named_action_control(self):
+        """The hidden ``action`` input must not shadow the form submission URL."""
+        javascript = Path(settings.BASE_DIR, "static/js/photographer_workspace.js").read_text()
+
+        self.assertIn("fetch(form.getAttribute('action')", javascript)
+        self.assertNotIn("fetch(form.action", javascript)
 
     def test_photographer_cannot_view_or_mutate_unassigned_booking_or_client(self):
         member_user = User.objects.create_user(

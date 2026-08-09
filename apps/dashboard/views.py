@@ -2271,8 +2271,14 @@ def bookings_dashboard(request):
                 errors["team"] = "Select active photographers from this workspace."
             if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
                 own_id = request.studio_access.membership.pk if request.studio_access.membership else None
-                if member_ids != {own_id}:
-                    raise PermissionDenied
+                # A photographer's assignment is trusted workspace context, not
+                # a value the browser must remember to submit.  The shared form
+                # intentionally permits an empty selection for its default
+                # resource, so resolve that resource to the authenticated member.
+                if not member_ids and own_id is not None:
+                    member_ids = {own_id}
+                elif member_ids != {own_id}:
+                    errors["team"] = "You can only assign bookings to yourself."
             if errors:
                 return JsonResponse({"ok": False, "errors": errors}, status=400)
             values = {
