@@ -1208,7 +1208,6 @@
   const checks = layer.querySelector('[data-move-checks]');
   const error = layer.querySelector('[data-move-error]');
   const save = layer.querySelector('[data-move-save]');
-  const notify = layer.querySelector('[data-move-notify]');
   let pending = null; let opener = null;
 
   function csrf() {
@@ -1230,8 +1229,6 @@
     checks.innerHTML = result.checks.map(function (item) {
       return '<div class="lpw-move-check' + (item.ok ? '' : ' is-warning') + '"><i class="bi ' + (item.ok ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill') + '"></i><strong>' + item.label + '</strong><small>' + item.detail + '</small></div>';
     }).join('');
-    notify.closest('label').hidden = !result.notify_recommended;
-    notify.checked = result.notify_recommended;
     save.disabled = result.blocking;
   }
   function preview(button, start, duration) {
@@ -1274,7 +1271,7 @@
   layer.querySelectorAll('[data-move-close]').forEach(function (button) { button.addEventListener('click', close); });
   save.addEventListener('click', function () {
     save.disabled = true; error.hidden = true;
-    request(pending.url, {starts_at: pending.starts_at, duration_minutes: pending.duration_minutes, notify_client: notify.checked, preview: false}).then(function () { const previous = pending.previous; close(); toast(previous); window.setTimeout(function () { window.location.reload(); }, 7200); }).catch(function (problem) { save.disabled = false; error.textContent = problem.error || 'This change could not be saved.'; error.hidden = false; if (problem.checks) render(problem); });
+    request(pending.url, {starts_at: pending.starts_at, duration_minutes: pending.duration_minutes, preview: false}).then(function () { const previous = pending.previous; close(); toast(previous); window.setTimeout(function () { window.location.reload(); }, 7200); }).catch(function (problem) { save.disabled = false; error.textContent = problem.error || 'This change could not be saved.'; error.hidden = false; if (problem.checks) render(problem); });
   });
   layer.querySelector('.lpw-move-dialog').addEventListener('keydown', function (event) { if (event.key === 'Escape') close(); });
 }());

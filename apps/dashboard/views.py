@@ -2229,13 +2229,11 @@ def bookings_dashboard(request):
             is_edit = request.POST["action"].startswith("edit_")
             session = None
             if is_edit:
-                editable_sessions = ClientSession.objects.filter(photographer=profile)
-                if is_consultation:
-                    editable_sessions = scope_assigned(editable_sessions, request.studio_access)
+                editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
                 session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
             errors = {}
-            client = Client.objects.filter(
-                photographer=profile, pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
+            client = scope_assigned(Client.objects.all(), request.studio_access).filter(
+                pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
             ).first()
             if client is None:
                 errors["client"] = "Select a client from this workspace."
@@ -2271,6 +2269,10 @@ def bookings_dashboard(request):
             ).values_list("pk", flat=True))
             if valid_member_ids != member_ids:
                 errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                if member_ids != {own_id}:
+                    raise PermissionDenied
             if errors:
                 return JsonResponse({"ok": False, "errors": errors}, status=400)
             values = {
@@ -2343,7 +2345,9 @@ def bookings_dashboard(request):
             }, status=200 if is_edit else 201)
         if request.POST.get("action") == "mark_complete":
             session = get_object_or_404(
-                ClientSession.objects.filter(photographer=profile).exclude(status=ClientSession.Status.CANCELLED),
+                scope_assigned(ClientSession.objects.all(), request.studio_access).exclude(
+                    status=ClientSession.Status.CANCELLED
+                ),
                 pk=request.POST.get("session_id"),
             )
             session.status = ClientSession.Status.COMPLETED
@@ -2355,7 +2359,7 @@ def bookings_dashboard(request):
     today = timezone.localdate()
     month_start = today.replace(day=1)
     next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-    all_sessions = ClientSession.objects.filter(photographer=profile).select_related("client")
+    all_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access).select_related("client")
     upcoming = all_sessions.filter(starts_at__gte=now).exclude(status__in=[ClientSession.Status.CANCELLED, ClientSession.Status.COMPLETED]).order_by("starts_at")
     today_sessions = list(all_sessions.filter(starts_at__date=today).exclude(status=ClientSession.Status.CANCELLED).order_by("starts_at")[:5])
 
@@ -2454,12 +2458,10 @@ def booking_detail(request, pk):
     """Keep booking-specific documents within the booking workspace."""
     profile = request.studio
     booking = get_object_or_404(
-        ClientSession.objects.select_related("client"), photographer=profile, pk=pk,
+        scope_assigned(ClientSession.objects.select_related("client"), request.studio_access), pk=pk,
     )
-    if request.method == "POST" and request.POST.get("action") in {"send_contract", "send_contract_reminder"}:
-        action = "Contract reminder" if request.POST["action"] == "send_contract_reminder" else "Contract"
-        messages.success(request, f"{action} queued for {booking.client}.")
-        return redirect(f'{reverse("photographer_workspace:booking_detail", args=[booking.pk])}?tab=contract#contract')
+    if request.method == "POST":
+        return HttpResponseBadRequest("Unsupported booking action.")
 
     tab = request.GET.get("tab", "overview")
     if tab not in {"overview", "contract"}:
@@ -2472,7 +2474,7 @@ def booking_detail(request, pk):
         # Contract records are intentionally not duplicated here. The booking owns
         # the document workflow; this presentation remains ready for the existing
         # contract service to supply its status, signatures, and signed PDF.
-        "contract_status": "Awaiting signature",
+        "contract_status": "Not implemented",
         "contract_is_signed": False,
     })
     return render(request, "photographer_workspace/bookings/detail.html", context)
@@ -2577,7 +2579,7 @@ def schedule(request):
         sessions_queryset = sessions_queryset.filter(event_kind=filter_values["event_type"])
     elif filter_values["event_type"]:
         sessions_queryset = sessions_queryset.none()
-    all_profile_sessions = ClientSession.objects.filter(photographer=profile)
+    all_profile_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
     session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
     locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
     sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user").order_by("starts_at"))
@@ -2677,9 +2679,6 @@ def schedule(request):
             "notes": constraint.notes, "reason": constraint.reason, "client_id": None,
             "booking_value": "", "member_ids": [member.pk for member in members], "warnings": [],
         })
-
-    # Production schedule surfaces only persisted, studio-scoped records.
-    using_sample_events = False
 
     action_labels = {
         "booking": ["Open Full Booking", "Contact Client", "Edit Booking", "Reschedule", "Mark Complete", "Create Gallery", "Cancel Booking"],
@@ -2834,7 +2833,6 @@ def schedule(request):
         "next_date": next_date,
         "calendar_weeks": calendar_weeks,
         "schedule_events": events,
-        "using_sample_events": using_sample_events,
         "week_days": [{"date": range_start + timedelta(days=offset), "events": events_by_date.get(range_start + timedelta(days=offset), [])} for offset in range((range_end - range_start).days)],
         "agenda_groups": agenda_groups,
         "booking_page": booking_page,
@@ -2845,7 +2843,7 @@ def schedule(request):
         "location_options": locations,
         "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
         "event_form_types": [("booking", "Booking", "bi-camera"), ("consultation", "Consultation", "bi-chat-square-text"), ("editing", "Editing Time", "bi-magic"), ("blocked", "Blocked Time", "bi-slash-circle"), ("vacation", "Vacation", "bi-sun"), ("mini", "Mini Session", "bi-people")],
-        "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
+        "booking_clients": scope_assigned(Client.objects.all(), request.studio_access).order_by("first_name", "last_name"),
         "schedule_members": StudioMembership.objects.filter(
             studio=profile, status=StudioMembership.Status.ACTIVE
         ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
@@ -2868,7 +2866,7 @@ def reschedule_session(request, pk):
     import json
 
     profile = request.studio
-    session = get_object_or_404(ClientSession, pk=pk, photographer=profile)
+    session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
     try:
         payload = json.loads(request.body or "{}")
         starts_at = datetime.fromisoformat(payload["starts_at"].replace("Z", "+00:00"))
@@ -2892,8 +2890,8 @@ def reschedule_session(request, pk):
         {"key": "availability", "label": "Photographer availability", "ok": result["working_hours_ok"], "detail": "Within configured working hours" if result["working_hours_ok"] else "Outside the photographer's configured working hours"},
     ]
     blocking = not result["available"]
-    response = {"starts_at": local_start.isoformat(), "ends_at": timezone.localtime(end).isoformat(), "checks": checks,
-                "blocking": blocking, "notify_recommended": session.status == ClientSession.Status.CONFIRMED}
+    response = {"starts_at": local_start.isoformat(), "ends_at": timezone.localtime(end).isoformat(),
+                "checks": checks, "blocking": blocking}
     if payload.get("preview", True):
         return JsonResponse(response)
     if blocking:
@@ -2919,18 +2917,15 @@ def reschedule_session(request, pk):
                 description=f"{locked.session_type} was rescheduled.",
                 metadata={"changes": {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}},
             )
-    return JsonResponse(response | {"saved": True, "notified": bool(payload.get("notify_client"))})
+    # No booking-notification delivery service is wired to this endpoint.
+    return JsonResponse(response | {"saved": True, "notified": False})
 
 
 @photographer_workspace_required
 @require_POST
 def booking_action(request, pk):
     """Apply the state transitions supported by the schedule inspector."""
-    sessions = ClientSession.objects.filter(photographer=request.studio)
-    candidate = get_object_or_404(sessions, pk=pk)
-    if candidate.event_kind == ClientSession.EventKind.CONSULTATION:
-        candidate = get_object_or_404(scope_assigned(sessions, request.studio_access), pk=pk)
-    session = candidate
+    session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
     action = request.POST.get("action")
     if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
         session.status = ClientSession.Status.COMPLETED

@@ -40,7 +40,6 @@
     <div class="lpw-schedule-date-nav"><a href="?view={{ schedule_view }}&amp;date={{ previous_date|date:'Y-m-d' }}{% if filter_query %}&amp;{{ filter_query }}{% endif %}" aria-label="Previous {{ schedule_view }}"><i class="bi bi-chevron-left"></i></a><a class="lpw-schedule-today" href="?view={{ schedule_view }}&amp;date={{ today|date:'Y-m-d' }}{% if filter_query %}&amp;{{ filter_query }}{% endif %}">Today</a><a href="?view={{ schedule_view }}&amp;date={{ next_date|date:'Y-m-d' }}{% if filter_query %}&amp;{{ filter_query }}{% endif %}" aria-label="Next {{ schedule_view }}"><i class="bi bi-chevron-right"></i></a><h2 aria-live="polite">{{ date_range_label }}</h2></div>
   </section>
 
-  {% if using_sample_events %}<p class="lpw-calendar-demo"><i class="bi bi-info-circle" aria-hidden="true"></i><strong>Preview schedule</strong> — sample events are shown until your first booking is added.</p>{% endif %}
   {% if schedule_view == 'list' or schedule_view == 'agenda' %}<p class="sr-only">{{ schedule_view_label }} view</p>{% endif %}
   <ul class="lpw-calendar-legend" aria-label="Event type legend"><li class="booking"><i class="bi bi-camera"></i>Booking</li><li class="consultation"><i class="bi bi-chat-square-text"></i>Consultation</li><li class="editing"><i class="bi bi-magic"></i>Editing</li><li class="blocked"><i class="bi bi-slash-circle"></i>Blocked</li><li class="vacation"><i class="bi bi-sun"></i>Vacation</li><li class="mini"><i class="bi bi-people"></i>Mini session</li><li><i class="bi bi-exclamation-triangle"></i>Action required</li></ul>
 
@@ -138,7 +137,7 @@
   <button class="lpw-move-scrim" type="button" data-move-close aria-label="Cancel rescheduling"></button>
   <section class="lpw-move-dialog" role="dialog" aria-modal="true" aria-labelledby="move-title" tabindex="-1">
     <header><div><span>Review schedule change</span><h2 id="move-title">Reschedule event</h2></div><button type="button" data-move-close aria-label="Close"><i class="bi bi-x-lg"></i></button></header>
-    <div class="lpw-move-body"><p class="lpw-move-time" data-move-time></p><div data-move-checks aria-live="polite"></div><label class="lpw-notify-client"><input type="checkbox" data-move-notify><span><strong>Notify the client</strong><small>Send the updated date and time after saving.</small></span></label><p class="lpw-move-error" data-move-error role="alert" hidden></p></div>
+    <div class="lpw-move-body"><p class="lpw-move-time" data-move-time></p><div data-move-checks aria-live="polite"></div><p class="lpw-move-error" data-move-error role="alert" hidden></p></div>
     <footer><button class="lpw-btn" type="button" data-move-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="button" data-move-save>Save change</button></footer>
   </section>
 </div>
