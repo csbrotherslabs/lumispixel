@@ -356,7 +356,13 @@ def _crm_form_page(request, form_class, title, success_message, activity_type=No
             if isinstance(form, CrmClientForm) and form.cleaned_data.get("notes"):
                 ClientNote.objects.create(photographer=profile, client=record, content=form.cleaned_data["notes"])
             if activity_type:
-                ClientActivity.objects.create(photographer=profile, lead=record, event_type=activity_type, description=f"Lead {record} was created.")
+                ClientActivity.objects.create(
+                    photographer=profile,
+                    actor=request.user,
+                    lead=record,
+                    event_type=activity_type,
+                    description=f"Lead {record} was created.",
+                )
         messages.success(request, success_message)
         if is_add_lead:
             return redirect(_lead_destination(request))
@@ -487,7 +493,18 @@ def edit_lead(request, pk):
                 messages.success(request, "Lead updated successfully.")
                 return redirect("photographer_workspace:leads")
     context = _dashboard_context(request, "leads", "Edit Lead")
-    context.update({"form": form, "form_title": "Edit Lead", "is_lead_form": True, "editing_lead": lead})
+    converted_client = Client.objects.for_photographer(profile).filter(converted_lead=lead).first()
+    conversion_activity = ClientActivity.objects.for_photographer(profile).filter(
+        lead=lead, event_type=ClientActivity.EventType.LEAD_CONVERTED
+    ).select_related("actor").first()
+    context.update({
+        "form": form,
+        "form_title": "Edit Lead",
+        "is_lead_form": True,
+        "editing_lead": lead,
+        "converted_client": converted_client,
+        "conversion_activity": conversion_activity,
+    })
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
@@ -626,6 +643,8 @@ def leads_workspace(request):
                        "value": sum((item.estimated_value or Decimal("0")) for item in records)})
     paginator = Paginator(leads, 10)
     page = paginator.get_page(request.GET.get("page"))
+    retained = request.GET.copy()
+    retained.pop("page", None)
     sources = Lead.objects.for_photographer(profile).exclude(lead_source="").values_list("lead_source", flat=True).distinct().order_by("lead_source")
     event_types = Lead.objects.for_photographer(profile).exclude(event_type="").values_list("event_type", flat=True).distinct().order_by("event_type")
     tasks_due = ClientTask.objects.filter(photographer=profile, lead__archived_at__isnull=True, status__in=[ClientTask.Status.OPEN, ClientTask.Status.IN_PROGRESS]).select_related("lead").order_by(F("due_date").asc(nulls_last=True), "-priority")[:6]
@@ -645,7 +664,8 @@ def leads_workspace(request):
                     "recent_activity": recent_activity, "source_rows": source_rows,
                     "lead_status_choices": Lead.Status.choices, "result_count": len(filtered_leads),
                     "selected_follow_up": follow_up, "created_from": created_from, "created_to": created_to,
-                    "terminal": terminal, "has_filters": any([query, status, source, event_type, follow_up, created_from, created_to, terminal == "all"])})
+                    "terminal": terminal, "retained_query": retained.urlencode(),
+                    "has_filters": any([query, status, source, event_type, follow_up, created_from, created_to, terminal == "all"])})
     return render(request, "photographer_workspace/leads.html", context)
 
 
