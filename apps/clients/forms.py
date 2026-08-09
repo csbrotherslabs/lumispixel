@@ -167,14 +167,16 @@ class CrmClientForm(forms.ModelForm):
         labels = {"address": "Street address"}
         widgets = {"birthday": forms.DateInput(attrs={"type": "date"}), "address": forms.TextInput()}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, photographer=None, **kwargs):
+        self.photographer = photographer
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk and not self.is_bound:
-            self.fields["tags_input"].initial = ", ".join(self.instance.tags or [])
+        if self.instance and self.instance.pk:
+            self.initial["lead_source"] = self.instance.lead_source
+            self.initial["tags_input"] = ", ".join(self.instance.tags or [])
             address_parts = (self.instance.address or "").splitlines()
-            self.fields["address"].initial = address_parts[0] if address_parts else ""
+            self.initial["address"] = address_parts[0] if address_parts else ""
             for name, value in zip(("city", "state_province", "postal_code", "country"), address_parts[1:]):
-                self.fields[name].initial = value
+                self.initial[name] = value
         placeholders = {"first_name": "e.g. Avery", "last_name": "e.g. Morgan", "email": "avery@example.com", "phone": "+1 (555) 123-4567", "company": "Studio or company name", "address": "Street and number", "city": "City", "state_province": "State or province", "postal_code": "Postal code", "country": "Country", "tags_input": "Type a tag and press Enter", "notes": "Add preferences, important dates, project context, or anything your team should know…"}
         for name, field in self.fields.items():
             field.widget.attrs.setdefault("class", "form-control")
@@ -200,12 +202,24 @@ class CrmClientForm(forms.ModelForm):
         data = super().clean()
         if not data.get("email") and not data.get("phone"):
             raise forms.ValidationError("Provide an email address or phone number.")
+        email = (data.get("email") or "").strip()
+        photographer = self.photographer or getattr(self.instance, "photographer", None)
+        if email and photographer:
+            duplicates = Client.objects.for_photographer(photographer).filter(email__iexact=email)
+            if self.instance.pk:
+                duplicates = duplicates.exclude(pk=self.instance.pk)
+            if duplicates.exists():
+                self.add_error(
+                    "email",
+                    "A client with this email address already exists. Open that client instead.",
+                )
         return data
 
     def save(self, commit=True):
         client = super().save(commit=False)
         parts = [self.cleaned_data.get(name, "").strip() for name in ("address", "city", "state_province", "postal_code", "country")]
         client.address = "\n".join(part for part in parts if part)
+        client.lead_source = self.cleaned_data.get("lead_source", "")
         client.tags = self.cleaned_data.get("tags_input", [])
         if commit:
             client.save()

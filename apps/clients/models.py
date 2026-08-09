@@ -230,6 +230,7 @@ class Client(PhotographerOwnedModel):
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=32, blank=True)
     company = models.CharField(max_length=200, blank=True)
+    lead_source = models.CharField(max_length=100, blank=True)
     address = models.TextField(blank=True)
     birthday = models.DateField(blank=True, null=True)
     client_type = models.CharField(max_length=20, choices=ClientType.choices, blank=True)
