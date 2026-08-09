@@ -2502,9 +2502,12 @@ def growth_action(request):
                 Lead.objects.bulk_create(leads, batch_size=500)
                 messages.success(request, f"Imported {len(leads)} lead{'s' if len(leads) != 1 else ''}.")
                 return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#lead-funnel')
+    range_key = request.GET.get("range") or request.POST.get("range") or "last_30_days"
     context = _dashboard_context(request, "growth", "Promote your business")
-    context.update({"growth_action": action, "range_key": request.GET.get("range", "last_30_days"),
+    context.update({"growth_action": action, "range_key": range_key,
                     "eligible_bookings": completed_bookings.exclude(review_requests__isnull=False),
+                    "selected_booking_ids": request.POST.getlist("bookings"),
+                    "review_message": request.POST.get("message", "Thank you for choosing our studio. We’d appreciate a quick review of your experience."),
                     "clients": Client.objects.for_photographer(profile).order_by("first_name", "last_name"),
                     "campaigns": GrowthCampaign.objects.for_photographer(profile),
                     "referral_types": ReferralLink.ReferralType.choices, "referral_statuses": ReferralLink.Status.choices,
