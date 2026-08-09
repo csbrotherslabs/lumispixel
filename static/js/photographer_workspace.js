@@ -1051,7 +1051,8 @@
         method: 'POST', body: new FormData(form),
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
-      const result = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const result = contentType.includes('application/json') ? await response.json() : {};
       if (!response.ok) {
         Object.keys(result.errors || {}).forEach(function (name) {
           const field = form.elements[name];
@@ -1060,10 +1061,15 @@
           const error = field.parentElement.querySelector('.lpw-field-error');
           if (error) error.textContent = result.errors[name];
         });
-        alert.querySelector('span').textContent = 'Please review the highlighted fields.';
+        alert.querySelector('span').textContent = Object.keys(result.errors || {}).length
+          ? 'Please review the highlighted fields.'
+          : (result.error || (response.status === 403
+            ? 'You do not have permission to create this schedule event.'
+            : 'The schedule event could not be saved. Try again.'));
         alert.hidden = false;
         return;
       }
+      if (!contentType.includes('application/json')) throw new Error('Expected a JSON response.');
     } catch (error) {
       alert.querySelector('span').textContent = 'The schedule event could not be saved. Try again.';
       alert.hidden = false;
