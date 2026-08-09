@@ -40,6 +40,11 @@ class InvoiceWorkspaceTests(TestCase):
     def test_create_page_uses_compact_builder_and_real_readiness_hooks(self):
         response = self.client.get(reverse("photographer_workspace:invoice_create"))
         self.assertContains(response, "Invoice Summary")
+        self.assertContains(response, "Photographer Workspace")
+        self.assertContains(response, reverse("photographer_workspace:dashboard"))
+        self.assertContains(response, reverse("photographer_workspace:invoices"))
+        self.assertContains(response, 'class="lpw-breadcrumb"')
+        self.assertContains(response, 'class="lpw-invoice-header form-page-header lp-page-header"')
         self.assertContains(response, "Client &amp; Booking")
         self.assertContains(response, "Payment Schedule")
         self.assertContains(response, "data-ready-send")
