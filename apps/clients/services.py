@@ -1,7 +1,38 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from .models import Client, ClientActivity, Lead
+from .models import Client, ClientActivity, ClientNote, Lead
+
+
+@transaction.atomic
+def create_client_note(*, client, content, actor):
+    """Persist a validated note and its immutable audit event atomically.
+
+    Workspace, client, actor and timestamp are deliberately derived by the
+    server-side caller rather than accepted as independently writable fields.
+    """
+    locked_client = (
+        Client.objects.select_for_update()
+        .for_photographer(client.photographer)
+        .get(pk=client.pk)
+    )
+    note = ClientNote(
+        photographer=locked_client.photographer,
+        client=locked_client,
+        author=actor,
+        content=content.strip(),
+    )
+    note.full_clean()
+    note.save()
+    ClientActivity.objects.create(
+        photographer=locked_client.photographer,
+        client=locked_client,
+        actor=actor,
+        event_type=ClientActivity.EventType.NOTE_ADDED,
+        description="A client note was added.",
+        metadata={"note_id": note.pk},
+    )
+    return note
 
 
 class DuplicateClientError(ValidationError):
