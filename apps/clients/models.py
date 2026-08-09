@@ -369,6 +369,10 @@ class ClientActivity(PhotographerOwnedModel):
         CLIENT_UPDATED = "client_updated", "Client updated"
         CLIENT_ARCHIVED = "client_archived", "Client archived"
         CLIENT_RESTORED = "client_restored", "Client restored"
+        BOOKING_CREATED = "booking_created", "Booking created"
+        BOOKING_UPDATED = "booking_updated", "Booking updated"
+        BOOKING_RESCHEDULED = "booking_rescheduled", "Booking rescheduled"
+        BOOKING_CANCELLED = "booking_cancelled", "Booking cancelled"
 
     event_type = models.CharField(max_length=32, choices=EventType.choices)
     actor = models.ForeignKey(
@@ -380,6 +384,7 @@ class ClientActivity(PhotographerOwnedModel):
     )
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
+    booking = models.ForeignKey("ClientSession", on_delete=models.CASCADE, related_name="activities", blank=True, null=True)
     description = models.TextField(blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     occurred_at = models.DateTimeField(auto_now_add=True)
@@ -398,6 +403,8 @@ class ClientActivity(PhotographerOwnedModel):
             errors["lead"] = "The lead must belong to this photographer."
         if self.client_id and self.photographer_id != self.client.photographer_id:
             errors["client"] = "The client must belong to this photographer."
+        if self.booking_id and self.photographer_id != self.booking.photographer_id:
+            errors["booking"] = "The booking must belong to this photographer."
         if errors:
             raise ValidationError(errors)
 
@@ -422,11 +429,15 @@ class ClientSession(PhotographerOwnedModel):
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
     booking_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
     # Reporting uses the business event date, not the row creation date.  Keeping
     # this separate also means a tentative request confirmed later lands in the
     # correct growth period.
     confirmed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+    cancellation_reason = models.CharField(max_length=500, blank=True)
 
     class Meta:
         ordering = ["starts_at"]

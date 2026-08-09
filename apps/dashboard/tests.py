@@ -794,6 +794,50 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(rejected.status_code, 400)
         self.assertEqual(ClientSession.objects.filter(photographer=profile).count(), 1)
 
+    def test_booking_edit_updates_in_place_and_records_reschedule(self):
+        user, profile = self.make_photographer(True, email="edit-booking@example.com", slug="edit-booking")
+        client = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone")
+        other_client = Client.objects.create(photographer=profile, first_name="Jordan", last_name="Reed")
+        session = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait",
+            starts_at=timezone.make_aware(datetime(2026, 8, 12, 9)), booking_value=Decimal("100"),
+        )
+        created_at = session.created_at
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "edit_booking", "booking_id": session.pk, "client": other_client.pk,
+            "session_type": "Family portrait", "start_date": "2026-08-14", "start_time": "11:00",
+            "end_date": "2026-08-14", "end_time": "13:00", "location": "Studio B",
+            "booking_status": "confirmed", "price": "425.00", "notes": "Bring both outfits.",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ClientSession.objects.filter(photographer=profile).count(), 1)
+        session.refresh_from_db()
+        self.assertEqual(session.client, other_client)
+        self.assertEqual(session.duration_minutes, 120)
+        self.assertEqual(session.notes, "Bring both outfits.")
+        self.assertEqual(session.created_at, created_at)
+        activity = session.activities.get()
+        self.assertEqual(activity.event_type, ClientActivity.EventType.BOOKING_RESCHEDULED)
+        self.assertIn("starts_at", activity.metadata["changes"])
+
+    def test_booking_edit_rejects_cross_workspace_client_and_invalid_status(self):
+        user, profile = self.make_photographer(True, email="secure-booking@example.com", slug="secure-booking")
+        _other_user, other = self.make_photographer(True, email="private-booking@example.com", slug="private-booking")
+        client = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone")
+        private_client = Client.objects.create(photographer=other, first_name="Private", last_name="Client")
+        session = ClientSession.objects.create(photographer=profile, client=client, session_type="Portrait", starts_at=timezone.now())
+        self.client.force_login(user)
+        response = self.client.post(reverse("photographer_workspace:bookings"), {
+            "action": "edit_booking", "booking_id": session.pk, "client": private_client.pk,
+            "session_type": "Tampered", "start_date": "2026-08-14", "start_time": "11:00",
+            "end_date": "2026-08-14", "end_time": "12:00", "booking_status": "invented",
+        })
+        self.assertEqual(response.status_code, 400)
+        session.refresh_from_db()
+        self.assertEqual(session.client, client)
+        self.assertEqual(session.session_type, "Portrait")
+
     def test_schedule_inspector_actions_follow_booking_state_and_are_scoped(self):
         user, profile = self.make_photographer(True, email="inspector@example.com", slug="inspector")
         _other_user, other = self.make_photographer(True, email="other-inspector@example.com", slug="other-inspector")

@@ -771,6 +771,7 @@
     byId[event.drawer_id] = event;
     return byId;
   }, {});
+  window.LumisScheduleEvents = events;
   const drawer = layer.querySelector('[data-event-drawer]');
   let opener = null;
 
@@ -955,12 +956,16 @@
     const radio = form.querySelector('input[name="event_type"][value="' + type + '"]');
     if (radio) radio.checked = true;
     if (event) {
+      form.elements.action.value = 'edit_booking';
+      setValue('booking_id', event.id);
       title.textContent = 'Edit ' + (type === 'mini' ? 'Mini Session' : type.charAt(0).toUpperCase() + type.slice(1));
       setValue('title', event.name);
       setValue('location', event.location === 'Away' ? '' : event.location);
       setValue('notes', event.notes);
       setValue('session_type', event.session_type);
-      setValue('client', event.name);
+      setValue('client', event.client_id);
+      setValue('booking_status', event.status_key);
+      setValue('price', event.booking_value);
       setValue('contact', event.name);
       setValue('related_work', event.name);
       setValue('reason', event.name);
@@ -969,6 +974,10 @@
       setValue('start_date', start.toISOString().slice(0, 10)); setValue('end_date', end.toISOString().slice(0, 10));
       setValue('start_time', start.toTimeString().slice(0, 5)); setValue('end_time', end.toTimeString().slice(0, 5));
       form.elements.all_day.checked = event.all_day;
+    }
+    else {
+      form.elements.action.value = 'create_booking';
+      setValue('booking_id', '');
     }
     syncType(); syncAllDay();
     layer.hidden = false;
@@ -1000,7 +1009,11 @@
     document.body.appendChild(node); window.setTimeout(function () { node.remove(); }, 2800);
   }
 
-  document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () { open(button.dataset.eventFormOpen, button); }); });
+  document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () {
+    const existing = button.dataset.eventEdit && window.LumisScheduleEvents
+      ? window.LumisScheduleEvents[button.dataset.eventEdit] : null;
+    open(button.dataset.eventFormOpen, button, existing);
+  }); });
   form.addEventListener('input', function (event) { dirty = true; event.target.classList.remove('has-error'); checkConflict(); });
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
   form.addEventListener('submit', async function (event) {
@@ -1042,8 +1055,8 @@
     }
     toast(editing ? 'Booking updated.' : 'Booking saved to your schedule.');
     dirty = false;
-    if (another) { const type = currentType(); open(type, opener); }
-    else close(true);
+    if (another && !editing) { const type = currentType(); open(type, opener); }
+    else window.location.assign(result.booking_url);
   });
   layer.querySelectorAll('[data-event-form-close]').forEach(function (button) { button.addEventListener('click', function () { close(false); }); });
   drawer.addEventListener('keydown', function (event) {

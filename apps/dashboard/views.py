@@ -2065,7 +2065,14 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
-        if request.POST.get("action") == "create_booking":
+        if request.POST.get("action") in {"create_booking", "edit_booking"}:
+            is_edit = request.POST["action"] == "edit_booking"
+            session = None
+            if is_edit:
+                session = get_object_or_404(
+                    ClientSession.objects.all(),
+                    photographer=profile, pk=request.POST.get("booking_id"),
+                )
             errors = {}
             client = Client.objects.filter(
                 photographer=profile, pk=request.POST.get("client")
@@ -2088,7 +2095,7 @@ def bookings_dashboard(request):
                 starts_at = ends_at = None
                 errors["start_date"] = "Enter a valid start and end date and time."
             status = request.POST.get("booking_status", ClientSession.Status.TENTATIVE)
-            if status not in ClientSession.Status.values:
+            if status not in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
                 errors["booking_status"] = "Select a valid booking status."
             try:
                 booking_value = Decimal(request.POST.get("price") or "0")
@@ -2098,17 +2105,50 @@ def bookings_dashboard(request):
                 errors["price"] = "Enter a valid non-negative price."
             if errors:
                 return JsonResponse({"ok": False, "errors": errors}, status=400)
-            session = ClientSession.objects.create(
-                photographer=profile, client=client, session_type=session_type,
-                starts_at=starts_at,
-                duration_minutes=max(1, round((ends_at - starts_at).total_seconds() / 60)),
-                location=request.POST.get("location", "").strip(), status=status,
-                booking_value=booking_value,
-            )
+            values = {
+                "client": client, "session_type": session_type, "starts_at": starts_at,
+                "duration_minutes": max(1, round((ends_at - starts_at).total_seconds() / 60)),
+                "location": request.POST.get("location", "").strip(), "status": status,
+                "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
+            }
+            with transaction.atomic():
+                if is_edit:
+                    before = {
+                        "client_id": session.client_id, "session_type": session.session_type,
+                        "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
+                        "location": session.location, "status": session.status,
+                        "booking_value": str(session.booking_value), "notes": session.notes,
+                    }
+                    for field, value in values.items():
+                        setattr(session, field, value)
+                    session.save()
+                    after = before | {
+                        "client_id": session.client_id, "session_type": session.session_type,
+                        "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
+                        "location": session.location, "status": session.status,
+                        "booking_value": str(session.booking_value), "notes": session.notes,
+                    }
+                    changes = {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}
+                    if changes:
+                        event_type = (ClientActivity.EventType.BOOKING_RESCHEDULED
+                                      if {"starts_at", "duration_minutes"} & changes.keys()
+                                      else ClientActivity.EventType.BOOKING_UPDATED)
+                        ClientActivity.objects.create(
+                            photographer=profile, actor=request.user, client=session.client,
+                            booking=session, event_type=event_type, metadata={"changes": changes},
+                            description=f"{session.session_type} was {event_type.removeprefix('booking_')}.",
+                        )
+                else:
+                    session = ClientSession.objects.create(photographer=profile, **values)
+                    ClientActivity.objects.create(
+                        photographer=profile, actor=request.user, client=client, booking=session,
+                        event_type=ClientActivity.EventType.BOOKING_CREATED,
+                        description=f"{session.session_type} was created.",
+                    )
             return JsonResponse({
                 "ok": True,
                 "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
-            }, status=201)
+            }, status=200 if is_edit else 201)
         if request.POST.get("action") == "mark_complete":
             session = get_object_or_404(
                 ClientSession.objects.filter(photographer=profile).exclude(status=ClientSession.Status.CANCELLED),
@@ -2223,6 +2263,7 @@ def booking_detail(request, pk):
     context.update({
         "booking": booking,
         "booking_tab": tab,
+        "booking_activity": booking.activities.select_related("actor").all()[:20],
         # Contract records are intentionally not duplicated here. The booking owns
         # the document workflow; this presentation remains ready for the existing
         # contract service to supply its status, signatures, and signed PDF.
@@ -2335,7 +2376,8 @@ def schedule(request):
             else "Paid" if all(invoice.status in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all())
             else "Payment due"
         ), "questionnaire_status": "Not tracked",
-        "notes": "No internal notes have been added.",
+        "notes": session.notes,
+        "client_id": session.client_id, "booking_value": str(session.booking_value),
         "warnings": (
             (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])
             + (["Payment requires attention"] if session.invoices.all() and any(invoice.status not in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all()) else [])
@@ -2493,7 +2535,7 @@ def schedule(request):
         "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
         "event_form_types": [("booking", "Booking", "bi-camera"), ("consultation", "Consultation", "bi-chat-square-text"), ("editing", "Editing Time", "bi-magic"), ("blocked", "Blocked Time", "bi-slash-circle"), ("vacation", "Vacation", "bi-sun"), ("mini", "Mini Session", "bi-people")],
         "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
-        "booking_status_options": [("tentative", "Tentative"), ("confirmed", "Confirmed"), ("in_progress", "In Progress"), ("completed", "Completed"), ("cancelled", "Cancelled")],
+        "booking_status_options": ClientSession.Status.choices,
         "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
         "filter_query": filter_query,
         "todays_schedule": todays_schedule,
@@ -2548,8 +2590,17 @@ def reschedule_session(request, pk):
         return JsonResponse(response | {"error": "Resolve booking and buffer conflicts before saving."}, status=409)
     with transaction.atomic():
         locked = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+        before = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
         locked.starts_at, locked.duration_minutes = starts_at, duration
-        locked.save(update_fields=("starts_at", "duration_minutes"))
+        locked.save(update_fields=("starts_at", "duration_minutes", "updated_at"))
+        after = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
+        if before != after:
+            ClientActivity.objects.create(
+                photographer=profile, actor=request.user, client=locked.client, booking=locked,
+                event_type=ClientActivity.EventType.BOOKING_RESCHEDULED,
+                description=f"{locked.session_type} was rescheduled.",
+                metadata={"changes": {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}},
+            )
     return JsonResponse(response | {"saved": True, "notified": bool(payload.get("notify_client"))})
 
 
@@ -2561,11 +2612,19 @@ def booking_action(request, pk):
     action = request.POST.get("action")
     if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
         session.status = ClientSession.Status.COMPLETED
-        session.save(update_fields=("status",))
+        session.save(update_fields=("status", "updated_at"))
         messages.success(request, f"{session.session_type} for {session.client} marked complete.")
     elif action == "cancel" and session.status != ClientSession.Status.CANCELLED:
         session.status = ClientSession.Status.CANCELLED
-        session.save(update_fields=("status",))
+        session.cancelled_at = timezone.now()
+        session.cancellation_reason = request.POST.get("reason", "").strip()[:500]
+        session.save(update_fields=("status", "cancelled_at", "cancellation_reason", "updated_at"))
+        ClientActivity.objects.create(
+            photographer=request.studio, actor=request.user, client=session.client, booking=session,
+            event_type=ClientActivity.EventType.BOOKING_CANCELLED,
+            description=f"{session.session_type} was cancelled.",
+            metadata={"reason": session.cancellation_reason},
+        )
         messages.success(request, f"{session.session_type} for {session.client} cancelled.")
     else:
         messages.error(request, "That booking action is not available in its current state.")
