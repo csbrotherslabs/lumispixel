@@ -344,6 +344,28 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(section_states, "lp-skeleton--list", count=2)
         self.assertContains(response, '<input type="hidden" name="compare" value="1">', html=True)
 
+    def test_review_request_uses_workspace_form_layout_and_empty_state(self):
+        user, profile = self.make_photographer(True, email="review-request@example.com", slug="review-request")
+        self.client.force_login(user)
+        url = reverse("photographer_workspace:growth_action")
+
+        empty_response = self.client.get(url, {"action": "reviews", "range": "last_30_days"})
+        self.assertEqual(empty_response.status_code, 200)
+        self.assertContains(empty_response, 'class="workspace-form-page lp-container lp-add-lead lp-growth-review-request lp-clients-main-width"')
+        self.assertContains(empty_response, "No clients are ready for a review request")
+        self.assertContains(empty_response, 'disabled aria-describedby="no-eligible-bookings"')
+
+        client = Client.objects.create(photographer=profile, first_name="Avery", last_name="Stone")
+        booking = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait",
+            starts_at=timezone.now() - timedelta(days=2), status=ClientSession.Status.COMPLETED,
+        )
+        response = self.client.get(url, {"action": "reviews", "range": "last_30_days"})
+        self.assertContains(response, "Choose Recipients")
+        self.assertContains(response, "Avery Stone")
+        self.assertContains(response, f'name="bookings" value="{booking.pk}"')
+        self.assertContains(response, "Before You Send")
+
     def test_analytics_foundation_sections_filters_and_states(self):
         user, _ = self.make_photographer(True, email="analytics-page@example.com", slug="analytics-page")
         self.client.force_login(user)
