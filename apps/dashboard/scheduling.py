@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.clients.models import ClientSession
+from apps.clients.models import ClientSession, MiniSession
 from apps.dashboard.models import ScheduleConstraint, StudioMembership
 
 
@@ -55,7 +55,7 @@ def conflicting_constraints(*, studio, starts_at, duration_minutes, member_ids=(
 
 
 def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), exclude_pk=None,
-                     lock=False):
+                     lock=False, exclude_mini_pk=None):
     """Evaluate persisted working hours and active booking conflicts."""
     member_ids = set(member_ids)
     members = list(StudioMembership.objects.filter(
@@ -84,9 +84,21 @@ def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), excl
         studio=studio, starts_at=starts_at, duration_minutes=duration_minutes,
         member_ids=member_ids, lock=lock,
     ))
-    return {"available": working_hours_ok and not conflicts and not constraints,
+    ends_at = starts_at + timedelta(minutes=duration_minutes)
+    minis = MiniSession.objects.for_photographer(studio).exclude(status=MiniSession.Status.CANCELLED)
+    if member_ids:
+        minis = minis.filter(assigned_members__in=member_ids)
+    else:
+        minis = minis.filter(assigned_members__isnull=True)
+    if exclude_mini_pk:
+        minis = minis.exclude(pk=exclude_mini_pk)
+    minis = minis.filter(starts_at__lt=ends_at).distinct()
+    if lock:
+        minis = minis.select_for_update()
+    mini_conflicts = [row for row in minis if row.starts_at + timedelta(minutes=row.duration_minutes) > starts_at]
+    return {"available": working_hours_ok and not conflicts and not constraints and not mini_conflicts,
             "working_hours_ok": working_hours_ok, "conflicts": conflicts,
-            "constraint_conflicts": constraints}
+            "constraint_conflicts": constraints, "mini_conflicts": mini_conflicts}
 
 
 def parse_local_datetime(studio, date_value, time_value):
