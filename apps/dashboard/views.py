@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import FileResponse, HttpResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.db import DatabaseError, transaction
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -1822,13 +1822,39 @@ def client_archive_restore(request, pk):
     profile = request.studio
     if not request.studio_access.allows("clients"):
         raise PermissionDenied
-    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
-    restoring = client.status == Client.Status.ARCHIVED
-    client.status = Client.Status.ACTIVE if restoring else Client.Status.ARCHIVED
-    client.save(update_fields=["status", "updated_at"])
-    event = ClientActivity.EventType.CLIENT_RESTORED if restoring else ClientActivity.EventType.CLIENT_ARCHIVED
-    verb = "restored" if restoring else "archived"
-    ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=event, description=f"Client {client} was {verb}.")
+    action = request.POST.get("action")
+    if action not in {"archive", "restore"}:
+        return HttpResponseBadRequest("Choose archive or restore.")
+
+    # The client status is the existing retention boundary: related business
+    # records remain attached. Locking plus an explicit desired state makes a
+    # retried/double-submitted request idempotent rather than toggling it back.
+    with transaction.atomic():
+        client = get_object_or_404(
+            scope_assigned(Client.objects.select_for_update(), request.studio_access),
+            pk=pk,
+        )
+        target_status = Client.Status.ARCHIVED if action == "archive" else Client.Status.ACTIVE
+        if client.status == target_status:
+            verb = "already archived" if action == "archive" else "already active"
+            messages.info(request, f"Client is {verb}.")
+            return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+        client.status = target_status
+        client.save(update_fields=["status", "updated_at"])
+        event = (
+            ClientActivity.EventType.CLIENT_ARCHIVED
+            if action == "archive"
+            else ClientActivity.EventType.CLIENT_RESTORED
+        )
+        verb = "archived" if action == "archive" else "restored"
+        ClientActivity.objects.create(
+            photographer=profile,
+            client=client,
+            actor=request.user,
+            event_type=event,
+            description=f"Client {client} was {verb}.",
+        )
     messages.success(request, f"Client {verb}.")
     return redirect("photographer_workspace:client_detail", pk=client.pk)
 
