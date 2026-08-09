@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientSession
-from apps.dashboard.models import StudioMembership
+from apps.dashboard.models import ScheduleConstraint, StudioMembership
 from apps.dashboard.scheduling import availability_for
 
 
@@ -50,6 +50,97 @@ class SchedulingIntegrationTests(TestCase):
             time_zone="America/New_York",
         )
 
+    def constraint_payload(self, kind="blocked", **values):
+        payload = {
+            "action": "create_constraint", "event_type": kind, "title": "Unavailable",
+            "reason": "Personal appointment", "start_date": "2026-08-12", "start_time": "10:00",
+            "end_date": "2026-08-12", "end_time": "11:00", "prevent_booking": "on",
+            "availability_scope": "selected",
+        }
+        payload.update(values)
+        return payload
+
+    def test_block_create_edit_delete_persists_and_recalculates_availability(self):
+        created = self.client.post(self.url, self.constraint_payload())
+        self.assertEqual(created.status_code, 201)
+        block = ScheduleConstraint.objects.get(studio=self.studio)
+        self.assertTrue(block.blocks_booking)
+        page = self.client.get(reverse("photographer_workspace:schedule"), {"view": "day", "date": "2026-08-12"})
+        self.assertContains(page, "Unavailable")
+        self.assertEqual(self.client.post(self.url, self.payload("10:30", "10:45")).status_code, 409)
+        self.assertEqual(self.client.post(self.url, self.payload("09:00", "10:00")).status_code, 201)
+        self.assertEqual(self.client.post(self.url, self.payload("11:00", "12:00")).status_code, 201)
+
+        edited = self.client.post(self.url, self.constraint_payload(
+            action="edit_constraint", constraint_id=block.pk, title="Updated block",
+            reason="Updated reason", start_time="13:00", end_time="14:00",
+        ))
+        self.assertEqual(edited.status_code, 200)
+        block.refresh_from_db()
+        self.assertEqual((block.title, block.reason), ("Updated block", "Updated reason"))
+        self.assertEqual(timezone.localtime(block.starts_at).hour, 13)
+        removed = self.client.post(reverse("photographer_workspace:constraint_action", args=[block.pk]), {"action": "delete"})
+        self.assertEqual(removed.status_code, 302)
+        self.assertFalse(ScheduleConstraint.objects.filter(pk=block.pk).exists())
+        self.assertEqual(self.client.post(self.url, self.payload("13:00", "14:00")).status_code, 201)
+
+    def test_editing_is_persisted_and_informational(self):
+        response = self.client.post(self.url, self.constraint_payload(
+            kind="editing", title="Cull gallery", reason="", prevent_booking="",
+        ))
+        self.assertEqual(response.status_code, 201)
+        editing = ScheduleConstraint.objects.get()
+        self.assertFalse(editing.blocks_booking)
+        self.assertEqual(self.client.post(self.url, self.payload()).status_code, 201)
+
+    def test_vacation_supports_single_and_multi_day_and_blocks_reschedule(self):
+        response = self.client.post(self.url, self.constraint_payload(
+            kind="vacation", title="Summer leave", all_day="on", end_date="2026-08-14",
+        ))
+        self.assertEqual(response.status_code, 201)
+        vacation = ScheduleConstraint.objects.get()
+        self.assertEqual((vacation.ends_at - vacation.starts_at).days, 3)
+        self.assertEqual(self.client.post(self.url, self.payload(
+            start="12:00", end="13:00", start_date="2026-08-13", end_date="2026-08-13",
+        )).status_code, 409)
+        self.assertEqual(self.client.post(self.url, self.payload(
+            start="00:00", end="01:00", start_date="2026-08-15", end_date="2026-08-15",
+        )).status_code, 201)
+
+    def test_constraints_are_tenant_scoped_and_member_ids_cannot_be_injected(self):
+        other_user = User.objects.create_user(
+            email="other-owner@example.com", password="pass12345",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True,
+            account_status=User.AccountStatus.ACTIVE,
+        )
+        other = PhotographerProfile.objects.create(user=other_user, slug="other-constraints", onboarding_completed=True)
+        foreign_member = StudioMembership.objects.create(
+            studio=other, user=other_user, role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        injected = self.client.post(self.url, self.constraint_payload(team=[foreign_member.pk]))
+        self.assertEqual(injected.status_code, 400)
+        foreign = ScheduleConstraint.objects.create(
+            studio=other, kind="blocked", title="Private leave", starts_at=timezone.now(),
+            ends_at=timezone.now() + timedelta(hours=1), blocks_booking=True,
+        )
+        self.assertEqual(self.client.post(
+            reverse("photographer_workspace:constraint_action", args=[foreign.pk]), {"action": "delete"},
+        ).status_code, 404)
+        self.assertNotContains(self.client.get(
+            reverse("photographer_workspace:schedule"), {"date": timezone.localdate().isoformat()},
+        ), "Private leave")
+
+    def test_photographer_cannot_modify_other_member_or_entire_team_constraint(self):
+        member = self.create_member("restricted@example.com")
+        other_member = self.create_member("other-member@example.com")
+        self.client.force_login(member.user)
+        self.assertEqual(self.client.post(self.url, self.constraint_payload(team=[other_member.pk])).status_code, 403)
+        self.assertEqual(self.client.post(self.url, self.constraint_payload(
+            team=[member.pk], availability_scope="entire_team",
+        )).status_code, 403)
+        own = self.client.post(self.url, self.constraint_payload(team=[member.pk]))
+        self.assertEqual(own.status_code, 201)
     def test_booking_is_source_for_every_calendar_view_and_edit_propagates(self):
         created = self.client.post(self.url, self.payload(end="11:30"))
         self.assertEqual(created.status_code, 201)
