@@ -8,6 +8,8 @@
   const count = editor.querySelector("[data-content-count]");
   const feedback = editor.querySelector("[data-copy-feedback]");
   const search = editor.querySelector("[data-merge-search]");
+  const previewButton = editor.querySelector("[data-template-preview]");
+  const previewDialog = editor.querySelector("[data-preview-dialog]");
 
   function updateCount() {
     if (content && count) count.textContent = `${content.value.length} characters`;
@@ -40,6 +42,13 @@
   editor.addEventListener("click", async function (event) {
     const insertButton = event.target.closest("[data-merge-insert]");
     const copyButton = event.target.closest("[data-merge-copy]");
+    const editorCommand = event.target.closest("[data-editor-command]");
+
+    if (editorCommand && content) {
+      content.focus();
+      document.execCommand(editorCommand.dataset.editorCommand);
+      updateCount();
+    }
 
     if (insertButton && content) {
       const token = insertButton.dataset.mergeInsert;
@@ -63,5 +72,15 @@
 
   if (content) content.addEventListener("input", updateCount);
   if (search) search.addEventListener("input", filterMergeFields);
+  if (previewButton && previewDialog) {
+    previewButton.addEventListener("click", function () {
+      const title = editor.querySelector("#id_title");
+      previewDialog.querySelector("[data-preview-title]").textContent = title.value.trim() || "Untitled contract";
+      previewDialog.querySelector("[data-preview-content]").textContent = content.value;
+      previewDialog.showModal();
+    });
+    previewDialog.querySelector("[data-preview-close]").addEventListener("click", function () { previewDialog.close(); });
+    previewDialog.addEventListener("click", function (event) { if (event.target === previewDialog) previewDialog.close(); });
+  }
   updateCount();
 }());
