@@ -581,6 +581,33 @@ class Contract(PhotographerOwnedModel):
     def __str__(self):
         return self.title
 
+    def save(self, *args, **kwargs):
+        """Keep the legal snapshot immutable once it has been delivered."""
+        if self.pk:
+            persisted = type(self).objects.filter(pk=self.pk).values(
+                "locked_at", "status", "photographer_id", "booking_id", "client_id",
+                "template_id", "title", "content", "version", "rendered_content",
+            ).first()
+            if persisted and persisted["locked_at"]:
+                protected = (
+                    "photographer_id", "booking_id", "client_id", "template_id", "title",
+                    "content", "version", "rendered_content",
+                )
+                update_fields = kwargs.get("update_fields")
+                checked = protected if update_fields is None else tuple(
+                    field for field in protected if field.removesuffix("_id") in update_fields or field in update_fields
+                )
+                if any(getattr(self, field) != persisted[field] for field in checked):
+                    raise ValidationError("A delivered contract is locked. Create a new contract for revised terms.")
+                if persisted["status"] == self.Status.SIGNED and self.status != self.Status.SIGNED:
+                    raise ValidationError("A signed contract's status cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.status == self.Status.SIGNED:
+            raise ValidationError("A signed contract cannot be deleted.")
+        return super().delete(*args, **kwargs)
+
 
 class ContractEvent(models.Model):
     """Append-only evidence for material contract lifecycle events."""
@@ -590,6 +617,7 @@ class ContractEvent(models.Model):
         SENT = "sent", "Sent"
         RESENT = "resent", "Resent"
         VIEWED = "viewed", "Viewed"
+        SIGNED = "signed", "Signed"
 
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(
@@ -603,6 +631,38 @@ class ContractEvent(models.Model):
     class Meta:
         ordering = ("-occurred_at", "-pk")
         indexes = [models.Index(fields=("contract", "-occurred_at"), name="contract_event_time")]
+
+
+class ContractSignature(models.Model):
+    """Immutable first-party evidence of one electronic acceptance event."""
+
+    class SignatureType(models.TextChoices):
+        TYPED = "typed", "Typed signature"
+
+    contract = models.OneToOneField(Contract, on_delete=models.PROTECT, related_name="signature")
+    signer_name = models.CharField(max_length=200)
+    signature_value = models.CharField(max_length=200)
+    signature_type = models.CharField(max_length=16, choices=SignatureType.choices, default=SignatureType.TYPED)
+    consent_accepted = models.BooleanField()
+    consent_text = models.TextField()
+    signed_at = models.DateTimeField()
+    content_hash = models.CharField(max_length=64, editable=False)
+    contract_version = models.PositiveIntegerField()
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contract_signatures")
+    photographer = models.ForeignKey(
+        "accounts.PhotographerProfile", on_delete=models.PROTECT, related_name="contract_signatures",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, editable=False)
+    user_agent = models.CharField(max_length=512, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Signature evidence is immutable.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Signature evidence cannot be deleted.")
 
 
 class MiniSession(PhotographerOwnedModel):

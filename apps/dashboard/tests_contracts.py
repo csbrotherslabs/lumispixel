@@ -1,3 +1,4 @@
+import hashlib
 from unittest.mock import patch
 
 from django.core import mail
@@ -8,7 +9,8 @@ from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.contracts import create_contract_from_template
-from apps.clients.models import Client, ClientSession, Contract, ContractEvent, ContractTemplate
+from apps.clients.models import (Client, ClientSession, Contract, ContractEvent, ContractSignature,
+                                 ContractTemplate)
 from apps.dashboard.models import StudioMembership
 from apps.clients.contracts import render_merge_fields
 
@@ -311,3 +313,93 @@ class ContractWorkflowTests(TestCase):
         self.assertEqual(contract.review_token_digest, "")
         self.assertEqual(contract.send_count, 0)
         self.assertFalse(contract.events.filter(event_type=ContractEvent.EventType.SENT).exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_client_signs_with_persisted_evidence_and_refreshes_success(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        url = reverse("clients:contract-review", args=[token])
+        response = self.client.post(url, {
+            "signer_name": "Maya Cole", "signature_value": "Maya Cole",
+            "consent_accepted": "on",
+        }, REMOTE_ADDR="192.0.2.10", HTTP_USER_AGENT="Test browser")
+        self.assertContains(response, "Contract signed successfully")
+        contract.refresh_from_db()
+        evidence = ContractSignature.objects.get(contract=contract)
+        self.assertEqual(contract.status, Contract.Status.SIGNED)
+        self.assertEqual(contract.signed_at, evidence.signed_at)
+        self.assertEqual(evidence.content_hash, hashlib.sha256(contract.rendered_content.encode()).hexdigest())
+        self.assertEqual(evidence.client, self.crm_client)
+        self.assertEqual(evidence.photographer, self.studio)
+        self.assertTrue(evidence.consent_accepted)
+        self.assertEqual(evidence.ip_address, "192.0.2.10")
+        self.assertContains(self.client.get(url), "Contract signed successfully")
+        self.assertEqual(contract.events.filter(event_type=ContractEvent.EventType.SIGNED).count(), 1)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_signature_requires_name_signature_and_consent(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        response = self.client.post(reverse("clients:contract-review", args=[token]), {
+            "signer_name": "", "signature_value": "",
+        })
+        self.assertContains(response, "This field is required", count=3)
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, Contract.Status.VIEWED)
+        self.assertFalse(ContractSignature.objects.filter(contract=contract).exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_double_sign_invalid_token_and_atomic_failure_create_no_extra_evidence(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        payload = {"signer_name": "Maya Cole", "signature_value": "Maya Cole", "consent_accepted": "on"}
+        url = reverse("clients:contract-review", args=[token])
+        self.client.post(url, payload)
+        second = self.client.post(url, payload)
+        self.assertContains(second, "Contract signed successfully")
+        self.assertEqual(ContractSignature.objects.filter(contract=contract).count(), 1)
+        self.assertEqual(self.client.post(reverse("clients:contract-review", args=["invalid"]), payload).status_code, 404)
+
+        other = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[other.pk]))
+        other_token = mail.outbox[-1].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        with patch("apps.clients.contracts.ContractEvent.objects.create", side_effect=RuntimeError("audit failure")):
+            with self.assertRaises(RuntimeError):
+                self.client.post(reverse("clients:contract-review", args=[other_token]), payload)
+        other.refresh_from_db()
+        self.assertNotEqual(other.status, Contract.Status.SIGNED)
+        self.assertFalse(ContractSignature.objects.filter(contract=other).exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_signed_contract_is_locked_and_cross_workspace_cannot_retrieve_it(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        self.client.post(reverse("clients:contract-review", args=[token]), {
+            "signer_name": "Maya Cole", "signature_value": "Maya Cole", "consent_accepted": "on",
+        })
+        contract.refresh_from_db()
+        contract.content = "Changed after signature"
+        with self.assertRaises(ValidationError):
+            contract.save()
+        evidence = contract.signature
+        evidence.signer_name = "Someone else"
+        with self.assertRaises(ValidationError):
+            evidence.save()
+
+        other_owner, _studio, _client, _booking, _template = self.make_studio("signature-other@example.com")
+        self.client.force_login(other_owner)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:contract_detail", args=[contract.pk])).status_code, 404)

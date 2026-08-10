@@ -1,8 +1,13 @@
+from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
 
 from apps.core.views import add
-from apps.clients.contracts import open_contract_review
+from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_http_methods
+
+from apps.clients.contracts import (ContractSignatureForm, DEFAULT_SIGNATURE_CONSENT,
+                                    open_contract_review, sign_contract)
 
 add(
     "for_clients",
@@ -166,8 +171,27 @@ def for_clients(request):
     return render(request, "for_clients.html", context)
 
 
+@require_http_methods(["GET", "POST"])
 def contract_review(request, token):
     contract = open_contract_review(token)
     if contract is None:
         raise Http404("This contract review link is invalid or has expired.")
-    return render(request, "clients/contracts/review.html", {"contract": contract})
+    form = ContractSignatureForm(request.POST or None)
+    if request.method == "POST" and contract.status != contract.Status.SIGNED and form.is_valid():
+        ip_address = request.META.get("REMOTE_ADDR") or None
+        try:
+            sign_contract(raw_token=token, ip_address=ip_address,
+                          user_agent=request.META.get("HTTP_USER_AGENT", ""), **form.cleaned_data)
+        except ValidationError as exc:
+            if hasattr(exc, "message_dict"):
+                for field, errors in exc.message_dict.items():
+                    for error in errors:
+                        form.add_error(field if field in form.fields else None, error)
+            else:
+                form.add_error(None, exc.messages[0])
+        else:
+            contract.refresh_from_db()
+    return render(request, "clients/contracts/review.html", {
+        "contract": contract, "form": form,
+        "consent_text": getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT),
+    })
