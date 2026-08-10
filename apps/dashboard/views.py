@@ -27,7 +27,7 @@ from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
-                                Contract, ContractTemplate, SignedContractDocument,
+                                Contract, ContractEvent, ContractTemplate, SignedContractDocument,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
@@ -2554,6 +2554,11 @@ def contract_detail(request, pk):
             raise PermissionDenied
         if form.is_valid():
             form.save()
+            ContractEvent.objects.create(
+                contract=contract, actor=request.user,
+                event_type=ContractEvent.EventType.CUSTOMIZED,
+                metadata={"contract_version": contract.version},
+            )
             if request.POST.get("action") == "preview":
                 return redirect("photographer_workspace:contract_preview", pk=contract.pk)
             messages.success(request, "Contract draft saved.")

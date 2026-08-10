@@ -87,6 +87,17 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Draft")
         self.assertContains(booking_page, reverse("photographer_workspace:contract_detail", args=[contract.pk]))
 
+    def test_duplicate_create_submission_reuses_the_active_draft(self):
+        self.client.force_login(self.owner)
+        create_url = reverse("photographer_workspace:contract_create", args=[self.booking.pk])
+        first = self.client.post(create_url, {"template": self.template.pk})
+        second = self.client.post(create_url, {"template": self.template.pk})
+
+        self.assertEqual(first.url, second.url)
+        self.assertEqual(Contract.objects.count(), 1)
+        contract = Contract.objects.get()
+        self.assertEqual(contract.events.filter(event_type=ContractEvent.EventType.CREATED).count(), 1)
+
     def test_cross_workspace_booking_template_and_contract_ids_are_hidden(self):
         other_owner, _other_studio, _other_client, other_booking, other_template = self.make_studio(
             "contract-other@example.com"
@@ -203,6 +214,9 @@ class ContractWorkflowTests(TestCase):
         self.template.refresh_from_db()
         self.assertEqual(contract.content, "Customized persisted terms")
         self.assertEqual(self.template.content, "Original persisted terms")
+        self.assertEqual(
+            contract.events.filter(event_type=ContractEvent.EventType.CUSTOMIZED).count(), 1,
+        )
         self.client.logout()
         self.client.force_login(self.owner)
         self.assertContains(self.client.get(url), "Customized persisted terms")
@@ -400,6 +414,36 @@ class ContractWorkflowTests(TestCase):
         evidence.signer_name = "Someone else"
         with self.assertRaises(ValidationError):
             evidence.save()
+        event = contract.events.get(event_type=ContractEvent.EventType.SIGNED)
+        event.metadata = {"tampered": True}
+        with self.assertRaises(ValidationError):
+            event.save()
+        with self.assertRaises(ValidationError):
+            event.delete()
+
+        protected_changes = {
+            "title": "Changed title",
+            "template": None,
+            "booking": self.booking,
+            "client": self.crm_client,
+        }
+        for field, value in protected_changes.items():
+            pristine = Contract.objects.get(pk=contract.pk)
+            setattr(pristine, field, value)
+            if getattr(pristine, field) == getattr(contract, field):
+                # Exercise reassignment using a valid same-tenant alternative.
+                if field == "booking":
+                    value = ClientSession.objects.create(
+                        photographer=self.studio, client=self.crm_client,
+                        session_type="Alternative", starts_at=timezone.now(),
+                    )
+                elif field == "client":
+                    value = Client.objects.create(
+                        photographer=self.studio, first_name="Other", last_name="Client",
+                    )
+                setattr(pristine, field, value)
+            with self.assertRaises(ValidationError, msg=f"signed {field} must be immutable"):
+                pristine.save()
 
         other_owner, _studio, _client, _booking, _template = self.make_studio("signature-other@example.com")
         self.client.force_login(other_owner)
@@ -440,6 +484,9 @@ class ContractWorkflowTests(TestCase):
         regenerated = generate_signed_contract_pdf(contract.pk)
         with regenerated.file.open("rb") as stored:
             self.assertEqual(stored.read(), original_pdf)
+        self.assertEqual(
+            contract.events.filter(event_type=ContractEvent.EventType.PDF_GENERATED).count(), 1,
+        )
 
         self.client.force_login(self.owner)
         workspace_download = self.client.get(
