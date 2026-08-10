@@ -6,7 +6,7 @@
 
   const content = editor.querySelector("#id_content");
   const count = editor.querySelector("[data-content-count]");
-  const feedback = editor.querySelector("[data-copy-feedback]");
+  const feedback = editor.querySelector("[data-merge-feedback]");
   const search = editor.querySelector("[data-merge-search]");
   const previewButton = editor.querySelector("[data-template-preview]");
   const previewDialog = editor.querySelector("[data-preview-dialog]");
@@ -39,9 +39,8 @@
     }, 1800);
   }
 
-  editor.addEventListener("click", async function (event) {
+  editor.addEventListener("click", function (event) {
     const insertButton = event.target.closest("[data-merge-insert]");
-    const copyButton = event.target.closest("[data-merge-copy]");
     const editorCommand = event.target.closest("[data-editor-command]");
 
     if (editorCommand && content) {
@@ -60,14 +59,6 @@
       announce("Merge field inserted.");
     }
 
-    if (copyButton) {
-      try {
-        await navigator.clipboard.writeText(copyButton.dataset.mergeCopy);
-        announce("Copied to clipboard.");
-      } catch (_error) {
-        announce("Copy unavailable. Select the token to copy it.");
-      }
-    }
   });
 
   if (content) content.addEventListener("input", updateCount);

@@ -104,13 +104,12 @@
                 <div><code>{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}</code><span>{{ label }}</span></div>
                 <div class="lp-merge-field-actions">
                   <button type="button" data-merge-insert="{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}" aria-label="Insert {{ label }}">Insert</button>
-                  <button type="button" data-merge-copy="{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}" aria-label="Copy {{ label }} merge field"><i class="bi bi-copy" aria-hidden="true"></i><span class="lp-sr-only">Copy</span></button>
                 </div>
               </article>
             {% endfor %}
           </div>
           <p class="lp-merge-field-empty" data-merge-empty hidden>No supported merge fields match your search.</p>
-          <p class="lp-merge-field-feedback" data-copy-feedback aria-live="polite"></p>
+          <p class="lp-merge-field-feedback" data-merge-feedback aria-live="polite"></p>
         </div>
       </section>
       <section class="lp-card lp-template-tips" aria-labelledby="template-tips-title">
