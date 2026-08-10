@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import FileResponse, HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.db import DatabaseError, transaction
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -27,7 +27,7 @@ from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
-                                Contract, ContractTemplate,
+                                Contract, ContractTemplate, SignedContractDocument,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
@@ -55,6 +55,7 @@ from apps.dashboard.financial_actions import add_credit, issue_refund, record_pa
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
 from apps.clients.contracts import MERGE_FIELDS
+from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
 from apps.dashboard.dashboard_data import build_dashboard
@@ -2569,6 +2570,33 @@ def _accessible_contract(request, pk):
         Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
         .select_related("booking", "client", "photographer", "photographer__user"), pk=pk,
     )
+
+
+@photographer_workspace_required
+@require_GET
+def signed_contract_pdf(request, pk, disposition="inline"):
+    contract = _accessible_contract(request, pk)
+    document = get_object_or_404(SignedContractDocument, contract=contract,
+                                 status=SignedContractDocument.Status.READY)
+    response = FileResponse(document.file.open("rb"), content_type=document.content_type)
+    response["Content-Disposition"] = f'{disposition}; filename="signed-contract-{contract.pk}.pdf"'
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def signed_contract_pdf_retry(request, pk):
+    contract = _accessible_contract(request, pk)
+    if contract.status != Contract.Status.SIGNED:
+        raise Http404
+    document = generate_signed_contract_pdf(contract.pk)
+    if document.status == SignedContractDocument.Status.READY:
+        messages.success(request, "The signed PDF is ready.")
+    else:
+        messages.error(request, "The signed PDF could not be generated. You can retry safely.")
+    return redirect("photographer_workspace:contract_detail", pk=contract.pk)
 
 
 @photographer_workspace_required

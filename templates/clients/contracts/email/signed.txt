@@ -1,0 +1,6 @@
+Your signed contract is ready
+
+{{ contract.title }} was signed successfully. Download your private copy using this secure link:
+{{ signed_pdf_url }}
+
+This link is intended only for the recipient and expires with the contract review link.

@@ -1,13 +1,15 @@
 from django.conf import settings
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import render
+from django.urls import reverse
 
 from apps.core.views import add
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_http_methods
 
 from apps.clients.contracts import (ContractSignatureForm, DEFAULT_SIGNATURE_CONSENT,
-                                    open_contract_review, sign_contract)
+                                    open_contract_review, send_signed_contract_copy_link, sign_contract)
+from apps.clients.models import SignedContractDocument
 
 add(
     "for_clients",
@@ -191,7 +193,31 @@ def contract_review(request, token):
                 form.add_error(None, exc.messages[0])
         else:
             contract.refresh_from_db()
+            try:
+                send_signed_contract_copy_link(
+                    contract=contract,
+                    signed_pdf_url=request.build_absolute_uri(
+                        reverse("clients:signed-contract-pdf-download", args=[token])
+                    ),
+                )
+            except Exception:
+                # The signed record and PDF status remain authoritative; email can be retried separately.
+                pass
     return render(request, "clients/contracts/review.html", {
-        "contract": contract, "form": form,
+        "contract": contract, "form": form, "token": token,
         "consent_text": getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT),
     })
+
+
+def signed_contract_pdf(request, token, disposition="inline"):
+    contract = open_contract_review(token)
+    if contract is None or contract.status != contract.Status.SIGNED:
+        raise Http404("This signed contract link is invalid or has expired.")
+    document = getattr(contract, "signed_document", None)
+    if document is None or document.status != SignedContractDocument.Status.READY:
+        raise Http404("The signed contract PDF is not available.")
+    response = FileResponse(document.file.open("rb"), content_type=document.content_type)
+    response["Content-Disposition"] = f'{disposition}; filename="signed-contract-{contract.pk}.pdf"'
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
