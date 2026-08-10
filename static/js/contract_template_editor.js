@@ -75,8 +75,16 @@
   if (previewButton && previewDialog) {
     previewButton.addEventListener("click", function () {
       const title = editor.querySelector("#id_title");
+      const previewContent = previewDialog.querySelector("[data-preview-content]");
       previewDialog.querySelector("[data-preview-title]").textContent = title.value.trim() || "Untitled contract";
-      previewDialog.querySelector("[data-preview-content]").textContent = content.value;
+      if (content.value.trim()) {
+        previewContent.textContent = content.value;
+      } else {
+        const empty = document.createElement("p");
+        empty.className = "lp-contract-preview__empty";
+        empty.textContent = "Add contract content to see its preview here.";
+        previewContent.replaceChildren(empty);
+      }
       previewDialog.showModal();
     });
     previewDialog.querySelector("[data-preview-close]").addEventListener("click", function () { previewDialog.close(); });
