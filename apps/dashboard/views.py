@@ -2532,8 +2532,15 @@ def contract_create(request, booking_pk):
         messages.success(request, "Draft contract created.")
         return redirect("photographer_workspace:contract_detail", pk=contract.pk)
     context = _dashboard_context(request, "bookings", "Create Contract")
-    context.update({"booking": booking, "form": form,
-                    "contract_templates_url": reverse("photographer_workspace:contract_templates")})
+    context.update({
+        "booking": booking,
+        "booking_end": booking.starts_at + timedelta(minutes=booking.duration_minutes),
+        "booking_value_display": format_currency(booking.booking_value, request.studio.default_currency),
+        "can_manage_contract_templates": request.studio_access.allows("settings"),
+        "form": form,
+        "contract_templates_url": reverse("photographer_workspace:contract_templates"),
+        "contract_template_create_url": reverse("photographer_workspace:contract_template_create"),
+    })
     return render(request, "photographer_workspace/contracts/create.html", context)
 
 

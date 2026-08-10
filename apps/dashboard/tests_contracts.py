@@ -87,6 +87,51 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Draft")
         self.assertContains(booking_page, reverse("photographer_workspace:contract_detail", args=[contract.pk]))
 
+    def test_create_page_shows_persisted_booking_context_and_selectable_templates(self):
+        self.booking.location = "North Studio"
+        self.booking.booking_value = "425.00"
+        self.booking.save(update_fields=["location", "booking_value"])
+        self.template.description = "A persisted portrait agreement"
+        self.template.save(update_fields=["description"])
+        self.client.force_login(self.owner)
+
+        response = self.client.get(
+            reverse("photographer_workspace:contract_create", args=[self.booking.pk])
+        )
+
+        self.assertContains(response, "Booking Summary")
+        self.assertContains(response, "Maya Cole")
+        self.assertContains(response, "Portrait")
+        self.assertContains(response, "North Studio")
+        self.assertContains(response, "425.00")
+        self.assertContains(response, "Select Template")
+        self.assertContains(response, "Customize")
+        self.assertContains(response, "Preview")
+        self.assertContains(response, "Send")
+        self.assertContains(response, "A persisted portrait agreement")
+        self.assertContains(response, f'name="template" value="{self.template.pk}"')
+        self.assertContains(response, "Continue to Customize")
+        self.assertContains(response, "Manage Templates")
+
+    def test_create_page_empty_state_links_to_new_template_and_booking(self):
+        self.template.is_active = False
+        self.template.save(update_fields=["is_active"])
+        self.client.force_login(self.owner)
+
+        response = self.client.get(
+            reverse("photographer_workspace:contract_create", args=[self.booking.pk])
+        )
+
+        self.assertContains(response, "No contract templates yet")
+        self.assertContains(response, "Create Contract Template")
+        self.assertContains(
+            response, reverse("photographer_workspace:contract_template_create")
+        )
+        self.assertContains(
+            response, reverse("photographer_workspace:booking_detail", args=[self.booking.pk])
+        )
+        self.assertNotContains(response, f'name="template" value="{self.template.pk}"')
+
     def test_duplicate_create_submission_reuses_the_active_draft(self):
         self.client.force_login(self.owner)
         create_url = reverse("photographer_workspace:contract_create", args=[self.booking.pk])
