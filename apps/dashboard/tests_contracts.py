@@ -263,6 +263,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, 'form="contract-template-form"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ client.full_name }}"', html=False)
         self.assertContains(response, 'data-merge-copy="{{ booking.date }}"', html=False)
+        self.assertContains(response, "Search merge fields...")
+        self.assertContains(response, 'data-merge-search-text="client.full_name Client full name"', html=False)
         self.assertNotContains(response, "Save Draft")
 
     def test_draft_customization_persists_without_changing_template(self):

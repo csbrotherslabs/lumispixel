@@ -10,7 +10,7 @@ class ContractTemplateForm(forms.ModelForm):
         model = ContractTemplate
         fields = ("name", "description", "category", "title", "content", "is_active")
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 3}),
+            "description": forms.Textarea(attrs={"rows": 2}),
             "content": forms.Textarea(attrs={
                 "rows": 16,
                 "placeholder": "Start writing your contract terms here...",

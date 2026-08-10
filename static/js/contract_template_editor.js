@@ -7,16 +7,26 @@
   const content = editor.querySelector("#id_content");
   const count = editor.querySelector("[data-content-count]");
   const feedback = editor.querySelector("[data-copy-feedback]");
-
-  function resizeContent() {
-    if (!content) return;
-    content.style.height = "auto";
-    content.style.height = `${Math.min(content.scrollHeight, 880)}px`;
-  }
+  const search = editor.querySelector("[data-merge-search]");
 
   function updateCount() {
     if (content && count) count.textContent = `${content.value.length} characters`;
-    resizeContent();
+  }
+
+  function filterMergeFields() {
+    const query = search.value.trim().toLocaleLowerCase();
+    const fields = Array.from(editor.querySelectorAll("[data-merge-field]"));
+    fields.forEach(function (field) {
+      field.hidden = !field.dataset.mergeSearchText.toLocaleLowerCase().includes(query);
+    });
+    editor.querySelectorAll("[data-merge-group]").forEach(function (heading) {
+      if (heading.matches("[data-merge-field]")) return;
+      heading.hidden = !fields.some(function (field) {
+        return field.dataset.mergeGroup === heading.dataset.mergeGroup && !field.hidden;
+      });
+    });
+    const empty = editor.querySelector("[data-merge-empty]");
+    if (empty) empty.hidden = fields.some(function (field) { return !field.hidden; });
   }
 
   function announce(message) {
@@ -52,5 +62,6 @@
   });
 
   if (content) content.addEventListener("input", updateCount);
+  if (search) search.addEventListener("input", filterMergeFields);
   updateCount();
 }());

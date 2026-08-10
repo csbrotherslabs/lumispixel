@@ -27,9 +27,7 @@
       {% if form.non_field_errors %}<div class="lp-contract-template-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
 
       <section class="lp-card lp-contract-template-card" aria-labelledby="template-details-title">
-        <header class="lp-card__header">
-          <div><h2 id="template-details-title">Template Details</h2><p>Define how this reusable template is identified and presented.</p></div>
-        </header>
+        <header class="lp-card__header"><h2 id="template-details-title"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Template Details</h2></header>
         <div class="lp-card__body lp-contract-template-fields">
           <div class="lp-contract-template-field">
             <label for="{{ form.name.id_for_label }}">Template Name{% if form.name.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="lp-sr-only"> (required)</span>{% endif %}</label>
@@ -42,32 +40,33 @@
             {{ form.category }}
             {% if form.category.errors %}<div class="field-error" id="{{ form.category.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.category.errors|striptags }}</div>{% endif %}
           </div>
-          <div class="lp-contract-template-field lp-contract-template-field--wide">
-            <label for="{{ form.description.id_for_label }}">Description</label>
-            {{ form.description }}
-            <small>Optional internal context about when this template should be used.</small>
-            {% if form.description.errors %}<div class="field-error" id="{{ form.description.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.description.errors|striptags }}</div>{% endif %}
-          </div>
-          <div class="lp-contract-template-field lp-contract-template-field--wide">
+          <div class="lp-contract-template-field">
             <label for="{{ form.title.id_for_label }}">Contract Title{% if form.title.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="lp-sr-only"> (required)</span>{% endif %}</label>
             {{ form.title }}
             <small>Title shown on the final client-facing contract.</small>
             {% if form.title.errors %}<div class="field-error" id="{{ form.title.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.title.errors|striptags }}</div>{% endif %}
           </div>
-          <div class="lp-contract-template-status lp-contract-template-field--wide">
-            <div><label for="{{ form.is_active.id_for_label }}">Active</label><small>Available when creating contracts.</small></div>
+          <div class="lp-contract-template-status">
+            <div><label for="{{ form.is_active.id_for_label }}">Active</label><small>This template is available when creating contracts.</small></div>
             <label class="lp-contract-template-switch" for="{{ form.is_active.id_for_label }}">
               {{ form.is_active }}<span aria-hidden="true"></span><span class="lp-sr-only">Set template active</span>
             </label>
             {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
           </div>
+          <details class="lp-contract-template-description"{% if form.description.errors or form.description.value %} open{% endif %}>
+            <summary>Internal description <span>Optional</span></summary>
+            <div class="lp-contract-template-field">
+              <label class="lp-sr-only" for="{{ form.description.id_for_label }}">Internal description</label>
+              {{ form.description }}
+              <small>Internal context about when this template should be used.</small>
+              {% if form.description.errors %}<div class="field-error" id="{{ form.description.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.description.errors|striptags }}</div>{% endif %}
+            </div>
+          </details>
         </div>
       </section>
 
       <section class="lp-card lp-contract-template-card lp-contract-content-card" aria-labelledby="contract-content-title">
-        <header class="lp-card__header">
-          <div><h2 id="contract-content-title">Contract Content</h2><p>Write the reusable contract language below. Merge fields can automatically insert booking, client, and business information.</p></div>
-        </header>
+        <header class="lp-card__header"><div><h2 id="contract-content-title"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Contract Content</h2><p>Write the reusable contract language below. Use merge fields to insert booking and client information.</p></div></header>
         <div class="lp-card__body">
           <div class="lp-contract-template-field">
             <label class="lp-sr-only" for="{{ form.content.id_for_label }}">Contract Content</label>
@@ -83,13 +82,13 @@
 
     <aside class="lp-contract-template-aside" aria-label="Contract template tools">
       <section class="lp-card lp-merge-fields" aria-labelledby="merge-fields-title">
-        <header class="lp-card__header"><div><h2 id="merge-fields-title">Merge Fields</h2><p>Insert dynamic booking or client information into the contract.</p></div></header>
+        <header class="lp-card__header"><div><h2 id="merge-fields-title">Merge Fields</h2><p>Click “Insert” to add a field to your contract.</p></div></header>
         <div class="lp-card__body">
-          <p class="lp-merge-fields-help"><i class="bi bi-cursor-text" aria-hidden="true"></i>Select <strong>Insert</strong> to add a field at the editor cursor, or copy its token.</p>
+          <label class="lp-merge-field-search"><span class="lp-sr-only">Search merge fields</span><input type="search" placeholder="Search merge fields..." autocomplete="off" data-merge-search><i class="bi bi-search" aria-hidden="true"></i></label>
           <div class="lp-merge-field-list">
             {% for field, label in merge_fields %}
-              {% if field == "client.first_name" %}<h3>Client</h3>{% elif field == "booking.service" %}<h3>Booking</h3>{% elif field == "workspace.name" %}<h3>Business</h3>{% endif %}
-              <article class="lp-merge-field">
+              {% if field == "client.first_name" %}<h3 data-merge-group="client">Client</h3>{% elif field == "booking.service" %}<h3 data-merge-group="booking">Booking</h3>{% elif field == "workspace.name" %}<h3 data-merge-group="business">Business</h3>{% endif %}
+              <article class="lp-merge-field" data-merge-field data-merge-group="{% if field|slice:':7' == 'client.' %}client{% elif field|slice:':8' == 'booking.' %}booking{% else %}business{% endif %}" data-merge-search-text="{{ field }} {{ label }}">
                 <div><code>{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}</code><span>{{ label }}</span></div>
                 <div class="lp-merge-field-actions">
                   <button type="button" data-merge-insert="{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}" aria-label="Insert {{ label }}">Insert</button>
@@ -98,6 +97,7 @@
               </article>
             {% endfor %}
           </div>
+          <p class="lp-merge-field-empty" data-merge-empty hidden>No supported merge fields match your search.</p>
           <p class="lp-merge-field-feedback" data-copy-feedback aria-live="polite"></p>
         </div>
       </section>
