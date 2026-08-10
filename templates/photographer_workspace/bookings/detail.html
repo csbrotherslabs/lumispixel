@@ -25,22 +25,13 @@
   {% else %}
       <section class="lp-booking-detail-card" aria-labelledby="booking-overview-title">
         <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a class="is-active" aria-current="page" href="#booking-details">Details</a><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Contracts <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
-        <header><div><span>Booking details</span><h2 id="booking-overview-title">Session Summary</h2></div></header>
+        <header><h2 id="booking-overview-title">Session Summary</h2></header>
         <dl class="lp-booking-summary">
           <div><i class="bi bi-calendar3" aria-hidden="true"></i><dt>Date &amp; time</dt><dd><strong>{{ booking.starts_at|date:"l, F j, Y" }}</strong><span>{{ booking.starts_at|date:"g:i A" }} – {{ booking_end|date:"g:i A" }}</span></dd></div>
           <div><i class="bi bi-clock" aria-hidden="true"></i><dt>Duration</dt><dd><strong>{{ booking_duration }}</strong><span>{{ booking.duration_minutes }} minutes</span></dd></div>
+          <div><span class="lp-booking-summary-avatar" aria-hidden="true">{{ booking.client.first_name|first|upper }}{{ booking.client.last_name|first|upper }}</span><dt>Client</dt><dd><strong><a class="lp-booking-summary-client-link" href="{% url 'photographer_workspace:client_detail' booking.client.pk %}">{{ booking.client }}</a></strong>{% if booking.client.email %}<a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a>{% endif %}{% if booking.client.phone %}<a href="tel:{{ booking.client.phone }}">{{ booking.client.phone }}</a>{% endif %}</dd></div>
           <div><i class="bi bi-geo-alt" aria-hidden="true"></i><dt>Location</dt><dd><strong>{{ booking.location|default:"To be confirmed" }}</strong></dd></div>
         </dl>
-        <div class="lp-booking-overview-lower">
-          <section aria-labelledby="booking-client-title">
-            <h3 id="booking-client-title">Client</h3>
-            <div class="lp-booking-client">
-              {% if booking.client.profile_photo %}<img src="{{ booking.client.profile_photo.url }}" alt="">{% else %}<span class="lp-booking-avatar" aria-hidden="true">{{ booking.client.first_name|first|upper }}{{ booking.client.last_name|first|upper }}</span>{% endif %}
-              <div><strong>{{ booking.client }}</strong>{% if booking.client.email %}<a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a>{% endif %}{% if booking.client.phone %}<a href="tel:{{ booking.client.phone }}">{{ booking.client.phone }}</a>{% endif %}</div>
-            </div>
-            <a class="lp-booking-text-link" href="{% url 'photographer_workspace:client_detail' booking.client.pk %}">View Client Profile <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-          </section>
-        </div>
         <div id="booking-details" class="lp-booking-details-section"><h2 id="booking-details-title">Booking Details</h2><dl class="lp-booking-metadata">
           <div><dt>Session type</dt><dd>{{ booking.session_type|default:"Photography session" }}</dd></div><div><dt>Booking ID</dt><dd>LP-{{ booking.pk|stringformat:'04d' }}</dd></div>
           <div><dt>Assigned photographer</dt><dd>{% for member in booking.assigned_members.all %}{{ member.user.get_full_name|default:member.user.email }}{% if not forloop.last %}, {% endif %}{% empty %}Unassigned{% endfor %}</dd></div><div><dt>Status</dt><dd>{{ booking.get_status_display }}</dd></div>
