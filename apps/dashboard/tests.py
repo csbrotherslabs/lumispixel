@@ -679,6 +679,28 @@ class PhotographerWorkspaceTests(TestCase):
         response = self.client.post(detail_url, {"action": "send_contract"})
         self.assertEqual(response.status_code, 400)
 
+    def test_booking_details_summary_groups_client_and_location_on_second_row(self):
+        user, profile = self.make_photographer(True, email="summary-booking@example.com", slug="summary-booking")
+        client = Client.objects.create(
+            photographer=profile, first_name="Maya", last_name="Cole",
+            email="maya.summary@example.com", phone="555-0199",
+        )
+        booking = ClientSession.objects.create(
+            photographer=profile, client=client, session_type="Portrait", location="North Studio",
+            starts_at=timezone.now() + timezone.timedelta(days=2), status=ClientSession.Status.CONFIRMED,
+        )
+        self.client.force_login(user)
+
+        details = self.client.get(reverse("photographer_workspace:booking_detail", args=[booking.pk]))
+
+        self.assertContains(details, '<header><h2 id="booking-overview-title">Session Summary</h2></header>', html=True)
+        self.assertNotContains(details, "<span>Booking details</span>", html=True)
+        summary = details.content.decode().split('<dl class="lp-booking-summary">', 1)[1].split("</dl>", 1)[0]
+        for value in ("Date &amp; time", "Duration", "MC", "Maya Cole", "maya.summary@example.com", "555-0199", "North Studio"):
+            self.assertIn(value, summary)
+        self.assertLess(summary.index("Duration"), summary.index("Maya Cole"))
+        self.assertLess(summary.index("Maya Cole"), summary.index("Location"))
+
     def test_schedule_route_controls_and_navigation(self):
         user, profile = self.make_photographer(True, email="schedule@example.com", slug="schedule")
         client = Client.objects.create(photographer=profile, first_name="Maya", last_name="Cole", email="maya.schedule@example.com")
