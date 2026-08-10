@@ -259,6 +259,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, "Merge Fields")
         self.assertContains(response, "Template Tips")
         self.assertContains(response, "Start writing your contract terms here...")
+        self.assertContains(response, 'class="lp-container lp-container--wide lp-contract-template-editor"', html=False)
         self.assertContains(response, 'class="lp-contract-document"', html=False)
         self.assertContains(response, 'role="toolbar"', html=False)
         self.assertContains(response, 'role="group" aria-label="Editing history"', html=False)
