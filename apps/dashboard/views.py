@@ -2464,7 +2464,10 @@ def booking_detail(request, pk):
     """Keep booking-specific documents within the booking workspace."""
     profile = request.studio
     booking = get_object_or_404(
-        scope_assigned(ClientSession.objects.select_related("client"), request.studio_access), pk=pk,
+        scope_assigned(
+            ClientSession.objects.select_related("client").prefetch_related("assigned_members__user"),
+            request.studio_access,
+        ), pk=pk,
     )
     if request.method == "POST":
         return HttpResponseBadRequest("Unsupported booking action.")
@@ -2475,6 +2478,28 @@ def booking_detail(request, pk):
     context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
     context.update({
         "booking": booking,
+        "booking_end": booking.starts_at + timedelta(minutes=booking.duration_minutes),
+        "booking_duration": (
+            f"{booking.duration_minutes // 60} hour{'s' if booking.duration_minutes // 60 != 1 else ''}"
+            + (f" {booking.duration_minutes % 60} minutes" if booking.duration_minutes % 60 else "")
+        ) if booking.duration_minutes >= 60 else f"{booking.duration_minutes} minutes",
+        "booking_value_display": format_currency(booking.booking_value, profile.default_currency),
+        "booking_edit_url": (
+            f'{reverse("photographer_workspace:calendar")}?view=list&date='
+            f'{timezone.localtime(booking.starts_at):%Y-%m-%d}'
+        ),
+        "booking_status_variant": {
+            ClientSession.Status.TENTATIVE: "warning",
+            ClientSession.Status.CONFIRMED: "success",
+            ClientSession.Status.COMPLETED: "success",
+            ClientSession.Status.CANCELLED: "danger",
+        }[booking.status],
+        "booking_status_description": {
+            ClientSession.Status.TENTATIVE: "This booking is pending confirmation.",
+            ClientSession.Status.CONFIRMED: "This session is confirmed with the client.",
+            ClientSession.Status.COMPLETED: "This photography session has been completed.",
+            ClientSession.Status.CANCELLED: "This booking has been cancelled.",
+        }[booking.status],
         "booking_tab": tab,
         "booking_activity": booking.activities.select_related("actor").all()[:20],
         # Contract records are intentionally not duplicated here. The booking owns
