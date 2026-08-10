@@ -5,6 +5,7 @@
   <header class="lp-contract-template-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb">
+        <a class="lp-contract-template-back" href="{% url 'photographer_workspace:contract_templates' %}" aria-label="Back to contract templates"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
         <a href="{% url 'photographer_workspace:contract_templates' %}">Settings</a>
         <i class="bi bi-chevron-right" aria-hidden="true"></i>
         <a href="{% url 'photographer_workspace:contract_templates' %}">Contract Templates</a>
@@ -17,6 +18,8 @@
     <div class="lp-header-actions">
       {% url 'photographer_workspace:contract_templates' as contract_templates_url %}
       {% include "photographer_workspace/components/button.html" with href=contract_templates_url variant="ghost" label="Cancel" %}
+      <button class="lp-button lp-button--outline lp-button--md" type="button" disabled aria-describedby="template-preview-unavailable"><i class="bi bi-eye" aria-hidden="true"></i><span>Preview</span></button>
+      <span class="lp-sr-only" id="template-preview-unavailable">Preview is available after the template is saved and used to create a contract.</span>
       <button class="lp-button lp-button--primary lp-button--md" type="submit" form="contract-template-form"><span>Save Template</span></button>
     </div>
   </header>
@@ -53,15 +56,7 @@
             </label>
             {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
           </div>
-          <details class="lp-contract-template-description"{% if form.description.errors or form.description.value %} open{% endif %}>
-            <summary>Internal description <span>Optional</span></summary>
-            <div class="lp-contract-template-field">
-              <label class="lp-sr-only" for="{{ form.description.id_for_label }}">Internal description</label>
-              {{ form.description }}
-              <small>Internal context about when this template should be used.</small>
-              {% if form.description.errors %}<div class="field-error" id="{{ form.description.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.description.errors|striptags }}</div>{% endif %}
-            </div>
-          </details>
+          {{ form.description.as_hidden }}
         </div>
       </section>
 
@@ -71,6 +66,13 @@
           <div class="lp-contract-template-field">
             <label class="lp-sr-only" for="{{ form.content.id_for_label }}">Contract Content</label>
             <div class="lp-contract-document">
+              <div class="lp-contract-toolbar" role="toolbar" aria-label="Plain text editing tools">
+                <span>Plain text</span>
+                <div>
+                  <button type="button" data-editor-command="undo" aria-label="Undo"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+                  <button type="button" data-editor-command="redo" aria-label="Redo"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+                </div>
+              </div>
               {{ form.content }}
               <footer class="lp-contract-content-meta"><span>Plain text</span><span data-content-count aria-live="polite">0 characters</span></footer>
             </div>
