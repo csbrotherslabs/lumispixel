@@ -54,6 +54,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
+from apps.dashboard.contract_starters import serialized_contract_starters
 from apps.clients.contracts import MERGE_FIELDS
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
@@ -2672,7 +2673,12 @@ def contract_template_form(request, pk=None):
         messages.success(request, "Contract template saved.")
         return redirect("photographer_workspace:contract_templates")
     context = _dashboard_context(request, "settings", "Edit Contract Template" if template else "Create Contract Template")
-    context.update({"form": form, "template_object": template, "merge_fields": MERGE_FIELDS.items()})
+    context.update({
+        "form": form,
+        "template_object": template,
+        "merge_fields": MERGE_FIELDS.items(),
+        "contract_starters": serialized_contract_starters() if template is None else {},
+    })
     return render(request, "photographer_workspace/contracts/template_form.html", context)
 
 

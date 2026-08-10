@@ -3,9 +3,17 @@ from django import forms
 
 from apps.clients.contracts import MERGE_FIELDS, unknown_merge_fields
 from apps.clients.models import Contract, ContractTemplate
+from apps.dashboard.contract_starters import CONTRACT_STARTER_CHOICES
 
 
 class ContractTemplateForm(forms.ModelForm):
+    start_from = forms.ChoiceField(
+        choices=CONTRACT_STARTER_CHOICES,
+        required=False,
+        help_text="Choose a LumisPixel starter template or start with a blank contract.",
+        widget=forms.Select(attrs={"data-contract-starter": ""}),
+    )
+
     class Meta:
         model = ContractTemplate
         fields = ("name", "description", "category", "title", "content", "is_active")
