@@ -695,6 +695,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         self.assertContains(details, '<header><h2 id="booking-overview-title">Session Summary</h2></header>', html=True)
         self.assertNotContains(details, "<span>Booking details</span>", html=True)
+        self.assertContains(details, 'class="lp-booking-summary-client-link"')
         summary = details.content.decode().split('<dl class="lp-booking-summary">', 1)[1].split("</dl>", 1)[0]
         for value in ("Date &amp; time", "Duration", "MC", "Maya Cole", "maya.summary@example.com", "555-0199", "North Studio"):
             self.assertIn(value, summary)
