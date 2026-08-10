@@ -9,7 +9,13 @@ class ContractTemplateForm(forms.ModelForm):
     class Meta:
         model = ContractTemplate
         fields = ("name", "description", "category", "title", "content", "is_active")
-        widgets = {"description": forms.Textarea(attrs={"rows": 3}), "content": forms.Textarea(attrs={"rows": 16})}
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "content": forms.Textarea(attrs={
+                "rows": 16,
+                "placeholder": "Start writing your contract terms here...",
+            }),
+        }
 
     def clean_content(self):
         content = self.cleaned_data["content"]

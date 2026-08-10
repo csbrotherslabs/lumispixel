@@ -71,8 +71,10 @@
         <div class="lp-card__body">
           <div class="lp-contract-template-field">
             <label class="lp-sr-only" for="{{ form.content.id_for_label }}">Contract Content</label>
-            {{ form.content }}
-            <div class="lp-contract-content-meta"><span>Plain text is safely escaped when displayed.</span><span data-content-count aria-live="polite">0 characters</span></div>
+            <div class="lp-contract-document">
+              {{ form.content }}
+              <footer class="lp-contract-content-meta"><span>Plain text</span><span data-content-count aria-live="polite">0 characters</span></footer>
+            </div>
             {% if form.content.errors %}<div class="field-error" id="{{ form.content.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.content.errors|striptags }}</div>{% endif %}
           </div>
         </div>

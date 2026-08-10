@@ -8,8 +8,15 @@
   const count = editor.querySelector("[data-content-count]");
   const feedback = editor.querySelector("[data-copy-feedback]");
 
+  function resizeContent() {
+    if (!content) return;
+    content.style.height = "auto";
+    content.style.height = `${Math.min(content.scrollHeight, 880)}px`;
+  }
+
   function updateCount() {
     if (content && count) count.textContent = `${content.value.length} characters`;
+    resizeContent();
   }
 
   function announce(message) {

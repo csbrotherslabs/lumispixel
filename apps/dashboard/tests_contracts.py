@@ -258,6 +258,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, "Contract Content")
         self.assertContains(response, "Merge Fields")
         self.assertContains(response, "Template Tips")
+        self.assertContains(response, "Start writing your contract terms here...")
+        self.assertContains(response, 'class="lp-contract-document"', html=False)
         self.assertContains(response, 'form="contract-template-form"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ client.full_name }}"', html=False)
         self.assertContains(response, 'data-merge-copy="{{ booking.date }}"', html=False)
