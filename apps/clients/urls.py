@@ -23,4 +23,8 @@ from . import public_views
 urlpatterns += [
     path("for-clients/", public_views.for_clients, name="for_clients"),
     path("contracts/review/<str:token>/", public_views.contract_review, name="contract-review"),
+    path("contracts/review/<str:token>/signed-pdf/", public_views.signed_contract_pdf,
+         name="signed-contract-pdf"),
+    path("contracts/review/<str:token>/signed-pdf/download/", public_views.signed_contract_pdf,
+         {"disposition": "attachment"}, name="signed-contract-pdf-download"),
 ]

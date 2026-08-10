@@ -9,8 +9,9 @@ from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.contracts import create_contract_from_template
+from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.clients.models import (Client, ClientSession, Contract, ContractEvent, ContractSignature,
-                                 ContractTemplate)
+                                 ContractTemplate, SignedContractDocument)
 from apps.dashboard.models import StudioMembership
 from apps.clients.contracts import render_merge_fields
 
@@ -403,3 +404,70 @@ class ContractWorkflowTests(TestCase):
         other_owner, _studio, _client, _booking, _template = self.make_studio("signature-other@example.com")
         self.client.force_login(other_owner)
         self.assertEqual(self.client.get(reverse("photographer_workspace:contract_detail", args=[contract.pk])).status_code, 404)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_signed_pdf_uses_snapshot_and_is_available_to_both_parties(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        self.client.post(reverse("clients:contract-review", args=[token]), {
+            "signer_name": "Maya Cole", "signature_value": "Maya Cole", "consent_accepted": "on",
+        })
+        contract.refresh_from_db()
+        document = contract.signed_document
+        self.addCleanup(document.file.delete, False)
+        self.assertEqual(document.status, SignedContractDocument.Status.READY)
+        self.assertEqual(document.signed_content_hash, contract.signature.content_hash)
+        self.assertEqual(document.file_size, document.file.size)
+        self.assertTrue(document.file.name.startswith(f"contracts/{self.studio.pk}/{contract.pk}/"))
+        with document.file.open("rb") as generated:
+            original_pdf = generated.read()
+        self.assertTrue(original_pdf.startswith(b"%PDF-1.4"))
+        self.assertIn(b"Original persisted terms", original_pdf)
+        self.assertIn(b"Maya Cole", original_pdf)
+
+        client_view = self.client.get(reverse("clients:signed-contract-pdf", args=[token]))
+        self.assertEqual(client_view.status_code, 200)
+        self.assertEqual(client_view["Cache-Control"], "private, no-store")
+        self.assertEqual(self.client.get(reverse("clients:signed-contract-pdf", args=["guessed-key"])).status_code, 404)
+
+        self.template.content = "Mutated template terms"
+        self.template.save(update_fields=["content"])
+        self.booking.location = "A changed location"
+        self.booking.save(update_fields=["location"])
+        regenerated = generate_signed_contract_pdf(contract.pk)
+        with regenerated.file.open("rb") as stored:
+            self.assertEqual(stored.read(), original_pdf)
+
+        self.client.force_login(self.owner)
+        workspace_download = self.client.get(
+            reverse("photographer_workspace:signed_contract_pdf_download", args=[contract.pk]),
+        )
+        self.assertEqual(workspace_download.status_code, 200)
+        self.assertIn("attachment", workspace_download["Content-Disposition"])
+        other_owner, _studio, _client, _booking, _template = self.make_studio("pdf-other@example.com")
+        self.client.force_login(other_owner)
+        self.assertEqual(self.client.get(
+            reverse("photographer_workspace:signed_contract_pdf", args=[contract.pk])
+        ).status_code, 404)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_pdf_failure_preserves_signature_and_can_regenerate(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        with patch("apps.clients.contract_pdfs.render_signed_contract_pdf", side_effect=RuntimeError("renderer down")):
+            self.client.post(reverse("clients:contract-review", args=[token]), {
+                "signer_name": "Maya Cole", "signature_value": "Maya Cole", "consent_accepted": "on",
+            })
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, Contract.Status.SIGNED)
+        self.assertEqual(contract.signed_document.status, SignedContractDocument.Status.FAILED)
+        document = generate_signed_contract_pdf(contract.pk)
+        self.addCleanup(document.file.delete, False)
+        self.assertEqual(document.status, SignedContractDocument.Status.READY)
+        self.assertEqual(document.signed_content_hash, contract.signature.content_hash)

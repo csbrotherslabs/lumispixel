@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.utils import formats, timezone
 
 from .models import Contract, ContractEvent, ContractSignature, ContractTemplate
+from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
 
 MERGE_FIELDS = {
@@ -204,49 +205,65 @@ def _content_hash(content):
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-@transaction.atomic
 def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, ip_address=None, user_agent=""):
     """Atomically accept the exact delivered snapshot addressed by an opaque token."""
     if not raw_token:
         raise ValidationError("This contract review link is invalid.")
-    contract = Contract.objects.select_for_update().select_related(
-        "client", "booking", "photographer"
-    ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
-    now = timezone.now()
-    if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:
-        raise ValidationError("This contract review link is invalid or has expired.")
-    if contract.status == Contract.Status.SIGNED or ContractSignature.objects.filter(contract=contract).exists():
-        raise ValidationError("This contract has already been signed.")
-    if contract.status not in (Contract.Status.SENT, Contract.Status.VIEWED):
-        raise ValidationError("This contract is not available for signing.")
-    signer_name = (signer_name or "").strip()
-    signature_value = (signature_value or "").strip()
-    if not signer_name:
-        raise ValidationError({"signer_name": "Enter your full name."})
-    if not signature_value:
-        raise ValidationError({"signature_value": "Type your signature."})
-    if consent_accepted is not True:
-        raise ValidationError({"consent_accepted": "You must agree before signing."})
-    consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
-    digest = _content_hash(contract.rendered_content)
-    signature = ContractSignature.objects.create(
-        contract=contract, signer_name=signer_name, signature_value=signature_value,
-        signature_type=ContractSignature.SignatureType.TYPED, consent_accepted=True,
-        consent_text=consent_text, signed_at=now, content_hash=digest,
-        contract_version=contract.version, client=contract.client, photographer=contract.photographer,
-        ip_address=ip_address, user_agent=(user_agent or "")[:512],
-    )
-    contract.signed_at = now
-    contract.locked_at = contract.locked_at or now
-    contract.status = Contract.Status.SIGNED
-    contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at"))
-    ContractEvent.objects.create(
-        contract=contract, event_type=ContractEvent.EventType.SIGNED,
-        metadata={"contract_id": contract.pk, "contract_version": contract.version,
-                  "signer": signer_name, "signed_at": now.isoformat(), "content_hash": digest,
-                  "client_id": contract.client_id, "workspace_id": contract.photographer_id},
-    )
+    with transaction.atomic():
+        contract = Contract.objects.select_for_update().select_related(
+            "client", "booking", "photographer", "photographer__user"
+        ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
+        now = timezone.now()
+        if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:
+            raise ValidationError("This contract review link is invalid or has expired.")
+        if contract.status == Contract.Status.SIGNED or ContractSignature.objects.filter(contract=contract).exists():
+            raise ValidationError("This contract has already been signed.")
+        if contract.status not in (Contract.Status.SENT, Contract.Status.VIEWED):
+            raise ValidationError("This contract is not available for signing.")
+        signer_name = (signer_name or "").strip()
+        signature_value = (signature_value or "").strip()
+        if not signer_name:
+            raise ValidationError({"signer_name": "Enter your full name."})
+        if not signature_value:
+            raise ValidationError({"signature_value": "Type your signature."})
+        if consent_accepted is not True:
+            raise ValidationError({"consent_accepted": "You must agree before signing."})
+        consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
+        digest = _content_hash(contract.rendered_content)
+        signature = ContractSignature(
+            contract=contract, signer_name=signer_name, signature_value=signature_value,
+            signature_type=ContractSignature.SignatureType.TYPED, consent_accepted=True,
+            consent_text=consent_text, signed_at=now, content_hash=digest,
+            contract_version=contract.version, client=contract.client, photographer=contract.photographer,
+            ip_address=ip_address, user_agent=(user_agent or "")[:512],
+        )
+        signature.signed_snapshot = build_signed_snapshot(contract, signature)
+        signature.save()
+        contract.signed_at = now
+        contract.locked_at = contract.locked_at or now
+        contract.status = Contract.Status.SIGNED
+        contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at"))
+        ContractEvent.objects.create(
+            contract=contract, event_type=ContractEvent.EventType.SIGNED,
+            metadata={"contract_id": contract.pk, "contract_version": contract.version,
+                      "signer": signer_name, "signed_at": now.isoformat(), "content_hash": digest,
+                      "client_id": contract.client_id, "workspace_id": contract.photographer_id},
+        )
+    generate_signed_contract_pdf(contract.pk)
     return signature
+
+
+def send_signed_contract_copy_link(*, contract, signed_pdf_url):
+    """Best-effort delivery of the existing private token URL, never a public storage URL."""
+    context = {"contract": contract, "signed_pdf_url": signed_pdf_url, "studio": contract.photographer}
+    message = EmailMultiAlternatives(
+        f"Your signed contract: {contract.title}",
+        render_to_string("clients/contracts/email/signed.txt", context),
+        settings.DEFAULT_FROM_EMAIL,
+        [contract.sent_to_email],
+    )
+    message.attach_alternative(render_to_string("clients/contracts/email/signed.html", context), "text/html")
+    return message.send(fail_silently=False)
 
 
 @transaction.atomic

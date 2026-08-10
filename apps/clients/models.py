@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage, storages
 from django.db import models, transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
 from django.db.models.functions import Coalesce
@@ -655,6 +656,7 @@ class ContractSignature(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True, editable=False)
     user_agent = models.CharField(max_length=512, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    signed_snapshot = models.JSONField(default=dict, editable=False)
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -663,6 +665,63 @@ class ContractSignature(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Signature evidence cannot be deleted.")
+
+
+def signed_contract_document_path(instance, filename):
+    """Use an opaque, tenant-partitioned key; storage decides its physical location."""
+    return f"contracts/{instance.contract.photographer_id}/{instance.contract_id}/{filename}"
+
+
+def contract_document_storage():
+    """Resolve an optional object-storage alias, with private development storage as fallback."""
+    if "contract_documents" in getattr(settings, "STORAGES", {}):
+        return storages["contract_documents"]
+    return FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
+
+
+class SignedContractDocument(models.Model):
+    """Private generated copy of one immutable signed contract snapshot."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        READY = "ready", "Ready"
+        FAILED = "failed", "Failed"
+
+    contract = models.OneToOneField(Contract, on_delete=models.PROTECT, related_name="signed_document")
+    file = models.FileField(storage=contract_document_storage, upload_to=signed_contract_document_path,
+                            blank=True, max_length=500)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    generated_at = models.DateTimeField(null=True, blank=True)
+    content_type = models.CharField(max_length=100, default="application/pdf")
+    file_size = models.PositiveBigIntegerField(default=0)
+    file_hash = models.CharField(max_length=64, blank=True, editable=False)
+    signed_content_hash = models.CharField(max_length=64, editable=False)
+    error_message = models.CharField(max_length=255, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=("status", "updated_at"), name="signed_doc_status_time")]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            persisted = type(self).objects.filter(pk=self.pk).values(
+                "status", "contract_id", "file", "generated_at", "file_size", "file_hash",
+                "signed_content_hash",
+            ).first()
+            if persisted and persisted["status"] == self.Status.READY:
+                protected = ("contract_id", "file", "generated_at", "file_size", "file_hash",
+                             "signed_content_hash")
+                if any(str(getattr(self, field)) != str(persisted[field]) for field in protected):
+                    raise ValidationError("A completed signed contract PDF cannot be overwritten.")
+                if self.status != self.Status.READY:
+                    raise ValidationError("A completed signed contract PDF cannot be replaced.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.status == self.Status.READY:
+            raise ValidationError("A completed signed contract PDF cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
 
 class MiniSession(PhotographerOwnedModel):
