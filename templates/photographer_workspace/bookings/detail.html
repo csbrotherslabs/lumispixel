@@ -40,7 +40,6 @@
             </div>
             <a class="lp-booking-text-link" href="{% url 'photographer_workspace:client_detail' booking.client.pk %}">View Client Profile <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
           </section>
-          <section aria-labelledby="booking-value-title"><h3 id="booking-value-title">Booking Value</h3><strong class="lp-booking-value">{{ booking_value_display }}</strong><p>Recorded value for this booking.</p></section>
         </div>
         <div id="booking-details" class="lp-booking-details-section"><h2 id="booking-details-title">Booking Details</h2><dl class="lp-booking-metadata">
           <div><dt>Session type</dt><dd>{{ booking.session_type|default:"Photography session" }}</dd></div><div><dt>Booking ID</dt><dd>LP-{{ booking.pk|stringformat:'04d' }}</dd></div>
@@ -55,6 +54,7 @@
     </main>
 
     <aside class="lp-booking-detail-side" aria-label="Booking operations">
+      <section class="lp-booking-side-card" aria-labelledby="booking-value-title"><h2 id="booking-value-title">Booking Value</h2><strong class="lp-booking-value">{{ booking_value_display }}</strong><p>Recorded value for this booking.</p></section>
       <section class="lp-booking-side-card" aria-labelledby="booking-status-title"><h2 id="booking-status-title">Booking Status</h2>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}<p>{{ booking_status_description }}</p></section>
       <section class="lp-booking-side-card" aria-labelledby="booking-actions-title"><h2 id="booking-actions-title">Quick Actions</h2><div class="lp-booking-quick-actions">
         {% url 'photographer_workspace:client_detail' booking.client.pk as client_url %}
