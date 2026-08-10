@@ -1,0 +1,16 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lp-container">
+  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:contract_customize' contract.pk %}">Customize</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Preview</strong></nav>
+  <header class="lp-page-header">
+    <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Contract Preview</h1><p class="lp-page-description">This is the safe, resolved content the client will receive.</p></div>
+    <div class="lp-header-actions"><a class="lp-button lp-button--outline" href="{% url 'photographer_workspace:contract_customize' contract.pk %}">Back to Customize</a></div>
+  </header>
+  {% if send_errors %}<section class="lp-card lp-card--alert" role="alert" aria-labelledby="send-check-title"><h2 id="send-check-title">Not ready to send</h2><ul>{% for error in send_errors %}<li>{{ error }}</li>{% endfor %}</ul></section>{% endif %}
+  {% include "clients/contracts/_document.html" with content=rendered_content preview=True %}
+  <section class="lp-card" aria-labelledby="delivery-title">
+    <h2 id="delivery-title">Send to Client</h2><p>A secure review link will be emailed to {{ contract.client.email|default:"the client after an email is added" }}. Sending again rotates the previous link.</p>
+    <form method="post" action="{% url 'photographer_workspace:contract_send' contract.pk %}">{% csrf_token %}<button class="lp-button lp-button--primary" type="submit"{% if send_errors %} disabled aria-disabled="true"{% endif %}>{% if contract.send_count %}Re-send Contract{% else %}Send to Client{% endif %}</button></form>
+  </section>
+</div>
+{% endblock %}

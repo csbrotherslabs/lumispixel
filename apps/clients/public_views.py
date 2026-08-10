@@ -1,6 +1,8 @@
+from django.http import Http404
 from django.shortcuts import render
 
 from apps.core.views import add
+from apps.clients.contracts import open_contract_review
 
 add(
     "for_clients",
@@ -162,3 +164,10 @@ def for_clients(request):
         ],
     }
     return render(request, "for_clients.html", context)
+
+
+def contract_review(request, token):
+    contract = open_contract_review(token)
+    if contract is None:
+        raise Http404("This contract review link is invalid or has expired.")
+    return render(request, "clients/contracts/review.html", {"contract": contract})

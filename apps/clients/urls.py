@@ -22,4 +22,5 @@ from . import public_views
 
 urlpatterns += [
     path("for-clients/", public_views.for_clients, name="for_clients"),
+    path("contracts/review/<str:token>/", public_views.contract_review, name="contract-review"),
 ]

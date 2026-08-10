@@ -1,0 +1,7 @@
+{% load static %}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ contract.title }} | Contract Review</title><link rel="stylesheet" href="{% static 'css/workspace_design_system.css' %}"><link rel="stylesheet" href="{% static 'css/client_contract.css' %}"></head>
+<body><a class="lp-skip-link" href="#main-content">Skip to contract</a><main id="main-content" class="lp-contract-page" tabindex="-1">
+  <p class="lp-contract-eyebrow">Secure contract review</p>
+  {% include "clients/contracts/_document.html" with content=contract.rendered_content %}
+  <section class="lp-contract-next" aria-labelledby="next-action"><h2 id="next-action">Next action</h2><p>Please review the contract. Signature capability will be available in the next step.</p><span class="lp-button lp-button--primary" aria-disabled="true">Review Contract</span></section>
+</main></body></html>

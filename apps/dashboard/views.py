@@ -32,7 +32,9 @@ from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNo
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
-from apps.clients.contracts import create_contract_from_template
+from apps.clients.contracts import (ContractDeliveryError, contract_preview_content,
+                                   create_contract_from_template, send_contract_for_review,
+                                   validate_contract_for_email)
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
@@ -2546,19 +2548,59 @@ def contract_detail(request, pk):
     )
     form = ContractCustomizeForm(request.POST or None, instance=contract)
     is_editable = contract.status == Contract.Status.DRAFT
-    preview = request.method == "POST" and request.POST.get("action") == "preview"
     if request.method == "POST":
         if not is_editable:
             raise PermissionDenied
-        if form.is_valid() and not preview:
+        if form.is_valid():
             form.save()
+            if request.POST.get("action") == "preview":
+                return redirect("photographer_workspace:contract_preview", pk=contract.pk)
             messages.success(request, "Contract draft saved.")
             return redirect("photographer_workspace:contract_customize", pk=contract.pk)
     context = _dashboard_context(request, "bookings", contract.title)
     context.update({"contract": contract, "form": form, "is_editable": is_editable,
-                    "preview": preview, "preview_content": form.data.get("content", "") if preview else "",
                     "merge_fields": MERGE_FIELDS.items()})
     return render(request, "photographer_workspace/contracts/detail.html", context)
+
+
+def _accessible_contract(request, pk):
+    accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    return get_object_or_404(
+        Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
+        .select_related("booking", "client", "photographer", "photographer__user"), pk=pk,
+    )
+
+
+@photographer_workspace_required
+@require_GET
+def contract_preview(request, pk):
+    contract = _accessible_contract(request, pk)
+    try:
+        validate_contract_for_email(contract)
+        send_errors = []
+    except ValidationError as exc:
+        send_errors = exc.messages
+    context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
+    context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
+                    "send_errors": send_errors})
+    return render(request, "photographer_workspace/contracts/preview.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_send(request, pk):
+    contract = _accessible_contract(request, pk)
+    try:
+        send_contract_for_review(contract=contract, actor=request.user,
+                                 build_absolute_uri=request.build_absolute_uri)
+    except ValidationError as exc:
+        for error in exc.messages:
+            messages.error(request, error)
+    except ContractDeliveryError:
+        messages.error(request, "The email could not be delivered. The contract was not marked as sent.")
+    else:
+        messages.success(request, "Contract review link sent to the client.")
+    return redirect("photographer_workspace:contract_preview", pk=contract.pk)
 
 
 @photographer_workspace_required
