@@ -8,7 +8,7 @@
     {% if form.template.field.queryset.exists %}
       <form method="post">{% csrf_token %}{{ form.non_field_errors }}{% include "photographer_workspace/components/form_field.html" with field=form.template wide=True %}<div class="lp-header-actions"><a class="lp-button lp-button--ghost" href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Cancel</a><button class="lp-button lp-button--primary" type="submit">Create Draft</button></div></form>
     {% else %}
-      {% include "photographer_workspace/components/empty_state.html" with icon="bi-file-earmark-x" title="No active contract templates" description="An active contract template must be created for this workspace before a booking contract can be drafted." secondary_url=booking.get_absolute_url secondary_label="Return to booking" %}
+      {% include "photographer_workspace/components/empty_state.html" with icon="bi-file-earmark-x" title="No active contract templates" description="Create and activate a contract template for this workspace before drafting a booking contract." primary_url=contract_templates_url primary_label="Manage templates" %}
       <a class="lp-button lp-button--ghost" href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Return to booking</a>
     {% endif %}
   </section>

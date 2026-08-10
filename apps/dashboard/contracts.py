@@ -1,7 +1,29 @@
 """Workspace-facing contract forms with tenant-scoped choices."""
 from django import forms
 
-from apps.clients.models import ContractTemplate
+from apps.clients.contracts import MERGE_FIELDS, unknown_merge_fields
+from apps.clients.models import Contract, ContractTemplate
+
+
+class ContractTemplateForm(forms.ModelForm):
+    class Meta:
+        model = ContractTemplate
+        fields = ("name", "description", "category", "title", "content", "is_active")
+        widgets = {"description": forms.Textarea(attrs={"rows": 3}), "content": forms.Textarea(attrs={"rows": 16})}
+
+    def clean_content(self):
+        content = self.cleaned_data["content"]
+        unknown = unknown_merge_fields(content)
+        if unknown:
+            raise forms.ValidationError("Unsupported merge field(s): %s" % ", ".join("{{ %s }}" % item for item in unknown))
+        return content
+
+
+class ContractCustomizeForm(forms.ModelForm):
+    class Meta:
+        model = Contract
+        fields = ("title", "content")
+        widgets = {"content": forms.Textarea(attrs={"rows": 24})}
 
 
 class ContractCreateForm(forms.Form):

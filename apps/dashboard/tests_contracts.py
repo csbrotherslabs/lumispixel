@@ -7,6 +7,7 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.contracts import create_contract_from_template
 from apps.clients.models import Client, ClientSession, Contract, ContractEvent, ContractTemplate
 from apps.dashboard.models import StudioMembership
+from apps.clients.contracts import render_merge_fields
 
 
 class ContractWorkflowTests(TestCase):
@@ -136,3 +137,75 @@ class ContractWorkflowTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("accounts:login"), response.url)
+
+    def test_merge_fields_render_real_values_and_unknown_fields_survive(self):
+        self.crm_client.email = "maya@example.com"
+        self.crm_client.save(update_fields=["email"])
+        self.booking.location = "City Studio"
+        self.booking.booking_value = "425.00"
+        self.booking.save(update_fields=["location", "booking_value"])
+        content = "Hello {{ client.full_name }} at {{ booking.location }} — {{ unknown.value }}"
+        rendered = render_merge_fields(content, self.booking)
+        self.assertIn("Maya Cole", rendered)
+        self.assertIn("City Studio", rendered)
+        self.assertIn("{{ unknown.value }}", rendered)
+
+    def test_template_crud_validation_archive_duplicate_and_tenant_isolation(self):
+        self.client.force_login(self.owner)
+        list_url = reverse("photographer_workspace:contract_templates")
+        create_url = reverse("photographer_workspace:contract_template_create")
+        self.assertContains(self.client.get(list_url), "Portrait standard")
+        invalid = self.client.post(create_url, {
+            "name": "Invalid", "title": "Invalid", "category": "general",
+            "content": "Hello {{ client.secret }}", "is_active": "on",
+        })
+        self.assertContains(invalid, "Unsupported merge field")
+        created = self.client.post(create_url, {
+            "name": "Wedding", "title": "Wedding terms", "category": "wedding",
+            "description": "Ceremony agreement", "content": "Hello {{ client.first_name }}",
+            "is_active": "on",
+        })
+        self.assertRedirects(created, list_url)
+        item = ContractTemplate.objects.get(name="Wedding")
+        edit = self.client.post(reverse("photographer_workspace:contract_template_edit", args=[item.pk]), {
+            "name": "Wedding revised", "title": "Wedding terms", "category": "wedding",
+            "description": "Updated", "content": "Hello {{ client.full_name }}", "is_active": "on",
+        })
+        self.assertRedirects(edit, list_url)
+        item.refresh_from_db()
+        self.assertEqual(item.version, 2)
+        self.client.post(reverse("photographer_workspace:contract_template_action", args=[item.pk]), {"action": "duplicate"})
+        self.assertTrue(ContractTemplate.objects.filter(photographer=self.studio, name__contains="(copy)").exists())
+        self.client.post(reverse("photographer_workspace:contract_template_action", args=[item.pk]), {"action": "toggle_active"})
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+        create_page = self.client.get(reverse("photographer_workspace:contract_create", args=[self.booking.pk]))
+        self.assertNotContains(create_page, f'<option value="{item.pk}">', html=True)
+        other_owner, _studio, _client, _booking, other_template = self.make_studio("template-private@example.com")
+        other_template.name = "Private other workspace template"
+        other_template.save(update_fields=["name"])
+        self.assertNotContains(self.client.get(list_url), other_template.name)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:contract_template_edit", args=[other_template.pk])).status_code, 404)
+
+    def test_draft_customization_persists_without_changing_template(self):
+        contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+        self.client.force_login(self.owner)
+        url = reverse("photographer_workspace:contract_customize", args=[contract.pk])
+        response = self.client.post(url, {"title": "Personal terms", "content": "Customized persisted terms", "action": "save"})
+        self.assertRedirects(response, url)
+        contract.refresh_from_db()
+        self.template.refresh_from_db()
+        self.assertEqual(contract.content, "Customized persisted terms")
+        self.assertEqual(self.template.content, "Original persisted terms")
+        self.client.logout()
+        self.client.force_login(self.owner)
+        self.assertContains(self.client.get(url), "Customized persisted terms")
+
+    def test_template_management_requires_settings_permission(self):
+        manager = User.objects.create_user(email="template-manager@example.com", password="pass12345")
+        manager.account_status = User.AccountStatus.ACTIVE
+        manager.save()
+        StudioMembership.objects.create(studio=self.studio, user=manager, role=StudioMembership.Role.MANAGER,
+                                        status=StudioMembership.Status.ACTIVE)
+        self.client.force_login(manager)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:contract_templates")).status_code, 403)

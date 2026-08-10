@@ -27,7 +27,7 @@ from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
-                                Contract,
+                                Contract, ContractTemplate,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
@@ -51,7 +51,8 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
                                              referral_summary, reputation_summary, retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
-from apps.dashboard.contracts import ContractCreateForm
+from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
+from apps.clients.contracts import MERGE_FIELDS
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
 from apps.dashboard.dashboard_data import build_dashboard
@@ -2528,12 +2529,13 @@ def contract_create(request, booking_pk):
         messages.success(request, "Draft contract created.")
         return redirect("photographer_workspace:contract_detail", pk=contract.pk)
     context = _dashboard_context(request, "bookings", "Create Contract")
-    context.update({"booking": booking, "form": form})
+    context.update({"booking": booking, "form": form,
+                    "contract_templates_url": reverse("photographer_workspace:contract_templates")})
     return render(request, "photographer_workspace/contracts/create.html", context)
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def contract_detail(request, pk):
     """Display a contract only when its booking is accessible in this studio."""
     accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
@@ -2542,9 +2544,77 @@ def contract_detail(request, pk):
         .select_related("booking", "client", "template", "created_by"),
         pk=pk,
     )
+    form = ContractCustomizeForm(request.POST or None, instance=contract)
+    is_editable = contract.status == Contract.Status.DRAFT
+    preview = request.method == "POST" and request.POST.get("action") == "preview"
+    if request.method == "POST":
+        if not is_editable:
+            raise PermissionDenied
+        if form.is_valid() and not preview:
+            form.save()
+            messages.success(request, "Contract draft saved.")
+            return redirect("photographer_workspace:contract_customize", pk=contract.pk)
     context = _dashboard_context(request, "bookings", contract.title)
-    context.update({"contract": contract})
+    context.update({"contract": contract, "form": form, "is_editable": is_editable,
+                    "preview": preview, "preview_content": form.data.get("content", "") if preview else "",
+                    "merge_fields": MERGE_FIELDS.items()})
     return render(request, "photographer_workspace/contracts/detail.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def contract_templates(request):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    context = _dashboard_context(request, "settings", "Contract Templates")
+    context["templates"] = ContractTemplate.objects.filter(photographer=request.studio)
+    context["create_url"] = reverse("photographer_workspace:contract_template_create")
+    return render(request, "photographer_workspace/contracts/templates.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_template_form(request, pk=None):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    template = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk) if pk else None
+    form = ContractTemplateForm(request.POST or None, instance=template)
+    if request.method == "POST" and form.is_valid():
+        item = form.save(commit=False)
+        item.photographer = request.studio
+        item.created_by = item.created_by or request.user
+        if template and form.has_changed():
+            item.version += 1
+        item.full_clean()
+        item.save()
+        messages.success(request, "Contract template saved.")
+        return redirect("photographer_workspace:contract_templates")
+    context = _dashboard_context(request, "settings", "Edit Contract Template" if template else "Create Contract Template")
+    context.update({"form": form, "template_object": template, "merge_fields": MERGE_FIELDS.items()})
+    return render(request, "photographer_workspace/contracts/template_form.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_template_action(request, pk):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    source = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk)
+    action = request.POST.get("action")
+    if action == "duplicate":
+        source.pk = None
+        source.name = f"{source.name} (copy)"
+        source.created_by = request.user
+        source.version = 1
+        source.save()
+        messages.success(request, "Contract template duplicated.")
+    elif action == "toggle_active":
+        source.is_active = not source.is_active
+        source.save(update_fields=["is_active", "updated_at"])
+        messages.success(request, "Contract template status updated.")
+    else:
+        return HttpResponseBadRequest("Unsupported template action.")
+    return redirect("photographer_workspace:contract_templates")
 
 
 @photographer_workspace_required
