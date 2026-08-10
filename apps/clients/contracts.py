@@ -5,6 +5,7 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
+from django import forms
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import validate_email
@@ -13,7 +14,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import formats, timezone
 
-from .models import Contract, ContractEvent, ContractTemplate
+from .models import Contract, ContractEvent, ContractSignature, ContractTemplate
 
 
 MERGE_FIELDS = {
@@ -32,6 +33,28 @@ MERGE_FIELDS = {
 MERGE_PATTERN = re.compile(r"{{\s*([a-z][a-z0-9_.]*)\s*}}")
 REVIEW_LINK_LIFETIME = timedelta(days=30)
 SENDABLE_STATUSES = (Contract.Status.DRAFT, Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED)
+DEFAULT_SIGNATURE_CONSENT = (
+    "I have reviewed and agree to the terms of this contract and intend this electronic "
+    "signature to be legally binding."
+)
+
+
+class ContractSignatureForm(forms.Form):
+    signer_name = forms.CharField(label="Signer full name", max_length=200, strip=True)
+    signature_value = forms.CharField(label="Type your signature", max_length=200, strip=True)
+    consent_accepted = forms.BooleanField(label="Agreement", required=True)
+
+    def clean_signer_name(self):
+        value = self.cleaned_data["signer_name"]
+        if not value:
+            raise forms.ValidationError("Enter your full name.")
+        return value
+
+    def clean_signature_value(self):
+        value = self.cleaned_data["signature_value"]
+        if not value:
+            raise forms.ValidationError("Type your signature.")
+        return value
 
 
 class ContractDeliveryError(Exception):
@@ -161,6 +184,8 @@ def open_contract_review(raw_token):
     ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
     if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
         return None
+    if contract.status == Contract.Status.SIGNED:
+        return contract
     if contract.status not in (Contract.Status.SENT, Contract.Status.VIEWED):
         return None
     if contract.viewed_at is None:
@@ -173,6 +198,55 @@ def open_contract_review(raw_token):
             metadata={"recipient": contract.sent_to_email, "contract_version": contract.version},
         )
     return contract
+
+
+def _content_hash(content):
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+@transaction.atomic
+def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, ip_address=None, user_agent=""):
+    """Atomically accept the exact delivered snapshot addressed by an opaque token."""
+    if not raw_token:
+        raise ValidationError("This contract review link is invalid.")
+    contract = Contract.objects.select_for_update().select_related(
+        "client", "booking", "photographer"
+    ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
+    now = timezone.now()
+    if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:
+        raise ValidationError("This contract review link is invalid or has expired.")
+    if contract.status == Contract.Status.SIGNED or ContractSignature.objects.filter(contract=contract).exists():
+        raise ValidationError("This contract has already been signed.")
+    if contract.status not in (Contract.Status.SENT, Contract.Status.VIEWED):
+        raise ValidationError("This contract is not available for signing.")
+    signer_name = (signer_name or "").strip()
+    signature_value = (signature_value or "").strip()
+    if not signer_name:
+        raise ValidationError({"signer_name": "Enter your full name."})
+    if not signature_value:
+        raise ValidationError({"signature_value": "Type your signature."})
+    if consent_accepted is not True:
+        raise ValidationError({"consent_accepted": "You must agree before signing."})
+    consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
+    digest = _content_hash(contract.rendered_content)
+    signature = ContractSignature.objects.create(
+        contract=contract, signer_name=signer_name, signature_value=signature_value,
+        signature_type=ContractSignature.SignatureType.TYPED, consent_accepted=True,
+        consent_text=consent_text, signed_at=now, content_hash=digest,
+        contract_version=contract.version, client=contract.client, photographer=contract.photographer,
+        ip_address=ip_address, user_agent=(user_agent or "")[:512],
+    )
+    contract.signed_at = now
+    contract.locked_at = contract.locked_at or now
+    contract.status = Contract.Status.SIGNED
+    contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at"))
+    ContractEvent.objects.create(
+        contract=contract, event_type=ContractEvent.EventType.SIGNED,
+        metadata={"contract_id": contract.pk, "contract_version": contract.version,
+                  "signer": signer_name, "signed_at": now.isoformat(), "content_hash": digest,
+                  "client_id": contract.client_id, "workspace_id": contract.photographer_id},
+    )
+    return signature
 
 
 @transaction.atomic

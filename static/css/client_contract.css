@@ -13,5 +13,16 @@ body { margin: 0; background: var(--lp-color-page); color: var(--lp-text-primary
 .lp-contract-summary dd { margin: var(--lp-space-1) 0 0; }
 .lp-contract-copy { line-height: var(--lp-leading-body); overflow-wrap: anywhere; }
 .lp-contract-next { margin-top: var(--lp-space-6); padding: var(--lp-space-6); background: var(--lp-color-surface); border: 1px solid var(--lp-color-border); border-radius: var(--lp-radius-lg); }
+.lp-contract-signature { display: grid; gap: var(--lp-space-5); }
+.lp-contract-signature > div:not(.lp-contract-consent) { display: grid; gap: var(--lp-space-2); }
+.lp-contract-signature label { font: var(--lp-type-label); }
+.lp-contract-signature input[type="text"] { min-height: 44px; padding: var(--lp-space-3); color: var(--lp-text-primary); background: var(--lp-color-surface); border: 1px solid var(--lp-color-border-strong); border-radius: var(--lp-radius-md); font: var(--lp-type-body); }
+.lp-contract-signature input:focus, .lp-contract-signature button:focus { outline: var(--lp-focus-ring); outline-offset: 2px; }
+.lp-contract-consent { display: grid; grid-template-columns: auto 1fr; gap: var(--lp-space-3); align-items: start; }
+.lp-contract-consent input { width: 20px; height: 20px; }
+.lp-contract-consent .errorlist { grid-column: 2; }
+.lp-contract-help { margin: 0; color: var(--lp-text-muted); font: var(--lp-type-caption); }
+.lp-contract-signature .errorlist { margin: 0; color: var(--lp-text-danger); }
+.lp-contract-success { border-color: var(--lp-color-success); background: var(--lp-color-success-subtle); }
 @media (max-width: 600px) { .lp-contract-page { padding: var(--lp-space-6) 0; } .lp-contract-document { padding: var(--lp-space-5); } .lp-contract-summary { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto; transition-duration: 0.01ms; } }
