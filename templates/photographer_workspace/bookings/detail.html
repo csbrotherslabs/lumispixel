@@ -13,17 +13,16 @@
     </div>
   </header>
 
+  <div class="lp-content-sidebar lp-booking-detail-layout">
+    <main class="lp-booking-detail-main">
   {% if booking_tab == 'contract' %}
-  <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">Overview</a><a class="is-active" aria-current="page" href="#contract">Contract <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
-  <section id="contract" class="lpw-bookings-card" aria-labelledby="contract-title">
+  <section id="contract" class="lp-booking-detail-card lpw-bookings-card" aria-labelledby="contract-title">
     <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">Details</a><a class="is-active" aria-current="page" href="#contract">Contracts <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
     <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Contract management is not implemented for workspace bookings.</p></div><span class="lpw-booking-status">{{ contract_status }}</span></div>
     <dl class="lpw-pipeline-insights"><div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div><div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div><div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd>Not tracked</dd></div></dl>
     <div class="lpw-bookings-actions"><button class="lpw-btn" type="button" disabled><i class="bi bi-send" aria-hidden="true"></i>Send contract unavailable</button></div>
   </section>
   {% else %}
-  <div class="lp-content-sidebar lp-booking-detail-layout">
-    <main class="lp-booking-detail-main">
       <section class="lp-booking-detail-card" aria-labelledby="booking-overview-title">
         <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a class="is-active" aria-current="page" href="#booking-details">Details</a><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Contracts <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
         <header><div><span>Booking details</span><h2 id="booking-overview-title">Session Summary</h2></div></header>
@@ -52,6 +51,7 @@
         {% if booking_activity %}<div id="booking-timeline" class="lp-booking-details-section"><h2>Timeline</h2><ol class="lp-booking-timeline">{% for activity in booking_activity %}<li><span aria-hidden="true"></span><div><strong>{{ activity.get_event_type_display }}</strong>{% if activity.description %}<p>{{ activity.description }}</p>{% endif %}<time datetime="{{ activity.occurred_at|date:'c' }}">{{ activity.occurred_at|date:"M j, Y, g:i A" }}</time></div></li>{% endfor %}</ol></div>{% endif %}
         {% if booking.notes %}<div id="booking-notes" class="lp-booking-details-section"><h2>Notes</h2><p class="lp-booking-note">{{ booking.notes|linebreaksbr }}</p></div>{% endif %}
       </section>
+  {% endif %}
     </main>
 
     <aside class="lp-booking-detail-side" aria-label="Booking operations">
@@ -63,6 +63,5 @@
       </div></section>
     </aside>
   </div>
-  {% endif %}
 </div>
 {% endblock %}
