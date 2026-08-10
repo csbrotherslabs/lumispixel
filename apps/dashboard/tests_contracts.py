@@ -266,6 +266,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, 'data-editor-command="redo"', html=False)
         self.assertContains(response, 'id="id_description"', html=False)
         self.assertNotContains(response, "Internal description Optional")
+        self.assertContains(response, 'class="lp-contract-template-status__control"', html=False)
+        self.assertContains(response, "This template is available when creating contracts.")
         self.assertContains(response, "Preview")
         self.assertContains(response, "data-template-preview", html=False)
         self.assertContains(response, "data-preview-dialog", html=False)

@@ -49,10 +49,13 @@
             {% if form.title.errors %}<div class="field-error" id="{{ form.title.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.title.errors|striptags }}</div>{% endif %}
           </div>
           <div class="lp-contract-template-status">
-            <div><label for="{{ form.is_active.id_for_label }}">Active</label><small>This template is available when creating contracts.</small></div>
-            <label class="lp-contract-template-switch" for="{{ form.is_active.id_for_label }}">
-              {{ form.is_active }}<span aria-hidden="true"></span><span class="lp-sr-only">Set template active</span>
-            </label>
+            <div class="lp-contract-template-status__control">
+              <label class="lp-contract-template-switch" for="{{ form.is_active.id_for_label }}">
+                {{ form.is_active }}<span aria-hidden="true"></span><span class="lp-sr-only">Set template active</span>
+              </label>
+              <label for="{{ form.is_active.id_for_label }}">Active</label>
+            </div>
+            <small>This template is available when creating contracts.</small>
             {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
           </div>
           {{ form.description.as_hidden }}
