@@ -10,6 +10,37 @@
   const search = editor.querySelector("[data-merge-search]");
   const previewButton = editor.querySelector("[data-template-preview]");
   const previewDialog = editor.querySelector("[data-preview-dialog]");
+  const starterSelect = editor.querySelector("[data-contract-starter]");
+  const starterDefinitions = document.querySelector("#contract-starter-definitions");
+  const starterFields = ["name", "category", "title", "content"].reduce(function (fields, name) {
+    fields[name] = editor.querySelector(`#id_${name}`);
+    return fields;
+  }, {});
+  let selectedStarter = starterSelect ? starterSelect.value : "";
+  let starterBaseline = null;
+
+  function currentStarterValues() {
+    return Object.keys(starterFields).reduce(function (values, name) {
+      values[name] = starterFields[name] ? starterFields[name].value : "";
+      return values;
+    }, {});
+  }
+
+  function starterFieldsWereEdited() {
+    if (!starterBaseline) return Object.values(currentStarterValues()).some(Boolean);
+    const current = currentStarterValues();
+    return Object.keys(current).some(function (name) { return current[name] !== starterBaseline[name]; });
+  }
+
+  function applyStarter(key, definitions) {
+    const values = key ? definitions[key] : { name: "", category: "general", title: "", content: "" };
+    Object.keys(starterFields).forEach(function (name) {
+      if (starterFields[name]) starterFields[name].value = values[name] || "";
+    });
+    starterBaseline = currentStarterValues();
+    selectedStarter = key;
+    updateCount();
+  }
 
   function updateCount() {
     if (content && count) count.textContent = `${content.value.length} characters`;
@@ -62,6 +93,18 @@
   });
 
   if (content) content.addEventListener("input", updateCount);
+  if (starterSelect && starterDefinitions) {
+    const definitions = JSON.parse(starterDefinitions.textContent);
+    starterSelect.addEventListener("change", function () {
+      const nextStarter = starterSelect.value;
+      if (nextStarter === selectedStarter) return;
+      if (starterFieldsWereEdited() && !window.confirm("Changing the starter template will overwrite the template details and contract content you have edited. Continue?")) {
+        starterSelect.value = selectedStarter;
+        return;
+      }
+      applyStarter(nextStarter, definitions);
+    });
+  }
   if (search) search.addEventListener("input", filterMergeFields);
   if (previewButton && previewDialog) {
     previewButton.addEventListener("click", function () {

@@ -13,6 +13,7 @@ from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.clients.models import (Client, ClientSession, Contract, ContractEvent, ContractSignature,
                                  ContractTemplate, SignedContractDocument)
 from apps.dashboard.models import StudioMembership
+from apps.dashboard.contract_starters import CONTRACT_STARTERS, serialized_contract_starters
 from apps.clients.contracts import render_merge_fields
 
 
@@ -255,6 +256,12 @@ class ContractWorkflowTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:contract_template_create"))
 
         self.assertContains(response, "Template Details")
+        self.assertContains(response, "Start From")
+        self.assertContains(response, "Choose a LumisPixel starter template or start with a blank contract.")
+        self.assertContains(response, "Blank Template")
+        for starter in CONTRACT_STARTERS:
+            self.assertContains(response, starter.label)
+            self.assertContains(response, f'"{starter.key}"', html=False)
         self.assertContains(response, "Contract Content")
         self.assertContains(response, "Merge Fields")
         self.assertContains(response, "Template Tips")
@@ -283,6 +290,49 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, "Search merge fields...")
         self.assertContains(response, 'data-merge-search-text="client.full_name Client full name"', html=False)
         self.assertNotContains(response, "Save Draft")
+
+    def test_every_contract_starter_has_editable_metadata_without_unreviewed_legal_text(self):
+        expected = {
+            "wedding": ("Wedding Photography Agreement", "wedding"),
+            "portrait": ("Portrait Photography Agreement", "portrait"),
+            "event": ("Event Photography Agreement", "event"),
+            "commercial": ("Commercial Photography Agreement", "commercial"),
+            "real-estate": ("Real Estate Photography Agreement", "general"),
+            "mini-session": ("Mini Session Agreement", "portrait"),
+            "second-shooter": ("Second Shooter / Associate Photographer Agreement", "wedding"),
+        }
+        definitions = serialized_contract_starters()
+
+        self.assertEqual(set(definitions), set(expected))
+        for key, (label, category) in expected.items():
+            with self.subTest(starter=key):
+                self.assertEqual(definitions[key]["label"], label)
+                self.assertEqual(definitions[key]["name"], label)
+                self.assertEqual(definitions[key]["title"], label)
+                self.assertEqual(definitions[key]["category"], category)
+                self.assertEqual(definitions[key]["content"], "")
+
+    def test_starter_selection_is_not_persisted_and_saved_template_belongs_to_workspace(self):
+        self.client.force_login(self.owner)
+        starter = CONTRACT_STARTERS[0]
+        response = self.client.post(reverse("photographer_workspace:contract_template_create"), {
+            "start_from": starter.key,
+            "name": "Edited starter name",
+            "title": "Edited contract title",
+            "category": starter.category,
+            "content": "Workspace-reviewed and edited terms",
+            "is_active": "on",
+        })
+
+        self.assertRedirects(response, reverse("photographer_workspace:contract_templates"))
+        saved = ContractTemplate.objects.get(name="Edited starter name")
+        self.assertEqual(saved.photographer, self.studio)
+        self.assertEqual(saved.created_by, self.owner)
+        self.assertEqual(saved.content, "Workspace-reviewed and edited terms")
+        self.assertFalse(hasattr(saved, "start_from"))
+        edit_response = self.client.get(reverse("photographer_workspace:contract_template_edit", args=[saved.pk]))
+        self.assertContains(edit_response, "Workspace-reviewed and edited terms")
+        self.assertNotContains(edit_response, "Start From")
 
     def test_draft_customization_persists_without_changing_template(self):
         contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
