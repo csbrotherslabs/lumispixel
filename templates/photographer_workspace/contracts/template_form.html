@@ -18,9 +18,8 @@
     <div class="lp-header-actions">
       {% url 'photographer_workspace:contract_templates' as contract_templates_url %}
       {% include "photographer_workspace/components/button.html" with href=contract_templates_url variant="ghost" label="Cancel" %}
-      <button class="lp-button lp-button--outline lp-button--md" type="button" disabled aria-describedby="template-preview-unavailable"><i class="bi bi-eye" aria-hidden="true"></i><span>Preview</span></button>
-      <span class="lp-sr-only" id="template-preview-unavailable">Preview is available after the template is saved and used to create a contract.</span>
-      <button class="lp-button lp-button--primary lp-button--md" type="submit" form="contract-template-form"><span>Save Template</span></button>
+      <button class="lp-button lp-button--outline lp-button--md" type="button" data-template-preview><i class="bi bi-eye" aria-hidden="true"></i><span>Preview</span></button>
+      <button class="lp-button lp-button--primary lp-button--md" type="submit" form="contract-template-form"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Save Template</span></button>
     </div>
   </header>
 
@@ -67,8 +66,16 @@
             <label class="lp-sr-only" for="{{ form.content.id_for_label }}">Contract Content</label>
             <div class="lp-contract-document">
               <div class="lp-contract-toolbar" role="toolbar" aria-label="Plain text editing tools">
-                <span>Plain text</span>
-                <div>
+                <div class="lp-contract-toolbar__format" aria-label="Formatting unavailable in plain text mode">
+                  <button class="lp-contract-toolbar__style" type="button" disabled>Paragraph <i class="bi bi-chevron-down" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Bold unavailable in plain text mode"><i class="bi bi-type-bold" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Italic unavailable in plain text mode"><i class="bi bi-type-italic" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Underline unavailable in plain text mode"><i class="bi bi-type-underline" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Bulleted list unavailable in plain text mode"><i class="bi bi-list-ul" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Numbered list unavailable in plain text mode"><i class="bi bi-list-ol" aria-hidden="true"></i></button>
+                  <button type="button" disabled aria-label="Link unavailable in plain text mode"><i class="bi bi-link-45deg" aria-hidden="true"></i></button>
+                </div>
+                <div class="lp-contract-toolbar__history">
                   <button type="button" data-editor-command="undo" aria-label="Undo"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
                   <button type="button" data-editor-command="redo" aria-label="Redo"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
                 </div>
@@ -104,10 +111,14 @@
         </div>
       </section>
       <section class="lp-card lp-template-tips" aria-labelledby="template-tips-title">
-        <div class="lp-card__body"><h2 id="template-tips-title"><i class="bi bi-lightbulb" aria-hidden="true"></i>Template Tips</h2><ul><li>Use merge fields for booking-specific information.</li><li>Keep reusable wording generic.</li><li>Contracts can be customized before being sent.</li></ul></div>
+        <div class="lp-card__body"><h2 id="template-tips-title"><i class="bi bi-lightbulb" aria-hidden="true"></i>Template Tips</h2><ul><li>Use merge fields for booking-specific information.</li><li>Keep the language general and reusable.</li><li>Contracts can be customized before sending.</li><li>Updating this template won’t change existing contracts.</li></ul></div>
       </section>
     </aside>
   </form>
+  <dialog class="lp-contract-preview" data-preview-dialog aria-labelledby="template-preview-title">
+    <header><div><span>Contract preview</span><h2 id="template-preview-title" data-preview-title>Untitled contract</h2></div><button type="button" data-preview-close aria-label="Close preview"><i class="bi bi-x-lg" aria-hidden="true"></i></button></header>
+    <div data-preview-content></div>
+  </dialog>
 </div>
 <script src="{% static 'js/contract_template_editor.js' %}"></script>
 {% endblock %}
