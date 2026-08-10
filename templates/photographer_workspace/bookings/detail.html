@@ -19,6 +19,7 @@
   </nav>
 
   {% if booking_tab == 'contract' %}
+  <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">Overview</a><a class="is-active" aria-current="page" href="#contract">Contract <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
   <section id="contract" class="lpw-bookings-card" aria-labelledby="contract-title">
     <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Contract management is not implemented for workspace bookings.</p></div><span class="lpw-booking-status">{{ contract_status }}</span></div>
     <dl class="lpw-pipeline-insights"><div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div><div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div><div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd>Not tracked</dd></div></dl>
