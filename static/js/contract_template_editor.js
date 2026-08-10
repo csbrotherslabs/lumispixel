@@ -16,19 +16,17 @@
   function filterMergeFields() {
     const query = search.value.trim().toLocaleLowerCase();
     const fields = Array.from(editor.querySelectorAll("[data-merge-field]"));
-    let visibleCount = 0;
     fields.forEach(function (field) {
-      const visible = field.dataset.mergeSearchText.toLocaleLowerCase().includes(query);
-      field.hidden = !visible;
-      if (visible) visibleCount += 1;
+      field.hidden = !field.dataset.mergeSearchText.toLocaleLowerCase().includes(query);
     });
-    editor.querySelectorAll("h3[data-merge-group]").forEach(function (heading) {
+    editor.querySelectorAll("[data-merge-group]").forEach(function (heading) {
+      if (heading.matches("[data-merge-field]")) return;
       heading.hidden = !fields.some(function (field) {
         return field.dataset.mergeGroup === heading.dataset.mergeGroup && !field.hidden;
       });
     });
     const empty = editor.querySelector("[data-merge-empty]");
-    if (empty) empty.hidden = visibleCount !== 0;
+    if (empty) empty.hidden = fields.some(function (field) { return !field.hidden; });
   }
 
   function announce(message) {
