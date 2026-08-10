@@ -1117,10 +1117,10 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 
 /* Contract template authoring */
 .lpw-main:has(.lp-contract-template-editor){padding-top:0;background:var(--lp-color-page)}
-.lp-contract-template-editor{display:grid;gap:var(--lp-space-4);max-width:var(--lp-container-wide);color:var(--lp-text-primary)}
+.lp-contract-template-editor{display:grid;gap:var(--lp-space-4);max-width:var(--lp-container-wide);padding-inline:0;color:var(--lp-text-primary)}
 .lp-contract-template-header{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--lp-space-6);padding:var(--lp-space-4) 0}
 .lp-contract-template-header .lp-page-heading{display:grid;gap:var(--lp-space-2)}
-.lp-contract-template-header .lpw-breadcrumb{display:flex;align-items:center;gap:var(--lp-space-2);margin:0;color:var(--lp-text-muted);font-size:var(--lp-type-caption);font-weight:600;line-height:var(--lp-leading-caption);text-transform:none}.lp-contract-template-back{display:grid;width:2rem;height:2rem;margin-right:var(--lp-space-1);place-items:center;border-radius:var(--lp-radius-pill);background:var(--lp-color-page)}
+.lp-contract-template-header .lpw-breadcrumb{display:flex;align-items:center;gap:var(--lp-space-2);margin:0;color:var(--lp-text-muted);font-size:var(--lp-type-caption);font-weight:600;line-height:var(--lp-leading-caption);text-transform:none}
 .lp-contract-template-header .lpw-breadcrumb a{color:var(--lp-text-brand);text-decoration:none}.lp-contract-template-header .lpw-breadcrumb a:hover{text-decoration:underline}.lp-contract-template-header .lpw-breadcrumb i{color:var(--lp-text-subtle);font-size:var(--lp-type-micro)}.lp-contract-template-header .lpw-breadcrumb strong{color:var(--lp-text-primary)}
 .lp-contract-template-header .lp-page-title,.lp-contract-template-header .lp-page-description{margin:0}.lp-contract-template-header .lp-header-actions{flex:none}.lp-contract-template-header .lp-header-actions .lp-button{min-height:2.75rem}
 .lp-contract-template-layout{display:grid;grid-template-columns:minmax(0,2.85fr) minmax(18rem,1fr);align-items:start;gap:var(--lp-space-5);padding-bottom:var(--lp-space-8)}
