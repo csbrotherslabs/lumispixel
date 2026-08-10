@@ -6,7 +6,7 @@ import textwrap
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
-from .models import Contract, SignedContractDocument
+from .models import Contract, ContractEvent, SignedContractDocument
 
 
 def build_signed_snapshot(contract, signature):
@@ -107,6 +107,17 @@ def generate_signed_contract_pdf(contract_id):
             document.signed_content_hash = signature.content_hash
             document.error_message = ""
             document.save()
+            ContractEvent.objects.get_or_create(
+                contract=contract,
+                event_type=ContractEvent.EventType.PDF_GENERATED,
+                defaults={
+                    "metadata": {
+                        "contract_version": signature.contract_version,
+                        "content_hash": signature.content_hash,
+                        "file_hash": digest,
+                    },
+                },
+            )
         return document
     except Exception as exc:
         SignedContractDocument.objects.update_or_create(

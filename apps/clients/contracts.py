@@ -268,9 +268,19 @@ def send_signed_contract_copy_link(*, contract, signed_pdf_url):
 
 @transaction.atomic
 def create_contract_from_template(*, booking, template, actor):
-    """Create a draft snapshot without retaining live template content."""
+    """Create one draft snapshot, safely coalescing duplicate form submissions."""
     if booking.photographer_id != template.photographer_id:
         raise ValidationError({"template": "The template and booking must belong to the same photographer."})
+    # Serialize creation for this booking so a browser retry/double-click cannot
+    # create two indistinguishable active drafts. A new contract remains possible
+    # after the existing agreement has left draft state.
+    type(booking).objects.select_for_update().get(pk=booking.pk)
+    existing = Contract.objects.filter(
+        photographer=booking.photographer, booking=booking, client=booking.client,
+        template=template, version=template.version, status=Contract.Status.DRAFT,
+    ).first()
+    if existing:
+        return existing
     contract = Contract(
         photographer=booking.photographer,
         booking=booking,

@@ -615,10 +615,12 @@ class ContractEvent(models.Model):
 
     class EventType(models.TextChoices):
         CREATED = "created", "Created"
+        CUSTOMIZED = "customized", "Customized"
         SENT = "sent", "Sent"
         RESENT = "resent", "Resent"
         VIEWED = "viewed", "Viewed"
         SIGNED = "signed", "Signed"
+        PDF_GENERATED = "pdf_generated", "PDF generated"
 
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(
@@ -632,6 +634,14 @@ class ContractEvent(models.Model):
     class Meta:
         ordering = ("-occurred_at", "-pk")
         indexes = [models.Index(fields=("contract", "-occurred_at"), name="contract_event_time")]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Contract activity evidence is immutable.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Contract activity evidence cannot be deleted.")
 
 
 class ContractSignature(models.Model):
