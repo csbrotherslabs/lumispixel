@@ -27,10 +27,12 @@ from PIL import Image, UnidentifiedImageError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
+                                Contract,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
+from apps.clients.contracts import create_contract_from_template
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
@@ -49,6 +51,7 @@ from apps.dashboard.growth_analytics import (booking_value_by_source, growth_sum
                                              referral_summary, reputation_summary, retention_summary, service_performance)
 from apps.dashboard.financial_actions import add_credit, issue_refund, record_payment
 from apps.dashboard.invoices import next_invoice_number, save_invoice
+from apps.dashboard.contracts import ContractCreateForm
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
 from apps.dashboard.dashboard_data import build_dashboard
@@ -2502,13 +2505,46 @@ def booking_detail(request, pk):
         }[booking.status],
         "booking_tab": tab,
         "booking_activity": booking.activities.select_related("actor").all()[:20],
-        # Contract records are intentionally not duplicated here. The booking owns
-        # the document workflow; this presentation remains ready for the existing
-        # contract service to supply its status, signatures, and signed PDF.
-        "contract_status": "Not implemented",
-        "contract_is_signed": False,
+        "contracts": booking.contracts.select_related("template", "created_by").all(),
+        "current_contract": booking.contracts.select_related("template").first(),
+        "contract_create_url": reverse("photographer_workspace:contract_create", args=[booking.pk]),
     })
     return render(request, "photographer_workspace/bookings/detail.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_create(request, booking_pk):
+    """Create a draft only from a template visible in the active studio."""
+    booking = get_object_or_404(
+        scope_assigned(ClientSession.objects.select_related("client"), request.studio_access),
+        pk=booking_pk,
+    )
+    form = ContractCreateForm(request.POST or None, studio=request.studio)
+    if request.method == "POST" and form.is_valid():
+        contract = create_contract_from_template(
+            booking=booking, template=form.cleaned_data["template"], actor=request.user,
+        )
+        messages.success(request, "Draft contract created.")
+        return redirect("photographer_workspace:contract_detail", pk=contract.pk)
+    context = _dashboard_context(request, "bookings", "Create Contract")
+    context.update({"booking": booking, "form": form})
+    return render(request, "photographer_workspace/contracts/create.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def contract_detail(request, pk):
+    """Display a contract only when its booking is accessible in this studio."""
+    accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    contract = get_object_or_404(
+        Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
+        .select_related("booking", "client", "template", "created_by"),
+        pk=pk,
+    )
+    context = _dashboard_context(request, "bookings", contract.title)
+    context.update({"contract": contract})
+    return render(request, "photographer_workspace/contracts/detail.html", context)
 
 
 @photographer_workspace_required

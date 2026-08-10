@@ -467,6 +467,134 @@ class ClientSession(PhotographerOwnedModel):
         return f"{self.client} — {self.session_type}"
 
 
+class ContractTemplate(PhotographerOwnedModel):
+    """Reusable, studio-owned source content for booking contracts."""
+
+    class Category(models.TextChoices):
+        GENERAL = "general", "General"
+        WEDDING = "wedding", "Wedding"
+        PORTRAIT = "portrait", "Portrait"
+        EVENT = "event", "Event"
+        COMMERCIAL = "commercial", "Commercial"
+        ADDENDUM = "addendum", "Addendum"
+
+    name = models.CharField(max_length=150)
+    description = models.TextField(blank=True)
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.GENERAL)
+    is_active = models.BooleanField(default=True)
+    version = models.PositiveIntegerField(default=1)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_contract_templates",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("name", "pk")
+        indexes = [models.Index(fields=("photographer", "is_active"), name="contract_tpl_owner_active")]
+
+    def clean(self):
+        errors = {}
+        if not self.name.strip():
+            errors["name"] = "Enter a template name."
+        if not self.title.strip():
+            errors["title"] = "Enter a contract title."
+        if not self.content.strip():
+            errors["content"] = "Enter contract content."
+        if self.version < 1:
+            errors["version"] = "Version must be at least 1."
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return self.name
+
+
+class Contract(PhotographerOwnedModel):
+    """An independently editable snapshot of an agreement for one booking."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        READY = "ready", "Ready"
+        SENT = "sent", "Sent"
+        VIEWED = "viewed", "Viewed"
+        SIGNED = "signed", "Signed"
+        VOIDED = "voided", "Voided"
+
+    booking = models.ForeignKey(ClientSession, on_delete=models.PROTECT, related_name="contracts")
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contracts")
+    template = models.ForeignKey(
+        ContractTemplate, on_delete=models.SET_NULL, null=True, related_name="contracts",
+    )
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
+    version = models.PositiveIntegerField(default=1)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_contracts",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-pk")
+        indexes = [
+            models.Index(fields=("photographer", "booking", "-created_at"), name="contract_owner_booking"),
+            models.Index(fields=("photographer", "status"), name="contract_owner_status"),
+        ]
+
+    def clean(self):
+        errors = {}
+        if self.booking_id:
+            if self.photographer_id != self.booking.photographer_id:
+                errors["booking"] = "The booking must belong to this photographer."
+            if self.client_id and self.client_id != self.booking.client_id:
+                errors["client"] = "The contract client must match the booking client."
+        if self.client_id and self.photographer_id != self.client.photographer_id:
+            errors["client"] = "The client must belong to this photographer."
+        if self.template_id and self.photographer_id != self.template.photographer_id:
+            errors["template"] = "The template must belong to this photographer."
+        if not self.title.strip():
+            errors["title"] = "Enter a contract title."
+        if not self.content.strip():
+            errors["content"] = "Enter contract content."
+        if self.version < 1:
+            errors["version"] = "Version must be at least 1."
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return self.title
+
+
+class ContractEvent(models.Model):
+    """Append-only evidence for material contract lifecycle events."""
+
+    class EventType(models.TextChoices):
+        CREATED = "created", "Created"
+
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="events")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="contract_events",
+    )
+    event_type = models.CharField(max_length=24, choices=EventType.choices)
+    metadata = models.JSONField(default=dict, blank=True)
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-occurred_at", "-pk")
+        indexes = [models.Index(fields=("contract", "-occurred_at"), name="contract_event_time")]
+
+
 class MiniSession(PhotographerOwnedModel):
     """A tenant-owned schedule block whose bookable children are ``MiniSessionSlot`` rows."""
 
