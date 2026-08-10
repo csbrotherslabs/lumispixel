@@ -1,0 +1,16 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lp-container">
+  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Booking contracts</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Create contract</strong></nav>
+  <header class="lp-page-header"><div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Create Contract</h1><p class="lp-page-description">Create a draft for {{ booking.client }} from an active template. Nothing will be sent.</p></div></header>
+  <section class="lp-card" aria-labelledby="contract-source-title">
+    <h2 id="contract-source-title">Select Template</h2>
+    {% if form.template.field.queryset.exists %}
+      <form method="post">{% csrf_token %}{{ form.non_field_errors }}{% include "photographer_workspace/components/form_field.html" with field=form.template wide=True %}<div class="lp-header-actions"><a class="lp-button lp-button--ghost" href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Cancel</a><button class="lp-button lp-button--primary" type="submit">Create Draft</button></div></form>
+    {% else %}
+      {% include "photographer_workspace/components/empty_state.html" with icon="bi-file-earmark-x" title="No active contract templates" description="An active contract template must be created for this workspace before a booking contract can be drafted." secondary_url=booking.get_absolute_url secondary_label="Return to booking" %}
+      <a class="lp-button lp-button--ghost" href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Return to booking</a>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

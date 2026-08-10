@@ -671,10 +671,8 @@ class PhotographerWorkspaceTests(TestCase):
             resolve("/workspace/contracts/")
 
         contract = self.client.get(detail_url, {"tab": "contract"})
-        self.assertContains(contract, "Contract management is not implemented")
-        self.assertContains(contract, "Send contract unavailable")
-        self.assertContains(contract, 'class="lpw-command-header__actions lp-header-actions"')
-        self.assertContains(contract, 'class="lpw-btn lpw-btn-danger"')
+        self.assertContains(contract, "No contract yet")
+        self.assertContains(contract, "Create Contract")
         self.assertNotContains(contract, "Send reminder")
         response = self.client.post(detail_url, {"action": "send_contract"})
         self.assertEqual(response.status_code, 400)
