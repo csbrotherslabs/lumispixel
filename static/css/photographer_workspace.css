@@ -1111,6 +1111,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Bookings overview — canonical workspace operations dashboard. */
 .lp-bookings-overview{display:grid;gap:var(--lp-space-6);color:var(--lp-text-primary)}
 .lp-bookings-overview>.lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}.lp-bookings-overview>.lpw-breadcrumb a{color:var(--lp-text-brand)}.lp-bookings-overview>.lpw-breadcrumb strong{color:var(--lp-text-primary)}
+.lp-contract-create>.lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}.lp-contract-create>.lpw-breadcrumb a{color:var(--lp-text-brand)}.lp-contract-create>.lpw-breadcrumb strong{color:var(--lp-text-primary)}
 .lp-booking-detail{display:grid;gap:var(--lp-space-6);color:var(--lp-text-primary)}
 .lp-booking-detail .lpw-detail-tabs{padding-inline:var(--lp-space-4);border-color:var(--lp-color-border)}
 .lp-booking-detail .lpw-bookings-card{border-color:var(--lp-color-border);border-radius:var(--lp-radius-lg);box-shadow:var(--lp-shadow-subtle)}
