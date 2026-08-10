@@ -1,38 +1,67 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 <div class="lp-booking-detail">
-  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">LP-{{ booking.pk|stringformat:'04d' }}</strong></nav>
-  <header class="lpw-command-header lp-page-header">
+  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Booking #LP-{{ booking.pk|stringformat:'04d' }}</strong></nav>
+  <header class="lp-page-header lp-booking-detail-header">
     <div class="lp-page-heading">
-      <h1 class="lp-page-title" id="workspace-page-title">{{ booking.client }}</h1>
-      <p class="lp-page-description">{{ booking.session_type }} · {{ booking.starts_at|date:"F j, Y, g:i A" }}</p>
+      <div class="lp-booking-title-row"><h1 class="lp-page-title" id="workspace-page-title">{{ booking.session_type|default:"Photography session" }}</h1>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}</div>
+      <p class="lp-page-description">Booking for {{ booking.client }} · LP-{{ booking.pk|stringformat:'04d' }}</p>
     </div>
-    <div class="lpw-command-header__actions lp-header-actions" role="group" aria-label="Booking actions"><a class="lpw-btn" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>{% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lpw-btn lpw-btn-danger" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}</div>
+    <div class="lp-header-actions" role="group" aria-label="Booking actions">
+      <a class="lp-button lp-button--secondary lp-booking-edit-action" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>
+      {% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}" data-mutation-form data-confirm="Cancel this booking? This will remove it from the active schedule.">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lp-button lp-button--destructive" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}
+    </div>
   </header>
 
-  <nav class="lpw-detail-tabs" aria-label="Booking workspace">
-    <a href="{% url 'photographer_workspace:booking_detail' booking.pk %}"{% if booking_tab == 'overview' %} class="is-active" aria-current="page"{% endif %}>Overview</a>
-    <a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract"{% if booking_tab == 'contract' %} class="is-active" aria-current="page"{% endif %}>Contract <span class="lpw-mini-status">{{ contract_status }}</span></a>
-  </nav>
-
+  <div class="lp-content-sidebar lp-booking-detail-layout">
+    <main class="lp-booking-detail-main">
   {% if booking_tab == 'contract' %}
-  <section id="contract" class="lpw-bookings-card" aria-labelledby="contract-title">
+  <section id="contract" class="lp-booking-detail-card lpw-bookings-card" aria-labelledby="contract-title">
+    <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">Details</a><a class="is-active" aria-current="page" href="#contract">Contracts <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
     <div class="lpw-bookings-card-head"><div><span>Booking document</span><h2 id="contract-title">Contract</h2><p>Contract management is not implemented for workspace bookings.</p></div><span class="lpw-booking-status">{{ contract_status }}</span></div>
-    <dl class="lpw-pipeline-insights">
-      <div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div>
-      <div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div>
-      <div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd id="contract-signatures">Not tracked</dd></div>
-    </dl>
-    <div class="lpw-bookings-actions">
-      <button class="lpw-btn" type="button" disabled><i class="bi bi-send" aria-hidden="true"></i>Send contract unavailable</button>
-    </div>
+    <dl class="lpw-pipeline-insights"><div><dt><i class="bi bi-person" aria-hidden="true"></i>Client</dt><dd>{{ booking.client }}</dd></div><div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i>Session</dt><dd>{{ booking.starts_at|date:"M j, Y" }}</dd></div><div><dt><i class="bi bi-pen" aria-hidden="true"></i>Signatures</dt><dd>Not tracked</dd></div></dl>
+    <div class="lpw-bookings-actions"><button class="lpw-btn" type="button" disabled><i class="bi bi-send" aria-hidden="true"></i>Send contract unavailable</button></div>
   </section>
   {% else %}
-  <section class="lpw-bookings-card" aria-labelledby="booking-overview-title">
-    <div class="lpw-bookings-card-head"><div><span>Booking details</span><h2 id="booking-overview-title">Overview</h2><p>Session details and client contact information.</p></div><span class="lpw-booking-status lpw-booking-status--{{ booking.status }}">{{ booking.get_status_display }}</span></div>
-    <dl class="lpw-pipeline-insights"><div><dt>Date and time</dt><dd>{{ booking.starts_at|date:"F j, Y, g:i A" }}</dd></div><div><dt>Duration</dt><dd>{{ booking.duration_minutes }} minutes</dd></div><div><dt>Location</dt><dd>{{ booking.location|default:"To be confirmed" }}</dd></div><div><dt>Client</dt><dd>{{ booking.client }}</dd></div><div><dt>Email</dt><dd>{% if booking.client.email %}<a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a>{% else %}Not provided{% endif %}</dd></div><div><dt>Booking value</dt><dd>{{ request.studio.default_currency }} {{ booking.booking_value }}</dd></div>{% if booking.notes %}<div><dt>Notes</dt><dd>{{ booking.notes|linebreaksbr }}</dd></div>{% endif %}{% if booking.cancelled_at %}<div><dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"F j, Y, g:i A" }}{% if booking.cancellation_reason %}<br>{{ booking.cancellation_reason }}{% endif %}</dd></div>{% endif %}</dl>
-  </section>
-  <section class="lpw-bookings-card" aria-labelledby="booking-activity-title"><div class="lpw-bookings-card-head"><div><span>History</span><h2 id="booking-activity-title">Activity</h2></div></div>{% if booking_activity %}<ol class="lp-activity-list">{% for activity in booking_activity %}<li><strong>{{ activity.get_event_type_display }}</strong> — {{ activity.description }} <time datetime="{{ activity.occurred_at|date:'c' }}">{{ activity.occurred_at|date:"M j, Y, g:i A" }}</time></li>{% endfor %}</ol>{% else %}<p>No booking activity has been recorded.</p>{% endif %}</section>
+      <section class="lp-booking-detail-card" aria-labelledby="booking-overview-title">
+        <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a class="is-active" aria-current="page" href="#booking-details">Details</a><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}?tab=contract#contract">Contracts <span class="lpw-mini-status">{{ contract_status }}</span></a></nav>
+        <header><div><span>Booking details</span><h2 id="booking-overview-title">Session Summary</h2></div></header>
+        <dl class="lp-booking-summary">
+          <div><i class="bi bi-calendar3" aria-hidden="true"></i><dt>Date &amp; time</dt><dd><strong>{{ booking.starts_at|date:"l, F j, Y" }}</strong><span>{{ booking.starts_at|date:"g:i A" }} – {{ booking_end|date:"g:i A" }}</span></dd></div>
+          <div><i class="bi bi-clock" aria-hidden="true"></i><dt>Duration</dt><dd><strong>{{ booking_duration }}</strong><span>{{ booking.duration_minutes }} minutes</span></dd></div>
+          <div><i class="bi bi-geo-alt" aria-hidden="true"></i><dt>Location</dt><dd><strong>{{ booking.location|default:"To be confirmed" }}</strong></dd></div>
+        </dl>
+        <div class="lp-booking-overview-lower">
+          <section aria-labelledby="booking-client-title">
+            <h3 id="booking-client-title">Client</h3>
+            <div class="lp-booking-client">
+              {% if booking.client.profile_photo %}<img src="{{ booking.client.profile_photo.url }}" alt="">{% else %}<span class="lp-booking-avatar" aria-hidden="true">{{ booking.client.first_name|first|upper }}{{ booking.client.last_name|first|upper }}</span>{% endif %}
+              <div><strong>{{ booking.client }}</strong>{% if booking.client.email %}<a href="mailto:{{ booking.client.email }}">{{ booking.client.email }}</a>{% endif %}{% if booking.client.phone %}<a href="tel:{{ booking.client.phone }}">{{ booking.client.phone }}</a>{% endif %}</div>
+            </div>
+            <a class="lp-booking-text-link" href="{% url 'photographer_workspace:client_detail' booking.client.pk %}">View Client Profile <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          </section>
+          <section aria-labelledby="booking-value-title"><h3 id="booking-value-title">Booking Value</h3><strong class="lp-booking-value">{{ booking_value_display }}</strong><p>Recorded value for this booking.</p></section>
+        </div>
+        <div id="booking-details" class="lp-booking-details-section"><h2 id="booking-details-title">Booking Details</h2><dl class="lp-booking-metadata">
+          <div><dt>Session type</dt><dd>{{ booking.session_type|default:"Photography session" }}</dd></div><div><dt>Booking ID</dt><dd>LP-{{ booking.pk|stringformat:'04d' }}</dd></div>
+          <div><dt>Assigned photographer</dt><dd>{% for member in booking.assigned_members.all %}{{ member.user.get_full_name|default:member.user.email }}{% if not forloop.last %}, {% endif %}{% empty %}Unassigned{% endfor %}</dd></div><div><dt>Status</dt><dd>{{ booking.get_status_display }}</dd></div>
+          <div><dt>Created</dt><dd>{{ booking.created_at|date:"M j, Y, g:i A" }}</dd></div><div><dt>Last updated</dt><dd>{{ booking.updated_at|date:"M j, Y, g:i A" }}</dd></div>
+          {% if booking.cancelled_at %}<div><dt>Cancelled</dt><dd>{{ booking.cancelled_at|date:"M j, Y, g:i A" }}</dd></div>{% if booking.cancellation_reason %}<div><dt>Cancellation reason</dt><dd>{{ booking.cancellation_reason }}</dd></div>{% endif %}{% endif %}
+        </dl></div>
+        {% if booking_activity %}<div id="booking-timeline" class="lp-booking-details-section"><h2>Timeline</h2><ol class="lp-booking-timeline">{% for activity in booking_activity %}<li><span aria-hidden="true"></span><div><strong>{{ activity.get_event_type_display }}</strong>{% if activity.description %}<p>{{ activity.description }}</p>{% endif %}<time datetime="{{ activity.occurred_at|date:'c' }}">{{ activity.occurred_at|date:"M j, Y, g:i A" }}</time></div></li>{% endfor %}</ol></div>{% endif %}
+        {% if booking.notes %}<div id="booking-notes" class="lp-booking-details-section"><h2>Notes</h2><p class="lp-booking-note">{{ booking.notes|linebreaksbr }}</p></div>{% endif %}
+      </section>
   {% endif %}
+    </main>
+
+    <aside class="lp-booking-detail-side" aria-label="Booking operations">
+      <section class="lp-booking-side-card" aria-labelledby="booking-status-title"><h2 id="booking-status-title">Booking Status</h2>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}<p>{{ booking_status_description }}</p></section>
+      <section class="lp-booking-side-card" aria-labelledby="booking-actions-title"><h2 id="booking-actions-title">Quick Actions</h2><div class="lp-booking-quick-actions">
+        {% url 'photographer_workspace:client_detail' booking.client.pk as client_url %}
+        {% include "photographer_workspace/components/quick_action.html" with title="Edit or reschedule" description="Open this date in the schedule" icon="bi-calendar-event" url=booking_edit_url %}
+        {% include "photographer_workspace/components/quick_action.html" with title="View client" description=booking.client icon="bi-person" url=client_url %}
+      </div></section>
+    </aside>
+  </div>
 </div>
 {% endblock %}
