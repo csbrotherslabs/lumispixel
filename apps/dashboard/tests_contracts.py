@@ -249,6 +249,20 @@ class ContractWorkflowTests(TestCase):
         self.assertNotContains(self.client.get(list_url), other_template.name)
         self.assertEqual(self.client.get(reverse("photographer_workspace:contract_template_edit", args=[other_template.pk])).status_code, 404)
 
+    def test_template_form_renders_authoring_layout_with_supported_merge_fields(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("photographer_workspace:contract_template_create"))
+
+        self.assertContains(response, "Template Details")
+        self.assertContains(response, "Contract Content")
+        self.assertContains(response, "Merge Fields")
+        self.assertContains(response, "Template Tips")
+        self.assertContains(response, 'form="contract-template-form"', html=False)
+        self.assertContains(response, 'data-merge-insert="{{ client.full_name }}"', html=False)
+        self.assertContains(response, 'data-merge-copy="{{ booking.date }}"', html=False)
+        self.assertNotContains(response, "Save Draft")
+
     def test_draft_customization_persists_without_changing_template(self):
         contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
         self.client.force_login(self.owner)

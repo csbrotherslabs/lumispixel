@@ -1,6 +1,109 @@
 {% extends "photographer_workspace/base.html" %}
-{% block workspace_content %}<div class="lp-container">
-<nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:contract_templates' %}">Contract templates</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{% if template_object %}Edit{% else %}Create{% endif %}</strong></nav>
-<header class="lp-page-header"><div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">{% if template_object %}Edit Contract Template{% else %}Create Contract Template{% endif %}</h1><p class="lp-page-description">Plain text is escaped when previewed, preventing embedded scripts or unsafe content.</p></div></header>
-<form method="post" class="lp-content-sidebar">{% csrf_token %}<main><section class="lp-card" aria-labelledby="template-content"><h2 id="template-content">Template details</h2>{{ form.non_field_errors }}{% for field in form %}{% include "photographer_workspace/components/form_field.html" with field=field wide=True %}{% endfor %}<div class="lp-header-actions"><a class="lp-button lp-button--ghost" href="{% url 'photographer_workspace:contract_templates' %}">Cancel</a><button class="lp-button lp-button--primary" type="submit">Save Template</button></div></section></main><aside><section class="lp-card"><h2>Supported merge fields</h2><p>Use the exact safe syntax shown below.</p><ul>{% for field, label in merge_fields %}<li><code>{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}</code> — {{ label }}</li>{% endfor %}</ul></section></aside></form>
-</div>{% endblock %}
+{% load static %}
+{% block workspace_content %}
+<div class="lp-container lp-contract-template-editor" data-contract-template-editor>
+  <header class="lp-contract-template-header">
+    <div class="lp-page-heading">
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb">
+        <a href="{% url 'photographer_workspace:contract_templates' %}">Settings</a>
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        <a href="{% url 'photographer_workspace:contract_templates' %}">Contract Templates</a>
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        <strong aria-current="page">{% if template_object %}Edit Template{% else %}Create Template{% endif %}</strong>
+      </nav>
+      <h1 class="lp-page-title" id="workspace-page-title">{% if template_object %}Edit Contract Template{% else %}Create Contract Template{% endif %}</h1>
+      <p class="lp-page-description">Create a reusable contract template that can be customized for individual bookings.</p>
+    </div>
+    <div class="lp-header-actions">
+      {% url 'photographer_workspace:contract_templates' as contract_templates_url %}
+      {% include "photographer_workspace/components/button.html" with href=contract_templates_url variant="ghost" label="Cancel" %}
+      <button class="lp-button lp-button--primary lp-button--md" type="submit" form="contract-template-form"><span>Save Template</span></button>
+    </div>
+  </header>
+
+  <form method="post" id="contract-template-form" class="lp-contract-template-layout" novalidate>
+    {% csrf_token %}
+    <main class="lp-contract-template-main">
+      {% if form.non_field_errors %}<div class="lp-contract-template-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+      <section class="lp-card lp-contract-template-card" aria-labelledby="template-details-title">
+        <header class="lp-card__header">
+          <div><h2 id="template-details-title">Template Details</h2><p>Define how this reusable template is identified and presented.</p></div>
+        </header>
+        <div class="lp-card__body lp-contract-template-fields">
+          <div class="lp-contract-template-field">
+            <label for="{{ form.name.id_for_label }}">Template Name{% if form.name.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="lp-sr-only"> (required)</span>{% endif %}</label>
+            {{ form.name }}
+            <small>Internal name used to identify this template.</small>
+            {% if form.name.errors %}<div class="field-error" id="{{ form.name.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.name.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="lp-contract-template-field">
+            <label for="{{ form.category.id_for_label }}">Category{% if form.category.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="lp-sr-only"> (required)</span>{% endif %}</label>
+            {{ form.category }}
+            {% if form.category.errors %}<div class="field-error" id="{{ form.category.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.category.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="lp-contract-template-field lp-contract-template-field--wide">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            <small>Optional internal context about when this template should be used.</small>
+            {% if form.description.errors %}<div class="field-error" id="{{ form.description.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.description.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="lp-contract-template-field lp-contract-template-field--wide">
+            <label for="{{ form.title.id_for_label }}">Contract Title{% if form.title.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="lp-sr-only"> (required)</span>{% endif %}</label>
+            {{ form.title }}
+            <small>Title shown on the final client-facing contract.</small>
+            {% if form.title.errors %}<div class="field-error" id="{{ form.title.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.title.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="lp-contract-template-status lp-contract-template-field--wide">
+            <div><label for="{{ form.is_active.id_for_label }}">Active</label><small>Available when creating contracts.</small></div>
+            <label class="lp-contract-template-switch" for="{{ form.is_active.id_for_label }}">
+              {{ form.is_active }}<span aria-hidden="true"></span><span class="lp-sr-only">Set template active</span>
+            </label>
+            {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+      </section>
+
+      <section class="lp-card lp-contract-template-card lp-contract-content-card" aria-labelledby="contract-content-title">
+        <header class="lp-card__header">
+          <div><h2 id="contract-content-title">Contract Content</h2><p>Write the reusable contract language below. Merge fields can automatically insert booking, client, and business information.</p></div>
+        </header>
+        <div class="lp-card__body">
+          <div class="lp-contract-template-field">
+            <label class="lp-sr-only" for="{{ form.content.id_for_label }}">Contract Content</label>
+            {{ form.content }}
+            <div class="lp-contract-content-meta"><span>Plain text is safely escaped when displayed.</span><span data-content-count aria-live="polite">0 characters</span></div>
+            {% if form.content.errors %}<div class="field-error" id="{{ form.content.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.content.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="lp-contract-template-aside" aria-label="Contract template tools">
+      <section class="lp-card lp-merge-fields" aria-labelledby="merge-fields-title">
+        <header class="lp-card__header"><div><h2 id="merge-fields-title">Merge Fields</h2><p>Insert dynamic booking or client information into the contract.</p></div></header>
+        <div class="lp-card__body">
+          <p class="lp-merge-fields-help"><i class="bi bi-cursor-text" aria-hidden="true"></i>Select <strong>Insert</strong> to add a field at the editor cursor, or copy its token.</p>
+          <div class="lp-merge-field-list">
+            {% for field, label in merge_fields %}
+              {% if field == "client.first_name" %}<h3>Client</h3>{% elif field == "booking.service" %}<h3>Booking</h3>{% elif field == "workspace.name" %}<h3>Business</h3>{% endif %}
+              <article class="lp-merge-field">
+                <div><code>{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}</code><span>{{ label }}</span></div>
+                <div class="lp-merge-field-actions">
+                  <button type="button" data-merge-insert="{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}" aria-label="Insert {{ label }}">Insert</button>
+                  <button type="button" data-merge-copy="{% templatetag openvariable %} {{ field }} {% templatetag closevariable %}" aria-label="Copy {{ label }} merge field"><i class="bi bi-copy" aria-hidden="true"></i><span class="lp-sr-only">Copy</span></button>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+          <p class="lp-merge-field-feedback" data-copy-feedback aria-live="polite"></p>
+        </div>
+      </section>
+      <section class="lp-card lp-template-tips" aria-labelledby="template-tips-title">
+        <div class="lp-card__body"><h2 id="template-tips-title"><i class="bi bi-lightbulb" aria-hidden="true"></i>Template Tips</h2><ul><li>Use merge fields for booking-specific information.</li><li>Keep reusable wording generic.</li><li>Contracts can be customized before being sent.</li></ul></div>
+      </section>
+    </aside>
+  </form>
+</div>
+<script src="{% static 'js/contract_template_editor.js' %}"></script>
+{% endblock %}
