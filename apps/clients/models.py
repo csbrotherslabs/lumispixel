@@ -537,6 +537,13 @@ class Contract(PhotographerOwnedModel):
     viewed_at = models.DateTimeField(null=True, blank=True)
     signed_at = models.DateTimeField(null=True, blank=True)
     locked_at = models.DateTimeField(null=True, blank=True)
+    rendered_content = models.TextField(blank=True)
+    review_token_digest = models.CharField(max_length=64, blank=True, editable=False, db_index=True)
+    review_token_expires_at = models.DateTimeField(null=True, blank=True)
+    review_token_revoked_at = models.DateTimeField(null=True, blank=True)
+    sent_to_email = models.EmailField(blank=True)
+    send_count = models.PositiveIntegerField(default=0)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_contracts",
@@ -580,6 +587,9 @@ class ContractEvent(models.Model):
 
     class EventType(models.TextChoices):
         CREATED = "created", "Created"
+        SENT = "sent", "Sent"
+        RESENT = "resent", "Resent"
+        VIEWED = "viewed", "Viewed"
 
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="events")
     actor = models.ForeignKey(

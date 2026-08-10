@@ -1,0 +1,5 @@
+{{ studio.business_name|default:studio.display_name }} has sent you “{{ contract.title }}” to review.
+
+Review your contract securely: {{ review_url }}
+
+This link expires in 30 days. If you did not expect this email, contact the studio.

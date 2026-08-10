@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
+from django.core import mail
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -209,3 +212,102 @@ class ContractWorkflowTests(TestCase):
                                         status=StudioMembership.Status.ACTIVE)
         self.client.force_login(manager)
         self.assertEqual(self.client.get(reverse("photographer_workspace:contract_templates")).status_code, 403)
+
+    def _draft_with_email(self):
+        self.crm_client.email = "maya@example.com"
+        self.crm_client.save(update_fields=["email"])
+        return create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+
+    def test_preview_renders_resolved_snapshot_safely(self):
+        self.template.content = "Hello {{ client.full_name }} <script>alert(1)</script>"
+        self.template.save(update_fields=["content"])
+        contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("photographer_workspace:contract_preview", args=[contract.pk]))
+        self.assertContains(response, "Hello Maya Cole")
+        self.assertNotContains(response, "<script>alert(1)</script>", html=True)
+        self.assertContains(response, "&lt;script&gt;alert(1)&lt;/script&gt;")
+        self.assertNotContains(response, "Contract Content")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_send_secure_review_view_and_resend(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        send_url = reverse("photographer_workspace:contract_send", args=[contract.pk])
+        self.client.post(send_url)
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, Contract.Status.SENT)
+        self.assertEqual(contract.send_count, 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(contract.review_token_digest), 64)
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        review = self.client.get(reverse("clients:contract-review", args=[token]))
+        self.assertContains(review, "Original persisted terms")
+        self.assertNotContains(review, "Photographer Workspace")
+        contract.refresh_from_db()
+        first_viewed_at = contract.viewed_at
+        self.assertEqual(contract.status, Contract.Status.VIEWED)
+        self.client.get(reverse("clients:contract-review", args=[token]))
+        contract.refresh_from_db()
+        self.assertEqual(contract.viewed_at, first_viewed_at)
+        self.assertEqual(contract.events.filter(event_type=ContractEvent.EventType.VIEWED).count(), 1)
+
+        self.client.force_login(self.owner)
+        self.client.post(send_url)
+        contract.refresh_from_db()
+        self.assertEqual(Contract.objects.filter(pk=contract.pk).count(), 1)
+        self.assertEqual(contract.send_count, 2)
+        self.assertEqual(contract.events.filter(event_type=ContractEvent.EventType.RESENT).count(), 1)
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[token])).status_code, 404)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_missing_and_invalid_email_are_not_sent(self):
+        contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+        self.client.force_login(self.owner)
+        url = reverse("photographer_workspace:contract_send", args=[contract.pk])
+        self.client.post(url)
+        self.crm_client.email = "not-an-email"
+        self.crm_client.save(update_fields=["email"])
+        self.client.post(url)
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, Contract.Status.DRAFT)
+        self.assertEqual(contract.send_count, 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_invalid_expired_and_revoked_tokens_are_hidden(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=["invalid-token"])).status_code, 404)
+        contract.review_token_expires_at = timezone.now() - timezone.timedelta(seconds=1)
+        contract.save(update_fields=["review_token_expires_at"])
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[token])).status_code, 404)
+        contract.review_token_expires_at = timezone.now() + timezone.timedelta(days=1)
+        contract.review_token_revoked_at = timezone.now()
+        contract.save(update_fields=["review_token_expires_at", "review_token_revoked_at"])
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[token])).status_code, 404)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_cross_tenant_preview_and_send_are_hidden(self):
+        other_owner, _studio, other_client, other_booking, other_template = self.make_studio("send-other@example.com")
+        other_client.email = "private@example.com"
+        other_client.save(update_fields=["email"])
+        contract = create_contract_from_template(booking=other_booking, template=other_template, actor=other_owner)
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:contract_preview", args=[contract.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk])).status_code, 404)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_email_failure_leaves_contract_draft_and_without_token(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        with patch("apps.clients.contracts.EmailMultiAlternatives.send", side_effect=OSError("mail down")):
+            response = self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]), follow=True)
+        contract.refresh_from_db()
+        self.assertContains(response, "was not marked as sent")
+        self.assertEqual(contract.status, Contract.Status.DRAFT)
+        self.assertEqual(contract.review_token_digest, "")
+        self.assertEqual(contract.send_count, 0)
+        self.assertFalse(contract.events.filter(event_type=ContractEvent.EventType.SENT).exists())

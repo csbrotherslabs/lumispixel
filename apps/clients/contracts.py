@@ -1,8 +1,16 @@
 """Canonical, tenant-safe operations for booking contracts and merge fields."""
+import hashlib
 import re
+import secrets
+from datetime import timedelta
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
 from django.db import transaction
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import formats, timezone
 
 from .models import Contract, ContractEvent, ContractTemplate
@@ -22,6 +30,12 @@ MERGE_FIELDS = {
     "photographer.name": "Photographer/studio name",
 }
 MERGE_PATTERN = re.compile(r"{{\s*([a-z][a-z0-9_.]*)\s*}}")
+REVIEW_LINK_LIFETIME = timedelta(days=30)
+SENDABLE_STATUSES = (Contract.Status.DRAFT, Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED)
+
+
+class ContractDeliveryError(Exception):
+    """A client review email could not be delivered."""
 
 
 def unknown_merge_fields(content):
@@ -54,6 +68,111 @@ def render_merge_fields(content, booking):
     """Resolve known fields; retain unknown tokens visibly and harmlessly."""
     values = merge_context(booking)
     return MERGE_PATTERN.sub(lambda match: str(values.get(match.group(1), match.group(0))), content or "")
+
+
+def contract_preview_content(contract, content=None):
+    """Render the contract snapshot with current persisted merge values."""
+    return render_merge_fields(contract.content if content is None else content, contract.booking)
+
+
+def validate_contract_for_email(contract):
+    errors = []
+    if not contract.client_id:
+        errors.append("Add a client before sending this contract.")
+    email = (contract.client.email if contract.client_id else "").strip()
+    try:
+        validate_email(email)
+    except ValidationError:
+        errors.append("Add a valid client email address before sending.")
+    if not (contract.content or "").strip():
+        errors.append("Add contract content before sending.")
+    if contract.status not in SENDABLE_STATUSES:
+        errors.append("This contract is not in a sendable status.")
+    if contract.booking_id and contract.booking.photographer_id != contract.photographer_id:
+        errors.append("This contract does not belong to the active workspace.")
+    if not contract.photographer.user.can_login:
+        errors.append("This workspace is not active.")
+    if errors:
+        raise ValidationError(errors)
+    return email
+
+
+def _token_digest(raw_token):
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
+@transaction.atomic
+def send_contract_for_review(*, contract, actor, build_absolute_uri):
+    """Deliver a rotating opaque review link, then atomically record success."""
+    contract = Contract.objects.select_for_update().select_related(
+        "client", "booking", "photographer", "photographer__user"
+    ).get(pk=contract.pk, photographer=contract.photographer)
+    recipient = validate_contract_for_email(contract)
+    raw_token = secrets.token_urlsafe(32)
+    review_url = build_absolute_uri(reverse("clients:contract-review", kwargs={"token": raw_token}))
+    rendered_content = contract_preview_content(contract)
+    context = {"contract": contract, "review_url": review_url, "studio": contract.photographer}
+    message = EmailMultiAlternatives(
+        f"Review your contract: {contract.title}",
+        render_to_string("clients/contracts/email/review.txt", context),
+        settings.DEFAULT_FROM_EMAIL,
+        [recipient],
+    )
+    message.attach_alternative(render_to_string("clients/contracts/email/review.html", context), "text/html")
+    try:
+        delivered = message.send(fail_silently=False)
+    except Exception as exc:
+        raise ContractDeliveryError("Contract email delivery failed.") from exc
+    if delivered != 1:
+        raise ContractDeliveryError("Contract email delivery failed.")
+
+    now = timezone.now()
+    was_sent = contract.send_count > 0
+    contract.rendered_content = rendered_content
+    contract.review_token_digest = _token_digest(raw_token)
+    contract.review_token_expires_at = now + REVIEW_LINK_LIFETIME
+    contract.review_token_revoked_at = None
+    contract.sent_to_email = recipient
+    contract.send_count += 1
+    contract.last_sent_at = now
+    contract.sent_at = contract.sent_at or now
+    contract.locked_at = contract.locked_at or now
+    if contract.status in (Contract.Status.DRAFT, Contract.Status.READY):
+        contract.status = Contract.Status.SENT
+    contract.save(update_fields=(
+        "rendered_content", "review_token_digest", "review_token_expires_at", "review_token_revoked_at",
+        "sent_to_email", "send_count", "last_sent_at", "sent_at", "locked_at", "status", "updated_at",
+    ))
+    ContractEvent.objects.create(
+        contract=contract, actor=actor,
+        event_type=ContractEvent.EventType.RESENT if was_sent else ContractEvent.EventType.SENT,
+        metadata={"recipient": recipient, "contract_version": contract.version, "send_number": contract.send_count},
+    )
+    return contract
+
+
+@transaction.atomic
+def open_contract_review(raw_token):
+    """Resolve one unexpired token and record only its first successful view."""
+    if not raw_token:
+        return None
+    contract = Contract.objects.select_for_update().select_related(
+        "client", "booking", "photographer", "photographer__user"
+    ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
+    if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+        return None
+    if contract.status not in (Contract.Status.SENT, Contract.Status.VIEWED):
+        return None
+    if contract.viewed_at is None:
+        now = timezone.now()
+        contract.viewed_at = now
+        contract.status = Contract.Status.VIEWED
+        contract.save(update_fields=("viewed_at", "status", "updated_at"))
+        ContractEvent.objects.create(
+            contract=contract, event_type=ContractEvent.EventType.VIEWED,
+            metadata={"recipient": contract.sent_to_email, "contract_version": contract.version},
+        )
+    return contract
 
 
 @transaction.atomic
