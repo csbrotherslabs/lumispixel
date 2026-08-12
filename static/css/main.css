@@ -47,6 +47,17 @@
 @import url("style.css");
 @import url("responsive.css");
 @import url("light.css");
+
+/* LumisPixel company logo asset uses a square canvas; display it at the existing wordmark ratio. */
+.lumis-company-logo {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 107 / 31;
+  object-fit: cover;
+  object-position: center;
+}
+
 /* LumisPixel AI features section */
 .lumis-ai-features {
   position: relative;
