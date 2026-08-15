@@ -7,6 +7,7 @@
   <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:create_gallery' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Gallery</a><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload Photos</a></div>
 </header>
 
+{% if gallery_summary_strip.0.value or has_filters %}
 <nav class="lpw-gallery-summary" aria-label="Gallery status filter">{% for item in gallery_summary_strip %}<a href="{% url 'photographer_workspace:all_galleries' %}{% if item.status %}?status={{ item.status }}{% endif %}"{% if selected_status == item.status %} class="is-active" aria-current="page"{% endif %}><span>{{ item.label }}</span><strong aria-label="{{ item.value }} galleries">{{ item.value }}</strong></a>{% endfor %}</nav>
 
 <section class="lpw-gallery-toolbar" aria-label="Gallery controls">
@@ -58,5 +59,25 @@
   <dialog class="lpw-confirm-modal" data-gallery-modal><div class="lpw-confirm-icon"><i class="bi bi-exclamation-triangle"></i></div><h2 data-modal-title>Delete galleries?</h2><p data-modal-copy>This action cannot be undone. Gallery records will be permanently removed.</p><div><button class="lpw-btn" type="button" data-modal-cancel>Cancel</button><button class="lpw-btn lpw-btn-danger" type="submit" name="action" value="delete" data-modal-submit>Delete</button></div></dialog>
 </form>
 {% if gallery_page.paginator.num_pages > 1 %}<nav class="lpw-client-pagination" aria-label="Gallery pages"><p>Showing {{ gallery_page.start_index }}–{{ gallery_page.end_index }} of {{ gallery_page.paginator.count }} galleries</p><div>{% if gallery_page.has_previous %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ gallery_page.previous_page_number }}"><i class="bi bi-chevron-left"></i>Previous</a>{% endif %}<span>Page {{ gallery_page.number }} of {{ gallery_page.paginator.num_pages }}</span>{% if gallery_page.has_next %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ gallery_page.next_page_number }}">Next<i class="bi bi-chevron-right"></i></a>{% endif %}</div></nav>{% endif %}
+{% else %}
+<section class="lp-gallery-welcome lp-gallery-library-welcome" aria-labelledby="gallery-library-welcome-title">
+  <div class="lp-gallery-welcome__main">
+    <span class="lp-gallery-welcome__icon"><i class="bi bi-images" aria-hidden="true"></i></span>
+    <span class="lp-contract-eyebrow">Your client gallery library</span>
+    <h2 id="gallery-library-welcome-title">Create a polished home for every photo story</h2>
+    <p>Start with a client gallery, add the finished images, then publish a private experience that is ready to share.</p>
+    <a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:create_gallery' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Create Your First Gallery</span></a>
+  </div>
+  <ol class="lp-gallery-welcome__steps" aria-label="Gallery delivery workflow">
+    <li><span>1</span><div><strong>Set up the collection</strong><small>Add the gallery name, client, event date, and privacy settings.</small></div></li>
+    <li><span>2</span><div><strong>Upload and organize</strong><small>Bring in the final photos and arrange the client experience.</small></div></li>
+    <li><span>3</span><div><strong>Publish and deliver</strong><small>Share a secure gallery when the collection is ready.</small></div></li>
+  </ol>
+</section>
+<section class="lp-gallery-welcome-actions" aria-label="Gallery shortcuts">
+  <a href="{% url 'photographer_workspace:create_gallery' %}"><span><i class="bi bi-folder-plus" aria-hidden="true"></i></span><div><strong>Start from gallery details</strong><small>Connect a client and prepare the delivery experience first.</small></div><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+  <a href="{% url 'photographer_workspace:gallery_upload_queue' %}"><span><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><div><strong>Already have photos ready?</strong><small>Open the upload queue and begin with the image collection.</small></div><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</section>
+{% endif %}
 </div>
 {% endblock %}
