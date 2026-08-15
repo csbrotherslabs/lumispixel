@@ -1422,3 +1422,41 @@ document.addEventListener('click', async (event) => {
   layer.querySelectorAll('[data-definitions-close]').forEach(button => button.addEventListener('click', close));
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !layer.hidden) close(); });
 })();
+
+/* Lightweight contract editor controls. */
+(() => {
+  const editor = document.querySelector('#id_content');
+  if (!editor) return;
+  const replaceSelection = (replacement) => {
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    editor.setRangeText(replacement, start, end, 'end');
+    editor.focus();
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  document.querySelectorAll('[data-contract-merge]').forEach(button => {
+    button.addEventListener('click', () => replaceSelection(`{{ ${button.dataset.contractMerge} }}`));
+  });
+  document.querySelectorAll('[data-contract-format]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tag = button.dataset.contractFormat;
+      const start = editor.selectionStart;
+      const selected = editor.value.slice(start, editor.selectionEnd);
+      const content = selected || 'Text';
+      replaceSelection(`<${tag}>${content}</${tag}>`);
+      if (!selected) editor.setSelectionRange(start + tag.length + 2, start + tag.length + 2 + content.length);
+    });
+  });
+  document.querySelectorAll('[data-contract-list]').forEach(button => {
+    button.addEventListener('click', () => {
+      const tag = button.dataset.contractList;
+      const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd) || 'List item';
+      const items = selected.split(/\r?\n/).filter(Boolean).map(item => `<li>${item}</li>`).join('');
+      replaceSelection(`<${tag}>${items}</${tag}>`);
+    });
+  });
+  document.querySelector('[data-contract-clear]')?.addEventListener('click', () => {
+    const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+    if (selected) replaceSelection(selected.replace(/<\/?(?:strong|em|u|ul|ol|li)>/g, ''));
+  });
+})();

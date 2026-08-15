@@ -1,4 +1,4 @@
-<article class="lp-contract-document{% if preview %} lp-card{% endif %}" aria-labelledby="contract-document-title">
+{% load core_extras %}<article class="lp-contract-document{% if preview %} lp-card{% endif %}" aria-labelledby="contract-document-title">
   <header class="lp-contract-document__header">
     <p class="lp-contract-document__studio">{{ contract.photographer.business_name|default:contract.photographer.display_name }}</p>
     <h2 id="contract-document-title">{{ contract.title }}</h2>
@@ -10,5 +10,5 @@
     <div><dt>Date</dt><dd>{{ contract.booking.starts_at|date:"F j, Y, g:i A" }}</dd></div>
     {% if contract.booking.location %}<div><dt>Location</dt><dd>{{ contract.booking.location }}</dd></div>{% endif %}
   </dl>
-  <section class="lp-contract-copy" aria-label="Contract terms">{{ content|linebreaks }}</section>
+  <section class="lp-contract-copy" aria-label="Contract terms">{{ content|contract_rich_text }}</section>
 </article>

@@ -84,6 +84,10 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(detail, "Original persisted terms")
         self.assertContains(detail, 'class="lp-contract-workspace lp-contract-editor"')
         self.assertContains(detail, "Booking &amp; Client")
+        self.assertContains(detail, 'data-contract-format="strong"')
+        self.assertContains(detail, 'data-contract-format="em"')
+        self.assertContains(detail, 'data-contract-format="u"')
+        self.assertContains(detail, 'data-contract-merge="client.full_name"')
         booking_page = self.client.get(
             reverse("photographer_workspace:booking_detail", args=[self.booking.pk]), {"tab": "contract"},
         )
@@ -372,7 +376,7 @@ class ContractWorkflowTests(TestCase):
         return create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
 
     def test_preview_renders_resolved_snapshot_safely(self):
-        self.template.content = "Hello {{ client.full_name }} <script>alert(1)</script>"
+        self.template.content = "Hello <strong>{{ client.full_name }}</strong> <script>alert(1)</script>"
         self.template.save(update_fields=["content"])
         contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
         self.client.force_login(self.owner)
@@ -380,7 +384,9 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, 'class="lp-contract-workspace lp-contract-preview-page"')
         self.assertContains(response, "Document preview")
         self.assertContains(response, "Delivery")
-        self.assertContains(response, "Hello Maya Cole")
+        self.assertContains(response, "Hello")
+        self.assertContains(response, "Maya Cole")
+        self.assertContains(response, "<strong>Maya Cole</strong>", html=True)
         self.assertNotContains(response, "<script>alert(1)</script>", html=True)
         self.assertContains(response, "&lt;script&gt;alert(1)&lt;/script&gt;")
         self.assertNotContains(response, "Contract Content")
