@@ -556,6 +556,8 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(page, 'class="lp-settings-row"', count=2)
         self.assertContains(page, "Gallery Management")
         self.assertContains(page, "Delete Gallery")
+        self.assertContains(page, 'class="lp-button lp-button--destructive lp-button--md" type="button" data-confirm="delete-dialog"')
+        self.assertContains(page, 'type="submit" data-settings-save')
         payload = {
             "action": "save_settings", "general-name": "Coastal Celebration", "general-description": "Client delivery",
             "general-event_date": "2026-08-10", "general-client": "", "general-status": Gallery.Status.PUBLISHED,
@@ -572,6 +574,23 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(gallery.name, "Coastal Celebration")
         self.assertEqual(gallery.settings.download_limit, 12)
         self.assertEqual(gallery.settings.gallery_url, "coastal-client")
+
+        duplicate_response = self.client.post(url, {"action": "duplicate_gallery"})
+        self.assertRedirects(duplicate_response, f"{url}?tab=settings")
+        duplicate = Gallery.objects.get(photographer=profile, name="Coastal Celebration Copy")
+        self.assertEqual(duplicate.status, Gallery.Status.DRAFT)
+        self.assertEqual(duplicate.settings.download_limit, 12)
+
+        archive_response = self.client.post(url, {"action": "archive_gallery"})
+        self.assertRedirects(archive_response, f"{url}?tab=settings")
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
+
+        disposable = Gallery.objects.create(photographer=profile, name="Disposable", slug="disposable")
+        disposable_url = reverse("photographer_workspace:gallery_workspace", args=[disposable.pk])
+        delete_response = self.client.post(disposable_url, {"action": "delete_gallery"})
+        self.assertRedirects(delete_response, reverse("photographer_workspace:all_galleries"))
+        self.assertFalse(Gallery.objects.filter(pk=disposable.pk).exists())
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk]), {"tab": "settings"}).status_code, 404)
 
     def test_completed_photographer_dashboard_and_post_login_destination(self):
