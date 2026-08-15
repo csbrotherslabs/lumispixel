@@ -1,0 +1,16 @@
+{% extends "photographer_workspace/base.html" %}
+{% block workspace_content %}
+<div class="lp-container lp-gallery-preview">
+  <header class="lp-gallery-preview__toolbar">
+    <div><span class="lp-contract-eyebrow">Photographer preview</span><h1 id="workspace-page-title">{{ gallery.name }}</h1><p>This private preview shows how the gallery content is taking shape. It does not publish or grant client access.</p></div>
+    <a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}"><i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Workspace</a>
+  </header>
+  <section class="lp-gallery-preview__hero" aria-labelledby="gallery-preview-title">
+    {% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="Cover for {{ gallery.name }}">{% endif %}
+    <div><span>{{ gallery.event_date|date:"F j, Y"|default:"Client gallery" }}</span><h2 id="gallery-preview-title">{{ gallery.name }}</h2>{% if gallery.description %}<p>{{ gallery.description }}</p>{% endif %}<small>{{ photos|length }} photo{{ photos|length|pluralize }}</small></div>
+  </section>
+  <section class="lp-gallery-preview__photos" aria-label="Gallery photos">
+    {% for photo in photos %}<figure><img src="{% url 'photographer_workspace:gallery_photo_media' photo.pk %}" alt="{{ photo.original_name }}" loading="lazy"></figure>{% empty %}<div class="lp-gallery-preview__empty"><i class="bi bi-images" aria-hidden="true"></i><h2>No photos to preview yet</h2><p>Upload photos to see the client-facing collection take shape.</p><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}?gallery={{ gallery.pk }}">Upload Photos</a></div>{% endfor %}
+  </section>
+</div>
+{% endblock %}
