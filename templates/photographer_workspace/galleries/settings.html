@@ -1,7 +1,7 @@
 <section class="lp-gallery-settings">
   <form method="post" enctype="multipart/form-data" novalidate id="gallery-settings-form">
     {% csrf_token %}<input type="hidden" name="action" value="save_settings">
-    <header class="lp-settings-head"><div><span>Gallery configuration</span><h2>Gallery Settings</h2><p>Manage delivery, presentation, and client experience in one place.</p></div><div><a class="lp-button lp-button--secondary lp-button--md" href="?tab=overview">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit"><i class="bi bi-check2"></i>Save Changes</button></div></header>
+    <header class="lp-settings-head"><div><span>Gallery workspace</span><h2>Gallery Settings</h2><p>Manage delivery, presentation, and client experience in one place.</p></div><div><a class="lpw-btn" href="?tab=overview">Cancel</a><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-check2"></i>Save Changes</button></div></header>
     {% if general_form.non_field_errors or settings_form.non_field_errors %}<div class="lp-settings-alert">{{ general_form.non_field_errors }}{{ settings_form.non_field_errors }}</div>{% endif %}
     <div class="lp-settings-grid">
       <article class="lp-settings-card lp-settings-wide"><header><i class="bi bi-sliders"></i><div><h3>General</h3><p>The essential details clients see for this gallery.</p></div></header><div class="lp-settings-fields two-col">
