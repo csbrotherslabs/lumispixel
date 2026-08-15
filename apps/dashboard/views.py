@@ -2925,8 +2925,8 @@ def schedule(request):
         if event["kind"] in ("booking", "consultation"):
             noun = "Consultation" if event["kind"] == "consultation" else "Booking"
             event["actions"] = [
-                *([{"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-box-arrow-up-right"}] if event["kind"] == "booking" else []),
-                *([{"label": "Contact Client", "type": "link", "url": f'mailto:{event["contact_email"]}', "priority": "secondary", "icon": "bi-envelope"}] if event["contact_email"] else []),
+                *([{"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-arrow-right"}] if event["kind"] == "booking" else []),
+                *([{"label": "Contact Client", "type": "link", "url": f'mailto:{event["contact_email"]}', "priority": "workflow", "icon": "bi-envelope"}] if event["contact_email"] else []),
                 {"label": f"Edit {noun}", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
                 *([{"label": "Reschedule", "type": "reschedule", "priority": "secondary", "icon": "bi-calendar3"}] if event["status_key"] not in (ClientSession.Status.COMPLETED, ClientSession.Status.CANCELLED) else []),
                 *([{"label": "Mark Complete", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "mark_complete", "priority": "workflow", "icon": "bi-check2-circle"}] if event["status_key"] in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) else []),

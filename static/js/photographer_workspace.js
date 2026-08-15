@@ -838,18 +838,22 @@
     const notesWrap = layer.querySelector('[data-event-notes-wrap]');
     notesWrap.hidden = !event.notes || event.kind === 'vacation';
     layer.querySelector('[data-event-notes]').textContent = event.notes || '';
-    function actionMarkup(action) {
+    function actionMarkup(action, menuItem) {
       const icon = action.icon ? '<i class="bi ' + escapeHtml(action.icon) + '" aria-hidden="true"></i>' : '';
-      const classes = 'lpw-btn ' + (action.priority === 'primary' ? 'lpw-btn-primary ' : '') + (action.priority === 'destructive' ? 'is-danger ' : '');
-      if (action.type === 'edit' || action.type === 'reschedule') return '<button type="button" class="' + classes + '" data-detail-' + action.type + '="' + escapeHtml(event.drawer_id) + '">' + icon + escapeHtml(action.label) + '</button>';
-      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.cookie.match(/(?:^|; )csrftoken=([^;]+)/) || [,''])[1]) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '">' + icon + escapeHtml(action.label) + '</button></form>';
-      return '<a class="' + classes + '" href="' + escapeHtml(action.url) + '">' + icon + escapeHtml(action.label) + '</a>';
+      const variant = action.priority === 'primary' ? 'primary' : action.priority === 'destructive' ? 'destructive' : 'outline';
+      const classes = 'lp-button lp-button--' + variant + ' lp-button--md' + (action.priority === 'primary' ? ' lp-button--full' : '');
+      const menuRole = menuItem ? ' role="menuitem"' : '';
+      if (action.type === 'edit' || action.type === 'reschedule') return '<button type="button" class="' + classes + '"' + menuRole + ' data-detail-' + action.type + '="' + escapeHtml(event.drawer_id) + '">' + icon + escapeHtml(action.label) + '</button>';
+      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.cookie.match(/(?:^|; )csrftoken=([^;]+)/) || [,''])[1]) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</button></form>';
+      return '<a class="' + classes + '" href="' + escapeHtml(action.url) + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</a>';
     }
     const primaryActions = layer.querySelector('[data-event-primary-actions]');
+    const secondaryActions = layer.querySelector('[data-event-secondary-actions]');
     const moreActions = layer.querySelector('[data-event-more-actions]');
-    primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary' || action.priority === 'secondary'; }).sort(function (left, right) { return (left.priority === 'primary') - (right.priority === 'primary'); }).map(actionMarkup).join('');
-    const overflowActions = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(actionMarkup).join('');
-    moreActions.innerHTML = overflowActions ? '<details class="lpw-event-overflow"><summary class="lpw-btn" aria-label="More event actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div>' + overflowActions + '</div></details>' : '';
+    primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary'; }).map(actionMarkup).join('');
+    secondaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'secondary'; }).map(actionMarkup).join('');
+    const overflowActions = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(function (action) { return actionMarkup(action, true); }).join('');
+    moreActions.innerHTML = overflowActions ? '<details class="lpw-event-overflow"><summary class="lp-button lp-button--outline lp-button--md" aria-label="More event actions"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary><div role="menu" aria-label="More event actions">' + overflowActions + '</div></details>' : '';
     const editButton = layer.querySelector('[data-detail-edit]');
     if (editButton) editButton.addEventListener('click', function () {
       closeDrawer();
