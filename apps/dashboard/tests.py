@@ -769,6 +769,12 @@ class PhotographerWorkspaceTests(TestCase):
             "view": "agenda", "q": "Studio A", "session_type": "Portrait", "status": "confirmed",
         })
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="lpw-schedule-commandbar"')
+        self.assertContains(response, 'class="lpw-schedule-popover lpw-filter-popover"')
+        self.assertContains(response, "Selections apply automatically.")
+        self.assertContains(response, "Legend")
+        self.assertNotContains(response, "Apply filters")
+        self.assertNotContains(response, "Schedule tools")
         self.assertContains(response, "Maya Cole")
         self.assertNotContains(response, "Wedding ·")
         self.assertContains(response, "3 active")
