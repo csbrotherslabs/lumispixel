@@ -84,7 +84,7 @@ class TeamInvitationTests(TestCase):
         url = reverse("photographer_workspace:team_member_detail", args=[membership.pk])
         response = self.client.get(url)
         self.assertContains(response, "Role &amp; Access")
-        self.assertContains(response, "Availability not configured")
+        self.assertContains(response, "Not configured")
         response = self.client.post(url, {
             "action": "save", "first_name": "Avery", "last_name": "Stone",
             "email": "hijack@example.com", "role": StudioMembership.Role.MANAGER,

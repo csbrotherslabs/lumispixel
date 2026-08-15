@@ -55,10 +55,8 @@ class PhotographerWorkspaceTests(TestCase):
                 self.assertContains(response, "Manage your team, roles, access, and availability.")
             else:
                 self.assertContains(response, '<h1 id="workspace-page-title">Team Performance</h1>', html=True)
-                self.assertContains(response, "Review team productivity, contribution, turnaround, workload, and client experience over time.")
-                for section in ("Team performance summary", "Performance over time",
-                                "Productivity and completion", "Turnaround and delivery", "Revenue Contribution",
-                                "Client experience", "Performance insights", "Recent performance activity"):
+                self.assertContains(response, "Track team workload, delivery, and client experience over time.")
+                for section in ("Team summary", "Team Performance Trends", "Team-member comparison"):
                     self.assertContains(response, section)
             self.assertContains(response, f'href="{url}" class="is-active" aria-current="page"')
             for child_route, (child_title, _) in pages.items():
@@ -633,8 +631,6 @@ class PhotographerWorkspaceTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, module["title"])
-            if module["key"] not in {"dashboard", "crm", "leads", "clients", "galleries", "all_galleries", "gallery_upload_queue", "ai_processing", "bookings", "financial_overview"}:
-                self.assertContains(response, "Back to Dashboard")
 
     def test_bookings_dashboard_structure_navigation_and_states(self):
         user, profile = self.make_photographer(True, email="bookings@example.com", slug="bookings")
@@ -780,6 +776,9 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "Booking List view")
         self.assertContains(list_response, 'class="lpw-booking-list-table"')
+        self.assertContains(list_response, 'disabled title="Bulk assignment is not available yet"')
+        self.assertContains(list_response, 'disabled title="Bookings must be rescheduled individually"')
+        self.assertContains(list_response, 'type="button" data-booking-export')
 
         fixed_date = "2026-08-15"
         expected_ranges = {
@@ -1150,8 +1149,15 @@ class PhotographerWorkspaceTests(TestCase):
         page = self.client.get(workspace_url)
         self.assertContains(page, f'href="{preview_url}"')
         self.assertContains(page, 'href="?tab=client-access#invite-client"')
+        self.assertContains(page, ">Manage sharing</a>")
         self.assertContains(page, 'name="action" value="publish_gallery"')
+        self.assertContains(page, 'name="action" value="archive_gallery"')
         self.assertContains(page, 'lpw-gallery-status--draft')
+
+        store_page = self.client.get(workspace_url, {"tab": "store"})
+        self.assertContains(store_page, 'disabled title="Storefront preview will be available with the client storefront"')
+        photos_page = self.client.get(workspace_url, {"tab": "photos"})
+        self.assertContains(photos_page, 'disabled title="Bulk downloads are not available yet"')
 
         preview = self.client.get(preview_url)
         self.assertEqual(preview.status_code, 200)
@@ -1174,6 +1180,11 @@ class PhotographerWorkspaceTests(TestCase):
         published_page = self.client.get(workspace_url)
         self.assertContains(published_page, ">Published</span>")
         self.assertNotContains(published_page, 'name="action" value="publish_gallery"')
+
+        archived = self.client.post(workspace_url, {"action": "archive_gallery"})
+        self.assertRedirects(archived, f"{workspace_url}?tab=settings")
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.ARCHIVED)
 
     def test_gallery_upload_validates_images_and_scopes_media(self):
         user, profile = self.make_photographer(True, email="upload@example.com", slug="upload")
@@ -1587,7 +1598,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         for label in ("Clients", "Bookings", "Galleries", "Financial", "Growth", "Analytics", "Team", "Settings"):
             self.assertContains(response, label)
-        for route_name in ("crm", "leads", "clients", "bookings", "schedule", "galleries", "all_galleries", "financial_overview", "transactions", "growth", "analytics", "team", "settings"):
+        for route_name in ("crm", "leads", "clients", "bookings", "schedule", "galleries", "all_galleries", "financial_overview", "transactions", "growth", "analytics", "team_overview", "settings"):
             self.assertContains(response, f'href="{reverse(f"photographer_workspace:{route_name}")}"')
         for obsolete_label in ("Business Growth", "Gallery Archive", "Upload Queue", "AI Processing", "Marketing", "Reviews", "Referrals", "Invoices", "Payments", "Revenue", "Contracts"):
             self.assertNotContains(response, f">{obsolete_label}<")
