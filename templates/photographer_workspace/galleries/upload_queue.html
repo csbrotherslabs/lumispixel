@@ -1,11 +1,12 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<main class="workspace-form-page lp-container lp-upload-page lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
+<main class="workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
   <header class="form-page-header lp-page-header">
-    <div class="lp-page-heading">
+    <div class="lp-upload-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
-      <h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Upload photos to a gallery and monitor transfer progress.</p>
+      <div class="lp-upload-heading__title"><span class="lp-upload-heading__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery delivery</span><h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Move finished photos into a client gallery and follow every transfer in one place.</p></div></div>
     </div>
+    <a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}"><i class="bi bi-images" aria-hidden="true"></i>All Galleries</a>
   </header>
 
   <section class="lp-upload-stats" aria-label="Upload status summary">
@@ -18,7 +19,7 @@
   <div class="lp-upload-layout">
     <section class="lp-card lp-upload-create" aria-labelledby="destination-title">
       <div class="lp-destination">
-        <div class="lp-section-header"><div><h2 id="destination-title">Select gallery</h2><p>Choose the destination for these photos.</p></div></div>
+        <div class="lp-section-header lp-upload-step-head"><span>1</span><div><small>Destination</small><h2 id="destination-title">Select gallery</h2><p>Choose the destination for these photos.</p></div></div>
         <div class="lp-gallery-picker" data-gallery-picker {% if selected_gallery %}hidden{% endif %}>
           <label for="upload-gallery-search">Find a gallery</label>
           <div class="lp-gallery-picker__controls">
@@ -34,6 +35,7 @@
           <button class="lp-button lp-button--ghost lp-button--sm" type="button" data-change-gallery>Change gallery</button>
         </article>
       </div>
+      <div class="lp-upload-step-head lp-upload-step-head--files"><span>2</span><div><small>Files</small><h2>Add photos</h2><p>Choose production-ready images to add to the queue.</p></div></div>
       <div class="lp-upload-drop{% if not selected_gallery %} is-disabled{% endif %}" data-upload-drop tabindex="{% if selected_gallery %}0{% else %}-1{% endif %}" role="button" aria-disabled="{% if selected_gallery %}false{% else %}true{% endif %}" aria-describedby="upload-requirement upload-formats">
         <input type="file" multiple accept="image/jpeg,image/png,image/webp" data-upload-input {% if not selected_gallery %}disabled{% endif %}>
         <span class="lp-upload-drop__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><h2 data-drop-title>Drop photos here</h2><p>or <span>Browse files</span></p><small id="upload-formats">JPG, PNG, WEBP • up to 25 MB per image</small>
@@ -50,7 +52,7 @@
     </aside>
   </div>
 
-  <section class="lp-card lp-queue" aria-labelledby="uploads-title"><header><div><h2 id="uploads-title">Uploads</h2><p class="visually-hidden" data-queue-announcer aria-live="polite"></p></div><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-clear-completed {% if not upload_counts.completed %}hidden{% endif %}>Clear Completed</button></header><div data-upload-list>
+  <section class="lp-card lp-queue" aria-labelledby="uploads-title"><header><div><span class="lp-contract-eyebrow">Transfer activity</span><h2 id="uploads-title">Upload Queue</h2><p>Review progress, retry failed files, or clear completed transfers.</p><p class="visually-hidden" data-queue-announcer aria-live="polite"></p></div><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-clear-completed {% if not upload_counts.completed %}hidden{% endif %}>Clear Completed</button></header><div data-upload-list>
     {% for item in uploads %}<article class="lp-upload-row is-{{ item.status }}" data-status="{{ item.status }}" data-upload-id="{{ item.pk }}"><div class="lp-file-icon">{% if item.status == 'completed' %}<i class="bi bi-check2" aria-hidden="true"></i>{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</div><div class="lp-file-main"><strong>{{ item.original_name }}</strong><span>{% widthratio item.file_size 1048576 1 %} MB · {{ item.gallery.name }}</span>{% if item.status == 'uploading' %}<progress max="100" value="0" aria-label="{{ item.original_name }}: Uploading, 0 percent">0%</progress>{% endif %}</div><div class="lp-file-state"><strong>{% if item.status == 'completed' %}Uploaded{% elif item.status == 'failed' %}Upload failed{% else %}{{ item.get_status_display }}{% endif %}</strong><span>{% if item.status == 'completed' %}{{ item.updated_at|date:"M j, Y, g:i A" }}{% elif item.status == 'failed' %}{{ item.error_message|default:"The upload could not be completed." }}{% elif item.status == 'queued' %}Waiting to upload{% else %}Transfer in progress{% endif %}</span></div><div class="lp-file-actions">{% if item.status == 'failed' %}<button data-server-action="retry" data-action-url="{% url 'photographer_workspace:gallery_photo_action' item.pk %}" aria-label="Retry {{ item.original_name }}"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>{% endif %}{% if item.status == 'completed' or item.status == 'failed' %}<button data-server-action="remove" data-action-url="{% url 'photographer_workspace:gallery_photo_action' item.pk %}" aria-label="Remove {{ item.original_name }} from queue"><i class="bi bi-x-lg" aria-hidden="true"></i></button>{% endif %}</div></article>
     {% empty %}<div class="lp-queue-empty" data-queue-empty><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><strong>No uploads yet</strong><span>Select a gallery and add photos to begin.</span></div>{% endfor %}
   </div><div class="lp-queue-complete" data-queue-complete hidden><i class="bi bi-check2-circle" aria-hidden="true"></i><span></span><a class="lp-button lp-button--secondary lp-button--sm" data-view-gallery>View Gallery</a><button class="lp-button lp-button--ghost lp-button--sm" type="button" data-upload-more>Upload More</button></div></section>
