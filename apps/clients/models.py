@@ -620,6 +620,7 @@ class ContractEvent(models.Model):
         RESENT = "resent", "Resent"
         VIEWED = "viewed", "Viewed"
         SIGNED = "signed", "Signed"
+        PHOTOGRAPHER_SIGNED = "photographer_signed", "Photographer signed"
         PDF_GENERATED = "pdf_generated", "PDF generated"
 
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="events")
@@ -675,6 +676,40 @@ class ContractSignature(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Signature evidence cannot be deleted.")
+
+
+class ContractPhotographerSignature(models.Model):
+    """Immutable workspace-side countersignature evidence."""
+
+    contract = models.OneToOneField(
+        Contract, on_delete=models.PROTECT, related_name="photographer_signature",
+    )
+    signer_name = models.CharField(max_length=200)
+    signature_value = models.CharField(max_length=200)
+    consent_accepted = models.BooleanField()
+    consent_text = models.TextField()
+    signed_at = models.DateTimeField()
+    content_hash = models.CharField(max_length=64, editable=False)
+    contract_version = models.PositiveIntegerField()
+    photographer = models.ForeignKey(
+        "accounts.PhotographerProfile", on_delete=models.PROTECT,
+        related_name="photographer_contract_signatures",
+    )
+    signed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="photographer_contract_signatures",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, editable=False)
+    user_agent = models.CharField(max_length=512, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Photographer signature evidence is immutable.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Photographer signature evidence cannot be deleted.")
 
 
 def signed_contract_document_path(instance, filename):

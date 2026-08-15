@@ -32,8 +32,9 @@ from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNo
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
-from apps.clients.contracts import (ContractDeliveryError, contract_preview_content,
-                                   create_contract_from_template, send_contract_for_review,
+from apps.clients.contracts import (DEFAULT_SIGNATURE_CONSENT, ContractDeliveryError, PhotographerSignatureForm,
+                                   contract_preview_content, create_contract_from_template,
+                                   send_contract_for_review, sign_contract_as_photographer,
                                    validate_contract_for_email)
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
@@ -2676,7 +2677,8 @@ def _accessible_contract(request, pk):
     accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
     return get_object_or_404(
         Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
-        .select_related("booking", "client", "photographer", "photographer__user"), pk=pk,
+        .select_related("booking", "client", "photographer", "photographer__user",
+                        "photographer_signature"), pk=pk,
     )
 
 
@@ -2708,9 +2710,28 @@ def signed_contract_pdf_retry(request, pk):
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def contract_preview(request, pk):
     contract = _accessible_contract(request, pk)
+    signature_form = PhotographerSignatureForm(request.POST or None)
+    if request.method == "POST" and signature_form.is_valid():
+        try:
+            sign_contract_as_photographer(
+                contract=contract, actor=request.user,
+                ip_address=request.META.get("REMOTE_ADDR") or None,
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                **signature_form.cleaned_data,
+            )
+        except ValidationError as exc:
+            if hasattr(exc, "message_dict"):
+                for field, errors in exc.message_dict.items():
+                    for error in errors:
+                        signature_form.add_error(field if field in signature_form.fields else None, error)
+            else:
+                signature_form.add_error(None, exc.messages[0])
+        else:
+            messages.success(request, "Photographer signature recorded. The contract is ready to send.")
+            return redirect("photographer_workspace:contract_preview", pk=contract.pk)
     try:
         validate_contract_for_email(contract)
         send_errors = []
@@ -2718,7 +2739,8 @@ def contract_preview(request, pk):
         send_errors = exc.messages
     context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
     context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
-                    "send_errors": send_errors,
+                    "send_errors": send_errors, "signature_form": signature_form,
+                    "signature_consent_text": DEFAULT_SIGNATURE_CONSENT,
                     "contract_status_variant": {
                         Contract.Status.DRAFT: "neutral", Contract.Status.READY: "info",
                         Contract.Status.SENT: "warning", Contract.Status.VIEWED: "info",

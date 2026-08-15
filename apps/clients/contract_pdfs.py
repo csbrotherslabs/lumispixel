@@ -13,6 +13,7 @@ def build_signed_snapshot(contract, signature):
     """Capture every PDF input while the signed contract and its relations are locked."""
     booking = contract.booking
     studio = contract.photographer
+    photographer_signature = getattr(contract, "photographer_signature", None)
     return {
         "business_name": studio.business_name or studio.display_name or studio.user.full_name or studio.user.email,
         "contract_id": contract.pk,
@@ -30,6 +31,9 @@ def build_signed_snapshot(contract, signature):
         "signature_type": signature.signature_type,
         "signed_at": signature.signed_at.isoformat(),
         "signed_content_hash": signature.content_hash,
+        "photographer_signer_name": photographer_signature.signer_name if photographer_signature else "",
+        "photographer_signature_value": photographer_signature.signature_value if photographer_signature else "",
+        "photographer_signed_at": photographer_signature.signed_at.isoformat() if photographer_signature else "",
     }
 
 
@@ -43,9 +47,12 @@ def render_signed_contract_pdf(snapshot):
              f'Location: {snapshot["booking_location"] or "Not provided"}', ""]
     for source_line in snapshot["content"].splitlines() or [""]:
         lines.extend(textwrap.wrap(source_line, width=92, replace_whitespace=False) or [""])
-    lines.extend(["", f'Signed by: {snapshot["signer_name"]}',
-                  f'Typed signature: {snapshot["signature_value"]}',
-                  f'Signed at: {snapshot["signed_at"]}',
+    if snapshot.get("photographer_signer_name"):
+        lines.extend(["", "Photographer signature", f'Signed by: {snapshot["photographer_signer_name"]}',
+                      f'Typed signature: {snapshot["photographer_signature_value"]}',
+                      f'Signed at: {snapshot["photographer_signed_at"]}'])
+    lines.extend(["", "Client signature", f'Signed by: {snapshot["signer_name"]}',
+                  f'Typed signature: {snapshot["signature_value"]}', f'Signed at: {snapshot["signed_at"]}',
                   f'Signed content SHA-256: {snapshot["signed_content_hash"]}'])
 
     def pdf_text(value):
@@ -83,7 +90,9 @@ def render_signed_contract_pdf(snapshot):
 
 def generate_signed_contract_pdf(contract_id):
     """Create or retry a copy without ever overwriting a successfully generated file."""
-    contract = Contract.objects.select_related("signature").get(pk=contract_id, status=Contract.Status.SIGNED)
+    contract = Contract.objects.select_related("signature", "photographer_signature").get(
+        pk=contract_id, status=Contract.Status.SIGNED,
+    )
     signature = contract.signature
     document, _ = SignedContractDocument.objects.get_or_create(
         contract=contract, defaults={"signed_content_hash": signature.content_hash},
