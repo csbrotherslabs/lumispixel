@@ -1,5 +1,5 @@
 <section class="lp-activity-page">
-  <header class="lp-activity-head"><div><h2>Activity</h2><p>Review everything that has happened in this gallery.</p></div><a class="lpw-btn" href="?{{ request.GET.urlencode }}&export=csv"><i class="bi bi-download"></i>Export Activity</a></header>
+  <header class="lp-activity-head"><div><span class="lp-contract-eyebrow">Audit timeline</span><h2>Gallery Activity</h2><p>Review everything that has happened in this gallery.</p></div><a class="lpw-btn" href="?{{ request.GET.urlencode }}&export=csv"><i class="bi bi-download"></i>Export Activity</a></header>
   <div class="lp-activity-summary">
     <article><i class="bi bi-activity"></i><span>Total Events</span><strong>{{ activity_summary.total }}</strong></article>
     <article><i class="bi bi-people"></i><span>Client Interactions</span><strong>{{ activity_summary.clients }}</strong></article>
