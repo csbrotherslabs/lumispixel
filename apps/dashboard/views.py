@@ -2458,9 +2458,9 @@ def bookings_dashboard(request):
             ("mini", "Mini Session", "bi-people"),
         ],
         "booking_quick_actions": [
-            {"label": "New Booking", "icon": "bi-calendar-plus", "url": f'{reverse("photographer_workspace:schedule")}?create=booking', "help": "Start a client booking"},
-            {"label": "Block Time", "icon": "bi-calendar-x", "url": f'{reverse("photographer_workspace:schedule")}?create=blocked', "help": "Reserve unavailable time"},
-            {"label": "Schedule Consultation", "icon": "bi-chat-square-text", "url": f'{reverse("photographer_workspace:schedule")}?create=consultation', "help": "Plan a client consultation"},
+            {"label": "New Booking", "icon": "bi-calendar-plus", "event_type": "booking", "help": "Start a client booking"},
+            {"label": "Block Time", "icon": "bi-calendar-x", "event_type": "blocked", "help": "Reserve unavailable time"},
+            {"label": "Schedule Consultation", "icon": "bi-chat-square-text", "event_type": "consultation", "help": "Plan a client consultation"},
         ],
     })
     return render(request, "photographer_workspace/bookings/dashboard.html", context)

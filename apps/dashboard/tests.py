@@ -626,10 +626,13 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "View Schedule")
         self.assertContains(response, "Manage upcoming sessions, confirmations, payments, and scheduling activity.")
         self.assertContains(response, "New Booking")
-        schedule_url = reverse("photographer_workspace:schedule")
-        self.assertContains(response, f'{schedule_url}?create=booking')
-        self.assertContains(response, f'{schedule_url}?create=blocked')
-        self.assertContains(response, f'{schedule_url}?create=consultation')
+        quick_actions = response.context["booking_quick_actions"]
+        self.assertEqual(
+            [action["event_type"] for action in quick_actions],
+            ["booking", "blocked", "consultation"],
+        )
+        self.assertContains(response, 'data-event-form-open="blocked"')
+        self.assertContains(response, 'data-event-form-open="consultation"')
         self.assertContains(response, 'data-event-form-open="booking"')
         self.assertContains(response, 'data-event-form-layer hidden')
         self.assertContains(response, 'data-event-form-drawer role="dialog"')

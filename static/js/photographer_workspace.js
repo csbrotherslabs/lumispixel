@@ -1082,17 +1082,6 @@
       ? window.LumisScheduleEvents[button.dataset.eventEdit] : null;
     open(button.dataset.eventFormOpen, button, existing);
   }); });
-  const requestedType = new URLSearchParams(window.location.search).get('create');
-  const supportedTypes = ['booking', 'consultation', 'editing', 'blocked', 'vacation', 'mini'];
-  if (requestedType && supportedTypes.includes(requestedType)) {
-    const deepLinkOpener = document.querySelector('[data-event-form-open="' + requestedType + '"]');
-    if (deepLinkOpener) {
-      open(requestedType, deepLinkOpener, null);
-      const cleanUrl = new URL(window.location.href);
-      cleanUrl.searchParams.delete('create');
-      window.history.replaceState({}, '', cleanUrl.toString());
-    }
-  }
   form.addEventListener('input', function (event) { dirty = true; event.target.classList.remove('has-error'); checkConflict(); });
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
   form.addEventListener('submit', async function (event) {
