@@ -1159,6 +1159,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(filtered, 'data-gallery-view="grid"')
         self.assertContains(filtered, 'data-gallery-view="list"')
         self.assertContains(filtered, 'class="lpw-gallery-compact"')
+        self.assertContains(filtered, 'class="lpw-gallery-list-table"')
         self.assertContains(filtered, "Search gallery name or client")
         self.assertContains(filtered, "More filters")
         self.assertContains(filtered, "result")
