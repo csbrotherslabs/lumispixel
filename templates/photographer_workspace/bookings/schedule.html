@@ -22,9 +22,9 @@
         <label class="lpw-schedule-search"><span class="sr-only">Search schedule</span><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="{{ filter_values.q }}" placeholder="Search client, booking, session, or location"><kbd>⌘ K</kbd></label>
         <fieldset class="lpw-scope-toggle"><legend class="sr-only">Schedule scope</legend><label><input type="radio" name="scope" value="me"{% if filter_values.scope == 'me' %} checked{% endif %}><span><i class="bi bi-person" aria-hidden="true"></i>My Schedule</span></label><label><input type="radio" name="scope" value="studio"{% if filter_values.scope != 'me' %} checked{% endif %}><span><i class="bi bi-people" aria-hidden="true"></i>Entire Studio</span></label></fieldset>
         <details class="lpw-schedule-popover lpw-filter-popover" data-schedule-popover>
-          <summary><i class="bi bi-sliders" aria-hidden="true"></i>Filters{% if active_filter_count %}<span>{{ active_filter_count }}</span>{% endif %}<i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+          <summary><i class="bi bi-sliders" aria-hidden="true"></i>Filters{% if filter_panel_count %}<span aria-label="{{ filter_panel_count }} active filter{{ filter_panel_count|pluralize }}">{{ filter_panel_count }}</span>{% endif %}<i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
           <div class="lpw-schedule-popover-panel">
-            <header><div><strong>Filter schedule</strong><span>Selections apply automatically.</span></div>{% if active_filter_count %}<a href="?view={{ schedule_view }}&amp;date={{ selected_date|date:'Y-m-d' }}">Clear all</a>{% endif %}</header>
+            <header><div><strong>Filter schedule</strong><span>Selections apply automatically.</span></div>{% if filter_panel_count %}<a href="?view={{ schedule_view }}&amp;date={{ selected_date|date:'Y-m-d' }}&amp;scope={{ filter_values.scope|default:'studio' }}">Clear filters</a>{% endif %}</header>
             <div class="lpw-filter-fields">
               <label><span>Photographer / team member</span><select name="member"><option value="">All team members</option><option value="me"{% if filter_values.member == 'me' %} selected{% endif %}>{{ request.user.full_name|default:'Me' }} (me)</option>{% for member in schedule_members %}<option value="{{ member.pk }}"{% if filter_values.member == member.pk|stringformat:'s' %} selected{% endif %}>{{ member.user.full_name|default:member.email }}</option>{% endfor %}</select></label>
               <label><span>Session type</span><select name="session_type"><option value="">All sessions</option>{% for option in session_type_options %}<option value="{{ option }}"{% if filter_values.session_type == option %} selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
@@ -34,9 +34,11 @@
               <label><span>Go to date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></label>
             </div>
             <fieldset class="lpw-schedule-toggles"><legend>Include in schedule</legend>
-              <label class="lpw-switch"><input type="checkbox" name="availability" value="1"{% if filter_values.availability %} checked{% endif %}><span></span>Show Availability</label>
-              <label class="lpw-switch"><input type="checkbox" name="show_completed" value="1"{% if filter_values.show_completed %} checked{% endif %}><span></span>Show Completed</label>
-              <label class="lpw-switch"><input type="checkbox" name="show_cancelled" value="1"{% if filter_values.show_cancelled %} checked{% endif %}><span></span>Show Cancelled</label>
+              <div class="lpw-schedule-include-options">
+                <label class="lpw-switch"><input type="checkbox" name="availability" value="1"{% if filter_values.availability %} checked{% endif %}><span></span>Show Availability</label>
+                <label class="lpw-switch"><input type="checkbox" name="show_completed" value="1"{% if filter_values.show_completed %} checked{% endif %}><span></span>Show Completed</label>
+                <label class="lpw-switch"><input type="checkbox" name="show_cancelled" value="1"{% if filter_values.show_cancelled %} checked{% endif %}><span></span>Show Cancelled</label>
+              </div>
             </fieldset>
           </div>
         </details>

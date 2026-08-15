@@ -3077,6 +3077,10 @@ def schedule(request):
         "studio_timezone": str(studio_timezone(profile)),
         "booking_status_options": ClientSession.Status.choices,
         "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
+        "filter_panel_count": sum(bool(filter_values[key]) for key in (
+            "member", "session_type", "status", "event_type", "location",
+            "availability", "show_completed", "show_cancelled",
+        )),
         "filter_query": filter_query,
         "todays_schedule": todays_schedule,
         "upcoming_shoots": upcoming_shoots,

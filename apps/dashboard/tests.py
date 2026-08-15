@@ -773,6 +773,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, 'class="lpw-schedule-popover lpw-filter-popover"')
         self.assertContains(response, "Selections apply automatically.")
         self.assertContains(response, "Legend")
+        self.assertContains(response, 'aria-label="2 active filters">2</span>')
         self.assertNotContains(response, "Apply filters")
         self.assertNotContains(response, "Schedule tools")
         self.assertContains(response, "Maya Cole")
