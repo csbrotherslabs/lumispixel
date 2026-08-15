@@ -1173,6 +1173,13 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertEqual(gallery.slug, "maya-rowan")
         self.assertIsNotNone(gallery.expires_at)
 
+        edit_page = self.client.get(reverse("photographer_workspace:edit_gallery", args=[gallery.pk]))
+        self.assertContains(edit_page, 'class="workspace-form-page lp-container lp-gallery-edit-modern lp-clients-main-width"')
+        self.assertContains(edit_page, "Gallery configuration")
+        self.assertContains(edit_page, 'aria-label="Gallery edit summary"')
+        self.assertContains(edit_page, "Changes stay connected")
+        self.assertContains(edit_page, "Open Gallery Workspace")
+
         filtered = self.client.get(reverse("photographer_workspace:all_galleries"), {"q": "Maya", "client": client.pk, "status": "draft"})
         self.assertContains(filtered, "Maya &amp; Rowan")
         self.assertContains(filtered, "Gallery library")
