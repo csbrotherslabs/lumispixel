@@ -1031,7 +1031,12 @@ class PhotographerWorkspaceTests(TestCase):
         detail = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
         self.assertContains(detail, "Gallery summary")
         self.assertContains(detail, "Upload progress")
+        self.assertContains(detail, 'class="lp-gallery-workspace lp-gallery-workspace-modern"')
+        self.assertContains(detail, 'href="?tab=overview" aria-current="page"')
+        self.assertContains(detail, "Gallery workspace")
         self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "photos"}), "Search photos")
+        self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "ai-tools"}), "AI tools are coming next")
+        self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "downloads"}), "Download management is coming next")
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
 
     def test_empty_gallery_dashboard_shows_focused_first_delivery_path(self):
