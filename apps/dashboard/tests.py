@@ -770,6 +770,7 @@ class PhotographerWorkspaceTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="lpw-schedule-commandbar"')
+        self.assertContains(response, 'class="lpw-scope-toggle" role="radiogroup" aria-label="Schedule scope"')
         self.assertContains(response, 'class="lpw-schedule-popover lpw-filter-popover"')
         self.assertContains(response, "Selections apply automatically.")
         self.assertContains(response, "Legend")
