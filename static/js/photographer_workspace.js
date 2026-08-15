@@ -805,14 +805,21 @@
     opener = button;
     layer.querySelector('[data-event-kind]').textContent = event.kind === 'booking' ? 'Booking' : event.kind === 'mini' ? 'Mini session' : event.kind;
     layer.querySelector('[data-event-title]').textContent = event.name;
-    layer.querySelector('[data-event-summary]').textContent = event.session_type + ' · ' + event.status;
+    const startsAt = new Date(event.starts_at);
+    const endsAt = event.ends_at ? new Date(event.ends_at) : null;
+    const statusNode = layer.querySelector('[data-event-status]');
+    statusNode.textContent = event.status || '';
+    statusNode.className = 'lpw-event-status is-' + String(event.status || 'neutral').toLowerCase();
+    layer.querySelector('[data-event-summary]').textContent = startsAt.toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'}) + (event.all_day ? ' · All day' : ' · ' + startsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) + (endsAt ? ' – ' + endsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) : ''));
+    const summaryLocation = layer.querySelector('[data-event-summary-location]');
+    summaryLocation.hidden = !event.location;
+    summaryLocation.querySelector('span').textContent = event.location || '';
     const bookingOnly = event.kind === 'booking';
     const clientEvent = bookingOnly || event.kind === 'consultation' || event.kind === 'mini';
-    const startsAt = new Date(event.starts_at);
     const details = bookingOnly ? [
       section('Session', 'bi-calendar-event', [
         detail('Date', startsAt.toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})),
-        detail('Time', startsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})), detail('Duration', event.duration),
+        detail('Start time', startsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})), endsAt ? detail('End time', endsAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})) : '', detail('Duration', event.duration),
         detail('Session type', event.session_type), detail('Package', event.package), detail('Location', event.location)
       ]),
       section('Client', 'bi-person', [detail('Client name', event.name), detail('Email', event.contact_email), detail('Phone', event.contact_phone)]),
@@ -841,7 +848,8 @@
     const primaryActions = layer.querySelector('[data-event-primary-actions]');
     const moreActions = layer.querySelector('[data-event-more-actions]');
     primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary' || action.priority === 'secondary'; }).map(actionMarkup).join('');
-    moreActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(actionMarkup).join('');
+    const overflowActions = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(actionMarkup).join('');
+    moreActions.innerHTML = overflowActions ? '<details class="lpw-event-overflow"><summary class="lpw-btn" aria-label="More event actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div>' + overflowActions + '</div></details>' : '';
     const editButton = layer.querySelector('[data-detail-edit]');
     if (editButton) editButton.addEventListener('click', function () {
       closeDrawer();
