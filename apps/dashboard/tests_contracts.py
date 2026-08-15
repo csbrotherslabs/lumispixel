@@ -10,7 +10,8 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.contracts import create_contract_from_template
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
-from apps.clients.models import (Client, ClientSession, Contract, ContractEvent, ContractSignature,
+from apps.clients.models import (Client, ClientSession, Contract, ContractEvent,
+                                 ContractPhotographerSignature, ContractSignature,
                                  ContractTemplate, SignedContractDocument)
 from apps.dashboard.models import StudioMembership
 from apps.dashboard.contract_starters import CONTRACT_STARTERS, serialized_contract_starters
@@ -385,7 +386,7 @@ class ContractWorkflowTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:contract_preview", args=[contract.pk]))
         self.assertContains(response, 'class="lp-contract-workspace lp-contract-preview-page"')
         self.assertContains(response, "Document preview")
-        self.assertContains(response, "Delivery")
+        self.assertContains(response, "Signatures &amp; delivery")
         self.assertContains(response, "Hello")
         self.assertContains(response, "Maya Cole")
         self.assertContains(response, "<strong>Maya Cole</strong>", html=True)
@@ -511,10 +512,41 @@ class ContractWorkflowTests(TestCase):
         response = self.client.post(reverse("clients:contract-review", args=[token]), {
             "signer_name": "", "signature_value": "",
         })
-        self.assertContains(response, "This field is required", count=3)
+        self.assertContains(response, "This field is required", count=2)
         contract.refresh_from_db()
         self.assertEqual(contract.status, Contract.Status.VIEWED)
         self.assertFalse(ContractSignature.objects.filter(contract=contract).exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_photographer_and_client_signatures_are_preserved_in_final_snapshot(self):
+        contract = self._draft_with_email()
+        self.client.force_login(self.owner)
+        preview_url = reverse("photographer_workspace:contract_preview", args=[contract.pk])
+        response = self.client.post(preview_url, {
+            "signer_name": "Morgan Studio", "signature_value": "Morgan Studio",
+            "consent_accepted": "on",
+        }, REMOTE_ADDR="192.0.2.20", HTTP_USER_AGENT="Studio browser")
+        self.assertRedirects(response, preview_url)
+        contract.refresh_from_db()
+        photographer_signature = ContractPhotographerSignature.objects.get(contract=contract)
+        self.assertEqual(contract.status, Contract.Status.READY)
+        self.assertIsNotNone(contract.locked_at)
+        self.assertEqual(photographer_signature.signer_name, "Morgan Studio")
+        self.assertEqual(photographer_signature.ip_address, "192.0.2.20")
+        self.assertEqual(photographer_signature.signed_by, self.owner)
+        self.assertContains(self.client.get(preview_url), "Send to Client")
+
+        self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.client.logout()
+        self.client.post(reverse("clients:contract-review", args=[token]), {
+            "signer_name": "Maya Cole", "signature_value": "Maya Cole",
+            "consent_accepted": "on",
+        })
+        contract.refresh_from_db()
+        self.assertEqual(contract.status, Contract.Status.SIGNED)
+        self.assertEqual(contract.signature.signed_snapshot["photographer_signer_name"], "Morgan Studio")
+        self.assertEqual(contract.signature.signed_snapshot["signer_name"], "Maya Cole")
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_double_sign_invalid_token_and_atomic_failure_create_no_extra_evidence(self):

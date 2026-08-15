@@ -14,7 +14,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import formats, timezone
 
-from .models import Contract, ContractEvent, ContractSignature, ContractTemplate
+from .models import (Contract, ContractEvent, ContractPhotographerSignature,
+                     ContractSignature, ContractTemplate)
 from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
 
@@ -42,7 +43,7 @@ DEFAULT_SIGNATURE_CONSENT = (
 
 class ContractSignatureForm(forms.Form):
     signer_name = forms.CharField(label="Signer full name", max_length=200, strip=True)
-    signature_value = forms.CharField(label="Type your signature", max_length=200, strip=True)
+    signature_value = forms.CharField(required=False, widget=forms.HiddenInput)
     consent_accepted = forms.BooleanField(label="Agreement", required=True)
 
     def clean_signer_name(self):
@@ -51,11 +52,14 @@ class ContractSignatureForm(forms.Form):
             raise forms.ValidationError("Enter your full name.")
         return value
 
-    def clean_signature_value(self):
-        value = self.cleaned_data["signature_value"]
-        if not value:
-            raise forms.ValidationError("Type your signature.")
-        return value
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data["signature_value"] = cleaned_data.get("signer_name", "")
+        return cleaned_data
+
+
+class PhotographerSignatureForm(ContractSignatureForm):
+    signer_name = forms.CharField(label="Your full legal name", max_length=200, strip=True)
 
 
 class ContractDeliveryError(Exception):
@@ -205,13 +209,55 @@ def _content_hash(content):
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
+@transaction.atomic
+def sign_contract_as_photographer(*, contract, actor, signer_name, signature_value,
+                                  consent_accepted, ip_address=None, user_agent=""):
+    """Countersign and lock the exact workspace-side contract snapshot."""
+    contract = Contract.objects.select_for_update().select_related(
+        "booking", "client", "photographer"
+    ).get(pk=contract.pk, photographer=contract.photographer)
+    if ContractPhotographerSignature.objects.filter(contract=contract).exists():
+        raise ValidationError("This contract has already been signed by the photographer.")
+    if contract.status not in (Contract.Status.DRAFT, Contract.Status.READY):
+        raise ValidationError("Sign the contract before sending it to the client.")
+    signer_name = (signer_name or "").strip()
+    signature_value = (signature_value or "").strip()
+    if not signer_name:
+        raise ValidationError({"signer_name": "Enter your full name."})
+    if not signature_value:
+        raise ValidationError({"signature_value": "Type your signature."})
+    if consent_accepted is not True:
+        raise ValidationError({"consent_accepted": "You must agree before signing."})
+    now = timezone.now()
+    rendered_content = contract_preview_content(contract)
+    digest = _content_hash(rendered_content)
+    consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
+    signature = ContractPhotographerSignature.objects.create(
+        contract=contract, signer_name=signer_name, signature_value=signature_value,
+        consent_accepted=True, consent_text=consent_text, signed_at=now,
+        content_hash=digest, contract_version=contract.version,
+        photographer=contract.photographer, signed_by=actor, ip_address=ip_address,
+        user_agent=(user_agent or "")[:512],
+    )
+    contract.rendered_content = rendered_content
+    contract.locked_at = contract.locked_at or now
+    contract.status = Contract.Status.READY
+    contract.save(update_fields=("rendered_content", "locked_at", "status", "updated_at"))
+    ContractEvent.objects.create(
+        contract=contract, actor=actor, event_type=ContractEvent.EventType.PHOTOGRAPHER_SIGNED,
+        metadata={"signer": signer_name, "signed_at": now.isoformat(),
+                  "content_hash": digest, "contract_version": contract.version},
+    )
+    return signature
+
+
 def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, ip_address=None, user_agent=""):
     """Atomically accept the exact delivered snapshot addressed by an opaque token."""
     if not raw_token:
         raise ValidationError("This contract review link is invalid.")
     with transaction.atomic():
         contract = Contract.objects.select_for_update().select_related(
-            "client", "booking", "photographer", "photographer__user"
+            "client", "booking", "photographer", "photographer__user", "photographer_signature"
         ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
         now = timezone.now()
         if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:

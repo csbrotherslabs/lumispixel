@@ -11,4 +11,5 @@
     {% if contract.booking.location %}<div><dt>Location</dt><dd>{{ contract.booking.location }}</dd></div>{% endif %}
   </dl>
   <section class="lp-contract-copy" aria-label="Contract terms">{{ content|contract_rich_text }}</section>
+  {% if contract.status == "signed" %}<section class="lp-contract-document-signatures" aria-label="Electronic signatures"><div><span>Photographer signature</span><strong>{{ contract.photographer_signature.signature_value|default:"Not countersigned" }}</strong>{% if contract.photographer_signature %}<small>{{ contract.photographer_signature.signer_name }} · {{ contract.photographer_signature.signed_at|date:"M j, Y, g:i A T" }}</small>{% endif %}</div><div><span>Client signature</span><strong>{{ contract.signature.signature_value }}</strong><small>{{ contract.signature.signer_name }} · {{ contract.signature.signed_at|date:"M j, Y, g:i A T" }}</small></div></section>{% endif %}
 </article>

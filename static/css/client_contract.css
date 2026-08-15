@@ -12,6 +12,10 @@ body { margin: 0; background: var(--lp-color-page); color: var(--lp-text-primary
 .lp-contract-summary dt { color: var(--lp-text-muted); font: var(--lp-type-label); }
 .lp-contract-summary dd { margin: var(--lp-space-1) 0 0; }
 .lp-contract-copy { line-height: var(--lp-leading-body); overflow-wrap: anywhere; }
+.lp-contract-document-signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lp-space-5); margin-top: var(--lp-space-8); padding-top: var(--lp-space-5); border-top: 1px solid var(--lp-color-border); }
+.lp-contract-document-signatures > div { display: grid; gap: var(--lp-space-1); }
+.lp-contract-document-signatures span, .lp-contract-document-signatures small { color: var(--lp-text-muted); font: var(--lp-type-caption); }
+.lp-contract-document-signatures strong { font-family: cursive; font-size: 1.5rem; font-weight: 500; }
 .lp-contract-next { margin-top: var(--lp-space-6); padding: var(--lp-space-6); background: var(--lp-color-surface); border: 1px solid var(--lp-color-border); border-radius: var(--lp-radius-lg); }
 .lp-contract-signature { display: grid; gap: var(--lp-space-5); }
 .lp-contract-signature > div:not(.lp-contract-consent) { display: grid; gap: var(--lp-space-2); }
@@ -24,5 +28,5 @@ body { margin: 0; background: var(--lp-color-page); color: var(--lp-text-primary
 .lp-contract-help { margin: 0; color: var(--lp-text-muted); font: var(--lp-type-caption); }
 .lp-contract-signature .errorlist { margin: 0; color: var(--lp-text-danger); }
 .lp-contract-success { border-color: var(--lp-color-success); background: var(--lp-color-success-subtle); }
-@media (max-width: 600px) { .lp-contract-page { padding: var(--lp-space-6) 0; } .lp-contract-document { padding: var(--lp-space-5); } .lp-contract-summary { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .lp-contract-page { padding: var(--lp-space-6) 0; } .lp-contract-document { padding: var(--lp-space-5); } .lp-contract-summary, .lp-contract-document-signatures { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto; transition-duration: 0.01ms; } }
