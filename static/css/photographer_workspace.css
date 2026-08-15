@@ -1181,7 +1181,7 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:430px){.lp-booking-kpis{grid-template-columns:1fr}.lp-booking-session-list li{grid-template-columns:3.5rem 1fr}.lp-booking-session-list .lp-badge{grid-column:2;justify-self:start}.lp-booking-today-list li{grid-template-columns:3.75rem 1fr}.lp-booking-today-list .lp-badge{grid-column:2;justify-self:start}.lp-bookings-overview .lp-header-actions{display:grid;width:100%}.lp-bookings-overview .lp-header-actions>*{width:100%}}
 
 /* Schedule workspace: canonical shell and calendar-first operational layout. */
-.lpw-main:has(.lpw-schedule-page){max-width:var(--lp-container-wide);padding:clamp(24px,3vw,40px) var(--lp-page-gutter) 52px;background:var(--lp-color-page)}
+.lpw-main:has(.lpw-schedule-page){max-width:none;padding:clamp(24px,3vw,40px) var(--lp-page-gutter) 52px;background:var(--lp-color-page)}
 .lpw-schedule-page{width:100%;max-width:1480px;padding:0;color:var(--lp-text-primary)}
 .lpw-schedule-page>.lpw-breadcrumb,.lp-booking-detail>.lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}
 .lpw-schedule-page>.lpw-breadcrumb a,.lp-booking-detail>.lpw-breadcrumb a{color:var(--lp-text-brand)}
