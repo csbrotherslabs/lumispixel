@@ -1774,5 +1774,6 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 .lp-gallery-settings :is(.lp-button--primary,.lpw-btn-primary,.lpw-btn-danger):is(:hover,:focus-visible,:active),
 .lp-gallery-settings :is(.lp-button--primary,.lpw-btn-primary,.lpw-btn-danger) :is(i,span,strong){color:#fff!important}
 
-/* Albums uses grid gap for vertical rhythm; avoid stacking margins onto it. */
-.lp-gallery-workspace-modern .lp-albums-page :is(.lp-albums-head,.lp-album-summary){margin-bottom:0}
+/* Gallery tabs use parent grid gaps for vertical rhythm; avoid stacking margins onto them. */
+.lp-gallery-workspace-modern .lp-gw-content :is(.lp-gw-section-head,.lp-albums-head,.lp-access-head,.lp-store-head,.lp-activity-head,.lp-settings-head,.lp-album-summary,.lp-access-stats,.lp-store-summary,.lp-activity-summary,.lp-photo-toolbar){margin-bottom:0}
+.lp-gallery-workspace-modern .lp-gw-content .lp-photo-grid{margin-top:0}
