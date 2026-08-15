@@ -1014,6 +1014,9 @@ class PhotographerWorkspaceTests(TestCase):
             if url_name == "gallery_upload_queue":
                 self.assertContains(response, '<nav class="lpw-breadcrumb" aria-label="Breadcrumb">')
                 self.assertContains(response, 'class="lp-gallery-picker__controls"')
+                self.assertContains(response, "Gallery delivery")
+                self.assertContains(response, 'class="lp-upload-step-head lp-upload-step-head--files"')
+                self.assertContains(response, "Transfer activity")
 
         dashboard = self.client.get(reverse("photographer_workspace:galleries"))
         self.assertContains(dashboard, "Create, prepare, and deliver polished client galleries from one workspace.")
