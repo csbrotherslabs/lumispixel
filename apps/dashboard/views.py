@@ -2524,6 +2524,37 @@ def booking_detail(request, pk):
         "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
         "all_day": False,
     }
+    contracts = list(
+        booking.contracts.select_related("template", "created_by").all()
+    )
+    contract_status_variants = {
+        Contract.Status.DRAFT: "neutral",
+        Contract.Status.READY: "info",
+        Contract.Status.SENT: "warning",
+        Contract.Status.VIEWED: "info",
+        Contract.Status.SIGNED: "success",
+        Contract.Status.VOIDED: "danger",
+    }
+    for contract in contracts:
+        contract.status_variant = contract_status_variants[contract.status]
+    current_contract = contracts[0] if contracts else None
+    contract_progress_steps = []
+    if current_contract and current_contract.status != Contract.Status.VOIDED:
+        progress_rank = {
+            Contract.Status.DRAFT: 0,
+            Contract.Status.READY: 0,
+            Contract.Status.SENT: 1,
+            Contract.Status.VIEWED: 2,
+            Contract.Status.SIGNED: 3,
+        }[current_contract.status]
+        contract_progress_steps = [
+            {
+                "label": label,
+                "complete": index < progress_rank or current_contract.status == Contract.Status.SIGNED,
+                "current": index == progress_rank and current_contract.status != Contract.Status.SIGNED,
+            }
+            for index, label in enumerate(("Draft", "Sent", "Viewed", "Signed"))
+        ]
     context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
     context.update({
         "booking": booking,
@@ -2563,9 +2594,15 @@ def booking_detail(request, pk):
         }[booking.status],
         "booking_tab": tab,
         "booking_activity": booking.activities.select_related("actor").all()[:20],
-        "contracts": booking.contracts.select_related("template", "created_by").all(),
-        "current_contract": booking.contracts.select_related("template").first(),
+        "contracts": contracts,
+        "current_contract": current_contract,
+        "contract_progress_steps": contract_progress_steps,
+        "signed_contract_count": sum(
+            contract.status == Contract.Status.SIGNED for contract in contracts
+        ),
         "contract_create_url": reverse("photographer_workspace:contract_create", args=[booking.pk]),
+        "can_manage_contract_templates": request.studio_access.allows("settings"),
+        "contract_templates_url": reverse("photographer_workspace:contract_templates"),
     })
     return render(request, "photographer_workspace/bookings/detail.html", context)
 

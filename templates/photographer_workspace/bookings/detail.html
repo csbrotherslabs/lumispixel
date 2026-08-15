@@ -16,10 +16,11 @@
   <div class="lp-content-sidebar lp-booking-detail-layout">
     <main class="lp-booking-detail-main">
   {% if booking_tab == 'contract' %}
-  <section id="contract" class="lp-booking-detail-card lpw-bookings-card" aria-labelledby="contract-title">
+  <section id="contract" class="lp-booking-detail-card lp-booking-contract-workspace" aria-labelledby="contract-title">
     <nav class="lpw-detail-tabs" aria-label="Booking workspace"><a href="{% url 'photographer_workspace:booking_detail' booking.pk %}">Details</a><a class="is-active" aria-current="page" href="#contract">Contracts{% if current_contract %} <span class="lpw-mini-status">{{ current_contract.get_status_display }}</span>{% endif %}</a></nav>
-    <div class="lpw-bookings-card-head"><div><span>Booking documents</span><h2 id="contract-title">Contracts</h2><p>Draft and track agreements connected to this booking and client.</p></div><a class="lp-button lp-button--primary" href="{{ contract_create_url }}"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i>Create Contract</a></div>
-    {% if contracts %}<div class="lpw-pipeline-insights" role="list" aria-label="Booking contracts">{% for item in contracts %}<div role="listitem"><strong><a href="{% url 'photographer_workspace:contract_detail' item.pk %}">{{ item.title }}</a></strong><span>{{ item.get_status_display }} · Version {{ item.version }} · {% if item.signed_at %}Signed {{ item.signed_at|date:"M j, Y, g:i A" }}{% else %}{{ item.created_at|date:"M j, Y" }}{% endif %}</span></div>{% endfor %}</div>{% else %}{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-file-earmark-text" title="No contract yet" description="Create a draft from one of your active contract templates. Creating a draft does not send it to the client." primary_url=contract_create_url primary_label="Create Contract" %}{% endif %}
+    <header class="lp-booking-contract-header"><div><span>Booking documents</span><h2 id="contract-title">Contracts</h2><p>Create, send, and track agreements for {{ booking.client }}.</p></div><a class="lp-button lp-button--primary" href="{{ contract_create_url }}"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i>Create Contract</a></header>
+    {% if current_contract and contract_progress_steps %}<div class="lp-contract-progress" aria-label="Current contract progress"><div class="lp-contract-progress__heading"><div><span>Current workflow</span><strong>{{ current_contract.title }}</strong></div>{% include "photographer_workspace/components/badge.html" with label=current_contract.get_status_display variant=current_contract.status_variant dot=True %}</div><ol>{% for step in contract_progress_steps %}<li class="{% if step.complete %}is-complete{% elif step.current %}is-current{% endif %}"><span>{% if step.complete %}<i class="bi bi-check-lg" aria-hidden="true"></i>{% else %}{{ forloop.counter }}{% endif %}</span><strong>{{ step.label }}</strong></li>{% endfor %}</ol></div>{% endif %}
+    {% if contracts %}<div class="lp-booking-contract-list" role="list" aria-label="Booking contracts">{% for item in contracts %}<a class="lp-booking-contract-row" role="listitem" href="{% url 'photographer_workspace:contract_detail' item.pk %}"><span class="lp-booking-contract-row__icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span><span class="lp-booking-contract-row__copy"><span class="lp-booking-contract-row__title"><strong>{{ item.title }}</strong>{% include "photographer_workspace/components/badge.html" with label=item.get_status_display variant=item.status_variant dot=True %}</span><small>{% if item.template %}{{ item.template.name }} · {% endif %}Version {{ item.version }}</small></span><span class="lp-booking-contract-row__date"><small>{% if item.signed_at %}Signed{% else %}Updated{% endif %}</small><strong>{% if item.signed_at %}{{ item.signed_at|date:"M j, Y" }}{% else %}{{ item.updated_at|date:"M j, Y" }}{% endif %}</strong></span><span class="lp-booking-contract-row__open">Open <i class="bi bi-arrow-right" aria-hidden="true"></i></span></a>{% endfor %}</div>{% else %}<div class="lp-booking-contract-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-file-earmark-text" title="No contract yet" description="Create a draft from one of your active contract templates. Creating a draft does not send it to the client." primary_url=contract_create_url primary_label="Create Contract" %}</div>{% endif %}
   </section>
   {% else %}
       <section class="lp-booking-detail-card" aria-labelledby="booking-overview-title">
@@ -44,6 +45,15 @@
     </main>
 
     <aside class="lp-booking-detail-side" aria-label="Booking operations">
+      {% if booking_tab == 'contract' %}
+      <section class="lp-booking-side-card lp-contract-summary" aria-labelledby="contract-summary-title"><span class="lp-contract-side-eyebrow">Document overview</span><h2 id="contract-summary-title">Contract Summary</h2><dl><div><dt>Total contracts</dt><dd>{{ contracts|length }}</dd></div><div><dt>Signed</dt><dd>{{ signed_contract_count }}</dd></div><div><dt>Client</dt><dd>{{ booking.client }}</dd></div></dl>{% if current_contract %}<div class="lp-contract-summary__latest"><span>Latest contract</span><strong>{{ current_contract.title }}</strong>{% include "photographer_workspace/components/badge.html" with label=current_contract.get_status_display variant=current_contract.status_variant dot=True %}</div>{% else %}<p>There are no agreements attached to this booking yet.</p>{% endif %}</section>
+      <section class="lp-booking-side-card" aria-labelledby="contract-actions-title"><h2 id="contract-actions-title">Quick Actions</h2><div class="lp-booking-quick-actions">
+        {% url 'photographer_workspace:client_detail' booking.client.pk as client_url %}
+        {% include "photographer_workspace/components/quick_action.html" with title="Create contract" description="Start from an active template" icon="bi-file-earmark-plus" url=contract_create_url %}
+        {% if can_manage_contract_templates %}{% include "photographer_workspace/components/quick_action.html" with title="Manage templates" description="Edit reusable contract content" icon="bi-files" url=contract_templates_url %}{% endif %}
+        {% include "photographer_workspace/components/quick_action.html" with title="View client" description=booking.client icon="bi-person" url=client_url %}
+      </div></section>
+      {% else %}
       <section class="lp-booking-side-card" aria-labelledby="booking-value-title"><h2 id="booking-value-title">Booking Value</h2><strong class="lp-booking-value">{{ booking_value_display }}</strong><p>Recorded value for this booking.</p></section>
       <section class="lp-booking-side-card" aria-labelledby="booking-status-title"><h2 id="booking-status-title">Booking Status</h2>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}<p>{{ booking_status_description }}</p></section>
       <section class="lp-booking-side-card" aria-labelledby="booking-actions-title"><h2 id="booking-actions-title">Quick Actions</h2><div class="lp-booking-quick-actions">
@@ -51,6 +61,7 @@
         {% include "photographer_workspace/components/quick_action.html" with title="Edit or reschedule" description="Update this booking without leaving the page" icon="bi-calendar-event" event_type=booking.event_kind event_id=booking_event_id %}
         {% include "photographer_workspace/components/quick_action.html" with title="View client" description=booking.client icon="bi-person" url=client_url %}
       </div></section>
+      {% endif %}
     </aside>
   </div>
 </div>
