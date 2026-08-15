@@ -876,6 +876,19 @@
   document.querySelectorAll('[data-schedule-event]').forEach(function (button) {
     button.addEventListener('click', function () { openDrawer(events[button.dataset.scheduleEvent], button); });
   });
+  document.querySelectorAll('[data-schedule-event-row]').forEach(function (row) {
+    function activate(event) {
+      if (event.target.closest('a, button, input, summary, details, form, select')) return;
+      openDrawer(events[row.dataset.scheduleEventRow], row);
+    }
+    row.addEventListener('click', activate);
+    row.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target.closest('a, button, input, summary, details, form, select')) return;
+      event.preventDefault();
+      openDrawer(events[row.dataset.scheduleEventRow], row);
+    });
+  });
   layer.querySelectorAll('[data-event-drawer-close]').forEach(function (button) { button.addEventListener('click', closeDrawer); });
   drawer.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') closeDrawer();
@@ -893,12 +906,23 @@
   if (!summary) return;
   const toggle = summary.querySelector('[data-summary-toggle]');
   const panels = summary.querySelector('.lpw-summary-panels');
+  const workspace = summary.closest('.lpw-schedule-workspace');
+  const storageKey = 'lpw-schedule-summary-collapsed';
+  function setExpanded(expanded, persist) {
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.querySelector('span').textContent = expanded ? 'Hide' : 'Show';
+    toggle.querySelector('i').className = 'bi ' + (expanded ? 'bi-chevron-up' : 'bi-chevron-right');
+    panels.hidden = !expanded;
+    summary.classList.toggle('is-collapsed', !expanded);
+    workspace.classList.toggle('has-collapsed-summary', !expanded);
+    if (persist) window.localStorage.setItem(storageKey, String(!expanded));
+  }
+  const savedState = window.localStorage.getItem(storageKey);
+  const initiallyCollapsed = savedState === null ? summary.dataset.scheduleView === 'list' : savedState === 'true';
+  setExpanded(!initiallyCollapsed, false);
   toggle.addEventListener('click', function () {
     const expanded = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!expanded));
-    toggle.querySelector('span').textContent = expanded ? 'Show' : 'Hide';
-    toggle.querySelector('i').className = 'bi ' + (expanded ? 'bi-chevron-down' : 'bi-chevron-up');
-    panels.hidden = expanded;
+    setExpanded(!expanded, true);
   });
 }());
 
