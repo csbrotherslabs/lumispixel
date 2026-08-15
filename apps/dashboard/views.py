@@ -2773,9 +2773,19 @@ def contract_send(request, pk):
 def contract_templates(request):
     if not request.studio_access.allows("settings"):
         raise PermissionDenied
+    templates = list(
+        ContractTemplate.objects.filter(photographer=request.studio)
+        .select_related("created_by")
+        .order_by("-is_active", "name", "pk")
+    )
     context = _dashboard_context(request, "settings", "Contract Templates")
-    context["templates"] = ContractTemplate.objects.filter(photographer=request.studio)
-    context["create_url"] = reverse("photographer_workspace:contract_template_create")
+    context.update({
+        "templates": templates,
+        "template_count": len(templates),
+        "active_template_count": sum(item.is_active for item in templates),
+        "archived_template_count": sum(not item.is_active for item in templates),
+        "create_url": reverse("photographer_workspace:contract_template_create"),
+    })
     return render(request, "photographer_workspace/contracts/templates.html", context)
 
 
