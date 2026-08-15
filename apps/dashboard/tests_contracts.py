@@ -97,6 +97,15 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Draft")
         self.assertContains(booking_page, "Current workflow")
         self.assertContains(booking_page, 'class="lp-booking-contract-row"')
+        self.assertContains(booking_page, "Sign &amp; Share")
+
+        preview_page = self.client.get(
+            reverse("photographer_workspace:contract_preview", args=[contract.pk])
+        )
+        self.assertContains(
+            preview_page,
+            'class="lp-button lp-button--secondary lp-contract-back-action"',
+        )
         self.assertContains(booking_page, "Portrait standard")
         self.assertContains(booking_page, "Manage templates")
         self.assertContains(booking_page, reverse("photographer_workspace:contract_detail", args=[contract.pk]))
@@ -535,6 +544,16 @@ class ContractWorkflowTests(TestCase):
         self.assertEqual(photographer_signature.ip_address, "192.0.2.20")
         self.assertEqual(photographer_signature.signed_by, self.owner)
         self.assertContains(self.client.get(preview_url), "Send to Client")
+
+        booking_page = self.client.get(
+            reverse("photographer_workspace:booking_detail", args=[self.booking.pk]),
+            {"tab": "contract"},
+        )
+        self.assertContains(
+            booking_page,
+            reverse("photographer_workspace:contract_send", args=[contract.pk]),
+        )
+        self.assertContains(booking_page, "Share this contract with Maya Cole?")
 
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]

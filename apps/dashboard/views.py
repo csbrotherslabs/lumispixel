@@ -2526,7 +2526,9 @@ def booking_detail(request, pk):
         "all_day": False,
     }
     contracts = list(
-        booking.contracts.select_related("template", "created_by").all()
+        booking.contracts.select_related(
+            "template", "created_by", "photographer_signature",
+        ).all()
     )
     contract_status_variants = {
         Contract.Status.DRAFT: "neutral",
