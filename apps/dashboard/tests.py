@@ -733,10 +733,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "View bookings, manage availability, and organize photography work.")
         self.assertContains(response, "New Booking")
         self.assertContains(response, "Block Time")
-        self.assertContains(response, "Add Consultation")
-        self.assertContains(response, "Add Editing Time")
-        self.assertContains(response, "Add Vacation")
-        self.assertContains(response, "Create Mini Session")
+        self.assertContains(response, "Consultation")
+        self.assertContains(response, "Editing Day")
+        self.assertContains(response, "Vacation")
+        self.assertContains(response, "Mini Session")
         self.assertContains(response, "Booking List")
         self.assertContains(response, "Today")
         self.assertContains(response, "Schedule", count=None)
@@ -756,6 +756,7 @@ class PhotographerWorkspaceTests(TestCase):
         list_response = self.client.get(reverse("photographer_workspace:schedule"), {"view": "list"})
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "Booking List view")
+        self.assertContains(list_response, 'class="lpw-booking-list-table"')
 
         fixed_date = "2026-08-15"
         expected_ranges = {
