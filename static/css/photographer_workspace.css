@@ -1561,3 +1561,28 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 @media(max-width:768px){.lp-upload-row{grid-template-columns:48px minmax(0,1fr) auto;align-items:start}.lp-progress-copy{flex-wrap:wrap}.lp-queue-complete{flex-wrap:wrap}.lp-queue-complete>span{width:calc(100% - 40px);margin-right:0}}
 .lp-upload-page.workspace-form-page{max-width:1380px}.lp-upload-page .form-page-header{margin:0 -28px var(--lp-space-6);padding:22px 28px}.lp-upload-page .lpw-breadcrumb{margin:0;color:var(--lp-text-muted)}.lp-upload-page .lpw-breadcrumb a{color:var(--lp-text-brand)}.lp-upload-page .lpw-breadcrumb strong{color:var(--lp-text-primary)}
 @media(max-width:620px){.lp-upload-page .form-page-header{margin:0 -16px var(--lp-space-5);padding:17px 16px}}
+
+/* Schedule housekeeping: calendar-first toolbar and concise event drawer. */
+.lpw-create-menu>summary{list-style:none;cursor:pointer}.lpw-create-menu>summary::-webkit-details-marker{display:none}.lpw-create-menu>summary .bi-chevron-down{font-size:var(--lp-type-caption)}
+.lpw-schedule-controls{display:flex;align-items:center;justify-content:space-between;gap:var(--lp-space-4)}
+.lpw-view-navigation{display:flex;align-items:center;gap:var(--lp-space-2)}
+.lpw-booking-list-link{display:flex;align-items:center;gap:var(--lp-space-2);min-height:38px;padding:var(--lp-space-2) var(--lp-space-3);border-left:1px solid var(--lp-color-border);color:var(--lp-text-secondary);font-size:var(--lp-type-body-small);font-weight:700;text-decoration:none}
+.lpw-booking-list-link:is(:hover,.is-active){color:var(--lp-text-brand)}
+.lpw-event-drawer,.lpw-event-form-drawer{width:min(680px,100%)}.lpw-event-drawer{background:var(--lp-color-page)}
+.lpw-event-drawer>header{position:relative;z-index:1;box-shadow:var(--lp-shadow-subtle)}
+.lpw-event-summary{min-width:0}.lpw-event-summary-meta{display:flex;align-items:center;gap:var(--lp-space-2)}
+.lpw-event-drawer>header .lpw-event-status{display:inline-flex;padding:var(--lp-space-1) var(--lp-space-2);border-radius:var(--lp-radius-pill);background:var(--lp-color-info-subtle);color:var(--lp-text-secondary);font-size:var(--lp-type-caption);font-weight:750;letter-spacing:0;text-transform:none}
+.lpw-event-drawer>header .lpw-event-status:is(.is-confirmed,.is-completed){background:var(--lp-color-success-subtle);color:var(--lp-text-success)}
+.lpw-event-drawer>header .lpw-event-status:is(.is-tentative){background:var(--lp-color-warning-subtle);color:var(--lp-text-warning)}
+.lpw-event-drawer>header .lpw-event-status:is(.is-cancelled,.is-canceled){background:var(--lp-color-danger-subtle);color:var(--lp-text-danger)}
+.lpw-event-summary-location{display:flex;align-items:center;gap:var(--lp-space-1);margin-top:var(--lp-space-2)!important;color:var(--lp-text-secondary)!important}.lpw-event-summary-location[hidden]{display:none}
+.lpw-event-detail-section{padding:var(--lp-space-4) 0;border:0;border-bottom:1px solid var(--lp-color-border);border-radius:0;background:transparent}.lpw-event-detail-section:first-child{padding-top:0}.lpw-event-detail-section:last-child{border-bottom:0}
+.lpw-event-notes{margin-top:0;background:var(--lp-color-surface-elevated)}
+.lpw-event-more-actions{justify-content:flex-end}.lpw-event-overflow{position:relative}.lpw-event-overflow>summary{display:grid;min-width:40px;place-items:center;list-style:none}.lpw-event-overflow>summary::-webkit-details-marker{display:none}.lpw-event-overflow>div{position:absolute;right:0;bottom:calc(100% + var(--lp-space-2));display:grid;min-width:190px;padding:var(--lp-space-1);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);background:var(--lp-color-surface);box-shadow:var(--lp-shadow-elevated)}.lpw-event-overflow:not([open])>div{display:none}.lpw-event-overflow>div :is(a,button){width:100%;justify-content:flex-start}
+@media(max-width:700px){.lpw-schedule-controls{align-items:stretch;flex-direction:column}.lpw-view-navigation{width:100%;overflow-x:auto}.lpw-booking-list-link{flex:none}.lpw-event-drawer,.lpw-event-form-drawer{width:100%}}
+/* Match booking inspector actions to the schedule-event editor footer. */
+.lpw-event-drawer>footer{display:flex;align-items:center;justify-content:flex-end;gap:var(--lp-space-2);padding:var(--lp-space-3) var(--lp-space-6)}
+.lpw-event-primary-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--lp-space-2)}
+.lpw-event-primary-actions .lpw-btn{min-height:var(--lp-control-height);padding-inline:var(--lp-space-4);border-radius:var(--lp-radius-sm);font-size:var(--lp-type-body-small);font-weight:650}
+.lpw-event-more-actions{margin-right:auto}.lpw-event-more-actions .lpw-btn{min-height:var(--lp-control-height);border:1px solid var(--lp-color-border);background:var(--lp-color-surface)}
+@media(max-width:600px){.lpw-event-drawer>footer{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end}.lpw-event-primary-actions{display:grid;grid-column:2;grid-template-columns:1fr}.lpw-event-primary-actions .lpw-btn{width:100%}.lpw-event-more-actions{grid-column:1;margin:0}}
