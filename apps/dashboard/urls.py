@@ -18,6 +18,7 @@ urlpatterns = [
     path("galleries/photos/<int:pk>/media/", views.gallery_photo_media, name="gallery_photo_media"),
     path("galleries/photos/<int:pk>/action/", views.gallery_photo_action, name="gallery_photo_action"),
     path("galleries/<int:pk>/edit/", views.edit_gallery, name="edit_gallery"),
+    path("galleries/<int:pk>/preview/", views.gallery_preview, name="gallery_preview"),
     path("galleries/<int:gallery_pk>/albums/create/", views.create_album, name="create_album"),
     path("albums/<int:pk>/", views.album_workspace, name="album_workspace"),
     path("albums/<int:pk>/edit/", views.edit_album, name="edit_album"),

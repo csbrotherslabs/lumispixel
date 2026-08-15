@@ -1330,6 +1330,25 @@ def gallery_workspace(request, pk):
                                                if value in {Gallery.Status.DRAFT, Gallery.Status.PUBLISHED, Gallery.Status.ARCHIVED}]
     if request.method == "POST":
         action = request.POST.get("action")
+        if action == "publish_gallery":
+            if gallery.status in {Gallery.Status.ARCHIVED, Gallery.Status.EXPIRED}:
+                messages.error(request, "Restore this gallery before publishing it.")
+            else:
+                was_published = gallery.status == Gallery.Status.PUBLISHED
+                gallery.status = Gallery.Status.PUBLISHED
+                if not gallery.published_at:
+                    gallery.published_at = timezone.now()
+                gallery.save(update_fields=["status", "published_at", "updated_at"])
+                if not was_published:
+                    log_gallery_activity(
+                        gallery=gallery,
+                        event_type=GalleryActivity.EventType.GALLERY_PUBLISHED,
+                        title="Gallery published",
+                        description="Gallery published from its workspace.",
+                        actor=request.user,
+                    )
+                messages.success(request, "Gallery published and ready for client access.")
+            return redirect("photographer_workspace:gallery_workspace", pk=gallery.pk)
         if action == "save_store":
             if store_form.is_valid():
                 configured = store_form.save(commit=False); configured.photographer = request.studio; configured.gallery = gallery
@@ -1502,6 +1521,19 @@ def gallery_workspace(request, pk):
                     "activity_summary": {"total": all_activity.count(), "clients": all_activity.filter(actor_type=GalleryActivity.ActorType.CLIENT).count(), "downloads": all_activity.filter(event_type__in=[GalleryActivity.EventType.PHOTO_DOWNLOADED, GalleryActivity.EventType.GALLERY_DOWNLOADED]).count(), "store": all_activity.filter(event_type__in=[GalleryActivity.EventType.STORE_ORDER_CREATED, GalleryActivity.EventType.PAYMENT_CHANGED]).count()},
                     "activity_has_filters": any([activity_query, activity_type, activity_user, activity_source, activity_start, activity_end])})
     return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_preview(request, pk):
+    gallery = get_object_or_404(
+        Gallery.objects.for_photographer(request.studio).active().select_related("client"),
+        pk=pk,
+    )
+    photos = gallery.photos.all().order_by("created_at", "pk")
+    context = _dashboard_context(request, "all_galleries", f"Preview {gallery.name}")
+    context.update({"gallery": gallery, "photos": photos, "hide_topbar_heading": True})
+    return render(request, "photographer_workspace/galleries/preview.html", context)
 
 
 @photographer_workspace_required

@@ -1110,6 +1110,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(page, 'class="lp-access-advanced"')
         self.assertNotContains(page, 'class="lp-access-stats"')
         self.assertNotContains(page, 'class="lp-access-card lp-access-activity"')
+        self.assertContains(page, '>Prepare Invite</button>')
 
         saved = self.client.post(url, {
             "action": "save_access", "visibility": Gallery.Visibility.PUBLIC,
@@ -1136,6 +1137,43 @@ class PhotographerWorkspaceTests(TestCase):
         token.refresh_from_db()
         self.assertEqual(invitation.status, GalleryInvitation.Status.DISABLED)
         self.assertIsNotNone(token.revoked_at)
+
+    def test_gallery_workspace_preview_share_and_publish_actions(self):
+        user, profile = self.make_photographer(True, email="delivery-actions@example.com", slug="delivery-actions")
+        _, other = self.make_photographer(True, email="other-delivery-actions@example.com", slug="other-delivery-actions")
+        gallery = Gallery.objects.create(photographer=profile, name="Ready Delivery", slug="ready-delivery")
+        private_gallery = Gallery.objects.create(photographer=other, name="Private Delivery", slug="private-delivery")
+        self.client.force_login(user)
+        workspace_url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
+        preview_url = reverse("photographer_workspace:gallery_preview", args=[gallery.pk])
+
+        page = self.client.get(workspace_url)
+        self.assertContains(page, f'href="{preview_url}"')
+        self.assertContains(page, 'href="?tab=client-access#invite-client"')
+        self.assertContains(page, 'name="action" value="publish_gallery"')
+        self.assertContains(page, 'lpw-gallery-status--draft')
+
+        preview = self.client.get(preview_url)
+        self.assertEqual(preview.status_code, 200)
+        self.assertContains(preview, "Photographer preview")
+        self.assertContains(preview, "No photos to preview yet")
+        self.assertEqual(
+            self.client.get(reverse("photographer_workspace:gallery_preview", args=[private_gallery.pk])).status_code,
+            404,
+        )
+
+        published = self.client.post(workspace_url, {"action": "publish_gallery"})
+        self.assertRedirects(published, workspace_url)
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.status, Gallery.Status.PUBLISHED)
+        self.assertIsNotNone(gallery.published_at)
+        self.assertEqual(
+            gallery.activity.filter(event_type=GalleryActivity.EventType.GALLERY_PUBLISHED).count(),
+            1,
+        )
+        published_page = self.client.get(workspace_url)
+        self.assertContains(published_page, ">Published</span>")
+        self.assertNotContains(published_page, 'name="action" value="publish_gallery"')
 
     def test_gallery_upload_validates_images_and_scopes_media(self):
         user, profile = self.make_photographer(True, email="upload@example.com", slug="upload")
