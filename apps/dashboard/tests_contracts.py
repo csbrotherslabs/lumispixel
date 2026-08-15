@@ -82,6 +82,8 @@ class ContractWorkflowTests(TestCase):
         detail = self.client.get(response.url)
         self.assertContains(detail, "Portrait Agreement")
         self.assertContains(detail, "Original persisted terms")
+        self.assertContains(detail, 'class="lp-contract-workspace lp-contract-editor"')
+        self.assertContains(detail, "Booking &amp; Client")
         booking_page = self.client.get(
             reverse("photographer_workspace:booking_detail", args=[self.booking.pk]), {"tab": "contract"},
         )
@@ -375,6 +377,9 @@ class ContractWorkflowTests(TestCase):
         contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
         self.client.force_login(self.owner)
         response = self.client.get(reverse("photographer_workspace:contract_preview", args=[contract.pk]))
+        self.assertContains(response, 'class="lp-contract-workspace lp-contract-preview-page"')
+        self.assertContains(response, "Document preview")
+        self.assertContains(response, "Delivery")
         self.assertContains(response, "Hello Maya Cole")
         self.assertNotContains(response, "<script>alert(1)</script>", html=True)
         self.assertContains(response, "&lt;script&gt;alert(1)&lt;/script&gt;")

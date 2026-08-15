@@ -2663,7 +2663,12 @@ def contract_detail(request, pk):
             return redirect("photographer_workspace:contract_customize", pk=contract.pk)
     context = _dashboard_context(request, "bookings", contract.title)
     context.update({"contract": contract, "form": form, "is_editable": is_editable,
-                    "merge_fields": MERGE_FIELDS.items()})
+                    "merge_fields": MERGE_FIELDS.items(),
+                    "contract_status_variant": {
+                        Contract.Status.DRAFT: "neutral", Contract.Status.READY: "info",
+                        Contract.Status.SENT: "warning", Contract.Status.VIEWED: "info",
+                        Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
+                    }[contract.status]})
     return render(request, "photographer_workspace/contracts/detail.html", context)
 
 
@@ -2713,7 +2718,12 @@ def contract_preview(request, pk):
         send_errors = exc.messages
     context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
     context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
-                    "send_errors": send_errors})
+                    "send_errors": send_errors,
+                    "contract_status_variant": {
+                        Contract.Status.DRAFT: "neutral", Contract.Status.READY: "info",
+                        Contract.Status.SENT: "warning", Contract.Status.VIEWED: "info",
+                        Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
+                    }[contract.status]})
     return render(request, "photographer_workspace/contracts/preview.html", context)
 
 
