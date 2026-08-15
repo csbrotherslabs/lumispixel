@@ -1,10 +1,11 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% url 'photographer_workspace:all_galleries' as all_galleries_url %}
+{% url 'photographer_workspace:create_gallery' as create_gallery_url %}
 {% url 'photographer_workspace:gallery_upload_queue' as upload_url %}
 <div class="lp-gallery-dashboard">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Galleries</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Dashboard</strong></nav>
-  {% include "photographer_workspace/components/page_header.html" with title="Galleries" description="Create, prepare, and deliver polished client galleries from one workspace." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
+  {% include "photographer_workspace/components/page_header.html" with title="Galleries" description="Create, prepare, and deliver polished client galleries from one workspace." primary_url=create_gallery_url primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
 
   {% if not has_galleries and not gallery_dashboard_loading %}
   <section class="lp-gallery-welcome" aria-labelledby="gallery-welcome-title">
@@ -13,7 +14,7 @@
       <span class="lp-contract-eyebrow">Your gallery workspace</span>
       <h2 id="gallery-welcome-title">Deliver your first client gallery</h2>
       <p>Create a gallery for a client collection, upload the finished images, and move it through review to delivery.</p>
-      <a class="lp-button lp-button--primary lp-button--md" href="{{ all_galleries_url }}?action=create"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Create Your First Gallery</span></a>
+      <a class="lp-button lp-button--primary lp-button--md" href="{{ create_gallery_url }}"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Create Your First Gallery</span></a>
     </div>
     <ol class="lp-gallery-welcome__steps" aria-label="Gallery delivery workflow">
       <li><span>1</span><div><strong>Create the gallery</strong><small>Connect a client, event date, and delivery preferences.</small></div></li>
@@ -46,7 +47,7 @@
   <section class="lp-card lp-gallery-recent" aria-labelledby="recent-galleries-title"><header class="lp-section-header"><div><h2 id="recent-galleries-title">Recent Galleries</h2><p>Review your latest client collections and move delivery forward.</p></div><a class="lp-text-action" href="{{ all_galleries_url }}">View All Galleries <i class="bi bi-arrow-right" aria-hidden="true"></i></a></header>
     {% if gallery_dashboard_loading %}{% include "photographer_workspace/components/skeleton.html" with variant="list" only %}
     {% elif recent_galleries %}<div class="lp-gallery-table-scroll"><table class="lp-gallery-operations-table"><thead><tr><th scope="col">Gallery</th><th scope="col">Client</th><th scope="col">Event date</th><th scope="col">Workflow stage</th><th scope="col">Images</th><th scope="col">Delivery</th><th scope="col">Last updated</th><th scope="col"><span class="visually-hidden">Action</span></th></tr></thead><tbody>{% for gallery in recent_galleries %}<tr><th scope="row"><a class="lp-gallery-name" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}"><span class="lpw-gallery-cover">{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="">{% else %}<i class="bi bi-images" aria-hidden="true"></i>{% endif %}</span><strong>{{ gallery.name }}</strong></a></th><td data-label="Client">{{ gallery.client|default:"Unassigned" }}</td><td data-label="Event date">{{ gallery.event_date|date:"M j, Y"|default:"Not set" }}</td><td data-label="Workflow">{% include "photographer_workspace/components/badge.html" with label=gallery.get_status_display variant=gallery.badge_variant dot=True only %}</td><td data-label="Images">{{ gallery.image_count }}</td><td data-label="Delivery">{{ gallery.delivery_label }}</td><td data-label="Updated"><time datetime="{{ gallery.updated_at|date:'c' }}">{{ gallery.updated_at|timesince }} ago</time></td><td><a class="lp-gallery-row-action" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">Open<span class="visually-hidden"> {{ gallery.name }}</span></a></td></tr>{% endfor %}</tbody></table></div>
-    {% else %}{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-images" title="No galleries yet" description="Create your first gallery or upload photos to begin delivering work to clients." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" secondary_url=upload_url secondary_label="Upload Photos" only %}{% endif %}
+    {% else %}{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-images" title="No galleries yet" description="Create your first gallery or upload photos to begin delivering work to clients." primary_url=create_gallery_url primary_label="Create Gallery" secondary_url=upload_url secondary_label="Upload Photos" only %}{% endif %}
   </section>
 
   <div class="lp-gallery-lower">

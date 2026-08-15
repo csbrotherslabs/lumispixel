@@ -3,11 +3,12 @@
 <div class="lp-gallery-library">
 <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Galleries</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">All Galleries</strong></nav>
 <header class="lp-page-header lpw-all-gallery-head">
-  <div class="lp-page-heading"><h1 id="workspace-page-title" class="lp-page-title">All Galleries</h1><p class="lp-page-description">Create, organize, publish, and manage client galleries.</p></div>
+  <div class="lp-gallery-library-heading"><span class="lp-gallery-library-heading__icon"><i class="bi bi-collection" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery library</span><h1 id="workspace-page-title" class="lp-page-title">All Galleries</h1><p class="lp-page-description">Create, organize, publish, and manage client galleries.</p></div></div>
   <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:create_gallery' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Gallery</a><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload Photos</a></div>
 </header>
 
 {% if gallery_summary_strip.0.value or has_filters %}
+<section class="lp-gallery-command" aria-label="Find and organize galleries">
 <nav class="lpw-gallery-summary" aria-label="Gallery status filter">{% for item in gallery_summary_strip %}<a href="{% url 'photographer_workspace:all_galleries' %}{% if item.status %}?status={{ item.status }}{% endif %}"{% if selected_status == item.status %} class="is-active" aria-current="page"{% endif %}><span>{{ item.label }}</span><strong aria-label="{{ item.value }} galleries">{{ item.value }}</strong></a>{% endfor %}</nav>
 
 <section class="lpw-gallery-toolbar" aria-label="Gallery controls">
@@ -19,6 +20,7 @@
     <button class="lpw-toolbar-apply" type="submit">Apply</button>{% if has_filters %}<a href="{% url 'photographer_workspace:all_galleries' %}" class="lpw-gallery-clear"><i class="bi bi-x-circle" aria-hidden="true"></i>Clear filters</a>{% endif %}
   </form>
   <div class="lpw-gallery-toolbar-end"><p><strong>{{ gallery_page.paginator.count }}</strong> result{{ gallery_page.paginator.count|pluralize }}</p><div class="lpw-view-toggle" role="group" aria-label="Gallery view"><button type="button" class="is-active" data-gallery-view="grid" aria-pressed="true" aria-label="Grid view" title="Grid view"><i class="bi bi-grid" aria-hidden="true"></i></button><button type="button" data-gallery-view="list" aria-pressed="false" aria-label="List view" title="List view"><i class="bi bi-list-ul" aria-hidden="true"></i></button></div></div>
+</section>
 </section>
 
 <form method="post" action="{% url 'photographer_workspace:gallery_actions' %}" data-gallery-bulk>{% csrf_token %}

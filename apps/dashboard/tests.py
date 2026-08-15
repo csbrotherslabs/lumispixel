@@ -1016,6 +1016,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         dashboard = self.client.get(reverse("photographer_workspace:galleries"))
         self.assertContains(dashboard, "Create, prepare, and deliver polished client galleries from one workspace.")
+        self.assertContains(dashboard, f'href="{reverse("photographer_workspace:create_gallery")}"')
         self.assertContains(dashboard, "Active Galleries")
         self.assertContains(dashboard, "Ready to Deliver")
         self.assertContains(dashboard, "Delivery Pipeline")
@@ -1153,8 +1154,11 @@ class PhotographerWorkspaceTests(TestCase):
 
         filtered = self.client.get(reverse("photographer_workspace:all_galleries"), {"q": "Maya", "client": client.pk, "status": "draft"})
         self.assertContains(filtered, "Maya &amp; Rowan")
+        self.assertContains(filtered, "Gallery library")
+        self.assertContains(filtered, 'class="lp-gallery-command"')
         self.assertContains(filtered, 'data-gallery-view="grid"')
         self.assertContains(filtered, 'data-gallery-view="list"')
+        self.assertContains(filtered, 'class="lpw-gallery-compact"')
         self.assertContains(filtered, "Search gallery name or client")
         self.assertContains(filtered, "More filters")
         self.assertContains(filtered, "result")
