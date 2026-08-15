@@ -1264,6 +1264,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]))
         self.assertContains(response, 'class="lp-client-record-hero"')
+        self.assertContains(response, 'class="lpw-breadcrumb"')
         self.assertContains(response, 'class="lp-client-record-layout"')
         self.assertContains(response, 'class="lp-client-record-attention"')
         self.assertEqual(response.content.decode().count("<h1"), 1)
