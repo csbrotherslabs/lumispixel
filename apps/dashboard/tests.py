@@ -1162,9 +1162,17 @@ class PhotographerWorkspaceTests(TestCase):
         empty_user, empty_profile = self.make_photographer(True, email="gallery-empty@example.com", slug="gallery-empty")
         self.client.force_login(empty_user)
         empty = self.client.get(reverse("photographer_workspace:all_galleries"))
-        self.assertContains(empty, "Create your first gallery")
-        self.assertContains(empty, "Build a beautiful space to upload, organize, and deliver photos to your clients.")
-        self.assertContains(empty, "Upload Photos")
+        self.assertContains(empty, "Create a polished home for every photo story")
+        self.assertContains(empty, "Create Your First Gallery")
+        self.assertContains(empty, 'aria-label="Gallery delivery workflow"')
+        self.assertContains(empty, "Already have photos ready?")
+        self.assertNotContains(empty, 'class="lpw-gallery-toolbar"')
+        self.assertNotContains(empty, 'data-gallery-view="list"')
+
+        filtered_empty = self.client.get(reverse("photographer_workspace:all_galleries"), {"status": "draft"})
+        self.assertContains(filtered_empty, "No galleries match your search")
+        self.assertContains(filtered_empty, 'class="lpw-gallery-toolbar"')
+        self.assertContains(filtered_empty, "Clear filters")
 
         self.client.force_login(user)
 
