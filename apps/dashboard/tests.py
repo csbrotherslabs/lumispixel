@@ -699,6 +699,12 @@ class PhotographerWorkspaceTests(TestCase):
         details = self.client.get(reverse("photographer_workspace:booking_detail", args=[booking.pk]))
 
         self.assertContains(details, '<header><h2 id="booking-overview-title">Session Summary</h2></header>', html=True)
+        self.assertContains(details, 'data-event-form-open="booking"')
+        self.assertContains(details, f'data-event-edit="booking-detail-{booking.pk}"')
+        self.assertContains(details, 'data-event-form-layer hidden')
+        self.assertContains(details, 'id="schedule-event-data"')
+        quick_actions = details.content.decode().split('id="booking-actions-title"', 1)[1].split('</section>', 1)[0]
+        self.assertNotIn("?view=list", quick_actions)
         self.assertNotContains(details, "<span>Booking details</span>", html=True)
         self.assertContains(details, 'class="lp-booking-summary-client-link"')
         summary = details.content.decode().split('<dl class="lp-booking-summary">', 1)[1].split("</dl>", 1)[0]
