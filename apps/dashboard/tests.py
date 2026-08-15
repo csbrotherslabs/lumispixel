@@ -1032,6 +1032,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(detail, "Gallery summary")
         self.assertContains(detail, "Upload progress")
         self.assertContains(detail, 'class="lp-gallery-workspace lp-gallery-workspace-modern"')
+        self.assertContains(detail, 'class="lp-gw-commandbar"')
         self.assertContains(detail, 'href="?tab=overview" aria-current="page"')
         self.assertContains(detail, "Gallery workspace")
         photos_page = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "photos"})
