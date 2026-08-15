@@ -88,6 +88,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(detail, 'data-contract-format="em"')
         self.assertContains(detail, 'data-contract-format="u"')
         self.assertContains(detail, 'data-contract-merge="client.full_name"')
+        self.assertContains(detail, 'class="form-field form-field--wide lp-contract-content-field"')
+        self.assertContains(detail, 'class="lp-button lp-button--secondary lp-contract-preview-action"')
         booking_page = self.client.get(
             reverse("photographer_workspace:booking_detail", args=[self.booking.pk]), {"tab": "contract"},
         )
