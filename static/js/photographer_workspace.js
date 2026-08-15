@@ -734,6 +734,8 @@
   const form = document.querySelector('[data-schedule-filter-form]');
   if (!form) return;
   const search = form.querySelector('input[type="search"]');
+  const shortcut = form.querySelector('.lpw-schedule-search kbd');
+  if (shortcut && !/Mac|iPhone|iPad/.test(window.navigator.platform)) shortcut.textContent = 'Ctrl K';
   const popovers = Array.from(form.querySelectorAll('[data-schedule-popover]'));
   popovers.forEach(function (popover) {
     popover.addEventListener('toggle', function () {
