@@ -86,6 +86,10 @@ class ContractWorkflowTests(TestCase):
             reverse("photographer_workspace:booking_detail", args=[self.booking.pk]), {"tab": "contract"},
         )
         self.assertContains(booking_page, "Draft")
+        self.assertContains(booking_page, "Current workflow")
+        self.assertContains(booking_page, 'class="lp-booking-contract-row"')
+        self.assertContains(booking_page, "Portrait standard")
+        self.assertContains(booking_page, "Manage templates")
         self.assertContains(booking_page, reverse("photographer_workspace:contract_detail", args=[contract.pk]))
 
     def test_create_page_shows_persisted_booking_context_and_selectable_templates(self):

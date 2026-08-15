@@ -678,6 +678,9 @@ class PhotographerWorkspaceTests(TestCase):
             resolve("/workspace/contracts/")
 
         contract = self.client.get(detail_url, {"tab": "contract"})
+        self.assertContains(contract, 'class="lp-booking-detail-card lp-booking-contract-workspace"')
+        self.assertContains(contract, "Contract Summary")
+        self.assertContains(contract, "Total contracts")
         self.assertContains(contract, "No contract yet")
         self.assertContains(contract, "Create Contract")
         self.assertNotContains(contract, "Send reminder")
