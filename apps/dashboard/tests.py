@@ -551,6 +551,10 @@ class PhotographerWorkspaceTests(TestCase):
         url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
         page = self.client.get(url, {"tab": "settings"})
         self.assertContains(page, "Gallery Settings")
+        self.assertContains(page, 'class="lp-settings-card lp-settings-wide lp-settings-gallery-summary"')
+        self.assertContains(page, "Core details and the cover image are managed on the dedicated edit page.")
+        self.assertContains(page, 'class="lp-settings-card lp-settings-disclosure"', count=2)
+        self.assertContains(page, "Gallery Management")
         self.assertContains(page, "Permanently Delete Gallery")
         payload = {
             "action": "save_settings", "general-name": "Coastal Celebration", "general-description": "Client delivery",
