@@ -733,12 +733,25 @@
 (function () {
   const form = document.querySelector('[data-schedule-filter-form]');
   if (!form) return;
-  const trigger = document.querySelector('[data-schedule-filter-open]');
-  if (trigger) trigger.addEventListener('click', function () {
-    const open = trigger.getAttribute('aria-expanded') === 'true';
-    trigger.setAttribute('aria-expanded', String(!open));
-    form.classList.toggle('is-open', !open);
-    if (!open) form.querySelector('input:not([type="hidden"]), select').focus();
+  const search = form.querySelector('input[type="search"]');
+  const popovers = Array.from(form.querySelectorAll('[data-schedule-popover]'));
+  popovers.forEach(function (popover) {
+    popover.addEventListener('toggle', function () {
+      if (!popover.open) return;
+      popovers.forEach(function (other) { if (other !== popover) other.open = false; });
+    });
+  });
+  document.addEventListener('click', function (event) {
+    popovers.forEach(function (popover) { if (popover.open && !popover.contains(event.target)) popover.open = false; });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      const openPopover = popovers.find(function (popover) { return popover.open; });
+      if (openPopover) { openPopover.open = false; openPopover.querySelector('summary').focus(); }
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && search) {
+      event.preventDefault(); search.focus(); search.select();
+    }
   });
   form.querySelectorAll('select, input[type="date"], input[type="radio"], input[type="checkbox"]').forEach(function (control) {
     control.addEventListener('change', function () { form.requestSubmit(); });
@@ -760,6 +773,8 @@
     window.localStorage.setItem('lpw-schedule-saved-view', JSON.stringify(state));
     save.querySelector('span').textContent = 'View saved';
     save.querySelector('i').className = 'bi bi-bookmark-check-fill';
+    const popover = save.closest('[data-schedule-popover]');
+    if (popover) popover.open = false;
   });
 }());
 
