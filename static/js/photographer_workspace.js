@@ -847,7 +847,7 @@
     }
     const primaryActions = layer.querySelector('[data-event-primary-actions]');
     const moreActions = layer.querySelector('[data-event-more-actions]');
-    primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary' || action.priority === 'secondary'; }).sort(function (left, right) { return (left.priority === 'primary') - (right.priority === 'primary'); }).map(actionMarkup).join('');
+    primaryActions.innerHTML = event.actions.filter(function (action) { return action.priority === 'primary' || action.priority === 'secondary'; }).map(actionMarkup).join('');
     const overflowActions = event.actions.filter(function (action) { return action.priority === 'workflow' || action.priority === 'destructive'; }).map(actionMarkup).join('');
     moreActions.innerHTML = overflowActions ? '<details class="lpw-event-overflow"><summary class="lpw-btn" aria-label="More event actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div>' + overflowActions + '</div></details>' : '';
     const editButton = layer.querySelector('[data-detail-edit]');
