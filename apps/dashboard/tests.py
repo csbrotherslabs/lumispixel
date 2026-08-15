@@ -550,12 +550,12 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(user)
         url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
         page = self.client.get(url, {"tab": "settings"})
-        self.assertContains(page, "Gallery Settings")
-        self.assertContains(page, 'class="lp-settings-card lp-settings-wide lp-settings-gallery-summary"')
-        self.assertContains(page, "Core details and the cover image are managed on the dedicated edit page.")
-        self.assertContains(page, 'class="lp-settings-card lp-settings-disclosure"', count=2)
+        self.assertContains(page, 'class="lp-gallery-settings lp-gallery-settings-modern"')
+        self.assertContains(page, 'class="lp-settings-surface"')
+        self.assertContains(page, "Client Experience")
+        self.assertContains(page, 'class="lp-settings-row"', count=2)
         self.assertContains(page, "Gallery Management")
-        self.assertContains(page, "Permanently Delete Gallery")
+        self.assertContains(page, "Delete Gallery")
         payload = {
             "action": "save_settings", "general-name": "Coastal Celebration", "general-description": "Client delivery",
             "general-event_date": "2026-08-10", "general-client": "", "general-status": Gallery.Status.PUBLISHED,
