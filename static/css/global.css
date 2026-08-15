@@ -595,8 +595,6 @@ table {
     border-collapse: collapse;
     border-spacing: 0;
     margin-bottom: 10px;
-    border-left: 1px solid rgba(var(--color-black-rgb), 0.3);
-    border-top: 1px solid rgba(var(--color-black-rgb), 0.3);
 }
 table td, table th {
     padding: 5px 10px;
