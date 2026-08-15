@@ -1,15 +1,16 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% if is_create_gallery %}
-<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
+<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
   <header class="form-page-header lp-page-header">
-    <div class="lp-page-heading">
+    <div class="lp-gallery-create-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Create Gallery</strong></nav>
-      <h1 class="lp-page-title" id="workspace-page-title">Create Gallery</h1>
-      <p class="lp-page-description">Set up the gallery now. Add photos and delivery settings next.</p>
+      <div><span class="lp-gallery-create-heading__icon"><i class="bi bi-images" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery builder</span><h1 class="lp-page-title" id="workspace-page-title">Create Gallery</h1><p class="lp-page-description">Build the client-facing foundation now, then add photos and delivery settings.</p></div></div>
     </div>
     <div class="sticky-form-actions"><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit" data-gallery-submit><i class="bi bi-check2" aria-hidden="true"></i><span>Create Gallery</span></button></div>
   </header>
+
+  <ol class="lp-gallery-create-progress" aria-label="Gallery setup steps"><li class="is-current"><span>1</span><div><strong>Gallery details</strong><small>Name and client</small></div></li><li><span>2</span><div><strong>Client experience</strong><small>Cover image</small></div></li><li><span>3</span><div><strong>Access</strong><small>Publishing defaults</small></div></li></ol>
 
   {% if form.non_field_errors %}<div class="form-alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Please review the form.</strong>{{ form.non_field_errors }}</div></div>{% endif %}
   <div class="workspace-form-layout">
@@ -51,6 +52,7 @@
         <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>
         <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client hidden></p><h3 data-gallery-preview-name>Untitled gallery</h3><time data-gallery-preview-date hidden></time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility></span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status></span></div></div>
       </section>
+      <section class="lp-gallery-create__guidance" aria-labelledby="gallery-next-title"><span class="lp-contract-eyebrow">After creation</span><h2 id="gallery-next-title">Your delivery workspace is next</h2><ul><li><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><span><strong>Upload the finished images</strong><small>Add photos directly to this gallery.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Organize the collection</strong><small>Build albums and choose the final cover.</small></span></li><li><i class="bi bi-send-check" aria-hidden="true"></i><span><strong>Review and publish</strong><small>Confirm access before sharing with your client.</small></span></li></ul></section>
     </aside>
   </div>
 </form>
