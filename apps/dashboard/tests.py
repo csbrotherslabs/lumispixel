@@ -1103,10 +1103,13 @@ class PhotographerWorkspaceTests(TestCase):
         url = reverse("photographer_workspace:gallery_workspace", args=[gallery.pk])
 
         page = self.client.get(url, {"tab": "client-access"})
-        self.assertContains(page, "Control who can access this gallery.")
-        self.assertContains(page, "Gallery Visibility")
+        self.assertContains(page, "Choose who can open this gallery and what they can do.")
+        self.assertContains(page, "Who can view this gallery?")
         self.assertContains(page, "Purchase Prints")
         self.assertContains(page, "Client Invitations")
+        self.assertContains(page, 'class="lp-access-advanced"')
+        self.assertNotContains(page, 'class="lp-access-stats"')
+        self.assertNotContains(page, 'class="lp-access-card lp-access-activity"')
 
         saved = self.client.post(url, {
             "action": "save_access", "visibility": Gallery.Visibility.PUBLIC,
