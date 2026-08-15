@@ -877,6 +877,7 @@ def galleries_dashboard(request):
         gallery.badge_variant = "success" if gallery.status in {Gallery.Status.READY, Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED} else "warning" if gallery.status in {Gallery.Status.UPLOADING, Gallery.Status.PROCESSING, Gallery.Status.REVIEW} else "neutral"
     context = _dashboard_context(request, "galleries", "Galleries")
     context.update({
+        "has_galleries": galleries.exists(),
         "gallery_summary": _gallery_summary(galleries, storage_used), "recent_galleries": recent_galleries,
         "delivery_pipeline": pipeline, "recent_client_activity": activity, "gallery_attention": attention[:5],
         "storage": {"used": _format_storage(storage_used), "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100), "percent_display": f"{min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)}%"},

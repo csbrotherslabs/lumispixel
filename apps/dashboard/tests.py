@@ -1015,7 +1015,7 @@ class PhotographerWorkspaceTests(TestCase):
                 self.assertContains(response, 'class="lp-gallery-picker__controls"')
 
         dashboard = self.client.get(reverse("photographer_workspace:galleries"))
-        self.assertContains(dashboard, "Manage gallery delivery, client activity, uploads, and storage.")
+        self.assertContains(dashboard, "Create, prepare, and deliver polished client galleries from one workspace.")
         self.assertContains(dashboard, "Active Galleries")
         self.assertContains(dashboard, "Ready to Deliver")
         self.assertContains(dashboard, "Delivery Pipeline")
@@ -1028,6 +1028,21 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(detail, "Upload progress")
         self.assertContains(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]), {"tab": "photos"}), "Search photos")
         self.assertEqual(self.client.get(reverse("photographer_workspace:gallery_workspace", args=[private_gallery.pk])).status_code, 404)
+
+    def test_empty_gallery_dashboard_shows_focused_first_delivery_path(self):
+        user, _ = self.make_photographer(True, email="empty-gallery@example.com", slug="empty-gallery")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:galleries"))
+
+        self.assertContains(response, "Deliver your first client gallery")
+        self.assertContains(response, "Create Your First Gallery")
+        self.assertContains(response, "Create the gallery")
+        self.assertContains(response, "Add and prepare photos")
+        self.assertContains(response, "Share with your client")
+        self.assertContains(response, "Already have photos ready?")
+        self.assertNotContains(response, "Delivery Pipeline")
+        self.assertNotContains(response, "Recent Client Activity")
 
     def test_client_access_settings_and_secure_invitations(self):
         user, profile = self.make_photographer(True, email="access@example.com", slug="access")
@@ -1479,6 +1494,7 @@ class PhotographerWorkspaceTests(TestCase):
         self.assertContains(response, "Financial Overview")
         self.assertContains(response, "Track revenue, payments, balances, and financial activity.")
         self.assertContains(response, "Create Invoice")
+        self.assertContains(response, f'href="{reverse("photographer_workspace:invoice_create")}"')
         self.assertContains(response, "View Transactions")
         for action in ("Record payment", "Issue refund", "Add credit"):
             self.assertContains(response, action)

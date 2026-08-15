@@ -4,7 +4,28 @@
 {% url 'photographer_workspace:gallery_upload_queue' as upload_url %}
 <div class="lp-gallery-dashboard">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Galleries</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Dashboard</strong></nav>
-  {% include "photographer_workspace/components/page_header.html" with title="Dashboard" description="Manage gallery delivery, client activity, uploads, and storage." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
+  {% include "photographer_workspace/components/page_header.html" with title="Galleries" description="Create, prepare, and deliver polished client galleries from one workspace." primary_url=all_galleries_url|add:"?action=create" primary_label="Create Gallery" primary_icon="bi-plus-lg" secondary_url=upload_url secondary_label="Upload Photos" secondary_icon="bi-cloud-arrow-up" only %}
+
+  {% if not has_galleries and not gallery_dashboard_loading %}
+  <section class="lp-gallery-welcome" aria-labelledby="gallery-welcome-title">
+    <div class="lp-gallery-welcome__main">
+      <span class="lp-gallery-welcome__icon"><i class="bi bi-images" aria-hidden="true"></i></span>
+      <span class="lp-contract-eyebrow">Your gallery workspace</span>
+      <h2 id="gallery-welcome-title">Deliver your first client gallery</h2>
+      <p>Create a gallery for a client collection, upload the finished images, and move it through review to delivery.</p>
+      <a class="lp-button lp-button--primary lp-button--md" href="{{ all_galleries_url }}?action=create"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Create Your First Gallery</span></a>
+    </div>
+    <ol class="lp-gallery-welcome__steps" aria-label="Gallery delivery workflow">
+      <li><span>1</span><div><strong>Create the gallery</strong><small>Connect a client, event date, and delivery preferences.</small></div></li>
+      <li><span>2</span><div><strong>Add and prepare photos</strong><small>Upload images, organize albums, and complete your review.</small></div></li>
+      <li><span>3</span><div><strong>Share with your client</strong><small>Publish a secure gallery and track client activity.</small></div></li>
+    </ol>
+  </section>
+  <section class="lp-gallery-welcome-actions" aria-label="Gallery tools">
+    <a href="{{ upload_url }}"><span><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><div><strong>Already have photos ready?</strong><small>Open the upload queue to start preparing a collection.</small></div><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    <a href="{{ all_galleries_url }}"><span><i class="bi bi-grid" aria-hidden="true"></i></span><div><strong>Explore gallery management</strong><small>Review the gallery library, filters, and available workflow stages.</small></div><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+  </section>
+  {% else %}
 
   <section class="lp-card-grid lp-gallery-kpis" aria-label="Gallery summary">
     {% if gallery_dashboard_loading %}
@@ -34,5 +55,6 @@
   </div>
 
   <section class="lp-card lp-gallery-storage" aria-labelledby="storage-title"><div><header><span>Storage Overview</span><h2 id="storage-title">{{ storage.used }} of 100 GB used</h2><p>{{ storage.available }} remains available. Upcoming Deadlines and workflow issues appear above only when relevant.</p></header>{% include "photographer_workspace/components/progress.html" with label="Gallery storage" value=storage.percent value_text=storage.percent_display description="Storage usage across all galleries" only %}</div><a class="lp-text-action" href="{{ upload_url }}">Manage uploads <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>
+  {% endif %}
 </div>
 {% endblock %}

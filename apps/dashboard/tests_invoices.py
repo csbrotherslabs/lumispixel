@@ -39,7 +39,12 @@ class InvoiceWorkspaceTests(TestCase):
 
     def test_create_page_uses_compact_builder_and_real_readiness_hooks(self):
         response = self.client.get(reverse("photographer_workspace:invoice_create"))
-        self.assertContains(response, "Invoice Summary")
+        self.assertContains(response, "Invoice Readiness")
+        self.assertContains(response, "Invoice builder")
+        self.assertContains(response, "Build a clear, client-ready invoice and review it before sending.")
+        self.assertContains(response, 'class="lpw-invoice lp-invoice-builder', html=False)
+        self.assertContains(response, "Client selected")
+        self.assertContains(response, "Invoice details complete")
         self.assertContains(response, "Photographer Workspace")
         self.assertContains(response, reverse("photographer_workspace:dashboard"))
         self.assertContains(response, reverse("photographer_workspace:invoices"))
@@ -50,7 +55,7 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, "Payment Schedule")
         self.assertContains(response, "data-ready-send")
         self.assertContains(response, 'data-has-email="true"')
-        self.assertContains(response, "Totals verified when saved")
+        self.assertContains(response, "Totals are verified again when saved")
         self.assertContains(response, "Item / Description")
         self.assertContains(response, 'aria-label="Line item total"')
         self.assertContains(response, "data-schedule-balance")
