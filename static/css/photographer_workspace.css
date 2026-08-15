@@ -497,8 +497,8 @@ a:focus-visible,button:focus-visible{outline:3px solid rgba(215,0,6,.32);outline
 /* Controls on white and warm-white surfaces must not inherit the site's dark hero text. */
 .lpw-main:has(.lpw-all-gallery-head) :is(input,select,textarea,button),
 .lpw-main:has(.lpw-gallery-form-head) :is(input,select,textarea,button),
-.lp-gallery-workspace :is(input,select,textarea,button),
 .lp-upload-page :is(input,select,textarea,button){color:var(--gallery-text-primary)}
+.lp-gallery-workspace :is(input,select,textarea,button){color:#fff}
 .lpw-main:has(.lpw-all-gallery-head) :is(input,textarea)::placeholder,
 .lpw-main:has(.lpw-gallery-form-head) :is(input,textarea)::placeholder,
 .lp-gallery-workspace :is(input,textarea)::placeholder,
