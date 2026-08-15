@@ -24,7 +24,7 @@
   </nav>
 
   <section class="lp-contract-template-panel lp-card" aria-labelledby="contract-source-title">
-    <header class="lp-card__header"><div><h2 id="contract-source-title">Select a Contract Template</h2><p>Choose the template you want to use for this booking. You can customize the contract before sending it to your client.</p></div>{% if form.template.field.queryset.exists and can_manage_contract_templates %}{% include "photographer_workspace/components/button.html" with href=contract_templates_url variant="ghost" size="sm" label="Manage Templates" %}{% endif %}</header>
+    <header class="lp-card__header"><div><h2 id="contract-source-title">Select a Contract Template</h2><p>Choose the template you want to use for this booking. You can customize the contract before sending it to your client.</p></div>{% if form.template.field.queryset.exists and can_manage_contract_templates %}{% include "photographer_workspace/components/button.html" with href=contract_templates_url variant="outline" size="md" label="Manage Templates" leading_icon="bi-files" %}{% endif %}</header>
     {% if form.template.field.queryset.exists %}
       <form method="post" class="lp-contract-template-form">{% csrf_token %}{{ form.non_field_errors }}{% if form.template.errors %}<div class="lp-contract-form-error" role="alert">{{ form.template.errors }}</div>{% endif %}
         <fieldset><legend class="lp-sr-only">Active contract templates</legend><div class="lp-contract-template-grid">

@@ -135,6 +135,33 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, f'name="template" value="{self.template.pk}"')
         self.assertContains(response, "Continue to Customize")
         self.assertContains(response, "Manage Templates")
+        self.assertContains(response, 'lp-button--outline', html=False)
+        self.assertContains(response, 'bi-files', html=False)
+
+    def test_template_library_renders_modern_summary_and_actions(self):
+        self.client.force_login(self.owner)
+        archived = ContractTemplate.objects.create(
+            photographer=self.studio,
+            name="Archived agreement",
+            title="Archived terms",
+            content="Archived content",
+            category=ContractTemplate.Category.GENERAL,
+            is_active=False,
+            created_by=self.owner,
+        )
+
+        response = self.client.get(reverse("photographer_workspace:contract_templates"))
+
+        self.assertContains(response, 'class="lp-container lp-container--wide lp-contract-template-library"', html=False)
+        self.assertContains(response, "New Contract Template")
+        self.assertContains(response, "Total templates")
+        self.assertContains(response, "Available for bookings")
+        self.assertContains(response, "Archived templates")
+        self.assertContains(response, "Your Agreements")
+        self.assertContains(response, "View &amp; Edit")
+        self.assertContains(response, "Duplicate")
+        self.assertContains(response, "Activate")
+        self.assertContains(response, reverse("photographer_workspace:contract_template_edit", args=[archived.pk]))
 
     def test_create_page_empty_state_links_to_new_template_and_booking(self):
         self.template.is_active = False
