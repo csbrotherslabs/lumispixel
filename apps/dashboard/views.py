@@ -1777,7 +1777,12 @@ def edit_client(request, pk):
                 messages.success(request, "Client updated successfully.")
                 return redirect("photographer_workspace:client_detail", pk=updated.pk)
     context = _dashboard_context(request, "clients", "Edit Client")
-    context.update({"form": form, "form_title": "Edit Client", "is_client_form": True})
+    context.update({
+        "form": form, "form_title": "Edit Client", "is_client_form": True,
+        "editing_client": True, "client_record": client,
+        "client_detail_url": reverse("photographer_workspace:client_detail", args=[client.pk]),
+        "hide_topbar_heading": True,
+    })
     return render(request, "photographer_workspace/crm_form.html", context)
 
 
