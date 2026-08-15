@@ -1812,20 +1812,38 @@ def client_detail(request, pk):
         tab = "overview"
     notes = ClientNote.objects.for_photographer(profile).filter(client=client).select_related("author")
     activities = ClientActivity.objects.for_photographer(profile).filter(client=client).select_related("actor")
+    tasks = client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED])
+    galleries_awaiting_delivery = galleries.filter(status=Gallery.Status.READY).count()
+    operational_alerts = ([
+        {"label": "Overdue invoices", "count": overdue.count(), "icon": "bi-receipt", "urgent": True},
+    ] if can_view_financials and overdue.exists() else []) + ([
+        {"label": "Sessions in 7 days", "count": soon.count(), "icon": "bi-calendar-event", "urgent": False},
+    ] if soon.exists() else []) + ([
+        {"label": "Galleries awaiting delivery", "count": galleries_awaiting_delivery, "icon": "bi-images", "urgent": False},
+    ] if galleries_awaiting_delivery else [])
     context = _dashboard_context(request, "clients", str(client))
     context.update({
         "client_record": client, "detail_tabs": detail_tabs, "active_tab": tab,
         "sessions": sessions, "galleries": galleries, "invoices": invoices, "upcoming_session": upcoming,
         "outstanding_balance": outstanding, "recent_notes": notes[:5],
-        "client_tasks": client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED]),
+        "client_tasks": tasks,
         "activities": activities[:30],
         "can_view_financials": can_view_financials,
-        "operational_alerts": ([
-            {"label": "Overdue invoices", "count": overdue.count(), "icon": "bi-receipt", "urgent": overdue.exists()},
-        ] if can_view_financials else []) + [
-            {"label": "Sessions in 7 days", "count": soon.count(), "icon": "bi-calendar-event", "urgent": soon.exists()},
-            {"label": "Galleries awaiting delivery", "count": galleries.filter(status=Gallery.Status.READY).count(), "icon": "bi-images", "urgent": galleries.filter(status=Gallery.Status.READY).exists()},
-        ],
+        "operational_alerts": operational_alerts,
+        "total_sessions": sessions.count(), "total_galleries": galleries.count(),
+        "open_invoice_count": open_invoices.count(), "open_task_count": tasks.count(),
+        "galleries_awaiting_delivery": galleries_awaiting_delivery,
+        "has_relationship_data": sessions.exists() or galleries.exists() or invoices.exists() or tasks.exists(),
+        "client_status_variant": {
+            Client.Status.ACTIVE: "success", Client.Status.INACTIVE: "warning", Client.Status.ARCHIVED: "neutral",
+        }[client.status],
+        "edit_client_url": reverse("photographer_workspace:edit_client", args=[client.pk]),
+        "client_email_url": f"mailto:{client.email}" if client.email else "",
+        "client_phone_url": f"tel:{client.phone}" if client.phone else "",
+        "bookings_url": reverse("photographer_workspace:bookings"),
+        "create_gallery_url": reverse("photographer_workspace:create_gallery"),
+        "create_invoice_url": reverse("photographer_workspace:invoice_create"),
+        "hide_topbar_heading": True,
     })
     return render(request, "photographer_workspace/client_detail.html", context)
 

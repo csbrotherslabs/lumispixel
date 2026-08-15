@@ -1263,6 +1263,10 @@ class PhotographerWorkspaceTests(TestCase):
         self.client.force_login(user)
 
         response = self.client.get(reverse("photographer_workspace:client_detail", args=[client.pk]))
+        self.assertContains(response, 'class="lp-client-record-hero"')
+        self.assertContains(response, 'class="lp-client-record-layout"')
+        self.assertContains(response, 'class="lp-client-record-attention"')
+        self.assertEqual(response.content.decode().count("<h1"), 1)
         self.assertContains(response, "Contact details")
         self.assertContains(response, "Outstanding balance")
         self.assertContains(response, "Overdue invoices")
