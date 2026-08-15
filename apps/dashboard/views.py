@@ -2483,6 +2483,24 @@ def booking_detail(request, pk):
     tab = request.GET.get("tab", "overview")
     if tab not in {"overview", "contract"}:
         tab = "overview"
+    local_start = timezone.localtime(booking.starts_at, studio_timezone(profile))
+    local_end = local_start + timedelta(minutes=booking.duration_minutes)
+    booking_event_id = f"booking-detail-{booking.pk}"
+    booking_schedule_event = {
+        "id": booking.pk,
+        "drawer_id": booking_event_id,
+        "starts_at": local_start,
+        "ends_at": local_end,
+        "name": str(booking.client),
+        "session_type": booking.session_type,
+        "location": booking.location or "",
+        "notes": booking.notes,
+        "client_id": booking.client_id,
+        "status_key": booking.status,
+        "booking_value": str(booking.booking_value),
+        "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
+        "all_day": False,
+    }
     context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
     context.update({
         "booking": booking,
@@ -2492,10 +2510,22 @@ def booking_detail(request, pk):
             + (f" {booking.duration_minutes % 60} minutes" if booking.duration_minutes % 60 else "")
         ) if booking.duration_minutes >= 60 else f"{booking.duration_minutes} minutes",
         "booking_value_display": format_currency(booking.booking_value, profile.default_currency),
-        "booking_edit_url": (
-            f'{reverse("photographer_workspace:calendar")}?view=list&date='
-            f'{timezone.localtime(booking.starts_at):%Y-%m-%d}'
-        ),
+        "booking_event_id": booking_event_id,
+        "booking_schedule_events": [booking_schedule_event],
+        "booking_clients": scope_assigned(Client.objects.all(), request.studio_access).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
+        "selected_date": local_start.date(),
+        "event_form_types": [
+            ("booking", "Booking", "bi-camera"),
+            ("consultation", "Consultation", "bi-chat-square-text"),
+            ("editing", "Editing Time", "bi-magic"),
+            ("blocked", "Blocked Time", "bi-slash-circle"),
+            ("vacation", "Vacation", "bi-sun"),
+            ("mini", "Mini Session", "bi-people"),
+        ],
         "booking_status_variant": {
             ClientSession.Status.TENTATIVE: "warning",
             ClientSession.Status.CONFIRMED: "success",
