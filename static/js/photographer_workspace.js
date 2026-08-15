@@ -956,6 +956,16 @@
   let opener = null;
   let editing = false;
 
+  if (!window.LumisScheduleEvents) {
+    const dataNode = document.getElementById('schedule-event-data');
+    if (dataNode) {
+      window.LumisScheduleEvents = JSON.parse(dataNode.textContent).reduce(function (byId, event) {
+        byId[event.drawer_id] = event;
+        return byId;
+      }, {});
+    }
+  }
+
   function currentType() { return form.elements.event_type.value; }
   function syncType() {
     const type = currentType();

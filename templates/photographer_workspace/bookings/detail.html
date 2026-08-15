@@ -8,7 +8,7 @@
       <p class="lp-page-description">Booking for {{ booking.client }} · LP-{{ booking.pk|stringformat:'04d' }}</p>
     </div>
     <div class="lp-header-actions" role="group" aria-label="Booking actions">
-      <a class="lp-button lp-button--secondary lp-booking-edit-action" href="{% url 'photographer_workspace:calendar' %}?view=list&amp;date={{ booking.starts_at|date:'Y-m-d' }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</a>
+      <button class="lp-button lp-button--secondary lp-booking-edit-action" type="button" data-event-form-open="{{ booking.event_kind }}" data-event-edit="{{ booking_event_id }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</button>
       {% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}" data-mutation-form data-confirm="Cancel this booking? This will remove it from the active schedule.">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lp-button lp-button--destructive" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}
     </div>
   </header>
@@ -48,10 +48,12 @@
       <section class="lp-booking-side-card" aria-labelledby="booking-status-title"><h2 id="booking-status-title">Booking Status</h2>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}<p>{{ booking_status_description }}</p></section>
       <section class="lp-booking-side-card" aria-labelledby="booking-actions-title"><h2 id="booking-actions-title">Quick Actions</h2><div class="lp-booking-quick-actions">
         {% url 'photographer_workspace:client_detail' booking.client.pk as client_url %}
-        {% include "photographer_workspace/components/quick_action.html" with title="Edit or reschedule" description="Open this date in the schedule" icon="bi-calendar-event" url=booking_edit_url %}
+        {% include "photographer_workspace/components/quick_action.html" with title="Edit or reschedule" description="Update this booking without leaving the page" icon="bi-calendar-event" event_type=booking.event_kind event_id=booking_event_id %}
         {% include "photographer_workspace/components/quick_action.html" with title="View client" description=booking.client icon="bi-person" url=client_url %}
       </div></section>
     </aside>
   </div>
 </div>
+{% include "photographer_workspace/bookings/components/event_form_drawer.html" %}
+{{ booking_schedule_events|json_script:"schedule-event-data" }}
 {% endblock %}
