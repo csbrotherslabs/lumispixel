@@ -57,6 +57,12 @@ class ClientEditTests(TestCase):
 
     def test_successful_update_persists_fields_preserves_protected_data_and_audits(self):
         self.client.force_login(self.owner)
+        edit_page = self.client.get(self.url)
+        self.assertContains(edit_page, 'class="workspace-form-page lp-container lp-edit-client lp-clients-main-width"')
+        self.assertContains(edit_page, "Edit client")
+        self.assertContains(edit_page, str(self.record))
+        self.assertContains(edit_page, reverse("photographer_workspace:client_detail", args=[self.record.pk]))
+        self.assertEqual(edit_page.content.decode().count("<h1"), 1)
         created_at = self.record.created_at
         response = self.client.post(
             self.url,
@@ -163,4 +169,3 @@ class ClientEditTests(TestCase):
         self.record.assigned_members.add(membership)
         self.assertEqual(self.client.get(self.url).status_code, 200)
         self.assertEqual(self.client.post(self.url, self.form_data()).status_code, 302)
-
