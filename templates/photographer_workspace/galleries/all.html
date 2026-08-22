@@ -1,9 +1,12 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-gallery-library">
-<nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Galleries</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">All Galleries</strong></nav>
+<div class="lp-gallery-library" id="main-content">
 <header class="lp-page-header lpw-all-gallery-head">
-  <div class="lp-gallery-library-heading"><span class="lp-gallery-library-heading__icon"><i class="bi bi-collection" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery library</span><h1 id="workspace-page-title" class="lp-page-title">All Galleries</h1><p class="lp-page-description">Create, organize, publish, and manage client galleries.</p></div></div>
+  <div class="lp-page-heading">
+    <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">All Galleries</strong></nav>
+    <h1 id="workspace-page-title" class="lp-page-title">All Galleries</h1>
+    <p class="lp-page-description">Create, organize, publish, and manage client galleries.</p>
+  </div>
   <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:create_gallery' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Gallery</a><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>Upload Photos</a></div>
 </header>
 

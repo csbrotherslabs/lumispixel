@@ -1267,7 +1267,7 @@ class PhotographerWorkspaceTests(TestCase):
 
         filtered = self.client.get(reverse("photographer_workspace:all_galleries"), {"q": "Maya", "client": client.pk, "status": "draft"})
         self.assertContains(filtered, "Maya &amp; Rowan")
-        self.assertContains(filtered, "Gallery library")
+        self.assertContains(filtered, '<strong aria-current="page">All Galleries</strong>')
         self.assertContains(filtered, 'class="lp-gallery-command"')
         self.assertContains(filtered, 'data-gallery-view="grid"')
         self.assertContains(filtered, 'data-gallery-view="list"')
