@@ -16,6 +16,7 @@ from .services import EmailDeliveryError, email_verification_token, normalize_si
 SIGNUP_INTENT_SESSION_KEY = "signup_intent"
 AUTH_NEXT_SESSION_KEY = "auth_next_url"
 PENDING_USER_SESSION_KEY = "pending_verification_user_id"
+VERIFICATION_DELIVERY_SESSION_KEY = "verification_email_delivery_status"
 
 
 def _post_login_url(request, next_url=""):
@@ -47,8 +48,12 @@ def _remember_pending_user(request, user):
     request.session[PENDING_USER_SESSION_KEY] = str(user.pk)
 
 
+def _set_verification_delivery_status(request, status):
+    request.session[VERIFICATION_DELIVERY_SESSION_KEY] = status
+
+
 def _clear_auth_flow(request):
-    for key in (SIGNUP_INTENT_SESSION_KEY, AUTH_NEXT_SESSION_KEY, PENDING_USER_SESSION_KEY):
+    for key in (SIGNUP_INTENT_SESSION_KEY, AUTH_NEXT_SESSION_KEY, PENDING_USER_SESSION_KEY, VERIFICATION_DELIVERY_SESSION_KEY):
         request.session.pop(key, None)
 
 
@@ -172,8 +177,10 @@ def _signup_view(request, form_class, template_name, account_type):
             try:
                 send_verification_email(request, user)
             except EmailDeliveryError:
-                messages.warning(request, "We could not send the verification email right now. Please check the site email settings and try again.")
+                _set_verification_delivery_status(request, "failed")
+                messages.warning(request, "We could not send the verification email right now. Please try again.")
             else:
+                _set_verification_delivery_status(request, "sent")
                 messages.success(request, "We sent a verification email. Please check your inbox to continue.")
             return redirect("accounts:verification-pending")
     return render(request, template_name, {"form": form, "intent": intent, "next": next_url})
@@ -193,7 +200,16 @@ def photographer_signup(request):
 def verification_pending(request):
     user = _pending_user(request)
     email = user.email if user else ""
-    return render(request, "accounts/verification_pending.html", {"pending_email": email, "can_resend": bool(user and not user.email_verified)})
+    delivery_status = request.session.get(VERIFICATION_DELIVERY_SESSION_KEY, "unknown")
+    return render(
+        request,
+        "accounts/verification_pending.html",
+        {
+            "pending_email": email,
+            "can_resend": bool(user and not user.email_verified),
+            "delivery_status": delivery_status,
+        },
+    )
 
 
 @require_GET
@@ -223,10 +239,14 @@ def resend_verification(request):
             try:
                 send_verification_email(request, user)
             except EmailDeliveryError:
-                messages.warning(request, "We could not send the verification email right now. Please check the site email settings and try again.")
+                _set_verification_delivery_status(request, "failed")
+                messages.warning(request, "We could not send the verification email right now. Please try again.")
             else:
+                _set_verification_delivery_status(request, "sent")
                 cache.set(key, True, 60)
-    messages.success(request, "If a verification email can be sent, it will arrive shortly.")
+                messages.success(request, "A new verification email was sent.")
+        else:
+            messages.info(request, "A verification email was sent recently. Please wait a minute before trying again.")
     return redirect("accounts:verification-pending")
 
 
