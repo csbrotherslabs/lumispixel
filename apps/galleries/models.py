@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 import hashlib
 import secrets
+
+from .storage import get_private_gallery_storage
 
 
 class GalleryQuerySet(models.QuerySet):
@@ -22,9 +23,7 @@ class GalleryQuerySet(models.QuerySet):
 
 
 class Gallery(models.Model):
-    assigned_members = models.ManyToManyField(
-        "dashboard.StudioMembership", blank=True, related_name="assigned_galleries"
-    )
+    assigned_members = models.ManyToManyField("dashboard.StudioMembership", blank=True, related_name="assigned_galleries")
     """A photographer-owned collection prepared for client delivery."""
 
     class Status(models.TextChoices):
@@ -57,12 +56,8 @@ class Gallery(models.Model):
         SCHEDULED = "scheduled", "Scheduled for Deletion"
         DELETION_PENDING = "deletion_pending", "Deletion Pending"
 
-    photographer = models.ForeignKey(
-        "accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="galleries"
-    )
-    client = models.ForeignKey(
-        "clients.Client", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True
-    )
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="galleries")
+    client = models.ForeignKey("clients.Client", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220)
     description = models.TextField(blank=True)
@@ -93,14 +88,9 @@ class Gallery(models.Model):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["photographer", "slug"], name="gallery_owner_slug_unique"),
-            models.CheckConstraint(
-                condition=Q(expires_at__isnull=True) | Q(published_at__isnull=True) | Q(expires_at__gt=models.F("published_at")),
-                name="gallery_expiry_after_publish",
-            ),
+            models.CheckConstraint(condition=Q(expires_at__isnull=True) | Q(published_at__isnull=True) | Q(expires_at__gt=models.F("published_at")), name="gallery_expiry_after_publish"),
         ]
-        indexes = [
-            models.Index(fields=["photographer", "status", "-created_at"], name="gallery_owner_status_created"),
-        ]
+        indexes = [models.Index(fields=["photographer", "status", "-created_at"], name="gallery_owner_status_created")]
 
     def clean(self):
         if self.client_id and self.photographer_id and self.client.photographer_id != self.photographer_id:
@@ -111,8 +101,6 @@ class Gallery(models.Model):
 
 
 class GalleryArchivePolicy(models.Model):
-    """Owner-scoped archive defaults; storage-provider neutral by design."""
-
     photographer = models.OneToOneField("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_archive_policy")
     archive_delivered = models.BooleanField(default=False)
     archive_after_expiration = models.BooleanField(default=True)
@@ -128,8 +116,6 @@ class GalleryActivityQuerySet(models.QuerySet):
 
 
 class GalleryActivity(models.Model):
-    """An immutable, photographer-owned audit entry for a gallery workflow."""
-
     class ActorType(models.TextChoices):
         PHOTOGRAPHER = "photographer", "Photographer"
         CLIENT = "client", "Client"
@@ -169,15 +155,11 @@ class GalleryActivity(models.Model):
     related_object_id = models.CharField(max_length=64, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
     objects = GalleryActivityQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at", "-pk"]
-        indexes = [
-            models.Index(fields=["photographer", "gallery", "-created_at"], name="activity_owner_gallery_date"),
-            models.Index(fields=["gallery", "event_type", "-created_at"], name="activity_gallery_type_date"),
-        ]
+        indexes = [models.Index(fields=["photographer", "gallery", "-created_at"], name="activity_owner_gallery_date"), models.Index(fields=["gallery", "event_type", "-created_at"], name="activity_gallery_type_date")]
 
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
@@ -193,8 +175,6 @@ class GalleryAnalyticsEventQuerySet(models.QuerySet):
 
 
 class GalleryAnalyticsEvent(models.Model):
-    """Privacy-conscious, append-only events used for first-party gallery reporting."""
-
     class EventType(models.TextChoices):
         VIEW = "view", "Gallery view"
         PHOTO_VIEW = "photo_view", "Photo view"
@@ -223,16 +203,11 @@ class GalleryAnalyticsEvent(models.Model):
     source = models.CharField(max_length=24, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     occurred_at = models.DateTimeField(default=timezone.now)
-
     objects = GalleryAnalyticsEventQuerySet.as_manager()
 
     class Meta:
         ordering = ["-occurred_at", "-pk"]
-        indexes = [
-            models.Index(fields=["photographer", "gallery", "-occurred_at"], name="analytics_owner_gallery_date"),
-            models.Index(fields=["gallery", "event_type", "-occurred_at"], name="analytics_gallery_type_date"),
-            models.Index(fields=["gallery", "visitor_identifier", "-occurred_at"], name="analytics_gallery_visitor"),
-        ]
+        indexes = [models.Index(fields=["photographer", "gallery", "-occurred_at"], name="analytics_owner_gallery_date"), models.Index(fields=["gallery", "event_type", "-occurred_at"], name="analytics_gallery_type_date"), models.Index(fields=["gallery", "visitor_identifier", "-occurred_at"], name="analytics_gallery_visitor")]
 
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
@@ -243,11 +218,10 @@ class GalleryAnalyticsEvent(models.Model):
             raise ValidationError({"related_album": "Album must belong to this gallery."})
 
 
-private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
+private_gallery_storage = get_private_gallery_storage()
 
 
 def gallery_photo_path(instance, filename):
-    """Keep originals in an owner/gallery namespace (served only by an authorized view)."""
     return f"galleries/{instance.photographer_id}/{instance.gallery_id}/{filename}"
 
 
@@ -257,8 +231,6 @@ class GalleryPhotoQuerySet(models.QuerySet):
 
 
 class GalleryPhoto(models.Model):
-    """Storage-agnostic upload record for a gallery original."""
-
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
         UPLOADING = "uploading", "Uploading"
@@ -278,7 +250,6 @@ class GalleryPhoto(models.Model):
     error_message = models.CharField(max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     objects = GalleryPhotoQuerySet.as_manager()
 
     class Meta:
@@ -313,7 +284,6 @@ class Album(models.Model):
     photos = models.ManyToManyField(GalleryPhoto, through="AlbumPhoto", related_name="albums", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     objects = AlbumQuerySet.as_manager()
 
     class Meta:
@@ -346,8 +316,6 @@ class AlbumPhoto(models.Model):
 
 
 class GalleryPermission(models.Model):
-    """The gallery-wide client access policy, kept separate from presentation data."""
-
     class Watermark(models.TextChoices):
         NONE = "none", "None"
         PREVIEW = "preview", "Preview Only"
@@ -368,8 +336,6 @@ class GalleryPermission(models.Model):
 
 
 class GallerySettings(models.Model):
-    """Presentation, download, preference, and discovery settings for a gallery."""
-
     class WatermarkPosition(models.TextChoices):
         CENTER = "center", "Center"
         TOP_LEFT = "top_left", "Top left"
@@ -403,7 +369,6 @@ class GallerySettings(models.Model):
 
 
 class GalleryStore(models.Model):
-    """Gallery-scoped storefront configuration; payment providers live outside this model."""
     gallery = models.OneToOneField(Gallery, on_delete=models.CASCADE, related_name="store")
     photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_stores")
     enabled = models.BooleanField(default=False)
@@ -428,161 +393,91 @@ class StoreProduct(models.Model):
         GALLERY = "full_gallery_download", "Full Gallery Download"
         PRINT = "print", "Print"
         CANVAS = "canvas", "Canvas"
-        FRAMED = "framed_print", "Framed Print"
-        ALBUM = "photo_album", "Photo Album"
-    class Fulfillment(models.TextChoices):
-        DIGITAL = "digital", "Digital delivery"
-        PHYSICAL = "physical", "Physical fulfillment"
-    class Resolution(models.TextChoices):
-        WEB = "web", "Web size"
-        HIGH = "high", "High resolution"
-        ORIGINAL = "original", "Original"
+
     store = models.ForeignKey(GalleryStore, on_delete=models.CASCADE, related_name="products")
-    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="store_products")
-    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="store_products")
-    name = models.CharField(max_length=180)
-    product_type = models.CharField(max_length=30, choices=ProductType.choices)
+    name = models.CharField(max_length=160)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to="galleries/products/%Y/%m/", blank=True)
+    product_type = models.CharField(max_length=32, choices=ProductType.choices)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    fulfillment = models.CharField(max_length=12, choices=Fulfillment.choices, default=Fulfillment.DIGITAL)
-    download_resolution = models.CharField(max_length=12, choices=Resolution.choices, blank=True)
-    maximum_download_count = models.PositiveIntegerField(blank=True, null=True)
     active = models.BooleanField(default=True)
-    display_order = models.PositiveIntegerField(default=0)
+    fulfillment_sku = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    class Meta:
-        ordering = ["display_order", "name"]
-    def clean(self):
-        errors = {}
-        if self.sale_price is not None and self.price is not None and self.sale_price >= self.price:
-            errors["sale_price"] = "Sale price must be lower than the regular price."
-        if self.store_id and (self.gallery_id != self.store.gallery_id or self.photographer_id != self.store.photographer_id):
-            errors["store"] = "Product ownership must match its store."
-        if errors: raise ValidationError(errors)
-
-
-class ProductVariant(models.Model):
-    product = models.ForeignKey(StoreProduct, on_delete=models.CASCADE, related_name="variants")
-    name = models.CharField(max_length=100)
-    price_adjustment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    active = models.BooleanField(default=True)
-    display_order = models.PositiveIntegerField(default=0)
-    class Meta:
-        ordering = ["display_order", "name"]
-        constraints = [models.UniqueConstraint(fields=["product", "name"], name="store_product_variant_unique")]
 
 
 class GalleryOrder(models.Model):
     class Status(models.TextChoices):
-        PENDING="pending", "Pending"
-        PAID="paid", "Paid"
-        PROCESSING="processing", "Processing"
-        COMPLETED="completed", "Completed"
-        CANCELLED="cancelled", "Cancelled"
-        REFUNDED="refunded", "Refunded"
+        PENDING = "pending", "Pending"
+        PAID = "paid", "Paid"
+        FULFILLING = "fulfilling", "Fulfilling"
+        FULFILLED = "fulfilled", "Fulfilled"
+        REFUNDED = "refunded", "Refunded"
+        CANCELLED = "cancelled", "Cancelled"
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="orders")
+    store = models.ForeignKey(GalleryStore, on_delete=models.CASCADE, related_name="orders")
     photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_orders")
-    gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT, related_name="orders")
-    store = models.ForeignKey(GalleryStore, on_delete=models.PROTECT, related_name="orders")
-    order_number = models.CharField(max_length=30, unique=True)
-    customer_name = models.CharField(max_length=160)
-    customer_email = models.EmailField()
+    client = models.ForeignKey("clients.Client", on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_orders")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    currency = models.CharField(max_length=3, default="USD")
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    fulfillment_status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    internal_notes = models.TextField(blank=True)
-    activity_history = models.JSONField(default=list, blank=True)
+    payment_reference = models.CharField(max_length=120, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    class Meta: ordering = ["-created_at"]
+
     def clean(self):
-        if self.store_id and (self.gallery_id != self.store.gallery_id or self.photographer_id != self.store.photographer_id):
-            raise ValidationError({"store": "Order ownership must match its store."})
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Order and gallery must have the same photographer."})
+        if self.store_id and self.gallery_id and self.store.gallery_id != self.gallery_id:
+            raise ValidationError({"store": "Store must belong to this gallery."})
 
 
 class GalleryOrderItem(models.Model):
     order = models.ForeignKey(GalleryOrder, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(StoreProduct, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items")
-    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items")
-    product_name = models.CharField(max_length=180)
-    selected_photos = models.ManyToManyField(GalleryPhoto, blank=True, related_name="order_items")
+    product = models.ForeignKey(StoreProduct, on_delete=models.PROTECT, related_name="order_items")
+    photo = models.ForeignKey(GalleryPhoto, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items")
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     line_total = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-class DiscountCode(models.Model):
-    class DiscountType(models.TextChoices):
-        PERCENTAGE="percentage", "Percentage"
-        FIXED="fixed", "Fixed amount"
-    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="discount_codes")
-    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="discount_codes")
-    code = models.CharField(max_length=40)
-    discount_type = models.CharField(max_length=12, choices=DiscountType.choices)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    minimum_order = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    starts_at = models.DateTimeField(blank=True, null=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
-    usage_limit = models.PositiveIntegerField(blank=True, null=True)
-    times_used = models.PositiveIntegerField(default=0)
-    active = models.BooleanField(default=True)
-    class Meta:
-        ordering = ["-active", "code"]
-        constraints = [models.UniqueConstraint(fields=["gallery", "code"], name="gallery_discount_code_unique")]
     def clean(self):
-        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
-            raise ValidationError({"gallery": "Discount and gallery must have the same photographer."})
-        if self.discount_type == self.DiscountType.PERCENTAGE and self.amount > 100:
-            raise ValidationError({"amount": "Percentage cannot exceed 100."})
+        if self.photo_id and self.photo.gallery_id != self.order.gallery_id:
+            raise ValidationError({"photo": "Photo must belong to the order's gallery."})
 
 
-class GalleryInvitation(models.Model):
-    """An email-address invitation; delivery can be attached by a future mail service."""
+class GalleryAccess(models.Model):
+    class AccessType(models.TextChoices):
+        EMAIL = "email", "Email invitation"
+        LINK = "link", "Private link"
+        PASSWORD = "password", "Password"
+        PUBLIC = "public", "Public"
 
-    class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        ACTIVE = "active", "Active"
-        DISABLED = "disabled", "Disabled"
-
-    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="invitations")
-    client_name = models.CharField(max_length=160)
-    email = models.EmailField()
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
-    invited_at = models.DateTimeField(auto_now_add=True)
-    last_access_at = models.DateTimeField(blank=True, null=True)
-    resent_at = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        ordering = ["-invited_at"]
-        constraints = [models.UniqueConstraint(fields=["gallery", "email"], name="gallery_invitation_email_unique")]
-
-
-class AccessToken(models.Model):
-    """Revocable access credential. Only a SHA-256 digest is persisted."""
-
-    invitation = models.ForeignKey(GalleryInvitation, on_delete=models.CASCADE, related_name="access_tokens")
-    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="access_records")
+    client = models.ForeignKey("clients.Client", on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_access")
+    email = models.EmailField(blank=True)
+    access_type = models.CharField(max_length=20, choices=AccessType.choices, default=AccessType.LINK)
+    token_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    password_hash = models.CharField(max_length=255, blank=True)
+    can_download = models.BooleanField(default=True)
+    can_favorite = models.BooleanField(default=True)
+    can_comment = models.BooleanField(default=False)
     expires_at = models.DateTimeField(blank=True, null=True)
-    last_used_at = models.DateTimeField(blank=True, null=True)
     revoked_at = models.DateTimeField(blank=True, null=True)
+    first_viewed_at = models.DateTimeField(blank=True, null=True)
+    last_viewed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    @classmethod
-    def issue(cls, invitation, *, expires_at=None):
-        """Create a cryptographically secure token and return it once with its record."""
-        raw_token = secrets.token_urlsafe(32)
-        record = cls.objects.create(
-            invitation=invitation,
-            token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
-            expires_at=expires_at,
-        )
-        return record, raw_token
+    class Meta:
+        indexes = [models.Index(fields=["gallery", "email", "revoked_at"], name="access_gallery_email_revoked")]
 
     @classmethod
-    def digest(cls, raw_token):
-        return hashlib.sha256(raw_token.encode()).hexdigest()
+    def issue_token(cls):
+        raw = secrets.token_urlsafe(32)
+        return raw, hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    def token_matches(self, raw_token):
+        if not raw_token:
+            return False
+        return secrets.compare_digest(self.token_hash, hashlib.sha256(raw_token.encode("utf-8")).hexdigest())
