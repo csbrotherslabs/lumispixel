@@ -1,12 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Verify Your Email | LumisPixel{% endblock %}
+{% block extra_css %}
+<style>
+  .lumis-verification-page {
+    padding-top: 150px !important;
+    padding-bottom: 96px;
+    min-height: 520px;
+  }
+
+  .lumis-verification-page .wptb-heading {
+    margin-bottom: 34px;
+  }
+
+  .lumis-verification-page .wptb-item--title {
+    margin-top: 0;
+  }
+
+  .lumis-verification-status {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 991px) {
+    .lumis-verification-page {
+      padding-top: 125px !important;
+      padding-bottom: 72px;
+    }
+  }
+</style>
+{% endblock %}
 {% block content %}
-<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="verify-email-title">
+<section class="wptb-about-one bg-image-2 lumis-auth-section lumis-verification-page" aria-labelledby="verify-email-title">
   <div class="container">
     <div class="wptb-heading">
-      <div class="wptb-item--inner text-center">
+      <div class="wptb-item--inner text-center lumis-verification-status">
         <h1 class="wptb-item--title" id="verify-email-title">Verify your email</h1>
-        <p class="wptb-item--description">We sent a LumisPixel verification email{% if pending_email %} to {{ pending_email }}{% endif %}. Check your inbox and spam or junk folders.</p>
+        {% if delivery_status == "sent" %}
+          <p class="wptb-item--description">We sent a LumisPixel verification email{% if pending_email %} to {{ pending_email }}{% endif %}. Check your inbox and spam or junk folders.</p>
+        {% elif delivery_status == "failed" %}
+          <p class="wptb-item--description">We could not send the verification email{% if pending_email %} to {{ pending_email }}{% endif %}. Please use the button below to try again.</p>
+        {% else %}
+          <p class="wptb-item--description">Your email address{% if pending_email %} {{ pending_email }}{% endif %} still needs to be verified. Check your inbox or request another verification email below.</p>
+        {% endif %}
       </div>
     </div>
     <div class="text-center lumis-auth-actions lumis-auth-actions--centered">
