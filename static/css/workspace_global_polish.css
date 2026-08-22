@@ -1,0 +1,32 @@
+/* LumisPixel workspace convergence layer.
+ * Loaded after legacy feature CSS so established pages inherit the current
+ * type and surface system without changing layout or application hooks. */
+.lumis-workspace-body .lpw-shell{color:var(--lp-text-primary);font-family:var(--lp-font-sans);font-optical-sizing:auto}
+.lumis-workspace-body .lpw-main{background:var(--lp-color-page);color:var(--lp-text-primary);font-size:var(--lp-type-body)}
+.lumis-workspace-body .lpw-main :where(a){text-decoration-thickness:.08em;text-underline-offset:.16em}
+.lumis-workspace-body .lpw-main :where(p,li,dd,td){line-height:var(--lp-leading-body)}
+.lumis-workspace-body .lpw-main :where(dt,th){color:var(--lp-text-secondary);font-size:var(--lp-type-caption);font-weight:var(--lp-weight-semibold);line-height:var(--lp-leading-caption)}
+.lumis-workspace-body .lpw-main :where(input,select,textarea){border-color:var(--lp-color-border-strong);background-color:var(--lp-color-surface)}
+.lumis-workspace-body .lpw-main :where(input,select,textarea):hover:not(:disabled){border-color:color-mix(in srgb,var(--lp-color-border-strong) 62%,var(--lp-text-secondary))}
+.lumis-workspace-body .lpw-main :where(input,select,textarea):focus{border-color:var(--lp-color-brand)}
+.lpw-topbar{background:color-mix(in srgb,var(--lp-color-surface) 94%,transparent);border-color:var(--lp-color-border);box-shadow:0 4px 20px rgba(20,27,38,.045)}
+.lpw-topbar h1{color:var(--lp-text-primary);font-size:var(--lp-type-section-title);font-weight:var(--lp-weight-bold);letter-spacing:-.024em}
+.lpw-topbar .lpw-breadcrumb{color:var(--lp-text-muted);font-size:var(--lp-type-micro);font-weight:var(--lp-weight-semibold);letter-spacing:.045em}
+.lpw-global-search{border-color:var(--lp-color-border);background:var(--lp-color-page);box-shadow:inset 0 1px 2px rgba(20,27,38,.025)}
+.lpw-global-search input{color:var(--lp-text-primary);font-size:var(--lp-type-label);font-weight:var(--lp-weight-regular)}
+.lpw-profile-copy strong{color:var(--lp-text-primary);font-size:var(--lp-type-label);font-weight:var(--lp-weight-semibold)}
+.lpw-profile-copy small{color:var(--lp-text-muted);font-size:var(--lp-type-caption)}
+.lpw-nav a{font-size:var(--lp-type-label);font-weight:var(--lp-weight-medium);letter-spacing:-.004em}
+.lpw-nav-group__toggle{color:#aaa5a1;font-size:var(--lp-type-micro);font-weight:var(--lp-weight-semibold);letter-spacing:.07em}
+.lumis-workspace-body .lp-card,.lumis-workspace-body .lpw-panel,.lumis-workspace-body .lpw-card,.lumis-workspace-body .lpw-metric{border-color:var(--lp-color-border);background-color:var(--lp-color-surface);box-shadow:var(--lp-shadow-subtle)}
+.lumis-workspace-body .lp-card__header,.lumis-workspace-body .lp-card__footer{border-color:var(--lp-color-border)}
+.lumis-workspace-body .lp-card__header h3{font-size:var(--lp-type-card-title);font-weight:var(--lp-weight-semibold);letter-spacing:-.014em}
+.lumis-workspace-body .lp-kpi-card__label{color:var(--lp-text-secondary);font-size:var(--lp-type-label);font-weight:var(--lp-weight-semibold)}
+.lumis-workspace-body .lp-kpi-card__value{color:var(--lp-text-primary);font-weight:var(--lp-weight-bold);letter-spacing:-.035em}
+.lumis-workspace-body :where(.lp-section-heading,.lp-section-header) h2{color:var(--lp-text-primary);font-size:var(--lp-type-section-title);font-weight:var(--lp-weight-bold);letter-spacing:-.022em}
+.lumis-workspace-body :where(.lp-section-heading,.lp-section-header) p{color:var(--lp-text-secondary);font-size:var(--lp-type-body-small)}
+.lumis-workspace-body .lp-button{font-size:var(--lp-type-label);font-weight:var(--lp-weight-semibold);letter-spacing:-.006em}
+.lumis-workspace-body :where(table){color:var(--lp-text-primary);font-size:var(--lp-type-body-small)}
+.lumis-workspace-body :where(thead th){color:var(--lp-text-secondary);font-size:var(--lp-type-caption);font-weight:var(--lp-weight-semibold);letter-spacing:.025em}
+.lumis-workspace-body :where(tbody td,tbody th){border-color:var(--lp-color-border)}
+@media(max-width:620px){.lpw-topbar h1{font-size:1.125rem}.lumis-workspace-body .lpw-main{font-size:var(--lp-type-body-small)}}
