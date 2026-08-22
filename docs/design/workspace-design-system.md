@@ -30,9 +30,9 @@ Text components consume the `--lp-text-*` roles. The older `--lp-color-text*` pr
 
 ### Typography
 
-The workspace uses self-hosted variable DM Sans through `--lp-font-sans`; the normal face is preloaded by the workspace base template and both normal and italic files use `font-display: swap`. This avoids a network-dependent fallback changing text metrics or rendering quality. Roles are `--lp-type-page-title`, `--lp-type-section-title`, `--lp-type-card-title`, `--lp-type-kpi`, `--lp-type-body`, `--lp-type-body-small`, `--lp-type-caption`, `--lp-type-label`, and `--lp-type-micro`. Weight roles are `--lp-weight-regular`, `--lp-weight-medium`, `--lp-weight-semibold`, and `--lp-weight-bold`. Use `--lp-leading-tight` for headings, `--lp-leading-body` for readable copy, and `--lp-leading-caption` for compact metadata.
+The workspace retains DM Sans through `--lp-font-sans`. Roles are `--lp-type-page-title`, `--lp-type-section-title`, `--lp-type-card-title`, `--lp-type-kpi`, `--lp-type-body`, `--lp-type-body-small`, `--lp-type-caption`, `--lp-type-label`, and `--lp-type-micro`. Use `--lp-leading-tight` for headings, `--lp-leading-body` for readable copy, and `--lp-leading-caption` for compact metadata.
 
-Keep one `h1` per page, then use `h2` for sections and `h3` for cards within those sections. Visual size never substitutes for semantic heading order. Body content should normally use body or small-body size; reserve caption and microcopy for short supplementary content, never critical instructions. Do not set feature copy below the micro role or reduce opacity to make text look secondary; use the semantic foreground tokens so contrast remains deliberate.
+Keep one `h1` per page, then use `h2` for sections and `h3` for cards within those sections. Visual size never substitutes for semantic heading order. Body content should normally use body or small-body size; reserve caption and microcopy for short supplementary content, never critical instructions.
 
 ### Spacing
 
