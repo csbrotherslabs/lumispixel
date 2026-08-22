@@ -1,3 +1,18 @@
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("../fonts/dm-sans/dm-sans-variable.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("../fonts/dm-sans/dm-sans-variable-italic.woff2") format("woff2-variations");
+}
+
 /* LumisPixel Photographer Workspace design foundations.
  * Load before photographer_workspace.css so legacy components can migrate
  * incrementally without changing their current cascade.
@@ -6,19 +21,19 @@
   /* Brand and semantic color */
   --lp-color-brand: #d70006;
   --lp-color-brand-hover: #b90005;
-  --lp-color-brand-subtle: #fff1f1;
-  --lp-color-brand-border: #f2b8ba;
-  --lp-color-accent: #5b6472;
-  --lp-color-page: #f7f6f4;
+  --lp-color-brand-subtle: #fff2f2;
+  --lp-color-brand-border: #efb4b7;
+  --lp-color-accent: #596273;
+  --lp-color-page: #f6f7f8;
   --lp-color-surface: #ffffff;
-  --lp-color-surface-elevated: #ffffff;
+  --lp-color-surface-elevated: #fbfcfd;
   /* Semantic foreground roles. Components should consume these names; the
    * --lp-color-text* properties below remain compatibility aliases. */
-  --lp-text-primary: #191817;
-  --lp-text-secondary: #514b47;
-  --lp-text-muted: #6f6863;
-  --lp-text-subtle: #756e69;
-  --lp-text-disabled: #756e69;
+  --lp-text-primary: #17191c;
+  --lp-text-secondary: #434a54;
+  --lp-text-muted: #626b76;
+  --lp-text-subtle: #6c7580;
+  --lp-text-disabled: #7b8490;
   --lp-text-inverse: #ffffff;
   --lp-text-brand: #d70006;
   --lp-text-success: #18794e;
@@ -28,8 +43,8 @@
   --lp-color-text-secondary: var(--lp-text-secondary);
   --lp-color-text-muted: var(--lp-text-muted);
   --lp-color-text-disabled: var(--lp-text-disabled);
-  --lp-color-border: #e5e0dc;
-  --lp-color-border-strong: #cfc8c2;
+  --lp-color-border: #dfe3e8;
+  --lp-color-border-strong: #c7cdd5;
   --lp-color-success: var(--lp-text-success);
   --lp-color-success-subtle: #ecf8f1;
   --lp-color-warning: var(--lp-text-warning);
@@ -39,20 +54,24 @@
   --lp-color-info: #175cd3;
   --lp-color-info-subtle: #eff6ff;
 
-  /* Existing DM Sans remains the workspace UI face. */
-  --lp-font-sans: "DM Sans", Arial, sans-serif;
-  --lp-type-page-title: clamp(1.75rem, 2.4vw, 2.125rem);
-  --lp-type-section-title: 1.25rem;
-  --lp-type-card-title: 1rem;
-  --lp-type-kpi: clamp(1.875rem, 3vw, 2.25rem);
-  --lp-type-body: 0.9375rem;
-  --lp-type-body-small: 0.8125rem;
-  --lp-type-caption: 0.75rem;
-  --lp-type-label: 0.8125rem;
-  --lp-type-micro: 0.6875rem;
-  --lp-leading-tight: 1.2;
-  --lp-leading-body: 1.55;
-  --lp-leading-caption: 1.4;
+  /* Self-hosted variable DM Sans keeps every workspace view consistent and crisp. */
+  --lp-font-sans: "DM Sans", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --lp-type-page-title: clamp(1.875rem, 2.4vw, 2.25rem);
+  --lp-type-section-title: 1.375rem;
+  --lp-type-card-title: 1.0625rem;
+  --lp-type-kpi: clamp(2rem, 3vw, 2.375rem);
+  --lp-type-body: 1rem;
+  --lp-type-body-small: 0.875rem;
+  --lp-type-caption: 0.8125rem;
+  --lp-type-label: 0.875rem;
+  --lp-type-micro: 0.75rem;
+  --lp-weight-regular: 400;
+  --lp-weight-medium: 500;
+  --lp-weight-semibold: 600;
+  --lp-weight-bold: 700;
+  --lp-leading-tight: 1.16;
+  --lp-leading-body: 1.6;
+  --lp-leading-caption: 1.45;
 
   /* Four-pixel spacing scale */
   --lp-space-1: 0.25rem;
@@ -70,9 +89,9 @@
   --lp-radius-md: 0.75rem;
   --lp-radius-lg: 1rem;
   --lp-radius-pill: 999px;
-  --lp-shadow-subtle: 0 1px 2px rgba(25, 24, 23, 0.04);
-  --lp-shadow-standard: 0 8px 24px rgba(25, 24, 23, 0.07);
-  --lp-shadow-elevated: 0 16px 40px rgba(25, 24, 23, 0.11);
+  --lp-shadow-subtle: 0 1px 2px rgba(20, 27, 38, 0.045), 0 1px 3px rgba(20, 27, 38, 0.025);
+  --lp-shadow-standard: 0 10px 28px rgba(20, 27, 38, 0.075);
+  --lp-shadow-elevated: 0 20px 48px rgba(20, 27, 38, 0.13);
   --lp-focus-ring: 0 0 0 3px rgba(215, 0, 6, 0.26);
   --lp-transition-duration: 180ms;
   --lp-transition-easing: cubic-bezier(0.2, 0, 0, 1);
@@ -131,13 +150,50 @@
  * unclassed headings and copy cannot inherit marketing-theme colors onto light
  * surfaces. Component rules can then opt into a more specific semantic role. */
 .lumis-workspace-body {
+  background: var(--lp-color-page);
   color: var(--lp-text-primary);
+  font-family: var(--lp-font-sans);
+  font-size: var(--lp-type-body);
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  font-variant-ligatures: common-ligatures contextual;
+  line-height: var(--lp-leading-body);
+  letter-spacing: -0.006em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .lumis-workspace-body :where(h1, h2, h3, h4, h5, h6) {
   color: var(--lp-text-primary);
+  font-family: var(--lp-font-sans);
+  font-weight: var(--lp-weight-bold);
+  line-height: var(--lp-leading-tight);
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+.lumis-workspace-body :where(p, li, dd, dt, blockquote) {
+  text-wrap: pretty;
+}
+.lumis-workspace-body :where(strong, b) {
+  font-weight: var(--lp-weight-semibold);
+}
+.lumis-workspace-body :where(small) {
+  color: var(--lp-text-muted);
+  font-size: var(--lp-type-caption);
+  line-height: var(--lp-leading-caption);
 }
 .lumis-workspace-body :where(input, select, textarea, button) {
   color: var(--lp-text-primary);
+  font-family: var(--lp-font-sans);
+  font-size: var(--lp-type-label);
+  font-weight: var(--lp-weight-medium);
+  letter-spacing: -0.004em;
+}
+.lumis-workspace-body :where(label, legend) {
+  color: var(--lp-text-secondary);
+  font-size: var(--lp-type-label);
+  font-weight: var(--lp-weight-semibold);
+  line-height: var(--lp-leading-caption);
 }
 .lumis-workspace-body :where(input, textarea)::placeholder {
   color: var(--lp-text-subtle);
@@ -166,14 +222,14 @@
 .lp-page-title {
   margin: 0;
   color: var(--lp-color-text);
-  font: 700 var(--lp-type-page-title)/var(--lp-leading-tight) var(--lp-font-sans);
-  letter-spacing: -0.025em;
+  font: var(--lp-weight-bold) var(--lp-type-page-title)/var(--lp-leading-tight) var(--lp-font-sans);
+  letter-spacing: -0.032em;
 }
 .lp-page-description {
   max-width: 70ch;
   margin: 0;
   color: var(--lp-color-text-secondary);
-  font: 400 var(--lp-type-body)/var(--lp-leading-body) var(--lp-font-sans);
+  font: var(--lp-weight-regular) var(--lp-type-body)/var(--lp-leading-body) var(--lp-font-sans);
 }
 .lp-header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--lp-space-2); }
 .lp-dashboard-grid,
