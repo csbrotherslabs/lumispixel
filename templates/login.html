@@ -2,9 +2,19 @@
 {% load static %}
 {% block title %}Sign In | LumisPixel{% endblock %}
 {% block content %}
+<header class="login-title-section" aria-labelledby="login-title">
+  <div class="container">
+    <div class="login-title-section__inner text-center">
+      <span class="login-title-section__eyebrow">Welcome back</span>
+      <h1 class="login-title-section__title" id="login-title">Sign in to LumisPixel</h1>
+      <p class="login-title-section__copy">Your photography business, client galleries, and creative workflow—all in one place.</p>
+    </div>
+  </div>
+</header>
+
 <section class="login-feature-carousel-section" aria-labelledby="login-feature-carousel-title">
   <div class="login-feature-carousel-section__heading visually-hidden">
-    <h1 id="login-feature-carousel-title">LumisPixel workflow features</h1>
+    <h2 id="login-feature-carousel-title">LumisPixel workflow features</h2>
   </div>
 
   <div class="swiper-container swiper-gallery-two has-radius workflow-carousel workflow-carousel--login login-feature-carousel" aria-label="LumisPixel login feature carousel">
@@ -102,18 +112,12 @@
   </div>
 </section>
 
-<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="login-title">
+<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-label="Sign-in form">
   <div class="container">
     <div class="wptb-login-form lumis-auth-form">
       <div class="wptb-form--wrapper">
         <div class="row">
           <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
-            <div class="wptb-heading">
-              <div class="wptb-item--inner text-center">
-                <h1 class="wptb-item--title" id="login-title">Sign in to LumisPixel</h1>
-              </div>
-            </div>
-
             <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ next }}">
