@@ -2292,7 +2292,7 @@ body.theme-style--olive {
 .lumis-audience-card h2 {
     margin-bottom: 10px;
     color: #111111;
-    font-size: clamp(25px, 2vw, 32px);
+    font-size: clamp(36px, 5vw, 45px);
     line-height: 1.12;
 }
 
