@@ -329,7 +329,7 @@
 
 .lumis-photographer-marketplace__steps {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin: 30px 0 0;
   padding: 0;
@@ -337,23 +337,29 @@
   counter-reset: marketplace-step;
 }
 
-.lumis-photographer-marketplace__step {
+.lumis-photographer-marketplace .lumis-photographer-marketplace__step {
   position: relative;
-  min-height: 116px;
-  padding: 18px 18px 17px;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 18px;
-  background: rgba(255,255,255,.045);
-  display: flex;
-  gap: 13px;
-  transition: transform .22s ease, border-color .22s ease, background-color .22s ease;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid #ded8d1;
+  border-radius: 16px;
+  background: rgba(255,255,255,.82);
+  color: #181818;
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(26,20,16,.04);
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.lumis-photographer-marketplace__step:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.07); }
-.lumis-photographer-marketplace__step-number { width: 34px; height: 34px; min-width: 34px; border-radius: 50%; background: var(--color-one); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; line-height: 1; }
+.lumis-photographer-marketplace .lumis-photographer-marketplace__step:hover { transform: translateY(-1px); border-color: rgba(215,0,6,.34); background: #fff; box-shadow: 0 14px 34px rgba(116,26,18,.08); }
+.lumis-photographer-marketplace__step-number { width: 36px; height: 36px; min-width: 36px; border-radius: 12px; background: #f2eee9; color: #5f5a55; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; line-height: 1; }
 .lumis-photographer-marketplace__step-copy { min-width: 0; display: grid; gap: 5px; }
-.lumis-photographer-marketplace__step-copy strong { color: var(--color-white); font-size: 17px; font-weight: 700; line-height: 1.25; }
-.lumis-photographer-marketplace__step-copy span { color: rgba(255,255,255,.68); font-size: 14px; line-height: 1.45; }
+.lumis-photographer-marketplace__step-copy strong { color: #151515; font-size: 17px; font-weight: 700; line-height: 1.25; }
+.lumis-photographer-marketplace__step-copy span { color: #5f5a55; font-size: 14px; line-height: 1.45; }
 .lumis-photographer-marketplace__reassurance { margin: 18px 0 0; color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.5; }
 
 .lumis-photographer-marketplace__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 28px; }
@@ -366,12 +372,12 @@
 .lumis-marketplace-panel::after { content: ""; position: absolute; inset: 12px; z-index: -1; border: 1px dashed rgba(255,255,255,.12); border-radius: 20px; pointer-events: none; }
 .lumis-marketplace-panel__topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .lumis-marketplace-panel__label { color: var(--color-white); font-size: 18px; font-weight: 800; line-height: 1.2; }
-.lumis-marketplace-panel__badge { padding: 7px 10px; border-radius: 999px; background: rgba(233,40,40,.16); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.lumis-marketplace-panel__badge { display: inline-flex; width: fit-content; min-height: 26px; align-items: center; padding: 5px 10px; border: 1px solid rgba(var(--color-one-rgb),.18); border-radius: 999px; background: rgba(var(--color-one-rgb),.08); color: var(--color-one); line-height: 1; letter-spacing: .08em; text-transform: uppercase; }
 .lumis-marketplace-panel__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.lumis-marketplace-field { min-height: 78px; padding: 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 16px; background: rgba(10,10,10,.34); display: grid; align-content: center; gap: 6px; }
+.lumis-marketplace-field { min-height: 78px; padding: 14px; border: 1px solid #e8e1da; border-radius: 16px; background: linear-gradient(135deg,#f8f3ee,#ded4ca); display: grid; align-content: center; gap: 6px; }
 .lumis-marketplace-field--wide { grid-column: 1 / -1; min-height: 96px; }
-.lumis-marketplace-field span { color: rgba(255,255,255,.58); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-.lumis-marketplace-field strong { color: var(--color-white); font-size: 15px; font-weight: 700; line-height: 1.35; }
+.lumis-marketplace-field span { color: #5f5a55; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.lumis-marketplace-field strong { color: #151515; font-size: 15px; font-weight: 700; line-height: 1.35; }
 .lumis-marketplace-panel__button { width: 100%; min-height: 52px; margin-top: 16px; border: 0; border-radius: 14px; background: var(--color-one); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; cursor: default; }
 .lumis-marketplace-panel__note { margin: 12px 0 0; color: rgba(255,255,255,.62); font-size: 13px; line-height: 1.45; text-align: center; }
 
@@ -391,7 +397,7 @@
   .lumis-photographer-marketplace__title { font-size: clamp(32px, 8.5vw, 40px); }
   .lumis-photographer-marketplace__steps,
   .lumis-marketplace-panel__fields { grid-template-columns: 1fr; }
-  .lumis-photographer-marketplace__step { min-height: 0; }
+  .lumis-photographer-marketplace .lumis-photographer-marketplace__step { min-height: 0; }
   .lumis-photographer-marketplace__actions { align-items: stretch; flex-direction: column; }
   .lumis-photographer-marketplace__actions .btn,
   .lumis-photographer-marketplace__secondary { width: 100%; min-height: 52px; }
@@ -400,7 +406,7 @@
 }
 
 @media (max-width: 430px) {
-  .lumis-photographer-marketplace__step { padding: 15px; gap: 11px; }
+  .lumis-photographer-marketplace .lumis-photographer-marketplace__step { padding: 15px; gap: 11px; }
   .lumis-marketplace-panel { padding: 15px; }
   .lumis-marketplace-field { padding: 13px; }
 }
