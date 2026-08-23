@@ -1120,7 +1120,7 @@ Ready Components Stylesheet
     position: relative;
 }
 .wptb-slider.style3 .wptb-heading .wptb-item--title {
-    font-size: 70px;
+    font-size: 54px;
     line-height: 76px;
     color: var(--color-white-fixed);
 }
@@ -1134,7 +1134,7 @@ Ready Components Stylesheet
     color: var(--color-white-fixed);
 }
 .wptb-slider.style3 .wptb-heading .wptb-item--description {
-    font-size: 22px;
+    font-size: 17px;
     font-weight: var(--fw-light);
     line-height: 34px;
     margin: 20px 0px 20px 0px;
@@ -2372,7 +2372,7 @@ Ready Components Stylesheet
     .wptb-slider.style3 .wptb-heading .wptb-item--description,
     .wptb-slider.style4 .wptb-heading-two .wptb-item--description,
     .wptb-slider.style5 .wptb-heading .wptb-item--description {
-        font-size: 18px;
+        font-size: 17px;
         line-height: 24px;
     }
 
