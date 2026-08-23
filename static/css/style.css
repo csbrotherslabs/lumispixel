@@ -1766,8 +1766,8 @@ body.theme-style--olive {
 }
 
 .lumis-photo-match__preview-label {
-    background: rgba(var(--color-one-rgb), 0.16);
-    color: var(--color-one);
+    background: rgb(255 255 255 / 70%);
+    color: var(--color-black);
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
