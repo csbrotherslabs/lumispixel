@@ -1528,10 +1528,19 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .lumis-auth-checkbox input {
+  flex: 0 0 16px;
   width: 16px;
   height: 16px;
   margin: 0;
   accent-color: var(--color-one, #d73d35);
+}
+
+.wptb-login-form .wptb-form .lumis-auth-checkbox label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  margin: 0;
+  line-height: 16px;
 }
 
 .login-auth-submit {
@@ -1964,7 +1973,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-title-section__title {
   margin: 0;
   color: #181818;
-  font-size: 13px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -.035em;
