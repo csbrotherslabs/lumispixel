@@ -270,7 +270,7 @@ Ready Components Stylesheet
         font-size: var(--fs-36);
     }
     .wptb-heading-two .wptb-item--description {
-        font-size: 16px;
+        font-size: 15px;
         line-height: 24px;
     }
 }
@@ -1126,7 +1126,7 @@ Ready Components Stylesheet
 }
 
 .wptb-slider.style3 .wptb-heading .wptb-item--subtitle {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: var(--fw-medium);
     line-height: 30px;
     display: inline-block;
@@ -1260,7 +1260,7 @@ Ready Components Stylesheet
 }
 
 .wptb-slider.style5 .wptb-heading .wptb-item--subtitle {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: var(--fw-medium);
     line-height: 30px;
     display: inline-block;
@@ -2839,7 +2839,7 @@ Ready Components Stylesheet
     transition: var(--transition-base);
 }
 .wptb-icon-box6 .wptb-item--description {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 26px;
     margin-bottom: 0px;
     transition: var(--transition-base);
@@ -2906,7 +2906,7 @@ Ready Components Stylesheet
     background-color: var(--color-one);
 }
 .wptb-icon-box7 .wptb-item--description {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 26px;
     margin-bottom: 0px;
     transition: var(--transition-base);
@@ -3222,7 +3222,7 @@ Ready Components Stylesheet
     background: transparent;
     color: var(--color-two);
     display: inline-block;
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-medium);
     line-height: 20px;
@@ -3680,7 +3680,7 @@ Ready Components Stylesheet
     line-height: 1;
 }
 .wptb-client-review2 .wptb-item--inner .wptb-item--title {
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-light);
     line-height: 1.625;
@@ -3726,7 +3726,7 @@ Ready Components Stylesheet
     
     text-align: center;
     font-family: PT Serif;
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-light);
     line-height: 1.625;
@@ -4318,7 +4318,7 @@ Ready Components Stylesheet
 }
 .wptb-blog-grid2 .wptb-item--inner .wptb-item--author {
     color: var(--color-one);
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-normal);
     line-height: 28px;
@@ -4877,7 +4877,7 @@ Ready Components Stylesheet
 .wptb-package-switcher .toggler {
     color: var(--color-white);
     transition: .2s;
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-medium);
     line-height: 20px;
@@ -5242,7 +5242,7 @@ Ready Components Stylesheet
 }
 .wptb-progressbar .wptb-progress--value {
     font-family: var(--font-family-three);
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-light);
     line-height: 30px; /* 150% */
@@ -5697,7 +5697,7 @@ svg.radial-progress {
         line-height: 1.2em;
     }
     .wptb-team-grid1 .wptb-item--inner .wptb-item--meta .wptb-item--position {
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1.2em;
     }
 }
@@ -6071,7 +6071,7 @@ svg.radial-progress {
     min-height: 285px;
 }
 .wptb-career-grid .wptb-item--inner .wptb-item--holder .wptb-item--date {
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-light);
     line-height: 1.5;
@@ -6653,7 +6653,7 @@ svg.radial-progress {
     display: inline-flex;
     align-items: center;
     color: var(--color-white-fixed);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: var(--fw-medium);
     line-height: 1.4;
     text-decoration: none;

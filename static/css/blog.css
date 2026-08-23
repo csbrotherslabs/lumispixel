@@ -23,7 +23,7 @@
     margin-top: 20px;
 }
 .blog-details .wptb-item--meta .wptb-item {
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-normal);
     line-height: 28px;
@@ -598,7 +598,7 @@ iframe, object, embed, iframe, object, iframe, video {
 
 .comments-area .comments-pagination a, .comments-area .comments-pagination span {
     margin-right: 7px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: var(--fw-light);
     text-align: center;
     width: 40px;
@@ -646,7 +646,7 @@ iframe, object, embed, iframe, object, iframe, video {
 
 /* .comment-respond select, .comment-respond input[type="text"], .comment-respond input[type="email"], .comment-respond input[type="url"], .comment-respond input[type="password"], .comment-respond input[type="search"], .comment-respond input[type="number"], .comment-respond input[type="tel"], .comment-respond input[type="range"], .comment-respond input[type="date"], .comment-respond input[type="month"], .comment-respond input[type="week"], .comment-respond input[type="time"], .comment-respond input[type="datetime"], .comment-respond input[type="datetime-local"], .comment-respond input[type="color"] {
     height: 58px;
-    font-size: 16px;
+    font-size: 15px;
     background: var(--color-five);
     
     border: 1px solid var(--color-five);
@@ -655,7 +655,7 @@ iframe, object, embed, iframe, object, iframe, video {
 
 .comment-respond textarea.form-control {
     height: 140px;
-    font-size: 16px;
+    font-size: 15px;
     background: var(--color-five);
     
     border: 1px solid var(--color-five);
@@ -712,7 +712,7 @@ iframe, object, embed, iframe, object, iframe, video {
 }
 
 .blog-details .wptb-testimonial2 .wptb-item--inner .wptb-item--title {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 22px;
 }
 
