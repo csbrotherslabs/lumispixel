@@ -447,17 +447,18 @@
 .lumis-pricing-toggle__option.is-active::before { content: "✓"; color: var(--color-one); font-weight: 900; }
 .lumis-pricing-toggle__option:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
 .lumis-pricing-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
-.lumis-pricing-card { position: relative; min-width: 0; padding: 20px 18px 18px; border: 1px solid #eaded5; border-radius: 20px; background: rgba(255,255,255,.86); box-shadow: 0 14px 34px rgba(48,35,27,.07); transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
+.lumis-pricing-card { position: relative; min-width: 0; padding: 20px 18px 18px; border: 1px solid #eaded5; border-radius: 20px; background: rgba(255,255,255,.86); box-shadow: 0 14px 34px rgba(48,35,27,.07); display: flex; flex-direction: column; transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
 .lumis-pricing-card:hover { transform: translateY(-3px); border-color: #dccbc0; box-shadow: 0 18px 42px rgba(48,35,27,.1); }
 .lumis-pricing-card--featured { border-color: rgba(215,0,6,.34); background: linear-gradient(180deg, #fff6f3 0%, #fff 72%); }
-.lumis-pricing-card__badge { display: inline-flex; min-height: 28px; margin-bottom: 12px; padding: 0 10px; border-radius: 999px; background: rgba(215,0,6,.1); color: #b70005; align-items: center; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.lumis-pricing-card__badge-row { display: flex; min-height: 28px; align-items: center; margin-bottom: 12px; }
+.lumis-pricing-card__badge { display: inline-flex; min-height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(215,0,6,.1); color: #b70005; align-items: center; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .lumis-pricing-card__header h3 { margin: 0; color: #181818; font-size: 22px; line-height: 1.15; }
 .lumis-pricing-card__header p { min-height: 42px; margin: 7px 0 0; color: #655c55; font-size: 13px; line-height: 1.45; }
 .lumis-pricing-card__price { margin: 14px 0; color: #181818; font-size: 25px; font-weight: 900; line-height: 1.1; letter-spacing: -.02em; }
 .lumis-pricing-card__features { display: grid; gap: 8px; min-height: 166px; margin: 0 0 16px; padding: 0; list-style: none; }
 .lumis-pricing-card__features li { position: relative; padding-left: 18px; color: #4e4842; font-size: 13px; line-height: 1.35; }
 .lumis-pricing-card__features li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--color-one); }
-.lumis-pricing-card__cta { width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid #ded0c7; border-radius: 12px; color: #181818; background: #fff; display: inline-flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1.1; }
+.lumis-pricing-card__cta { width: 100%; min-height: 46px; margin-top: auto; padding: 0 14px; border: 1px solid #ded0c7; border-radius: 12px; color: #181818; background: #fff; display: inline-flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; font-weight: 900; line-height: 1.1; }
 .lumis-pricing-card__cta:hover { color: #fff; border-color: #181818; background: #181818; }
 .lumis-pricing-card__cta--primary { color: #fff; border-color: var(--color-one); background: var(--color-one); }
 .lumis-pricing-card__cta:focus-visible,
@@ -726,7 +727,7 @@
 .lumis-photographer-marketplace__title,
 .lumis-pricing-content__title,
 .lumis-final-cta__title {
-  font-size: clamp(40px, 4vw, 56px);
+  font-size: clamp(40px, 3vw, 56px);
   line-height: 1.04;
   letter-spacing: -0.045em;
 }
