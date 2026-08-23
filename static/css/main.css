@@ -1407,7 +1407,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-auth-card__heading h2 {
   margin: 0 0 6px;
   color: #181818;
-  font-size: 1.35rem;
+  font-size: 1.08rem;
   line-height: 1.2;
   letter-spacing: -.02em;
 }
@@ -1415,7 +1415,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-auth-card__heading p {
   margin: 0;
   color: #746b64;
-  font-size: .9rem;
+  font-size: .78rem;
   line-height: 1.5;
 }
 
@@ -1426,7 +1426,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-auth-label,
 .login-auth-label-row {
   color: #302b27;
-  font-size: .82rem;
+  font-size: .7rem;
   font-weight: 750;
   line-height: 1.25;
 }
@@ -1450,7 +1450,7 @@ img, svg, video { max-width: 100%; height: auto; }
 
 .login-auth-label-row a {
   color: #a90d0d;
-  font-size: .78rem;
+  font-size: .68rem;
   font-weight: 700;
   text-decoration: none;
 }
@@ -1463,7 +1463,7 @@ img, svg, video { max-width: 100%; height: auto; }
   border-radius: 11px;
   background: #fbfaf9;
   color: #181818;
-  font-size: .92rem;
+  font-size: .8rem;
   box-shadow: none;
   transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
 }
@@ -1538,7 +1538,8 @@ img, svg, video { max-width: 100%; height: auto; }
   gap: 10px;
   margin: 18px 0 0;
   color: #5d554f;
-  font-size: .82rem;
+  font-size: .7rem;
+  letter-spacing: .025em;
 }
 
 .lumis-auth-checkbox input {
@@ -1556,6 +1557,18 @@ img, svg, video { max-width: 100%; height: auto; }
   width: 100%;
   min-height: 48px;
   border-radius: 11px;
+  font-size: .76rem;
+  letter-spacing: .01em;
+}
+
+.login-auth-card .login-new-user-row__label {
+  font-size: .78rem;
+}
+
+.login-auth-card .lumis-auth-secondary {
+  font-size: .72rem;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .lumis-auth-actions {
@@ -1951,7 +1964,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-title-section__title {
   margin: 0;
   color: #181818;
-  font-size: clamp(2.15rem, 4.2vw, 3.45rem);
+  font-size: clamp(1.85rem, 3.2vw, 2.55rem);
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -.035em;
@@ -1961,7 +1974,7 @@ img, svg, video { max-width: 100%; height: auto; }
   max-width: 610px;
   margin: 18px auto 0;
   color: #655d57;
-  font-size: clamp(.98rem, 1.4vw, 1.08rem);
+  font-size: clamp(.84rem, 1.15vw, .94rem);
   line-height: 1.65;
 }
 
