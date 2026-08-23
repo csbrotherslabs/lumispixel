@@ -3,7 +3,11 @@
 <!-- Mobile Responsive Menu -->
 <div class="mr_menu" data-lenis-prevent>
     <button type="button" class="mr_menu_close" aria-label="Close mobile navigation"><i class="bi bi-x-lg"></i></button>
-    <div class="logo"></div>
+    <div class="logo">
+        <a href="{% url 'core:index' %}">
+            <img src="/static/img/lumis_logo_dark_v1.png" alt="LumisPixel" class="lumis-company-logo">
+        </a>
+    </div>
 
     <div class="mobile-account-panel">
         {% if request.user.is_authenticated %}
