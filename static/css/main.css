@@ -1382,7 +1382,7 @@ img, svg, video { max-width: 100%; height: auto; }
   padding: 0px 0 88px;
 }
 
-.login-feature-carousel-section + .lumis-auth-section .lumis-auth-form {
+.login-title-section + .lumis-auth-section .lumis-auth-form {
   padding-top: clamp(42px, 6vw, 78px);
 }
 
