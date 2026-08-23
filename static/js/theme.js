@@ -46,7 +46,9 @@ Description: Kimono - Photography Agency
         // Mobile Responsive Menu 
         var mobileLogoContent = $('header .logo').html();
         var mobileMenuContent = $('.mainnav').html();
-		$('.mr_menu .logo').append(mobileLogoContent);
+        if (!$('.mr_menu .logo').children().length) {
+			$('.mr_menu .logo').append(mobileLogoContent);
+		}
 		$('.mr_menu .mr_navmenu').append(mobileMenuContent);
         $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<button type='button' class='submenu_opener' aria-label='Toggle submenu' aria-expanded='false'><i class='bi bi-chevron-right'></i></button>" ) );
 
