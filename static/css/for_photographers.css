@@ -23,7 +23,7 @@
 .lp-section.bg-dark-200 { background: var(--lp-bg-soft) !important; }
 .lp-photo-page-heading .wptb-item--inner { padding-left: 24px; padding-right: 24px; position: relative; isolation: isolate; }
 .lp-photo-page-heading .wptb-item--inner::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.78)), radial-gradient(circle at 50% 25%, rgba(255,138,31,.18), transparent 42%); }
-.lp-photo-page-heading .wptb-item--title { color: var(--lp-heading); text-shadow: 0 2px 22px rgba(255,255,255,.72); }
+.lp-photo-page-heading .wptb-item--title { color: var(--lp-heading); font-size: clamp(48px, 7.4vw, 55px); text-shadow: 0 2px 22px rgba(255,255,255,.72); }
 .lp-photo-page-heading__subtitle { position: relative; z-index: 1; max-width: 760px; margin: 22px auto 0; color: var(--lp-body); font-size: clamp(17px, 2vw, 22px); line-height: 1.6; }
 .lp-video-intro { padding: clamp(76px, 9vw, 118px) 0 34px; background: var(--lp-bg); }
 .lp-video-intro .lp-section-heading { margin-bottom: 0; }

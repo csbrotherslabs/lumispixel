@@ -1296,7 +1296,7 @@ body.overlay_menu_active .wptb-overlay-contact {
 .mr_menu ul.main-menu li .submenu_opener:focus-visible { outline: 2px solid var(--color-one); outline-offset: 3px; }
 .nav-badge { border: 1px solid rgba(var(--color-white-rgb), .24); border-radius: 999px; display: inline-block; font-size: 9px; letter-spacing: .8px; margin-left: 6px; padding: 2px 6px; vertical-align: middle; }
 .lp-public-hero { background: linear-gradient(135deg, rgba(0,0,0,.86), rgba(23,23,23,.78)), url('../img/slider/7.jpg') center/cover; color: var(--color-white); padding: 190px 0 105px; }
-.lp-public-hero h1 { color: var(--color-white); font-size: clamp(42px, 7vw, 86px); line-height: .95; margin: 12px 0 22px; max-width: 920px; }
+.lp-public-hero h1 { color: var(--color-white); font-size: clamp(48px, 7.4vw, 55px); line-height: .95; margin: 12px 0 22px; max-width: 920px; }
 .lp-public-hero p { color: rgba(var(--color-white-rgb), .78); font-size: 19px; line-height: 1.7; max-width: 760px; }
 .lp-eyebrow, .lp-status-pill { color: var(--color-one); font-size: 12px; font-weight: var(--fw-semibold); letter-spacing: 2px; text-transform: uppercase; }
 .lp-status-pill { border: 1px solid rgba(var(--color-white-rgb), .2); border-radius: 999px; color: var(--color-white); display: inline-flex; margin-top: 6px; padding: 7px 12px; }

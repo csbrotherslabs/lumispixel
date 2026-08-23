@@ -2851,7 +2851,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .pricing-hero { padding: 138px 0 42px; background: radial-gradient(circle at 20% 20%, rgba(215,0,6,.08), transparent 30%), linear-gradient(180deg, #fffaf6 0%, #fff 100%); }
 .pricing-hero__inner { max-width: 860px; margin: 0 auto; text-align: center; }
 .pricing-hero h1, .pricing-heading h2, .pricing-final h2, .pricing-early h2 { color: #181818; letter-spacing: -.04em; line-height: 1.04; }
-.pricing-hero h1 { margin: 10px 0 14px; font-size: clamp(38px, 5vw, 60px); }
+.pricing-hero h1 { margin: 10px 0 14px; font-size: clamp(48px, 7.4vw, 55px); }
 .pricing-hero p, .pricing-heading p, .pricing-final p, .pricing-early p { color: #5f5750; font-size: 17px; line-height: 1.65; }
 .pricing-hero strong, .pricing-final strong { display: block; margin-top: 10px; color: #342c26; font-weight: 800; }
 .pricing-toggle { display: inline-flex; gap: 6px; margin-top: 24px; padding: 6px; border: 1px solid #e6d8ce; border-radius: 999px; background: rgba(255,255,255,.9); box-shadow: 0 12px 34px rgba(48,35,27,.08); }
@@ -2926,7 +2926,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .pricing-final__actions { display: flex; justify-content: center; gap: 12px; margin-top: 24px; }
 @media (max-width: 1199px) { .pricing-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pricing-faq-heading h2 { font-size: clamp(36px, 4.5vw, 40px); } .pricing-faq__question { font-size: 17px; } }
 @media (max-width: 767px) { .pricing-hero { padding-top: 116px; } .pricing-section { padding: 54px 0; } .pricing-faq-section { padding-top: 58px; padding-bottom: 58px; } .pricing-faq-heading { margin-bottom: 28px; } .pricing-faq-heading h2 { font-size: clamp(30px, 8vw, 34px); } .pricing-faq-heading p { font-size: 15px; } .pricing-faq { gap: 8px; } .pricing-faq button { min-height: 64px; padding: 14px 15px; grid-template-columns: 38px minmax(0, 1fr) 18px; gap: 11px; } .pricing-faq__chevron { width: 38px; height: 38px; font-size: 15px; } .pricing-faq__question { font-size: 15px; } .pricing-faq__badge { display: none; } .pricing-faq__panel { padding: 0 16px 16px 64px; } .pricing-faq__panel p { font-size: 15px; } .pricing-toggle { width: 100%; border-radius: 20px; } .pricing-toggle__option { flex: 1; padding: 0 10px; border-radius: 15px; } .pricing-card-grid, .pricing-value-grid, .pricing-tools__grid { grid-template-columns: 1fr; } .pricing-audience, .pricing-billing { min-height: 0; } .pricing-scroll-hint { display: block; } .pricing-final__actions { flex-direction: column; } .pricing-final__actions .btn-one, .pricing-final__actions .btn-two { width: 100%; justify-content: center; } }
-@media (max-width: 430px) { .pricing-plan-card { padding: 22px 18px 18px; border-radius: 20px; } .pricing-hero h1 { font-size: 34px; } .pricing-faq button { padding-left: 13px; padding-right: 13px; } .pricing-faq__panel { padding-left: 13px; padding-right: 13px; } }
+@media (max-width: 430px) { .pricing-plan-card { padding: 22px 18px 18px; border-radius: 20px; } .pricing-hero h1 { font-size: clamp(48px, 7.4vw, 55px); } .pricing-faq button { padding-left: 13px; padding-right: 13px; } .pricing-faq__panel { padding-left: 13px; padding-right: 13px; } }
 @media (prefers-reduced-motion: reduce) { .pricing-plan-card, .pricing-faq__item, .pricing-faq__chevron, .pricing-faq__plus { transition: none; } }
 
 /* Resources Blog / Articles page */
