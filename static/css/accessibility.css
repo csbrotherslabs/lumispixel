@@ -11,7 +11,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 155px; }
 .commitment-card { background: #fff; border: 1px solid #e9ddd7; border-radius: 28px; box-shadow: 0 24px 70px rgba(45,29,24,.09); padding: 40px; position: relative; }
 .commitment-card:before { background: #a50b0b; border-radius: 6px; content: ""; height: 6px; left: 40px; position: absolute; top: 0; width: 80px; }
 .commitment-card__icon { align-items: center; background: #f7edeb; border-radius: 15px; color: #a50b0b; display: flex; font-size: 27px; height: 58px; justify-content: center; margin-bottom: 27px; width: 58px; }
-.commitment-card h2 { font-size: 31px; letter-spacing: -.03em; margin: 10px 0 13px; }.commitment-card p { color: #625e5c; font-size: 16px; line-height: 1.75; margin: 0; }
+.commitment-card h2 { font-size: 31px; letter-spacing: -.03em; margin: 10px 0 13px; }.commitment-card p { color: #625e5c; font-size: 15px; line-height: 1.75; margin: 0; }
 .accessibility-toc { backdrop-filter: blur(12px); background: rgba(255,255,255,.95); border-bottom: 1px solid #e8e4de; border-top: 1px solid #eeeae5; position: sticky; top: 0; z-index: 20; }
 .accessibility-toc .container { align-items: flex-start; display: flex; gap: 28px; padding-bottom: 16px; padding-top: 16px; }.accessibility-toc strong { flex: 0 0 auto; font-size: 12px; padding-top: 8px; text-transform: uppercase; }
 .accessibility-toc ol { display: flex; gap: 8px; list-style: none; margin: 0; overflow-x: auto; padding: 0 0 5px; scrollbar-width: thin; }.accessibility-toc li { flex: 0 0 auto; }

@@ -88,7 +88,7 @@
 .header .social-box ul li a{
 	position:relative;
 	color:var(--color-white);
-	font-size: 16px;
+	font-size: 15px;
 }
 
 .header .social-box ul li:last-child{
@@ -334,7 +334,7 @@
 }
 
 .header .header_search .search_form .form-control {
-  font-size: 16px;
+  font-size: 15px;
     color: var(--color-one);
     width: 140px;
     padding-left: 55px;
@@ -362,7 +362,7 @@
   height: 50px;
   line-height: 1;
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--color-one);
   font-weight: var(--fw-light);
   background-color: initial;
@@ -379,35 +379,35 @@
 }
 
 .header .header_search .search_form ::-webkit-input-placeholder {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-light);
   font-style: normal;
   color: var(--color-one);
 }
 
 .header .header_search .search_form ::-moz-placeholder {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-light);
   font-style: normal;
   color: var(--color-one);
 }
 
 .header .header_search .search_form :-ms-input-placeholder {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-light);
   font-style: normal;
   color: var(--color-one);
 }
 
 .header .header_search .search_form :-moz-placeholder {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-light);
   font-style: normal;
   color: var(--color-one);
 }
 
 .header .header_search .search_form :placeholder {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-light);
   font-style: normal;
   color: var(--color-one);
@@ -679,7 +679,7 @@
   list-style: none;
   display: block;
   position: relative;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-normal);
   line-height: var(--fs-24);
   width: 100%;
@@ -936,7 +936,7 @@ body.overlay_menu_active .overlay_menu .overlay_navmenu {
   list-style: none;
   display: block;
   position: relative;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: var(--fw-normal);
   line-height: var(--fs-24);
   width: 100%;

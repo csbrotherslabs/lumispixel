@@ -553,7 +553,7 @@
     line-height: 46px;
     text-align: center;
     color: var(--color-white);
-    font-size: 16px;
+    font-size: 15px;
 }
 .wptb-project-info1 .wptb--meta {
     display: flex;
@@ -570,7 +570,7 @@
 .wptb-project-info1 .wptb--meta span {
     color: var(--color-two);
     display: block;
-    font-size: 16px;
+    font-size: 15px;
     font-style: normal;
     font-weight: var(--fw-medium);
     line-height: 26px;
@@ -633,7 +633,7 @@
     height: 100%;
 }
 .wptb-credential .wptb-heading .wptb-item--subtitle {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 28px;
     color: var(--color-white-fixed);
     transition: var(--transition-base);
@@ -1102,7 +1102,7 @@
 .wptb-team-social .wptb-team-social-list li a {
     position: relative;
     overflow: hidden;
-    font-size: 16px;
+    font-size: 15px;
     text-align: center;
     ;
     background: rgba(var(--color-dark-one-rgb), 0.6);
@@ -1325,7 +1325,7 @@
     line-height: 64px;
 }
 .theme-style--gradient .wptb-counter1 .wptb-item--text {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 26px;
 }
 
@@ -1876,7 +1876,7 @@ body.theme-style--olive {
 
 .lumis-photo-match__privacy i {
     color: var(--color-one);
-    font-size: 16px;
+    font-size: 15px;
     margin-top: 1px;
 }
 
@@ -2122,7 +2122,7 @@ body.theme-style--olive {
 
 @media screen and (max-width: 991px) {
     .lumis-photographer-workflow__intro {
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .lumis-photographer-workflow .swiper-gallery-two .swiper-wrapper {
@@ -2339,7 +2339,7 @@ body.theme-style--olive {
     }
 
     .lumis-audiences__intro {
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .lumis-audience-card__body {
@@ -2549,7 +2549,7 @@ body.theme-style--olive {
 .lumis-photographer-discovery__header-copy { max-width: 820px; }
 .lumis-photographer-discovery__eyebrow { margin: 0 0 10px; color: var(--color-one); font-size: 12px; font-weight: 800; letter-spacing: .16em; line-height: 1.2; text-transform: uppercase; }
 .lumis-photographer-discovery__title { max-width: 860px; margin: 0; color: var(--color-white); font-size: clamp(48px, 3vw, 54px); line-height: 1.06; letter-spacing: -.035em; }
-.lumis-photographer-discovery__intro { max-width: 620px; margin: 12px 0 0; color: rgba(255,255,255,.72); font-size: 16px; line-height: 1.55; }
+.lumis-photographer-discovery__intro { max-width: 620px; margin: 12px 0 0; color: rgba(255,255,255,.72); font-size: 15px; line-height: 1.55; }
 .lumis-photographer-discovery__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px; }
 .lumis-photographer-discovery__filters { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .lumis-photographer-discovery__filter { min-height: 40px; padding: 0 15px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; background: rgba(255,255,255,.045); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
