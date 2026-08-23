@@ -4,7 +4,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 190px; }
 .privacy-hero { background: radial-gradient(circle at 82% 10%, rgba(165,11,11,.08), transparent 30%), linear-gradient(180deg,#faf8f5,#fff); padding: 185px 0 90px; text-align: center; }
 .privacy-hero__inner { align-items: center; display: flex; flex-direction: column; }
 .privacy-eyebrow { color: #a50b0b; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-.privacy-hero h1 { font-size: clamp(52px,7vw,88px); letter-spacing: -.055em; line-height: 1; margin: 18px 0 24px; }
+.privacy-hero h1 { font-size: clamp(48px, 7.4vw, 55px); letter-spacing: -.055em; line-height: 1; margin: 18px 0 24px; }
 .privacy-hero p { color: #606060; font-size: clamp(18px,2vw,22px); line-height: 1.65; margin: 0; max-width: 810px; }
 .privacy-toc { background: rgba(255,255,255,.96); border-bottom: 1px solid #e8e4de; border-top: 1px solid #eeeae5; position: sticky; top: 0; z-index: 20; }
 .privacy-toc .container { align-items: flex-start; display: flex; gap: 28px; padding-bottom: 17px; padding-top: 17px; }

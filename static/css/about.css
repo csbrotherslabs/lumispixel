@@ -3,7 +3,7 @@
 .about-hero { background: radial-gradient(circle at 85% 15%, rgba(185,8,8,.08), transparent 28%), linear-gradient(180deg,#faf8f5 0%,#fff 100%); padding: 185px 0 95px; text-align: center; }
 .about-hero__inner { align-items: center; display: flex; flex-direction: column; }
 .about-kicker { color: #a50b0b; font-size: 13px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
-.about-hero h1 { font-size: clamp(48px,7.4vw,94px); letter-spacing: -.055em; line-height: .98; margin: 18px auto 24px; max-width: 940px; }
+.about-hero h1 { font-size: clamp(48px, 7.4vw, 55px); letter-spacing: -.055em; line-height: .98; margin: 18px auto 24px; max-width: 940px; }
 .about-hero p { color: #606060; font-size: clamp(18px,2vw,22px); line-height: 1.65; margin: 0 auto; max-width: 790px; }
 .about-actions { display: flex; gap: 12px; margin-top: 38px; }
 .about-button { align-items: center; border: 1px solid #171717; border-radius: 999px; display: inline-flex; font-size: 15px; font-weight: 700; gap: 10px; justify-content: center; min-height: 54px; padding: 0 27px; transition: .2s ease; }
