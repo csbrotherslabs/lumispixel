@@ -17,7 +17,12 @@
     <div class="wptb-login-form lumis-auth-form">
       <div class="wptb-form--wrapper">
         <div class="row">
-          <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
+          <div class="col-12 login-auth-column">
+            <div class="login-auth-card">
+              <div class="login-auth-card__heading">
+                <h2>Access your workspace</h2>
+                <p>Enter your account details to continue.</p>
+              </div>
             <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ next }}">
@@ -27,30 +32,30 @@
                 {% if form.password.errors %}<div class="alert alert-danger" role="alert">{{ form.password.errors|striptags }}</div>{% endif %}
 
                 <div class="row">
-                  <div class="col-lg-12 col-md-12 mb-4">
+                  <div class="col-12 login-auth-field">
                     <div class="form-group">
-                      <label class="visually-hidden" for="id_email">Email address</label>
-                      <input id="id_email" type="email" name="email" class="form-control" placeholder="Email address" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required>
+                      <label class="login-auth-label" for="id_email">Email address</label>
+                      <input id="id_email" type="email" name="email" class="form-control" placeholder="you@example.com" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required>
                     </div>
                   </div>
 
-                  <div class="col-lg-12 col-md-12 mb-4">
+                  <div class="col-12 login-auth-field">
                     <div class="form-group">
-                      <label class="visually-hidden" for="id_password">Password</label>
-                      <input id="id_password" type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
-                      <div class="lumis-auth-field-help">
+                      <div class="login-auth-label-row">
+                        <label class="login-auth-label" for="id_password">Password</label>
                         <a href="{% url 'accounts:password-reset' %}">Forgot password?</a>
                       </div>
+                      <input id="id_password" type="password" name="password" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
                     </div>
                   </div>
 
                   <div class="col-md-12 col-lg-12">
-                    <div class="form-group text-center lumis-auth-checkbox">
+                    <div class="form-group lumis-auth-checkbox">
                       <input type="checkbox" name="remember" id="remember">
-                      <label for="remember" class="text-capitalize">Remember password</label>
+                      <label for="remember">Keep me signed in</label>
                     </div>
 
-                    <div class="wptb-item--button text-center mt-4">
+                    <div class="wptb-item--button login-auth-submit">
                       <button class="btn lumis-auth-primary" type="submit">
                         <span class="btn-wrap"><span class="text-first">Sign In</span></span>
                       </button>
@@ -68,6 +73,7 @@
                 <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
                 <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
               </div>
+            </div>
             </div>
           </div>
         </div>
