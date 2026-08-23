@@ -1267,7 +1267,9 @@ body.overlay_menu_active .wptb-overlay-contact {
 .mobile-avatar { border-radius: 50%; flex: 0 0 auto; height: 48px; object-fit: cover; width: 48px; }
 .mobile-auth-actions, .nav-sidebar-actions { display: grid; gap: 10px; }
 .mobile-auth-actions { grid-template-columns: 1fr 1fr; }
-.mobile-auth-actions a, .mobile-dashboard-link, .nav-sidebar-actions a { align-items: center; border: 1px solid rgba(var(--color-white-rgb), .22); border-radius: 999px; color: var(--color-white); display: inline-flex; font-size: 12px; justify-content: center; letter-spacing: 1px; min-height: 44px; padding: 10px 14px; text-transform: uppercase; }
+.mobile-auth-actions a { font-size: 8px; min-height: 28px; padding: 4px 14px; }
+.mobile-auth-actions a, .mobile-dashboard-link, .nav-sidebar-actions a { align-items: center; border: 1px solid rgba(var(--color-white-rgb), .22); border-radius: 999px; color: var(--color-white); display: inline-flex; justify-content: center; letter-spacing: 1px; text-transform: uppercase; }
+.mobile-dashboard-link, .nav-sidebar-actions a { font-size: 12px; min-height: 44px; padding: 10px 14px; }
 .mobile-auth-actions a:last-child, .mobile-dashboard-link { background: rgba(var(--color-white-rgb), .92); color: var(--color-black); }
 .mobile-dashboard-link { margin-top: 14px; width: 100%; }
 .mobile-account-links { list-style: none; margin: 0; padding: 0; }
