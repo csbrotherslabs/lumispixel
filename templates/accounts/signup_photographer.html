@@ -1,28 +1,63 @@
 {% extends "base.html" %}
 {% block title %}Create Photographer Account | LumisPixel{% endblock %}
 {% block content %}
-<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-labelledby="photographer-signup-title">
+<header class="login-title-section" aria-labelledby="photographer-signup-title">
+  <div class="container">
+    <div class="login-title-section__inner text-center">
+      <span class="login-title-section__eyebrow">For photographers</span>
+      <h1 class="login-title-section__title" id="photographer-signup-title">Create your LumisPixel account</h1>
+      <p class="login-title-section__copy">Set up your secure workspace for client galleries, bookings, and the tools that keep your photography business moving.</p>
+    </div>
+  </div>
+</header>
+
+<section class="wptb-about-one bg-image-2 lumis-auth-section photographer-signup-section" aria-label="Photographer account form">
   <div class="container">
     <div class="wptb-login-form lumis-auth-form">
       <div class="wptb-form--wrapper">
         <div class="row">
-          <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
-            <div class="wptb-heading">
-              <div class="wptb-item--inner text-center">
-                <h1 class="wptb-item--title" id="photographer-signup-title">Create your photographer account</h1>
-                <p class="wptb-item--description">Start with the basics. Business details come next.</p>
-              </div>
-            </div>
+          <div class="col-12 login-auth-column photographer-signup-column">
+            <div class="login-auth-card photographer-signup-card">
             <form class="wptb-form" method="post">
-              {% include "accounts/signup_fields.html" %}
-              <div class="wptb-item--button text-center mt-4">
+              {% csrf_token %}
+              <input type="hidden" name="intent" value="{{ intent }}">
+              <input type="hidden" name="next" value="{{ next }}">
+              {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+              <div class="row photographer-signup-fields">
+                {% for field in form %}
+                  {% if field.field.widget.input_type == "checkbox" %}
+                    <div class="col-12 photographer-signup-consent">
+                      <div class="form-group lumis-auth-checkbox">
+                        {{ field }}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                      </div>
+                      {% if field.errors %}<div class="alert alert-danger" role="alert">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
+                  {% else %}
+                    <div class="col-12 login-auth-field photographer-signup-field">
+                      <div class="form-group">
+                        <label class="login-auth-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="alert alert-danger" role="alert">{{ field.errors|striptags }}</div>{% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <div class="wptb-item--button login-auth-submit">
                 <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Create Account</span></span></button>
               </div>
             </form>
             <div class="lumis-auth-actions" aria-label="Photographer signup navigation">
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:get-started' %}"><span class="btn-wrap"><span class="text-first">Back to Get Started</span></span></a>
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Sign In</span></span></a>
-              <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">I Need a Photographer</span></span></a>
+              <div class="login-new-user-row photographer-signup-signin-row">
+                <p class="login-new-user-row__label">Already have an account?</p>
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Sign In</span></span></a>
+              </div>
+              <div class="login-new-user-actions">
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:get-started' %}"><span class="btn-wrap"><span class="text-first">Back to Get Started</span></span></a>
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
+              </div>
+            </div>
             </div>
           </div>
         </div>
