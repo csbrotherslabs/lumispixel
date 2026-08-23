@@ -12,6 +12,70 @@
   </div>
 </header>
 
+<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-label="Sign-in form">
+  <div class="container">
+    <div class="wptb-login-form lumis-auth-form">
+      <div class="wptb-form--wrapper">
+        <div class="row">
+          <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
+            <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ next }}">
+              <div class="wptb-form--inner">
+                {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+                {% if form.email.errors %}<div class="alert alert-danger" role="alert">{{ form.email.errors|striptags }}</div>{% endif %}
+                {% if form.password.errors %}<div class="alert alert-danger" role="alert">{{ form.password.errors|striptags }}</div>{% endif %}
+
+                <div class="row">
+                  <div class="col-lg-12 col-md-12 mb-4">
+                    <div class="form-group">
+                      <label class="visually-hidden" for="id_email">Email address</label>
+                      <input id="id_email" type="email" name="email" class="form-control" placeholder="Email address" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required>
+                    </div>
+                  </div>
+
+                  <div class="col-lg-12 col-md-12 mb-4">
+                    <div class="form-group">
+                      <label class="visually-hidden" for="id_password">Password</label>
+                      <input id="id_password" type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
+                      <div class="lumis-auth-field-help">
+                        <a href="{% url 'accounts:password-reset' %}">Forgot password?</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12 col-lg-12">
+                    <div class="form-group text-center lumis-auth-checkbox">
+                      <input type="checkbox" name="remember" id="remember">
+                      <label for="remember" class="text-capitalize">Remember password</label>
+                    </div>
+
+                    <div class="wptb-item--button text-center mt-4">
+                      <button class="btn lumis-auth-primary" type="submit">
+                        <span class="btn-wrap"><span class="text-first">Sign In</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+            <div class="lumis-auth-actions" aria-label="Account signup options">
+              <div class="login-new-user-row">
+                <p class="login-new-user-row__label">New to LumisPixel?</p>
+                <a class="btn lumis-auth-secondary lumis-login-get-started" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
+              </div>
+              <div class="login-new-user-actions">
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="login-feature-carousel-section" aria-labelledby="login-feature-carousel-title">
   <div class="login-feature-carousel-section__heading visually-hidden">
     <h2 id="login-feature-carousel-title">LumisPixel workflow features</h2>
@@ -108,70 +172,6 @@
 
     <div class="wptb-swiper-dots style2 login-feature-carousel__dots">
       <div class="swiper-pagination" aria-label="Login feature slides"></div>
-    </div>
-  </div>
-</section>
-
-<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-label="Sign-in form">
-  <div class="container">
-    <div class="wptb-login-form lumis-auth-form">
-      <div class="wptb-form--wrapper">
-        <div class="row">
-          <div class="col-lg-6 col-md-10 offset-lg-3 offset-md-1">
-            <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
-              {% csrf_token %}
-              <input type="hidden" name="next" value="{{ next }}">
-              <div class="wptb-form--inner">
-                {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-                {% if form.email.errors %}<div class="alert alert-danger" role="alert">{{ form.email.errors|striptags }}</div>{% endif %}
-                {% if form.password.errors %}<div class="alert alert-danger" role="alert">{{ form.password.errors|striptags }}</div>{% endif %}
-
-                <div class="row">
-                  <div class="col-lg-12 col-md-12 mb-4">
-                    <div class="form-group">
-                      <label class="visually-hidden" for="id_email">Email address</label>
-                      <input id="id_email" type="email" name="email" class="form-control" placeholder="Email address" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required>
-                    </div>
-                  </div>
-
-                  <div class="col-lg-12 col-md-12 mb-4">
-                    <div class="form-group">
-                      <label class="visually-hidden" for="id_password">Password</label>
-                      <input id="id_password" type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
-                      <div class="lumis-auth-field-help">
-                        <a href="{% url 'accounts:password-reset' %}">Forgot password?</a>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-12 col-lg-12">
-                    <div class="form-group text-center lumis-auth-checkbox">
-                      <input type="checkbox" name="remember" id="remember">
-                      <label for="remember" class="text-capitalize">Remember password</label>
-                    </div>
-
-                    <div class="wptb-item--button text-center mt-4">
-                      <button class="btn lumis-auth-primary" type="submit">
-                        <span class="btn-wrap"><span class="text-first">Sign In</span></span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
-            <div class="lumis-auth-actions" aria-label="Account signup options">
-              <div class="login-new-user-row">
-                <p class="login-new-user-row__label">New to LumisPixel?</p>
-                <a class="btn lumis-auth-secondary lumis-login-get-started" href="{% url 'accounts:get-started' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
-              </div>
-              <div class="login-new-user-actions">
-                <a class="btn lumis-auth-secondary" href="{% url 'accounts:client-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Client Account</span></span></a>
-                <a class="btn lumis-auth-secondary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="btn-wrap"><span class="text-first">Create Photographer Account</span></span></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
