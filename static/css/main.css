@@ -1383,7 +1383,99 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .login-title-section + .lumis-auth-section .lumis-auth-form {
-  padding-top: clamp(42px, 6vw, 78px);
+  padding-top: clamp(32px, 4vw, 52px);
+}
+
+.login-auth-column {
+  max-width: 510px;
+  margin: 0 auto;
+}
+
+.login-auth-card {
+  padding: clamp(24px, 3.2vw, 34px);
+  border: 1px solid #e7ded7;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 20px 55px rgba(54, 38, 28, .09);
+}
+
+.login-auth-card__heading {
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.login-auth-card__heading h2 {
+  margin: 0 0 6px;
+  color: #181818;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.login-auth-card__heading p {
+  margin: 0;
+  color: #746b64;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.login-auth-field + .login-auth-field {
+  margin-top: 17px;
+}
+
+.login-auth-label,
+.login-auth-label-row {
+  color: #302b27;
+  font-size: .82rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.login-auth-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.login-auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.login-auth-label-row .login-auth-label {
+  margin: 0;
+}
+
+.login-auth-label-row a {
+  color: #a90d0d;
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.login-auth-card .form-control {
+  height: 48px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #dcd4cd;
+  border-radius: 11px;
+  background: #fbfaf9;
+  color: #181818;
+  font-size: .92rem;
+  box-shadow: none;
+  transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.login-auth-card .form-control:focus {
+  border-color: var(--color-one, #d73d35);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(215, 61, 53, .1);
+}
+
+.login-auth-card .form-control::placeholder {
+  color: #9a928c;
 }
 
 .lumis-auth-form .wptb-heading {
@@ -1441,9 +1533,29 @@ img, svg, video { max-width: 100%; height: auto; }
 
 .lumis-auth-checkbox {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 10px;
+  margin: 18px 0 0;
+  color: #5d554f;
+  font-size: .82rem;
+}
+
+.lumis-auth-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-one, #d73d35);
+}
+
+.login-auth-submit {
+  margin-top: 20px;
+}
+
+.login-auth-submit .lumis-auth-primary {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 11px;
 }
 
 .lumis-auth-actions {
@@ -1451,7 +1563,9 @@ img, svg, video { max-width: 100%; height: auto; }
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #eee7e1;
   text-align: center;
 }
 
