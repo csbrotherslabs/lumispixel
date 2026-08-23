@@ -1399,28 +1399,13 @@ img, svg, video { max-width: 100%; height: auto; }
   box-shadow: 0 20px 55px rgba(54, 38, 28, .09);
 }
 
-.login-auth-card__heading {
-  margin-bottom: 24px;
-  text-align: left;
-}
-
-.login-auth-card__heading h2 {
-  margin: 0 0 6px;
-  color: #181818;
-  font-size: 1.08rem;
-  line-height: 1.2;
-  letter-spacing: -.02em;
-}
-
-.login-auth-card__heading p {
-  margin: 0;
-  color: #746b64;
-  font-size: .78rem;
-  line-height: 1.5;
-}
-
 .login-auth-field + .login-auth-field {
   margin-top: 17px;
+}
+
+.wptb-login-form .wptb-form label {
+  font-size: 11px;
+  line-height: 15px;
 }
 
 .login-auth-label,
@@ -1566,9 +1551,20 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 .login-auth-card .lumis-auth-secondary {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 13px;
   font-size: .72rem;
   letter-spacing: 0;
   white-space: nowrap;
+}
+
+.login-auth-card .login-new-user-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .lumis-auth-actions {
@@ -1606,6 +1602,10 @@ img, svg, video { max-width: 100%; height: auto; }
   .lumis-auth-actions form .btn,
   .lumis-auth-primary {
     width: 100%;
+  }
+
+  .login-auth-card .login-new-user-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1964,7 +1964,7 @@ img, svg, video { max-width: 100%; height: auto; }
 .login-title-section__title {
   margin: 0;
   color: #181818;
-  font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -.035em;
