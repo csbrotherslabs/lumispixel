@@ -33,3 +33,6 @@ env/
 .DS_Store
 .vscode/
 .idea/
+
+docs
+Notes
