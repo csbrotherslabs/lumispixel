@@ -1576,35 +1576,43 @@ img, svg, video { max-width: 100%; height: auto; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.photographer-signup-column {
+.photographer-signup-column,
+.client-signup-column {
   max-width: 560px;
 }
 
-.photographer-signup-card {
+.photographer-signup-card,
+.client-signup-card {
   padding: clamp(24px, 3.2vw, 34px);
 }
 
-.photographer-signup-fields {
+.photographer-signup-fields,
+.client-signup-fields {
   row-gap: 17px;
 }
 
-.photographer-signup-field + .photographer-signup-field {
+.photographer-signup-field + .photographer-signup-field,
+.client-signup-field + .client-signup-field {
   margin-top: 0;
 }
 
-.photographer-signup-card .form-group {
+.photographer-signup-card .form-group,
+.client-signup-card .form-group {
   margin-bottom: 0;
 }
 
-.photographer-signup-card .lumis-auth-checkbox {
+.photographer-signup-card .lumis-auth-checkbox,
+.client-signup-card .lumis-auth-checkbox {
   margin-top: 0;
 }
 
-.photographer-signup-consent + .photographer-signup-consent {
+.photographer-signup-consent + .photographer-signup-consent,
+.client-signup-consent + .client-signup-consent {
   margin-top: -7px;
 }
 
-.photographer-signup-card .alert {
+.photographer-signup-card .alert,
+.client-signup-card .alert {
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 9px;
@@ -1612,7 +1620,8 @@ img, svg, video { max-width: 100%; height: auto; }
   line-height: 1.4;
 }
 
-.photographer-signup-signin-row {
+.photographer-signup-signin-row,
+.client-signup-signin-row {
   align-items: center;
 }
 
