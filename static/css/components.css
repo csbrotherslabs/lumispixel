@@ -205,7 +205,7 @@ Ready Components Stylesheet
 
 /* Large Heading */
 .wptb-heading .wptb-item--title.lg {
-    font-size: var(--fs-60);
+    font-size: var(--fs-45);
     font-weight: var(--fw-medium);
     line-height: var(--fs-74);
 }
