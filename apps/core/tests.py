@@ -134,6 +134,117 @@ class ForPhotographersRoutingTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class PricingPageTests(TestCase):
+    def test_pricing_page_is_concise_and_decision_focused(self):
+        response = self.client.get(reverse("core:pricing"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "pricing.html")
+        self.assertContains(response, "Start with what fits")
+        self.assertContains(response, "The useful differences")
+        self.assertContains(response, "Essential answers")
+        self.assertContains(response, "css/pricing_concise.")
+        self.assertContains(response, 'data-plan-price="pro"')
+        self.assertContains(response, reverse("accounts:get-started"))
+        self.assertContains(response, reverse("core:contact"))
+        self.assertContains(response, 'class="pc-plan"', count=3)
+        self.assertContains(response, 'class="pc-plan pc-plan--featured"', count=1)
+        self.assertContains(response, 'class="pricing-faq__item', count=5)
+        self.assertNotContains(response, "Replace disconnected tools")
+        self.assertNotContains(response, "Compare every plan")
+        self.assertNotContains(response, "Built with photographers")
+
+
+class ResourcesOverviewTests(TestCase):
+    def test_resources_page_uses_focused_library_overview(self):
+        response = self.client.get(reverse("core:resources"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "resources.html")
+        self.assertContains(response, "Learn what matters")
+        self.assertContains(response, "Four ways forward")
+        self.assertContains(response, "css/resources_concise.")
+        self.assertContains(response, 'class="ro-groups"')
+
+        for route_name in (
+            "core:resources_blog", "core:resources_photography_guides",
+            "core:resources_business_guides", "core:resources_ai_learning_center",
+            "core:resources_templates", "core:resources_free_downloads",
+            "core:resources_video_tutorials", "core:resources_webinars_events",
+            "core:resources_success_stories", "core:resources_help_center",
+            "core:resources_release_notes", "core:resources_learning_hub",
+        ):
+            self.assertContains(response, reverse(route_name))
+
+
+class ResourceDetailConciseTests(TestCase):
+    pages = (
+        ("core:resources_blog", "blog", "Ideas for better work"),
+        ("core:resources_photography_guides", "photo", "Understand the technique"),
+        ("core:resources_business_guides", "business", "Run the business"),
+        ("core:resources_ai_learning_center", "ai", "Use AI with clarity"),
+        ("core:resources_templates", "templates", "Skip the blank page"),
+        ("core:resources_help_center", "help", "Find the answer"),
+        ("core:resources_video_tutorials", "video", "See the workflow"),
+        ("core:resources_webinars_events", "events", "Join the session"),
+        ("core:resources_success_stories", "stories", "See the challenge"),
+        ("core:resources_free_downloads", "downloads", "Download the starting point"),
+        ("core:resources_release_notes", "updates", "Follow the progress"),
+        ("core:resources_learning_hub", "learning", "Choose what to learn"),
+    )
+
+    def test_each_resource_page_uses_the_concise_detail_system(self):
+        for route_name, theme, marker in self.pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f"rd--{theme}")
+                self.assertContains(response, marker)
+                self.assertContains(response, "css/resource_detail_concise.")
+                self.assertContains(response, 'class="rd-back"')
+                self.assertContains(response, reverse("core:resources"))
+                self.assertContains(response, 'class="rd-feature"')
+                self.assertContains(response, 'class="rd-library"')
+                self.assertContains(response, 'class="rd-topics"')
+                self.assertContains(response, 'class="rd-final"')
+                self.assertNotContains(response, "Placeholder testimonial")
+                self.assertNotContains(response, "Frequently Asked Questions")
+
+    def test_help_center_retains_direct_search(self):
+        response = self.client.get(reverse("core:resources_help_center"))
+
+        self.assertContains(response, 'class="rd-search"')
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, "Search LumisPixel help")
+
+
+class MarketingNavigationActiveStateTests(TestCase):
+    def test_only_home_is_active_on_homepage(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true" aria-current="page"')
+
+    def test_top_level_page_marks_its_own_navigation_item_active(self):
+        response = self.client.get(reverse("core:pricing"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/pricing/" aria-current="page">Pricing</a></li>')
+        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+
+    def test_resource_child_marks_child_and_resources_parent_active(self):
+        response = self.client.get(reverse("core:resources_business_guides"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
+        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+
+    def test_resources_navigation_has_no_dropdown(self):
+        response = self.client.get(reverse("core:resources"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
+        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true"')
+
+
 class ProductsOverviewTests(TestCase):
     def test_products_page_uses_condensed_platform_overview(self):
         response = self.client.get(reverse("core:products"))
@@ -207,77 +318,55 @@ class RemainingProductDeepDiveTests(TestCase):
                 self.assertContains(response, "css/product_deep_diverse.")
 
 
-class SolutionsOverviewTests(TestCase):
-    def test_solutions_page_uses_condensed_specialty_overview(self):
-        response = self.client.get(reverse("core:solutions"))
-
+class BusinessHubOverviewTests(TestCase):
+    def test_business_hub_uses_condensed_tool_overview(self):
+        response = self.client.get(reverse("core:business_hub"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "solutions.html")
-        self.assertContains(response, "Different shoots")
-        self.assertContains(response, "Ten specialties")
-        self.assertContains(response, "Find your way of working")
-        self.assertContains(response, "css/solutions_concise.")
+        self.assertTemplateUsed(response, "business_hub.html")
+        self.assertContains(response, "The business moves")
+        self.assertContains(response, "The complete business layer")
+        self.assertContains(response, "css/business_hub_concise.")
 
-        routes = (
-            "core:solution_wedding_photography",
-            "core:solution_portrait_photography",
-            "core:solution_sports_photography",
-            "core:solution_school_photography",
-            "core:solution_corporate_photography",
-            "core:solution_event_photography",
-            "core:solution_real_estate_photography",
-            "core:solution_commercial_photography",
-            "core:solution_studio_photography",
-            "core:solution_destination_photography",
-        )
-        for route_name in routes:
-            with self.subTest(route_name=route_name):
-                self.assertContains(response, reverse(route_name))
+        for route_name in (
+            "core:business_hub_dashboard", "core:business_hub_client_crm",
+            "core:business_hub_booking_calendar", "core:business_hub_ai_business_assistant",
+            "core:business_hub_contracts", "core:business_hub_invoices_payments",
+            "core:business_hub_workflow_automation", "core:business_hub_analytics_reports",
+            "core:business_hub_marketing_growth", "core:business_hub_team_operations",
+        ):
+            self.assertContains(response, reverse(route_name))
 
-    def test_primary_navigation_links_directly_to_solutions_overview(self):
+    def test_navigation_links_directly_to_business_hub(self):
         response = self.client.get(reverse("core:index"))
-
-        self.assertContains(
-            response,
-            f'<li class="menu-item"><a href="{reverse("core:solutions")}">Solutions</a></li>',
-            html=True,
-        )
-        self.assertNotContains(
-            response,
-            f'<a href="{reverse("core:solutions")}" aria-haspopup="true">Solutions</a>',
-            html=True,
-        )
+        self.assertContains(response, f'<li class="menu-item"><a href="{reverse("core:business_hub")}">Business Hub</a></li>', html=True)
+        self.assertNotContains(response, f'<a href="{reverse("core:business_hub")}" aria-haspopup="true">Business Hub</a>', html=True)
 
 
-class SolutionDeepDiveTests(TestCase):
-    def test_each_solution_is_concise_distinct_and_returns_to_overview(self):
+class BusinessHubDeepDiveTests(TestCase):
+    def test_each_business_hub_page_is_concise_and_returns_to_overview(self):
         pages = (
-            ("core:solution_wedding_photography", "wedding", "Hold the whole day"),
-            ("core:solution_portrait_photography", "portrait", "Make room for the person"),
-            ("core:solution_sports_photography", "sports", "Catch the action"),
-            ("core:solution_school_photography", "school", "Every student matters"),
-            ("core:solution_corporate_photography", "corporate", "Meet the brief"),
-            ("core:solution_event_photography", "event", "Cover the room"),
-            ("core:solution_real_estate_photography", "real-estate", "Make every property"),
-            ("core:solution_commercial_photography", "commercial", "Protect the idea"),
-            ("core:solution_studio_photography", "studio", "Every session enters"),
-            ("core:solution_destination_photography", "destination", "Follow the story"),
+            ("core:business_hub_dashboard", "dashboard", "See the whole business"),
+            ("core:business_hub_client_crm", "crm", "Know every client"),
+            ("core:business_hub_booking_calendar", "calendar", "Make time visible"),
+            ("core:business_hub_ai_business_assistant", "assistant", "Think with context"),
+            ("core:business_hub_contracts", "contracts", "Set expectations"),
+            ("core:business_hub_invoices_payments", "payments", "Make payment clear"),
+            ("core:business_hub_workflow_automation", "automation", "Repeat the standard"),
+            ("core:business_hub_analytics_reports", "analytics", "See the pattern"),
+            ("core:business_hub_marketing_growth", "marketing", "Create attention"),
+            ("core:business_hub_team_operations", "team", "Give everyone clarity"),
         )
-
         for route_name, theme, headline in pages:
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(route_name))
-
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, f"sol-detail--{theme}")
+                self.assertContains(response, f"bhd--{theme}")
                 self.assertContains(response, headline)
-                self.assertContains(response, 'class="sol-back"')
-                self.assertContains(response, "All Solutions")
-                self.assertContains(response, reverse("core:solutions"))
-                self.assertContains(response, "css/solutions_concise.")
-                self.assertNotContains(response, "Frequently Asked Questions")
+                self.assertContains(response, 'class="bhd-back"')
+                self.assertContains(response, "All Business Hub")
+                self.assertContains(response, reverse("core:business_hub"))
+                self.assertContains(response, "css/business_hub_concise.")
                 self.assertNotContains(response, "Testimonials")
-                self.assertNotContains(response, "Placeholder")
 
 
 class LearningHubNavigationTests(TestCase):
@@ -358,122 +447,3 @@ class BusinessGuidesNavigationTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, f'href="{reverse("core:resources")}"')
                 self.assertNotContains(response, 'href="/resources/" aria-haspopup="true"')
-
-class BusinessHubOverviewTests(TestCase):
-    def test_business_hub_uses_condensed_tool_overview(self):
-        response = self.client.get(reverse("core:business_hub"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "business_hub.html")
-        self.assertContains(response, "The business moves")
-        self.assertContains(response, "The complete business layer")
-        self.assertContains(response, "css/business_hub_concise.")
-
-        for route_name in (
-            "core:business_hub_dashboard", "core:business_hub_client_crm",
-            "core:business_hub_booking_calendar", "core:business_hub_ai_business_assistant",
-            "core:business_hub_contracts", "core:business_hub_invoices_payments",
-            "core:business_hub_workflow_automation", "core:business_hub_analytics_reports",
-            "core:business_hub_marketing_growth", "core:business_hub_team_operations",
-        ):
-            self.assertContains(response, reverse(route_name))
-
-    def test_navigation_links_directly_to_business_hub(self):
-        response = self.client.get(reverse("core:index"))
-        self.assertContains(response, f'<li class="menu-item"><a href="{reverse("core:business_hub")}">Business Hub</a></li>', html=True)
-        self.assertNotContains(response, f'<a href="{reverse("core:business_hub")}" aria-haspopup="true">Business Hub</a>', html=True)
-
-
-class BusinessHubDeepDiveTests(TestCase):
-    def test_each_business_hub_page_is_concise_and_returns_to_overview(self):
-        pages = (
-            ("core:business_hub_dashboard", "dashboard", "See the whole business"),
-            ("core:business_hub_client_crm", "crm", "Know every client"),
-            ("core:business_hub_booking_calendar", "calendar", "Make time visible"),
-            ("core:business_hub_ai_business_assistant", "assistant", "Think with context"),
-            ("core:business_hub_contracts", "contracts", "Set expectations"),
-            ("core:business_hub_invoices_payments", "payments", "Make payment clear"),
-            ("core:business_hub_workflow_automation", "automation", "Repeat the standard"),
-            ("core:business_hub_analytics_reports", "analytics", "See the pattern"),
-            ("core:business_hub_marketing_growth", "marketing", "Create attention"),
-            ("core:business_hub_team_operations", "team", "Give everyone clarity"),
-        )
-        for route_name, theme, headline in pages:
-            with self.subTest(route_name=route_name):
-                response = self.client.get(reverse(route_name))
-                self.assertEqual(response.status_code, 200)
-                self.assertContains(response, f"bhd--{theme}")
-                self.assertContains(response, headline)
-                self.assertContains(response, 'class="bhd-back"')
-                self.assertContains(response, "All Business Hub")
-                self.assertContains(response, reverse("core:business_hub"))
-                self.assertContains(response, "css/business_hub_concise.")
-                self.assertNotContains(response, "Testimonials")
-
-
-class PricingPageTests(TestCase):
-    def test_pricing_page_is_concise_and_decision_focused(self):
-        response = self.client.get(reverse("core:pricing"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "pricing.html")
-        self.assertContains(response, "Start with what fits")
-        self.assertContains(response, "The useful differences")
-        self.assertContains(response, "Essential answers")
-        self.assertContains(response, "css/pricing_concise.")
-        self.assertContains(response, 'data-plan-price="pro"')
-        self.assertContains(response, reverse("accounts:get-started"))
-        self.assertContains(response, reverse("core:contact"))
-        self.assertContains(response, 'class="pc-plan"', count=3)
-        self.assertContains(response, 'class="pc-plan pc-plan--featured"', count=1)
-        self.assertContains(response, 'class="pricing-faq__item', count=5)
-        self.assertNotContains(response, "Replace disconnected tools")
-        self.assertNotContains(response, "Compare every plan")
-        self.assertNotContains(response, "Built with photographers")
-
-
-class ResourcesOverviewTests(TestCase):
-    def test_resources_page_uses_focused_library_overview(self):
-        response = self.client.get(reverse("core:resources"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "resources.html")
-        self.assertContains(response, "Learn what matters")
-        self.assertContains(response, "Four ways forward")
-        self.assertContains(response, "css/resources_concise.")
-        self.assertContains(response, 'class="ro-groups"')
-
-        for route_name in (
-            "core:resources_blog", "core:resources_photography_guides",
-            "core:resources_business_guides", "core:resources_ai_learning_center",
-            "core:resources_templates", "core:resources_free_downloads",
-            "core:resources_video_tutorials", "core:resources_webinars_events",
-            "core:resources_success_stories", "core:resources_help_center",
-            "core:resources_release_notes", "core:resources_learning_hub",
-        ):
-            self.assertContains(response, reverse(route_name))
-
-
-class MarketingNavigationActiveStateTests(TestCase):
-    def test_only_home_is_active_on_homepage(self):
-        response = self.client.get(reverse("core:index"))
-
-        self.assertContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
-        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true" aria-current="page"')
-
-    def test_top_level_page_marks_its_own_navigation_item_active(self):
-        response = self.client.get(reverse("core:pricing"))
-
-        self.assertContains(response, '<li class="menu-item active current"><a href="/pricing/" aria-current="page">Pricing</a></li>')
-        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
-
-    def test_resource_child_marks_child_and_resources_parent_active(self):
-        response = self.client.get(reverse("core:resources_business_guides"))
-
-        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
-        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
-
-    def test_resources_navigation_has_no_dropdown(self):
-        response = self.client.get(reverse("core:resources"))
-
-        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
-        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true"')
