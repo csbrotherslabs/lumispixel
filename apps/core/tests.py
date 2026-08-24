@@ -207,6 +207,65 @@ class RemainingProductDeepDiveTests(TestCase):
                 self.assertContains(response, "css/product_deep_diverse.")
 
 
+class SolutionsOverviewTests(TestCase):
+    def test_solutions_page_uses_condensed_specialty_overview(self):
+        response = self.client.get(reverse("core:solutions"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "solutions.html")
+        self.assertContains(response, "Different shoots")
+        self.assertContains(response, "Ten specialties")
+        self.assertContains(response, "Find your way of working")
+        self.assertContains(response, "css/solutions_concise.")
+
+        routes = (
+            "core:solution_wedding_photography",
+            "core:solution_portrait_photography",
+            "core:solution_sports_photography",
+            "core:solution_school_photography",
+            "core:solution_corporate_photography",
+            "core:solution_event_photography",
+            "core:solution_real_estate_photography",
+            "core:solution_commercial_photography",
+            "core:solution_studio_photography",
+            "core:solution_destination_photography",
+        )
+        for route_name in routes:
+            with self.subTest(route_name=route_name):
+                self.assertContains(response, reverse(route_name))
+
+
+class SolutionDeepDiveTests(TestCase):
+    def test_each_solution_is_concise_distinct_and_returns_to_overview(self):
+        pages = (
+            ("core:solution_wedding_photography", "wedding", "Hold the whole day"),
+            ("core:solution_portrait_photography", "portrait", "Make room for the person"),
+            ("core:solution_sports_photography", "sports", "Catch the action"),
+            ("core:solution_school_photography", "school", "Every student matters"),
+            ("core:solution_corporate_photography", "corporate", "Meet the brief"),
+            ("core:solution_event_photography", "event", "Cover the room"),
+            ("core:solution_real_estate_photography", "real-estate", "Make every property"),
+            ("core:solution_commercial_photography", "commercial", "Protect the idea"),
+            ("core:solution_studio_photography", "studio", "Every session enters"),
+            ("core:solution_destination_photography", "destination", "Follow the story"),
+        )
+
+        for route_name, theme, headline in pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f"sol-detail--{theme}")
+                self.assertContains(response, headline)
+                self.assertContains(response, 'class="sol-back"')
+                self.assertContains(response, "All Solutions")
+                self.assertContains(response, reverse("core:solutions"))
+                self.assertContains(response, "css/solutions_concise.")
+                self.assertNotContains(response, "Frequently Asked Questions")
+                self.assertNotContains(response, "Testimonials")
+                self.assertNotContains(response, "Placeholder")
+
+
 class LearningHubNavigationTests(TestCase):
     def test_learning_hub_route_renders_marketing_template(self):
         learning_hub_url = reverse("core:resources_learning_hub")
