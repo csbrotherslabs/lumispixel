@@ -19,22 +19,7 @@
                             <li class="menu-item{% if request.path|slice:':11' == '/solutions/' %} active current{% endif %}"><a href="{% url 'core:solutions' %}">Solutions</a></li>
                             <li class="menu-item{% if request.path|slice:':14' == '/business-hub/' %} active current{% endif %}"><a href="{% url 'core:business_hub' %}">Business Hub</a></li>
                             <li class="menu-item{% if request.resolver_match.view_name == 'core:pricing' %} active current{% endif %}"><a href="{% url 'core:pricing' %}"{% if request.resolver_match.view_name == 'core:pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
-                            <li class="menu-item menu-item-has-children{% if request.path|slice:':11' == '/resources/' %} active current{% endif %}"><a href="{% url 'core:resources' %}" aria-haspopup="true">Resources</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_blog' %} active current{% endif %}"><a href="{% url 'core:resources_blog' %}">Blog / Articles</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_photography_guides' %} active current{% endif %}"><a href="{% url 'core:resources_photography_guides' %}">Photography Guides</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_business_guides' %} active current{% endif %}"><a href="{% url 'core:resources_business_guides' %}">Business Guides</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_ai_learning_center' %} active current{% endif %}"><a href="{% url 'core:resources_ai_learning_center' %}">AI Learning Center</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_templates' %} active current{% endif %}"><a href="{% url 'core:resources_templates' %}">Templates</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_help_center' %} active current{% endif %}"><a href="{% url 'core:resources_help_center' %}">Help Center / Documentation</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_video_tutorials' %} active current{% endif %}"><a href="{% url 'core:resources_video_tutorials' %}">Video Tutorials</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_webinars_events' %} active current{% endif %}"><a href="{% url 'core:resources_webinars_events' %}">Webinars &amp; Events</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_success_stories' %} active current{% endif %}"><a href="{% url 'core:resources_success_stories' %}">Success Stories / Case Studies</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_free_downloads' %} active current{% endif %}"><a href="{% url 'core:resources_free_downloads' %}">Free Downloads</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_release_notes' %} active current{% endif %}"><a href="{% url 'core:resources_release_notes' %}">Release Notes / Product Updates</a></li>
-                                    <li class="menu-item{% if request.resolver_match.view_name == 'core:resources_learning_hub' %} active current{% endif %}"><a href="{% url 'core:resources_learning_hub' %}">Newsletter / Learning Hub</a></li>
-                                </ul>
-                            </li>
+                            <li class="menu-item{% if request.path|slice:':11' == '/resources/' %} active current{% endif %}"><a href="{% url 'core:resources' %}">Resources</a></li>
                             <li class="menu-item menu-item-has-children{% if request.path|slice:':9' == '/company/' %} active current{% endif %}"><a href="{% url 'core:company' %}" aria-haspopup="true">Company</a>
                                 <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
                                     <li class="menu-item"><a href="{% url 'core:about' %}">About</a></li>
