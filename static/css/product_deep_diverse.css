@@ -15,6 +15,9 @@
 .dpp-final p { max-width:650px; margin:0; font-family:Georgia,"Times New Roman",serif; font-size:19px; line-height:1.5; }
 .dpp-page a:focus-visible { outline:3px solid var(--dpp-orange); outline-offset:4px; }
 
+/* Keep light-page return controls below the fixed marketing navbar. */
+.dpg-hero,.dpw-hero,.dpc-hero { padding-top:clamp(122px,10vw,148px); }
+
 /* Client Galleries — quiet exhibition space */
 .dpg-hero { min-height:760px; padding:70px 0 90px; color:#211d1a; background:#eee8df; }
 .dpg-hero__copy { max-width:790px; margin:64px auto 45px; text-align:center; }
@@ -78,6 +81,7 @@
   .dpm-map::before,.dpm-map::after { display:none; }
 }
 @media (max-width:767px) {
+  .dpg-hero,.dpw-hero,.dpc-hero { padding-top:108px; }
   .dpp-actions { align-items:stretch; flex-direction:column; }.dpp-actions a { justify-content:center; text-align:center; }.dpp-final { padding:28px 0; align-items:flex-start; flex-direction:column; }
   .dpg-frames { height:260px; }.dpg-frame--main { width:78%; height:245px; }.dpg-frame--left,.dpg-frame--right { width:43%; height:180px; }.dpg-frame--left { left:0; }.dpg-frame--right { right:0; }
   .dpg-mosaic,.dps-process ol,.dpw-columns,.dpc-steps,.dpc-care__points,.dpm-path ol { grid-template-columns:1fr; }.dpg-flow ol,.dpw-launch ol { grid-template-columns:1fr; }
