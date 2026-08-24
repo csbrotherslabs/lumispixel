@@ -264,6 +264,19 @@
   font-weight: var(--fw-semibold);
 }
 
+.header .mainnav .sub-menu > li > a { position: relative; }
+.header .mainnav .sub-menu > li.active > a::before,
+.header .mainnav .sub-menu > li.current > a::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 7px;
+  height: 1px;
+  background: currentColor;
+  opacity: .7;
+}
+
 .header .mainnav ul.main-menu li ul li:last-child > a {
   border-bottom: none;
 }
