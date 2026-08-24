@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import views
 
@@ -7,7 +8,7 @@ app_name = "core"
 urlpatterns = [
     path("", views.index, name="index"),
     path("pricing/", views.pricing, name="pricing"),
-    path("products/", views.public_page, {"page_key": "products"}, name="products"),
+    path("products/", TemplateView.as_view(template_name="products.html"), name="products"),
     path("for-photographers/", views.for_photographers, name="for_photographers"),
     path("solutions/", views.public_page, {"page_key": "solutions"}, name="solutions"),
     path(

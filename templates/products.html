@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Photography Business Platform | LumisPixel Products{% endblock %}
+{% block meta_description %}Run your photography business, deliver client galleries, find photos with AI, and grow from one connected LumisPixel platform.{% endblock %}
+{% block og_title %}One Connected Photography Platform | LumisPixel{% endblock %}
+{% block og_description %}Discover the LumisPixel workspace, client galleries, AI photo tools, websites, client experience, and marketplace in one view.{% endblock %}
+{% block twitter_title %}One Connected Photography Platform | LumisPixel{% endblock %}
+{% block twitter_description %}Book, manage, deliver, and grow with one connected photography platform.{% endblock %}
+{% block body_class %}marketing-page page-products-overview{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/products.css' %}">{% endblock %}
+
+{% block content %}
+<div class="lp-products">
+  <section class="lp-products-hero" aria-labelledby="products-title">
+    <div class="lp-products-orb lp-products-orb--one" aria-hidden="true"></div>
+    <div class="lp-products-orb lp-products-orb--two" aria-hidden="true"></div>
+    <div class="container lp-products-hero__grid">
+      <div class="lp-products-hero__copy">
+        <span class="lp-products-kicker"><i class="bi bi-stars" aria-hidden="true"></i> The photography operating system</span>
+        <h1 id="products-title">Everything photographers need.<br><span>One connected platform.</span></h1>
+        <p>Book clients, run your studio, accelerate photo work, and deliver an experience people remember.</p>
+        <div class="lp-products-actions">
+          <a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a>
+          <a class="lp-products-text-link" href="#platform">Explore the platform <i class="bi bi-arrow-down" aria-hidden="true"></i></a>
+        </div>
+      </div>
+      <div class="lp-products-console" aria-label="LumisPixel connected workspace preview">
+        <div class="lp-products-console__top"><span></span><span></span><span></span><strong>LumisPixel</strong><small>Studio online</small></div>
+        <div class="lp-products-console__body">
+          <nav aria-label="Preview navigation"><span class="active"><i class="bi bi-grid-1x2"></i> Overview</span><span><i class="bi bi-people"></i> Clients</span><span><i class="bi bi-images"></i> Galleries</span><span><i class="bi bi-stars"></i> AI tools</span></nav>
+          <div class="lp-products-console__content">
+            <div class="lp-products-console__welcome"><div><small>GOOD MORNING</small><strong>Your studio, in focus.</strong></div><span>4 tasks today</span></div>
+            <div class="lp-products-console__metrics"><span><small>Active projects</small><strong>12</strong></span><span><small>Gallery views</small><strong>2.4k</strong></span><span><small>Client actions</small><strong>86</strong></span></div>
+            <div class="lp-products-console__flow"><span class="done">Booked</span><i></i><span class="done">Shoot</span><i></i><span class="active">AI review</span><i></i><span>Delivery</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-products-platform" id="platform" aria-labelledby="platform-title">
+    <div class="container">
+      <header class="lp-products-heading">
+        <div><span class="lp-products-kicker">The complete platform</span><h2 id="platform-title">Six capabilities.<br>One seamless experience.</h2></div>
+        <p>Everything works together, so your clients and your business never feel disconnected.</p>
+      </header>
+      <div class="lp-products-grid">
+        <a class="lp-product-card lp-product-card--featured" href="{% url 'core:for_photographers' %}"><span class="lp-product-card__icon"><i class="bi bi-command"></i></span><span class="lp-product-card__copy"><small>01</small><strong>Photographer Workspace</strong><span>Manage bookings, clients, contracts, invoices, and daily workflows.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+        <a class="lp-product-card" href="{% url 'galleries:client_galleries' %}"><span class="lp-product-card__icon"><i class="bi bi-images"></i></span><span class="lp-product-card__copy"><small>02</small><strong>Client Galleries</strong><span>Deliver, proof, share, download, and sell photographs beautifully.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+        <a class="lp-product-card" href="{% url 'ai_engine:photo_search' %}"><span class="lp-product-card__icon"><i class="bi bi-stars"></i></span><span class="lp-product-card__copy"><small>03</small><strong>AI Photo Tools</strong><span>Cull faster, surface quality issues, and help people find their photos.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+        <a class="lp-product-card" href="{% url 'photographers:websites' %}"><span class="lp-product-card__icon"><i class="bi bi-window"></i></span><span class="lp-product-card__copy"><small>04</small><strong>Photographer Websites</strong><span>Showcase your brand and turn the right visitors into clients.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+        <a class="lp-product-card" href="{% url 'clients:for_clients' %}"><span class="lp-product-card__icon"><i class="bi bi-person-heart"></i></span><span class="lp-product-card__copy"><small>05</small><strong>Client Experience</strong><span>Give clients one place to view, approve, sign, pay, and download.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+        <a class="lp-product-card" href="{% url 'marketplace:find_photographer' %}"><span class="lp-product-card__icon"><i class="bi bi-globe2"></i></span><span class="lp-product-card__copy"><small>06</small><strong>Marketplace</strong><span>Connect photographers, clients, and creative professionals.</span></span><i class="bi bi-arrow-up-right lp-product-card__arrow" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-products-flow" aria-labelledby="flow-title">
+    <div class="container">
+      <div class="lp-products-flow__panel">
+        <span class="lp-products-kicker">One connected journey</span>
+        <h2 id="flow-title">From discovery to payment.<br><span>Nothing falls between tools.</span></h2>
+        <ol class="lp-products-journey">
+          <li><span>01</span><strong>Get discovered</strong></li><li><span>02</span><strong>Book</strong></li><li><span>03</span><strong>Manage</strong></li><li><span>04</span><strong>Deliver</strong></li><li><span>05</span><strong>Get paid</strong></li>
+        </ol>
+        <div class="lp-products-final">
+          <p>Spend less time connecting software. Spend more time creating work people value.</p>
+          <div class="lp-products-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="lp-products-text-link" href="{% url 'core:contact' %}">Talk to LumisPixel <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

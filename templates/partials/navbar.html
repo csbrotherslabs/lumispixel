@@ -15,17 +15,7 @@
                     <nav class="mainnav" aria-label="Primary navigation">
                         <ul class="main-menu">
                             <li class="menu-item"><a href="{% url 'core:index' %}">Home</a></li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:products' %}" aria-haspopup="true">Products</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:for_photographers' %}">For Photographers</a></li>
-                                    <li class="menu-item"><a href="{% url 'clients:for_clients' %}">For Clients</a></li>
-                                    <li class="menu-item"><a href="{% url 'ai_engine:photo_search' %}">AI Photo Search</a></li>
-                                    <li class="menu-item"><a href="{% url 'galleries:client_galleries' %}">Client Galleries</a></li>
-                                    <li class="menu-item"><a href="{% url 'ai_engine:editing_culling' %}">AI Editing &amp; Culling</a></li>
-                                    <li class="menu-item"><a href="{% url 'photographers:websites' %}">Photographer Websites</a></li>
-                                    <li class="menu-item"><a href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></li>
-                                </ul>
-                            </li>
+                            <li class="menu-item"><a href="{% url 'core:products' %}">Products</a></li>
                             <li class="menu-item menu-item-has-children"><a href="{% url 'core:solutions' %}" aria-haspopup="true">Solutions</a>
                                 <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
                                     <li class="menu-item"><a href="{% url 'core:solution_wedding_photography' %}">Wedding Photography</a></li>
