@@ -361,3 +361,54 @@ class BusinessGuidesNavigationTests(TestCase):
                 response = self.client.get(reverse(route_name))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, business_guides_link, count=1, html=True)
+
+
+class BusinessHubOverviewTests(TestCase):
+    def test_business_hub_uses_condensed_tool_overview(self):
+        response = self.client.get(reverse("core:business_hub"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "business_hub.html")
+        self.assertContains(response, "The business moves")
+        self.assertContains(response, "The complete business layer")
+        self.assertContains(response, "css/business_hub_concise.")
+
+        for route_name in (
+            "core:business_hub_dashboard", "core:business_hub_client_crm",
+            "core:business_hub_booking_calendar", "core:business_hub_ai_business_assistant",
+            "core:business_hub_contracts", "core:business_hub_invoices_payments",
+            "core:business_hub_workflow_automation", "core:business_hub_analytics_reports",
+            "core:business_hub_marketing_growth", "core:business_hub_team_operations",
+        ):
+            self.assertContains(response, reverse(route_name))
+
+    def test_navigation_links_directly_to_business_hub(self):
+        response = self.client.get(reverse("core:index"))
+        self.assertContains(response, f'<li class="menu-item"><a href="{reverse("core:business_hub")}">Business Hub</a></li>', html=True)
+        self.assertNotContains(response, f'<a href="{reverse("core:business_hub")}" aria-haspopup="true">Business Hub</a>', html=True)
+
+
+class BusinessHubDeepDiveTests(TestCase):
+    def test_each_business_hub_page_is_concise_and_returns_to_overview(self):
+        pages = (
+            ("core:business_hub_dashboard", "dashboard", "See the whole business"),
+            ("core:business_hub_client_crm", "crm", "Know every client"),
+            ("core:business_hub_booking_calendar", "calendar", "Make time visible"),
+            ("core:business_hub_ai_business_assistant", "assistant", "Think with context"),
+            ("core:business_hub_contracts", "contracts", "Set expectations"),
+            ("core:business_hub_invoices_payments", "payments", "Make payment clear"),
+            ("core:business_hub_workflow_automation", "automation", "Repeat the standard"),
+            ("core:business_hub_analytics_reports", "analytics", "See the pattern"),
+            ("core:business_hub_marketing_growth", "marketing", "Create attention"),
+            ("core:business_hub_team_operations", "team", "Give everyone clarity"),
+        )
+        for route_name, theme, headline in pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f"bhd--{theme}")
+                self.assertContains(response, headline)
+                self.assertContains(response, 'class="bhd-back"')
+                self.assertContains(response, "All Business Hub")
+                self.assertContains(response, reverse("core:business_hub"))
+                self.assertContains(response, "css/business_hub_concise.")
+                self.assertNotContains(response, "Testimonials")

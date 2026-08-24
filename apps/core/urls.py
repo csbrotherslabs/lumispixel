@@ -71,12 +71,7 @@ urlpatterns = [
         {"page_key": "destination_photography"},
         name="solution_destination_photography",
     ),
-    path(
-        "business-hub/",
-        views.public_page,
-        {"page_key": "business_hub"},
-        name="business_hub",
-    ),
+    path("business-hub/", TemplateView.as_view(template_name="business_hub.html"), name="business_hub"),
     path(
         "business-hub/dashboard/",
         views.public_page,
