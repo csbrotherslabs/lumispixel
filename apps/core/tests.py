@@ -167,6 +167,31 @@ class ProductsOverviewTests(TestCase):
         )
 
 
+class RemainingProductDeepDiveTests(TestCase):
+    def test_each_product_page_is_concise_and_visually_distinct(self):
+        pages = (
+            ("galleries:client_galleries", "dpp-gallery", "dpg-frames", "Turn a finished shoot"),
+            ("ai_engine:photo_search", "dpp-search", "dps-radar", "Skip the scroll"),
+            ("photographers:websites", "dpp-websites", "dpw-canvas", "your work feels"),
+            ("clients:for_clients", "dpp-clients", "dpc-memory", "Without the work"),
+            ("marketplace:find_photographer", "dpp-market", "dpm-search", "sees it your way"),
+        )
+
+        for url_name, page_class, signature_class, headline in pages:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, page_class)
+                self.assertContains(response, signature_class)
+                self.assertContains(response, headline)
+                self.assertContains(response, reverse("core:products"))
+                self.assertContains(response, "css/product_deep_diverse.")
+                self.assertNotContains(response, "Frequently Asked Questions")
+                self.assertNotContains(response, "Placeholder testimonial")
+                self.assertNotContains(response, "Looking Ahead")
+
+
 class LearningHubNavigationTests(TestCase):
     def test_learning_hub_route_renders_marketing_template(self):
         learning_hub_url = reverse("core:resources_learning_hub")
