@@ -15,9 +15,6 @@
 .dpp-final p { max-width:650px; margin:0; font-family:Georgia,"Times New Roman",serif; font-size:19px; line-height:1.5; }
 .dpp-page a:focus-visible { outline:3px solid var(--dpp-orange); outline-offset:4px; }
 
-/* Keep light-page return controls below the fixed marketing navbar. */
-.dpg-hero,.dpw-hero,.dpc-hero { padding-top:clamp(122px,10vw,148px); }
-
 /* Client Galleries — quiet exhibition space */
 .dpg-hero { min-height:760px; padding:70px 0 90px; color:#211d1a; background:#eee8df; }
 .dpg-hero__copy { max-width:790px; margin:64px auto 45px; text-align:center; }
@@ -81,7 +78,6 @@
   .dpm-map::before,.dpm-map::after { display:none; }
 }
 @media (max-width:767px) {
-  .dpg-hero,.dpw-hero,.dpc-hero { padding-top:108px; }
   .dpp-actions { align-items:stretch; flex-direction:column; }.dpp-actions a { justify-content:center; text-align:center; }.dpp-final { padding:28px 0; align-items:flex-start; flex-direction:column; }
   .dpg-frames { height:260px; }.dpg-frame--main { width:78%; height:245px; }.dpg-frame--left,.dpg-frame--right { width:43%; height:180px; }.dpg-frame--left { left:0; }.dpg-frame--right { right:0; }
   .dpg-mosaic,.dps-process ol,.dpw-columns,.dpc-steps,.dpc-care__points,.dpm-path ol { grid-template-columns:1fr; }.dpg-flow ol,.dpw-launch ol { grid-template-columns:1fr; }
@@ -90,3 +86,13 @@
   .dpm-search { grid-template-columns:25px 1fr; }.dpm-search>b,.dpm-search span:nth-of-type(2) { display:none; }.dpm-search button { grid-column:1/-1; }.dpm-directory article { grid-template-columns:30px 1fr; }.dpm-directory article p { grid-column:2; }
 }
 @media (prefers-reduced-motion:reduce) { .dpp-page * { scroll-behavior:auto!important; } }
+
+/* Must follow the page padding shorthands above so the fixed navbar never covers the return control. */
+body.dpp-gallery .dpg-hero,
+body.dpp-websites .dpw-hero,
+body.dpp-clients .dpc-hero { padding-top:max(148px,calc(env(safe-area-inset-top) + 122px)); }
+@media (max-width:767px) {
+  body.dpp-gallery .dpg-hero,
+  body.dpp-websites .dpw-hero,
+  body.dpp-clients .dpc-hero { padding-top:max(122px,calc(env(safe-area-inset-top) + 104px)); }
+}
