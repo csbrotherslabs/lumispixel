@@ -4,8 +4,9 @@
 .dpp-page h1 { font-size:clamp(48px,5vw,55px); line-height:1.03; letter-spacing:-.055em; }
 .dpp-page h2 { font-size:clamp(36px,4vw,45px); line-height:1.04; letter-spacing:-.045em; }
 .dpp-page em { font-family:Georgia,"Times New Roman",serif; font-weight:400; }
-.dpp-back { width:max-content; display:inline-flex; align-items:center; gap:8px; color:inherit; opacity:.62; font-size:12px; font-weight:700; text-decoration:none; }
+.dpp-back { width:max-content; min-height:38px; padding:8px 15px; display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(16,17,22,.2); border-radius:999px; color:inherit; opacity:1; background:rgba(255,255,255,.66); box-shadow:0 8px 24px rgba(16,17,22,.07); backdrop-filter:blur(12px); font-size:12px; font-weight:700; text-decoration:none; }
 .dpp-back:hover,.dpp-link:hover { color:var(--dpp-orange); opacity:1; }
+.dpp-back:hover { border-color:var(--dpp-orange); background:#fff; }
 .dpp-kicker { display:inline-flex; color:var(--dpp-orange); font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
 .dpp-actions { display:flex; align-items:center; flex-wrap:wrap; gap:22px; margin-top:29px; }
 .dpp-link { display:inline-flex; align-items:center; gap:9px; color:inherit; font-size:13px; font-weight:800; text-decoration:none; }
