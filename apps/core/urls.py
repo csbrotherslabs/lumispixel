@@ -132,7 +132,7 @@ urlpatterns = [
         {"page_key": "business_hub_team_operations"},
         name="business_hub_team_operations",
     ),
-    path("resources/", views.public_page, {"page_key": "resources"}, name="resources"),
+    path("resources/", TemplateView.as_view(template_name="resources.html"), name="resources"),
     path(
         "resources/how-it-works/",
         views.public_page,
