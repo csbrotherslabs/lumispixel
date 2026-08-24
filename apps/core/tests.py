@@ -195,6 +195,17 @@ class RemainingProductDeepDiveTests(TestCase):
                 self.assertNotContains(response, "Placeholder testimonial")
                 self.assertNotContains(response, "Looking Ahead")
 
+    def test_light_product_heroes_use_navbar_safe_return_controls(self):
+        for url_name in (
+            "galleries:client_galleries",
+            "photographers:websites",
+            "clients:for_clients",
+        ):
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertContains(response, 'class="dpp-back"')
+                self.assertContains(response, "css/product_deep_diverse.")
+
 
 class LearningHubNavigationTests(TestCase):
     def test_learning_hub_route_renders_marketing_template(self):
