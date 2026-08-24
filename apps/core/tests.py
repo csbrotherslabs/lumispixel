@@ -412,3 +412,24 @@ class BusinessHubDeepDiveTests(TestCase):
                 self.assertContains(response, reverse("core:business_hub"))
                 self.assertContains(response, "css/business_hub_concise.")
                 self.assertNotContains(response, "Testimonials")
+
+
+class PricingPageTests(TestCase):
+    def test_pricing_page_is_concise_and_decision_focused(self):
+        response = self.client.get(reverse("core:pricing"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "pricing.html")
+        self.assertContains(response, "Start with what fits")
+        self.assertContains(response, "The useful differences")
+        self.assertContains(response, "Essential answers")
+        self.assertContains(response, "css/pricing_concise.")
+        self.assertContains(response, 'data-plan-price="pro"')
+        self.assertContains(response, reverse("accounts:get-started"))
+        self.assertContains(response, reverse("core:contact"))
+        self.assertContains(response, 'class="pc-plan"', count=3)
+        self.assertContains(response, 'class="pc-plan pc-plan--featured"', count=1)
+        self.assertContains(response, 'class="pricing-faq__item', count=5)
+        self.assertNotContains(response, "Replace disconnected tools")
+        self.assertNotContains(response, "Compare every plan")
+        self.assertNotContains(response, "Built with photographers")
