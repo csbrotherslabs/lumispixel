@@ -131,6 +131,39 @@ class ForPhotographersRoutingTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ProductsOverviewTests(TestCase):
+    def test_products_page_uses_condensed_platform_overview(self):
+        response = self.client.get(reverse("core:products"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "products.html")
+        self.assertContains(response, "Everything photographers need")
+        self.assertContains(response, "Six capabilities")
+        self.assertContains(response, "From discovery to payment")
+        self.assertContains(response, "Photographer Workspace")
+        self.assertContains(response, "Client Galleries")
+        self.assertContains(response, "AI Photo Tools")
+        self.assertContains(response, "Photographer Websites")
+        self.assertContains(response, "Client Experience")
+        self.assertContains(response, "Marketplace")
+        self.assertContains(response, "css/products.")
+
+    def test_primary_navigation_links_directly_to_products_overview(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'<li class="menu-item"><a href="{reverse("core:products")}">Products</a></li>',
+            html=True,
+        )
+        self.assertNotContains(
+            response,
+            '<a href="/products/" aria-haspopup="true">Products</a>',
+            html=True,
+        )
+
+
 class LearningHubNavigationTests(TestCase):
     def test_learning_hub_route_renders_marketing_template(self):
         learning_hub_url = reverse("core:resources_learning_hub")
