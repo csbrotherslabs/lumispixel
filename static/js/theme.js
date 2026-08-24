@@ -19,24 +19,26 @@ Description: Kimono - Photography Agency
 
         // Add Menu Item Current Class Auto
         function dynamicCurrentMenuClass(selector) {
-            let FileName = window.location.href.split("/").reverse()[0];
-  
-            selector.find("li").each(function () {
-              let anchor = $(this).find("a");
-              if ($(anchor).attr("href") == FileName) {
-                $(this).addClass("active");
+            const normalizePath = function (path) {
+              const normalized = (path || "/").replace(/\/+$/, "");
+              return normalized || "/";
+            };
+            const currentPath = normalizePath(window.location.pathname);
+
+            selector.find("li").removeClass("active current");
+            selector.find("a").removeAttr("aria-current").each(function () {
+              const href = $(this).attr("href");
+              if (!href || href.charAt(0) === "#") return;
+
+              const linkPath = normalizePath(new URL(href, window.location.origin).pathname);
+              if (linkPath === currentPath) {
+                $(this).attr("aria-current", "page").parent("li").addClass("active current");
               }
             });
-            // if any li has .current elmnt add class
+
             selector.children("li").each(function () {
-              if ($(this).find(".active").length) {
-                $(this).addClass("active");
-              }
+              if ($(this).find("ul .active").length) $(this).addClass("active current");
             });
-            // if no file name return
-            if ("" == FileName) {
-              selector.find("li").eq(0).addClass("active");
-            }
         }
           
         if ($('.mainnav .main-menu').length) {
