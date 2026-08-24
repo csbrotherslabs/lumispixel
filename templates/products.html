@@ -13,29 +13,17 @@
 {% block content %}
 <div class="lp-products">
   <section class="lp-products-hero" aria-labelledby="products-title">
-    <div class="lp-products-orb lp-products-orb--one" aria-hidden="true"></div>
-    <div class="lp-products-orb lp-products-orb--two" aria-hidden="true"></div>
-    <div class="container lp-products-hero__grid">
+    <div class="lp-products-hero__grid-map" aria-hidden="true"></div>
+    <div class="container">
       <div class="lp-products-hero__copy">
         <span class="lp-products-kicker"><i class="bi bi-stars" aria-hidden="true"></i> The photography operating system</span>
-        <h1 id="products-title">Everything photographers need.<br><span>One connected platform.</span></h1>
-        <p>Book clients, run your studio, accelerate photo work, and deliver an experience people remember.</p>
-        <div class="lp-products-actions">
-          <a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a>
-          <a class="lp-products-text-link" href="#platform">Explore the platform <i class="bi bi-arrow-down" aria-hidden="true"></i></a>
-        </div>
+        <h1 id="products-title">Every part of the photography journey.<br><span>Working as one.</span></h1>
+        <p>Run the studio, accelerate photo work, deliver beautifully, and give clients one connected experience.</p>
       </div>
-      <div class="lp-products-console" aria-label="LumisPixel connected workspace preview">
-        <div class="lp-products-console__top"><span></span><span></span><span></span><strong>LumisPixel</strong><small>Studio online</small></div>
-        <div class="lp-products-console__body">
-          <nav aria-label="Preview navigation"><span class="active"><i class="bi bi-grid-1x2"></i> Overview</span><span><i class="bi bi-people"></i> Clients</span><span><i class="bi bi-images"></i> Galleries</span><span><i class="bi bi-stars"></i> AI tools</span></nav>
-          <div class="lp-products-console__content">
-            <div class="lp-products-console__welcome"><div><small>GOOD MORNING</small><strong>Your studio, in focus.</strong></div><span>4 tasks today</span></div>
-            <div class="lp-products-console__metrics"><span><small>Active projects</small><strong>12</strong></span><span><small>Gallery views</small><strong>2.4k</strong></span><span><small>Client actions</small><strong>86</strong></span></div>
-            <div class="lp-products-console__flow"><span class="done">Booked</span><i></i><span class="done">Shoot</span><i></i><span class="active">AI review</span><i></i><span>Delivery</span></div>
-          </div>
-        </div>
+      <div class="lp-products-command" aria-label="LumisPixel platform overview">
+        <i class="bi bi-command" aria-hidden="true"></i><span><small>FOR THE BUSINESS</small><strong>Workspace + Website</strong></span><b></b><span><small>FOR THE PHOTOGRAPHS</small><strong>AI Tools + Galleries</strong></span><b></b><span><small>FOR THE CONNECTION</small><strong>Clients + Marketplace</strong></span><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a>
       </div>
+      <a class="lp-products-hero__jump" href="#platform">Explore all six capabilities <i class="bi bi-arrow-down" aria-hidden="true"></i></a>
     </div>
   </section>
 
