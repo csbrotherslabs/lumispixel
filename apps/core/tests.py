@@ -234,6 +234,20 @@ class SolutionsOverviewTests(TestCase):
             with self.subTest(route_name=route_name):
                 self.assertContains(response, reverse(route_name))
 
+    def test_primary_navigation_links_directly_to_solutions_overview(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertContains(
+            response,
+            f'<li class="menu-item"><a href="{reverse("core:solutions")}">Solutions</a></li>',
+            html=True,
+        )
+        self.assertNotContains(
+            response,
+            f'<a href="{reverse("core:solutions")}" aria-haspopup="true">Solutions</a>',
+            html=True,
+        )
+
 
 class SolutionDeepDiveTests(TestCase):
     def test_each_solution_is_concise_distinct_and_returns_to_overview(self):
