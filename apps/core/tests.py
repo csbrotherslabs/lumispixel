@@ -433,3 +433,46 @@ class PricingPageTests(TestCase):
         self.assertNotContains(response, "Replace disconnected tools")
         self.assertNotContains(response, "Compare every plan")
         self.assertNotContains(response, "Built with photographers")
+
+
+class ResourcesOverviewTests(TestCase):
+    def test_resources_page_uses_focused_library_overview(self):
+        response = self.client.get(reverse("core:resources"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "resources.html")
+        self.assertContains(response, "Learn what matters")
+        self.assertContains(response, "Four ways forward")
+        self.assertContains(response, "css/resources_concise.")
+        self.assertContains(response, 'class="ro-groups"')
+
+        for route_name in (
+            "core:resources_blog", "core:resources_photography_guides",
+            "core:resources_business_guides", "core:resources_ai_learning_center",
+            "core:resources_templates", "core:resources_free_downloads",
+            "core:resources_video_tutorials", "core:resources_webinars_events",
+            "core:resources_success_stories", "core:resources_help_center",
+            "core:resources_release_notes", "core:resources_learning_hub",
+        ):
+            self.assertContains(response, reverse(route_name))
+
+
+class MarketingNavigationActiveStateTests(TestCase):
+    def test_only_home_is_active_on_homepage(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true" aria-current="page"')
+
+    def test_top_level_page_marks_its_own_navigation_item_active(self):
+        response = self.client.get(reverse("core:pricing"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/pricing/" aria-current="page">Pricing</a></li>')
+        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+
+    def test_resource_child_marks_child_and_resources_parent_active(self):
+        response = self.client.get(reverse("core:resources_business_guides"))
+
+        self.assertContains(response, 'menu-item menu-item-has-children active current')
+        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/business-guides/">Business Guides</a></li>')
+        self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
