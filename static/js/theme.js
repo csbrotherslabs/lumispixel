@@ -25,7 +25,6 @@ Description: Kimono - Photography Agency
             };
             const currentPath = normalizePath(window.location.pathname);
 
-            selector.find("li").removeClass("active current");
             selector.find("a").removeAttr("aria-current").each(function () {
               const href = $(this).attr("href");
               if (!href || href.charAt(0) === "#") return;

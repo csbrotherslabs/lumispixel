@@ -339,11 +339,7 @@ class BusinessGuidesNavigationTests(TestCase):
             "Learn pricing, marketing, finance, workflows, and studio operations.",
         )
 
-    def test_public_marketing_navbar_links_to_business_guides_once(self):
-        business_guides_link = (
-            f'<a href="{reverse("core:resources_business_guides")}">'
-            "Business Guides</a>"
-        )
+    def test_public_marketing_navbar_uses_resources_overview_without_child_dropdown(self):
         public_pages = (
             "core:index",
             "core:resources",
@@ -360,8 +356,8 @@ class BusinessGuidesNavigationTests(TestCase):
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(route_name))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, business_guides_link, count=1, html=True)
-
+                self.assertContains(response, f'href="{reverse("core:resources")}"')
+                self.assertNotContains(response, 'href="/resources/" aria-haspopup="true"')
 
 class BusinessHubOverviewTests(TestCase):
     def test_business_hub_uses_condensed_tool_overview(self):
@@ -473,6 +469,11 @@ class MarketingNavigationActiveStateTests(TestCase):
     def test_resource_child_marks_child_and_resources_parent_active(self):
         response = self.client.get(reverse("core:resources_business_guides"))
 
-        self.assertContains(response, 'menu-item menu-item-has-children active current')
-        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/business-guides/">Business Guides</a></li>')
+        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
         self.assertNotContains(response, '<li class="menu-item active current"><a href="/" aria-current="page">Home</a></li>')
+
+    def test_resources_navigation_has_no_dropdown(self):
+        response = self.client.get(reverse("core:resources"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/resources/">Resources</a></li>')
+        self.assertNotContains(response, 'href="/resources/" aria-haspopup="true"')
