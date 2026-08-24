@@ -7,46 +7,48 @@
 {% block og_description %}Run your studio from first inquiry to final delivery with one connected photography platform.{% endblock %}
 {% block twitter_title %}LumisPixel for Photographers{% endblock %}
 {% block twitter_description %}Manage the business, accelerate photo work, and give every client a polished experience.{% endblock %}
-{% block body_class %}marketing-page page-for-photographers page-photographers-brief{% endblock %}
+{% block body_class %}marketing-page page-for-photographers page-photographers-editorial{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/for_photographers.css' %}">{% endblock %}
 
 {% block content %}
-<div class="lp-photographers-brief">
-  <section class="lp-pb-hero" aria-labelledby="photographers-title">
-    <div class="lp-pb-glow lp-pb-glow--one" aria-hidden="true"></div><div class="lp-pb-glow lp-pb-glow--two" aria-hidden="true"></div>
-    <div class="container lp-pb-hero__grid">
-      <div class="lp-pb-hero__copy">
-        <a class="lp-pb-back" href="{% url 'core:products' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> All products</a>
-        <span class="lp-pb-kicker"><i class="bi bi-stars" aria-hidden="true"></i> For photographers</span>
-        <h1 id="photographers-title">Run your studio.<br><span>Stay focused on the work.</span></h1>
-        <p>LumisPixel connects the business behind every shoot with the experience your clients see—from first inquiry to final delivery.</p>
-        <div class="lp-pb-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="lp-pb-text-link" href="#photographer-outcomes">See what it replaces <i class="bi bi-arrow-down" aria-hidden="true"></i></a></div>
+<div class="lp-phe">
+  <section class="lp-phe-hero" aria-labelledby="photographers-title">
+    <div class="lp-phe-grain" aria-hidden="true"></div>
+    <div class="container lp-phe-hero__inner">
+      <div class="lp-phe-hero__copy">
+        <a class="lp-phe-back" href="{% url 'core:products' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> All products</a>
+        <span class="lp-phe-kicker">For photographers <b></b> Studio operating system</span>
+        <h1 id="photographers-title">The studio runs.<br><em>You keep creating.</em></h1>
+        <p>From first inquiry to final delivery, LumisPixel keeps the business moving without pulling you away from the work.</p>
+        <div class="lp-phe-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="lp-phe-link" href="#photographer-outcomes">See the photographer workflow <i class="bi bi-arrow-down" aria-hidden="true"></i></a></div>
       </div>
-      <div class="lp-pb-studio" aria-label="Connected photographer workspace preview">
-        <div class="lp-pb-studio__bar"><span></span><span></span><span></span><strong>Studio pulse</strong><small>Live</small></div>
-        <div class="lp-pb-studio__body">
-          <div class="lp-pb-studio__headline"><div><small>TODAY</small><strong>Everything is moving.</strong></div><i class="bi bi-stars" aria-hidden="true"></i></div>
-          <div class="lp-pb-studio__cards"><article><i class="bi bi-calendar2-check"></i><span><small>Next session</small><strong>Portrait · 2:30 PM</strong></span></article><article><i class="bi bi-images"></i><span><small>Gallery ready</small><strong>Martinez Wedding</strong></span></article><article><i class="bi bi-currency-dollar"></i><span><small>Payment received</small><strong>Invoice #1048</strong></span></article></div>
-          <div class="lp-pb-studio__progress"><div><span>Project progress</span><strong>72%</strong></div><i><span></span></i><small>Booked <b></b> Shot <b></b> AI review <b></b> Delivery</small></div>
-        </div>
+      <div class="lp-phe-lens" aria-hidden="true">
+        <span class="lp-phe-lens__orbit lp-phe-lens__orbit--one"></span><span class="lp-phe-lens__orbit lp-phe-lens__orbit--two"></span><span class="lp-phe-lens__orbit lp-phe-lens__orbit--three"></span>
+        <span class="lp-phe-lens__core"><small>CREATE</small><strong>∞</strong><small>DELIVER</small></span>
+        <span class="lp-phe-lens__note lp-phe-lens__note--top">FOCUS / 01</span><span class="lp-phe-lens__note lp-phe-lens__note--bottom">MOMENT / 05</span>
+      </div>
+    </div>
+    <div class="container lp-phe-signal" aria-label="Platform highlights"><span>Business in order</span><span>Photos moving faster</span><span>Clients beautifully served</span></div>
+  </section>
+
+  <section class="lp-phe-outcomes" id="photographer-outcomes" aria-labelledby="outcomes-title">
+    <div class="container">
+      <header class="lp-phe-heading"><span class="lp-phe-kicker">The work behind the work</span><h2 id="outcomes-title">Four jobs.<br><em>One rhythm.</em></h2><p>LumisPixel connects the operational work around every photograph, so each project moves forward with less friction.</p></header>
+      <div class="lp-phe-list">
+        <article><span class="lp-phe-list__number">01</span><div><h3>Run the business</h3><p>Keep leads, bookings, contracts, invoices, and client details together.</p></div><small>CRM / Calendar / Contracts / Payments</small><i class="bi bi-arrow-down-right" aria-hidden="true"></i></article>
+        <article><span class="lp-phe-list__number">02</span><div><h3>Move through photos faster</h3><p>Use AI assistance to organize, search, and review large collections.</p></div><small>Culling / Quality signals / Smart search</small><i class="bi bi-arrow-down-right" aria-hidden="true"></i></article>
+        <article><span class="lp-phe-list__number">03</span><div><h3>Deliver beautifully</h3><p>Give clients a polished place to view, favorite, share, and download.</p></div><small>Galleries / Proofing / Downloads / Sales</small><i class="bi bi-arrow-down-right" aria-hidden="true"></i></article>
+        <article><span class="lp-phe-list__number">04</span><div><h3>Grow with clarity</h3><p>See the activity, revenue, and client signals shaping your studio.</p></div><small>Website / Marketplace / Analytics</small><i class="bi bi-arrow-down-right" aria-hidden="true"></i></article>
       </div>
     </div>
   </section>
 
-  <section class="lp-pb-outcomes" id="photographer-outcomes" aria-labelledby="outcomes-title"><div class="container">
-    <header class="lp-pb-heading"><div><span class="lp-pb-kicker">One connected workspace</span><h2 id="outcomes-title">Less software.<br>More momentum.</h2></div><p>The essentials are connected, so information follows the job instead of living in separate tools.</p></header>
-    <div class="lp-pb-outcome-grid">
-      <article><span class="lp-pb-outcome__number">01</span><i class="bi bi-briefcase" aria-hidden="true"></i><h3>Run the business</h3><p>Keep leads, bookings, contracts, invoices, and client details together.</p><small>CRM · Calendar · Contracts · Payments</small></article>
-      <article><span class="lp-pb-outcome__number">02</span><i class="bi bi-stars" aria-hidden="true"></i><h3>Move through photos faster</h3><p>Use AI assistance to organize, search, and review large collections.</p><small>Culling · Quality signals · Smart search</small></article>
-      <article><span class="lp-pb-outcome__number">03</span><i class="bi bi-images" aria-hidden="true"></i><h3>Deliver beautifully</h3><p>Give clients a polished place to view, favorite, share, and download.</p><small>Galleries · Proofing · Downloads · Sales</small></article>
-      <article><span class="lp-pb-outcome__number">04</span><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><h3>Grow with clarity</h3><p>See the activity, revenue, and client signals shaping your studio.</p><small>Website · Marketplace · Analytics</small></article>
+  <section class="lp-phe-day" aria-labelledby="photographer-flow-title">
+    <div class="container">
+      <div class="lp-phe-day__top"><div><span class="lp-phe-kicker">A better day, end to end</span><h2 id="photographer-flow-title">One client journey.<br><em>Nothing lost between tools.</em></h2></div><p>Every stage carries the right context forward—from the first message to the next referral.</p></div>
+      <ol class="lp-phe-journey"><li><span>01</span><strong>Inquire</strong><small>Capture the opportunity</small></li><li><span>02</span><strong>Book</strong><small>Confirm every detail</small></li><li><span>03</span><strong>Shoot</strong><small>Stay present</small></li><li><span>04</span><strong>Deliver</strong><small>Make it memorable</small></li><li><span>05</span><strong>Grow</strong><small>Learn what works</small></li></ol>
+      <div class="lp-phe-cta"><p>Your photography deserves a business experience just as considered.</p><div class="lp-phe-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="lp-phe-link" href="{% url 'core:contact' %}">Talk to LumisPixel <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>
     </div>
-  </div></section>
-
-  <section class="lp-pb-finish" aria-labelledby="photographer-flow-title"><div class="container"><div class="lp-pb-finish__panel">
-    <span class="lp-pb-kicker">Your workflow, simplified</span><h2 id="photographer-flow-title">One client journey.<br><span>One place to run it.</span></h2>
-    <ol class="lp-pb-journey"><li><span>01</span><strong>Inquire</strong></li><li><span>02</span><strong>Book</strong></li><li><span>03</span><strong>Shoot</strong></li><li><span>04</span><strong>Deliver</strong></li><li><span>05</span><strong>Grow</strong></li></ol>
-    <div class="lp-pb-finish__footer"><p>Give every project a clear path forward—without stitching together a collection of disconnected apps.</p><div class="lp-pb-actions"><a class="btn-one" href="{% url 'accounts:get-started' %}">Start Free</a><a class="lp-pb-text-link" href="{% url 'core:contact' %}">Talk to LumisPixel <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>
-  </div></div></section>
+  </section>
 </div>
 {% endblock %}
