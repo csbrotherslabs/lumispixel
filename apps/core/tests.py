@@ -4,6 +4,15 @@ from django.urls import NoReverseMatch, resolve, reverse
 from . import views
 
 
+class HomePageTests(TestCase):
+    def test_start_free_ctas_use_get_started_route(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="{}"'.format(reverse("accounts:get-started")))
+        self.assertNotContains(response, 'href="#">Start Free')
+
+
 class AboutPageTests(TestCase):
     def test_about_page_uses_dedicated_marketing_layout(self):
         response = self.client.get(reverse("core:about"))
