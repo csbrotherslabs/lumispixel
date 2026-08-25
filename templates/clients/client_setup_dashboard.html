@@ -1,6 +1,88 @@
-{% extends "setup_dashboard_base.html" %}
+{% extends "base.html" %}
 {% block title %}Client Setup Dashboard | LumisPixel{% endblock %}
-{% block setup_title %}Welcome to LumisPixel{% endblock %}
-{% block setup_description %}Your account setup is not yet complete. Finish your client profile when you are ready to find and save photos safely.{% endblock %}
-{% block progress_heading %}Your account setup is not complete.{% endblock %}
-{% block preview_heading %}Client tools preview{% endblock %}
+{% block body_class %}page-inner client-setup-page{% endblock %}
+{% block content %}
+<main class="client-setup" aria-labelledby="client-setup-title">
+  <div class="container">
+    <header class="client-setup__hero">
+      <div class="client-setup__hero-copy">
+        <span class="client-setup__eyebrow">Client account setup</span>
+        <h1 id="client-setup-title">Your LumisPixel experience starts here.</h1>
+        <p>Complete a few quick details so you can securely find, save, and revisit the photographs that matter to you.</p>
+      </div>
+      <div class="client-setup__status" aria-label="Setup status">
+        <span class="client-setup__status-dot" aria-hidden="true"></span>
+        Setup in progress
+      </div>
+    </header>
+
+    <div class="client-setup__dashboard">
+      <section class="client-setup__progress-card" aria-labelledby="client-progress-title">
+        <div class="client-setup__card-heading">
+          <div>
+            <span class="client-setup__section-label">Your progress</span>
+            <h2 id="client-progress-title">Finish setting up your account</h2>
+          </div>
+          <strong>{{ progress_percent }}%</strong>
+        </div>
+
+        <div class="client-setup__progress-bar" role="progressbar" aria-label="Client setup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}">
+          <span style="width: {{ progress_percent }}%"></span>
+        </div>
+
+        <ol class="client-setup__steps" aria-label="Client setup steps">
+          <li class="{% if current_step >= 1 %}is-active{% endif %}{% if current_step > 1 %} is-complete{% endif %}">
+            <span>{% if current_step > 1 %}<i class="bi bi-check2" aria-hidden="true"></i>{% else %}1{% endif %}</span>
+            <div><strong>Welcome</strong><small>See what LumisPixel can do</small></div>
+          </li>
+          <li class="{% if current_step >= 2 %}is-active{% endif %}{% if current_step > 2 %} is-complete{% endif %}">
+            <span>{% if current_step > 2 %}<i class="bi bi-check2" aria-hidden="true"></i>{% else %}2{% endif %}</span>
+            <div><strong>Your profile</strong><small>Add your client details</small></div>
+          </li>
+          <li class="{% if current_step >= 3 %}is-active{% endif %}">
+            <span>3</span>
+            <div><strong>How it works</strong><small>Learn how to find photos</small></div>
+          </li>
+        </ol>
+
+        <div class="client-setup__actions">
+          <a class="btn client-setup__primary" href="{{ continue_url }}" aria-label="Continue client setup">
+            <span class="btn-wrap"><span class="text-first">Continue Setup</span></span>
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </a>
+          <a class="client-setup__secondary" href="{{ review_url }}">Review from the beginning</a>
+        </div>
+      </section>
+
+      <aside class="client-setup__next" aria-labelledby="client-next-title">
+        <span class="client-setup__section-label">What happens next</span>
+        <h2 id="client-next-title">Three steps. Then you’re ready.</h2>
+        <p>Your setup helps LumisPixel personalize your photo-discovery experience while keeping access secure.</p>
+        <ul>
+          <li><i class="bi bi-shield-check" aria-hidden="true"></i><span><strong>Private by design</strong><small>Your account controls access to saved photos.</small></span></li>
+          <li><i class="bi bi-lightning-charge" aria-hidden="true"></i><span><strong>Quick to complete</strong><small>Pick up exactly where you left off.</small></span></li>
+          <li><i class="bi bi-stars" aria-hidden="true"></i><span><strong>Built for discovery</strong><small>Use selfies or event codes to find your photos.</small></span></li>
+        </ul>
+      </aside>
+    </div>
+
+    <section class="client-setup__features" aria-labelledby="client-features-title">
+      <div class="client-setup__features-heading">
+        <div>
+          <span class="client-setup__section-label">Waiting for you</span>
+          <h2 id="client-features-title">Your client tools</h2>
+        </div>
+        <p>These tools unlock as soon as setup is complete.</p>
+      </div>
+
+      <div class="client-setup__feature-grid">
+        <article><span><i class="bi bi-search-heart" aria-hidden="true"></i></span><div><h3>Find My Photos</h3><p>Discover images connected to you.</p></div><small>Locked</small></article>
+        <article><span><i class="bi bi-person-bounding-box" aria-hidden="true"></i></span><div><h3>Upload Selfie</h3><p>Use a selfie for secure photo matching.</p></div><small>Locked</small></article>
+        <article><span><i class="bi bi-qr-code-scan" aria-hidden="true"></i></span><div><h3>Enter Event Code</h3><p>Open photos from a shared event.</p></div><small>Locked</small></article>
+        <article><span><i class="bi bi-heart" aria-hidden="true"></i></span><div><h3>Saved Photos</h3><p>Keep favorite moments together.</p></div><small>Locked</small></article>
+        <article><span><i class="bi bi-bag-check" aria-hidden="true"></i></span><div><h3>Purchases</h3><p>Review downloads and photo orders.</p></div><small>Locked</small></article>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}

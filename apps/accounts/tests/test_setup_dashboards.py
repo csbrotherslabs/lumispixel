@@ -22,7 +22,11 @@ class SetupDashboardTests(TestCase):
         ClientProfile.objects.create(user=client_user, onboarding_completed=False)
         self.client.force_login(client_user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
-        self.assertContains(self.client.get(reverse("clients:setup-dashboard")), "Continue Setup")
+        setup_response = self.client.get(reverse("clients:setup-dashboard"))
+        self.assertContains(setup_response, "Continue Setup")
+        self.assertContains(setup_response, 'class="client-setup__dashboard"')
+        self.assertContains(setup_response, 'role="progressbar"')
+        self.assertContains(setup_response, get_client_onboarding_resume_url(client_user.client_profile))
 
         client_user.client_profile.onboarding_completed = True
         client_user.client_profile.save(update_fields=["onboarding_completed", "updated_at"])
