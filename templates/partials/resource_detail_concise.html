@@ -1,4 +1,12 @@
-{% load core_extras %}<div class="rd rd--{{ theme }}">
+{% load core_extras %}
+<style>
+  .rd-grid article:hover { background: var(--ground) !important; color: #fff !important; }
+  .rd-grid article:hover h3,
+  .rd-grid article:hover small,
+  .rd-grid article:hover > span { color: #fff !important; }
+  .rd-grid article:hover i { color: var(--accent) !important; }
+</style>
+<div class="rd rd--{{ theme }}">
 <section class="rd-hero" aria-labelledby="rd-title"><div class="rd-mark" aria-hidden="true"><i></i><i></i><b>{{ motif }}</b></div><div class="container"><a class="rd-back" href="{% url 'core:resources' %}"><i class="bi bi-arrow-left"></i> All Resources</a><span class="rd-kicker">{{ eyebrow }}</span><h1 id="rd-title">{{ headline }}<br><em>{{ headline_em }}</em></h1><p>{{ intro }}</p>{% if search_label %}<form class="rd-search" action="{% url 'core:resources_help_center' %}" method="get" role="search"><i class="bi bi-search"></i><input name="q" aria-label="{{ search_label }}" placeholder="{{ search_label }}"><button type="submit">Search</button></form>{% endif %}<div class="rd-signals">{% for item in signals|split:'|' %}<span>{{ item }}</span>{% endfor %}</div></div></section>
 <section class="rd-feature" aria-labelledby="rd-feature-title"><div class="container"><header><span class="rd-kicker">Start here</span><h2 id="rd-feature-title">{{ feature_title }}<br><em>{{ feature_em }}</em></h2><p>{{ feature_copy }}</p></header><div class="rd-highlights">{% for item in highlights|split:'|' %}<article><span>{{ forloop.counter|stringformat:'02d' }}</span><h3>{{ item }}</h3></article>{% endfor %}</div></div></section>
 <section class="rd-library" aria-labelledby="rd-library-title"><div class="container"><header><span class="rd-kicker">Curated library</span><h2 id="rd-library-title">{{ library_title }}</h2><p>{{ library_copy }}</p></header><div class="rd-grid">{% for item in items|split:'|' %}<article><span>{{ forloop.counter|stringformat:'02d' }}</span><i class="bi {{ icon }}"></i><h3>{{ item }}</h3><small>{{ card_label }}</small></article>{% endfor %}</div></div></section>
