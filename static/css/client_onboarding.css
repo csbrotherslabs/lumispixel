@@ -418,6 +418,11 @@
   background: #fbf9f7;
 }
 
+.client-profile-form__preference + .client-profile-form__error + .client-profile-form__photo,
+.client-profile-form__preference + .client-profile-form__photo {
+  margin-top: 14px;
+}
+
 .client-profile-form__photo-icon {
   display: grid;
   width: 54px;
@@ -449,6 +454,8 @@
 .client-profile-form__photo-copy label span,
 .client-profile-form__field label span { margin-left: 5px; color: #938a84; font-size: .55rem; font-weight: 700; text-transform: uppercase; }
 .client-profile-form__photo-copy p { margin: 4px 0 10px; color: #7c736d; font-size: .61rem; line-height: 1.45; }
+.client-profile-form__photo-control { color: #807771; font-size: .5rem; line-height: 1.7; }
+.client-profile-form__photo-control a { color: var(--co-red); font-size: .58rem; }
 .client-profile-form__photo-copy input[type="file"] { width: 100%; max-width: 390px; padding: 6px; border: 1px solid #ddd4ce; border-radius: 9px; background: #fff; color: #6d645e; font-size: .61rem; }
 .client-profile-form__photo-copy input[type="file"]::file-selector-button { margin-right: 10px; padding: 7px 10px; border: 0; border-radius: 7px; background: #282321; color: #fff; font-size: .58rem; cursor: pointer; }
 .client-profile-form__photo-copy > small { display: block; margin-top: 7px; color: #807771; font-size: .57rem; overflow-wrap: anywhere; }
@@ -516,7 +523,7 @@
 
 .client-profile-form__preference {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 11px;
   margin-top: 19px;
   padding: 13px 14px;
@@ -526,7 +533,7 @@
   cursor: pointer;
 }
 
-.client-profile-form__preference input { width: 16px; height: 16px; flex: 0 0 16px; margin: 2px 0 0; accent-color: var(--co-red); }
+.client-profile-form__preference input { width: 16px; height: 16px; flex: 0 0 16px; margin: 0; accent-color: var(--co-red); }
 .client-profile-form__preference strong,
 .client-profile-form__preference small { display: block; }
 .client-profile-form__preference strong { color: #46403b; font-size: .64rem; }
