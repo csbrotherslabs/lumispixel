@@ -25,12 +25,18 @@
     </div>
 
     <form class="notification-inbox__filters" method="get" aria-label="Filter notifications">
-      <div class="notification-inbox__status-tabs">
-        <a href="?status=all{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "all" %} aria-current="page"{% endif %}>All</a>
-        <a href="?status=unread{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "unread" %} aria-current="page"{% endif %}>Unread <span>{{ unread_count }}</span></a>
-        <a href="?status=read{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "read" %} aria-current="page"{% endif %}>Read</a>
+      <div class="notification-inbox__filter-copy">
+        <span><i class="bi bi-funnel" aria-hidden="true"></i></span>
+        <div><strong>Filter activity</strong><small>Narrow your notification feed</small></div>
       </div>
-      <label><span>Category</span><select name="category" onchange="this.form.submit()"><option value="all">All categories</option>{% for value, label in categories %}<option value="{{ value }}"{% if category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <div class="notification-inbox__filter-controls">
+        <div class="notification-inbox__status-tabs" aria-label="Notification status">
+          <a href="?status=all{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "all" %} aria-current="page"{% endif %}>All</a>
+          <a href="?status=unread{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "unread" %} aria-current="page"{% endif %}>Unread <span>{{ unread_count }}</span></a>
+          <a href="?status=read{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "read" %} aria-current="page"{% endif %}>Read</a>
+        </div>
+        <label class="notification-inbox__category"><span class="visually-hidden">Category</span><i class="bi bi-grid" aria-hidden="true"></i><select name="category" aria-label="Notification category" onchange="this.form.submit()"><option value="all">All categories</option>{% for value, label in categories %}<option value="{{ value }}"{% if category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select><i class="bi bi-chevron-down" aria-hidden="true"></i></label>
+      </div>
       <input type="hidden" name="status" value="{{ status }}">
       <noscript><button type="submit">Apply</button></noscript>
     </form>
