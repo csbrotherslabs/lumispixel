@@ -63,7 +63,8 @@
       <div><span class="client-hub__utility-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><p><strong>Ready when your photos are.</strong><small>Use a selfie or event code to begin.</small></p></div>
       <div class="client-hub__utility-actions">
         <a href="{{ saved_photos_url }}"><i class="bi bi-heart" aria-hidden="true"></i> Saved photos</a>
-        <span aria-disabled="true" title="Profile management is coming soon"><i class="bi bi-person-gear" aria-hidden="true"></i> Profile settings <small>Coming soon</small></span>
+        <a href="{% url 'notifications:index' %}"><i class="bi bi-bell" aria-hidden="true"></i> Notifications</a>
+        <a href="{% url 'clients:account-settings' %}"><i class="bi bi-person-gear" aria-hidden="true"></i> Account settings</a>
       </div>
     </nav>
   </div>
