@@ -13,13 +13,23 @@
         {% if request.user.is_authenticated %}
             {% unread_notifications as mobile_unread_count %}
             <div class="mobile-user-summary">
-                {% if request.user.is_client and request.user.client_profile.profile_photo %}<img src="{{ request.user.client_profile.profile_photo.url }}" class="mobile-avatar" alt="">{% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}<img src="{{ request.user.photographer_profile.profile_photo.url }}" class="mobile-avatar" alt="">{% else %}<span class="mobile-avatar mobile-avatar--fallback" aria-hidden="true">{{ request.user.first_name|first|default:"U"|upper }}</span>{% endif %}
+                <img src="{% if request.user.is_client and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="mobile-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo">
                 <div>
                     <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
                     <span>{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span>
                 </div>
             </div>
-            <a class="mobile-dashboard-link" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
+            <ul class="mobile-account-links" aria-label="Account navigation">
+                <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-grid" aria-hidden="true"></i><span>{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</span></a></li>
+                <li><a href="{% url 'notifications:index' %}"><i class="bi bi-bell" aria-hidden="true"></i><span>Notifications</span>{% if mobile_unread_count %}<b class="mobile-account-links__count">{{ mobile_unread_count }}</b>{% endif %}</a></li>
+                <li><a href="{% if request.user.is_client %}{% url 'clients:account-settings' %}{% else %}{% url 'photographer_workspace:settings' %}{% endif %}"><i class="bi bi-sliders" aria-hidden="true"></i><span>Account Settings</span></a></li>
+                <li>
+                    <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-logout-button"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Sign Out</span></button>
+                    </form>
+                </li>
+            </ul>
         {% else %}
             <p>Manage, find, and deliver photos with LumisPixel.</p>
             <div class="mobile-auth-actions">
@@ -29,21 +39,8 @@
         {% endif %}
     </div>
 
-    <h6>Menu</h6>
-    <div class="mr_navmenu"></div>
-
-    {% if request.user.is_authenticated %}
-        <h6>Account</h6>
-        <ul class="mobile-account-links">
-            <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
-            <li><a href="{% url 'notifications:index' %}">Notifications{% if mobile_unread_count %}<span class="mobile-account-links__count">{{ mobile_unread_count }}</span>{% endif %}</a></li>
-            <li><a href="{% if request.user.is_client %}{% url 'clients:account-settings' %}{% else %}{% url 'photographer_workspace:settings' %}{% endif %}">Account Settings</a></li>
-            <li>
-                <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="nav-logout-button">Sign Out</button>
-                </form>
-            </li>
-        </ul>
-    {% endif %}
+    <div class="mobile-main-panel">
+        <h6>Explore</h6>
+        <div class="mr_navmenu"></div>
+    </div>
 </div>

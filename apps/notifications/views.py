@@ -45,6 +45,7 @@ def index(request):
         "categories": Notification.Category.choices,
         "total_count": counts["total"],
         "unread_count": counts["unread"],
+        "read_count": counts["total"] - counts["unread"],
         "return_query": request.GET.urlencode(),
     }
     return render(request, "notifications/index.html", context)

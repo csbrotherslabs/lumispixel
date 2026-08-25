@@ -36,13 +36,7 @@
                             </a>
                             <div class="nav-user-menu">
                                 <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
-                                    {% if request.user.is_client and request.user.client_profile.profile_photo %}
-                                    <img src="{{ request.user.client_profile.profile_photo.url }}" class="nav-avatar" alt="">
-                                    {% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}
-                                    <img src="{{ request.user.photographer_profile.profile_photo.url }}" class="nav-avatar" alt="">
-                                    {% else %}
-                                    <span class="nav-avatar nav-avatar--fallback" aria-hidden="true">{{ request.user.first_name|first|default:"U"|upper }}</span>
-                                    {% endif %}
+                                    <img src="{% if request.user.is_client and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="nav-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo">
                                     <span class="nav-user-copy">
                                         <span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span>
                                     </span>

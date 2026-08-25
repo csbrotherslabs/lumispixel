@@ -20,3 +20,9 @@
 .mobile-avatar--fallback{display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);background:#302a27;color:#fff;font-size:14px;font-weight:800}.mobile-account-links a{display:flex;align-items:center;justify-content:space-between}
 .nav-workspace-link:focus-visible,.nav-notification-link:focus-visible{outline:2px solid var(--color-one);outline-offset:3px}
 @media(min-width:1400px) and (max-width:1599px){.header .mainnav ul.main-menu>li+li{margin-left:17px}.header .mainnav ul.main-menu>li>a{font-size:10px;letter-spacing:.035em}.nav-account{gap:6px;margin-right:10px}.nav-workspace-link{padding:0 10px}.nav-user-name{max-width:76px}}
+
+/* Mobile navigation panels */
+.mr_menu ul.main-menu>li:nth-child(7)>a:before{content:'\F4D7'}
+.mobile-account-panel,.mobile-main-panel{margin:18px 0;padding:16px;border:1px solid rgba(var(--color-white-rgb),.12);border-radius:14px;background:rgba(var(--color-white-rgb),.035)}
+.mobile-main-panel{padding:8px 16px 4px}.mobile-main-panel h6{margin:8px 0 4px}.mobile-main-panel .mr_navmenu,.mobile-main-panel ul.main-menu{width:100%}.mobile-main-panel ul.main-menu{border-top:0}
+.mobile-account-links{margin:15px 0 0;padding:5px 0 0;border-top:1px solid rgba(var(--color-white-rgb),.09);list-style:none}.mobile-account-links a,.mobile-account-links button{display:flex;align-items:center;gap:11px;min-height:42px;padding:10px 2px;border-bottom:1px solid rgba(var(--color-white-rgb),.07);color:rgba(var(--color-white-rgb),.72);font-size:11px;letter-spacing:1px;text-transform:uppercase}.mobile-account-links li:last-child a,.mobile-account-links li:last-child button{border-bottom:0}.mobile-account-links i{width:18px;color:var(--color-one);font-size:14px}.mobile-account-links span{flex:1;text-align:left}
