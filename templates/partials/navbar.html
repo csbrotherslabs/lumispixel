@@ -20,19 +20,7 @@
                             <li class="menu-item{% if request.path|slice:':14' == '/business-hub/' %} active current{% endif %}"><a href="{% url 'core:business_hub' %}">Business Hub</a></li>
                             <li class="menu-item{% if request.resolver_match.view_name == 'core:pricing' %} active current{% endif %}"><a href="{% url 'core:pricing' %}"{% if request.resolver_match.view_name == 'core:pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
                             <li class="menu-item{% if request.path|slice:':11' == '/resources/' %} active current{% endif %}"><a href="{% url 'core:resources' %}">Resources</a></li>
-                            <li class="menu-item menu-item-has-children{% if request.path|slice:':9' == '/company/' %} active current{% endif %}"><a href="{% url 'core:company' %}" aria-haspopup="true">Company</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:about' %}">About</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:our_story' %}">Our Story</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:careers' %}">Careers</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:partners' %}">Partners</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:contact' %}">Contact</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:privacy_policy' %}">Privacy Policy</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:terms_of_service' %}">Terms of Service</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:cookie_policy' %}">Cookie Policy</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:accessibility' %}">Accessibility</a></li>
-                                </ul>
-                            </li>
+                            <li class="menu-item{% if request.path|slice:':9' == '/company/' %} active current{% endif %}"><a href="{% url 'core:company' %}">Company</a></li>
                         </ul>
                     </nav>
                 </div>
