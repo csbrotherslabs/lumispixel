@@ -40,8 +40,12 @@
                                 </button>
                                 <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent>
                                     <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
+                                    {% if request.user.is_client %}
+                                    <li><a href="{% url 'clients:account-settings' %}">Account Settings</a></li>
+                                    {% else %}
                                     <li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>
                                     <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
+                                    {% endif %}
                                     <li><a href="{% url 'notifications:index' %}">Notifications</a></li>
                                     <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
                                     <li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li>
