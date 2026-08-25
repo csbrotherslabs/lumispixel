@@ -2,28 +2,20 @@
 {% block title %}Client Setup Dashboard | LumisPixel{% endblock %}
 {% block body_class %}page-inner client-setup-page{% endblock %}
 {% block content %}
-<main class="client-setup" aria-labelledby="client-setup-title">
+<main class="client-setup" aria-labelledby="client-progress-title">
   <div class="container">
-    <header class="client-setup__hero">
-      <div class="client-setup__hero-copy">
-        <span class="client-setup__eyebrow">Client account setup</span>
-        <h1 id="client-setup-title">Your LumisPixel experience starts here.</h1>
-        <p>Complete a few quick details so you can securely find, save, and revisit the photographs that matter to you.</p>
-      </div>
-      <div class="client-setup__status" aria-label="Setup status">
-        <span class="client-setup__status-dot" aria-hidden="true"></span>
-        Setup in progress
-      </div>
-    </header>
-
     <div class="client-setup__dashboard">
       <section class="client-setup__progress-card" aria-labelledby="client-progress-title">
         <div class="client-setup__card-heading">
           <div>
-            <span class="client-setup__section-label">Your progress</span>
-            <h2 id="client-progress-title">Finish setting up your account</h2>
+            <span class="client-setup__section-label">Client account setup</span>
+            <h1 id="client-progress-title">Finish setting up your account</h1>
+            <p>Complete a few quick details so you can securely find, save, and revisit the photographs that matter to you.</p>
           </div>
-          <strong>{{ progress_percent }}%</strong>
+          <div class="client-setup__progress-summary">
+            <span class="client-setup__status"><i class="client-setup__status-dot" aria-hidden="true"></i>In progress</span>
+            <strong>{{ progress_percent }}%</strong>
+          </div>
         </div>
 
         <div class="client-setup__progress-bar" role="progressbar" aria-label="Client setup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}">
