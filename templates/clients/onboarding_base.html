@@ -1,20 +1,41 @@
 {% extends "base.html" %}
-{% block body_class %}page-inner client-onboarding-page{% endblock %}
+{% load static %}
+{% block body_class %}page-inner client-onboarding-v2-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/client_onboarding.css' %}">{% endblock %}
 {% block content %}
-<main class="client-onboarding" aria-labelledby="{{ title_id }}">
+<main class="client-onboarding-v2" aria-labelledby="{{ title_id }}">
   <div class="container">
-    <div class="client-onboarding__shell">
-      <div class="client-onboarding__panel">
-        <nav class="client-onboarding__progress" aria-label="Onboarding progress">
-          <div class="client-onboarding__progress-meta"><span>Client setup</span><strong>Step {{ current_step }} of 3</strong></div>
-          <ol class="client-onboarding__steps">
-            <li class="{% if current_step >= 1 %}is-active{% endif %}{% if current_step > 1 %} is-complete{% endif %}"><span>{% if current_step > 1 %}<i class="bi bi-check2"></i>{% else %}1{% endif %}</span><small>Welcome</small></li>
-            <li class="{% if current_step >= 2 %}is-active{% endif %}{% if current_step > 2 %} is-complete{% endif %}"><span>{% if current_step > 2 %}<i class="bi bi-check2"></i>{% else %}2{% endif %}</span><small>Profile</small></li>
-            <li class="{% if current_step >= 3 %}is-active{% endif %}"><span>3</span><small>Find photos</small></li>
-          </ol>
-        </nav>
-        <div class="client-onboarding__content">{% block onboarding_content %}{% endblock %}</div>
-      </div>
+    <div class="client-onboarding-v2__shell">
+      <aside class="client-onboarding-v2__rail" aria-label="Client setup progress">
+        <div class="client-onboarding-v2__rail-top">
+          <span class="client-onboarding-v2__brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div><strong>Client setup</strong><small>Step {{ current_step }} of 3</small></div>
+        </div>
+
+        <ol class="client-onboarding-v2__steps">
+          <li class="{% if current_step >= 1 %}is-active{% endif %}{% if current_step > 1 %} is-complete{% endif %}">
+            <span>{% if current_step > 1 %}<i class="bi bi-check2" aria-hidden="true"></i>{% else %}01{% endif %}</span>
+            <div><strong>Welcome</strong><small>See what’s waiting</small></div>
+          </li>
+          <li class="{% if current_step >= 2 %}is-active{% endif %}{% if current_step > 2 %} is-complete{% endif %}">
+            <span>{% if current_step > 2 %}<i class="bi bi-check2" aria-hidden="true"></i>{% else %}02{% endif %}</span>
+            <div><strong>Your profile</strong><small>Personalize your account</small></div>
+          </li>
+          <li class="{% if current_step >= 3 %}is-active{% endif %}">
+            <span>03</span>
+            <div><strong>Photo discovery</strong><small>Learn the experience</small></div>
+          </li>
+        </ol>
+
+        <div class="client-onboarding-v2__rail-note">
+          <i class="bi bi-shield-check" aria-hidden="true"></i>
+          <p><strong>Secure by default</strong><span>Your setup stays connected to your private client account.</span></p>
+        </div>
+      </aside>
+
+      <section class="client-onboarding-v2__workspace">
+        {% block onboarding_content %}{% endblock %}
+      </section>
     </div>
   </div>
 </main>
