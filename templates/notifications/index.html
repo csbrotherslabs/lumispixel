@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Notifications | LumisPixel{% endblock %}
+{% block body_class %}page-inner notification-inbox-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/notifications.css' %}">{% endblock %}
+{% block content %}
+<section class="notification-inbox" aria-labelledby="notification-title">
+  <div class="container notification-inbox__container">
+    <header class="notification-inbox__header">
+      <div><span>Client inbox</span><h1 id="notification-title">Notifications</h1><p>Gallery updates, downloads, messages, and account alerts—organized in one place.</p></div>
+      <a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to dashboard</a>
+    </header>
+
+    <div class="notification-inbox__summary" aria-label="Notification summary">
+      <div><span>Unread</span><strong>{{ unread_count }}</strong></div>
+      <div><span>Total</span><strong>{{ total_count }}</strong></div>
+      {% if unread_count %}
+      <form method="post" action="{% url 'notifications:mark-all-read' %}">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit"><i class="bi bi-check2-all" aria-hidden="true"></i> Mark all as read</button></form>
+      {% endif %}
+    </div>
+
+    <form class="notification-inbox__filters" method="get" aria-label="Filter notifications">
+      <div class="notification-inbox__status-tabs">
+        <a href="?status=all{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "all" %} aria-current="page"{% endif %}>All</a>
+        <a href="?status=unread{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "unread" %} aria-current="page"{% endif %}>Unread <span>{{ unread_count }}</span></a>
+        <a href="?status=read{% if category != 'all' %}&category={{ category }}{% endif %}"{% if status == "read" %} aria-current="page"{% endif %}>Read</a>
+      </div>
+      <label><span>Category</span><select name="category" onchange="this.form.submit()"><option value="all">All categories</option>{% for value, label in categories %}<option value="{{ value }}"{% if category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <input type="hidden" name="status" value="{{ status }}">
+      <noscript><button type="submit">Apply</button></noscript>
+    </form>
+
+    <div class="notification-inbox__list" aria-live="polite">
+      {% for notification in page_obj %}
+      <article class="notification-card{% if not notification.is_read %} notification-card--unread{% endif %}">
+        <span class="notification-card__icon notification-card__icon--{{ notification.category }}" aria-hidden="true">
+          {% if notification.category == "gallery" %}<i class="bi bi-images"></i>{% elif notification.category == "download" %}<i class="bi bi-cloud-arrow-down"></i>{% elif notification.category == "payment" %}<i class="bi bi-receipt"></i>{% elif notification.category == "message" %}<i class="bi bi-chat-left-text"></i>{% elif notification.category == "security" %}<i class="bi bi-shield-lock"></i>{% else %}<i class="bi bi-stars"></i>{% endif %}
+        </span>
+        <div class="notification-card__body">
+          <div class="notification-card__meta"><span>{{ notification.get_category_display }}</span><time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|timesince }} ago</time>{% if not notification.is_read %}<b>New</b>{% endif %}</div>
+          <h2>{{ notification.title }}</h2><p>{{ notification.message }}</p>
+          {% if notification.safe_action_url %}<a class="notification-card__action" href="{{ notification.safe_action_url }}">{{ notification.action_label|default:"View details" }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
+        </div>
+        <div class="notification-card__controls">
+          <form method="post" action="{% url 'notifications:mark-read' notification.pk %}">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}">{% if notification.is_read %}<input type="hidden" name="state" value="unread"><button type="submit" title="Mark as unread" aria-label="Mark {{ notification.title }} as unread"><i class="bi bi-envelope" aria-hidden="true"></i></button>{% else %}<button type="submit" title="Mark as read" aria-label="Mark {{ notification.title }} as read"><i class="bi bi-check2" aria-hidden="true"></i></button>{% endif %}</form>
+          <form method="post" action="{% url 'notifications:dismiss' notification.pk %}">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit" title="Dismiss notification" aria-label="Dismiss {{ notification.title }}"><i class="bi bi-x-lg" aria-hidden="true"></i></button></form>
+        </div>
+      </article>
+      {% empty %}
+      <div class="notification-inbox__empty"><span><i class="bi bi-bell-slash" aria-hidden="true"></i></span><h2>{% if status == "unread" %}You’re all caught up.{% elif total_count %}No notifications match these filters.{% else %}Your inbox is ready.{% endif %}</h2><p>{% if total_count %}Try another status or category to see more updates.{% else %}Gallery shares, download availability, messages, and account alerts will appear here.{% endif %}</p><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">Return to dashboard</a></div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}<nav class="notification-inbox__pagination" aria-label="Notification pages">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&status={{ status }}&category={{ category }}"><i class="bi bi-arrow-left"></i> Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&status={{ status }}&category={{ category }}">Next <i class="bi bi-arrow-right"></i></a>{% endif %}</nav>{% endif %}
+  </div>
+</section>
+{% endblock %}
