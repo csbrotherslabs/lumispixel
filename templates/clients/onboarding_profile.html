@@ -1,38 +1,80 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}Complete Profile | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="client-onboarding__intro">
-  <span class="client-onboarding__eyebrow">Personalize your account</span>
-  <h1 id="client-onboarding-profile-title">Tell us a little about you.</h1>
-  <p>These details help LumisPixel personalize your account and keep dates, locations, and photo access clear.</p>
+<div class="client-onboarding-v2__profile-heading">
+  <div>
+    <span class="client-onboarding-v2__kicker">Make it yours</span>
+    <h1 id="client-onboarding-profile-title">Build your client profile.</h1>
+    <p>Accurate details help LumisPixel personalize photo discovery, dates, and gallery access.</p>
+  </div>
+  <span class="client-onboarding-v2__required-note"><b>*</b> Required fields</span>
 </div>
 
-<form class="client-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
+<form class="client-profile-form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
-  {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-  <div class="client-onboarding__form-grid">
-    {% for field in form %}
-      <div class="client-onboarding__field{% if field.name == 'marketing_emails' %} client-onboarding__field--full client-onboarding__field--check{% endif %}">
-        {% if field.name == 'marketing_emails' %}
-          {{ field }}
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {% else %}
-          <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
-          {{ field }}
-        {% endif %}
-        {% if field.help_text %}<div class="client-onboarding__help">{{ field.help_text }}</div>{% endif %}
-        {% if field.errors %}<div class="client-onboarding__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors|striptags }}</div>{% endif %}
-      </div>
-    {% endfor %}
+  {% if form.non_field_errors %}<div class="client-profile-form__alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.non_field_errors|striptags }}</div>{% endif %}
+
+  <section class="client-profile-form__photo" aria-labelledby="profile-photo-label">
+    <div class="client-profile-form__photo-icon" aria-hidden="true"><i class="bi bi-person"></i></div>
+    <div class="client-profile-form__photo-copy">
+      <label id="profile-photo-label" for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label>
+      <p>Add a clear photo so your client account feels personal and recognizable.</p>
+      {{ form.profile_photo }}
+      {% if form.profile_photo.errors %}<div class="client-profile-form__error" role="alert">{{ form.profile_photo.errors|striptags }}</div>{% endif %}
+      {% if profile.profile_photo %}<small>Current: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></small>{% endif %}
+    </div>
+  </section>
+
+  <div class="client-profile-form__section-heading">
+    <span>01</span><div><h2>Your identity</h2><p>How your name appears across your account.</p></div>
+  </div>
+  <div class="client-profile-form__grid">
+    <div class="client-profile-form__field">
+      <label for="{{ form.first_name.id_for_label }}">First name <b>*</b></label>{{ form.first_name }}
+      {% if form.first_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.first_name.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.last_name.id_for_label }}">Last name <b>*</b></label>{{ form.last_name }}
+      {% if form.last_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.last_name.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field client-profile-form__field--full">
+      <label for="{{ form.display_name.id_for_label }}">Display name <span>Optional</span></label>{{ form.display_name }}
+      <small>The name photographers and galleries may show for you.</small>
+      {% if form.display_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.display_name.errors|striptags }}</div>{% endif %}
+    </div>
   </div>
 
-  {% if profile.profile_photo %}
-    <p class="client-onboarding__current-photo"><i class="bi bi-image" aria-hidden="true"></i> Current photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>
-  {% endif %}
+  <div class="client-profile-form__section-heading">
+    <span>02</span><div><h2>Location & time</h2><p>Used to keep events and gallery activity relevant.</p></div>
+  </div>
+  <div class="client-profile-form__grid client-profile-form__grid--location">
+    <div class="client-profile-form__field">
+      <label for="{{ form.country.id_for_label }}">Country <b>*</b></label>{{ form.country }}
+      {% if form.country.errors %}<div class="client-profile-form__error" role="alert">{{ form.country.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.state.id_for_label }}">State or region <b>*</b></label>{{ form.state }}
+      {% if form.state.errors %}<div class="client-profile-form__error" role="alert">{{ form.state.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.city.id_for_label }}">City <b>*</b></label>{{ form.city }}
+      {% if form.city.errors %}<div class="client-profile-form__error" role="alert">{{ form.city.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.timezone.id_for_label }}">Time zone <b>*</b></label>{{ form.timezone }}
+      {% if form.timezone.errors %}<div class="client-profile-form__error" role="alert">{{ form.timezone.errors|striptags }}</div>{% endif %}
+    </div>
+  </div>
 
-  <div class="client-onboarding__form-actions">
-    <a class="client-onboarding__back" href="{% url 'clients:onboarding-welcome' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
-    <button class="btn client-onboarding__primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+  <label class="client-profile-form__preference" for="{{ form.marketing_emails.id_for_label }}">
+    {{ form.marketing_emails }}
+    <span><strong>Product news and helpful tips</strong><small>Send me occasional LumisPixel updates and offers. You can change this anytime.</small></span>
+  </label>
+  {% if form.marketing_emails.errors %}<div class="client-profile-form__error" role="alert">{{ form.marketing_emails.errors|striptags }}</div>{% endif %}
+
+  <div class="client-onboarding-v2__footer-actions">
+    <a class="client-onboarding-v2__back" href="{% url 'clients:onboarding-welcome' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
+    <button class="client-onboarding-v2__primary" type="submit">Save & Continue <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
   </div>
 </form>
 {% endblock %}
