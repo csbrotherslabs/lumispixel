@@ -7,16 +7,21 @@
 <section class="notification-inbox" aria-labelledby="notification-title">
   <div class="container notification-inbox__container">
     <header class="notification-inbox__header">
-      <div><span>Client inbox</span><h1 id="notification-title">Notifications</h1><p>Gallery updates, downloads, messages, and account alerts—organized in one place.</p></div>
-      <a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to dashboard</a>
+      <div class="notification-inbox__heading">
+        <span><i class="bi bi-bell" aria-hidden="true"></i> Activity center</span>
+        <h1 id="notification-title">Notifications</h1>
+        <p>Stay current without losing focus. Gallery activity, downloads, messages, payments, and security updates are collected here.</p>
+      </div>
+      <div class="notification-inbox__header-actions">
+        {% if unread_count %}<form method="post" action="{% url 'notifications:mark-all-read' %}">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit"><i class="bi bi-check2-all" aria-hidden="true"></i> Mark all read</button></form>{% endif %}
+        <a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-grid" aria-hidden="true"></i> Dashboard</a>
+      </div>
     </header>
 
     <div class="notification-inbox__summary" aria-label="Notification summary">
-      <div><span>Unread</span><strong>{{ unread_count }}</strong></div>
-      <div><span>Total</span><strong>{{ total_count }}</strong></div>
-      {% if unread_count %}
-      <form method="post" action="{% url 'notifications:mark-all-read' %}">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit"><i class="bi bi-check2-all" aria-hidden="true"></i> Mark all as read</button></form>
-      {% endif %}
+      <div class="notification-stat notification-stat--primary"><span><i class="bi bi-envelope" aria-hidden="true"></i> Unread</span><strong>{{ unread_count }}</strong><small>Needs your attention</small></div>
+      <div class="notification-stat"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Read</span><strong>{{ read_count }}</strong><small>Already reviewed</small></div>
+      <div class="notification-stat"><span><i class="bi bi-collection" aria-hidden="true"></i> All activity</span><strong>{{ total_count }}</strong><small>Across your account</small></div>
     </div>
 
     <form class="notification-inbox__filters" method="get" aria-label="Filter notifications">
