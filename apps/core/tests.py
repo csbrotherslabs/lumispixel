@@ -179,7 +179,14 @@ class CompanyMarketingTests(TestCase):
                 response = self.client.get(reverse(route_name))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "css/company_detail_refine.")
-                self.assertContains(response, '<li class="menu-item menu-item-has-children active current"><a href="/company/"')
+                self.assertContains(response, '<li class="menu-item active current"><a href="/company/">Company</a></li>')
+                self.assertContains(response, 'class="company-back"')
+
+    def test_company_navigation_has_no_dropdown(self):
+        response = self.client.get(reverse("core:company"))
+
+        self.assertContains(response, '<li class="menu-item active current"><a href="/company/">Company</a></li>')
+        self.assertNotContains(response, 'href="/company/" aria-haspopup="true"')
 
     def test_about_page_does_not_publish_unverified_testimonials(self):
         response = self.client.get(reverse("core:about"))
