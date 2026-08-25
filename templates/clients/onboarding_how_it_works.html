@@ -1,24 +1,42 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}How You'll Find Photos | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="client-onboarding__intro client-onboarding__intro--centered">
-  <span class="client-onboarding__eyebrow">You’re almost ready</span>
-  <h1 id="client-onboarding-how-title">Four simple ways to enjoy your photos.</h1>
-  <p>Everything you need to discover, organize, and access images is connected to your LumisPixel account.</p>
+<div class="client-onboarding-v2__finish-heading">
+  <span class="client-onboarding-v2__kicker">Ready when you are</span>
+  <h1 id="client-onboarding-how-title">One account. Every photo journey.</h1>
+  <p>Choose the path your photographer shares with you. LumisPixel keeps the rest of the experience connected.</p>
 </div>
 
-<div class="client-onboarding__discovery-grid" aria-label="Photo discovery features">
-  <article><span>01</span><i class="bi bi-person-bounding-box" aria-hidden="true"></i><div><h2>Selfie Search</h2><p>Upload a selfie to find event photos that may include you.</p></div></article>
-  <article><span>02</span><i class="bi bi-upc-scan" aria-hidden="true"></i><div><h2>Event Code</h2><p>Use a photographer’s event code to open the right gallery.</p></div></article>
-  <article><span>03</span><i class="bi bi-heart" aria-hidden="true"></i><div><h2>Favorites</h2><p>Save the photos you love and revisit them whenever you want.</p></div></article>
-  <article><span>04</span><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i><div><h2>Purchase & Download</h2><p>Buy approved images and download them after checkout.</p></div></article>
+<div class="client-onboarding-v2__journeys" aria-label="Photo discovery features">
+  <article>
+    <span class="client-onboarding-v2__journey-number">01</span>
+    <i class="bi bi-person-bounding-box" aria-hidden="true"></i>
+    <div><h2>Find with a selfie</h2><p>Use a clear selfie to discover event images that may include you.</p></div>
+    <small>AI-assisted</small>
+  </article>
+  <article>
+    <span class="client-onboarding-v2__journey-number">02</span>
+    <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+    <div><h2>Enter an event code</h2><p>Open the correct gallery using the code provided by your photographer.</p></div>
+    <small>Direct access</small>
+  </article>
+  <article>
+    <span class="client-onboarding-v2__journey-number">03</span>
+    <i class="bi bi-heart" aria-hidden="true"></i>
+    <div><h2>Keep your favorites</h2><p>Build a personal collection and return to the images you love.</p></div>
+    <small>Always organized</small>
+  </article>
+  <article>
+    <span class="client-onboarding-v2__journey-number">04</span>
+    <i class="bi bi-cloud-arrow-down" aria-hidden="true"></i>
+    <div><h2>Purchase and download</h2><p>Access approved purchases and downloads from your client account.</p></div>
+    <small>In one place</small>
+  </article>
 </div>
 
-<div class="client-onboarding__finish">
-  <a class="client-onboarding__back" href="{% url 'clients:onboarding-profile' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
-  <form method="post" action="{% url 'clients:onboarding-how-it-works' %}">
-    {% csrf_token %}
-    <button class="btn client-onboarding__primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
-  </form>
+<div class="client-onboarding-v2__ready-bar">
+  <div><i class="bi bi-check2-circle" aria-hidden="true"></i><span><strong>Your account is ready to go</strong><small>Finish setup to enter your LumisPixel client dashboard.</small></span></div>
+  <form method="post" action="{% url 'clients:onboarding-how-it-works' %}">{% csrf_token %}<button class="client-onboarding-v2__primary" type="submit">Finish Setup <i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
 </div>
+<a class="client-onboarding-v2__back client-onboarding-v2__back--below" href="{% url 'clients:onboarding-profile' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to profile</a>
 {% endblock %}
