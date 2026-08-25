@@ -1,12 +1,25 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}Welcome to LumisPixel | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="client-onboarding-welcome-title">Welcome to LumisPixel</h1>
-  <p class="wptb-item--description">LumisPixel helps you find photos from events using a selfie or an event code, then save favorites and purchase downloads when galleries are ready.</p>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-    <a class="btn lumis-auth-primary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
-    <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>
-  </div>
+<div class="client-onboarding__welcome">
+  <section class="client-onboarding__welcome-copy">
+    <span class="client-onboarding__eyebrow">Welcome to LumisPixel</span>
+    <h1 id="client-onboarding-welcome-title">Find the photos that belong to you.</h1>
+    <p>LumisPixel gives you a secure place to discover event photos, save favorites, and access purchases—all through one client account.</p>
+    <div class="client-onboarding__actions">
+      <a class="btn client-onboarding__primary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      <a class="client-onboarding__text-action" href="{% url 'clients:onboarding-skip' %}">Finish later</a>
+    </div>
+  </section>
+
+  <aside class="client-onboarding__welcome-preview" aria-label="What your client account includes">
+    <span class="client-onboarding__preview-label">Your client experience</span>
+    <ul>
+      <li><i class="bi bi-person-bounding-box" aria-hidden="true"></i><div><strong>Selfie-powered discovery</strong><small>Find event photos that may include you.</small></div></li>
+      <li><i class="bi bi-qr-code-scan" aria-hidden="true"></i><div><strong>Event code access</strong><small>Open the correct gallery in seconds.</small></div></li>
+      <li><i class="bi bi-heart" aria-hidden="true"></i><div><strong>Favorites in one place</strong><small>Keep and revisit the moments you love.</small></div></li>
+    </ul>
+    <p><i class="bi bi-shield-check" aria-hidden="true"></i> Your access stays connected to your secure account.</p>
+  </aside>
 </div>
 {% endblock %}
