@@ -55,7 +55,7 @@
         <article class="client-hub__activity-card"><span class="client-hub__activity-icon"><i class="bi bi-images" aria-hidden="true"></i></span><div><span>Recent galleries</span><strong>0</strong><p>Your opened galleries will appear here.</p></div></article>
         <article class="client-hub__activity-card" id="saved-photos"><span class="client-hub__activity-icon client-hub__activity-icon--saved"><i class="bi bi-heart" aria-hidden="true"></i></span><div><span>Saved photos</span><strong>0</strong><p>Favorite moments stay easy to revisit.</p></div></article>
         <article class="client-hub__activity-card"><span class="client-hub__activity-icon client-hub__activity-icon--download"><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i></span><div><span>Downloads</span><strong>0</strong><p>Completed downloads will be tracked here.</p></div></article>
-        <article class="client-hub__activity-card client-hub__activity-card--clear"><span class="client-hub__activity-icon client-hub__activity-icon--clear"><i class="bi bi-check2" aria-hidden="true"></i></span><div><span>Notifications</span><strong>All clear</strong><p>You are completely caught up.</p></div></article>
+        <article class="client-hub__activity-card client-hub__activity-card--clear"><span class="client-hub__activity-icon client-hub__activity-icon--clear"><i class="bi bi-bell" aria-hidden="true"></i></span><div><span>Notifications</span><strong>{% if unread_notification_count %}{{ unread_notification_count }} new{% else %}All clear{% endif %}</strong><p>{% if unread_notification_count %}You have unread updates waiting.{% else %}You are completely caught up.{% endif %}</p></div></article>
       </div>
     </section>
 

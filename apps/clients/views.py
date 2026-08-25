@@ -6,6 +6,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.accounts.models import ClientProfile
 from apps.accounts.onboarding import get_client_onboarding_resume_url
+from apps.notifications.models import Notification
 
 from .forms import ClientOnboardingProfileForm
 
@@ -128,7 +129,15 @@ def dashboard(request):
     if not profile.onboarding_completed:
         return redirect("clients:setup-dashboard")
     display_name = profile.display_name or user.first_name or user.display_name
-    context = {"client_profile": profile, "display_name": display_name, "find_photos_url": reverse("accounts:find-photos-placeholder"), "saved_photos_url": "#saved-photos"}
+    notifications = Notification.objects.filter(recipient=user)
+    context = {
+        "client_profile": profile,
+        "display_name": display_name,
+        "find_photos_url": reverse("accounts:find-photos-placeholder"),
+        "saved_photos_url": "#saved-photos",
+        "notification_count": notifications.count(),
+        "unread_notification_count": notifications.filter(is_read=False).count(),
+    }
     return render(request, "clients/dashboard.html", context)
 
 
