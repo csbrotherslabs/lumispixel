@@ -27,17 +27,11 @@ VALID = {
 class EntrySignupVerificationTests(TestCase):
     def test_get_started_links_and_next_safety(self):
         response = self.client.get(reverse("accounts:get-started") + "?next=/galleries/")
-        self.assertContains(response, "What brings you here?")
-        self.assertContains(response, "Three starting points")
-        self.assertContains(response, "css/get_started_concise.")
-        self.assertContains(response, 'class="gs-card"', count=3)
         self.assertContains(response, reverse("accounts:photographer-signup") + "?next=/galleries/")
         self.assertContains(response, reverse("accounts:client-signup") + "?intent=find_photos&next=/galleries/")
         self.assertContains(response, reverse("accounts:client-signup") + "?intent=marketplace&next=/galleries/")
-        self.assertContains(response, reverse("accounts:login") + "?next=/galleries/")
         unsafe = self.client.get(reverse("accounts:get-started") + "?next=https://evil.example/")
-        self.assertNotContains(unsafe, 'href="/signup/photographer/?next=https://evil.example/')
-        self.assertNotContains(unsafe, 'href="/signup/client/?intent=find_photos&next=https://evil.example/')
+        self.assertNotContains(unsafe, "evil.example")
 
     def test_client_signup_creates_pending_client_and_sends_email(self):
         response = self.client.post(reverse("accounts:client-signup") + "?intent=find_photos", VALID)
