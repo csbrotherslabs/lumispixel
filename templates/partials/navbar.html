@@ -1,4 +1,4 @@
-{% load static %}
+{% load static notification_tags %}
 <!-- Main Header -->
 <header class="header color-fixed {% if request.resolver_match.view_name == 'core:index' %}navbar--transparent{% else %}navbar--sticky{% endif %}">
     <div class="header-inner">
@@ -15,7 +15,7 @@
                     <nav class="mainnav" aria-label="Primary navigation">
                         <ul class="main-menu">
                             <li class="menu-item{% if request.resolver_match.view_name == 'core:index' %} active current{% endif %}"><a href="{% url 'core:index' %}"{% if request.resolver_match.view_name == 'core:index' %} aria-current="page"{% endif %}>Home</a></li>
-                            <li class="menu-item{% if request.resolver_match.view_name == 'core:products' or request.resolver_match.view_name == 'core:for_photographers' or request.resolver_match.namespace == 'galleries' or request.resolver_match.namespace == 'ai_engine' or request.resolver_match.namespace == 'photographers' or request.resolver_match.namespace == 'clients' or request.resolver_match.namespace == 'marketplace' %} active current{% endif %}"><a href="{% url 'core:products' %}">Products</a></li>
+                            <li class="menu-item{% if request.resolver_match.view_name == 'core:products' or request.resolver_match.view_name == 'core:for_photographers' or request.resolver_match.view_name == 'clients:for_clients' or request.resolver_match.view_name == 'galleries:client_galleries' or request.resolver_match.view_name == 'ai_engine:photo_search' or request.resolver_match.view_name == 'ai_engine:editing_culling' or request.resolver_match.view_name == 'photographers:websites' or request.resolver_match.view_name == 'marketplace:find_photographer' or request.resolver_match.view_name == 'marketplace:marketplace' %} active current{% endif %}"><a href="{% url 'core:products' %}">Products</a></li>
                             <li class="menu-item{% if request.path|slice:':11' == '/solutions/' %} active current{% endif %}"><a href="{% url 'core:solutions' %}">Solutions</a></li>
                             <li class="menu-item{% if request.path|slice:':14' == '/business-hub/' %} active current{% endif %}"><a href="{% url 'core:business_hub' %}">Business Hub</a></li>
                             <li class="menu-item{% if request.resolver_match.view_name == 'core:pricing' %} active current{% endif %}"><a href="{% url 'core:pricing' %}"{% if request.resolver_match.view_name == 'core:pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
@@ -28,17 +28,28 @@
                 <div class="header_right_part d-flex align-items-center">
                     <div class="nav-account d-none d-xxl-flex align-items-center">
                         {% if request.user.is_authenticated %}
-                            <a class="nav-start-free" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
+                            {% unread_notifications as nav_unread_count %}
+                            <a class="nav-workspace-link" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-grid" aria-hidden="true"></i>{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
+                            <a class="nav-notification-link" href="{% url 'notifications:index' %}" aria-label="Notifications{% if nav_unread_count %}, {{ nav_unread_count }} unread{% endif %}">
+                                <i class="bi bi-bell" aria-hidden="true"></i>
+                                {% if nav_unread_count %}<span>{% if nav_unread_count > 99 %}99+{% else %}{{ nav_unread_count }}{% endif %}</span>{% endif %}
+                            </a>
                             <div class="nav-user-menu">
                                 <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
-                                    <img src="{% static 'img/default-avatar.svg' %}" class="nav-avatar" alt="" aria-hidden="true">
+                                    {% if request.user.is_client and request.user.client_profile.profile_photo %}
+                                    <img src="{{ request.user.client_profile.profile_photo.url }}" class="nav-avatar" alt="">
+                                    {% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}
+                                    <img src="{{ request.user.photographer_profile.profile_photo.url }}" class="nav-avatar" alt="">
+                                    {% else %}
+                                    <span class="nav-avatar nav-avatar--fallback" aria-hidden="true">{{ request.user.first_name|first|default:"U"|upper }}</span>
+                                    {% endif %}
                                     <span class="nav-user-copy">
                                         <span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span>
-                                        <span class="nav-user-role">{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span>
                                     </span>
                                     <i class="bi bi-chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent>
+                                    <li class="nav-user-dropdown__identity"><strong>{% if request.user.first_name %}{{ request.user.first_name }} {{ request.user.last_name }}{% else %}{{ request.user.get_username }}{% endif %}</strong><span>{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span></li>
                                     <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
                                     {% if request.user.is_client %}
                                     <li><a href="{% url 'clients:account-settings' %}">Account Settings</a></li>
@@ -46,7 +57,7 @@
                                     <li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>
                                     <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
                                     {% endif %}
-                                    <li><a href="{% url 'notifications:index' %}">Notifications</a></li>
+                                    <li><a href="{% url 'notifications:index' %}">Notifications{% if nav_unread_count %}<span class="nav-user-dropdown__count">{{ nav_unread_count }}</span>{% endif %}</a></li>
                                     <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
                                     <li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li>
                                 </ul>
