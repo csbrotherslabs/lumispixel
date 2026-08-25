@@ -1,0 +1,301 @@
+/* Homepage presentation layer: compact, image-led, and mobile first. */
+.page-home #main-content { overflow-x: clip; }
+.page-home .container { max-width: 1240px; }
+.page-home .lumis-photo-match,
+.page-home .lumis-photographer-workflow,
+.page-home .lumis-audiences,
+.page-home .lumis-how-it-works,
+.page-home .lumis-ai-features,
+.page-home .lumis-photographer-marketplace,
+.page-home .lumis-pricing-section { padding-block: clamp(72px, 6vw, 96px); }
+
+.page-home .wptb-slider.style3 .wptb-slider--image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(7,7,8,.82), rgba(7,7,8,.58) 46%, rgba(7,7,8,.16));
+}
+.page-home .wptb-slider.style3 .wptb-heading { max-width: 720px; }
+.page-home .wptb-slider.style3 .wptb-item--title { font-size: clamp(48px, 5vw, 68px); }
+.page-home .wptb-hero-subheadline { max-width: 650px; font-size: 16px; }
+.page-home .lumis-photo-match__panel,
+.page-home .lumis-audience-card,
+.page-home .lumis-ai-product-panel,
+.page-home .lumis-marketplace-panel,
+.page-home .lumis-pricing-card {
+    border-color: rgba(24,24,24,.1);
+    box-shadow: 0 18px 50px rgba(20,18,16,.08);
+}
+.page-home .lumis-photographer-workflow .shadow-heading { opacity: .035; pointer-events: none; }
+.page-home .lumis-audience-card__image img,
+.page-home .lumis-feature-card .wptb-item--image img { background: #ddd8d2; }
+.page-home .lumis-how-it-works .wptb-item--image { overflow: hidden; border-radius: 24px; }
+.page-home .lumis-pricing-visual { min-height: 500px; }
+.page-home .lumis-final-cta { min-height: 520px; }
+
+@media screen and (max-width: 991px) {
+    .page-home .wptb-slider.style3 .wptb-slider--image::after {
+        background: linear-gradient(90deg, rgba(7,7,8,.84), rgba(7,7,8,.62) 68%, rgba(7,7,8,.34));
+    }
+    .page-home .lumis-photo-match__panel,
+    .page-home .lumis-ai-product-panel,
+    .page-home .lumis-marketplace-panel,
+    .page-home .lumis-pricing-visual { max-width: 680px; margin-inline: auto; }
+}
+
+@media screen and (max-width: 767px) {
+    .page-home .container,
+    .page-home .container-full { width: 100%; padding-inline: 20px; }
+    .page-home .lumis-photo-match,
+    .page-home .lumis-photographer-workflow,
+    .page-home .lumis-audiences,
+    .page-home .lumis-how-it-works,
+    .page-home .lumis-ai-features,
+    .page-home .lumis-photographer-marketplace,
+    .page-home .lumis-pricing-section { padding-block: 64px; }
+    .page-home .wptb-heading,
+    .page-home .lumis-ai-features__heading,
+    .page-home .lumis-photographer-marketplace__content,
+    .page-home .lumis-pricing-content { margin-bottom: 28px; }
+    .page-home .lumis-photographer-workflow .wptb-item--title,
+    .page-home .lumis-audiences .wptb-item--title,
+    .page-home .lumis-how-it-works .wptb-heading .wptb-item--title,
+    .page-home .lumis-ai-features__heading .wptb-item--title,
+    .page-home .lumis-photographer-marketplace__title,
+    .page-home .lumis-pricing-content__title,
+    .page-home .lumis-final-cta__title {
+        font-size: clamp(32px, 9vw, 40px);
+        line-height: 1.04;
+        letter-spacing: -.04em;
+    }
+    .page-home .wptb-item--description,
+    .page-home .lumis-photographer-marketplace__intro,
+    .page-home .lumis-pricing-content__intro,
+    .page-home .lumis-final-cta__copy { font-size: 15px; line-height: 1.55; }
+
+    /* Hero: one purposeful phone viewport rather than a tall poster. */
+    .page-home .wptb-slider.style3 .wptb-slider--item,
+    .page-home .wptb-slider.style3 .wptb-slider--inner { height: auto; min-height: 650px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner {
+        position: relative;
+        top: auto;
+        display: flex;
+        align-items: center;
+        padding: 104px 0 82px;
+        transform: none;
+    }
+    .page-home .wptb-slider.style3 .wptb-slider--image::after {
+        background: linear-gradient(180deg, rgba(7,7,8,.62), rgba(7,7,8,.8) 58%, rgba(7,7,8,.92));
+    }
+    .page-home .wptb-slider.style3 .wptb-heading { margin: 0; }
+    .page-home .wptb-slider.style3 .wptb-heading .wptb-item--title {
+        max-width: 330px;
+        font-size: clamp(38px, 11vw, 46px);
+        line-height: 1;
+    }
+    .page-home .wptb-slider.style3 .wptb-hero-subheadline {
+        max-width: 340px;
+        margin-top: 16px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .page-home .wptb-slider.style3 .wptb-hero-feature-pills {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 20px;
+    }
+    .page-home .wptb-slider.style3 .wptb-hero-feature-pills span {
+        min-height: 34px;
+        justify-content: center;
+        padding: 7px 9px;
+        border-color: rgba(255,255,255,.2);
+        background: rgba(255,255,255,.08);
+        font-size: 10px;
+        text-align: center;
+        backdrop-filter: blur(8px);
+    }
+    .page-home .wptb-slider.style3 .wptb-item--button {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 22px;
+    }
+    .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-height: 48px; }
+    .page-home .wptb-slider.style3 .wptb-hero-text-link {
+        min-height: 42px;
+        margin-top: 8px;
+        justify-content: flex-start;
+    }
+    .page-home .wptb-slider.style3 .wptb-item-layer,
+    .page-home .wptb-slider.style3 .wptb-bottom-pane { display: none; }
+
+    /* Photo search preview. */
+    .page-home .lumis-photo-match .row { gap: 30px !important; }
+    .page-home .lumis-photo-match__steps { gap: 9px; }
+    .page-home .lumis-photo-match__steps li {
+        padding: 13px;
+        border: 1px solid rgba(24,24,24,.08);
+        border-radius: 14px;
+        background: #fff;
+    }
+    .page-home .lumis-photo-match__panel { padding: 16px; border-radius: 20px; }
+
+    /* Swipeable product cards. */
+    .page-home .lumis-photographer-workflow { padding-bottom: 58px; }
+    .page-home .lumis-photographer-workflow .wptb-heading,
+    .page-home .lumis-photographer-workflow .wptb-item--inner.text-center {
+        padding-inline: 0;
+        text-align: left !important;
+    }
+    .page-home .lumis-photographer-workflow__carousel { padding-bottom: 26px; }
+    .page-home .lumis-feature-card .wptb-item--image { min-height: 0; aspect-ratio: 4 / 3; }
+    .page-home .lumis-feature-card .wptb-item--image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .page-home .lumis-feature-card .wptb-item--holder { padding: 20px; }
+    .page-home .lumis-photographer-workflow .shadow-heading,
+    .page-home .lumis-photographer-workflow .wptb-swiper-navigation { display: none; }
+
+    /* Audience cards use consistent image and body geometry. */
+    .page-home .lumis-audiences.pt-0 { padding-top: 64px !important; }
+    .page-home .lumis-audiences .wptb-item--inner,
+    .page-home .lumis-audiences .wptb-heading { text-align: left !important; }
+    .page-home .lumis-audiences__grid { --bs-gutter-y: 16px; }
+    .page-home .lumis-audience-card {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        min-height: 178px;
+        overflow: hidden;
+        border-radius: 20px;
+    }
+    .page-home .lumis-audience-card__image { height: 100%; min-height: 178px; }
+    .page-home .lumis-audience-card__image img { width: 100%; height: 100%; object-fit: cover; }
+    .page-home .lumis-audience-card__body { padding: 18px 16px; }
+    .page-home .lumis-audience-card__body h2 { margin: 5px 0 7px; font-size: 20px; }
+    .page-home .lumis-audience-card__body p { margin-bottom: 10px; font-size: 13px; line-height: 1.45; }
+    .page-home .lumis-audience-card__link { font-size: 11px; }
+
+    /* Workflow becomes a modern five-step rail on phones. */
+    .page-home .lumis-how-it-works { background: #111; }
+    .page-home .lumis-how-it-works .wptb-item--subtitle,
+    .page-home .lumis-how-it-works .wptb-heading .wptb-item--title { color: #fff; }
+    .page-home .lumis-how-it-works__steps { display: grid; gap: 10px; padding: 0; }
+    .page-home .lumis-how-it-works .wptb-item {
+        margin: 0;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 16px;
+        background: rgba(255,255,255,.045);
+    }
+    .page-home .lumis-how-it-works .wptb-item .wptb-item--features-holder {
+        min-height: 60px;
+        padding: 0 16px;
+    }
+    .page-home .lumis-how-it-works .wptb-item .wptb-item--features-holder .wptb-item--title,
+    .page-home .lumis-how-it-works .wptb-item.active .wptb-item--features-holder .wptb-item--title {
+        width: 100%;
+        font-size: 18px;
+    }
+    .page-home .lumis-how-it-works .wptb-item--features-holder a {
+        width: 100%;
+        min-height: 58px;
+        color: #fff;
+    }
+    .page-home .lumis-how-it-works__step-number {
+        display: inline-grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--color-one);
+        color: #fff;
+        font-size: 11px;
+    }
+    .page-home .lumis-how-it-works .wptb-item--image { display: none !important; }
+
+    /* AI controls stay readable without taking a full screen each. */
+    .page-home .lumis-ai-features__tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .page-home .lumis-ai-feature-tab {
+        grid-template-columns: 30px minmax(0, 1fr);
+        min-height: 56px;
+        gap: 8px;
+        padding: 8px;
+    }
+    .page-home .lumis-ai-feature-tab__index {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        font-size: 10px;
+    }
+    .page-home .lumis-ai-feature-tab__title { font-size: 12px; }
+    .page-home .lumis-ai-features__cta .btn { width: 100%; }
+    .page-home .lumis-ai-product-panel { min-height: 0; padding: 12px; }
+
+    /* Marketplace, pricing, and closing CTA. */
+    .page-home .lumis-photographer-marketplace__grid { gap: 32px; }
+    .page-home .lumis-photographer-marketplace__steps { gap: 9px; }
+    .page-home .lumis-photographer-marketplace .lumis-photographer-marketplace__step {
+        padding: 13px;
+        border-radius: 14px;
+    }
+    .page-home .lumis-pricing-visual { min-height: 310px; margin-bottom: 8px; }
+    .page-home .lumis-pricing-visual__primary { inset: 38px 22px 68px 0; }
+    .page-home .lumis-pricing-visual__secondary { width: 54%; bottom: 34px; }
+    .page-home .lumis-pricing-visual__callout {
+        right: 10px;
+        left: 10px;
+        padding: 12px 14px;
+    }
+    .page-home .lumis-pricing-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 5px;
+        border-radius: 14px;
+    }
+    .page-home .lumis-pricing-toggle__option {
+        min-height: 40px;
+        padding-inline: 10px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+    .page-home .lumis-pricing-toggle__option span { display: none; }
+    .page-home .lumis-pricing-plans { gap: 12px; }
+    .page-home .lumis-pricing-card { padding: 18px; border-radius: 18px; }
+    .page-home .lumis-pricing-card__features {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+    }
+    .page-home .lumis-pricing-card__features li { font-size: 12px; }
+    .page-home .lumis-pricing-card__features li:nth-child(n+5) { display: none; }
+    .page-home .lumis-final-cta { min-height: 0; padding: 64px 0; }
+    .page-home .lumis-final-cta__panel { padding: 26px 20px; border-radius: 22px; }
+    .page-home .lumis-final-cta__actions { display: grid; align-items: stretch; gap: 10px; }
+    .page-home .lumis-final-cta__button,
+    .page-home .lumis-final-cta__link { width: 100%; min-height: 48px; }
+}
+
+@media screen and (max-width: 430px) {
+    .page-home .container,
+    .page-home .container-full { padding-inline: 16px; }
+    .page-home .wptb-slider.style3 .wptb-slider--item,
+    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 620px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { padding-top: 94px; }
+    .page-home .lumis-audience-card { grid-template-columns: 96px minmax(0, 1fr); }
+    .page-home .lumis-audience-card__body { padding: 16px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-home *,
+    .page-home *::before,
+    .page-home *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
