@@ -10,6 +10,12 @@ class HomePageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'href="{}"'.format(reverse("accounts:get-started")))
+        self.assertContains(
+            response,
+            'home-start-free-cta" href="{}"'.format(reverse("accounts:get-started")),
+            count=4,
+        )
+        self.assertNotContains(response, 'home-start-free-cta" href="#"')
         self.assertNotContains(response, 'href="#">Start Free')
 
 
