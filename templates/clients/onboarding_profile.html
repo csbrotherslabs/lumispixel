@@ -15,7 +15,13 @@
   {% if form.non_field_errors %}<div class="client-profile-form__alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.non_field_errors|striptags }}</div>{% endif %}
 
   <section class="client-profile-form__photo" aria-labelledby="profile-photo-label">
-    <div class="client-profile-form__photo-icon" aria-hidden="true"><i class="bi bi-person"></i></div>
+    <div class="client-profile-form__photo-icon{% if profile.profile_photo %} client-profile-form__photo-icon--has-image{% endif %}" aria-hidden="true">
+      {% if profile.profile_photo %}
+        <img src="{{ profile.profile_photo.url }}" alt="">
+      {% else %}
+        <i class="bi bi-person"></i>
+      {% endif %}
+    </div>
     <div class="client-profile-form__photo-copy">
       <label id="profile-photo-label" for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label>
       <p>Add a clear photo so your client account feels personal and recognizable.</p>
