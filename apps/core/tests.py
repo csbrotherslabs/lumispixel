@@ -10,11 +10,11 @@ class AboutPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "about.html")
-        self.assertContains(response, "Built for Modern Photography")
-        self.assertContains(response, "Why LumisPixel")
-        self.assertContains(response, "10+")
-        self.assertContains(response, "Ready to simplify your photography business?")
-        self.assertContains(response, reverse("core:pricing"))
+        self.assertContains(response, "Built for the work")
+        self.assertContains(response, "Less repetition")
+        self.assertContains(response, "One platform. Four connected layers")
+        self.assertContains(response, "Read Our Story")
+        self.assertContains(response, reverse("core:products"))
         self.assertContains(response, reverse("accounts:get-started"))
 
 
@@ -29,7 +29,7 @@ class PrivacyPolicyPageTests(TestCase):
         self.assertContains(response, 'class="privacy-sections"')
         self.assertContains(response, "Questions About Privacy?")
         self.assertContains(response, reverse("core:contact"))
-        self.assertContains(response, "static/css/privacy-policy.css")
+        self.assertContains(response, "css/privacy-policy.")
 
 
 class CookiePolicyPageTests(TestCase):
@@ -44,7 +44,7 @@ class CookiePolicyPageTests(TestCase):
         self.assertContains(response, "Essential Cookies")
         self.assertContains(response, "Questions About Cookies?")
         self.assertContains(response, reverse("core:contact"))
-        self.assertContains(response, "static/css/cookie-policy.css")
+        self.assertContains(response, "css/cookie-policy.")
 
 
 class AccessibilityPageTests(TestCase):
@@ -60,7 +60,7 @@ class AccessibilityPageTests(TestCase):
         self.assertContains(response, "How You Can Help")
         self.assertContains(response, "Help Us Improve Accessibility")
         self.assertContains(response, reverse("core:contact"))
-        self.assertContains(response, "static/css/accessibility.css")
+        self.assertContains(response, "css/accessibility.")
 
 
 class CareersPageTests(TestCase):
@@ -69,14 +69,13 @@ class CareersPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "careers.html")
-        self.assertContains(response, "Why Work With Us")
-        self.assertContains(response, "Our Values")
-        self.assertContains(response, "Open Positions")
-        self.assertContains(response, "Full Stack Software Engineer")
-        self.assertContains(response, '<i class="bi bi-geo-alt" aria-hidden="true"></i> Remote', count=3)
-        self.assertContains(response, '<i class="bi bi-clock" aria-hidden="true"></i> Full-Time', count=3)
-        self.assertContains(response, "Don't See the Right Role?")
-        self.assertContains(response, "static/css/careers.css")
+        self.assertContains(response, "Small team")
+        self.assertContains(response, "Own the outcome")
+        self.assertContains(response, "Current areas of interest")
+        self.assertContains(response, "Full Stack Engineering")
+        self.assertContains(response, "Roles and hiring status may change")
+        self.assertContains(response, "Send Your Resume")
+        self.assertContains(response, "css/company_pages_concise.")
 
 
 class PartnersPageTests(TestCase):
@@ -85,12 +84,12 @@ class PartnersPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "partners.html")
-        self.assertContains(response, "Partnership Opportunities")
-        self.assertContains(response, "Why Partner With LumisPixel")
-        self.assertContains(response, "How It Works")
-        self.assertContains(response, "Partner FAQ")
-        self.assertContains(response, "Let's Grow Together")
-        self.assertContains(response, "static/css/partners.css")
+        self.assertContains(response, "Shared audience")
+        self.assertContains(response, "A simple partnership path")
+        self.assertContains(response, "Partnership paths")
+        self.assertContains(response, "Technology Integrations")
+        self.assertContains(response, "Tell us the value")
+        self.assertContains(response, "css/company_pages_concise.")
 
 
 class ForPhotographersRoutingTests(TestCase):
@@ -173,14 +172,23 @@ class CompanyMarketingTests(TestCase):
         for route_name in self.child_pages:
             self.assertContains(response, reverse(route_name))
 
-    def test_company_children_share_refined_typography_and_safe_hero_spacing(self):
+    def test_company_children_use_concise_or_policy_specific_systems(self):
         for route_name in self.child_pages:
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(route_name))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, "css/company_detail_refine.")
                 self.assertContains(response, '<li class="menu-item active current"><a href="/company/">Company</a></li>')
-                self.assertContains(response, 'class="company-back"')
+                self.assertContains(response, reverse("core:company"))
+
+        for route_name in ("core:about", "core:our_story", "core:careers", "core:partners", "core:contact"):
+            response = self.client.get(reverse(route_name))
+            self.assertContains(response, "css/company_pages_concise.")
+            self.assertContains(response, 'class="cp-back"')
+
+        for route_name in ("core:privacy_policy", "core:terms_of_service", "core:cookie_policy", "core:accessibility"):
+            response = self.client.get(reverse(route_name))
+            self.assertContains(response, "css/company_policy_concise.")
+            self.assertContains(response, 'class="company-back"')
 
     def test_company_navigation_has_no_dropdown(self):
         response = self.client.get(reverse("core:company"))
