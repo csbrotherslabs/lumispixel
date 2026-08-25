@@ -1,51 +1,5 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}Contact Us | LumisPixel{% endblock %}
-{% block meta_description %}Contact LumisPixel for sales, support, partnership, and media questions.{% endblock %}
-{% block body_class %}marketing-page contact-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/contact.css' %}"><link rel="stylesheet" href="{% static 'css/company_detail_refine.css' %}">{% endblock %}
-
-{% block content %}
-<section class="contact-hero" aria-labelledby="contact-title"><div class="container contact-hero__inner">
-  <a class="company-back" href="{% url 'core:company' %}"><i class="bi bi-arrow-left"></i> All Company</a>
-  <span class="contact-kicker">Get in touch</span>
-  <h1 id="contact-title">Contact Us</h1>
-  <p>Questions, feedback, or interested in working with us? We'd love to hear from you.</p>
-  <div class="contact-actions"><a class="contact-button contact-button--primary" href="#contact-form">Send Message <i class="bi bi-arrow-right" aria-hidden="true"></i></a><a class="contact-button contact-button--secondary" href="{% url 'core:resources_help_center' %}">View Help Center</a></div>
-</div></section>
-
-<section class="contact-section" aria-label="Contact LumisPixel"><div class="container contact-layout">
-  <div class="contact-form-card" id="contact-form"><span class="contact-kicker">Send a note</span><h2>How can we help?</h2><p>Share a few details and we'll connect you with the right person.</p>
-    <form action="#" method="post">{% csrf_token %}<div class="contact-form-grid">
-      <label>First Name<input type="text" name="first_name" autocomplete="given-name" required placeholder="First name"></label>
-      <label>Last Name<input type="text" name="last_name" autocomplete="family-name" required placeholder="Last name"></label>
-      <label class="contact-span">Email Address<input type="email" name="email" autocomplete="email" required placeholder="you@example.com"></label>
-      <label class="contact-span">Subject<input type="text" name="subject" required placeholder="What can we help with?"></label>
-      <label class="contact-span">Message<textarea name="message" rows="6" required placeholder="Tell us a little more..."></textarea></label>
-    </div><button class="contact-button contact-button--primary" type="submit">Send Message <i class="bi bi-send" aria-hidden="true"></i></button></form>
-  </div>
-  <aside class="contact-info" aria-label="Contact departments"><div class="contact-card-grid">
-    <article><span class="contact-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span><div><h3>Sales</h3><p>Questions about plans and pricing.</p></div></article>
-    <article><span class="contact-icon"><i class="bi bi-headset" aria-hidden="true"></i></span><div><h3>Support</h3><p>Help with your account or technical issues.</p></div></article>
-    <article><span class="contact-icon"><i class="bi bi-people" aria-hidden="true"></i></span><div><h3>Partnerships</h3><p>Business, affiliate, and integration opportunities.</p></div></article>
-    <article><span class="contact-icon"><i class="bi bi-megaphone" aria-hidden="true"></i></span><div><h3>Media</h3><p>Press and media inquiries.</p></div></article>
-  </div><article class="response-card"><span class="contact-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span><div><small>Response Time</small><h3>We're Here to Help</h3><p>Our team typically responds within 1–2 business days.</p></div></article></aside>
-</div></section>
-
-<section class="contact-section contact-faq" aria-labelledby="faq-title"><div class="container contact-narrow"><header class="contact-heading"><span class="contact-kicker">Common questions</span><h2 id="faq-title">Frequently Asked Questions</h2><p>Quick answers before you send a message.</p></header><div class="faq-list">
-  <details><summary>How quickly will I receive a response?<i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p>Our team typically replies within one to two business days.</p></details>
-  <details><summary>Where can I get technical support?<i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p>Visit the Help Center for troubleshooting guides, or choose Support in your message.</p></details>
-  <details><summary>How do I request a product demo?<i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p>Send our Sales team a note with your business needs and preferred timing.</p></details>
-  <details><summary>How do I report a bug?<i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p>Tell Support what happened, including your device, browser, and any error message.</p></details>
-  <details><summary>How do I become a partner?<i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p>Contact Partnerships with a short overview of your business and collaboration idea.</p></details>
-</div></div></section>
-
-<section class="contact-section contact-resources" aria-labelledby="answers-title"><div class="container"><header class="contact-heading"><span class="contact-kicker">Explore resources</span><h2 id="answers-title">Need Immediate Answers?</h2><p>Find practical guidance, updates, and product support.</p></header><div class="resource-grid">
-  <a href="{% url 'core:resources_help_center' %}"><span class="contact-icon"><i class="bi bi-life-preserver" aria-hidden="true"></i></span><h3>Help Center</h3><p>Find setup help and quick answers.</p><strong>Explore resources <i class="bi bi-arrow-right"></i></strong></a>
-  <a href="{% url 'core:resources_business_guides' %}"><span class="contact-icon"><i class="bi bi-journal-text" aria-hidden="true"></i></span><h3>Business Guides</h3><p>Grow and streamline your business.</p><strong>Explore resources <i class="bi bi-arrow-right"></i></strong></a>
-  <a href="{% url 'core:resources_release_notes' %}"><span class="contact-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><h3>Release Notes</h3><p>See what's new in LumisPixel.</p><strong>Explore resources <i class="bi bi-arrow-right"></i></strong></a>
-</div></div></section>
-
-<section class="contact-final" aria-labelledby="contact-cta-title"><div class="container"><div class="contact-final__card"><span class="contact-kicker">Start a conversation</span><h2 id="contact-cta-title">Let's Build Something Great Together</h2><p>Whether you're a photographer, client, or business partner, we're excited to hear from you.</p><a class="contact-button contact-button--light" href="#contact-form">Contact LumisPixel <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></div></div></section>
+{% extends "base.html" %}{% load static %}{% block title %}Contact LumisPixel{% endblock %}{% block body_class %}marketing-page company-concise-page{% endblock %}{% block extra_css %}<link rel="stylesheet" href="{% static 'css/company_pages_concise.css' %}"><link rel="stylesheet" href="{% static 'css/contact_concise.css' %}">{% endblock %}{% block content %}
+<div class="cp cp--contact"><section class="cp-hero" aria-labelledby="contact-title"><div class="cp-mark" aria-hidden="true"><i></i><i></i><b>HI</b></div><div class="container"><a class="cp-back" href="{% url 'core:company' %}"><i class="bi bi-arrow-left"></i> All Company</a><span class="cp-kicker">Contact / Reach the right team</span><h1 id="contact-title">Tell us what you need.<br><em>We will route it.</em></h1><p>Questions about the product, support, partnerships, accessibility, privacy, or the company belong in one clear place.</p><div class="cp-actions"><a class="cp-primary" href="#contact-form">Send a Message <i class="bi bi-arrow-down"></i></a><a href="{% url 'core:resources_help_center' %}">Visit Help Center</a></div></div></section>
+<section class="cc-wrap" id="contact-form" aria-labelledby="contact-form-title"><div class="container cc-layout"><div class="cc-form"><span class="cp-kicker">One concise note</span><h2 id="contact-form-title">How can we help?</h2><p>Provide the essentials. The appropriate team can ask for anything else.</p><form action="#" method="post">{% csrf_token %}<div class="cc-fields"><label>First name<input name="first_name" autocomplete="given-name" required></label><label>Last name<input name="last_name" autocomplete="family-name" required></label><label class="wide">Email<input type="email" name="email" autocomplete="email" required></label><label class="wide">Topic<select name="topic" required><option value="">Choose one</option><option>Product and sales</option><option>Account support</option><option>Partnerships</option><option>Privacy or security</option><option>Accessibility</option><option>Media and company</option></select></label><label class="wide">Message<textarea name="message" rows="5" required></textarea></label></div><button class="cc-submit" type="submit">Send Message <i class="bi bi-arrow-right"></i></button></form></div><aside class="cc-route"><span class="cp-kicker">Faster paths</span><h3>Start with the right destination.</h3><a href="{% url 'core:resources_help_center' %}"><i class="bi bi-life-preserver"></i><span>Product Help</span></a><a href="{% url 'core:partners' %}"><i class="bi bi-diagram-3"></i><span>Partnerships</span></a><a href="{% url 'core:privacy_policy' %}"><i class="bi bi-shield-check"></i><span>Privacy Information</span></a><a href="{% url 'core:accessibility' %}"><i class="bi bi-universal-access"></i><span>Accessibility Support</span></a><p class="cc-note">Typical response target: one to two business days.</p></aside></div></section>
+<section class="cc-final"><div class="container"><div><span class="cp-kicker">Prefer email?</span><h2>hello@lumispixel.com</h2></div><a class="btn-one" href="mailto:hello@lumispixel.com">Open Email</a></div></section></div>
 {% endblock %}
