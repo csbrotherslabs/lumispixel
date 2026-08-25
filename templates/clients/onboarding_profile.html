@@ -1,36 +1,38 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}Complete Profile | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="client-onboarding-profile-title">Complete Profile</h1>
-  <p class="wptb-item--description">Tell us a little about you so LumisPixel can personalize your photo discovery experience.</p>
+<div class="client-onboarding__intro">
+  <span class="client-onboarding__eyebrow">Personalize your account</span>
+  <h1 id="client-onboarding-profile-title">Tell us a little about you.</h1>
+  <p>These details help LumisPixel personalize your account and keep dates, locations, and photo access clear.</p>
 </div>
-<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
+
+<form class="client-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-  <div class="row">
+  <div class="client-onboarding__form-grid">
     {% for field in form %}
-      <div class="{% if field.name == 'marketing_emails' %}col-12{% else %}col-lg-6 col-md-6{% endif %} mb-4">
-        <div class="form-group{% if field.name == 'marketing_emails' %} lumis-onboarding__check-row{% endif %}">
-          {% if field.name == 'marketing_emails' %}
-            {{ field }}
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% else %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
-            {{ field }}
-          {% endif %}
-          {% if field.help_text %}<div class="lumis-onboarding__help">{{ field.help_text }}</div>{% endif %}
-          {% if field.errors %}<div class="lumis-onboarding__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors|striptags }}</div>{% endif %}
-        </div>
+      <div class="client-onboarding__field{% if field.name == 'marketing_emails' %} client-onboarding__field--full client-onboarding__field--check{% endif %}">
+        {% if field.name == 'marketing_emails' %}
+          {{ field }}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% else %}
+          <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
+          {{ field }}
+        {% endif %}
+        {% if field.help_text %}<div class="client-onboarding__help">{{ field.help_text }}</div>{% endif %}
+        {% if field.errors %}<div class="client-onboarding__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors|striptags }}</div>{% endif %}
       </div>
     {% endfor %}
   </div>
+
   {% if profile.profile_photo %}
-    <p class="lumis-onboarding__help">Current photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>
+    <p class="client-onboarding__current-photo"><i class="bi bi-image" aria-hidden="true"></i> Current photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>
   {% endif %}
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-    <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-welcome' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
-    <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button>
+
+  <div class="client-onboarding__form-actions">
+    <a class="client-onboarding__back" href="{% url 'clients:onboarding-welcome' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
+    <button class="btn client-onboarding__primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
   </div>
 </form>
 {% endblock %}

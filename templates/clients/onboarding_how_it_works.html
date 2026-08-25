@@ -1,21 +1,24 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}How You'll Find Photos | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="client-onboarding-how-title">How You’ll Find Photos</h1>
-  <p class="wptb-item--description">Use these LumisPixel tools to discover, save, and download photos from your galleries.</p>
+<div class="client-onboarding__intro client-onboarding__intro--centered">
+  <span class="client-onboarding__eyebrow">You’re almost ready</span>
+  <h1 id="client-onboarding-how-title">Four simple ways to enjoy your photos.</h1>
+  <p>Everything you need to discover, organize, and access images is connected to your LumisPixel account.</p>
 </div>
-<div class="lumis-onboarding__cards" aria-label="Photo discovery features">
-  <article class="lumis-onboarding-card"><i class="bi bi-person-bounding-box" aria-hidden="true"></i><h2>Selfie Search</h2><p>Upload a selfie to quickly find event photos that may include you.</p></article>
-  <article class="lumis-onboarding-card"><i class="bi bi-upc-scan" aria-hidden="true"></i><h2>Event Code</h2><p>Enter an event code from your photographer to open the right gallery.</p></article>
-  <article class="lumis-onboarding-card"><i class="bi bi-heart" aria-hidden="true"></i><h2>Favorites</h2><p>Save the photos you love so you can compare and revisit them later.</p></article>
-  <article class="lumis-onboarding-card"><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i><h2>Purchase and Download</h2><p>Buy approved images and download your files when checkout is complete.</p></article>
+
+<div class="client-onboarding__discovery-grid" aria-label="Photo discovery features">
+  <article><span>01</span><i class="bi bi-person-bounding-box" aria-hidden="true"></i><div><h2>Selfie Search</h2><p>Upload a selfie to find event photos that may include you.</p></div></article>
+  <article><span>02</span><i class="bi bi-upc-scan" aria-hidden="true"></i><div><h2>Event Code</h2><p>Use a photographer’s event code to open the right gallery.</p></div></article>
+  <article><span>03</span><i class="bi bi-heart" aria-hidden="true"></i><div><h2>Favorites</h2><p>Save the photos you love and revisit them whenever you want.</p></div></article>
+  <article><span>04</span><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i><div><h2>Purchase & Download</h2><p>Buy approved images and download them after checkout.</p></div></article>
 </div>
-<div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-  <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
+
+<div class="client-onboarding__finish">
+  <a class="client-onboarding__back" href="{% url 'clients:onboarding-profile' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
   <form method="post" action="{% url 'clients:onboarding-how-it-works' %}">
     {% csrf_token %}
-    <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button>
+    <button class="btn client-onboarding__primary" type="submit"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span><i class="bi bi-check2" aria-hidden="true"></i></button>
   </form>
 </div>
 {% endblock %}
