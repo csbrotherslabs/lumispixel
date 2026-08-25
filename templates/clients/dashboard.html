@@ -1,64 +1,70 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Client Dashboard | LumisPixel{% endblock %}
 {% block body_class %}page-inner lumis-client-dashboard-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/client_dashboard.css' %}">{% endblock %}
 
 {% block content %}
-<section class="wptb-about-one bg-image-2 lumis-client-dashboard" aria-labelledby="client-dashboard-title">
-  <div class="container">
-    <div class="lumis-client-dashboard__hero">
-      <p class="lumis-client-dashboard__eyebrow">Client dashboard</p>
-      <h1 class="wptb-item--title" id="client-dashboard-title">Welcome back, {{ display_name }}</h1>
-      <p class="wptb-item--description">Find, save, and access your photos from one place.</p>
-    </div>
-
-    <section class="lumis-client-dashboard__section" aria-labelledby="find-my-photos-title">
-      <div class="lumis-client-dashboard__section-heading">
-        <p class="lumis-client-dashboard__eyebrow">Find My Photos</p>
-        <h2 id="find-my-photos-title">Start with a selfie or event code.</h2>
+<section class="client-hub" aria-labelledby="client-dashboard-title">
+  <div class="container client-hub__container">
+    <header class="client-hub__header">
+      <div class="client-hub__identity">
+        <span class="client-hub__avatar" aria-hidden="true">
+          {% if client_profile.profile_photo %}<img src="{{ client_profile.profile_photo.url }}" alt="">{% else %}<i class="bi bi-person"></i>{% endif %}
+        </span>
+        <div>
+          <span class="client-hub__eyebrow">Your photo space</span>
+          <h1 id="client-dashboard-title">Welcome back, {{ display_name }}</h1>
+          <p>Find your galleries, return to saved moments, and keep everything close.</p>
+        </div>
       </div>
-      <div class="lumis-client-dashboard__action-grid">
-        <article class="lumis-client-action-card">
-          <div class="lumis-client-action-card__icon" aria-hidden="true"><i class="bi bi-person-bounding-box"></i></div>
-          <h3>Selfie Search</h3>
-          <p>Upload a selfie and let LumisPixel find matching photos.</p>
-          <a class="btn lumis-auth-primary" href="{{ find_photos_url }}" aria-label="Upload a selfie to find matching photos"><span class="btn-wrap"><span class="text-first">Upload Selfie</span></span></a>
-          <p class="lumis-client-dashboard__placeholder-note">Selfie search is coming soon.</p>
-        </article>
+      <span class="client-hub__status"><i aria-hidden="true"></i> Account ready</span>
+    </header>
 
-        <article class="lumis-client-action-card">
-          <div class="lumis-client-action-card__icon" aria-hidden="true"><i class="bi bi-upc-scan"></i></div>
-          <h3>Event Code</h3>
-          <p>Enter the code provided by your photographer.</p>
-          <form class="lumis-client-event-form" action="{{ find_photos_url }}" method="get">
-            <label for="event-code">Event code</label>
-            <div class="lumis-client-event-form__row">
-              <input class="form-control" id="event-code" name="event_code" type="text" autocomplete="off" placeholder="Enter event code">
-              <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Find Photos</span></span></button>
-            </div>
+    <section class="client-hub__search" aria-labelledby="find-my-photos-title">
+      <div class="client-hub__section-heading">
+        <div><span class="client-hub__eyebrow">Find my photos</span><h2 id="find-my-photos-title">How would you like to search?</h2></div>
+        <p>Use the option shared by your photographer.</p>
+      </div>
+      <div class="client-hub__search-grid">
+        <article class="client-hub__search-card client-hub__search-card--selfie">
+          <span class="client-hub__card-icon" aria-hidden="true"><i class="bi bi-person-bounding-box"></i></span>
+          <div class="client-hub__card-copy"><span class="client-hub__availability">Early access</span><h3>Search with a selfie</h3><p>Upload a clear photo of yourself to surface matching moments.</p></div>
+          <a class="client-hub__primary-action" href="{{ find_photos_url }}" aria-label="Upload a selfie to find matching photos">Upload selfie <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+        </article>
+        <article class="client-hub__search-card">
+          <span class="client-hub__card-icon client-hub__card-icon--code" aria-hidden="true"><i class="bi bi-upc-scan"></i></span>
+          <div class="client-hub__card-copy"><span class="client-hub__availability">Have a code?</span><h3>Open an event gallery</h3><p>Enter the private event code supplied by your photographer.</p></div>
+          <form class="client-hub__event-form" action="{{ find_photos_url }}" method="get">
+            <label class="visually-hidden" for="event-code">Event code</label>
+            <input id="event-code" name="event_code" type="text" autocomplete="off" inputmode="text" placeholder="Enter event code" aria-describedby="event-code-help">
+            <button type="submit">Find photos <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
           </form>
-          <p class="lumis-client-dashboard__placeholder-note">Gallery lookup is not active yet.</p>
+          <small id="event-code-help">Codes are not case-sensitive.</small>
         </article>
       </div>
     </section>
 
-    <section class="lumis-client-dashboard__section" aria-labelledby="dashboard-summary-title">
-      <div class="lumis-client-dashboard__section-heading">
-        <p class="lumis-client-dashboard__eyebrow">Your activity</p>
-        <h2 id="dashboard-summary-title">Dashboard summary</h2>
+    <section class="client-hub__activity" aria-labelledby="dashboard-summary-title">
+      <div class="client-hub__section-heading">
+        <div><span class="client-hub__eyebrow">At a glance</span><h2 id="dashboard-summary-title">Your activity</h2></div>
+        <a href="#find-my-photos-title">Find more photos <i class="bi bi-arrow-up" aria-hidden="true"></i></a>
       </div>
-      <div class="lumis-client-summary-grid">
-        <article class="lumis-client-summary-card"><h3>Recent Galleries</h3><p>No recent galleries yet.</p></article>
-        <article class="lumis-client-summary-card" id="saved-photos"><h3>Saved Photos</h3><p>You have not saved any photos yet.</p></article>
-        <article class="lumis-client-summary-card"><h3>Purchases or Downloads</h3><p>No purchases or downloads yet.</p></article>
-        <article class="lumis-client-summary-card"><h3>Notifications</h3><p>You’re all caught up.</p></article>
+      <div class="client-hub__activity-grid">
+        <article class="client-hub__activity-card"><span class="client-hub__activity-icon"><i class="bi bi-images" aria-hidden="true"></i></span><div><span>Recent galleries</span><strong>0</strong><p>Your opened galleries will appear here.</p></div></article>
+        <article class="client-hub__activity-card" id="saved-photos"><span class="client-hub__activity-icon client-hub__activity-icon--saved"><i class="bi bi-heart" aria-hidden="true"></i></span><div><span>Saved photos</span><strong>0</strong><p>Favorite moments stay easy to revisit.</p></div></article>
+        <article class="client-hub__activity-card"><span class="client-hub__activity-icon client-hub__activity-icon--download"><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i></span><div><span>Downloads</span><strong>0</strong><p>Completed downloads will be tracked here.</p></div></article>
+        <article class="client-hub__activity-card client-hub__activity-card--clear"><span class="client-hub__activity-icon client-hub__activity-icon--clear"><i class="bi bi-check2" aria-hidden="true"></i></span><div><span>Notifications</span><strong>All clear</strong><p>You are completely caught up.</p></div></article>
       </div>
     </section>
 
-    <nav class="lumis-client-dashboard__quick-actions" aria-label="Client quick actions">
-      <a href="#find-my-photos-title">Find My Photos</a>
-      <a href="{{ saved_photos_url }}">View Saved Photos</a>
-      <button type="button" disabled>Manage Profile (coming soon)</button>
+    <nav class="client-hub__utility" aria-label="Client quick actions">
+      <div><span class="client-hub__utility-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><p><strong>Ready when your photos are.</strong><small>Use a selfie or event code to begin.</small></p></div>
+      <div class="client-hub__utility-actions">
+        <a href="{{ saved_photos_url }}"><i class="bi bi-heart" aria-hidden="true"></i> Saved photos</a>
+        <span aria-disabled="true" title="Profile management is coming soon"><i class="bi bi-person-gear" aria-hidden="true"></i> Profile settings <small>Coming soon</small></span>
+      </div>
     </nav>
   </div>
 </section>
