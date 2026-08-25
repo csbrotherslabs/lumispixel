@@ -1470,6 +1470,17 @@ img, svg, video { max-width: 100%; height: auto; }
   color: #9a928c;
 }
 
+.password-reset-card__helper {
+  margin: 10px 0 0;
+  color: #756d67;
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.password-reset-card .lumis-auth-actions .lumis-auth-secondary {
+  max-width: 220px;
+}
+
 .lumis-auth-form .wptb-heading {
   margin-top: 134px;
   margin-bottom: 30px;
