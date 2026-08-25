@@ -14,23 +14,6 @@
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="client-profile-form__alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.non_field_errors|striptags }}</div>{% endif %}
 
-  <section class="client-profile-form__photo" aria-labelledby="profile-photo-label">
-    <div class="client-profile-form__photo-icon{% if profile.profile_photo %} client-profile-form__photo-icon--has-image{% endif %}" aria-hidden="true">
-      {% if profile.profile_photo %}
-        <img src="{{ profile.profile_photo.url }}" alt="">
-      {% else %}
-        <i class="bi bi-person"></i>
-      {% endif %}
-    </div>
-    <div class="client-profile-form__photo-copy">
-      <label id="profile-photo-label" for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label>
-      <p>Add a clear photo so your client account feels personal and recognizable.</p>
-      {{ form.profile_photo }}
-      {% if form.profile_photo.errors %}<div class="client-profile-form__error" role="alert">{{ form.profile_photo.errors|striptags }}</div>{% endif %}
-      {% if profile.profile_photo %}<small>Current: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></small>{% endif %}
-    </div>
-  </section>
-
   <div class="client-profile-form__section-heading">
     <span>01</span><div><h2>Your identity</h2><p>How your name appears across your account.</p></div>
   </div>
@@ -77,6 +60,22 @@
     <span><strong>Product news and helpful tips</strong><small>Send me occasional LumisPixel updates and offers. You can change this anytime.</small></span>
   </label>
   {% if form.marketing_emails.errors %}<div class="client-profile-form__error" role="alert">{{ form.marketing_emails.errors|striptags }}</div>{% endif %}
+
+  <section class="client-profile-form__photo" aria-labelledby="profile-photo-label">
+    <div class="client-profile-form__photo-icon{% if profile.profile_photo %} client-profile-form__photo-icon--has-image{% endif %}" aria-hidden="true">
+      {% if profile.profile_photo %}
+        <img src="{{ profile.profile_photo.url }}" alt="">
+      {% else %}
+        <i class="bi bi-person"></i>
+      {% endif %}
+    </div>
+    <div class="client-profile-form__photo-copy">
+      <label id="profile-photo-label" for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label>
+      <p>Add a clear photo so your client account feels personal and recognizable.</p>
+      <div class="client-profile-form__photo-control">{{ form.profile_photo }}</div>
+      {% if form.profile_photo.errors %}<div class="client-profile-form__error" role="alert">{{ form.profile_photo.errors|striptags }}</div>{% endif %}
+    </div>
+  </section>
 
   <div class="client-onboarding-v2__footer-actions">
     <a class="client-onboarding-v2__back" href="{% url 'clients:onboarding-welcome' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
