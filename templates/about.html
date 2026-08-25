@@ -8,7 +8,7 @@
 {% block twitter_title %}Built for Modern Photography | LumisPixel{% endblock %}
 {% block twitter_description %}A simpler way to run, deliver, and grow your photography business.{% endblock %}
 {% block body_class %}marketing-page page-about{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/about.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/about.css' %}"><link rel="stylesheet" href="{% static 'css/company_detail_refine.css' %}">{% endblock %}
 
 {% block content %}
 <section class="about-hero" aria-labelledby="about-title">
@@ -44,15 +44,6 @@
 <section class="about-stats" aria-label="LumisPixel platform highlights"><div class="container"><div class="about-stats__grid">
   <p><strong>10+</strong><span>Business Tools</span></p><p><i class="bi bi-stars" aria-hidden="true"></i><span>AI Powered Workflows</span></p><p><i class="bi bi-lightning-charge" aria-hidden="true"></i><span>Fast Client Galleries</span></p><p><strong>1</strong><span>One Platform</span></p>
 </div></div></section>
-
-<section class="about-section about-testimonials" aria-labelledby="stories-title"><div class="container">
-  <div class="about-heading"><span class="about-kicker">Photographer stories</span><h2 id="stories-title">Made for the way you work.</h2></div>
-  <div class="about-quote-grid">
-    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“LumisPixel gives me one clear place to manage the work behind every shoot.”</p><footer><strong>Maya R.</strong><span>Wedding Photographer</span></footer></blockquote>
-    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“My clients find their photos faster, and I spend far less time answering the same questions.”</p><footer><strong>Jordan K.</strong><span>Event Photographer</span></footer></blockquote>
-    <blockquote><div class="about-stars" aria-label="5 out of 5 stars">★★★★★</div><p>“The connected workflow makes my studio feel organized, polished, and ready to grow.”</p><footer><strong>Elena S.</strong><span>Portrait Photographer</span></footer></blockquote>
-  </div>
-</div></section>
 
 <section class="about-final" aria-labelledby="about-cta-title"><div class="container"><div class="about-final__card">
   <span class="about-icon"><i class="bi bi-camera" aria-hidden="true"></i></span><h2 id="about-cta-title">Ready to simplify your photography business?</h2><p>Start building a better workflow today.</p><a class="about-button about-button--light" href="{% url 'accounts:get-started' %}">Start Free <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
