@@ -155,6 +155,52 @@ class PricingPageTests(TestCase):
         self.assertNotContains(response, "Built with photographers")
 
 
+class CompanyMarketingTests(TestCase):
+    child_pages = (
+        "core:about", "core:our_story", "core:careers", "core:partners",
+        "core:contact", "core:privacy_policy", "core:terms_of_service",
+        "core:cookie_policy", "core:accessibility",
+    )
+
+    def test_company_overview_uses_concise_directory(self):
+        response = self.client.get(reverse("core:company"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "company.html")
+        self.assertContains(response, "Photography keeps moving")
+        self.assertContains(response, "Company directory")
+        self.assertContains(response, "css/company_concise.")
+        for route_name in self.child_pages:
+            self.assertContains(response, reverse(route_name))
+
+    def test_company_children_share_refined_typography_and_safe_hero_spacing(self):
+        for route_name in self.child_pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "css/company_detail_refine.")
+                self.assertContains(response, '<li class="menu-item menu-item-has-children active current"><a href="/company/"')
+
+    def test_about_page_does_not_publish_unverified_testimonials(self):
+        response = self.client.get(reverse("core:about"))
+
+        self.assertNotContains(response, "Photographer stories")
+        self.assertNotContains(response, "Maya R.")
+
+    def test_legal_pages_keep_their_substantive_sections(self):
+        expectations = (
+            ("core:privacy_policy", "AI Features and Uploaded Images", "Your Privacy Rights"),
+            ("core:terms_of_service", "User Content and Uploaded Photos", "Limitation of Liability"),
+            ("core:cookie_policy", "Types of Cookies We Use", "Managing Cookie Preferences"),
+            ("core:accessibility", "Known Limitations", "Feedback and Assistance"),
+        )
+        for route_name, first, second in expectations:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertContains(response, first)
+                self.assertContains(response, second)
+
+
 class ResourcesOverviewTests(TestCase):
     def test_resources_page_uses_focused_library_overview(self):
         response = self.client.get(reverse("core:resources"))

@@ -1,0 +1,9 @@
+/* Shared refinement for Company pages: restrained scale, navbar-safe heroes, and clearer reading rhythm. */
+.page-about,.page-story,.page-careers,.page-partners,.page-contact,.privacy-page,.terms-page,.cookie-page,.accessibility-page{font-size:15px}
+.page-about h1,.page-story h1,.page-careers h1,.page-partners h1,.page-contact h1,.privacy-page h1,.terms-page h1,.cookie-page h1,.accessibility-page h1{font-size:clamp(48px,5.5vw,55px)!important;line-height:.98;letter-spacing:-.04em}
+.page-about h2,.page-story h2,.page-careers h2,.page-partners h2,.page-contact h2,.privacy-page h2,.terms-page h2,.cookie-page h2,.accessibility-page h2{font-size:clamp(30px,4vw,45px);line-height:1.04;letter-spacing:-.03em}
+.about-hero,.story-hero,.careers-hero,.partners-hero,.contact-hero,.privacy-hero,.terms-hero,.cookie-hero,.accessibility-hero{padding-top:max(155px,calc(env(safe-area-inset-top) + 132px))!important}
+.privacy-content section,.terms-content section,.cookie-content section,.accessibility-section{scroll-margin-top:120px}
+.privacy-sections p,.terms-sections p,.cookie-sections p,.accessibility-section p{font-size:15px;line-height:1.75;color:#55585f}
+.privacy-toc a,.terms-toc a,.cookie-toc a,.accessibility-toc a{text-underline-offset:4px}
+@media(max-width:700px){.page-about h1,.page-story h1,.page-careers h1,.page-partners h1,.page-contact h1,.privacy-page h1,.terms-page h1,.cookie-page h1,.accessibility-page h1{font-size:42px!important}.page-about h2,.page-story h2,.page-careers h2,.page-partners h2,.page-contact h2,.privacy-page h2,.terms-page h2,.cookie-page h2,.accessibility-page h2{font-size:32px}.about-hero,.story-hero,.careers-hero,.partners-hero,.contact-hero,.privacy-hero,.terms-hero,.cookie-hero,.accessibility-hero{padding-top:max(132px,calc(env(safe-area-inset-top) + 116px))!important}}
