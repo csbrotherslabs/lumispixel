@@ -1,3 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Verification issue | LumisPixel{% endblock %}
-{% block content %}<section class="wptb-about-one bg-image-2" style="padding: 120px 0;"><div class="container text-center"><h1>We could not verify that link</h1><p>The link may be invalid, expired, or already used. Request a new verification email from the pending page.</p><a href="{% url 'accounts:verification-pending' %}">Go to verification page</a></div></section>{% endblock %}
+{% block title %}Verification Issue | LumisPixel{% endblock %}
+{% block content %}
+<header class="login-title-section" aria-labelledby="verification-result-title">
+  <div class="container">
+    <div class="login-title-section__inner text-center">
+      <span class="login-title-section__eyebrow">Verification issue</span>
+      <h1 class="login-title-section__title" id="verification-result-title">We couldn’t verify that link</h1>
+      <p class="login-title-section__copy">The link may be invalid, expired, or already used. You can request a fresh verification email.</p>
+    </div>
+  </div>
+</header>
+
+<section class="wptb-about-one bg-image-2 lumis-auth-section" aria-label="Verification recovery options">
+  <div class="container">
+    <div class="wptb-login-form lumis-auth-form">
+      <div class="wptb-form--wrapper">
+        <div class="row">
+          <div class="col-12 login-auth-column verification-auth-column">
+            <div class="login-auth-card verification-auth-card">
+              <div class="verification-auth-card__status verification-auth-card__status--error" aria-hidden="true">
+                <i class="bi bi-link-45deg"></i>
+              </div>
+              <h2>This verification link is no longer available</h2>
+              <p>Return to the verification page to request another secure link, or sign in if you have already verified your account.</p>
+              <div class="lumis-auth-actions verification-auth-card__actions" aria-label="Verification recovery actions">
+                <a class="btn lumis-auth-primary" href="{% url 'accounts:verification-pending' %}"><span class="btn-wrap"><span class="text-first">Request a New Link</span></span></a>
+                <a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}"><span class="btn-wrap"><span class="text-first">Return to Sign In</span></span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
