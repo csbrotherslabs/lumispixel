@@ -1481,6 +1481,87 @@ img, svg, video { max-width: 100%; height: auto; }
   max-width: 220px;
 }
 
+.verification-auth-column {
+  max-width: 560px;
+}
+
+.verification-auth-card {
+  text-align: center;
+}
+
+.verification-auth-card__status {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border: 1px solid rgba(215, 61, 53, .16);
+  border-radius: 17px;
+  background: rgba(215, 61, 53, .08);
+  color: var(--color-one, #d73d35);
+  font-size: 22px;
+  box-shadow: 0 10px 24px rgba(215, 61, 53, .08);
+}
+
+.verification-auth-card__status--error {
+  border-color: rgba(157, 37, 37, .16);
+  background: #fff3f1;
+  color: #9d2525;
+}
+
+.verification-auth-card h2 {
+  margin: 0;
+  color: #201d1b;
+  font-size: 1.05rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.verification-auth-card > p {
+  margin: 12px auto 0;
+  color: #655d57;
+  font-size: .78rem;
+  line-height: 1.65;
+}
+
+.verification-auth-card > p strong {
+  color: #302b27;
+  overflow-wrap: anywhere;
+}
+
+.verification-auth-card__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 1px solid #eee6e0;
+  border-radius: 11px;
+  background: #fbfaf9;
+  color: #756d67;
+  font-size: .69rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.verification-auth-card__note i {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-one, #d73d35);
+}
+
+.verification-auth-card__actions form,
+.verification-auth-card__actions .btn {
+  width: 100%;
+}
+
+.verification-auth-card__actions .lumis-auth-primary,
+.verification-auth-card__actions .lumis-auth-secondary {
+  min-height: 42px;
+  border-radius: 11px;
+  font-size: .72rem;
+}
+
 .lumis-auth-form .wptb-heading {
   margin-top: 134px;
   margin-bottom: 30px;
