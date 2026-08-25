@@ -35,7 +35,7 @@
         <h6>Account</h6>
         <ul class="mobile-account-links">
             <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
-            <li><a href="{% url 'photographer_workspace:settings' %}">Settings</a></li>
+            <li><a href="{% if request.user.is_client %}{% url 'clients:account-settings' %}{% else %}{% url 'photographer_workspace:settings' %}{% endif %}">Account Settings</a></li>
             <li>
                 <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
                     {% csrf_token %}

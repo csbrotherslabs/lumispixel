@@ -130,3 +130,27 @@ def dashboard(request):
     display_name = profile.display_name or user.first_name or user.display_name
     context = {"client_profile": profile, "display_name": display_name, "find_photos_url": reverse("accounts:find-photos-placeholder"), "saved_photos_url": "#saved-photos"}
     return render(request, "clients/dashboard.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def account_settings(request):
+    user = request.user
+    if user.is_photographer:
+        return redirect("photographer_workspace:settings")
+    if not user.is_client:
+        return redirect("accounts:post-login-redirect")
+    profile = _client_profile(user)
+    if not profile.onboarding_completed:
+        return redirect("clients:setup-dashboard")
+    form = ClientOnboardingProfileForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=profile,
+        user=user,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(f"{reverse('clients:account-settings')}?saved=1")
+    context = {"form": form, "profile": profile, "saved": request.GET.get("saved") == "1"}
+    return render(request, "clients/account_settings.html", context)
