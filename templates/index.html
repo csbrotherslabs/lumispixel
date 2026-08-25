@@ -1,14 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
-{% url 'accounts:get-started' as homepage_get_started_url %}
-{% url 'marketplace:find_photographer' as find_photographer_url %}
-
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
 
 
 <!-- Main Wrapper-->
 {% block content %}
+    {% url 'accounts:get-started' as homepage_get_started_url %}
+    {% url 'marketplace:find_photographer' as find_photographer_url %}
     <!-- Slider Section -->
     <section class="wptb-slider style3">
         <div class="swiper-container wptb-swiper-slider-three">    
@@ -37,7 +36,7 @@
                                                 
                                                 <div class="wptb-item--button">
                                                     {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True %}
+                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
                                                     {% endif %}
     
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
@@ -87,7 +86,7 @@
                                                 
                                                 <div class="wptb-item--button">
                                                     {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True %}
+                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
                                                     {% endif %}
     
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
@@ -137,7 +136,7 @@
                                                 
                                                 <div class="wptb-item--button">
                                                     {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True %}
+                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
                                                     {% endif %}
     
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
@@ -187,7 +186,7 @@
                                                 
                                                 <div class="wptb-item--button">
                                                     {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True %}
+                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
                                                     {% endif %}
     
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
