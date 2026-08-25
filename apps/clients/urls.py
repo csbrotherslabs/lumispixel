@@ -6,6 +6,7 @@ app_name = "clients"
 
 urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("settings/", views.account_settings, name="account-settings"),
     path("setup-dashboard/", views.setup_dashboard, name="setup-dashboard"),
     path("setup-dashboard/", views.setup_dashboard, name="client_setup_dashboard"),
     path("onboarding/skip/", views.skip_onboarding, name="onboarding-skip"),
