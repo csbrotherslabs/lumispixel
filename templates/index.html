@@ -2,12 +2,16 @@
 {% load static %}
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">{% endblock %}
 
 
 <!-- Main Wrapper-->
 {% block content %}
     {% url 'accounts:get-started' as homepage_get_started_url %}
     {% url 'marketplace:find_photographer' as find_photographer_url %}
+    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
+    {% url 'ai_engine:editing_culling' as homepage_ai_tools_url %}
+    {% url 'core:pricing' as homepage_pricing_url %}
     <!-- Slider Section -->
     <section class="wptb-slider style3">
         <div class="swiper-container wptb-swiper-slider-three">    
@@ -42,7 +46,7 @@
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
                                                     {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -75,7 +79,7 @@
                                         <div class="col-lg-7">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">AI Photography Platform</h6>
-                                                <h1 class="wptb-item--title">Photography, Powered by AI.</h1>
+                                                <h2 class="wptb-item--title">Photography, Powered by AI.</h2>
                                                 <h2 class="wptb-item--description wptb-hero-subheadline">One platform for photographers to manage, deliver, and grow their business—and for clients to instantly find and enjoy their photos.</h2>
                                                 <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
                                                     <span>AI Face Search</span>
@@ -92,7 +96,7 @@
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
                                                     {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -125,7 +129,7 @@
                                         <div class="col-lg-7">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">AI Photography Platform</h6>
-                                                <h1 class="wptb-item--title">Photography, Powered by AI.</h1>
+                                                <h2 class="wptb-item--title">Photography, Powered by AI.</h2>
                                                 <h2 class="wptb-item--description wptb-hero-subheadline">One platform for photographers to manage, deliver, and grow their business—and for clients to instantly find and enjoy their photos.</h2>
                                                 <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
                                                     <span>AI Face Search</span>
@@ -142,7 +146,7 @@
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
                                                     {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -175,7 +179,7 @@
                                         <div class="col-lg-7">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">AI Photography Platform</h6>
-                                                <h1 class="wptb-item--title">Photography, Powered by AI.</h1>
+                                                <h2 class="wptb-item--title">Photography, Powered by AI.</h2>
                                                 <h2 class="wptb-item--description wptb-hero-subheadline">One platform for photographers to manage, deliver, and grow their business—and for clients to instantly find and enjoy their photos.</h2>
                                                 <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
                                                     <span>AI Face Search</span>
@@ -192,7 +196,7 @@
                                                     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
                                                     {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Hire a Photographer →" href="#" class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="Hire a Photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
                                             </div>
                                         </div>
                                     </div>
@@ -231,8 +235,8 @@
     <!-- Photo Matching Preview -->
     <section class="wptb-services-one lumis-photo-match" aria-labelledby="photo-match-title">
         <div class="wptb-item-layer wptb-item-layer-one both-version" aria-hidden="true">
-            <img src="{% static 'img/more/texture-2.png' %}" alt="">
-            <img src="{% static 'img/more/texture-2-light.png' %}" alt="">
+            <img loading="lazy" decoding="async" src="{% static 'img/more/texture-2.png' %}" alt="">
+            <img loading="lazy" decoding="async" src="{% static 'img/more/texture-2-light.png' %}" alt="">
         </div>
         <div class="container">
             <div class="row align-items-center g-4 g-xl-5">
@@ -290,15 +294,15 @@
                         </div>
 
                         <div class="lumis-photo-match__grid" aria-label="Preview grid of matching event photos">
-                            <img src="{% static 'img/slider/21.jpg' %}" alt="Preview match from an event gallery">
-                            <img src="{% static 'img/slider/30.jpg' %}" alt="Preview match from an event gallery">
-                            <img src="{% static 'img/slider/36.jpg' %}" alt="Preview match from an event gallery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Preview match from an event gallery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/slider/30.jpg' %}" alt="Preview match from an event gallery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/slider/36.jpg' %}" alt="Preview match from an event gallery">
                         </div>
 
                         <p class="lumis-photo-match__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i> Selfie used only for this gallery search.</p>
 
                         <!-- Future named URL: photo_matching_demo -->
-                        {% include "components/button.html" with label="Try the Demo" href="#" variant="outline" aria_label="Try the nonfunctional photo matching demo preview" %}
+                        {% include "components/button.html" with label="Try Photo Search" href=find_photos_url variant="outline" aria_label="Try LumisPixel photo search" %}
                     </div>
                 </div>
             </div>
@@ -312,7 +316,7 @@
             <div class="wptb-heading mb-0">
                 <div class="wptb-item--inner text-center">
                     <h6 class="wptb-item--subtitle"><span>FOR</span> PHOTOGRAPHERS</h6>
-                    <h1 class="wptb-item--title lg" id="photographer-workflow-title">One Platform. <span>Your Entire</span> <br> Workflow.</h1>
+                    <h2 class="wptb-item--title lg" id="photographer-workflow-title">One Platform. <span>Your Entire</span> <br> Workflow.</h2>
                     <p class="wptb-item--description lumis-photographer-workflow__intro">Cull faster, edit smarter, deliver beautifully, and grow your business from one connected workspace.</p>
                 </div>
             </div>
@@ -324,17 +328,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing a curated image gallery">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing a curated image gallery">
                                     <!-- Future named URL: photographer_ai_culling -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about AI Culling"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'ai_engine:editing_culling' %}" aria-label="Learn more about AI Culling"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Workflow</span>
-                                        <h4><a href="#">AI Culling</a></h4><!-- Future named URL: photographer_ai_culling -->
+                                        <h4><a href="{% url 'ai_engine:editing_culling' %}">AI Culling</a></h4><!-- Future named URL: photographer_ai_culling -->
                                         <p>Quickly identify the strongest images and reduce repetitive review work.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_ai_culling -->
+                                        <a class="lumis-feature-card__link" href="{% url 'ai_engine:editing_culling' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_ai_culling -->
                                     </div>
                                 </div>
                             </div>
@@ -346,17 +350,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/2.jpg' %}" alt="Edited portrait preview with consistent color treatment">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/2.jpg' %}" alt="Edited portrait preview with consistent color treatment">
                                     <!-- Future named URL: photographer_ai_editing -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about AI Editing Assistance"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'ai_engine:editing_culling' %}" aria-label="Learn more about AI Editing Assistance"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Post-production</span>
-                                        <h4><a href="#">AI Editing Assistance</a></h4><!-- Future named URL: photographer_ai_editing -->
+                                        <h4><a href="{% url 'ai_engine:editing_culling' %}">AI Editing Assistance</a></h4><!-- Future named URL: photographer_ai_editing -->
                                         <p>Apply consistent adjustments and speed up post-production.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_ai_editing -->
+                                        <a class="lumis-feature-card__link" href="{% url 'ai_engine:editing_culling' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_ai_editing -->
                                     </div>
                                 </div>
                             </div>
@@ -368,17 +372,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/3.jpg' %}" alt="Private client gallery displayed as polished image cards">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/3.jpg' %}" alt="Private client gallery displayed as polished image cards">
                                     <!-- Future named URL: photographer_client_galleries -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about Smart Client Galleries"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'galleries:client_galleries' %}" aria-label="Learn more about Smart Client Galleries"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Delivery</span>
-                                        <h4><a href="#">Smart Client Galleries</a></h4><!-- Future named URL: photographer_client_galleries -->
+                                        <h4><a href="{% url 'galleries:client_galleries' %}">Smart Client Galleries</a></h4><!-- Future named URL: photographer_client_galleries -->
                                         <p>Deliver polished, private galleries clients can easily browse and share.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_client_galleries -->
+                                        <a class="lumis-feature-card__link" href="{% url 'galleries:client_galleries' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_client_galleries -->
                                     </div>
                                 </div>
                             </div>
@@ -390,17 +394,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/4.jpg' %}" alt="Event gallery organized for fast face-based photo discovery">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/4.jpg' %}" alt="Event gallery organized for fast face-based photo discovery">
                                     <!-- Future named URL: photographer_face_recognition -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about Face Recognition"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'ai_engine:photo_search' %}" aria-label="Learn more about Face Recognition"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Organization</span>
-                                        <h4><a href="#">Face Recognition</a></h4><!-- Future named URL: photographer_face_recognition -->
+                                        <h4><a href="{% url 'ai_engine:photo_search' %}">Face Recognition</a></h4><!-- Future named URL: photographer_face_recognition -->
                                         <p>Organize large event galleries and help clients find their photos faster.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_face_recognition -->
+                                        <a class="lumis-feature-card__link" href="{% url 'ai_engine:photo_search' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_face_recognition -->
                                     </div>
                                 </div>
                             </div>
@@ -412,17 +416,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/5.jpg' %}" alt="Gallery storefront for selling photo downloads and prints">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/5.jpg' %}" alt="Gallery storefront for selling photo downloads and prints">
                                     <!-- Future named URL: photographer_online_sales -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about Online Sales"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'core:products' %}" aria-label="Learn more about Online Sales"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Commerce</span>
-                                        <h4><a href="#">Online Sales</a></h4><!-- Future named URL: photographer_online_sales -->
+                                        <h4><a href="{% url 'core:products' %}">Online Sales</a></h4><!-- Future named URL: photographer_online_sales -->
                                         <p>Sell downloads, prints, and gallery products directly from the platform.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_online_sales -->
+                                        <a class="lumis-feature-card__link" href="{% url 'core:products' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_online_sales -->
                                     </div>
                                 </div>
                             </div>
@@ -434,17 +438,17 @@
                         <div class="grid-item lumis-feature-card">
                             <div class="wptb-item--inner">
                                 <div class="wptb-item--image">
-                                    <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Business dashboard overview for galleries clients orders and performance">
+                                    <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Business dashboard overview for galleries clients orders and performance">
                                     <!-- Future named URL: photographer_business_dashboard -->
-                                    <a class="wptb-item--link" href="#" aria-label="Learn more about Business Dashboard"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                                    <a class="wptb-item--link" href="{% url 'core:business_hub' %}" aria-label="Learn more about Business Dashboard"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                                 </div>
 
                                 <div class="wptb-item--holder">
                                     <div class="wptb-item--meta">
                                         <span class="lumis-feature-card__eyebrow">Operations</span>
-                                        <h4><a href="#">Business Dashboard</a></h4><!-- Future named URL: photographer_business_dashboard -->
+                                        <h4><a href="{% url 'core:business_hub' %}">Business Dashboard</a></h4><!-- Future named URL: photographer_business_dashboard -->
                                         <p>Manage galleries, clients, orders, performance, and workflow in one place.</p>
-                                        <a class="lumis-feature-card__link" href="#">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_business_dashboard -->
+                                        <a class="lumis-feature-card__link" href="{% url 'core:business_hub' %}">Learn More <span aria-hidden="true">→</span></a><!-- Future named URL: photographer_business_dashboard -->
                                     </div>
                                 </div>
                             </div>
@@ -461,7 +465,7 @@
             </div>
 
             <div class="shadow-heading" aria-hidden="true">
-                <h1 class="wptb-item--title">Workflow</h1>
+                <p class="wptb-item--title" aria-hidden="true">Workflow</p>
             </div>
         </div>
     </section>
@@ -472,7 +476,7 @@
             <div class="wptb-heading">
                 <div class="wptb-item--inner text-center">
                     <h6 class="wptb-item--subtitle">ONE CONNECTED PLATFORM</h6>
-                    <h1 class="wptb-item--title" id="lumis-audiences-title">Built for Every Side of Photography.</h1>
+                    <h2 class="wptb-item--title" id="lumis-audiences-title">Built for Every Side of Photography.</h2>
                     <p class="wptb-item--description lumis-audiences__intro">Photographers manage their workflow, clients find and enjoy their photos, and customers book the right professional—all in one place.</p>
                 </div>
             </div>
@@ -481,7 +485,7 @@
                 <div class="col-lg-4 col-md-6">
                     <article class="lumis-audience-card wow fadeInUp">
                         <div class="lumis-audience-card__image">
-                            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing event images in a professional gallery workflow">
+                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing event images in a professional gallery workflow">
                         </div>
                         <div class="lumis-audience-card__body">
                             <span class="lumis-audience-card__kicker">Creator workspace</span>
@@ -495,7 +499,7 @@
                 <div class="col-lg-4 col-md-6">
                     <article class="lumis-audience-card wow fadeInUp" data-wow-delay="0.1s">
                         <div class="lumis-audience-card__image">
-                            <img src="{% static 'img/slider/21.jpg' %}" alt="Client browsing photos from a private event gallery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Client browsing photos from a private event gallery">
                         </div>
                         <div class="lumis-audience-card__body">
                             <span class="lumis-audience-card__kicker">Gallery access</span>
@@ -509,7 +513,7 @@
                 <div class="col-lg-4 col-md-6 mx-md-auto mx-lg-0">
                     <article class="lumis-audience-card wow fadeInUp" data-wow-delay="0.2s">
                         <div class="lumis-audience-card__image">
-                            <img src="{% static 'img/more/10.jpg' %}" alt="Photographer covering an event for customers looking to book a professional">
+                            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="Photographer covering an event for customers looking to book a professional">
                         </div>
                         <div class="lumis-audience-card__body">
                             <span class="lumis-audience-card__kicker">Booking marketplace</span>
@@ -529,7 +533,7 @@
             <div class="wptb-heading">
                 <div class="wptb-item--inner">
                     <h6 class="wptb-item--subtitle">HOW IT WORKS</h6>
-                    <h1 class="wptb-item--title mb-0" id="lumis-how-it-works-title">From Camera to Client, All in One Flow.</h1>
+                    <h2 class="wptb-item--title mb-0" id="lumis-how-it-works-title">From Camera to Client, All in One Flow.</h2>
                 </div>
             </div>
 
@@ -542,12 +546,12 @@
                             </div>
                         </div>
                         <div class="wptb-item--image" id="lumis-workflow-upload">
-                            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer workspace for adding a new photo gallery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer workspace for adding a new photo gallery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
                                     <div class="logo" aria-hidden="true">
-                                        <span class="dark_logo"><img src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
+                                        <span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
                                     </div>
                                     <div class="wptb-item--description">
                                         Add photos from a shoot, event, or gallery.
@@ -590,12 +594,12 @@
                             </div>
                         </div>
                         <div class="wptb-item--image" id="lumis-workflow-organize">
-                            <img src="{% static 'img/slider/21.jpg' %}" alt="Client photo gallery organized for quick browsing and face-based discovery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Client photo gallery organized for quick browsing and face-based discovery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
                                     <div class="logo" aria-hidden="true">
-                                        <span class="dark_logo"><img src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
+                                        <span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
                                     </div>
                                     <div class="wptb-item--description">
                                         LumisPixel groups images, detects faces, and helps identify the strongest shots.
@@ -627,11 +631,11 @@
                             </div>
                         </div>
                         <div class="wptb-item--image" id="lumis-workflow-refine">
-                            <img src="{% static 'img/more/8.jpg' %}" alt="Photographer refining selected images before client delivery">
+                            <img loading="lazy" decoding="async" src="{% static 'img/more/8.jpg' %}" alt="Photographer refining selected images before client delivery">
 
                             <div class="wptb-item--features-bottom">
                                 <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo" aria-hidden="true"><span class="dark_logo"><img src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div>
+                                    <div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div>
                                     <div class="wptb-item--description">Use AI-assisted culling and editing tools to speed up post-production.</div>
                                     <div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
                                 </div>
@@ -649,8 +653,8 @@
                             </div>
                         </div>
                         <div class="wptb-item--image" id="lumis-workflow-deliver">
-                            <img src="{% static 'img/projects/gallery/5.jpg' %}" alt="Secure branded gallery prepared for client delivery">
-                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Publish a secure, branded gallery for clients.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div></div></div></div>
+                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/5.jpg' %}" alt="Secure branded gallery prepared for client delivery">
+                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Publish a secure, branded gallery for clients.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div></div></div></div>
                         </div>
                     </div>
                 </li>
@@ -663,8 +667,8 @@
                             </div>
                         </div>
                         <div class="wptb-item--image" id="lumis-workflow-sell-share">
-                            <img src="{% static 'img/more/10.jpg' %}" alt="Event photography experience ready for clients to view purchase download and share">
-                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Let clients favorite, purchase, download, and share their photos.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div></div>
+                            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="Event photography experience ready for clients to view purchase download and share">
+                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Let clients favorite, purchase, download, and share their photos.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div></div>
                         </div>
                     </div>
                 </li>
@@ -681,7 +685,7 @@
                     <div class="wptb-heading lumis-ai-features__heading">
                         <div class="wptb-item--inner">
                             <h6 class="wptb-item--subtitle"><span>AI</span> FEATURES</h6>
-                            <h1 class="wptb-item--title" id="lumis-ai-features-title">The Platform Does Far More Than Photo Delivery.</h1>
+                            <h2 class="wptb-item--title" id="lumis-ai-features-title">The Platform Does Far More Than Photo Delivery.</h2>
                             <p class="wptb-item--description">LumisPixel helps photographers organize, refine, search, and deliver images with intelligent tools built into the workflow.</p>
                         </div>
                     </div>
@@ -727,7 +731,7 @@
 
                     <div class="wptb-item--button lumis-ai-features__cta">
                         <!-- Future Django named URL: ai_tools:index -->
-                        {% include "components/button.html" with label="Explore AI Tools →" href="#" variant="solid" show_second=True second_label="Explore AI Tools →" %}
+                        {% include "components/button.html" with label="Explore AI Tools →" href=homepage_ai_tools_url variant="solid" show_second=True second_label="Explore AI Tools →" %}
                     </div>
                 </div>
 
@@ -839,7 +843,7 @@
                     <div class="lumis-photographer-marketplace__actions">
                         {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="solid" show_second=True second_label="Find a Photographer" %}
                         <!-- Future named URL: photographers:signup -->
-                        <a class="lumis-photographer-marketplace__secondary" href="#">Join as a Photographer <span aria-hidden="true">→</span></a>
+                        <a class="lumis-photographer-marketplace__secondary" href="{{ homepage_get_started_url }}">Join as a Photographer <span aria-hidden="true">→</span></a>
                     </div>
                 </div>
 
@@ -886,10 +890,10 @@
                 <div class="lumis-pricing-visual wow fadeInLeft">
                     <div class="lumis-pricing-visual__accent" aria-hidden="true"></div>
                     <figure class="lumis-pricing-visual__primary">
-                        <img src="{% static 'img/pricing/1.jpg' %}" alt="Photographer reviewing a client gallery workflow">
+                        <img loading="lazy" decoding="async" src="{% static 'img/pricing/1.jpg' %}" alt="Photographer reviewing a client gallery workflow">
                     </figure>
                     <figure class="lumis-pricing-visual__secondary">
-                        <img src="{% static 'img/more/9.jpg' %}" alt="Client photo gallery preview on a photography workstation">
+                        <img loading="lazy" decoding="async" src="{% static 'img/more/9.jpg' %}" alt="Client photo gallery preview on a photography workstation">
                     </figure>
                     <div class="lumis-pricing-visual__callout">
                         <span>More time behind the camera.</span>
@@ -910,15 +914,15 @@
                     <div class="lumis-pricing-plans" aria-label="Pricing plan previews">
                         {% include "components/pricing_card.html" with plan_name="Starter" audience="For photographers getting started." price="Free" monthly_price="Free" annual_price="Free" feature_1="Essential client galleries" feature_2="Basic photo delivery" feature_3="Limited storage" feature_4="Photographer profile" feature_5="Marketplace visibility" cta_label="Start Free" cta_url=homepage_get_started_url show_cta=request.user.is_anonymous %}
 
-                        {% include "components/pricing_card.html" with plan_name="Professional" audience="For active photographers managing regular clients." price="$29 / month" monthly_price="$29 / month" annual_price="$29 / month billed annually" feature_1="Everything in Starter" feature_2="AI-assisted culling" feature_3="Face-powered photo discovery" feature_4="Online photo sales" feature_5="Expanded storage" feature_6="Custom gallery branding" cta_label="Choose Professional" cta_url="#" highlighted=True badge_text="Most Popular" %}
+                        {% include "components/pricing_card.html" with plan_name="Professional" audience="For active photographers managing regular clients." price="$29 / month" monthly_price="$29 / month" annual_price="$29 / month billed annually" feature_1="Everything in Starter" feature_2="AI-assisted culling" feature_3="Face-powered photo discovery" feature_4="Online photo sales" feature_5="Expanded storage" feature_6="Custom gallery branding" cta_label="View Professional" cta_url=homepage_pricing_url highlighted=True badge_text="Most Popular" %}
 
-                        {% include "components/pricing_card.html" with plan_name="Studio" audience="For teams and growing photography businesses." price="$79 / month" monthly_price="$79 / month" annual_price="$79 / month billed annually" feature_1="Everything in Professional" feature_2="Multiple team members" feature_3="Advanced gallery controls" feature_4="Higher storage limits" feature_5="Business performance dashboard" feature_6="Priority support" cta_label="Choose Studio" cta_url="#" %}
+                        {% include "components/pricing_card.html" with plan_name="Studio" audience="For teams and growing photography businesses." price="$79 / month" monthly_price="$79 / month" annual_price="$79 / month billed annually" feature_1="Everything in Professional" feature_2="Multiple team members" feature_3="Advanced gallery controls" feature_4="Higher storage limits" feature_5="Business performance dashboard" feature_6="Priority support" cta_label="View Studio" cta_url=homepage_pricing_url %}
                     </div>
 
                     <!-- Pricing must become database- or configuration-driven before launch. These provisional marketing examples must not be treated as live billing values. -->
                     <p class="lumis-pricing-note">Introductory pricing shown for preview. Final plans may change before launch.</p>
                     <!-- Future named URL: pricing:compare -->
-                    <a class="lumis-pricing-compare" href="#">Compare All Features <span aria-hidden="true">→</span></a>
+                    <a class="lumis-pricing-compare" href="{{ homepage_pricing_url }}">Compare All Features <span aria-hidden="true">→</span></a>
                 </div>
             </div>
         </div>
@@ -927,7 +931,7 @@
     <!-- LumisPixel Final CTA -->
     <section class="lumis-final-cta" aria-labelledby="lumis-final-cta-title">
         <div class="lumis-final-cta__media" aria-hidden="true">
-            <img src="{% static 'img/more/10.jpg' %}" alt="">
+            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="">
         </div>
         <div class="lumis-final-cta__overlay" aria-hidden="true"></div>
         <div class="container">
@@ -939,15 +943,15 @@
                 <div class="lumis-final-cta__actions" aria-label="Get started with LumisPixel">
                     {% if request.user.is_authenticated %}
                         <!-- Future named URL: dashboard:index -->
-                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="#" data-placeholder-link>Go to Dashboard</a>
+                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">Go to Dashboard</a>
                     {% else %}
                         <!-- Future named URL: accounts:signup -->
-                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="#" data-placeholder-link>Start as a Photographer</a>
+                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{{ homepage_get_started_url }}">Start as a Photographer</a>
                     {% endif %}
                     <!-- Future named URL: galleries:photo_search -->
                     <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find My Photos</a>
                     <!-- Future named URL: marketplace:photographer_search -->
-                    <a class="lumis-final-cta__link" href="#" data-placeholder-link>Hire a Photographer <span aria-hidden="true">→</span></a>
+                    <a class="lumis-final-cta__link" href="{{ find_photographer_url }}">Hire a Photographer <span aria-hidden="true">→</span></a>
                 </div>
 
                 <p class="lumis-final-cta__reassurance">Start free and explore the platform before choosing a paid plan.</p>
@@ -955,41 +959,4 @@
         </div>
     </section>
 
-    <!-- Instagram -->
-    <div class="wptb-instagram--gallery">
-        <div class="wptb-item--inner d-flex align-items-center justify-content-center flex-wrap flex-md-nowrap">
-            <div class="wptb-item">
-                <div class="wptb-item--image">
-                    <img src="{% static 'img/instagram/1.jpg' %}" alt="img">
-                </div>
-            </div>
-
-            <div class="wptb-item">
-                <div class="wptb-item--image">
-                    <img src="{% static 'img/instagram/2.jpg' %}" alt="img">
-                </div>
-            </div>
-
-            <div class="wptb-item">
-                <div class="wptb-item--image">
-                    <img src="{% static 'img/instagram/3.jpg' %}" alt="img">
-                </div>
-            </div>
-
-            <div class="wptb-item">
-                <div class="wptb-item--image">
-                    <img src="{% static 'img/instagram/4.jpg' %}" alt="img">
-                </div>
-            </div>
-
-            <div class="wptb-item">
-                <div class="wptb-item--image">
-                    <img src="{% static 'img/instagram/5.jpg' %}" alt="img">
-                </div>
-            </div>
-        </div>
-        <div class="wptb-item--button">
-            {% include "components/button.html" with label="Follow Us on Instagram" href="#" show_second=True icon="bi-instagram" %}
-        </div>
-    </div>
 {% endblock %}
