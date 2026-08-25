@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Account Settings | LumisPixel{% endblock %}
+{% block body_class %}page-inner client-account-settings-page{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/client_onboarding.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_account_settings.css' %}">
+{% endblock %}
+{% block content %}
+<section class="client-settings" aria-labelledby="client-settings-title">
+  <div class="container client-settings__container">
+    <header class="client-settings__header">
+      <div><span>Account settings</span><h1 id="client-settings-title">Your account, in one place.</h1><p>Manage your profile, preferences, and account security without leaving your client space.</p></div>
+      <a href="{% url 'clients:dashboard' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to dashboard</a>
+    </header>
+
+    {% if saved %}<div class="client-settings__success" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i><div><strong>Changes saved</strong><span>Your account settings are up to date.</span></div></div>{% endif %}
+
+    <div class="client-settings__layout">
+      <nav class="client-settings__nav" aria-label="Account settings sections">
+        <a href="#profile"><i class="bi bi-person" aria-hidden="true"></i><span>Profile<small>Name, location, and photo</small></span></a>
+        <a href="#preferences"><i class="bi bi-sliders" aria-hidden="true"></i><span>Preferences<small>Product communication</small></span></a>
+        <a href="#security"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security<small>Email and password</small></span></a>
+      </nav>
+
+      <form class="client-settings__form client-profile-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="client-profile-form__alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.non_field_errors|striptags }}</div>{% endif %}
+
+        <section class="client-settings__panel" id="profile" aria-labelledby="profile-heading">
+          <header><span class="client-settings__panel-icon"><i class="bi bi-person" aria-hidden="true"></i></span><div><h2 id="profile-heading">Profile</h2><p>The details used across your galleries and client experience.</p></div></header>
+          <div class="client-profile-form__grid">
+            <div class="client-profile-form__field"><label for="{{ form.first_name.id_for_label }}">First name <b>*</b></label>{{ form.first_name }}{% if form.first_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.first_name.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.last_name.id_for_label }}">Last name <b>*</b></label>{{ form.last_name }}{% if form.last_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.last_name.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field client-profile-form__field--full"><label for="{{ form.display_name.id_for_label }}">Display name <span>Optional</span></label>{{ form.display_name }}<small>The name photographers and galleries may show for you.</small>{% if form.display_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.display_name.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.country.id_for_label }}">Country <b>*</b></label>{{ form.country }}{% if form.country.errors %}<div class="client-profile-form__error" role="alert">{{ form.country.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.state.id_for_label }}">State or region <b>*</b></label>{{ form.state }}{% if form.state.errors %}<div class="client-profile-form__error" role="alert">{{ form.state.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.city.id_for_label }}">City <b>*</b></label>{{ form.city }}{% if form.city.errors %}<div class="client-profile-form__error" role="alert">{{ form.city.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.timezone.id_for_label }}">Time zone <b>*</b></label>{{ form.timezone }}{% if form.timezone.errors %}<div class="client-profile-form__error" role="alert">{{ form.timezone.errors|striptags }}</div>{% endif %}</div>
+          </div>
+          <div class="client-profile-form__photo">
+            <div class="client-profile-form__photo-icon{% if profile.profile_photo %} client-profile-form__photo-icon--has-image{% endif %}" aria-hidden="true">{% if profile.profile_photo %}<img src="{{ profile.profile_photo.url }}" alt="">{% else %}<i class="bi bi-person"></i>{% endif %}</div>
+            <div class="client-profile-form__photo-copy"><label for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label><p>Use a clear, recognizable photo for your client account.</p><div class="client-profile-form__photo-control">{{ form.profile_photo }}</div>{% if form.profile_photo.errors %}<div class="client-profile-form__error" role="alert">{{ form.profile_photo.errors|striptags }}</div>{% endif %}</div>
+          </div>
+        </section>
+
+        <section class="client-settings__panel" id="preferences" aria-labelledby="preferences-heading">
+          <header><span class="client-settings__panel-icon client-settings__panel-icon--warm"><i class="bi bi-sliders" aria-hidden="true"></i></span><div><h2 id="preferences-heading">Preferences</h2><p>Choose how LumisPixel keeps you informed.</p></div></header>
+          <label class="client-profile-form__preference" for="{{ form.marketing_emails.id_for_label }}">{{ form.marketing_emails }}<span><strong>Product news and helpful tips</strong><small>Send me occasional LumisPixel updates and offers. You can change this anytime.</small></span></label>
+          {% if form.marketing_emails.errors %}<div class="client-profile-form__error" role="alert">{{ form.marketing_emails.errors|striptags }}</div>{% endif %}
+        </section>
+
+        <section class="client-settings__panel" id="security" aria-labelledby="security-heading">
+          <header><span class="client-settings__panel-icon client-settings__panel-icon--secure"><i class="bi bi-shield-lock" aria-hidden="true"></i></span><div><h2 id="security-heading">Security</h2><p>Review your sign-in email and keep your password current.</p></div></header>
+          <div class="client-settings__security-row"><div><span>Sign-in email</span><strong>{{ request.user.email }}</strong></div><span class="client-settings__verified"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verified</span></div>
+          <div class="client-settings__security-row"><div><span>Password</span><strong>••••••••••••</strong></div><a href="{% url 'accounts:password-reset' %}">Change password <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+        </section>
+
+        <div class="client-settings__actions"><a href="{% url 'clients:dashboard' %}">Cancel</a><button type="submit">Save changes <i class="bi bi-check2" aria-hidden="true"></i></button></div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
