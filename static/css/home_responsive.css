@@ -307,32 +307,61 @@
     .page-home .lumis-pricing-content__intro,
     .page-home .lumis-final-cta__copy { font-size: 14px; line-height: 1.55; }
 
-    /* Phone carousel gives the placeholder a defined image stage above the copy. */
+    /* Phone carousel: contained placeholder, light content surface, complete controls. */
     .page-home .wptb-slider.style3 .wptb-slider--item,
-    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 700px; }
-    .page-home .wptb-slider.style3 .wptb-slider--item { position: relative; background: #0a0a0a; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 710px; }
+    .page-home .wptb-slider.style3 .wptb-slider--item { position: relative; background: #f6f3ef; }
     .page-home .wptb-slider.style3 .wptb-slider--image {
-        top: 0;
-        right: 0;
+        top: 88px;
+        right: 16px;
         bottom: auto;
-        left: 0;
-        height: 300px;
+        left: 16px;
+        height: 218px;
+        overflow: hidden;
+        border: 1px solid rgba(17,16,15,.14);
+        border-radius: 17px;
+        background-color: #d1d1d1;
         background-position: center;
-        background-size: cover;
+        background-size: contain;
+        background-repeat: no-repeat;
+        box-shadow: 0 14px 34px rgba(24,20,17,.1);
     }
-    .page-home .wptb-slider.style3 .wptb-slider--image::after {
-        background: linear-gradient(180deg, rgba(5,5,5,.08), rgba(5,5,5,.34));
-    }
-    .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 332px 0 78px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 330px 0 82px; }
     .page-home .wptb-slider.style3 .wptb-heading { max-width: 100%; margin: 0; }
-    .page-home .wptb-slider.style3 .wptb-item--title { max-width: 360px; margin: 11px 0 14px; font-size: 36px; line-height: 1; }
-    .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 370px; font-size: 13px; line-height: 1.52; }
+    .page-home .wptb-slider.style3 .wptb-item--title { max-width: 390px; margin: 9px 0 12px; color: var(--home-ink); font-size: 32px; line-height: 1.02; }
+    .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 390px; color: var(--home-muted); font-size: 13px; line-height: 1.5; }
     .page-home .wptb-slider.style3 .wptb-hero-feature-pills { display: none; }
-    .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
-    .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 45px; padding-inline: 9px; font-size: 10px; }
-    .page-home .wptb-slider.style3 .wptb-hero-text-link { min-height: 34px; margin-top: 7px; }
-    .page-home .wptb-slider.style3 .wptb-bottom-pane { right: 16px; bottom: 18px; left: 16px; }
-    .page-home .wptb-slider.style3 .wptb-swiper-navigation { display: flex; }
+    .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+    .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 43px; padding-inline: 8px; font-size: 9px; }
+    .page-home .wptb-slider.style3 .wptb-hero-text-link { min-height: 32px; margin-top: 6px; color: #514b47; }
+    .page-home .wptb-slider.style3 .wptb-bottom-pane { right: 16px; bottom: 16px; left: 16px; }
+    .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 {
+        position: relative !important;
+        display: flex;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        width: auto;
+        gap: 7px;
+        transform: none;
+    }
+    .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .wptb-swiper-arrow {
+        display: inline-flex;
+        width: 58px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(17,16,15,.16);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--home-ink);
+        box-shadow: 0 8px 20px rgba(24,20,17,.08);
+    }
+    .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .swiper-button-prev {
+        border-color: #d70006;
+        background: #d70006;
+        color: #fff;
+    }
 
     /* Heading, example, then detail: visual proof is never detached. */
     .page-home .lumis-photo-match .row { display: grid; gap: 0 !important; }
@@ -427,7 +456,7 @@
 @media (max-width: 390px) {
     .page-home .wptb-slider.style3 .wptb-slider--item,
     .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 760px; }
-    .page-home .wptb-slider.style3 .wptb-item--title { font-size: 34px; }
+    .page-home .wptb-slider.style3 .wptb-item--title { font-size: 30px; }
     .page-home .wptb-slider.style3 .wptb-item--button { grid-template-columns: 1fr; }
     .page-home .lumis-pricing-plans { grid-auto-columns: 91%; }
 }
