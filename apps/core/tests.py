@@ -43,6 +43,7 @@ class HomePageTests(TestCase):
         self.assertIn("min-height: max(780px, 100svh)", responsive_css)
         self.assertIn("background-size: cover", responsive_css)
         self.assertIn("padding: 220px 0 184px", responsive_css)
+        self.assertIn(".wptb-hero-subheadline { display: none; }", responsive_css)
         self.assertIn("min-height: 63px", responsive_css)
         self.assertIn("border-top: 1px solid rgba(255,255,255,.2)", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
