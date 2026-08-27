@@ -38,7 +38,7 @@
 .page-home .lumis-final-cta__title { font-size: clamp(36px, 4vw, 52px); line-height: 1; letter-spacing: -.05em; }
 
 /* A restrained four-story hero. Existing placeholder images remain untouched. */
-.page-home .wptb-slider.style3 { position: relative; background: #0a0a0a; }
+.page-home .wptb-slider.style3 { position: relative; background: #d1d1d1; }
 .page-home .wptb-slider.style3 .wptb-item-layer { display: none !important; }
 .page-home .wptb-slider.style3 .wptb-slider--item,
 .page-home .wptb-slider.style3 .wptb-slider--inner { height: auto; min-height: min(820px, 90svh); }
@@ -50,17 +50,15 @@
     transform: none;
 }
 .page-home .wptb-slider.style3 .wptb-slider--image::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(5,5,5,.78), rgba(5,5,5,.48) 48%, rgba(5,5,5,.1));
+    display: none;
 }
+.page-home .wptb-slider.style3 .wptb-item--subtitle { color: #d70006; }
 .page-home .wptb-slider.style3 .wptb-heading { max-width: 740px; margin-top: 72px; }
 .page-home .wptb-slider.style3 .wptb-item--title {
     max-width: 720px;
     margin: 15px 0 19px;
     color: #fff;
-    font-size: clamp(46px, 5vw, 68px);
+    font-size: clamp(46px, 5vw, 52px);
     line-height: .97;
     letter-spacing: -.055em;
 }
@@ -68,7 +66,7 @@
     max-width: 620px;
     margin: 0;
     color: rgba(255,255,255,.72);
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1.62;
     font-weight: 400;
 }
@@ -112,6 +110,16 @@
     color: #fff;
     backdrop-filter: blur(10px);
 }
+.page-home .wptb-slider.style3 .swiper-button-prev {
+    width: 72px;
+    height: 46px;
+    border: 1px solid #d70006;
+    border-radius: 999px;
+    background: #d70006;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(215,0,6,.24);
+}
+.page-home .wptb-slider.style3 .swiper-button-prev::after { color: #fff; }
 
 /* Photo discovery: copy and demonstration read as one chapter. */
 .page-home .lumis-photo-match { position: relative; background: var(--home-paper); }
@@ -318,7 +326,7 @@
     .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 332px 0 78px; }
     .page-home .wptb-slider.style3 .wptb-heading { max-width: 100%; margin: 0; }
     .page-home .wptb-slider.style3 .wptb-item--title { max-width: 360px; margin: 11px 0 14px; font-size: 36px; line-height: 1; }
-    .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 370px; font-size: 14px; line-height: 1.52; }
+    .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 370px; font-size: 13px; line-height: 1.52; }
     .page-home .wptb-slider.style3 .wptb-hero-feature-pills { display: none; }
     .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
     .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 45px; padding-inline: 9px; font-size: 10px; }
