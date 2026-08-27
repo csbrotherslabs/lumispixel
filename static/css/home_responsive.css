@@ -49,6 +49,7 @@
     align-items: center;
     transform: none;
 }
+.page-home .wptb-slider.style3 .wptb-slider--image { background-image: var(--desktop-image) !important; }
 .page-home .wptb-slider.style3 .wptb-slider--image::after {
     display: none;
 }
@@ -96,6 +97,16 @@
 }
 .page-home .wptb-slider.style3 .wptb-swiper-dots,
 .page-home .wptb-slider.style3 .wptb-swiper-navigation { position: relative; z-index: 4; }
+.page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 {
+    position: relative;
+    display: flex;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    gap: 9px;
+    transform: none;
+}
 .page-home .wptb-slider.style3 .swiper-pagination-bullet {
     width: 7px;
     height: 7px;
@@ -105,7 +116,13 @@
 .page-home .wptb-slider.style3 .swiper-pagination-bullet-active { width: 24px; border-radius: 999px; background: #fff; }
 .page-home .wptb-slider.style3 .swiper-button-prev,
 .page-home .wptb-slider.style3 .swiper-button-next {
+    display: inline-flex;
+    width: 72px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
     border-color: rgba(255,255,255,.22);
+    border-radius: 999px;
     background: rgba(8,8,8,.34);
     color: #fff;
     backdrop-filter: blur(10px);
@@ -120,6 +137,13 @@
     box-shadow: 0 10px 24px rgba(215,0,6,.24);
 }
 .page-home .wptb-slider.style3 .swiper-button-prev::after { color: #fff; }
+.page-home .wptb-slider.style3 .swiper-button-next {
+    border: 1px solid rgba(17,16,15,.22);
+    background: rgba(17,16,15,.84);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(17,16,15,.16);
+}
+.page-home .wptb-slider.style3 .swiper-button-next::after { color: #fff; }
 
 /* Photo discovery: copy and demonstration read as one chapter. */
 .page-home .lumis-photo-match { position: relative; background: var(--home-paper); }
@@ -325,6 +349,7 @@
         background-size: contain;
         background-repeat: no-repeat;
         box-shadow: 0 14px 34px rgba(24,20,17,.1);
+        background-image: var(--mobile-image, var(--desktop-image)) !important;
     }
     .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 330px 0 82px; }
     .page-home .wptb-slider.style3 .wptb-heading { max-width: 100%; margin: 0; }

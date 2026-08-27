@@ -31,6 +31,10 @@ class HomePageTests(TestCase):
         self.assertContains(response, "img/slider/8.jpg", count=2)
         self.assertContains(response, "img/slider/9.jpg")
         self.assertContains(response, 'class="wptb-bottom-pane justify-content-center"')
+        self.assertContains(response, "--desktop-image:", count=4)
+        self.assertContains(response, "--mobile-image:", count=4)
+        self.assertContains(response, "swiper-button-prev")
+        self.assertContains(response, "swiper-button-next")
 
 
 class AboutPageTests(TestCase):
