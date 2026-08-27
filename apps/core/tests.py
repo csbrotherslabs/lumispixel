@@ -40,7 +40,9 @@ class HomePageTests(TestCase):
         self.assertContains(response, "swiper-button-next")
 
         responsive_css = (settings.BASE_DIR / "static/css/home_responsive.css").read_text()
-        self.assertIn("height: clamp(330px, 112vw, 420px)", responsive_css)
+        self.assertIn("min-height: max(780px, 100svh)", responsive_css)
+        self.assertIn("background-size: cover", responsive_css)
+        self.assertIn("padding: 220px 0 112px", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
