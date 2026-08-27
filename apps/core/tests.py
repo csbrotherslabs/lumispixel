@@ -54,6 +54,8 @@ class HomePageTests(TestCase):
         self.assertIn(".lumis-photo-match__panel-header {", responsive_css)
         self.assertIn("flex-wrap: nowrap", responsive_css)
         self.assertIn(".lumis-photo-match__status > span { flex: 0 0 7px; }", responsive_css)
+        self.assertIn("overflow: visible;\n        z-index: auto", responsive_css)
+        self.assertIn("z-index: 10;", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
