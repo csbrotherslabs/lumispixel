@@ -48,6 +48,9 @@ class HomePageTests(TestCase):
         self.assertIn("border-top: 1px solid rgba(255,255,255,.2)", responsive_css)
         self.assertIn(".lumis-pricing-card {\n        flex: 0 0 86%", responsive_css)
         self.assertIn("scroll-snap-stop: always", responsive_css)
+        self.assertIn("grid-template-columns: minmax(0, 1fr)", responsive_css)
+        self.assertIn(".lumis-pricing-content { overflow: hidden; }", responsive_css)
+        self.assertIn("overscroll-behavior-inline: contain", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
