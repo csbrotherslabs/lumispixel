@@ -46,6 +46,8 @@ class HomePageTests(TestCase):
         self.assertIn(".wptb-hero-subheadline { display: none; }", responsive_css)
         self.assertIn("min-height: 63px", responsive_css)
         self.assertIn("border-top: 1px solid rgba(255,255,255,.2)", responsive_css)
+        self.assertIn(".lumis-pricing-card {\n        flex: 0 0 86%", responsive_css)
+        self.assertIn("scroll-snap-stop: always", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
