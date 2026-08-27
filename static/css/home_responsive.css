@@ -420,6 +420,25 @@
     .page-home .lumis-photo-match .wptb-heading { grid-row: 1; margin-bottom: 24px; }
     .page-home .lumis-photo-match .col-xl-5 { grid-row: 2; }
     .page-home .lumis-photo-match__panel { grid-row: 2; width: 100%; margin-bottom: 26px; padding: 14px; border-radius: 21px; }
+    .page-home .lumis-photo-match__panel-header {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .page-home .lumis-photo-match__preview-label,
+    .page-home .lumis-photo-match__status {
+        min-width: 0;
+        flex: 0 1 auto;
+        padding: 6px 8px;
+        white-space: nowrap;
+        font-size: 9px;
+    }
+    .page-home .lumis-photo-match__status > span { flex: 0 0 7px; }
     .page-home .lumis-photo-match__steps { grid-row: 3; margin: 0 0 20px; }
     .page-home .lumis-photo-match__steps li { padding: 12px 0; }
     .page-home .lumis-photo-match__link { grid-row: 4; }
