@@ -51,6 +51,9 @@ class HomePageTests(TestCase):
         self.assertIn("grid-template-columns: minmax(0, 1fr)", responsive_css)
         self.assertIn(".lumis-pricing-content { overflow: hidden; }", responsive_css)
         self.assertIn("overscroll-behavior-inline: contain", responsive_css)
+        self.assertIn(".lumis-photo-match__panel-header {", responsive_css)
+        self.assertIn("flex-wrap: nowrap", responsive_css)
+        self.assertIn(".lumis-photo-match__status > span { flex: 0 0 7px; }", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
