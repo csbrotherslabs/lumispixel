@@ -58,6 +58,12 @@ class HomePageTests(TestCase):
         self.assertIn("z-index: 10;", responsive_css)
         self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
         self.assertIn("width: 72px;\n        height: 46px", responsive_css)
+        self.assertIn(
+            ".swiper-slide:not(.swiper-slide-active) .wptb-heading {",
+            responsive_css,
+        )
+        self.assertIn("visibility: hidden;", responsive_css)
+        self.assertIn(".swiper-slide-active .wptb-heading {", responsive_css)
 
 
 class AboutPageTests(TestCase):
