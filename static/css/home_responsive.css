@@ -483,17 +483,25 @@
     .page-home .lumis-pricing-toggle { display: grid; grid-template-columns: 1fr 1fr; }
     .page-home .lumis-pricing-toggle__option span { display: none; }
     .page-home .lumis-pricing-plans {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 86%;
+        display: flex;
+        width: 100%;
         gap: 10px;
         overflow-x: auto;
         padding: 2px 16px 14px 0;
+        scroll-padding-inline: 0 16px;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
     }
     .page-home .lumis-pricing-plans::-webkit-scrollbar { display: none; }
-    .page-home .lumis-pricing-card { min-width: 0; padding: 18px; border-radius: 17px; scroll-snap-align: start; }
+    .page-home .lumis-pricing-card {
+        flex: 0 0 86%;
+        width: 86%;
+        min-width: 0;
+        padding: 18px;
+        border-radius: 17px;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
     .page-home .lumis-pricing-card__features { grid-template-columns: 1fr; }
     .page-home .lumis-final-cta { min-height: 0; padding: 64px 0; }
     .page-home .lumis-final-cta__panel { padding: 24px 18px; border-radius: 20px; }
@@ -507,7 +515,7 @@
     .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 760px; }
     .page-home .wptb-slider.style3 .wptb-item--title { font-size: 30px; }
     .page-home .wptb-slider.style3 .wptb-item--button { grid-template-columns: 1fr; }
-    .page-home .lumis-pricing-plans { grid-auto-columns: 91%; }
+    .page-home .lumis-pricing-card { flex-basis: 91%; width: 91%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
