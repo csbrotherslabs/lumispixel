@@ -55,6 +55,16 @@
 }
 .page-home .wptb-slider.style3 .wptb-item--subtitle { color: #d70006; }
 .page-home .wptb-slider.style3 .wptb-heading { max-width: 740px; margin-top: 72px; }
+/* Keep the long child animations from leaving two hero stories painted at once. */
+.page-home .wptb-slider.style3 .swiper-slide:not(.swiper-slide-active) .wptb-heading {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.page-home .wptb-slider.style3 .swiper-slide-active .wptb-heading {
+    opacity: 1;
+    visibility: visible;
+}
 .page-home .wptb-slider.style3 .wptb-item--title {
     max-width: 720px;
     margin: 15px 0 19px;
