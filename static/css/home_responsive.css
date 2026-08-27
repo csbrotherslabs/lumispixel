@@ -360,7 +360,7 @@
     }
     .page-home .wptb-slider.style3 .wptb-slider--inner {
         align-items: flex-end;
-        padding: 220px 0 112px;
+        padding: 220px 0 184px;
     }
     .page-home .wptb-slider.style3 .wptb-heading { position: relative; z-index: 2; max-width: 100%; margin: 0; }
     .page-home .wptb-slider.style3 .wptb-item--title { max-width: 390px; margin: 9px 0 12px; color: #fff; font-size: 32px; line-height: 1.02; text-shadow: 0 2px 22px rgba(0,0,0,.28); }
@@ -369,7 +369,15 @@
     .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
     .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 43px; padding-inline: 8px; font-size: 9px; }
     .page-home .wptb-slider.style3 .wptb-hero-text-link { min-height: 32px; margin-top: 6px; color: rgba(255,255,255,.82); }
-    .page-home .wptb-slider.style3 .wptb-bottom-pane { right: 16px; bottom: 16px; left: 16px; }
+    .page-home .wptb-slider.style3 .wptb-bottom-pane {
+        z-index: 6;
+        right: 16px;
+        bottom: 24px;
+        left: 16px;
+        min-height: 63px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255,255,255,.2);
+    }
     .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 {
         position: relative !important;
         display: flex;
