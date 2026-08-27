@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase
 from django.urls import NoReverseMatch, resolve, reverse
 
@@ -37,6 +38,11 @@ class HomePageTests(TestCase):
             self.assertContains(response, f"img/slider/{mobile_placeholder}")
         self.assertContains(response, "swiper-button-prev")
         self.assertContains(response, "swiper-button-next")
+
+        responsive_css = (settings.BASE_DIR / "static/css/home_responsive.css").read_text()
+        self.assertIn("height: clamp(330px, 112vw, 420px)", responsive_css)
+        self.assertIn(".wptb-swiper-navigation.style3 .swiper-button-next", responsive_css)
+        self.assertIn("width: 72px;\n        height: 46px", responsive_css)
 
 
 class AboutPageTests(TestCase):

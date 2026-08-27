@@ -333,25 +333,28 @@
 
     /* Phone carousel: contained placeholder, light content surface, complete controls. */
     .page-home .wptb-slider.style3 .wptb-slider--item,
-    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 710px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 910px; }
     .page-home .wptb-slider.style3 .wptb-slider--item { position: relative; background: #f6f3ef; }
     .page-home .wptb-slider.style3 .wptb-slider--image {
         top: 88px;
         right: 16px;
         bottom: auto;
         left: 16px;
-        height: 218px;
+        height: clamp(330px, 112vw, 420px);
         overflow: hidden;
         border: 1px solid rgba(17,16,15,.14);
         border-radius: 17px;
-        background-color: #d1d1d1;
+        background-color: #f6f3ef;
         background-position: center;
         background-size: contain;
         background-repeat: no-repeat;
         box-shadow: 0 14px 34px rgba(24,20,17,.1);
         background-image: var(--mobile-image, var(--desktop-image)) !important;
     }
-    .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 330px 0 82px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner {
+        align-items: flex-start;
+        padding: calc(clamp(330px, 112vw, 420px) + 116px) 0 82px;
+    }
     .page-home .wptb-slider.style3 .wptb-heading { max-width: 100%; margin: 0; }
     .page-home .wptb-slider.style3 .wptb-item--title { max-width: 390px; margin: 9px 0 12px; color: var(--home-ink); font-size: 32px; line-height: 1.02; }
     .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 390px; color: var(--home-muted); font-size: 13px; line-height: 1.5; }
@@ -372,8 +375,8 @@
     }
     .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .wptb-swiper-arrow {
         display: inline-flex;
-        width: 58px;
-        height: 36px;
+        width: 72px;
+        height: 46px;
         align-items: center;
         justify-content: center;
         border: 1px solid rgba(17,16,15,.16);
@@ -386,6 +389,12 @@
         border-color: #d70006;
         background: #d70006;
         color: #fff;
+    }
+    .page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .swiper-button-next {
+        border-color: rgba(17,16,15,.22);
+        background: rgba(17,16,15,.84);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(17,16,15,.16);
     }
 
     /* Heading, example, then detail: visual proof is never detached. */
