@@ -249,12 +249,13 @@
         max-width: none;
         height: 560px;
         border-radius: 24px;
-        z-index: 1;
+        overflow: visible;
+        z-index: auto;
     }
     .page-home .lumis-how-it-works .wptb-item.active .wptb-item--image,
     .page-home .lumis-how-it-works .wptb-item:hover .wptb-item--image,
-    .page-home .lumis-how-it-works .wptb-item:focus-within .wptb-item--image { z-index: 3; }
-    .page-home .lumis-how-it-works .wptb-item--image > img { width: 100%; height: 100%; object-fit: cover; }
+    .page-home .lumis-how-it-works .wptb-item:focus-within .wptb-item--image { z-index: auto; }
+    .page-home .lumis-how-it-works .wptb-item--image > img { width: 100%; height: 100%; object-fit: cover; border-radius: 24px; }
     .page-home .lumis-how-it-works .wptb-item--features-bottom {
         right: 24px;
         bottom: 24px;
@@ -264,7 +265,7 @@
     }
     .page-home .lumis-how-it-works .wptb-item--content {
         position: relative;
-        z-index: 8;
+        z-index: 10;
         max-width: 380px;
         padding: 34px;
         box-shadow: 0 24px 60px rgba(0,0,0,.28);
