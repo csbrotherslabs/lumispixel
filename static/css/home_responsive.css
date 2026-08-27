@@ -364,7 +364,7 @@
     }
     .page-home .wptb-slider.style3 .wptb-heading { position: relative; z-index: 2; max-width: 100%; margin: 0; }
     .page-home .wptb-slider.style3 .wptb-item--title { max-width: 390px; margin: 9px 0 12px; color: #fff; font-size: 32px; line-height: 1.02; text-shadow: 0 2px 22px rgba(0,0,0,.28); }
-    .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 390px; color: rgba(255,255,255,.82); font-size: 13px; line-height: 1.5; }
+    .page-home .wptb-slider.style3 .wptb-hero-subheadline { display: none; }
     .page-home .wptb-slider.style3 .wptb-hero-feature-pills { display: none; }
     .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
     .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 43px; padding-inline: 8px; font-size: 9px; }
