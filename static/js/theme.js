@@ -1192,10 +1192,34 @@ Description: Kimono - Photography Agency
             $('.wptb-image-box1.highlight, .wptb-image-box2.highlight, .wptb-blog-grid1.highlight, .wptb-packages1.highlight, .wptb-icon-box2.highlight, .wptb-icon-box5.highlight, .wptb-icon-box7.highlight, .wptb-award-list .wptb-item.highlight, .wptb-features .wptb-item.highlight').addClass('active');     
         });
 
-        // Keyboard parity for the LumisPixel workflow feature reveal
-        $('.lumis-how-it-works .wptb-features .wptb-item').on('focusin', function(){
-            $('.lumis-how-it-works .wptb-features .wptb-item').removeClass('active');
-            $(this).addClass('active');
+        // Keep the LumisPixel workflow reveal in sync for mouse, keyboard, and touch.
+        $('.lumis-how-it-works').each(function(){
+            var $workflow = $(this);
+            var $workflowItems = $workflow.find('.wptb-features .wptb-item');
+
+            function activateWorkflowItem($item) {
+                $workflowItems.removeClass('active');
+                $workflowItems.find('.wptb-item--features-holder a').removeAttr('aria-current');
+                $item.addClass('active');
+                $item.find('.wptb-item--features-holder a').attr('aria-current', 'step');
+            }
+
+            $workflowItems.on('mouseenter focusin', function(){
+                activateWorkflowItem($(this));
+            });
+
+            $workflowItems.find('.wptb-item--features-holder a').on('click', function(event){
+                event.preventDefault();
+                activateWorkflowItem($(this).closest('.wptb-item'));
+            });
+
+            $workflowItems.on('mouseleave', function(){
+                if (!$workflow.find(':focus').length) {
+                    activateWorkflowItem($workflowItems.filter('.highlight').first());
+                }
+            });
+
+            activateWorkflowItem($workflowItems.filter('.highlight').first());
         });
 
 

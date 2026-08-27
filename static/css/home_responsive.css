@@ -31,15 +31,14 @@
 .page-home .lumis-ai-features .wptb-item--title,
 .page-home .lumis-photographer-marketplace__title,
 .page-home .lumis-pricing-content__title {
-    font-size: clamp(42px, 4.8vw, 66px);
+    font-size: clamp(36px, 4vw, 52px);
     line-height: .99;
     letter-spacing: -.052em;
 }
+.page-home .lumis-final-cta__title { font-size: clamp(36px, 4vw, 52px); line-height: 1; letter-spacing: -.05em; }
 
-/* A restrained, focused hero. Existing placeholder images remain untouched. */
+/* A restrained four-story hero. Existing placeholder images remain untouched. */
 .page-home .wptb-slider.style3 { position: relative; background: #0a0a0a; }
-.page-home .wptb-slider.style3 .swiper-slide:not(:first-child),
-.page-home .wptb-slider.style3 .wptb-bottom-pane,
 .page-home .wptb-slider.style3 .wptb-item-layer { display: none !important; }
 .page-home .wptb-slider.style3 .wptb-slider--item,
 .page-home .wptb-slider.style3 .wptb-slider--inner { height: auto; min-height: min(820px, 90svh); }
@@ -54,14 +53,14 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(5,5,5,.88), rgba(5,5,5,.64) 48%, rgba(5,5,5,.2));
+    background: linear-gradient(90deg, rgba(5,5,5,.78), rgba(5,5,5,.48) 48%, rgba(5,5,5,.1));
 }
 .page-home .wptb-slider.style3 .wptb-heading { max-width: 740px; margin-top: 72px; }
 .page-home .wptb-slider.style3 .wptb-item--title {
     max-width: 720px;
     margin: 15px 0 19px;
     color: #fff;
-    font-size: clamp(50px, 5.8vw, 78px);
+    font-size: clamp(46px, 5vw, 68px);
     line-height: .97;
     letter-spacing: -.055em;
 }
@@ -87,6 +86,32 @@
 .page-home .wptb-slider.style3 .wptb-item--button { display: flex; gap: 9px; margin-top: 28px; }
 .page-home .wptb-slider.style3 .wptb-item--button .btn { min-width: 172px; min-height: 48px; }
 .page-home .wptb-slider.style3 .wptb-hero-text-link { margin-top: 13px; color: rgba(255,255,255,.75); font-size: 12px; }
+.page-home .wptb-slider.style3 .wptb-bottom-pane {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between !important;
+    right: 28px;
+    bottom: 28px;
+    left: 28px;
+    width: auto;
+    padding: 0;
+}
+.page-home .wptb-slider.style3 .wptb-swiper-dots,
+.page-home .wptb-slider.style3 .wptb-swiper-navigation { position: relative; z-index: 4; }
+.page-home .wptb-slider.style3 .swiper-pagination-bullet {
+    width: 7px;
+    height: 7px;
+    background: rgba(255,255,255,.55);
+    opacity: 1;
+}
+.page-home .wptb-slider.style3 .swiper-pagination-bullet-active { width: 24px; border-radius: 999px; background: #fff; }
+.page-home .wptb-slider.style3 .swiper-button-prev,
+.page-home .wptb-slider.style3 .swiper-button-next {
+    border-color: rgba(255,255,255,.22);
+    background: rgba(8,8,8,.34);
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
 
 /* Photo discovery: copy and demonstration read as one chapter. */
 .page-home .lumis-photo-match { position: relative; background: var(--home-paper); }
@@ -176,6 +201,46 @@
 .page-home .lumis-how-it-works .wptb-item--features-holder a { min-height: 74px; }
 .page-home .lumis-how-it-works .wptb-item--image { overflow: hidden; border-radius: 22px; }
 
+/* Desktop workflow reveal: fixed visual canvas with a content card above it. */
+@media (min-width: 1200px) {
+    .page-home .lumis-how-it-works { overflow: visible !important; }
+    .page-home .lumis-how-it-works__steps { position: relative; min-height: 590px; overflow: visible; }
+    .page-home .lumis-how-it-works .wptb-item .wptb-item--inner { display: block; }
+    .page-home .lumis-how-it-works .wptb-item .wptb-item--features-holder { position: relative; z-index: 6; width: 34%; }
+    .page-home .lumis-how-it-works .wptb-item .wptb-item--image {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: 34%;
+        width: auto;
+        max-width: none;
+        height: 560px;
+        border-radius: 24px;
+        z-index: 1;
+    }
+    .page-home .lumis-how-it-works .wptb-item.active .wptb-item--image,
+    .page-home .lumis-how-it-works .wptb-item:hover .wptb-item--image,
+    .page-home .lumis-how-it-works .wptb-item:focus-within .wptb-item--image { z-index: 3; }
+    .page-home .lumis-how-it-works .wptb-item--image > img { width: 100%; height: 100%; object-fit: cover; }
+    .page-home .lumis-how-it-works .wptb-item--features-bottom {
+        right: 24px;
+        bottom: 24px;
+        left: -118px;
+        z-index: 7;
+        pointer-events: none;
+    }
+    .page-home .lumis-how-it-works .wptb-item--content {
+        position: relative;
+        z-index: 8;
+        max-width: 380px;
+        padding: 34px;
+        box-shadow: 0 24px 60px rgba(0,0,0,.28);
+        pointer-events: auto;
+    }
+    .page-home .lumis-how-it-works .wptb-counter--box { pointer-events: auto; }
+}
+
 /* AI interface and marketplace share the same disciplined surface language. */
 .page-home .lumis-ai-features { background: #ddd6ce; }
 .page-home .lumis-ai-features__inner { width: min(calc(100% - 48px), 1280px); max-width: 1280px; margin: auto; gap: clamp(44px, 6vw, 88px); }
@@ -225,7 +290,7 @@
     .page-home .lumis-photographer-marketplace__title,
     .page-home .lumis-pricing-content__title,
     .page-home .lumis-final-cta__title {
-        font-size: clamp(33px, 9.4vw, 41px);
+        font-size: clamp(30px, 8.3vw, 37px);
         line-height: 1.01;
         letter-spacing: -.045em;
     }
@@ -234,20 +299,32 @@
     .page-home .lumis-pricing-content__intro,
     .page-home .lumis-final-cta__copy { font-size: 14px; line-height: 1.55; }
 
-    /* Phone hero uses the first viewport intentionally. */
+    /* Phone carousel gives the placeholder a defined image stage above the copy. */
     .page-home .wptb-slider.style3 .wptb-slider--item,
-    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 660px; }
-    .page-home .wptb-slider.style3 .wptb-slider--image::after {
-        background: linear-gradient(180deg, rgba(5,5,5,.46), rgba(5,5,5,.74) 52%, rgba(5,5,5,.94));
+    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 700px; }
+    .page-home .wptb-slider.style3 .wptb-slider--item { position: relative; background: #0a0a0a; }
+    .page-home .wptb-slider.style3 .wptb-slider--image {
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: 0;
+        height: 300px;
+        background-position: center;
+        background-size: cover;
     }
-    .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-end; padding: 104px 0 42px; }
+    .page-home .wptb-slider.style3 .wptb-slider--image::after {
+        background: linear-gradient(180deg, rgba(5,5,5,.08), rgba(5,5,5,.34));
+    }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { align-items: flex-start; padding: 332px 0 78px; }
     .page-home .wptb-slider.style3 .wptb-heading { max-width: 100%; margin: 0; }
-    .page-home .wptb-slider.style3 .wptb-item--title { max-width: 360px; margin: 11px 0 14px; font-size: 42px; line-height: .97; }
+    .page-home .wptb-slider.style3 .wptb-item--title { max-width: 360px; margin: 11px 0 14px; font-size: 36px; line-height: 1; }
     .page-home .wptb-slider.style3 .wptb-hero-subheadline { max-width: 370px; font-size: 14px; line-height: 1.52; }
     .page-home .wptb-slider.style3 .wptb-hero-feature-pills { display: none; }
     .page-home .wptb-slider.style3 .wptb-item--button { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
     .page-home .wptb-slider.style3 .wptb-item--button .btn { width: 100%; min-width: 0; min-height: 45px; padding-inline: 9px; font-size: 10px; }
     .page-home .wptb-slider.style3 .wptb-hero-text-link { min-height: 34px; margin-top: 7px; }
+    .page-home .wptb-slider.style3 .wptb-bottom-pane { right: 16px; bottom: 18px; left: 16px; }
+    .page-home .wptb-slider.style3 .wptb-swiper-navigation { display: flex; }
 
     /* Heading, example, then detail: visual proof is never detached. */
     .page-home .lumis-photo-match .row { display: grid; gap: 0 !important; }
@@ -287,9 +364,13 @@
     .page-home .lumis-how-it-works .wptb-item--features-holder a { min-height: 58px; padding-inline: 14px; }
     .page-home .lumis-how-it-works .wptb-item--features-holder .wptb-item--title { font-size: 17px; }
     .page-home .lumis-how-it-works .wptb-item--image { display: none !important; margin: 0; border-radius: 0; }
-    .page-home .lumis-how-it-works .wptb-item.active .wptb-item--image { display: block !important; aspect-ratio: 16 / 10; }
+    .page-home .lumis-how-it-works .wptb-item.active .wptb-item--image,
+    .page-home .lumis-how-it-works .wptb-item:focus-within .wptb-item--image { display: block !important; aspect-ratio: 16 / 10; }
     .page-home .lumis-how-it-works .wptb-item.active .wptb-item--image > img { width: 100%; height: 100%; object-fit: cover; }
     .page-home .lumis-how-it-works .wptb-item--features-bottom { display: none; }
+    .page-home .lumis-how-it-works .wptb-item.active .wptb-item--features-bottom,
+    .page-home .lumis-how-it-works .wptb-item:focus-within .wptb-item--features-bottom { display: block; }
+    .page-home .lumis-how-it-works .wptb-item--content { margin: 0; padding: 18px; border-radius: 0; transform: none; }
 
     .page-home .lumis-ai-features__heading { margin-bottom: 24px; }
     .page-home .lumis-ai-features__tabs { grid-template-columns: repeat(2, 1fr); gap: 7px; }
@@ -337,8 +418,8 @@
 
 @media (max-width: 390px) {
     .page-home .wptb-slider.style3 .wptb-slider--item,
-    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 640px; }
-    .page-home .wptb-slider.style3 .wptb-item--title { font-size: 38px; }
+    .page-home .wptb-slider.style3 .wptb-slider--inner { min-height: 760px; }
+    .page-home .wptb-slider.style3 .wptb-item--title { font-size: 34px; }
     .page-home .wptb-slider.style3 .wptb-item--button { grid-template-columns: 1fr; }
     .page-home .lumis-pricing-plans { grid-auto-columns: 91%; }
 }

@@ -18,6 +18,20 @@ class HomePageTests(TestCase):
         self.assertNotContains(response, 'home-start-free-cta" href="#"')
         self.assertNotContains(response, 'href="#">Start Free')
 
+    def test_hero_carousel_keeps_four_distinct_stories_and_placeholders(self):
+        response = self.client.get(reverse("core:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="swiper-slide"', count=4)
+        self.assertContains(response, "Photography, Powered by AI.")
+        self.assertContains(response, "Find Your Photos in Seconds.")
+        self.assertContains(response, "One Workspace. Your Entire Business.")
+        self.assertContains(response, "The Right Photographer, Easier to Find.")
+        self.assertContains(response, "img/slider/7.jpg")
+        self.assertContains(response, "img/slider/8.jpg", count=2)
+        self.assertContains(response, "img/slider/9.jpg")
+        self.assertContains(response, 'class="wptb-bottom-pane justify-content-center"')
+
 
 class AboutPageTests(TestCase):
     def test_about_page_uses_dedicated_marketing_layout(self):
