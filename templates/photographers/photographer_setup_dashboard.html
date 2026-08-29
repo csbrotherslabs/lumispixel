@@ -1,6 +1,23 @@
-{% extends "setup_dashboard_base.html" %}
+{% extends "base.html" %}
 {% block title %}Photographer Setup Dashboard | LumisPixel{% endblock %}
-{% block setup_title %}Welcome to LumisPixel{% endblock %}
-{% block setup_description %}Your photography workspace is not fully configured. Continue setup to unlock your workspace tools.{% endblock %}
-{% block progress_heading %}Finish setting up your photography business to unlock your workspace.{% endblock %}
-{% block preview_heading %}Photography workspace preview{% endblock %}
+{% block body_class %}page-inner client-setup-page photographer-setup-page{% endblock %}
+{% block content %}
+<main class="client-setup photographer-setup" aria-labelledby="photographer-progress-title"><div class="container">
+  <div class="client-setup__dashboard">
+    <section class="client-setup__progress-card">
+      <div class="client-setup__card-heading"><div><span class="client-setup__section-label">Photography business setup</span><h1 id="photographer-progress-title">Build your LumisPixel workspace</h1><p>Complete five focused steps to prepare your business identity, specialties, operating preferences, and client-facing experience.</p></div><div class="client-setup__progress-summary"><span class="client-setup__status"><i class="client-setup__status-dot"></i>In progress</span><strong>{{ progress_percent }}%</strong></div></div>
+      <div class="client-setup__progress-bar" role="progressbar" aria-label="Photographer setup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}"><span style="width:{{ progress_percent }}%"></span></div>
+      <ol class="client-setup__steps photographer-setup__steps">
+        <li class="{% if current_step >= 1 %}is-active{% endif %}{% if current_step > 1 %} is-complete{% endif %}"><span>{% if current_step > 1 %}<i class="bi bi-check2"></i>{% else %}1{% endif %}</span><div><strong>Welcome</strong><small>See your workspace</small></div></li>
+        <li class="{% if current_step >= 2 %}is-active{% endif %}{% if current_step > 2 %} is-complete{% endif %}"><span>{% if current_step > 2 %}<i class="bi bi-check2"></i>{% else %}2{% endif %}</span><div><strong>Profile</strong><small>Business identity</small></div></li>
+        <li class="{% if current_step >= 3 %}is-active{% endif %}{% if current_step > 3 %} is-complete{% endif %}"><span>{% if current_step > 3 %}<i class="bi bi-check2"></i>{% else %}3{% endif %}</span><div><strong>Specialties</strong><small>Your photography</small></div></li>
+        <li class="{% if current_step >= 4 %}is-active{% endif %}{% if current_step > 4 %} is-complete{% endif %}"><span>{% if current_step > 4 %}<i class="bi bi-check2"></i>{% else %}4{% endif %}</span><div><strong>Business</strong><small>Preferences</small></div></li>
+        <li class="{% if current_step >= 5 %}is-active{% endif %}"><span>5</span><div><strong>Theme</strong><small>Client experience</small></div></li>
+      </ol>
+      <div class="client-setup__actions"><a class="btn client-setup__primary" href="{{ continue_url }}"><span class="btn-wrap"><span class="text-first">Continue Setup</span></span><i class="bi bi-arrow-right"></i></a><a class="client-setup__secondary" href="{{ review_url }}">Review from the beginning</a></div>
+    </section>
+    <aside class="client-setup__next"><span class="client-setup__section-label">What happens next</span><h2>Five steps. Built around your business.</h2><p>Your choices prepare a workspace that can grow with you—from independent photographer to a full studio team.</p><ul><li><i class="bi bi-buildings"></i><span><strong>Business ready</strong><small>Set your identity, location, and defaults.</small></span></li><li><i class="bi bi-people"></i><span><strong>Team compatible</strong><small>Keep ownership and team access connected.</small></span></li><li><i class="bi bi-stars"></i><span><strong>Client focused</strong><small>Shape how clients experience your brand.</small></span></li></ul></aside>
+  </div>
+  <section class="client-setup__features"><div class="client-setup__features-heading"><div><span class="client-setup__section-label">Waiting for you</span><h2>Your photography workspace</h2></div><p>These tools unlock as soon as setup is complete.</p></div><div class="client-setup__feature-grid"><article><span><i class="bi bi-images"></i></span><div><h3>Galleries</h3><p>Deliver polished photo experiences.</p></div><small>Locked</small></article><article><span><i class="bi bi-people"></i></span><div><h3>Client CRM</h3><p>Keep relationships and activity together.</p></div><small>Locked</small></article><article><span><i class="bi bi-calendar-event"></i></span><div><h3>Bookings</h3><p>Manage shoots and your schedule.</p></div><small>Locked</small></article><article><span><i class="bi bi-receipt"></i></span><div><h3>Financials</h3><p>Track invoices and transactions.</p></div><small>Locked</small></article><article><span><i class="bi bi-stars"></i></span><div><h3>AI Tools</h3><p>Prepare smarter photo workflows.</p></div><small>Locked</small></article></div></section>
+</div></main>
+{% endblock %}
