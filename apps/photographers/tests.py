@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.accounts.models import ClientProfile, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile
+from apps.accounts.models import AdministrativeRegion, ClientProfile, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile
 from apps.photographers.forms import PhotographerSpecialtiesForm
 
 User = get_user_model()
@@ -25,6 +25,8 @@ class PhotographerOnboardingTests(TestCase):
         ClientProfile.objects.create(user=self.client_user)
         self.wedding = PhotographerSpecialty.objects.get(slug="wedding")
         self.sports = PhotographerSpecialty.objects.get(slug="sports")
+        self.country = Country.objects.create(source_id=233, name="United States", iso2="US", iso3="USA")
+        self.region = AdministrativeRegion.objects.create(source_id=1456, country=self.country, name="California", code="US-CA", region_type="state")
 
     def test_anonymous_user_redirects_to_login(self):
         response = self.client.get(reverse("photographers:setup-dashboard"))
@@ -54,12 +56,16 @@ class PhotographerOnboardingTests(TestCase):
         logo = SimpleUploadedFile("logo.gif", image.read(), content_type="image/gif")
         image.seek(0)
         response = self.client.post(reverse("photographers:onboarding-profile"), {
-            "first_name": "Pat", "last_name": "Pixel", "display_name": "Pat Pixel", "business_name": "Lumis Studio", "phone_number": "+1 555 1212", "website": "https://example.com", "country": "United States", "state": "CA", "city": "Oakland", "timezone": "America/Los_Angeles", "profile_photo": image, "business_logo": logo,
+            "first_name": "Pat", "last_name": "Pixel", "display_name": "Pat Pixel", "business_name": "Lumis Studio", "phone_number": "+1 555 1212", "website": "https://example.com", "country_record": self.country.pk, "administrative_region": self.region.pk, "city": "Oakland", "timezone": "America/Los_Angeles", "profile_photo": image, "business_logo": logo,
         })
         self.assertRedirects(response, reverse("photographers:onboarding-specialties"), fetch_redirect_response=False)
         self.user.refresh_from_db(); self.profile.refresh_from_db()
         self.assertEqual(self.user.first_name, "Pat")
         self.assertEqual(self.profile.display_name, "Pat Pixel")
+        self.assertEqual(self.profile.country, "United States")
+        self.assertEqual(self.profile.state, "California")
+        self.assertEqual(self.profile.country_record, self.country)
+        self.assertEqual(self.profile.administrative_region, self.region)
         self.assertTrue(self.profile.profile_photo)
         self.assertTrue(self.profile.business_logo)
 

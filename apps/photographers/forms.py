@@ -2,8 +2,9 @@ from zoneinfo import available_timezones
 
 from django import forms
 from django.db.models import Case, IntegerField, Value, When
+from django.urls import reverse
 
-from apps.accounts.models import PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile, PhotographerWebsiteProject
+from apps.accounts.models import AdministrativeRegion, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile, PhotographerWebsiteProject
 from apps.clients.forms import COMMON_TIMEZONES, timezone_choices
 
 
@@ -20,8 +21,8 @@ class PhotographerOnboardingProfileForm(forms.ModelForm):
             "business_logo",
             "phone_number",
             "website",
-            "country",
-            "state",
+            "country_record",
+            "administrative_region",
             "city",
             "timezone",
         ]
@@ -32,6 +33,8 @@ class PhotographerOnboardingProfileForm(forms.ModelForm):
             "business_logo": "Business logo",
             "phone_number": "Phone number",
             "website": "Website",
+            "country_record": "Country",
+            "administrative_region": "State / province / region",
             "timezone": "Time zone",
         }
         widgets = {
@@ -41,8 +44,8 @@ class PhotographerOnboardingProfileForm(forms.ModelForm):
             "business_logo": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
             "phone_number": forms.TextInput(attrs={"class": "form-control", "autocomplete": "tel"}),
             "website": forms.URLInput(attrs={"class": "form-control", "autocomplete": "url"}),
-            "country": forms.TextInput(attrs={"class": "form-control", "autocomplete": "country-name"}),
-            "state": forms.TextInput(attrs={"class": "form-control", "autocomplete": "address-level1"}),
+            "country_record": forms.Select(attrs={"class": "form-control", "autocomplete": "country-name", "data-location-country": "", "data-regions-url": "/api/locations/regions/"}),
+            "administrative_region": forms.Select(attrs={"class": "form-control", "autocomplete": "address-level1", "data-location-region": ""}),
             "city": forms.TextInput(attrs={"class": "form-control", "autocomplete": "address-level2"}),
             "timezone": forms.Select(attrs={"class": "form-control"}, choices=timezone_choices()),
         }
@@ -52,7 +55,17 @@ class PhotographerOnboardingProfileForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["first_name"].widget.attrs.update({"class": "form-control", "autocomplete": "given-name"})
         self.fields["last_name"].widget.attrs.update({"class": "form-control", "autocomplete": "family-name"})
-        for name in ("first_name", "last_name", "display_name", "country", "state", "city", "timezone"):
+        self.fields["country_record"].queryset = Country.objects.filter(is_active=True).order_by("name")
+        self.fields["country_record"].widget.attrs["data-regions-url"] = reverse("api:administrative-regions")
+        selected_country = self.data.get("country_record") if self.is_bound else getattr(self.instance, "country_record_id", None)
+        regions = AdministrativeRegion.objects.none()
+        if selected_country and str(selected_country).isdigit():
+            regions = AdministrativeRegion.objects.filter(country_id=selected_country, is_active=True).order_by("name")
+        self.fields["administrative_region"].queryset = regions
+        self.fields["administrative_region"].required = regions.exists()
+        self.fields["country_record"].empty_label = "Select a country"
+        self.fields["administrative_region"].empty_label = "Select a state, province, or region"
+        for name in ("first_name", "last_name", "display_name", "country_record", "city", "timezone"):
             self.fields[name].required = True
         if user and not self.is_bound:
             self.fields["first_name"].initial = user.first_name
@@ -60,6 +73,10 @@ class PhotographerOnboardingProfileForm(forms.ModelForm):
 
     def save(self, commit=True):
         profile = super().save(commit=False)
+        country = self.cleaned_data["country_record"]
+        region = self.cleaned_data.get("administrative_region")
+        profile.country = country.name
+        profile.state = region.name if region else ""
         if self.user:
             self.user.first_name = self.cleaned_data["first_name"].strip()
             self.user.last_name = self.cleaned_data["last_name"].strip()
