@@ -140,6 +140,50 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.save(update_fields=["email_verified", "email_verified_at", "account_status", "updated_at"])
 
 
+class Country(models.Model):
+    source_id = models.PositiveIntegerField(unique=True)
+    name = models.CharField(max_length=100)
+    iso2 = models.CharField(max_length=2, unique=True)
+    iso3 = models.CharField(max_length=3, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name_plural = "countries"
+
+    def __str__(self):
+        return self.name
+
+
+class AdministrativeRegion(models.Model):
+    source_id = models.PositiveIntegerField(unique=True)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="administrative_regions")
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=32, blank=True)
+    region_type = models.CharField(max_length=50, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        return f"{self.name}, {self.country.iso2}"
+
+
+class LocationDatasetImport(models.Model):
+    source = models.CharField(max_length=200)
+    revision = models.CharField(max_length=64)
+    country_count = models.PositiveIntegerField(default=0)
+    region_count = models.PositiveIntegerField(default=0)
+    imported_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-imported_at",)
+
+    def __str__(self):
+        return f"{self.source} @ {self.revision}"
+
+
 class ClientProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="client_profile")
     display_name = models.CharField(max_length=150, blank=True)
@@ -192,6 +236,8 @@ class PhotographerProfile(models.Model):
     website = models.URLField(blank=True)
     country = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
+    country_record = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, related_name="photographer_profiles")
+    administrative_region = models.ForeignKey(AdministrativeRegion, on_delete=models.SET_NULL, null=True, blank=True, related_name="photographer_profiles")
     city = models.CharField(max_length=100, blank=True)
     timezone = models.CharField(max_length=64, blank=True)
     business_type = models.CharField(max_length=20, choices=BusinessType.choices, default=BusinessType.INDIVIDUAL)
