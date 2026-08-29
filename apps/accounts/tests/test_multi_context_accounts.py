@@ -106,6 +106,30 @@ class MultiContextAccountTests(TestCase):
             405,
         )
 
+    def test_photographer_can_add_personal_photo_space(self):
+        photographer = User.objects.create_user(
+            email="photographer-only@example.com",
+            password="TestPass123!",
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            last_active_workspace=User.Workspace.PHOTOGRAPHER,
+        )
+        PhotographerProfile.objects.create(user=photographer, onboarding_completed=True)
+        self.client.force_login(photographer)
+
+        response = self.client.post(reverse("accounts:enable-client-profile"))
+
+        self.assertRedirects(
+            response,
+            reverse("clients:setup-dashboard"),
+            fetch_redirect_response=False,
+        )
+        photographer.refresh_from_db()
+        self.assertTrue(ClientProfile.objects.filter(user=photographer).exists())
+        self.assertTrue(PhotographerProfile.objects.filter(user=photographer).exists())
+        self.assertEqual(photographer.last_active_workspace, User.Workspace.CLIENT)
+
     def test_invitation_signup_creates_personal_identity_not_owned_workspace(self):
         owner = User.objects.create_user(
             email="invite-owner@example.com",

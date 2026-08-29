@@ -49,6 +49,7 @@ urlpatterns = [
     path("accounts/email-verification-required/", views.verification_pending, name="email-verification-required"),
     path("accounts/onboarding/photographer/", views.photographer_onboarding_entry, name="photographer-onboarding"),
     path("accounts/enable-photographer-workspace/", views.enable_photographer_workspace, name="enable-photographer-workspace"),
+    path("accounts/enable-client-profile/", views.enable_client_profile, name="enable-client-profile"),
     path("accounts/find-photos/", views.placeholder_view, {"title": "Find My Photos"}, name="find-photos-placeholder"),
     path("accounts/marketplace-request/", views.placeholder_view, {"title": "Marketplace Request"}, name="marketplace-request-placeholder"),
     path("accounts/dashboard/client/", views.client_dashboard, name="client-dashboard"),
