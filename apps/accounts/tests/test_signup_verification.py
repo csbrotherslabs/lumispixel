@@ -122,6 +122,28 @@ class EntrySignupVerificationTests(TestCase):
         invalid = self.client.get(reverse("accounts:verify-email", kwargs={"uidb64": uid, "token": token}))
         self.assertRedirects(invalid, reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
+    def test_verified_status_page_stays_confirmed_after_refresh(self):
+        user = User.objects.create_user(
+            email="confirmed@example.com",
+            password="StrongPass123!",
+            email_verified=True,
+            account_status=User.AccountStatus.ACTIVE,
+        )
+        ClientProfile.objects.create(user=user, onboarding_completed=False)
+        self.client.force_login(user)
+
+        first_response = self.client.get(reverse("accounts:verification-pending"))
+        refreshed_response = self.client.get(reverse("accounts:verification-pending"))
+
+        for response in (first_response, refreshed_response):
+            self.assertContains(response, "Your email is verified")
+            self.assertContains(response, "Account successfully verified")
+            self.assertContains(response, "Your verification status has been saved")
+            self.assertContains(response, "Continue Account Setup")
+            self.assertContains(response, reverse("clients:setup-dashboard"))
+            self.assertNotContains(response, "Resend Verification Email")
+            self.assertNotContains(response, "Check your inbox")
+
     def test_invalid_token_fails_safely(self):
         user = User.objects.create_user(email="badtoken@example.com", password="StrongPass123!")
         uid = urlsafe_base64_encode(force_bytes(user.pk))

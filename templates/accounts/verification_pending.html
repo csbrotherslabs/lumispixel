@@ -4,9 +4,9 @@
 <header class="login-title-section" aria-labelledby="verify-email-title">
   <div class="container">
     <div class="login-title-section__inner text-center">
-      <span class="login-title-section__eyebrow">One last step</span>
-      <h1 class="login-title-section__title" id="verify-email-title">Verify your email</h1>
-      <p class="login-title-section__copy">Confirm your email address to secure your account and continue into LumisPixel.</p>
+      <span class="login-title-section__eyebrow">{% if is_verified %}Email confirmed{% else %}One last step{% endif %}</span>
+      <h1 class="login-title-section__title" id="verify-email-title">{% if is_verified %}Your email is verified{% else %}Verify your email{% endif %}</h1>
+      <p class="login-title-section__copy">{% if is_verified %}Your LumisPixel account is secure and ready for the next step.{% else %}Confirm your email address to secure your account and continue into LumisPixel.{% endif %}</p>
     </div>
   </div>
 </header>
@@ -18,11 +18,14 @@
         <div class="row">
           <div class="col-12 login-auth-column verification-auth-column">
             <div class="login-auth-card verification-auth-card">
-              <div class="verification-auth-card__status{% if delivery_status == 'failed' %} verification-auth-card__status--error{% endif %}" aria-hidden="true">
-                <i class="bi {% if delivery_status == 'failed' %}bi-exclamation-lg{% else %}bi-envelope-check{% endif %}"></i>
+              <div class="verification-auth-card__status{% if delivery_status == 'failed' and not is_verified %} verification-auth-card__status--error{% endif %}" aria-hidden="true">
+                <i class="bi {% if is_verified %}bi-patch-check-fill{% elif delivery_status == 'failed' %}bi-exclamation-lg{% else %}bi-envelope-check{% endif %}"></i>
               </div>
 
-              {% if delivery_status == "sent" %}
+              {% if is_verified %}
+                <h2>Account successfully verified</h2>
+                <p><strong>{{ pending_email }}</strong> has been confirmed. You can safely continue setting up your LumisPixel account.</p>
+              {% elif delivery_status == "sent" %}
                 <h2>Verification email sent</h2>
                 <p>We sent a secure verification link{% if pending_email %} to <strong>{{ pending_email }}</strong>{% endif %}. It should arrive shortly.</p>
               {% elif delivery_status == "failed" %}
@@ -33,19 +36,28 @@
                 <p>Your email address{% if pending_email %}, <strong>{{ pending_email }}</strong>,{% endif %} still needs to be verified. Open the link in your verification email to continue.</p>
               {% endif %}
 
-              <div class="verification-auth-card__note">
-                <i class="bi bi-info-circle" aria-hidden="true"></i>
-                <span>If you don’t see the message, check your spam or junk folder before requesting another one.</span>
-              </div>
+              {% if is_verified %}
+                <div class="verification-auth-card__note">
+                  <i class="bi bi-shield-check" aria-hidden="true"></i>
+                  <span>Your verification status has been saved. Refreshing this page will not change it.</span>
+                </div>
+              {% else %}
+                <div class="verification-auth-card__note">
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                  <span>If you don’t see the message, check your spam or junk folder before requesting another one.</span>
+                </div>
+              {% endif %}
 
               <div class="lumis-auth-actions verification-auth-card__actions" aria-label="Email verification actions">
-                {% if can_resend %}
+                {% if is_verified %}
+                  <a class="btn lumis-auth-primary" href="{{ continue_url }}"><span class="btn-wrap"><span class="text-first">Continue Account Setup</span></span></a>
+                {% elif can_resend %}
                   <form method="post" action="{% url 'accounts:resend-verification' %}">
                     {% csrf_token %}
                     <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Resend Verification Email</span></span></button>
                   </form>
                 {% endif %}
-                <a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}"><span class="btn-wrap"><span class="text-first">Return to Sign In</span></span></a>
+                {% if not is_verified %}<a class="btn lumis-auth-secondary" href="{% url 'accounts:login' %}"><span class="btn-wrap"><span class="text-first">Return to Sign In</span></span></a>{% endif %}
               </div>
             </div>
           </div>
