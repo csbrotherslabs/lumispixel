@@ -126,7 +126,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def can_use_photographer_workspace(self):
-        return self.can_login and self.has_photographer_profile
+        return self.can_login and (
+            self.has_photographer_profile
+            or self.studio_memberships.filter(status="active").exists()
+        )
 
     def mark_email_verified(self, commit=True):
         self.email_verified = True

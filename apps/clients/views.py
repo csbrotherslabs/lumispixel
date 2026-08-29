@@ -27,8 +27,8 @@ def _completed_client_destination(profile):
 
 
 def _client_onboarding_profile_or_response(request):
-    if not request.user.is_client:
-        raise PermissionDenied("Only client accounts can complete client onboarding.")
+    if not request.user.has_client_profile:
+        raise PermissionDenied("A client profile is required to complete client onboarding.")
     profile = _client_profile(request.user)
     completed_response = _completed_client_destination(profile)
     if completed_response:
@@ -45,9 +45,7 @@ def _set_client_step(profile, step):
 @login_required
 @require_GET
 def setup_dashboard(request):
-    if request.user.is_photographer:
-        return redirect("photographers:setup-dashboard")
-    if not request.user.is_client:
+    if not request.user.has_client_profile:
         return redirect("accounts:post-login-redirect")
     profile = _client_profile(request.user)
     if profile.onboarding_completed:
@@ -109,9 +107,7 @@ def onboarding_how_it_works(request):
 @login_required
 @require_GET
 def skip_onboarding(request):
-    if request.user.is_photographer:
-        return redirect("photographers:setup-dashboard")
-    if not request.user.is_client:
+    if not request.user.has_client_profile:
         return redirect("accounts:post-login-redirect")
     _client_profile(request.user)
     return redirect("clients:setup-dashboard")
@@ -121,9 +117,7 @@ def skip_onboarding(request):
 @require_GET
 def dashboard(request):
     user = request.user
-    if user.is_photographer:
-        return redirect("accounts:photographer-dashboard")
-    if not user.is_client:
+    if not user.has_client_profile:
         return redirect("accounts:post-login-redirect")
     profile = _client_profile(user)
     if not profile.onboarding_completed:
@@ -145,9 +139,7 @@ def dashboard(request):
 @require_http_methods(["GET", "POST"])
 def account_settings(request):
     user = request.user
-    if user.is_photographer:
-        return redirect("photographer_workspace:settings")
-    if not user.is_client:
+    if not user.has_client_profile:
         return redirect("accounts:post-login-redirect")
     profile = _client_profile(user)
     if not profile.onboarding_completed:

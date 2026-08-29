@@ -167,7 +167,7 @@ class LoginTests(TestCase):
         self.assertRedirects(response, reverse("clients:dashboard"), fetch_redirect_response=False)
         dashboard = self.client.get(reverse("clients:dashboard"))
         self.assertEqual(dashboard.status_code, 200)
-        self.assertContains(dashboard, "Find, save, and access your photos from one place.")
+        self.assertContains(dashboard, "Find your galleries, return to saved moments, and keep everything close.")
 
     def test_photographer_with_client_profile_does_not_enter_client_onboarding(self):
         user = make_user(email="photo-not-client-onboarding@example.com", primary_role=User.PrimaryRole.PHOTOGRAPHER, last_active_workspace=User.Workspace.PHOTOGRAPHER)
@@ -277,7 +277,7 @@ class LoginTests(TestCase):
 
         self.assertRedirects(self.client.get(reverse("clients:account-settings")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
-    def test_photographer_cannot_access_client_dashboard(self):
+    def test_user_without_client_profile_cannot_access_client_dashboard(self):
         user = make_user(
             email="photo-client-dashboard@example.com",
             primary_role=User.PrimaryRole.PHOTOGRAPHER,
@@ -287,7 +287,11 @@ class LoginTests(TestCase):
         PhotographerProfile.objects.create(user=user, slug="photo-client-dashboard")
         self.client.force_login(user)
 
-        self.assertRedirects(self.client.get(reverse("clients:dashboard")), reverse("accounts:photographer-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(
+            self.client.get(reverse("clients:dashboard")),
+            reverse("accounts:post-login-redirect"),
+            fetch_redirect_response=False,
+        )
 
     def test_finish_setup_requires_post(self):
         user = make_user(email="finish-get-client@example.com")
@@ -299,7 +303,7 @@ class LoginTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Finish Setup")
 
-    def test_photographer_cannot_complete_client_onboarding(self):
+    def test_user_with_both_profiles_can_complete_client_onboarding(self):
         user = make_user(
             email="photo-cannot-finish-client@example.com",
             primary_role=User.PrimaryRole.PHOTOGRAPHER,
@@ -311,9 +315,9 @@ class LoginTests(TestCase):
 
         response = self.client.post(reverse("clients:onboarding-how-it-works"))
 
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("clients:dashboard"), fetch_redirect_response=False)
         profile.refresh_from_db()
-        self.assertFalse(profile.onboarding_completed)
+        self.assertTrue(profile.onboarding_completed)
 
 
 from django.http import HttpResponse

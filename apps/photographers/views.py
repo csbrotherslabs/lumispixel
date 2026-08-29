@@ -27,8 +27,9 @@ def _photographer_profile(user):
 
 
 def _photographer_onboarding_profile_or_response(request):
-    if not request.user.is_photographer:
-        return None, redirect("clients:setup-dashboard" if request.user.is_client else _authenticated_destination_url(request, request.user))
+    if not request.user.has_photographer_profile:
+        destination = "clients:setup-dashboard" if request.user.has_client_profile else _authenticated_destination_url(request, request.user)
+        return None, redirect(destination)
     profile = _photographer_profile(request.user)
     if profile.onboarding_completed:
         return None, redirect("photographer_workspace:dashboard")
@@ -50,10 +51,8 @@ def _context(step, title_id, **extra):
 @login_required
 @require_GET
 def setup_dashboard(request):
-    if request.user.is_client:
-        return redirect("clients:setup-dashboard")
-    if not request.user.is_photographer:
-        return redirect("accounts:post-login-redirect")
+    if not request.user.has_photographer_profile:
+        return redirect("clients:setup-dashboard" if request.user.has_client_profile else "accounts:post-login-redirect")
     profile = _photographer_profile(request.user)
     if profile.onboarding_completed:
         return redirect("photographer_workspace:dashboard")
