@@ -1,12 +1,75 @@
 <!doctype html>
-<html>
-    <body>
-        <h1>LumisPixel</h1>
-        <p>Hi {{ user.first_name|default:"there" }},</p>
-        <p>Please verify your email address to continue setting up your LumisPixel account.</p>
-        <p><a href="{{ verification_url }}">Verify your email address</a></p>
-        <p>Plain-text link: {{ verification_url }}</p>
-        <p>If you did not create this account, you can ignore this email.</p>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Verify your LumisPixel email address</title>
+    <style>
+        @media only screen and (max-width: 620px) {
+            .email-shell { width: 100% !important; }
+            .email-pad { padding-right: 24px !important; padding-left: 24px !important; }
+            .email-title { font-size: 31px !important; line-height: 36px !important; }
+            .email-button { display: block !important; text-align: center !important; }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f2ef;color:#17181c;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Confirm your email to finish setting up your LumisPixel account.</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#f4f2ef;">
+        <tr>
+            <td align="center" style="padding:36px 14px;">
+                <table role="presentation" class="email-shell" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;border-collapse:separate;background-color:#ffffff;border:1px solid #e3dfda;border-radius:22px;overflow:hidden;box-shadow:0 18px 50px rgba(20,22,32,.08);">
+                    <tr>
+                        <td class="email-pad" style="padding:25px 42px;background-color:#111525;border-bottom:3px solid #d70006;">
+                            <a href="{{ site_url }}" style="display:inline-block;text-decoration:none;">
+                                <img src="{{ brand_logo_url }}" width="180" alt="LumisPixel" style="display:block;width:180px;max-width:100%;height:auto;border:0;">
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-pad" style="padding:48px 42px 18px;">
+                            <p style="margin:0 0 16px;color:#d70006;font-size:11px;font-weight:700;line-height:16px;letter-spacing:2px;text-transform:uppercase;">Email verification</p>
+                            <h1 class="email-title" style="margin:0 0 20px;color:#17181c;font-size:38px;font-weight:700;line-height:43px;letter-spacing:-1.3px;">One quick step, {{ user.first_name|default:"there" }}.</h1>
+                            <p style="margin:0;color:#62646a;font-size:16px;line-height:25px;">Confirm your email address to secure your account and continue setting up your LumisPixel experience.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-pad" style="padding:14px 42px 28px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td style="border-radius:12px;background-color:#d70006;">
+                                        <a class="email-button" href="{{ verification_url }}" style="display:inline-block;padding:15px 24px;color:#ffffff;font-size:14px;font-weight:700;line-height:18px;text-decoration:none;border-radius:12px;">Verify my email&nbsp;&nbsp;→</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-pad" style="padding:0 42px 28px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#effaf2;border:1px solid #ccebd5;border-radius:14px;">
+                                <tr>
+                                    <td width="42" valign="top" style="padding:16px 0 16px 16px;color:#16763a;font-size:20px;line-height:22px;">✓</td>
+                                    <td style="padding:16px;color:#31563d;font-size:13px;line-height:20px;">This secure link is unique to your account. LumisPixel will never ask you to send this link to anyone.</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-pad" style="padding:0 42px 42px;">
+                            <p style="margin:0 0 9px;color:#777980;font-size:12px;line-height:18px;">If the button does not work, copy and paste this address into your browser:</p>
+                            <p style="margin:0;padding:13px 15px;background-color:#f7f6f4;border-radius:10px;color:#55575d;font-size:11px;line-height:17px;word-break:break-all;"><a href="{{ verification_url }}" style="color:#55575d;text-decoration:underline;">{{ verification_url }}</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-pad" style="padding:24px 42px;background-color:#f8f7f5;border-top:1px solid #ebe8e4;">
+                            <p style="margin:0 0 7px;color:#55575d;font-size:12px;line-height:18px;">Didn’t create a LumisPixel account? You can safely ignore this email.</p>
+                            <p style="margin:0;color:#929399;font-size:11px;line-height:17px;">© {% now "Y" %} LumisPixel · Your work. Your clients. One connected place.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
 </html>
- 
