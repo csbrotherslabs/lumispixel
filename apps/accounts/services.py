@@ -139,7 +139,7 @@ def send_verification_email(request, user):
         "user": user,
         "verification_url": verification_url,
         "brand_name": "LumisPixel",
-        "brand_logo_url": request.build_absolute_uri(static("img/preloader-logo.svg")),
+        "brand_logo_url": request.build_absolute_uri(static("img/lumis_favicon_v1.png")),
         "site_url": request.build_absolute_uri("/"),
     }
     subject = "Verify your LumisPixel email address"
