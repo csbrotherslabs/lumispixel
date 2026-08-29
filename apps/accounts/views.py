@@ -3,7 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.urls import Resolver404, resolve, reverse
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -211,6 +211,14 @@ def client_signup(request):
 
 @require_http_methods(["GET", "POST"])
 def photographer_signup(request):
+    raw_next = request.GET.get("next") or request.POST.get("next") or ""
+    invitation_next = safe_next_url(request, raw_next)
+    try:
+        is_team_invitation = resolve(invitation_next).view_name == "photographer_workspace:invitation_accept"
+    except Resolver404:
+        is_team_invitation = False
+    if is_team_invitation:
+        return _signup_view(request, ClientSignupForm, "accounts/signup_client.html", "client")
     return _signup_view(request, PhotographerSignupForm, "accounts/signup_photographer.html", "photographer")
 
 

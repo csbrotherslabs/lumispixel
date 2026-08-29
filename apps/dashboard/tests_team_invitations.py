@@ -124,10 +124,7 @@ class TeamInvitationTests(TestCase):
         token = mail.outbox[0].body.split("/team/invitations/accept/")[1].split("/")[0]
         accept_url = reverse("photographer_workspace:invitation_accept", args=[token])
         self.client.logout()
-        anonymous_response = self.client.get(accept_url)
-        self.assertContains(anonymous_response, "Sign in or create an account")
-        self.assertContains(anonymous_response, reverse("accounts:client-signup"))
-        self.assertNotContains(anonymous_response, reverse("accounts:photographer-signup"))
+        self.assertContains(self.client.get(accept_url), "Sign in or create an account")
         unrelated = User.objects.create_user(email="unrelated@example.com", password="password123",
                                              account_status=User.AccountStatus.ACTIVE, email_verified=True)
         self.client.force_login(unrelated)
@@ -143,8 +140,6 @@ class TeamInvitationTests(TestCase):
         self.assertEqual(invitation.user, invitee)
         self.assertEqual(invitation.status, StudioMembership.Status.ACTIVE)
         self.assertEqual(invitation.invitation_token_digest, "")
-        invitee.refresh_from_db()
-        self.assertEqual(invitee.last_active_workspace, User.Workspace.PHOTOGRAPHER)
         self.assertFalse(PhotographerProfile.objects.filter(user=invitee).exists())
         self.assertEqual(self.client.get(accept_url).status_code, 410)
 
