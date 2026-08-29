@@ -241,13 +241,16 @@ def photographer_signup(request):
 def verification_pending(request):
     user = _pending_user(request)
     email = user.email if user else ""
+    is_verified = bool(user and user.email_verified)
     delivery_status = request.session.get(VERIFICATION_DELIVERY_SESSION_KEY, "unknown")
     return render(
         request,
         "accounts/verification_pending.html",
         {
             "pending_email": email,
-            "can_resend": bool(user and not user.email_verified),
+            "is_verified": is_verified,
+            "can_resend": bool(user and not is_verified),
+            "continue_url": _authenticated_destination_url(request, user) if is_verified else "",
             "delivery_status": delivery_status,
         },
     )
