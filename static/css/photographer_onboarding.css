@@ -45,7 +45,7 @@
 .photographer-onboarding-v2 .lumis-onboarding__business-field { min-width:0; margin:0; }
 .photographer-onboarding-v2 .lumis-onboarding__profile-field--full { grid-column:1/-1; }
 .photographer-onboarding-v2 .lumis-onboarding__profile-field label,
-.photographer-onboarding-v2 .lumis-onboarding__business-field>label,
+.photographer-onboarding-v2 .lumis-onboarding__business-field>label:not(.lumis-onboarding-choice),
 .photographer-onboarding-v2 .lumis-onboarding__business-group-label { display:block; margin-bottom:6px; color:#403a36; font-size:.64rem; font-weight:750; }
 .photographer-onboarding-v2 .form-control { width:100%; min-height:44px; padding:9px 12px; border:1px solid #dcd4ce; border-radius:10px; background:#fbfaf9; color:#25211f; font-size:.69rem; box-shadow:none; }
 .photographer-onboarding-v2 .form-control:focus { border-color:var(--co-red); background:#fff; box-shadow:0 0 0 4px rgba(185,14,21,.08); outline:0; }
@@ -60,7 +60,9 @@
 .photographer-onboarding-v2 .lumis-onboarding-choice:hover { border-color:#d8b5b2; background:#fff; transform:translateY(-1px); }
 .photographer-onboarding-v2 .lumis-onboarding-choice input { width:16px; height:16px; flex:0 0 16px; margin:0; accent-color:var(--co-red); }
 .photographer-onboarding-v2 .lumis-onboarding-choice__label { font-size:.64rem; font-weight:750; line-height:1.3; }
-.photographer-onboarding-v2 .lumis-onboarding-choice--business { min-height:44px; }
+.photographer-onboarding-v2 .lumis-onboarding-choice--business { display:flex; align-items:center; flex-flow:row nowrap; gap:11px; min-height:44px; margin:0; }
+.photographer-onboarding-v2 .lumis-onboarding-choice--business input[type="checkbox"] { display:block; width:18px; height:18px; flex:0 0 18px; margin:0; }
+.photographer-onboarding-v2 .lumis-onboarding-choice--business .lumis-onboarding-choice__label { display:block; flex:1 1 auto; margin:0; line-height:1.35; }
 .photographer-onboarding-v2 .lumis-onboarding__location-summary { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:18px; padding:15px 16px; border:1px solid #e4ddd7; border-radius:13px; background:#faf8f6; }
 .photographer-onboarding-v2 .lumis-onboarding__location-summary p { margin:0; }
 .photographer-onboarding-v2 .lumis-onboarding__location-label { color:#8a817a; font-size:.56rem; }
