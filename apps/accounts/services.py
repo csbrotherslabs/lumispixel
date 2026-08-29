@@ -125,11 +125,18 @@ def create_photographer_workspace(user):
         return profile, created
 
 
+def build_public_url(request, path="/"):
+    normalized_path = path if path.startswith("/") else f"/{path}"
+    if settings.PUBLIC_BASE_URL:
+        return f"{settings.PUBLIC_BASE_URL}{normalized_path}"
+    return request.build_absolute_uri(normalized_path)
+
+
 def build_verification_url(request, user):
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
     token = email_verification_token.make_token(user)
     path = reverse("accounts:verify-email", kwargs={"uidb64": uidb64, "token": token})
-    return request.build_absolute_uri(path)
+    return build_public_url(request, path)
 
 
 def send_verification_email(request, user):
@@ -138,7 +145,7 @@ def send_verification_email(request, user):
         "user": user,
         "verification_url": verification_url,
         "brand_name": "LumisPixel",
-        "site_url": request.build_absolute_uri("/"),
+        "site_url": build_public_url(request),
     }
     subject = "Verify your LumisPixel email address"
     text_body = render_to_string("accounts/email/verify_email.txt", context)

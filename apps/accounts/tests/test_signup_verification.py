@@ -77,6 +77,15 @@ class EntrySignupVerificationTests(TestCase):
         self.assertNotIn("<img", html_body)
         self.assertIn("http://testserver/accounts/verify-email/", html_body)
 
+    @override_settings(PUBLIC_BASE_URL="https://lumispixel.com")
+    def test_verification_email_buttons_use_public_lumispixel_origin(self):
+        self.client.post(reverse("accounts:client-signup"), VALID | {"email": "public-link@example.com"})
+
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertIn('href="https://lumispixel.com/"', html_body)
+        self.assertIn('href="https://lumispixel.com/accounts/verify-email/', html_body)
+        self.assertNotIn("testserver", html_body)
+
     def test_client_signup_validation(self):
         User.objects.create_user(email="ada@example.com", password="StrongPass123!")
         duplicate = self.client.post(reverse("accounts:client-signup"), VALID)
