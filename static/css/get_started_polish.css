@@ -1,6 +1,6 @@
 .get-started-page{background:#f8f6f3}
 .lumis-get-started{min-height:calc(100vh - 80px);padding:max(124px,calc(env(safe-area-inset-top) + 106px)) 0 78px;background:radial-gradient(circle at 78% 12%,rgba(166,25,29,.07),transparent 29%),#f8f6f3}
-.lumis-get-started__heading{display:flex;align-items:flex-end;justify-content:space-between;gap:38px;max-width:none!important;margin:0 0 34px!important}
+.lumis-get-started__heading{display:flex;align-items:center;justify-content:space-between;gap:38px;max-width:none!important;margin:0 0 34px!important}
 .lumis-get-started__heading>.wptb-item--inner{max-width:760px}
 .lumis-get-started .wptb-item--subtitle{margin-bottom:11px;color:#d70006!important;font-size:11px;font-weight:800;letter-spacing:.18em}
 .lumis-get-started .wptb-item--title{max-width:680px;margin:0 0 13px;color:#17181c;font-size:clamp(40px,4.2vw,55px);line-height:1;letter-spacing:-.042em}
@@ -15,9 +15,9 @@
 .lumis-get-started__paths>.wptb-item>.wptb-item--inner{display:block}
 .lumis-get-started__paths .wptb-item--features-holder{position:relative;z-index:6;width:36%;border-bottom:1px solid rgba(24,25,29,.14);background:transparent!important}
 .lumis-get-started__paths .wptb-item--features-holder a{display:grid;grid-template-columns:42px 1fr;align-items:center;min-height:105px;padding:18px 32px 18px 0;color:#696a6f;text-decoration:none;transition:color .2s ease}
-.lumis-get-started__paths .wptb-item--features-holder a>span:not(.lumis-get-started__number){font-size:clamp(20px,2vw,29px);font-weight:650;line-height:1.05;letter-spacing:-.035em}
-.lumis-get-started__paths .wptb-item--features-holder small{grid-column:2;display:block;margin-top:-5px;color:#8b8c91;font-size:11px;font-weight:500;letter-spacing:.01em}
-.lumis-get-started__number{color:#a6191d;font-size:10px;font-weight:800;letter-spacing:.12em}
+.lumis-get-started__paths .wptb-item--features-holder a>span:not(.lumis-get-started__number){font-size:clamp(20px,2vw,25px);font-weight:650;line-height:1.05;letter-spacing:-.035em}
+.lumis-get-started__paths .wptb-item--features-holder small{grid-column:2;display:block;margin-top:-20px;color:#8b8c91;font-size:11px;font-weight:500;letter-spacing:.01em}
+.lumis-get-started__number{color:#a6191d;font-size:12px;font-weight:800;letter-spacing:.12em}
 .lumis-get-started__paths>.wptb-item.active .wptb-item--features-holder a,.lumis-get-started__paths>.wptb-item:focus-within .wptb-item--features-holder a{color:#17181c}
 .lumis-get-started__paths .wptb-item--image{position:absolute;top:0;right:0;width:58%;max-width:750px;height:485px;overflow:visible;border-radius:24px;opacity:0;visibility:hidden;transition:opacity .25s ease}
 .lumis-get-started__paths>.wptb-item.active .wptb-item--image,.lumis-get-started__paths>.wptb-item:focus-within .wptb-item--image{z-index:10;opacity:1;visibility:visible}
@@ -26,7 +26,7 @@
 .lumis-get-started__paths .wptb-item--features-bottom{position:absolute;z-index:40;right:24px;bottom:75px;left:-118px;padding:0;pointer-events:none}
 .lumis-get-started__paths .wptb-item--content.flex-shrink-0{position:relative;z-index:50;width:min(380px,100%);max-width:380px;padding:29px 30px;border:1px solid rgba(24,25,29,.08);border-radius:18px;background:#fff;color:#17181c;box-shadow:0 22px 52px rgba(17,18,21,.22);pointer-events:auto}
 .lumis-get-started__label{display:block;margin-bottom:8px;color:#d70006;font-size:9px;font-weight:800;letter-spacing:.17em}
-.lumis-get-started__paths h2{margin:0 0 10px;color:#17181c;font-size:clamp(25px,2.4vw,34px);line-height:1.04;letter-spacing:-.035em}
+.lumis-get-started__paths h2{margin:0 0 10px;color:#17181c;font-size:clamp(25px,2.4vw,28px);line-height:1.04;letter-spacing:-.035em}
 .lumis-get-started__paths .wptb-item--content p{max-width:480px;margin:0 0 18px;color:#66676c;font-size:13px;line-height:1.55}
 .lumis-get-started__paths form{margin:0}
 .lumis-get-started__action{display:inline-flex;align-items:center;gap:12px;min-height:40px;padding:10px 15px;border:1px solid #17181c;border-radius:10px;background:#17181c;color:#fff;font-size:11px;font-weight:750;line-height:1;text-decoration:none;cursor:pointer}
