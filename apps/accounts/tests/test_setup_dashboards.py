@@ -37,7 +37,12 @@ class SetupDashboardTests(TestCase):
         PhotographerProfile.objects.create(user=photo_user, slug="photo-setup", onboarding_completed=False)
         self.client.force_login(photo_user)
         self.assertRedirects(self.client.get(reverse("accounts:post-login-redirect")), reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
-        self.assertContains(self.client.get(reverse("photographers:setup-dashboard")), "Continue Setup")
+        photographer_setup = self.client.get(reverse("photographers:setup-dashboard"))
+        self.assertContains(photographer_setup, "Continue Setup")
+        self.assertContains(photographer_setup, 'class="client-setup__dashboard"')
+        self.assertContains(photographer_setup, 'class="client-setup__steps photographer-setup__steps"')
+        self.assertContains(photographer_setup, 'role="progressbar"')
+        self.assertContains(photographer_setup, get_photographer_onboarding_resume_url(photo_user.photographer_profile))
 
         photo_user.photographer_profile.onboarding_completed = True
         photo_user.photographer_profile.save(update_fields=["onboarding_completed", "updated_at"])
