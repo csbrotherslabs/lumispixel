@@ -1,12 +1,29 @@
 {% extends "photographers/onboarding_base.html" %}
 {% block title %}Welcome to LumisPixel | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="photographer-onboarding-welcome-title">Welcome to LumisPixel</h1>
-  <p class="wptb-item--description mx-auto">Set up a workspace where you can manage galleries, deliver client photos, use AI-powered tools, and build a polished client-facing presence for your photography brand.</p>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-    <a class="btn lumis-auth-primary" href="{% url 'photographers:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Set Up My Workspace</span></span></a>
-    <a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>
+<div class="client-onboarding-v2__welcome photographer-onboarding-v2__welcome">
+  <div class="client-onboarding-v2__welcome-copy">
+    <span class="client-onboarding-v2__kicker">Welcome to LumisPixel</span>
+    <h1 id="photographer-onboarding-welcome-title">Your business.<br><em>One connected workspace.</em></h1>
+    <p>Set up a professional home for galleries, client delivery, business operations, and the team members who help you create.</p>
+    <div class="client-onboarding-v2__welcome-points">
+      <span><i class="bi bi-check2"></i>Deliver polished client galleries</span>
+      <span><i class="bi bi-check2"></i>Keep business tools connected</span>
+      <span><i class="bi bi-check2"></i>Grow from solo photographer to studio</span>
+    </div>
+    <div class="client-onboarding-v2__actions">
+      <a class="client-onboarding-v2__primary" href="{% url 'photographers:onboarding-profile' %}">Set Up My Workspace <i class="bi bi-arrow-right"></i></a>
+      <a class="client-onboarding-v2__quiet" href="{% url 'photographers:onboarding-skip' %}">I’ll finish later</a>
+    </div>
+  </div>
+  <div class="photographer-onboarding-v2__preview" aria-label="Photography workspace preview">
+    <div class="photographer-onboarding-v2__preview-top"><span>Photography workspace</span><i class="bi bi-stars"></i></div>
+    <div class="photographer-onboarding-v2__preview-window">
+      <span class="photographer-onboarding-v2__preview-nav"><i></i><i></i><i></i></span>
+      <div class="photographer-onboarding-v2__preview-hero"><small>Recent gallery</small><strong>Golden Hour Portraits</strong><span>Ready to deliver</span></div>
+      <div class="photographer-onboarding-v2__preview-cards"><span><i class="bi bi-images"></i><b>Galleries</b></span><span><i class="bi bi-people"></i><b>Clients</b></span><span><i class="bi bi-calendar-event"></i><b>Bookings</b></span></div>
+    </div>
+    <div class="client-onboarding-v2__experience-stats"><div><strong>5 steps</strong><small>Quick setup</small></div><div><strong>Flexible</strong><small>Solo or team</small></div><div><strong>Connected</strong><small>One account</small></div></div>
   </div>
 </div>
 {% endblock %}
