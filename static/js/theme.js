@@ -1193,7 +1193,7 @@ Description: Kimono - Photography Agency
         });
 
         // Keep the LumisPixel workflow reveal in sync for mouse, keyboard, and touch.
-        $('.lumis-how-it-works').each(function(){
+        $('.lumis-how-it-works, .lumis-get-started-paths').each(function(){
             var $workflow = $(this);
             var $workflowItems = $workflow.find('.wptb-features .wptb-item');
 

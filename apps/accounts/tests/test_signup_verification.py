@@ -27,17 +27,37 @@ VALID = {
 class EntrySignupVerificationTests(TestCase):
     def test_get_started_links_and_next_safety(self):
         response = self.client.get(reverse("accounts:get-started") + "?next=/galleries/")
-        self.assertContains(response, "How would you like to get started?")
-        self.assertContains(response, "Choose your LumisPixel path")
+        self.assertContains(response, "Choose what you want to do next.")
+        self.assertContains(response, "One account can hold your personal photos")
         self.assertContains(response, "css/get_started_polish.")
-        self.assertContains(response, 'class="lumis-get-started-card"', count=3)
+        self.assertContains(response, 'id="get-started-photographer"', count=1)
+        self.assertContains(response, 'id="get-started-photos"', count=1)
+        self.assertContains(response, 'id="get-started-hire"', count=1)
         self.assertContains(response, reverse("accounts:photographer-signup") + "?next=/galleries/")
-        self.assertContains(response, reverse("accounts:client-signup") + "?intent=find_photos&next=/galleries/")
-        self.assertContains(response, reverse("accounts:client-signup") + "?intent=marketplace&next=/galleries/")
+        self.assertContains(response, reverse("accounts:client-signup") + "?intent=find_photos&amp;next=/galleries/")
+        self.assertContains(response, reverse("accounts:client-signup") + "?intent=marketplace&amp;next=/galleries/")
         self.assertContains(response, reverse("accounts:login") + "?next=/galleries/")
         unsafe = self.client.get(reverse("accounts:get-started") + "?next=https://evil.example/")
         self.assertNotContains(unsafe, 'href="/signup/photographer/?next=https://evil.example/')
         self.assertNotContains(unsafe, 'href="/signup/client/?intent=find_photos&next=https://evil.example/')
+
+    def test_authenticated_get_started_hides_sign_in_and_uses_capabilities(self):
+        user = User.objects.create_user(
+            email="signed-in@example.com",
+            password="StrongPass123!",
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+        )
+        ClientProfile.objects.create(user=user, onboarding_completed=True)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:get-started"))
+
+        self.assertNotContains(response, "Already have an account?")
+        self.assertNotContains(response, reverse("accounts:login"))
+        self.assertContains(response, "Signed in as")
+        self.assertContains(response, "Open my photo space")
+        self.assertContains(response, "Create photography workspace")
 
     def test_client_signup_creates_pending_client_and_sends_email(self):
         response = self.client.post(reverse("accounts:client-signup") + "?intent=find_photos", VALID)
@@ -122,7 +142,7 @@ class EntrySignupVerificationTests(TestCase):
             response = self.client.post(reverse("accounts:resend-verification"))
         self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
         messages = [message.message for message in get_messages(response.wsgi_request)]
-        self.assertIn("We could not send the verification email right now. Please check the site email settings and try again.", messages)
+        self.assertIn("We could not send the verification email right now. Please try again.", messages)
 
         self.client.post(reverse("accounts:resend-verification"))
         self.assertEqual(len(mail.outbox), 2)
@@ -133,7 +153,7 @@ class EntrySignupVerificationTests(TestCase):
         self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
         self.assertTrue(User.objects.filter(email="signupfailure@example.com").exists())
         messages = [message.message for message in get_messages(response.wsgi_request)]
-        self.assertIn("We could not send the verification email right now. Please check the site email settings and try again.", messages)
+        self.assertIn("We could not send the verification email right now. Please try again.", messages)
 
     def test_authenticated_signup_redirects_without_new_user(self):
         user = User.objects.create_user(email="existing@example.com", password="StrongPass123!", email_verified=True, account_status=User.AccountStatus.ACTIVE)

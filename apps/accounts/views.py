@@ -13,6 +13,7 @@ from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignup
 from .models import ClientProfile, PhotographerProfile, User
 from .services import (
     EmailDeliveryError,
+    create_client_profile,
     create_photographer_workspace,
     email_verification_token,
     normalize_signup_intent,
@@ -172,7 +173,21 @@ def logout_view(request):
 @require_GET
 def get_started(request):
     safe = _store_auth_flow(request, next_url=request.GET.get("next", ""), intent=request.GET.get("intent", "general"))
-    return render(request, "accounts/get_started.html", {"next": safe})
+    context = {"next": safe}
+    if request.user.is_authenticated:
+        owned_profile = request.user.photographer_profile if request.user.has_photographer_profile else None
+        has_team_membership = request.user.studio_memberships.filter(status="active").exists()
+        context.update({
+            "has_client_profile": request.user.has_client_profile,
+            "owned_photographer_profile": owned_profile,
+            "has_team_membership": has_team_membership,
+            "photographer_destination": (
+                reverse("photographers:setup-dashboard")
+                if owned_profile and not owned_profile.onboarding_completed
+                else reverse("photographer_workspace:dashboard")
+            ) if owned_profile or has_team_membership else "",
+        })
+    return render(request, "accounts/get_started.html", context)
 
 
 def _authenticated_signup_redirect(request, account_type):
@@ -296,6 +311,15 @@ def enable_photographer_workspace(request):
     if profile.onboarding_completed:
         return redirect("photographer_workspace:dashboard")
     return redirect("photographers:setup-dashboard")
+
+
+@login_required
+@require_POST
+def enable_client_profile(request):
+    profile, _ = create_client_profile(request.user)
+    if profile.onboarding_completed:
+        return redirect("clients:dashboard")
+    return redirect("clients:setup-dashboard")
 
 
 @login_required

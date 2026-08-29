@@ -76,6 +76,19 @@ def create_client_account(payload):
         raise DuplicateEmailError from exc
 
 
+def create_client_profile(user):
+    """Add personal photo access without changing professional capabilities."""
+    with transaction.atomic():
+        profile, created = ClientProfile.objects.get_or_create(
+            user=user,
+            defaults={"display_name": user.display_name},
+        )
+        if user.last_active_workspace != User.Workspace.CLIENT:
+            user.last_active_workspace = User.Workspace.CLIENT
+            user.save(update_fields=["last_active_workspace", "updated_at"])
+        return profile, created
+
+
 def create_photographer_account(payload):
     try:
         with transaction.atomic():
