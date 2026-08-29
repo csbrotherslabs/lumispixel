@@ -6385,7 +6385,7 @@ svg.radial-progress {
     font-weight: var(--fw-medium);
     line-height: 36px;
     color: var(--color-white);
-    padding: 24px 0px;
+    padding: 21px 0px;
     transition: var(--transition-base);
 }
 .wptb-features .wptb-item + .wptb-item .wptb-item--features-holder {
@@ -6428,7 +6428,7 @@ svg.radial-progress {
 
 .wptb-features .wptb-item .wptb-item--features-bottom {
     position: absolute;
-    bottom: 0;
+    bottom: 75px;
     left: -100px;
     right: 0;
     display: flex;
