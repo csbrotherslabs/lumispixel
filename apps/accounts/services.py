@@ -7,6 +7,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
 from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -138,6 +139,8 @@ def send_verification_email(request, user):
         "user": user,
         "verification_url": verification_url,
         "brand_name": "LumisPixel",
+        "brand_logo_url": request.build_absolute_uri(static("img/preloader-logo.svg")),
+        "site_url": request.build_absolute_uri("/"),
     }
     subject = "Verify your LumisPixel email address"
     text_body = render_to_string("accounts/email/verify_email.txt", context)
