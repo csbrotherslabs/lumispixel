@@ -73,9 +73,8 @@ class EntrySignupVerificationTests(TestCase):
         html_body = mail.outbox[0].alternatives[0][0]
         self.assertIn("One quick step, Ada.", html_body)
         self.assertIn("Verify my email", html_body)
-        self.assertIn("http://testserver/static/img/lumis_favicon_v1.", html_body)
-        self.assertIn(".png", html_body)
         self.assertIn("LUMISPIXEL", html_body)
+        self.assertNotIn("<img", html_body)
         self.assertIn("http://testserver/accounts/verify-email/", html_body)
 
     def test_client_signup_validation(self):
