@@ -95,6 +95,23 @@ def create_photographer_account(payload):
         raise DuplicateEmailError from exc
 
 
+def create_photographer_workspace(user):
+    """Add an owned photography workspace without replacing personal access."""
+    with transaction.atomic():
+        profile, created = PhotographerProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "display_name": user.display_name,
+                "verification_status": PhotographerProfile.VerificationStatus.NOT_STARTED,
+                "onboarding_step": PHOTOGRAPHER_FIRST_ONBOARDING_STEP,
+            },
+        )
+        if user.last_active_workspace != User.Workspace.PHOTOGRAPHER:
+            user.last_active_workspace = User.Workspace.PHOTOGRAPHER
+            user.save(update_fields=["last_active_workspace", "updated_at"])
+        return profile, created
+
+
 def build_verification_url(request, user):
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
     token = email_verification_token.make_token(user)

@@ -3,7 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.urls import Resolver404, resolve, reverse
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -11,7 +11,13 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from .decorators import safe_next_url
 from .forms import ClientSignupForm, EmailAuthenticationForm, PhotographerSignupForm
 from .models import ClientProfile, PhotographerProfile, User
-from .services import EmailDeliveryError, email_verification_token, normalize_signup_intent, send_verification_email
+from .services import (
+    EmailDeliveryError,
+    create_photographer_workspace,
+    email_verification_token,
+    normalize_signup_intent,
+    send_verification_email,
+)
 
 SIGNUP_INTENT_SESSION_KEY = "signup_intent"
 AUTH_NEXT_SESSION_KEY = "auth_next_url"
@@ -66,7 +72,7 @@ def _is_photographer_account(user):
 
 
 def _client_destination_url(request, user, fallback_route="clients:dashboard"):
-    if not _is_client_account(user):
+    if not user.has_client_profile and not _is_client_account(user):
         return None
     profile, _ = ClientProfile.objects.get_or_create(user=user)
     if not profile.onboarding_completed:
@@ -75,11 +81,15 @@ def _client_destination_url(request, user, fallback_route="clients:dashboard"):
 
 
 def _photographer_destination_url(request, user, fallback_route="photographer_workspace:dashboard"):
-    if not _is_photographer_account(user):
+    # Repair legacy photographer accounts whose profile was not provisioned.
+    if not user.has_photographer_profile and _is_photographer_account(user):
+        create_photographer_workspace(user)
+    if user.has_photographer_profile:
+        if not user.photographer_profile.onboarding_completed:
+            return reverse("photographers:setup-dashboard")
+        return reverse(fallback_route)
+    if not user.studio_memberships.filter(status="active").exists():
         return None
-    profile, _ = PhotographerProfile.objects.get_or_create(user=user)
-    if not profile.onboarding_completed:
-        return reverse("photographers:setup-dashboard")
     return reverse(fallback_route)
 
 
@@ -89,6 +99,14 @@ def _authenticated_destination_url(request, user):
     if not user.email_verified:
         _remember_pending_user(request, user)
         return reverse("accounts:email-verification-required")
+    if user.last_active_workspace == User.Workspace.PHOTOGRAPHER:
+        photographer_destination = _photographer_destination_url(request, user)
+        if photographer_destination:
+            return photographer_destination
+    if user.last_active_workspace == User.Workspace.CLIENT:
+        client_destination = _client_destination_url(request, user)
+        if client_destination:
+            return client_destination
     photographer_destination = _photographer_destination_url(request, user)
     if photographer_destination:
         return photographer_destination
@@ -193,6 +211,14 @@ def client_signup(request):
 
 @require_http_methods(["GET", "POST"])
 def photographer_signup(request):
+    raw_next = request.GET.get("next") or request.POST.get("next") or ""
+    invitation_next = safe_next_url(request, raw_next)
+    try:
+        is_team_invitation = resolve(invitation_next).view_name == "photographer_workspace:invitation_accept"
+    except Resolver404:
+        is_team_invitation = False
+    if is_team_invitation:
+        return _signup_view(request, ClientSignupForm, "accounts/signup_client.html", "client")
     return _signup_view(request, PhotographerSignupForm, "accounts/signup_photographer.html", "photographer")
 
 
@@ -261,6 +287,15 @@ def post_login_redirect(request):
 @login_required
 def photographer_onboarding_entry(request):
     return redirect(_authenticated_destination_url(request, request.user))
+
+
+@login_required
+@require_POST
+def enable_photographer_workspace(request):
+    profile, _ = create_photographer_workspace(request.user)
+    if profile.onboarding_completed:
+        return redirect("photographer_workspace:dashboard")
+    return redirect("photographers:setup-dashboard")
 
 
 @login_required
