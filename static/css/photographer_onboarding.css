@@ -49,6 +49,7 @@
 .photographer-onboarding-v2 .lumis-onboarding__business-group-label { display:block; margin-bottom:6px; color:#403a36; font-size:.64rem; font-weight:750; }
 .photographer-onboarding-v2 .form-control { width:100%; min-height:44px; padding:9px 12px; border:1px solid #dcd4ce; border-radius:10px; background:#fbfaf9; color:#25211f; font-size:.69rem; box-shadow:none; }
 .photographer-onboarding-v2 .form-control:focus { border-color:var(--co-red); background:#fff; box-shadow:0 0 0 4px rgba(185,14,21,.08); outline:0; }
+.photographer-onboarding-v2 .nice-select .list { max-height:min(320px,calc(100vh - 180px)); overflow-y:auto; overscroll-behavior:contain; }
 .photographer-onboarding-v2 input[type=file] { width:100%; padding:7px; border:1px solid #ddd4ce; border-radius:10px; background:#fbfaf9; font-size:.61rem; }
 .photographer-onboarding-v2 input[type=file]::file-selector-button { margin-right:10px; padding:7px 10px; border:0; border-radius:7px; background:#282321; color:#fff; font-size:.58rem; }
 .photographer-onboarding-v2 .lumis-onboarding__help { margin-top:6px; color:#8a817a; font-size:.56rem; line-height:1.45; overflow-wrap:anywhere; }
