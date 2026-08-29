@@ -21,6 +21,7 @@ if not DEBUG and SECRET_KEY == "django-insecure-development-only-change-me":
     raise RuntimeError("DJANGO_SECRET_KEY must be set in production.")
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1"] if DEBUG else ["lumispixel.com", "www.lumispixel.com"])
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [] if DEBUG else ["https://lumispixel.com", "https://www.lumispixel.com"])
+PUBLIC_BASE_URL = os.getenv("DJANGO_PUBLIC_BASE_URL", "" if DEBUG else "https://lumispixel.com").rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
