@@ -50,6 +50,14 @@ class PhotographerOnboardingTests(TestCase):
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200)
 
+    def test_profile_uses_scrollable_native_location_selects(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("photographers:onboarding-profile"))
+
+        self.assertContains(response, "data-location-country")
+        self.assertContains(response, "data-location-region")
+        self.assertContains(response, "js/location_selects.")
+
     def test_profile_step_saves_user_profile_and_uploads(self):
         self.client.force_login(self.user)
         image = SimpleUploadedFile("avatar.gif", b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;", content_type="image/gif")
