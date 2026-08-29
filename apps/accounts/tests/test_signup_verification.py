@@ -70,6 +70,12 @@ class EntrySignupVerificationTests(TestCase):
         self.assertIsNotNone(user.privacy_policy_accepted_at)
         self.assertTrue(ClientProfile.objects.filter(user=user).exists())
         self.assertEqual(len(mail.outbox), 1)
+        html_body = mail.outbox[0].alternatives[0][0]
+        self.assertIn("One quick step, Ada.", html_body)
+        self.assertIn("Verify my email", html_body)
+        self.assertIn("http://testserver/static/img/preloader-logo.", html_body)
+        self.assertIn(".svg", html_body)
+        self.assertIn("http://testserver/accounts/verify-email/", html_body)
 
     def test_client_signup_validation(self):
         User.objects.create_user(email="ada@example.com", password="StrongPass123!")
