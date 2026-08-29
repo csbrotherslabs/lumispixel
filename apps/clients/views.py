@@ -46,7 +46,7 @@ def _set_client_step(profile, step):
 @require_GET
 def setup_dashboard(request):
     if not request.user.has_client_profile:
-        return redirect("accounts:post-login-redirect")
+        return redirect("photographers:setup-dashboard" if request.user.has_photographer_profile else "accounts:post-login-redirect")
     profile = _client_profile(request.user)
     if profile.onboarding_completed:
         return redirect(CLIENT_DESTINATION_ROUTE)
