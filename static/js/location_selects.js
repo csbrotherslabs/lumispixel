@@ -3,6 +3,14 @@
   const region = document.querySelector("[data-location-region]");
   if (!country || !region) return;
 
+  // The global theme turns selects into non-native menus. A country list is
+  // long enough to be clipped by that menu, so retain native scrolling,
+  // keyboard search, and mobile pickers for these two controls.
+  if (window.jQuery?.fn?.niceSelect) {
+    window.jQuery(country).niceSelect("destroy");
+    window.jQuery(region).niceSelect("destroy");
+  }
+
   const emptyLabel = "Select a state, province, or region";
 
   const replaceOptions = (regions, message = emptyLabel) => {
