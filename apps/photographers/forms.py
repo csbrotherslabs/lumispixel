@@ -225,6 +225,26 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
     hero_image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={"class":"form-control","accept":"image/jpeg,image/png,image/webp,image/gif"}))
     field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]})
     hero_media_type = forms.ChoiceField(choices=(("image","Image"),("video","Video")), required=False, widget=forms.Select(attrs={"class":"form-control"}))
+    availability_window_months = forms.TypedChoiceField(
+        choices=((1, "1 month"), (2, "2 months"), (3, "3 months"), (6, "6 months")),
+        coerce=int,
+        required=False,
+        initial=2,
+        label="Public availability window",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    availability_call_to_action = forms.CharField(
+        required=False,
+        initial="Request this date",
+        label="Availability button text",
+        widget=forms.TextInput(attrs={"class": "form-control", "maxlength": "60"}),
+    )
+    equipment_inventory = forms.CharField(
+        required=False,
+        label="Equipment and capabilities",
+        help_text="Add one item per line as: Name | Client-friendly benefit | Bootstrap icon class",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 8, "placeholder": "Professional drone | Elevated aerial photography and cinematic footage | bi-airplane"}),
+    )
     class Meta:
         model = PhotographerProfile
         fields = ["website_theme"]
@@ -236,6 +256,9 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         content = (website_profile.theme_content if website_profile else {}) or {}
         if not self.is_bound:
+            for name in ("availability_window_months", "availability_call_to_action", "equipment_inventory"):
+                if name in content:
+                    self.fields[name].initial = content[name]
             for name in self.field_names:
                 self.fields[name].initial = content.get(name, "")
             if website_profile and website_profile.hero_image:
@@ -280,6 +303,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         profile = self.save(commit=False)
         website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
+        allowed.update(("availability_window_months", "availability_call_to_action", "equipment_inventory"))
         content = dict(website.theme_content or {})
         for name in allowed:
             content[name] = self.cleaned_data.get(name, "")
