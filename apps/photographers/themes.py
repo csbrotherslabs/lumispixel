@@ -106,7 +106,12 @@ DEMO_CONTENT = {
         {"quote": "The team made everyone comfortable and turned a fast-moving celebration into a collection that feels effortless and alive.", "name": "Avery Collins", "location": "New York", "image": "img/testimonial/6.jpg"},
     ],
     "stats": [("12+", "Years creating"), ("480", "Stories delivered"), ("18", "Awards & features")],
-    "team": [("Amara Reed", "Creative Director", "img/team/1.jpg"), ("Noah Bennett", "Lead Photographer", "img/team/2.jpg"), ("Mila Chen", "Editor", "img/team/3.jpg")],
+    "team": [
+        ("Amara Reed", "Creative Director", "img/team/1.jpg"),
+        ("Noah Bennett", "Lead Photographer", "img/team/2.jpg"),
+        ("Mila Chen", "Editor", "img/team/3.jpg"),
+        ("Elias Morgan", "Associate Photographer", "img/team/4.jpg"),
+    ],
     "images": ["img/slider/30.jpg", "img/slider/22.jpg", "img/slider/28.jpg", "img/slider/32.jpg", "img/slider/17.jpg", "img/slider/45.jpg"],
 }
 
