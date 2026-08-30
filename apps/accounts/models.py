@@ -208,12 +208,12 @@ class PhotographerProfile(models.Model):
         STUDIO = "studio", "Studio"
 
     class WebsiteTheme(models.TextChoices):
-        BASIC = "basic", "Basic"
-        ELEGANT = "elegant", "Elegant"
-        MODERN_STUDIO = "modern_studio", "Modern Studio"
-        CINEMATIC = "cinematic", "Cinematic"
-        PORTFOLIO_EDITORIAL = "portfolio_editorial", "Portfolio Editorial"
-        SPORTS_EVENTS = "sports_events", "Sports & Events"
+        BASIC = "basic", "Frame"
+        ELEGANT = "elegant", "Narrative"
+        MODERN_STUDIO = "modern_studio", "Panorama"
+        CINEMATIC = "cinematic", "Monograph"
+        PORTFOLIO_EDITORIAL = "portfolio_editorial", "Collective"
+        SPORTS_EVENTS = "sports_events", "Atelier"
 
     class VerificationStatus(models.TextChoices):
         NOT_STARTED = "not_started", "Not started"
@@ -354,6 +354,26 @@ class PhotographerWebsiteProject(models.Model):
 
     def __str__(self):
         return self.title or f"Project {self.display_order + 1}"
+
+
+class PhotographerWebsiteSection(models.Model):
+    photographer_website = models.ForeignKey(PhotographerWebsiteProfile, on_delete=models.CASCADE, related_name="sections")
+    section_type = models.CharField(max_length=40)
+    layout_variant = models.CharField(max_length=80, blank=True)
+    content = models.JSONField(default=dict, blank=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    is_enabled = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("display_order", "id")
+        constraints = [
+            models.UniqueConstraint(fields=("photographer_website", "section_type"), name="unique_photographer_website_section_type"),
+        ]
+
+    def __str__(self):
+        return f"{self.photographer_website}: {self.section_type}"
 
 
 class PhotographerSpecialty(models.Model):
