@@ -12,7 +12,10 @@
             </span>
             <span class="showcase-review-card__quote" aria-hidden="true">“</span>
           </div>
-          <blockquote>{{ review.quote }}</blockquote>
+          <div class="showcase-review-card__excerpt">
+            <blockquote data-review-excerpt>{{ review.quote }}</blockquote>
+            <button class="showcase-review-card__more" type="button" data-review-more aria-label="Read the full review from {{ review.name }}" hidden>…</button>
+          </div>
           <footer class="showcase-review-card__client">
             <img src="{% static review.image %}" alt="Portrait of {{ review.name }}">
             <div><strong>{{ review.name }}</strong><span>{{ review.location }} · Verified client</span></div>
@@ -34,3 +37,14 @@
     </aside>
   </div>
 </section>
+<div class="showcase-review-modal" data-review-modal role="dialog" aria-modal="true" aria-labelledby="showcase-review-modal-title" aria-describedby="showcase-review-modal-copy" aria-hidden="true" hidden>
+  <button class="showcase-review-modal__backdrop" type="button" data-review-modal-close aria-label="Close full review"></button>
+  <div class="showcase-review-modal__panel" role="document">
+    <button class="showcase-review-modal__close" type="button" data-review-modal-close aria-label="Close full review"><i class="bi bi-x-lg"></i></button>
+    <span class="showcase-review-modal__eyebrow">Verified client review</span>
+    <div class="showcase-review-modal__stars" aria-label="Five out of five stars">★★★★★</div>
+    <h2 id="showcase-review-modal-title">Client story</h2>
+    <blockquote id="showcase-review-modal-copy" data-review-modal-copy></blockquote>
+    <p data-review-modal-client></p>
+  </div>
+</div>
