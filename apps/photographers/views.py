@@ -9,7 +9,8 @@ from apps.accounts.onboarding import get_photographer_onboarding_resume_url
 from apps.accounts.views import _authenticated_destination_url
 
 from .forms import PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
-from .themes import DEMO_CONTENT, SECTION_LIBRARY, THEME_DEFINITIONS, section_options, theme_by_slug, theme_options
+from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, section_options, theme_by_slug, theme_options
+from .website_content import preview_content
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
@@ -138,6 +139,7 @@ def onboarding_theme(request):
             "website_theme": preview_state["theme_value"],
             "website_sections": preview_state["sections"],
             "section_order": ",".join(preview_state["sections"]),
+            **preview_state.get("content", {}),
         }
     form = PhotographerWebsiteThemeForm(request.POST or None, request.FILES or None, instance=profile, website_profile=website, draft=(action in {"save_draft", "save_website"}), initial=preview_initial)
     if request.method == "POST" and form.is_valid():
@@ -197,7 +199,7 @@ def theme_preview(request, theme_slug):
         return redirect("photographers:onboarding-theme")
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
     sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in theme["sections"]]
-    return render(request, theme["preview_template"], {"profile": profile, "website": website, "projects": website.projects.all()[:3], "theme": theme, "sections": sections, "demo": DEMO_CONTENT, "sample_label": "Completed theme preview"})
+    return render(request, theme["preview_template"], {"profile": profile, "website": website, "projects": website.projects.all()[:3], "theme": theme, "sections": sections, "demo": preview_content(profile, website), "sample_label": "Completed theme preview"})
 
 
 @login_required
@@ -230,6 +232,11 @@ def selected_theme_preview(request):
             "theme_value": theme_value,
             "sections": sections,
             "return_context": return_context,
+            "content": {
+                "availability_window_months": request.POST.get("availability_window_months", "2"),
+                "availability_call_to_action": request.POST.get("availability_call_to_action", ""),
+                "equipment_inventory": request.POST.get("equipment_inventory", ""),
+            },
         }
         return redirect("photographers:selected-theme-preview")
 
@@ -251,7 +258,7 @@ def selected_theme_preview(request):
         "projects": website.projects.all()[:3],
         "theme": theme,
         "sections": sections,
-        "demo": DEMO_CONTENT,
+        "demo": preview_content(profile, website, state.get("content")),
         "sample_label": "Your selected preview",
         "custom_preview": True,
         "preview_return_url": preview_return_url,

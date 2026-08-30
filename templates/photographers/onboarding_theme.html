@@ -17,7 +17,7 @@
     {% endfor %}
   </fieldset>
   <section class="lumis-section-builder" aria-labelledby="section-builder-title">
-    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Add Team now or return later without changing your template.</p></div>
+    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Availability remains private until you explicitly select it here.</p></div>
     {{ form.section_order }}
     {% if form.website_sections.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_sections.errors|striptags }}</div>{% endif %}
     <div class="lumis-section-builder__list" data-section-list>
@@ -29,6 +29,15 @@
       {% endfor %}
     </div>
   </section>
+  <section class="lumis-theme-config" aria-labelledby="section-content-title">
+    <h2 id="section-content-title">Availability and equipment</h2>
+    <p>Configure the optional public calendar and the equipment carousel. Public dates reveal availability status only—never client or event details.</p>
+    <div class="lumis-theme-config-grid">
+      <div class="lumis-theme-field"><label for="{{ form.availability_window_months.id_for_label }}">{{ form.availability_window_months.label }}</label>{{ form.availability_window_months }}{{ form.availability_window_months.errors }}</div>
+      <div class="lumis-theme-field"><label for="{{ form.availability_call_to_action.id_for_label }}">{{ form.availability_call_to_action.label }}</label>{{ form.availability_call_to_action }}{{ form.availability_call_to_action.errors }}</div>
+      <div class="lumis-theme-field lumis-theme-field--full"><label for="{{ form.equipment_inventory.id_for_label }}">{{ form.equipment_inventory.label }}</label>{{ form.equipment_inventory }}{% if form.equipment_inventory.help_text %}<small>{{ form.equipment_inventory.help_text }}</small>{% endif %}{{ form.equipment_inventory.errors }}</div>
+    </div>
+  </section>
   <section class="lumis-theme-config" aria-live="polite"><h2>Template content</h2><p data-empty-theme>Choose a template to see its starter content fields.</p>
     <div class="lumis-theme-panel" id="panel-basic" data-theme-panel="basic"><p>This theme uses the information already provided in the previous setup steps. No additional information is required.</p></div>
     {% include "photographers/theme_config_panels.html" %}
@@ -37,7 +46,7 @@
 </form>
 <script>
 (function(){
-  var defaults={basic:['hero','portfolio','contact'],elegant:['hero','services','about','portfolio','stats','reviews','contact'],modern_studio:['hero','services','about','portfolio','reviews','contact'],cinematic:['hero','about','services','portfolio','reviews','contact'],portfolio_editorial:['hero','portfolio','about','team','reviews','contact'],sports_events:['hero','services','stats','portfolio','reviews','team','contact']};
+  var defaults={basic:['hero','portfolio','contact'],elegant:['hero','services','about','portfolio','stats','reviews','contact'],modern_studio:['hero','services','about','equipment','portfolio','reviews','contact'],cinematic:['hero','about','services','equipment','portfolio','reviews','contact'],portfolio_editorial:['hero','portfolio','about','team','reviews','contact'],sports_events:['hero','services','equipment','stats','portfolio','reviews','team','contact']};
   var list=document.querySelector('[data-section-list]');var orderInput=document.querySelector('[data-section-order-input]');
   function applyInitialOrder(){var keys=(orderInput.value||'').split(',').filter(Boolean);keys.slice().reverse().forEach(function(key){var item=list.querySelector('[data-section-item="'+key+'"]');if(item)list.insertBefore(item,list.firstElementChild);});}
   function writeOrder(){orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}

@@ -9,6 +9,8 @@ SECTION_LIBRARY = {
     "stats": {"name": "Experience", "description": "Selected business and experience highlights."},
     "team": {"name": "Team", "description": "Photographers, editors, and studio collaborators."},
     "reviews": {"name": "Ratings & reviews", "description": "Verified LumisPixel client feedback."},
+    "availability": {"name": "Availability", "description": "Privacy-safe public dates connected to your LumisPixel schedule."},
+    "equipment": {"name": "Equipment & capabilities", "description": "A carousel showing the professional tools behind your work."},
     "contact": {"name": "Contact", "description": "A clear inquiry and booking call to action."},
 }
 
@@ -44,7 +46,7 @@ THEME_DEFINITIONS = {
         "best_for": "Studios with broad services and project depth",
         "description": "A wide, editorial presentation with service discovery and layered project storytelling.",
         "preview_class": "is-panorama",
-        "sections": ["hero", "services", "about", "portfolio", "reviews", "contact"],
+        "sections": ["hero", "services", "about", "equipment", "portfolio", "reviews", "contact"],
         "accent": "#d7ad78",
     },
     "cinematic": {
@@ -55,7 +57,7 @@ THEME_DEFINITIONS = {
         "best_for": "Portrait, fashion, and fine-art portfolios",
         "description": "Bold typography, strong image rhythm, and a concise studio narrative.",
         "preview_class": "is-monograph",
-        "sections": ["hero", "about", "services", "portfolio", "reviews", "contact"],
+        "sections": ["hero", "about", "services", "equipment", "portfolio", "reviews", "contact"],
         "accent": "#ec4b42",
     },
     "portfolio_editorial": {
@@ -77,7 +79,7 @@ THEME_DEFINITIONS = {
         "best_for": "Established studios with services, teams, and scale",
         "description": "The Panorama foundation expanded with studio milestones and a visible team.",
         "preview_class": "is-atelier",
-        "sections": ["hero", "services", "stats", "portfolio", "reviews", "team", "contact"],
+        "sections": ["hero", "services", "equipment", "stats", "portfolio", "reviews", "team", "contact"],
         "accent": "#ff5b4d",
     },
 }
@@ -111,6 +113,14 @@ DEMO_CONTENT = {
         ("Noah Bennett", "Lead Photographer", "img/team/2.jpg"),
         ("Mila Chen", "Editor", "img/team/3.jpg"),
         ("Elias Morgan", "Associate Photographer", "img/team/4.jpg"),
+    ],
+    "equipment": [
+        {"name": "Dual-card camera", "description": "Immediate in-camera backup protects every important frame as it is captured.", "icon": "bi-camera"},
+        {"name": "Professional drone", "description": "Elevated aerial photography and cinematic footage for a wider visual story.", "icon": "bi-airplane"},
+        {"name": "Portable lighting", "description": "Reliable, flattering light for portraits, products, and changing environments.", "icon": "bi-lightbulb"},
+        {"name": "5-in-1 reflector", "description": "Natural-looking light control indoors, outdoors, and everywhere between.", "icon": "bi-brightness-high"},
+        {"name": "Prism & creative filters", "description": "Expressive editorial effects created intentionally in-camera.", "icon": "bi-triangle"},
+        {"name": "Power & care kit", "description": "Spare batteries, air blower, and lens tools keep long assignments moving.", "icon": "bi-battery-charging"},
     ],
     "images": ["img/slider/30.jpg", "img/slider/22.jpg", "img/slider/28.jpg", "img/slider/32.jpg", "img/slider/17.jpg", "img/slider/45.jpg"],
 }

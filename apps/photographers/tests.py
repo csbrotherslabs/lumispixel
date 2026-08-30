@@ -1,10 +1,15 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import AdministrativeRegion, ClientProfile, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile
+from apps.clients.models import Client, ClientSession
 from apps.photographers.forms import PhotographerSpecialtiesForm
+from apps.photographers.themes import THEME_DEFINITIONS
 
 User = get_user_model()
 
@@ -259,6 +264,44 @@ class PhotographerThemeExperienceTests(TestCase):
             self.assertNotContains(response, source)
         self.assertContains(response, "project_0_title")
         self.assertContains(response, "lumis-onboarding__theme-grid")
+        self.assertContains(response, "Availability and equipment")
+        self.assertContains(response, "equipment_inventory")
+
+    def test_availability_is_optional_and_equipment_defaults_to_capability_themes(self):
+        for theme in THEME_DEFINITIONS.values():
+            self.assertNotIn("availability", theme["sections"])
+        for key in ("modern_studio", "cinematic", "sports_events"):
+            self.assertIn("equipment", THEME_DEFINITIONS[key]["sections"])
+        for key in ("basic", "elegant", "portfolio_editorial"):
+            self.assertNotIn("equipment", THEME_DEFINITIONS[key]["sections"])
+
+    def test_custom_preview_renders_equipment_and_privacy_safe_booking_availability(self):
+        crm_client = Client.objects.create(photographer=self.profile, first_name="Private", last_name="Client")
+        ClientSession.objects.create(
+            photographer=self.profile,
+            client=crm_client,
+            session_type="Confidential wedding",
+            starts_at=timezone.now() + timedelta(days=3),
+            status=ClientSession.Status.CONFIRMED,
+        )
+        response = self.client.post(reverse("photographers:selected-theme-preview"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
+            "website_sections": ["hero", "availability", "equipment", "contact"],
+            "section_order": "hero,availability,equipment,contact",
+            "availability_window_months": "2",
+            "availability_call_to_action": "Check this date",
+            "equipment_inventory": "Cinema drone | Elevated coverage for large events | bi-airplane",
+        }, follow=True)
+
+        self.assertContains(response, 'id="availability"')
+        self.assertContains(response, 'id="equipment"')
+        self.assertContains(response, "Cinema drone")
+        self.assertContains(response, "Check this date")
+        self.assertContains(response, "data-availability-month")
+        self.assertNotContains(response, "Private Client")
+        self.assertNotContains(response, "Confidential wedding")
+        self.assertContains(response, "css/showcase_availability_equipment")
+        self.assertContains(response, "js/showcase_availability_equipment")
 
     def test_preview_urls_resolve_and_do_not_change_theme(self):
         self.profile.website_theme = PhotographerProfile.WebsiteTheme.BASIC
