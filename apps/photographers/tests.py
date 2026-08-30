@@ -247,9 +247,13 @@ class PhotographerThemeExperienceTests(TestCase):
 
     def test_all_six_theme_cards_and_config_panels_render(self):
         response = self.client.get(reverse("photographers:onboarding-theme"))
-        for label in ("Basic", "Elegant", "Modern Studio", "Cinematic", "Portfolio Editorial", "Sports &amp; Events"):
+        for label in ("Frame", "Narrative", "Panorama", "Monograph", "Collective", "Atelier"):
             self.assertContains(response, label)
-        self.assertContains(response, "Customize This Theme")
+        self.assertContains(response, "Choose and arrange sections")
+        self.assertContains(response, "kimono_main/dark/index-21.html")
+        self.assertContains(response, "kimono_main/dark/index-19.html")
+        self.assertContains(response, "kimono_main/dark/index-15.html", count=2)
+        self.assertContains(response, "kimono_main/dark/index-5.html", count=2)
         self.assertContains(response, "project_0_title")
         self.assertContains(response, "lumis-onboarding__theme-grid")
 
@@ -264,15 +268,67 @@ class PhotographerThemeExperienceTests(TestCase):
             "photographers:photographer_onboarding_theme_preview_portfolio_editorial",
             "photographers:photographer_onboarding_theme_preview_sports_events",
         )
-        templates = set()
         for name in names:
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, "Preview only")
-            templates.update(t.name for t in response.templates if t.name and "theme_previews/" in t.name)
+            self.assertContains(response, "Completed preview")
+            self.assertTemplateUsed(response, "photographers/theme_previews/showcase.html")
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.BASIC)
-        self.assertGreaterEqual(len(templates), 6)
+
+    def test_completed_collective_preview_includes_team_section(self):
+        response = self.client.get(reverse("photographers:theme-preview", args=["collective"]))
+
+        self.assertContains(response, "The people behind the work")
+        self.assertContains(response, "Verified client")
+        self.assertContains(response, "Foundation: kimono_main/dark/index-5.html")
+
+    def test_section_selection_and_order_are_saved_without_deleting_content(self):
+        payload = {
+            "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
+            "website_sections": ["hero", "portfolio", "team", "contact"],
+            "section_order": "hero,team,portfolio,contact",
+            "action": "finish_setup",
+        }
+        response = self.client.post(reverse("photographers:onboarding-theme"), payload)
+
+        self.assertRedirects(response, reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
+        website = self.profile.website_profile
+        self.assertEqual(list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True)), ["hero", "team", "portfolio", "contact"])
+        team = website.sections.get(section_type="team")
+        team.content = {"heading": "Our people"}
+        team.save(update_fields=["content", "updated_at"])
+
+        self.profile.onboarding_completed = False
+        self.profile.save(update_fields=["onboarding_completed", "updated_at"])
+        self.client.post(reverse("photographers:onboarding-theme"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.ELEGANT,
+            "website_sections": ["hero", "about", "contact"],
+            "section_order": "hero,about,contact",
+            "hero_heading": "Soft light",
+            "action": "save_draft",
+        })
+        team.refresh_from_db()
+        self.assertFalse(team.is_enabled)
+        self.assertEqual(team.content, {"heading": "Our people"})
+
+    def test_completed_photographer_can_return_to_builder_and_add_team(self):
+        self.profile.onboarding_completed = True
+        self.profile.save(update_fields=["onboarding_completed", "updated_at"])
+
+        response = self.client.get(reverse("photographers:website-builder"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Build Your Photographer Website")
+        self.assertEqual(self.client.get(reverse("photographers:theme-preview", args=["frame"])).status_code, 200)
+        response = self.client.post(reverse("photographers:website-builder"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
+            "website_sections": ["hero", "portfolio", "team", "contact"],
+            "section_order": "hero,portfolio,team,contact",
+            "action": "save_website",
+        })
+
+        self.assertRedirects(response, reverse("photographers:website-builder"), fetch_redirect_response=False)
+        self.assertTrue(self.profile.website_profile.sections.get(section_type="team").is_enabled)
 
     def test_elegant_finish_requires_fields_but_draft_preserves_partial(self):
         response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "hero_heading": "Soft light", "action": "save_draft"})
