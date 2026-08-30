@@ -275,6 +275,7 @@ class PhotographerThemeExperienceTests(TestCase):
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "Completed preview")
+            self.assertContains(response, "img/lumis_favicon_v1")
             self.assertContains(response, "css/showcase_portfolio")
             self.assertTemplateUsed(response, "photographers/theme_previews/showcase.html")
         self.profile.refresh_from_db()
@@ -302,6 +303,15 @@ class PhotographerThemeExperienceTests(TestCase):
 
         self.assertNotContains(response, "data-frame-carousel")
         self.assertContains(response, "css/showcase_portfolio")
+
+    def test_services_preview_uses_six_card_index_five_composition(self):
+        response = self.client.get(reverse("photographers:theme-preview", args=["narrative"]))
+
+        self.assertContains(response, "wptb-services pb-4")
+        self.assertContains(response, '<article class="showcase-service-card', count=6)
+        self.assertContains(response, "Wedding Photography")
+        self.assertContains(response, "Brand Photography")
+        self.assertContains(response, "css/showcase_services")
 
     def test_selected_sections_render_in_custom_preview_without_saving(self):
         response = self.client.post(reverse("photographers:selected-theme-preview"), {
