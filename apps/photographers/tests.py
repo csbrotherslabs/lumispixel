@@ -250,10 +250,13 @@ class PhotographerThemeExperienceTests(TestCase):
         for label in ("Frame", "Narrative", "Panorama", "Monograph", "Collective", "Atelier"):
             self.assertContains(response, label)
         self.assertContains(response, "Choose and arrange sections")
-        self.assertContains(response, "kimono_main/dark/index-21.html")
-        self.assertContains(response, "kimono_main/dark/index-19.html")
-        self.assertContains(response, "kimono_main/dark/index-15.html", count=2)
-        self.assertContains(response, "kimono_main/dark/index-5.html", count=2)
+        for source in (
+            "kimono_main/dark/index-21.html",
+            "kimono_main/dark/index-19.html",
+            "kimono_main/dark/index-15.html",
+            "kimono_main/dark/index-5.html",
+        ):
+            self.assertNotContains(response, source)
         self.assertContains(response, "project_0_title")
         self.assertContains(response, "lumis-onboarding__theme-grid")
 
@@ -281,7 +284,7 @@ class PhotographerThemeExperienceTests(TestCase):
 
         self.assertContains(response, "The people behind the work")
         self.assertContains(response, "Verified client")
-        self.assertContains(response, "Foundation: kimono_main/dark/index-5.html")
+        self.assertNotContains(response, "kimono_main/dark/index-5.html")
 
     def test_section_selection_and_order_are_saved_without_deleting_content(self):
         payload = {
