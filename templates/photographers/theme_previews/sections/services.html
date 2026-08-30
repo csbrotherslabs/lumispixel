@@ -1,1 +1,23 @@
-<section class="showcase-services" id="services"><div class="showcase-section-label">What we create</div><div class="showcase-services__heading"><h2>Photography shaped around the story.</h2><p>Considered coverage, a calm experience, and imagery designed to live well beyond the day it was made.</p></div><div class="showcase-services__list">{% for service in demo.services %}<article><span>0{{ forloop.counter }}</span><h3>{{ service }}</h3><i class="bi bi-arrow-up-right"></i></article>{% endfor %}</div></section>
+<section class="showcase-services wptb-services pb-4" id="services">
+  <div class="showcase-services__inner">
+    <div class="showcase-services__heading">
+      <div>
+        <span class="showcase-services__eyebrow"><b>02 //</b> Services</span>
+        <h2>Our Photography<br><em>Services</em></h2>
+      </div>
+      <p>We create thoughtful photography and films that preserve what matters, communicate clearly, and stay meaningful long after they are delivered.</p>
+    </div>
+    <div class="showcase-services__grid">
+      {% for service in demo.services %}
+      <article class="showcase-service-card{% if forloop.counter == 2 %} is-highlighted{% endif %}">
+        <div class="showcase-service-card__icon"><i class="bi {{ service.icon }}" aria-hidden="true"></i></div>
+        <div class="showcase-service-card__copy">
+          <h3>{{ service.name }}</h3>
+          <p>{{ service.description }}</p>
+        </div>
+        <span class="showcase-service-card__number">{{ forloop.counter|stringformat:"02d" }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
