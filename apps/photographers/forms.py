@@ -4,8 +4,9 @@ from django import forms
 from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 
-from apps.accounts.models import AdministrativeRegion, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile, PhotographerWebsiteProject
+from apps.accounts.models import AdministrativeRegion, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile, PhotographerWebsiteProject, PhotographerWebsiteSection
 from apps.clients.forms import COMMON_TIMEZONES, timezone_choices
+from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
 
 class PhotographerOnboardingProfileForm(forms.ModelForm):
@@ -215,6 +216,12 @@ THEME_FIELD_CONFIG = {
 
 class PhotographerWebsiteThemeForm(forms.ModelForm):
     action = forms.CharField(required=False)
+    website_sections = forms.MultipleChoiceField(
+        choices=[(key, value["name"]) for key, value in SECTION_LIBRARY.items()],
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "lumis-section-builder__checkbox"}),
+    )
+    section_order = forms.CharField(required=False, widget=forms.HiddenInput(attrs={"data-section-order-input": ""}))
     hero_image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={"class":"form-control","accept":"image/jpeg,image/png,image/webp,image/gif"}))
     field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]})
     hero_media_type = forms.ChoiceField(choices=(("image","Image"),("video","Video")), required=False, widget=forms.Select(attrs={"class":"form-control"}))
@@ -233,6 +240,11 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                 self.fields[name].initial = content.get(name, "")
             if website_profile and website_profile.hero_image:
                 self.fields["hero_image"].help_text = f"Current image: {website_profile.hero_image.name}"
+            existing_sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
+            theme = self.instance.website_theme or PhotographerProfile.WebsiteTheme.BASIC
+            selected_sections = existing_sections or THEME_DEFINITIONS[theme]["sections"]
+            self.fields["website_sections"].initial = selected_sections
+            self.fields["section_order"].initial = ",".join(selected_sections)
 
     def clean_hero_image(self):
         image = self.cleaned_data.get("hero_image")
@@ -257,6 +269,11 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             value = cleaned.get(name)
             if value and not (value.startswith("https://") or value.startswith("http://")):
                 self.add_error(name, "Enter a valid video URL starting with http:// or https://.")
+        sections = cleaned.get("website_sections") or (THEME_DEFINITIONS[theme]["sections"] if "website_sections" not in self.data else [])
+        cleaned["website_sections"] = sections
+        for required_section in ("hero", "contact"):
+            if required_section not in sections:
+                self.add_error("website_sections", f"{SECTION_LIBRARY[required_section]['name']} is required for every photographer website.")
         return cleaned
 
     def save_theme(self):
@@ -271,7 +288,21 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             website.hero_image = self.cleaned_data["hero_image"]
         profile.save()
         website.save()
+        self._save_sections(website, profile.website_theme)
         return profile, website
+
+    def _save_sections(self, website, theme):
+        selected = list(self.cleaned_data.get("website_sections") or THEME_DEFINITIONS[theme]["sections"])
+        requested_order = [key for key in (self.cleaned_data.get("section_order") or "").split(",") if key in selected]
+        order = requested_order + [key for key in selected if key not in requested_order]
+        existing = {section.section_type: section for section in website.sections.all()}
+        for index, section_type in enumerate(order):
+            section = existing.get(section_type) or PhotographerWebsiteSection(photographer_website=website, section_type=section_type)
+            section.layout_variant = f"{THEME_DEFINITIONS[theme]['slug']}-{section_type}"
+            section.display_order = index
+            section.is_enabled = True
+            section.save()
+        website.sections.exclude(section_type__in=selected).update(is_enabled=False)
 
 
 for _theme_field_name in PhotographerWebsiteThemeForm.field_names:
