@@ -1,38 +1,50 @@
-# Virtual Environment
-env_lumispixel/
+# Environment / secrets
+.env
+.env.*
+!.env.example
 
 # Python
+venv/
+.venv/
 __pycache__/
 *.py[cod]
 *.pyo
 
-# Environment
-.env
-
-# Django
-db.sqlite3
-media/
-
-# VS Code
-.vscode/
-
-# Logs
-*.log
-
-# Static build
+# Django generated/local data
 staticfiles/
+media/
+*.sqlite3
+db.sqlite3
 
-kimono_main/
+# Logs / runtime
+*.log
+logs/
+*.pid
 
-# Virtual environments
-venv/
-.venv/
-env/
+# Celery
+celerybeat-schedule
+celerybeat.pid
 
-# Mac / IDE
-.DS_Store
+# IDE / OS
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+
+# Testing / caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Build/temp
+tmp/
+temp/
+*.tmp
+
+# Local uploads
+uploads/
 
 docs
 Notes
