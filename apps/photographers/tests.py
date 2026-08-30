@@ -312,6 +312,7 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertContains(response, "Wedding Photography")
         self.assertContains(response, "Brand Photography")
         self.assertContains(response, "css/showcase_services")
+        self.assertNotContains(response, "is-highlighted")
 
     def test_selected_sections_render_in_custom_preview_without_saving(self):
         response = self.client.post(reverse("photographers:selected-theme-preview"), {

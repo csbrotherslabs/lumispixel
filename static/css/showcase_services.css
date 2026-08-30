@@ -72,8 +72,7 @@
   transition: background .25s ease, transform .25s ease;
 }
 
-.showcase-service-card:hover,
-.showcase-service-card.is-highlighted {
+.showcase-service-card:hover {
   background: var(--showcase-accent);
 }
 
@@ -113,25 +112,27 @@
   line-height: 1.65;
 }
 
-.showcase-service-card:hover p,
-.showcase-service-card.is-highlighted p {
+.showcase-service-card:hover p {
   color: rgba(255,255,255,.82);
 }
 
 .showcase-service-card__number {
   position: absolute;
-  right: 22px;
-  bottom: -19px;
+  z-index: 1;
+  right: 24px;
+  bottom: 20px;
   color: transparent;
-  font-size: 84px;
+  font-size: clamp(58px, 5.4vw, 76px);
   font-weight: 900;
-  line-height: 1;
-  -webkit-text-stroke: 1px rgba(255,255,255,.18);
+  line-height: .82;
+  letter-spacing: -.06em;
+  pointer-events: none;
+  -webkit-text-stroke: 1px rgba(255,255,255,.2);
+  transition: opacity .25s ease, -webkit-text-stroke-color .25s ease;
 }
 
-.showcase-service-card:hover .showcase-service-card__number,
-.showcase-service-card.is-highlighted .showcase-service-card__number {
-  -webkit-text-stroke-color: rgba(255,255,255,.35);
+.showcase-service-card:hover .showcase-service-card__number {
+  -webkit-text-stroke-color: rgba(255,255,255,.48);
 }
 
 @media (max-width: 960px) {
@@ -165,6 +166,12 @@
 
   .showcase-service-card__copy {
     margin-top: 42px;
+  }
+
+  .showcase-service-card__number {
+    right: 22px;
+    bottom: 20px;
+    font-size: 62px;
   }
 }
 

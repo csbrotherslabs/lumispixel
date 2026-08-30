@@ -9,7 +9,7 @@
     </div>
     <div class="showcase-services__grid">
       {% for service in demo.services %}
-      <article class="showcase-service-card{% if forloop.counter == 2 %} is-highlighted{% endif %}">
+      <article class="showcase-service-card">
         <div class="showcase-service-card__icon"><i class="bi {{ service.icon }}" aria-hidden="true"></i></div>
         <div class="showcase-service-card__copy">
           <h3>{{ service.name }}</h3>
