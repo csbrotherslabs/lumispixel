@@ -1,0 +1,14 @@
+<section class="showcase-availability" id="availability" data-availability-calendar>
+  <div class="showcase-availability__intro">
+    <span class="showcase-section-label">Plan your session</span>
+    <h2>Find a date<br><em>that feels right.</em></h2>
+    <p>Explore public availability without exposing private client or event information. Final timing is confirmed after your inquiry.</p>
+    <div class="showcase-availability__legend"><span><i class="is-available"></i>Available</span><span><i class="is-limited"></i>Limited</span><span><i class="is-booked"></i>Booked</span></div>
+  </div>
+  <div class="showcase-calendar">
+    <div class="showcase-calendar__top"><button type="button" data-availability-previous aria-label="Previous month"><i class="bi bi-arrow-left"></i></button><strong data-availability-label></strong><button type="button" data-availability-next aria-label="Next month"><i class="bi bi-arrow-right"></i></button></div>
+    <div class="showcase-calendar__weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+    {% for month in demo.availability %}<div class="showcase-calendar__month{% if forloop.first %} is-active{% endif %}" data-availability-month data-label="{{ month.label }}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">{% for week in month.weeks %}<div class="showcase-calendar__week">{% for day in week %}<button type="button" class="is-{{ day.status }}" {% if day.status != 'available' and day.status != 'limited' %}disabled{% endif %} aria-label="{{ day.date|date:'F j, Y' }} — {{ day.status }}"><span>{{ day.day }}</span></button>{% endfor %}</div>{% endfor %}</div>{% endfor %}
+    <a class="showcase-calendar__cta" href="#contact">{{ demo.availability_call_to_action }} <i class="bi bi-arrow-up-right"></i></a>
+  </div>
+</section>
