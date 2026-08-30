@@ -286,6 +286,21 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertContains(response, "Verified client")
         self.assertNotContains(response, "kimono_main/dark/index-5.html")
 
+    def test_frame_preview_restores_six_slide_carousel(self):
+        response = self.client.get(reverse("photographers:theme-preview", args=["frame"]))
+
+        self.assertContains(response, "data-frame-carousel")
+        self.assertContains(response, "data-frame-slide", count=6)
+        self.assertContains(response, "data-frame-dot=", count=6)
+        self.assertContains(response, "data-frame-previous")
+        self.assertContains(response, "data-frame-next")
+        self.assertContains(response, "js/theme_showcase")
+
+    def test_non_frame_preview_keeps_static_hero(self):
+        response = self.client.get(reverse("photographers:theme-preview", args=["narrative"]))
+
+        self.assertNotContains(response, "data-frame-carousel")
+
     def test_section_selection_and_order_are_saved_without_deleting_content(self):
         payload = {
             "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
