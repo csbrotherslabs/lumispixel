@@ -13,6 +13,7 @@ from .themes import DEMO_CONTENT, SECTION_LIBRARY, THEME_DEFINITIONS, section_op
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
+SELECTED_THEME_PREVIEW_SESSION_KEY = "photographer_selected_theme_preview"
 
 
 def _photographer_profile(user):
@@ -130,10 +131,19 @@ def onboarding_theme(request):
         return redirect("photographer_workspace:dashboard")
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
     action = request.POST.get("action", "save_website" if builder_mode else "finish_setup") if request.method == "POST" else None
-    form = PhotographerWebsiteThemeForm(request.POST or None, request.FILES or None, instance=profile, website_profile=website, draft=(action in {"save_draft", "save_website"}))
+    preview_state = request.session.get(SELECTED_THEME_PREVIEW_SESSION_KEY) if request.method == "GET" and request.GET.get("restore_preview") == "1" else None
+    preview_initial = None
+    if preview_state:
+        preview_initial = {
+            "website_theme": preview_state["theme_value"],
+            "website_sections": preview_state["sections"],
+            "section_order": ",".join(preview_state["sections"]),
+        }
+    form = PhotographerWebsiteThemeForm(request.POST or None, request.FILES or None, instance=profile, website_profile=website, draft=(action in {"save_draft", "save_website"}), initial=preview_initial)
     if request.method == "POST" and form.is_valid():
         profile, website = form.save_theme()
         _save_project_drafts(request, website)
+        request.session.pop(SELECTED_THEME_PREVIEW_SESSION_KEY, None)
         if builder_mode:
             messages.success(request, "Your photographer website structure has been saved.")
             return redirect("photographers:website-builder")
@@ -188,6 +198,64 @@ def theme_preview(request, theme_slug):
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
     sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in theme["sections"]]
     return render(request, theme["preview_template"], {"profile": profile, "website": website, "projects": website.projects.all()[:3], "theme": theme, "sections": sections, "demo": DEMO_CONTENT, "sample_label": "Completed theme preview"})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def selected_theme_preview(request):
+    if not request.user.has_photographer_profile:
+        destination = "clients:setup-dashboard" if request.user.has_client_profile else _authenticated_destination_url(request, request.user)
+        return redirect(destination)
+
+    if request.method == "POST":
+        theme_value = request.POST.get("website_theme", "")
+        definition = THEME_DEFINITIONS.get(theme_value)
+        if not definition:
+            messages.error(request, "Choose a template before previewing your selection.")
+            return redirect("photographers:onboarding-theme")
+
+        requested_sections = request.POST.getlist("website_sections")
+        selected = []
+        for key in requested_sections:
+            if key in SECTION_LIBRARY and key not in selected:
+                selected.append(key)
+        for required_section in ("hero", "contact"):
+            if required_section not in selected:
+                selected.append(required_section)
+
+        requested_order = [key for key in request.POST.get("section_order", "").split(",") if key in selected]
+        sections = list(dict.fromkeys(requested_order + selected))
+        return_context = "builder" if request.POST.get("preview_context") == "builder" else "onboarding"
+        request.session[SELECTED_THEME_PREVIEW_SESSION_KEY] = {
+            "theme_value": theme_value,
+            "sections": sections,
+            "return_context": return_context,
+        }
+        return redirect("photographers:selected-theme-preview")
+
+    state = request.session.get(SELECTED_THEME_PREVIEW_SESSION_KEY)
+    if not state or state.get("theme_value") not in THEME_DEFINITIONS:
+        return redirect("photographers:onboarding-theme")
+
+    profile = _photographer_profile(request.user)
+    website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+    definition = THEME_DEFINITIONS[state["theme_value"]]
+    theme = dict(value=state["theme_value"], **definition)
+    section_keys = [key for key in state.get("sections", []) if key in SECTION_LIBRARY]
+    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in section_keys]
+    return_route = "photographers:website-builder" if state.get("return_context") == "builder" else "photographers:onboarding-theme"
+    preview_return_url = f"{reverse(return_route)}?restore_preview=1"
+    return render(request, theme["preview_template"], {
+        "profile": profile,
+        "website": website,
+        "projects": website.projects.all()[:3],
+        "theme": theme,
+        "sections": sections,
+        "demo": DEMO_CONTENT,
+        "sample_label": "Your selected preview",
+        "custom_preview": True,
+        "preview_return_url": preview_return_url,
+    })
 
 @login_required
 @require_GET
