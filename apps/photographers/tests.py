@@ -275,6 +275,7 @@ class PhotographerThemeExperienceTests(TestCase):
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "Completed preview")
+            self.assertContains(response, "css/showcase_portfolio")
             self.assertTemplateUsed(response, "photographers/theme_previews/showcase.html")
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.BASIC)
@@ -300,7 +301,7 @@ class PhotographerThemeExperienceTests(TestCase):
         response = self.client.get(reverse("photographers:theme-preview", args=["narrative"]))
 
         self.assertNotContains(response, "data-frame-carousel")
-        self.assertContains(response, "css/narrative_theme")
+        self.assertContains(response, "css/showcase_portfolio")
 
     def test_section_selection_and_order_are_saved_without_deleting_content(self):
         payload = {
