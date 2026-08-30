@@ -11,6 +11,11 @@
   background: #fffaf6;
 }
 
+.lumis-showcase-page .showcase-about h2 {
+  color: #111;
+  font-size: clamp(36px, 4.4vw, 62px);
+}
+
 .lumis-showcase-page .showcase-portfolio__heading {
   display: grid;
   grid-template-columns: minmax(150px, .32fr) minmax(0, 1fr);
@@ -27,8 +32,9 @@
 
 .lumis-showcase-page .showcase-portfolio__heading h2 {
   max-width: 850px;
+  color: #111;
   font-family: Georgia, serif;
-  font-size: clamp(46px, 6vw, 86px);
+  font-size: clamp(36px, 4.4vw, 62px);
   font-weight: 400;
   line-height: .98;
   letter-spacing: -.045em;
