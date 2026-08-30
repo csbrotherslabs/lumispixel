@@ -300,6 +300,7 @@ class PhotographerThemeExperienceTests(TestCase):
         response = self.client.get(reverse("photographers:theme-preview", args=["narrative"]))
 
         self.assertNotContains(response, "data-frame-carousel")
+        self.assertContains(response, "css/narrative_theme")
 
     def test_section_selection_and_order_are_saved_without_deleting_content(self):
         payload = {
