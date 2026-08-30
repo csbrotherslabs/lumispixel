@@ -303,6 +303,48 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertNotContains(response, "data-frame-carousel")
         self.assertContains(response, "css/showcase_portfolio")
 
+    def test_selected_sections_render_in_custom_preview_without_saving(self):
+        response = self.client.post(reverse("photographers:selected-theme-preview"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.ELEGANT,
+            "website_sections": ["hero", "portfolio", "team", "reviews", "contact"],
+            "section_order": "hero,team,portfolio,reviews,contact",
+            "preview_context": "onboarding",
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Your selected preview — Narrative")
+        self.assertContains(response, "Back to customize")
+        self.assertContains(response, 'id="team"')
+        self.assertContains(response, 'id="reviews"')
+        content = response.content.decode()
+        self.assertLess(content.index('id="team"'), content.index('id="portfolio"'))
+        self.assertLess(content.index('id="portfolio"'), content.index('id="reviews"'))
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.BASIC)
+        self.assertFalse(self.profile.website_profile.sections.exists())
+
+    def test_custom_preview_selection_is_restored_on_return(self):
+        self.client.post(reverse("photographers:selected-theme-preview"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL,
+            "website_sections": ["hero", "team", "about", "contact"],
+            "section_order": "hero,about,team,contact",
+        })
+
+        response = self.client.get(f'{reverse("photographers:onboarding-theme")}?restore_preview=1')
+
+        self.assertEqual(response.context["form"]["website_theme"].value(), PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL)
+        self.assertEqual(response.context["form"]["section_order"].value(), "hero,about,team,contact")
+        self.assertEqual(set(response.context["selected_sections"]), {"hero", "about", "team", "contact"})
+
+    def test_custom_preview_requires_a_valid_theme(self):
+        response = self.client.post(reverse("photographers:selected-theme-preview"), {
+            "website_theme": "unknown-theme",
+            "website_sections": ["hero", "contact"],
+        })
+
+        self.assertRedirects(response, reverse("photographers:onboarding-theme"), fetch_redirect_response=False)
+        self.assertNotIn("photographer_selected_theme_preview", self.client.session)
+
     def test_section_selection_and_order_are_saved_without_deleting_content(self):
         payload = {
             "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
