@@ -285,6 +285,10 @@ class PhotographerThemeExperienceTests(TestCase):
         response = self.client.get(reverse("photographers:theme-preview", args=["collective"]))
 
         self.assertContains(response, "The people behind the work")
+        self.assertContains(response, '<div class="showcase-team__grid">')
+        self.assertContains(response, "Associate Photographer")
+        self.assertContains(response, "Elias Morgan")
+        self.assertContains(response, "css/showcase_team")
         self.assertContains(response, "Verified client")
         self.assertNotContains(response, "kimono_main/dark/index-5.html")
 
