@@ -1,1 +1,36 @@
-<section class="showcase-reviews" id="reviews"><div class="showcase-rating"><strong>{{ demo.rating }}</strong><span>★★★★★</span><small>Based on {{ demo.review_count }} verified reviews</small></div><blockquote>“{{ demo.review }}”<cite>{{ demo.reviewer }} / Verified client</cite></blockquote></section>
+{% load static %}
+<section class="showcase-reviews wptb-testimonial-one testimonial-colored bg-image" id="reviews" style="background-image: url('{% static 'img/background/bg-16.jpg' %}');" data-review-carousel>
+  <div class="showcase-reviews__overlay"></div>
+  <div class="showcase-reviews__inner">
+    <div class="showcase-reviews__carousel" aria-roledescription="carousel" aria-label="Verified client reviews">
+      <div class="showcase-reviews__slides" aria-live="polite">
+        {% for review in demo.reviews %}
+        <article class="showcase-review-card{% if forloop.first %} is-active{% endif %}" data-review-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+          <div class="showcase-review-card__top">
+            <span class="showcase-review-card__stars" aria-label="Five out of five stars">
+              <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+            </span>
+            <span class="showcase-review-card__quote" aria-hidden="true">“</span>
+          </div>
+          <blockquote>{{ review.quote }}</blockquote>
+          <footer class="showcase-review-card__client">
+            <img src="{% static review.image %}" alt="Portrait of {{ review.name }}">
+            <div><strong>{{ review.name }}</strong><span>{{ review.location }} · Verified client</span></div>
+          </footer>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="showcase-reviews__controls">
+        <button type="button" data-review-previous aria-label="Previous review"><i class="bi bi-arrow-left"></i></button>
+        <span><b data-review-current>01</b> / {{ demo.reviews|length|stringformat:"02d" }}</span>
+        <button type="button" data-review-next aria-label="Next review"><i class="bi bi-arrow-right"></i></button>
+      </div>
+    </div>
+    <aside class="showcase-rating" aria-label="Overall client rating">
+      <span class="showcase-rating__label">Client experience</span>
+      <strong>{{ demo.rating }}</strong>
+      <span class="showcase-rating__stars" aria-label="{{ demo.rating }} out of five stars">★★★★★</span>
+      <small>Based on {{ demo.review_count }} verified reviews</small>
+    </aside>
+  </div>
+</section>
