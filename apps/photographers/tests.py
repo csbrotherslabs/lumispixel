@@ -314,6 +314,18 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertContains(response, "css/showcase_services")
         self.assertNotContains(response, "is-highlighted")
 
+    def test_reviews_preview_uses_index_nineteen_testimonial_composition(self):
+        response = self.client.get(reverse("photographers:theme-preview", args=["narrative"]))
+
+        self.assertContains(response, "wptb-testimonial-one testimonial-colored bg-image")
+        self.assertContains(response, "data-review-slide", count=3)
+        self.assertContains(response, "data-review-previous")
+        self.assertContains(response, "data-review-next")
+        self.assertContains(response, "4.9")
+        self.assertContains(response, "Based on 128 verified reviews")
+        self.assertContains(response, "css/showcase_reviews")
+        self.assertContains(response, "js/showcase_reviews")
+
     def test_selected_sections_render_in_custom_preview_without_saving(self):
         response = self.client.post(reverse("photographers:selected-theme-preview"), {
             "website_theme": PhotographerProfile.WebsiteTheme.ELEGANT,
