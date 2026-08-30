@@ -71,6 +71,101 @@
   background: #fff;
 }
 
+/* Frame uses one editorial feature followed by four evenly sized stories. */
+.lumis-showcase--frame .showcase-portfolio {
+  width: min(100%, 1480px);
+  margin-inline: auto;
+  padding: 100px clamp(24px, 5vw, 76px) 120px;
+}
+
+.lumis-showcase--frame .showcase-portfolio__heading {
+  display: grid;
+  grid-template-columns: minmax(150px, .35fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 80px);
+  align-items: end;
+  margin: 0 0 52px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(17,17,17,.16);
+}
+
+.lumis-showcase--frame .showcase-portfolio__heading > span {
+  margin: 0;
+}
+
+.lumis-showcase--frame .showcase-portfolio__heading h2 {
+  max-width: 760px;
+  font-size: clamp(40px, 5vw, 72px);
+}
+
+.lumis-showcase--frame .showcase-portfolio__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 52px 22px;
+}
+
+.lumis-showcase--frame .showcase-portfolio__grid figure:nth-child(n) {
+  grid-column: auto;
+  height: auto;
+}
+
+.lumis-showcase--frame .showcase-portfolio__grid figure:first-child {
+  grid-column: 1 / -1;
+}
+
+.lumis-showcase--frame .showcase-portfolio__grid figure img {
+  aspect-ratio: 4 / 3;
+  height: auto;
+}
+
+.lumis-showcase--frame .showcase-portfolio__grid figure:first-child img {
+  aspect-ratio: 16 / 7;
+}
+
+.lumis-showcase--frame .showcase-portfolio figcaption {
+  align-items: baseline;
+  gap: 20px;
+  padding: 14px 2px 0;
+  border-top: 0;
+  font-size: 11px;
+}
+
+.lumis-showcase--frame .showcase-portfolio figcaption span {
+  color: #77716c;
+  letter-spacing: .08em;
+}
+
+.lumis-showcase--frame .showcase-portfolio figcaption b {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (max-width: 760px) {
+  .lumis-showcase--frame .showcase-portfolio {
+    padding: 72px 18px 84px;
+  }
+
+  .lumis-showcase--frame .showcase-portfolio__heading {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .lumis-showcase--frame .showcase-portfolio__grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .lumis-showcase--frame .showcase-portfolio__grid figure:first-child {
+    grid-column: auto;
+  }
+
+  .lumis-showcase--frame .showcase-portfolio__grid figure img,
+  .lumis-showcase--frame .showcase-portfolio__grid figure:first-child img {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 @media (max-width: 600px) {
   .lumis-showcase--frame .showcase-hero {
     padding-bottom: 78px;
