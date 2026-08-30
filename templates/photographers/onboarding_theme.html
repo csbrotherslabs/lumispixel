@@ -1,7 +1,7 @@
 {% extends "photographers/onboarding_base.html" %}
 {% block title %}Choose Your Client Experience | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">Choose Your Client Experience</h1><p class="wptb-item--description mx-auto">Pick, preview, and customize your photographer homepage draft. Public publishing comes later.</p></div>
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">{% if builder_mode %}Build Your Photographer Website{% else %}Choose Your Website{% endif %}</h1><p class="wptb-item--description mx-auto">{% if builder_mode %}Change templates or add, remove, and rearrange sections without losing saved section content.{% else %}Start with a complete Kimono layout, then choose the sections your photography business needs.{% endif %}</p></div>
 <form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate data-theme-form>
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
@@ -11,17 +11,39 @@
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
         <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %} aria-controls="panel-{{ theme.value }}">
         <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Requires:</b> {{ theme.required_summary }}</small><a class="lumis-theme-preview-link" href="{% url theme.url_name %}" aria-label="Preview {{ theme.name }} theme">Preview</a><span class="lumis-theme-selected" aria-live="polite">Selected theme</span></span>
+        <span class="lumis-onboarding-theme__body"><span class="lumis-theme-foundation">{{ theme.source }}</span><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview">View completed preview</a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
       </label>
     {% endfor %}
   </fieldset>
-  <section class="lumis-theme-config" aria-live="polite"><h2>Customize This Theme</h2><p data-empty-theme>Choose a theme to see its configuration fields.</p>
+  <section class="lumis-section-builder" aria-labelledby="section-builder-title">
+    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Add Team now or return later without changing your template.</p></div>
+    {{ form.section_order }}
+    {% if form.website_sections.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_sections.errors|striptags }}</div>{% endif %}
+    <div class="lumis-section-builder__list" data-section-list>
+      {% for section in section_options %}
+      <div class="lumis-section-builder__item" data-section-item="{{ section.key }}">
+        <label for="section-{{ section.key }}"><input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}><span><strong>{{ section.name }}</strong><small>{{ section.description }}</small></span></label>
+        <span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="lumis-theme-config" aria-live="polite"><h2>Template content</h2><p data-empty-theme>Choose a template to see its starter content fields.</p>
     <div class="lumis-theme-panel" id="panel-basic" data-theme-panel="basic"><p>This theme uses the information already provided in the previous setup steps. No additional information is required.</p></div>
     {% include "photographers/theme_config_panels.html" %}
   </section>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a><button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button><button class="btn lumis-auth-primary" type="submit" name="action" value="finish_setup"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button></div>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">{% if builder_mode %}<a class="btn lumis-auth-secondary" href="{% url 'photographer_workspace:dashboard' %}"><span class="btn-wrap"><span class="text-first">Back to Workspace</span></span></a><button class="btn lumis-auth-primary" type="submit" name="action" value="save_website"><span class="btn-wrap"><span class="text-first">Save Website</span></span></button>{% else %}<a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a><button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button><button class="btn lumis-auth-primary" type="submit" name="action" value="finish_setup"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button>{% endif %}</div>
 </form>
 <script>
-(function(){function sync(){var checked=document.querySelector('input[name="website_theme"]:checked');document.querySelectorAll('[data-theme-panel]').forEach(function(p){p.hidden=!checked||p.dataset.themePanel!==checked.value});var empty=document.querySelector('[data-empty-theme]'); if(empty) empty.hidden=!!checked;}document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',sync)});sync();})();
+(function(){
+  var defaults={basic:['hero','portfolio','contact'],elegant:['hero','services','about','portfolio','stats','reviews','contact'],modern_studio:['hero','services','about','portfolio','reviews','contact'],cinematic:['hero','about','services','portfolio','reviews','contact'],portfolio_editorial:['hero','portfolio','about','team','reviews','contact'],sports_events:['hero','services','stats','portfolio','reviews','team','contact']};
+  var list=document.querySelector('[data-section-list]');var orderInput=document.querySelector('[data-section-order-input]');
+  function writeOrder(){orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}
+  function sync(resetSections){var checked=document.querySelector('input[name="website_theme"]:checked');document.querySelectorAll('[data-theme-panel]').forEach(function(p){p.hidden=!checked||p.dataset.themePanel!==checked.value});var empty=document.querySelector('[data-empty-theme]');if(empty)empty.hidden=!!checked;if(resetSections&&checked){list.querySelectorAll('input[type="checkbox"]').forEach(function(box){box.checked=defaults[checked.value].includes(box.value)||box.hasAttribute('data-required-section')});writeOrder();}}
+  document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',function(){sync(true)})});
+  list.addEventListener('change',function(event){if(event.target.hasAttribute('data-required-section'))event.target.checked=true;writeOrder()});
+  list.addEventListener('click',function(event){var button=event.target.closest('[data-move]');if(!button)return;var item=button.closest('[data-section-item]');var sibling=button.dataset.move==='up'?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;if(button.dataset.move==='up')list.insertBefore(item,sibling);else list.insertBefore(sibling,item);writeOrder()});
+  sync(false);writeOrder();
+})();
 </script>
 {% endblock %}
