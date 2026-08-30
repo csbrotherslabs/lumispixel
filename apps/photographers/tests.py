@@ -325,6 +325,10 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertContains(response, "Based on 128 verified reviews")
         self.assertContains(response, "css/showcase_reviews")
         self.assertContains(response, "js/showcase_reviews")
+        self.assertContains(response, "data-review-excerpt", count=3)
+        self.assertContains(response, "data-review-more", count=3)
+        self.assertContains(response, "data-review-modal")
+        self.assertContains(response, "data-review-modal-copy")
 
     def test_selected_sections_render_in_custom_preview_without_saving(self):
         response = self.client.post(reverse("photographers:selected-theme-preview"), {
