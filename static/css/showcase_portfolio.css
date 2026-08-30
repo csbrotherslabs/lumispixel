@@ -3,6 +3,14 @@
   background: color-mix(in srgb, var(--showcase-paper) 88%, #fff);
 }
 
+.lumis-showcase--narrative .showcase-about {
+  background: var(--showcase-paper);
+}
+
+.lumis-showcase--narrative .showcase-portfolio {
+  background: #fffaf6;
+}
+
 .lumis-showcase-page .showcase-portfolio__heading {
   display: grid;
   grid-template-columns: minmax(150px, .32fr) minmax(0, 1fr);
