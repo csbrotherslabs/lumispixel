@@ -12,7 +12,7 @@
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
         <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
         <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview">View completed preview</a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
+        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview"><span>View completed preview</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
       </label>
     {% endfor %}
   </fieldset>
