@@ -75,25 +75,8 @@
 .photographer-onboarding-v2 .lumis-onboarding__actions .lumis-auth-primary:hover { background:#970f15; color:#fff; }
 .photographer-onboarding-v2 .lumis-onboarding__theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:0; padding:0; border:0; }
 .photographer-onboarding-v2 .lumis-onboarding-theme { overflow:hidden; border:1px solid #e5ddd7; border-radius:15px; background:#fbfaf9; }
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview{position:relative;min-height:150px;padding:0;background:#25211f;overflow:hidden}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview span{position:absolute;display:block;background:#eee5de;border-radius:0}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview span:first-child{inset:0 42% 0 0;background:linear-gradient(145deg,#7a6257,#211d1b)}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview span:nth-child(2){top:25px;right:18px;width:34%;height:9px;background:#fff}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview span:nth-child(3){top:47px;right:18px;width:27%;height:45px;background:#d55249}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative{display:grid;place-items:center;background:#e7e3df}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative span:first-child{inset:13px;border:1px solid #cec7c1;border-radius:10px;background:linear-gradient(145deg,#ded8d3,#c9c1bb)}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative span:first-child::before{content:"";position:absolute;top:50%;left:50%;width:36px;height:28px;border:2px solid rgba(66,58,53,.48);border-radius:5px;transform:translate(-50%,-70%)}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative span:first-child::after{content:"Image placeholder";position:absolute;top:calc(50% + 20px);left:50%;color:#655d57;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transform:translateX(-50%);white-space:nowrap}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative span:nth-child(2),.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-narrative span:nth-child(3){display:none}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-panorama span:first-child{inset:0;background:linear-gradient(90deg,#382f2b,#a98f7e,#382f2b)}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-panorama span:nth-child(2){left:22%;right:22%;top:34px;width:auto}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-panorama span:nth-child(3){left:33%;right:33%;top:58px;width:auto;height:32px;background:#d7ad78}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-monograph span:first-child,.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-collective span:first-child{inset:0 0 0 50%}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-monograph span:nth-child(2),.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-collective span:nth-child(2){left:18px;right:auto;width:36%;top:36px}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-collective span:nth-child(3){background:#cbff3f}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-atelier span:first-child{inset:20px 20px 42px;background:linear-gradient(90deg,#4a3831,#b79580)}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-atelier span:nth-child(2){top:auto;bottom:20px;left:20px;width:28%}
-.photographer-onboarding-v2 .lumis-onboarding-theme__preview.is-atelier span:nth-child(3){top:auto;bottom:20px;right:20px;width:34%;height:9px}
+.photographer-onboarding-v2 .lumis-onboarding-theme__preview{position:relative;aspect-ratio:16/9;min-height:150px;padding:0;background:#e7e3df;overflow:hidden}
+.photographer-onboarding-v2 .lumis-onboarding-theme__preview img{display:block;width:100%;height:100%;object-fit:cover}
 .photographer-onboarding-v2 .lumis-onboarding-theme__body{display:grid;gap:9px;padding:17px;font-style:normal;letter-spacing:normal;text-transform:none!important}
 .photographer-onboarding-v2 .lumis-onboarding-theme__body>*{font-style:normal;letter-spacing:normal;text-transform:none!important}
 .photographer-onboarding-v2 .lumis-onboarding-theme__body>strong{font-size:1rem;font-weight:600;line-height:1.3}
