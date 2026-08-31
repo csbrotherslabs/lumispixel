@@ -94,6 +94,16 @@
 .photographer-onboarding-v2 .lumis-onboarding-theme__body>strong{font-size:1rem;font-weight:600;line-height:1.3}
 .photographer-onboarding-v2 .lumis-onboarding-theme__body>small{font-size:.72rem;font-weight:400;line-height:1.6}
 .photographer-onboarding-v2 .lumis-onboarding-theme__body>small b{font-weight:600;text-transform:none!important}
+
+.photographer-onboarding-v2 .lumis-content-sections{display:grid;gap:22px;margin-top:28px}
+.photographer-onboarding-v2 .lumis-content-section{margin-top:0;padding:28px;border-radius:14px}
+.photographer-onboarding-v2 .lumis-content-section__heading{display:grid;grid-template-columns:42px 1fr;gap:16px;align-items:start;margin-bottom:22px}
+.photographer-onboarding-v2 .lumis-content-section__heading>span{display:grid;width:38px;height:38px;place-items:center;border-radius:50%;background:#181818;color:#fff;font-size:11px;font-weight:700}
+.photographer-onboarding-v2 .lumis-content-section__heading h2{margin:0 0 6px;color:#181818;font-size:24px}
+.photographer-onboarding-v2 .lumis-content-section__heading p{margin:0;color:#706760;font-size:13px;line-height:1.6}
+.photographer-onboarding-v2 .lumis-content-section__inherited{display:flex;gap:10px;align-items:flex-start;margin:0;padding:16px;border-radius:10px;background:#f4f1ee;color:#625b55;font-size:13px;line-height:1.6}
+.photographer-onboarding-v2 .lumis-content-section__inherited i{color:#4c9b68;font-size:17px}
+@media(max-width:575px){.photographer-onboarding-v2 .lumis-content-section{padding:20px}.photographer-onboarding-v2 .lumis-content-section__heading{grid-template-columns:34px 1fr}.photographer-onboarding-v2 .lumis-content-section__heading>span{width:32px;height:32px}.photographer-onboarding-v2 .lumis-content-section__heading h2{font-size:21px}}
 .photographer-onboarding-v2 .lumis-theme-preview-link{width:max-content;margin-top:5px;color:var(--co-red);font-size:.72rem;font-weight:600}
 .photographer-onboarding-v2 .lumis-theme-selected{font-size:.7rem;font-weight:600;text-transform:none!important}
 .photographer-onboarding-v2 .lumis-section-builder{margin-top:24px;padding:22px;border:1px solid #e5ddd7;border-radius:15px;background:#fff}

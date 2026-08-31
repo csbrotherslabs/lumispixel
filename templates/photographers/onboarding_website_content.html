@@ -1,0 +1,30 @@
+{% extends "photographers/onboarding_base.html" %}
+{% block title %}Customize Your Website | Photographer Onboarding{% endblock %}
+{% block onboarding_content %}
+<div class="lumis-onboarding__intro text-center">
+  <span class="lumis-onboarding__eyebrow">Website content</span>
+  <h1 class="wptb-item--title" id="photographer-onboarding-content-title">Bring Your Website to Life</h1>
+  <p class="wptb-item--description mx-auto">Add the information for the sections you selected. Panels follow the same order as your website.</p>
+</div>
+<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="website_theme" value="{{ profile.website_theme }}">
+  {% for section in selected_sections %}<input type="hidden" name="website_sections" value="{{ section }}">{% endfor %}
+  <input type="hidden" name="section_order" value="{{ selected_sections|join:',' }}">
+  {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div class="lumis-content-sections">
+    {% for panel in panels %}
+    <section class="lumis-theme-config lumis-content-section" id="content-{{ panel.key }}">
+      <div class="lumis-content-section__heading"><span>{{ forloop.counter|stringformat:"02d" }}</span><div><h2>{{ panel.name }}</h2><p>{{ panel.description }}</p></div></div>
+      {% if panel.fields %}<div class="lumis-theme-config-grid">{% for field in panel.fields %}<div class="lumis-theme-field {% if field.name == 'hero_image' or field.name == 'equipment_inventory' %}lumis-theme-field--full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label|default:field.name|title }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}{% if field.name == 'hero_image' and website.hero_image %}<p><img src="{{ website.hero_image.url }}" alt="Current hero image" loading="lazy" style="max-width:180px"></p>{% endif %}</div>{% endfor %}</div>{% else %}<p class="lumis-content-section__inherited"><i class="bi bi-check-circle"></i> This section uses your existing photographer profile and business information. More editing controls can be added later without changing your selected layout.</p>{% endif %}
+      {% if panel.supports_projects %}<h3>Featured homepage projects</h3>{% for i in '012' %}<div class="lumis-theme-project"><label>Project {{ forloop.counter }} title<input class="form-control" name="project_{{ i }}_title"></label><label>Description<textarea class="form-control" name="project_{{ i }}_description"></textarea></label><label>Cover image<input class="form-control" type="file" name="project_{{ i }}_cover_image" accept="image/*"></label></div>{% endfor %}{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
+    <a class="btn lumis-auth-secondary" href="{% if builder_mode %}{% url 'photographers:website-builder' %}{% else %}{% url 'photographers:onboarding-theme' %}{% endif %}"><span class="btn-wrap"><span class="text-first">Back to Structure</span></span></a>
+    {% if not builder_mode %}<button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button>{% endif %}
+    <button class="btn lumis-auth-primary" type="submit" name="action" value="{% if builder_mode %}save_content{% else %}finish_setup{% endif %}"><span class="btn-wrap"><span class="text-first">{% if builder_mode %}Save Website Content{% else %}Finish Setup{% endif %}</span></span></button>
+  </div>
+</form>
+{% endblock %}

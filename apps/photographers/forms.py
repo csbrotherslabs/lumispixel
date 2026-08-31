@@ -214,6 +214,23 @@ THEME_FIELD_CONFIG = {
     PhotographerProfile.WebsiteTheme.SPORTS_EVENTS: {"required": ["hero_heading", "hero_subheading", "find_photos_heading", "recent_events_heading", "booking_call_to_action"], "optional": ["highlight_video", "featured_event_title", "featured_event_description"]},
 }
 
+FIELD_SECTION_MAP = {
+    "hero_image": "hero", "hero_media_type": "hero", "hero_heading": "hero", "hero_subheading": "hero",
+    "hero_video": "hero", "editorial_heading": "hero",
+    "about_heading": "about", "about_text": "about", "studio_intro": "about", "story_heading": "about",
+    "story_text": "about", "artist_statement": "about",
+    "services_intro": "services", "client_list": "services",
+    "featured_gallery_title": "portfolio", "featured_project_title": "portfolio",
+    "featured_project_description": "portfolio", "project_section_heading": "portfolio",
+    "find_photos_heading": "portfolio", "recent_events_heading": "portfolio", "featured_event_title": "portfolio",
+    "featured_event_description": "portfolio", "featured_video_url": "portfolio", "highlight_video": "portfolio",
+    "testimonial_quote": "reviews", "testimonial_name": "reviews",
+    "booking_call_to_action": "contact", "consultation_call_to_action": "contact",
+    "contact_call_to_action": "contact", "contact_statement": "contact",
+    "availability_window_months": "availability", "availability_call_to_action": "availability",
+    "equipment_inventory": "equipment",
+}
+
 class PhotographerWebsiteThemeForm(forms.ModelForm):
     action = forms.CharField(required=False)
     website_sections = forms.MultipleChoiceField(
@@ -250,9 +267,10 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         fields = ["website_theme"]
         widgets = {"website_theme": forms.RadioSelect(attrs={"class":"lumis-onboarding__theme-radio"})}
 
-    def __init__(self, *args, website_profile=None, draft=False, **kwargs):
+    def __init__(self, *args, website_profile=None, draft=False, content_only=False, **kwargs):
         self.website_profile = website_profile
         self.draft = draft
+        self.content_only = content_only
         super().__init__(*args, **kwargs)
         content = (website_profile.theme_content if website_profile else {}) or {}
         if not self.is_bound:
@@ -283,7 +301,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         theme = cleaned.get("website_theme")
         if theme not in THEME_FIELD_CONFIG:
             return cleaned
-        required = THEME_FIELD_CONFIG[theme]["required"]
+        selected_sections = set(self.website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if self.website_profile else set()
+        required = [name for name in THEME_FIELD_CONFIG[theme]["required"] if not self.content_only or FIELD_SECTION_MAP.get(name) in selected_sections]
         if not self.draft:
             for name in required:
                 if not str(cleaned.get(name) or "").strip():
@@ -292,6 +311,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             value = cleaned.get(name)
             if value and not (value.startswith("https://") or value.startswith("http://")):
                 self.add_error(name, "Enter a valid video URL starting with http:// or https://.")
+        if self.content_only:
+            return cleaned
         sections = cleaned.get("website_sections") or (THEME_DEFINITIONS[theme]["sections"] if "website_sections" not in self.data else [])
         cleaned["website_sections"] = sections
         for required_section in ("hero", "contact"):
@@ -299,11 +320,20 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                 self.add_error("website_sections", f"{SECTION_LIBRARY[required_section]['name']} is required for every photographer website.")
         return cleaned
 
-    def save_theme(self):
+    def save_structure(self):
         profile = self.save(commit=False)
         website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+        profile.save()
+        self._save_sections(website, profile.website_theme)
+        return profile, website
+
+    def save_content(self):
+        profile = self.save(commit=False)
+        website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+        selected_sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
         allowed.update(("availability_window_months", "availability_call_to_action", "equipment_inventory"))
+        allowed = {name for name in allowed if FIELD_SECTION_MAP.get(name) in selected_sections}
         content = dict(website.theme_content or {})
         for name in allowed:
             content[name] = self.cleaned_data.get(name, "")
@@ -312,6 +342,10 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             website.hero_image = self.cleaned_data["hero_image"]
         profile.save()
         website.save()
+        return profile, website
+
+    def save_theme(self):
+        profile, website = self.save_content()
         self._save_sections(website, profile.website_theme)
         return profile, website
 

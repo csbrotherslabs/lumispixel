@@ -8,7 +8,7 @@ from apps.accounts.models import PhotographerProfile, PhotographerWebsiteProfile
 from apps.accounts.onboarding import get_photographer_onboarding_resume_url
 from apps.accounts.views import _authenticated_destination_url
 
-from .forms import PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
+from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
 
@@ -131,7 +131,7 @@ def onboarding_theme(request):
     if profile.onboarding_completed and not builder_mode:
         return redirect("photographer_workspace:dashboard")
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
-    action = request.POST.get("action", "save_website" if builder_mode else "finish_setup") if request.method == "POST" else None
+    action = request.POST.get("action", "continue_to_content") if request.method == "POST" else None
     preview_state = request.session.get(SELECTED_THEME_PREVIEW_SESSION_KEY) if request.method == "GET" and request.GET.get("restore_preview") == "1" else None
     preview_initial = None
     if preview_state:
@@ -139,35 +139,84 @@ def onboarding_theme(request):
             "website_theme": preview_state["theme_value"],
             "website_sections": preview_state["sections"],
             "section_order": ",".join(preview_state["sections"]),
-            **preview_state.get("content", {}),
         }
-    form = PhotographerWebsiteThemeForm(request.POST or None, request.FILES or None, instance=profile, website_profile=website, draft=(action in {"save_draft", "save_website"}), initial=preview_initial)
+    form = PhotographerWebsiteThemeForm(request.POST or None, instance=profile, website_profile=website, draft=True, initial=preview_initial)
     if request.method == "POST" and form.is_valid():
-        profile, website = form.save_theme()
-        _save_project_drafts(request, website)
+        profile, website = form.save_structure()
         request.session.pop(SELECTED_THEME_PREVIEW_SESSION_KEY, None)
+        if action == "save_structure_draft" and not builder_mode:
+            messages.success(request, "Your website structure has been saved. You can add content anytime.")
+            return redirect("photographers:setup-dashboard")
+        messages.success(request, "Your website structure is ready. Now add the content for your selected sections.")
+        return redirect("photographers:website-content" if builder_mode else "photographers:onboarding-website-content")
+    selected_sections = set(form["website_sections"].value() or [])
+    return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, profile=profile, website=website, theme_options=THEME_OPTIONS, section_options=section_options(), selected_sections=selected_sections, builder_mode=builder_mode))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def website_content(request):
+    builder_mode = request.resolver_match.url_name == "website-content"
+    if not request.user.has_photographer_profile:
+        destination = "clients:setup-dashboard" if request.user.has_client_profile else _authenticated_destination_url(request, request.user)
+        return redirect(destination)
+    profile = _photographer_profile(request.user)
+    if profile.onboarding_completed and not builder_mode:
+        return redirect("photographer_workspace:dashboard")
+    website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
+    selected_sections = list(website.sections.filter(is_enabled=True).order_by("display_order", "id").values_list("section_type", flat=True))
+    if not selected_sections:
+        messages.info(request, "Choose a template and sections before adding website content.")
+        return redirect("photographers:website-builder" if builder_mode else "photographers:onboarding-theme")
+    action = request.POST.get("action", "save_content" if builder_mode else "finish_setup") if request.method == "POST" else None
+    form = PhotographerWebsiteThemeForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=profile,
+        website_profile=website,
+        draft=action in {"save_draft", "save_content"},
+        content_only=True,
+    )
+    if request.method == "POST" and form.is_valid():
+        profile, website = form.save_content()
+        _save_project_drafts(request, website)
         if builder_mode:
-            messages.success(request, "Your photographer website structure has been saved.")
-            return redirect("photographers:website-builder")
+            messages.success(request, "Your website content has been saved.")
+            return redirect("photographers:website-content")
         if action == "save_draft":
-            messages.success(request, "Your website theme draft has been saved. You can complete it anytime.")
+            messages.success(request, "Your website content draft has been saved.")
             return redirect("photographers:setup-dashboard")
         profile.onboarding_completed = True
         profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
         profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
         return redirect("photographer_workspace:dashboard")
-    selected_sections = set(form["website_sections"].value() or [])
-    return render(request, "photographers/onboarding_theme.html", _context(5, "photographer-onboarding-theme-title", form=form, profile=profile, website=website, projects=list(website.projects.all()[:3]), theme_options=THEME_OPTIONS, theme_panels=_theme_panels(form), theme_field_config=THEME_FIELD_CONFIG, section_options=section_options(), selected_sections=selected_sections, builder_mode=builder_mode))
+    panels = _section_content_panels(form, profile.website_theme, selected_sections)
+    return render(request, "photographers/onboarding_website_content.html", _context(
+        5,
+        "photographer-onboarding-content-title",
+        form=form,
+        profile=profile,
+        website=website,
+        projects=list(website.projects.all()[:3]),
+        panels=panels,
+        selected_sections=selected_sections,
+        builder_mode=builder_mode,
+    ))
 
 
-def _theme_panels(form):
+def _section_content_panels(form, theme, selected_sections):
+    allowed = set(THEME_FIELD_CONFIG[theme]["required"] + THEME_FIELD_CONFIG[theme]["optional"])
+    allowed.update(("hero_image", "availability_window_months", "availability_call_to_action", "equipment_inventory"))
     panels = []
-    for option in THEME_OPTIONS:
-        key = option["value"]
-        if key == PhotographerProfile.WebsiteTheme.BASIC:
-            continue
-        names = ["hero_image"] + THEME_FIELD_CONFIG[key]["required"] + THEME_FIELD_CONFIG[key]["optional"]
-        panels.append({"key": key, "name": option["name"], "fields": [form[name] for name in names if name in form.fields]})
+    for section_key in selected_sections:
+        field_names = [name for name in form.fields if name in allowed and FIELD_SECTION_MAP.get(name) == section_key]
+        panels.append({
+            "key": section_key,
+            "name": SECTION_LIBRARY[section_key]["name"],
+            "description": SECTION_LIBRARY[section_key]["description"],
+            "fields": [form[name] for name in field_names],
+            "supports_projects": section_key == "portfolio" and theme == PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL,
+        })
     return panels
 
 

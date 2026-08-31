@@ -92,7 +92,8 @@ class PhotographerOnboardingTests(TestCase):
         self.client.post(reverse("photographers:onboarding-specialties"), {"specialties": [self.wedding.pk, self.sports.pk]})
         self.assertEqual(set(self.profile.specialties.values_list("slug", flat=True)), {"wedding", "sports"})
         self.client.post(reverse("photographers:onboarding-business"), {"business_type": PhotographerProfile.BusinessType.STUDIO, "years_of_experience": 7, "travel_radius": "50", "willing_to_travel": "on", "destination_photographer": "on", "available_nationally": "on", "available_internationally": "on", "default_currency": "usd", "instagram_url": "https://instagram.com/lumis", "facebook_url": "", "tiktok_url": "", "linkedin_url": "", "youtube_url": ""})
-        self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "finish_setup"})
+        self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "continue_to_content"})
+        self.client.post(reverse("photographers:onboarding-website-content"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "finish_setup"})
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.business_type, PhotographerProfile.BusinessType.STUDIO)
         self.assertEqual(self.profile.default_currency, "USD")
@@ -262,10 +263,11 @@ class PhotographerThemeExperienceTests(TestCase):
             "kimono_main/dark/index-5.html",
         ):
             self.assertNotContains(response, source)
-        self.assertContains(response, "project_0_title")
         self.assertContains(response, "lumis-onboarding__theme-grid")
-        self.assertContains(response, "Availability and equipment")
-        self.assertContains(response, "equipment_inventory")
+        self.assertContains(response, "Continue to Customize")
+        self.assertNotContains(response, "lumis-theme-config")
+        self.assertNotContains(response, "equipment_inventory")
+        self.assertNotContains(response, "project_0_title")
 
     def test_availability_is_optional_and_equipment_defaults_to_capability_themes(self):
         for theme in THEME_DEFINITIONS.values():
@@ -424,11 +426,11 @@ class PhotographerThemeExperienceTests(TestCase):
             "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
             "website_sections": ["hero", "portfolio", "team", "contact"],
             "section_order": "hero,team,portfolio,contact",
-            "action": "finish_setup",
+            "action": "continue_to_content",
         }
         response = self.client.post(reverse("photographers:onboarding-theme"), payload)
 
-        self.assertRedirects(response, reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("photographers:onboarding-website-content"), fetch_redirect_response=False)
         website = self.profile.website_profile
         self.assertEqual(list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True)), ["hero", "team", "portfolio", "contact"])
         team = website.sections.get(section_type="team")
@@ -441,12 +443,16 @@ class PhotographerThemeExperienceTests(TestCase):
             "website_theme": PhotographerProfile.WebsiteTheme.ELEGANT,
             "website_sections": ["hero", "about", "contact"],
             "section_order": "hero,about,contact",
-            "hero_heading": "Soft light",
-            "action": "save_draft",
+            "action": "continue_to_content",
         })
         team.refresh_from_db()
         self.assertFalse(team.is_enabled)
         self.assertEqual(team.content, {"heading": "Our people"})
+        content_response = self.client.get(reverse("photographers:onboarding-website-content"))
+        content = content_response.content.decode()
+        self.assertLess(content.index('id="content-hero"'), content.index('id="content-about"'))
+        self.assertLess(content.index('id="content-about"'), content.index('id="content-contact"'))
+        self.assertNotContains(content_response, 'id="content-team"')
 
     def test_completed_photographer_can_return_to_builder_and_add_team(self):
         self.profile.onboarding_completed = True
@@ -460,32 +466,40 @@ class PhotographerThemeExperienceTests(TestCase):
             "website_theme": PhotographerProfile.WebsiteTheme.BASIC,
             "website_sections": ["hero", "portfolio", "team", "contact"],
             "section_order": "hero,portfolio,team,contact",
-            "action": "save_website",
+            "action": "continue_to_content",
         })
 
-        self.assertRedirects(response, reverse("photographers:website-builder"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("photographers:website-content"), fetch_redirect_response=False)
         self.assertTrue(self.profile.website_profile.sections.get(section_type="team").is_enabled)
+        content_response = self.client.get(reverse("photographers:website-content"))
+        self.assertContains(content_response, "Bring Your Website to Life")
+        self.assertContains(content_response, "Team")
 
     def test_elegant_finish_requires_fields_but_draft_preserves_partial(self):
-        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "hero_heading": "Soft light", "action": "save_draft"})
+        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "action": "continue_to_content"})
+        self.assertRedirects(response, reverse("photographers:onboarding-website-content"), fetch_redirect_response=False)
+        response = self.client.post(reverse("photographers:onboarding-website-content"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "hero_heading": "Soft light", "action": "save_draft"})
         self.assertRedirects(response, reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
         self.profile.refresh_from_db()
         self.assertFalse(self.profile.onboarding_completed)
         self.assertEqual(self.profile.website_theme, PhotographerProfile.WebsiteTheme.ELEGANT)
         self.assertEqual(self.profile.website_profile.theme_content["hero_heading"], "Soft light")
-        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "action": "finish_setup"})
+        response = self.client.post(reverse("photographers:onboarding-website-content"), {"website_theme": PhotographerProfile.WebsiteTheme.ELEGANT, "action": "finish_setup"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required")
 
     def test_basic_completes_without_extra_fields(self):
-        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "finish_setup"})
+        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "continue_to_content"})
+        self.assertRedirects(response, reverse("photographers:onboarding-website-content"), fetch_redirect_response=False)
+        response = self.client.post(reverse("photographers:onboarding-website-content"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "finish_setup"})
         self.assertRedirects(response, reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
         self.profile.refresh_from_db()
         self.assertTrue(self.profile.onboarding_completed)
 
     def test_portfolio_projects_save(self):
+        self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL, "action": "continue_to_content"})
         payload = {"website_theme": PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL, "editorial_heading": "Editorial", "artist_statement": "Statement", "project_section_heading": "Projects", "contact_statement": "Contact", "project_0_title": "Project A", "project_0_description": "Desc", "action": "finish_setup"}
-        response = self.client.post(reverse("photographers:onboarding-theme"), payload)
+        response = self.client.post(reverse("photographers:onboarding-website-content"), payload)
         self.assertRedirects(response, reverse("photographer_workspace:dashboard"), fetch_redirect_response=False)
         self.assertEqual(self.profile.website_profile.projects.count(), 1)
 
@@ -500,8 +514,9 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertRedirects(response, reverse("clients:setup-dashboard"), fetch_redirect_response=False)
 
     def test_invalid_upload_rejected(self):
+        self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "continue_to_content"})
         bad = SimpleUploadedFile("bad.txt", b"bad", content_type="text/plain")
-        response = self.client.post(reverse("photographers:onboarding-theme"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "save_draft", "hero_image": bad})
+        response = self.client.post(reverse("photographers:onboarding-website-content"), {"website_theme": PhotographerProfile.WebsiteTheme.BASIC, "action": "save_draft", "hero_image": bad})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Upload a valid image")
 
