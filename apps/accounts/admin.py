@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django import forms
 
-from .models import AdministrativeRegion, ClientProfile, Country, LocationDatasetImport, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteSection, User
+from .models import AdministrativeRegion, ClientProfile, Country, LocationDatasetImport, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteEquipment, PhotographerWebsiteSection, User
 
 
 class UserCreationForm(forms.ModelForm):
@@ -107,3 +107,10 @@ class PhotographerWebsiteSectionAdmin(admin.ModelAdmin):
     list_display = ("photographer_website", "section_type", "layout_variant", "display_order", "is_enabled")
     list_filter = ("section_type", "is_enabled")
     search_fields = ("photographer_website__photographer_profile__business_name", "section_type", "layout_variant")
+
+
+@admin.register(PhotographerWebsiteEquipment)
+class PhotographerWebsiteEquipmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "photographer_website", "display_order", "is_featured")
+    list_filter = ("is_featured",)
+    search_fields = ("name", "description", "photographer_website__photographer_profile__business_name")
