@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import AdministrativeRegion, ClientProfile, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteProfile
+from apps.accounts.models import AdministrativeRegion, ClientProfile, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteEquipment, PhotographerWebsiteProfile
 from apps.clients.models import Client, ClientSession
 from apps.photographers.forms import PhotographerSpecialtiesForm
 from apps.photographers.themes import THEME_DEFINITIONS
@@ -276,6 +276,30 @@ class PhotographerThemeExperienceTests(TestCase):
             self.assertIn("equipment", THEME_DEFINITIONS[key]["sections"])
         for key in ("basic", "elegant", "portfolio_editorial"):
             self.assertNotIn("equipment", THEME_DEFINITIONS[key]["sections"])
+
+    def test_photographer_uploads_equipment_image_and_preview_uses_it(self):
+        self.client.post(reverse("photographers:onboarding-theme"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
+            "website_sections": ["hero", "equipment", "contact"],
+            "section_order": "hero,equipment,contact",
+            "action": "continue_to_content",
+        })
+        image = SimpleUploadedFile("camera.gif", b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;", content_type="image/gif")
+        response = self.client.post(reverse("photographers:onboarding-website-content"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
+            "equipment_0_name": "Primary cinema camera",
+            "equipment_0_description": "Dual-card capture protects every frame.",
+            "equipment_0_image": image,
+            "action": "save_draft",
+        })
+
+        self.assertRedirects(response, reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
+        item = PhotographerWebsiteEquipment.objects.get(photographer_website=self.profile.website_profile)
+        self.assertEqual(item.name, "Primary cinema camera")
+        preview = self.client.get(reverse("photographers:theme-preview", args=["panorama"]))
+        self.assertContains(preview, "Primary cinema camera")
+        self.assertContains(preview, item.image.url)
+        self.assertContains(preview, "showcase-equipment-card__media")
 
     def test_custom_preview_renders_equipment_and_privacy_safe_booking_availability(self):
         crm_client = Client.objects.create(photographer=self.profile, first_name="Private", last_name="Client")
