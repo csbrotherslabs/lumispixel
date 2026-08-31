@@ -228,7 +228,6 @@ FIELD_SECTION_MAP = {
     "booking_call_to_action": "contact", "consultation_call_to_action": "contact",
     "contact_call_to_action": "contact", "contact_statement": "contact",
     "availability_window_months": "availability", "availability_call_to_action": "availability",
-    "equipment_inventory": "equipment",
 }
 
 class PhotographerWebsiteThemeForm(forms.ModelForm):
@@ -256,12 +255,6 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         label="Availability button text",
         widget=forms.TextInput(attrs={"class": "form-control", "maxlength": "60"}),
     )
-    equipment_inventory = forms.CharField(
-        required=False,
-        label="Equipment and capabilities",
-        help_text="Add one item per line as: Name | Client-friendly benefit | Bootstrap icon class",
-        widget=forms.Textarea(attrs={"class": "form-control", "rows": 8, "placeholder": "Professional drone | Elevated aerial photography and cinematic footage | bi-airplane"}),
-    )
     class Meta:
         model = PhotographerProfile
         fields = ["website_theme"]
@@ -274,7 +267,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         content = (website_profile.theme_content if website_profile else {}) or {}
         if not self.is_bound:
-            for name in ("availability_window_months", "availability_call_to_action", "equipment_inventory"):
+            for name in ("availability_window_months", "availability_call_to_action"):
                 if name in content:
                     self.fields[name].initial = content[name]
             for name in self.field_names:
@@ -332,7 +325,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
         selected_sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
-        allowed.update(("availability_window_months", "availability_call_to_action", "equipment_inventory"))
+        allowed.update(("availability_window_months", "availability_call_to_action"))
         allowed = {name for name in allowed if FIELD_SECTION_MAP.get(name) in selected_sections}
         content = dict(website.theme_content or {})
         for name in allowed:
