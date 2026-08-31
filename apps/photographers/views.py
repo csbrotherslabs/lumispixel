@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 
-from apps.accounts.models import PhotographerProfile, PhotographerWebsiteProfile, PhotographerWebsiteProject
+from apps.accounts.models import PhotographerProfile, PhotographerWebsiteEquipment, PhotographerWebsiteProfile, PhotographerWebsiteProject
 from apps.accounts.onboarding import get_photographer_onboarding_resume_url
 from apps.accounts.views import _authenticated_destination_url
 
@@ -178,18 +178,24 @@ def website_content(request):
         content_only=True,
     )
     if request.method == "POST" and form.is_valid():
-        profile, website = form.save_content()
-        _save_project_drafts(request, website)
-        if builder_mode:
-            messages.success(request, "Your website content has been saved.")
-            return redirect("photographers:website-content")
-        if action == "save_draft":
-            messages.success(request, "Your website content draft has been saved.")
-            return redirect("photographers:setup-dashboard")
-        profile.onboarding_completed = True
-        profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
-        profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
-        return redirect("photographer_workspace:dashboard")
+        equipment_error = _equipment_upload_error(request, website) if "equipment" in selected_sections else None
+        if equipment_error:
+            form.add_error(None, equipment_error)
+        else:
+            profile, website = form.save_content()
+            _save_project_drafts(request, website)
+            if "equipment" in selected_sections:
+                _save_equipment_drafts(request, website)
+            if builder_mode:
+                messages.success(request, "Your website content has been saved.")
+                return redirect("photographers:website-content")
+            if action == "save_draft":
+                messages.success(request, "Your website content draft has been saved.")
+                return redirect("photographers:setup-dashboard")
+            profile.onboarding_completed = True
+            profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
+            profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
+            return redirect("photographer_workspace:dashboard")
     panels = _section_content_panels(form, profile.website_theme, selected_sections)
     return render(request, "photographers/onboarding_website_content.html", _context(
         5,
@@ -199,6 +205,7 @@ def website_content(request):
         website=website,
         projects=list(website.projects.all()[:3]),
         panels=panels,
+        equipment_slots=_equipment_slots(website),
         selected_sections=selected_sections,
         builder_mode=builder_mode,
     ))
@@ -206,7 +213,7 @@ def website_content(request):
 
 def _section_content_panels(form, theme, selected_sections):
     allowed = set(THEME_FIELD_CONFIG[theme]["required"] + THEME_FIELD_CONFIG[theme]["optional"])
-    allowed.update(("hero_image", "availability_window_months", "availability_call_to_action", "equipment_inventory"))
+    allowed.update(("hero_image", "availability_window_months", "availability_call_to_action"))
     panels = []
     for section_key in selected_sections:
         field_names = [name for name in form.fields if name in allowed and FIELD_SECTION_MAP.get(name) == section_key]
@@ -216,8 +223,61 @@ def _section_content_panels(form, theme, selected_sections):
             "description": SECTION_LIBRARY[section_key]["description"],
             "fields": [form[name] for name in field_names],
             "supports_projects": section_key == "portfolio" and theme == PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL,
+            "supports_equipment": section_key == "equipment",
         })
     return panels
+
+
+def _equipment_slots(website, count=6):
+    items = {item.display_order: item for item in website.equipment_items.all()}
+    return [{"index": index, "item": items.get(index)} for index in range(count)]
+
+
+def _equipment_upload_error(request, website):
+    existing = {item.display_order: item for item in website.equipment_items.all()}
+    for index in range(6):
+        if request.POST.get(f"equipment_{index}_remove"):
+            continue
+        name = request.POST.get(f"equipment_{index}_name", "").strip()
+        description = request.POST.get(f"equipment_{index}_description", "").strip()
+        image = request.FILES.get(f"equipment_{index}_image")
+        if not (name or description or image):
+            continue
+        if not name:
+            return f"Equipment item {index + 1} needs a name."
+        if index not in existing and not image:
+            return f"Equipment item {index + 1} needs an image."
+        if image and image.content_type not in IMAGE_TYPES:
+            return f"Equipment item {index + 1} must use a JPG, PNG, GIF, or WebP image."
+        if image and image.size > MAX_IMAGE_SIZE:
+            return f"Equipment item {index + 1} must be 5 MB or smaller."
+    return None
+
+
+def _save_equipment_drafts(request, website):
+    existing = {item.display_order: item for item in website.equipment_items.all()}
+    for index in range(6):
+        item = existing.get(index)
+        if request.POST.get(f"equipment_{index}_remove"):
+            if item:
+                item.image.delete(save=False)
+                item.delete()
+            continue
+        name = request.POST.get(f"equipment_{index}_name", "").strip()
+        description = request.POST.get(f"equipment_{index}_description", "").strip()
+        image = request.FILES.get(f"equipment_{index}_image")
+        if not (name or description or image):
+            continue
+        old_image = item.image.name if item and item.image else None
+        item = item or PhotographerWebsiteEquipment(photographer_website=website, display_order=index)
+        item.name = name
+        item.description = description
+        if image:
+            item.image = image
+        item.is_featured = True
+        item.save()
+        if image and old_image and old_image != item.image.name:
+            item.image.storage.delete(old_image)
 
 
 def _save_project_drafts(request, website):

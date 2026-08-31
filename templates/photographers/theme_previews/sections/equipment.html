@@ -1,8 +1,8 @@
-<section class="showcase-equipment" id="equipment" data-equipment-carousel>
+{% load static %}<section class="showcase-equipment" id="equipment" data-equipment-carousel>
   <div class="showcase-equipment__heading"><div><span class="showcase-section-label">Inside the kit</span><h2>Prepared for the<br><em>moment and the unexpected.</em></h2></div><p>Professional tools are selected for creative range, dependable coverage, and built-in protection throughout every assignment.</p></div>
   <div class="showcase-equipment__viewport" data-equipment-viewport>
     <div class="showcase-equipment__track">
-      {% for item in demo.equipment %}<article class="showcase-equipment-card"><span class="showcase-equipment-card__index">{{ forloop.counter|stringformat:"02d" }}</span><i class="bi {{ item.icon }}" aria-hidden="true"></i><h3>{{ item.name }}</h3><p>{{ item.description }}</p></article>{% endfor %}
+      {% for item in demo.equipment %}<article class="showcase-equipment-card"><div class="showcase-equipment-card__media">{% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }} used by the studio" loading="lazy">{% elif item.image %}<img src="{% static item.image %}" alt="{{ item.name }} used by the studio" loading="lazy">{% else %}<i class="bi {{ item.icon }}" aria-hidden="true"></i>{% endif %}<span class="showcase-equipment-card__index">{{ forloop.counter|stringformat:"02d" }}</span></div><div class="showcase-equipment-card__body"><h3>{{ item.name }}</h3><p>{{ item.description }}</p></div></article>{% endfor %}
     </div>
   </div>
   <div class="showcase-equipment__controls"><button type="button" data-equipment-previous aria-label="Previous equipment"><i class="bi bi-arrow-left"></i></button><button type="button" data-equipment-next aria-label="Next equipment"><i class="bi bi-arrow-right"></i></button></div>

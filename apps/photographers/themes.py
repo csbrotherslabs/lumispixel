@@ -115,12 +115,12 @@ DEMO_CONTENT = {
         ("Elias Morgan", "Associate Photographer", "img/team/4.jpg"),
     ],
     "equipment": [
-        {"name": "Dual-card camera", "description": "Immediate in-camera backup protects every important frame as it is captured.", "icon": "bi-camera"},
-        {"name": "Professional drone", "description": "Elevated aerial photography and cinematic footage for a wider visual story.", "icon": "bi-airplane"},
-        {"name": "Portable lighting", "description": "Reliable, flattering light for portraits, products, and changing environments.", "icon": "bi-lightbulb"},
-        {"name": "5-in-1 reflector", "description": "Natural-looking light control indoors, outdoors, and everywhere between.", "icon": "bi-brightness-high"},
-        {"name": "Prism & creative filters", "description": "Expressive editorial effects created intentionally in-camera.", "icon": "bi-triangle"},
-        {"name": "Power & care kit", "description": "Spare batteries, air blower, and lens tools keep long assignments moving.", "icon": "bi-battery-charging"},
+        {"name": "Dual-card camera", "description": "Immediate in-camera backup protects every important frame as it is captured.", "icon": "bi-camera", "image": "img/services/details.jpg"},
+        {"name": "Professional drone", "description": "Elevated aerial photography and cinematic footage for a wider visual story.", "icon": "bi-airplane", "image": "img/services/details-2.jpg"},
+        {"name": "Portable lighting", "description": "Reliable, flattering light for portraits, products, and changing environments.", "icon": "bi-lightbulb", "image": "img/services/details-3.jpg"},
+        {"name": "5-in-1 reflector", "description": "Natural-looking light control indoors, outdoors, and everywhere between.", "icon": "bi-brightness-high", "image": "img/services/details.jpg"},
+        {"name": "Prism & creative filters", "description": "Expressive editorial effects created intentionally in-camera.", "icon": "bi-triangle", "image": "img/services/details-2.jpg"},
+        {"name": "Power & care kit", "description": "Spare batteries, air blower, and lens tools keep long assignments moving.", "icon": "bi-battery-charging", "image": "img/services/details-3.jpg"},
     ],
     "images": ["img/slider/30.jpg", "img/slider/22.jpg", "img/slider/28.jpg", "img/slider/32.jpg", "img/slider/17.jpg", "img/slider/45.jpg"],
 }

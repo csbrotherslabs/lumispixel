@@ -324,6 +324,10 @@ def photographer_website_project_upload_path(instance, filename):
     return f"photographer_websites/{instance.photographer_website.photographer_profile_id}/projects/{filename}"
 
 
+def photographer_website_equipment_upload_path(instance, filename):
+    return f"photographer_websites/{instance.photographer_website.photographer_profile_id}/equipment/{filename}"
+
+
 class PhotographerWebsiteProfile(models.Model):
     photographer_profile = models.OneToOneField(PhotographerProfile, on_delete=models.CASCADE, related_name="website_profile")
     hero_image = models.ImageField(upload_to=photographer_website_hero_upload_path, blank=True, null=True)
@@ -354,6 +358,23 @@ class PhotographerWebsiteProject(models.Model):
 
     def __str__(self):
         return self.title or f"Project {self.display_order + 1}"
+
+
+class PhotographerWebsiteEquipment(models.Model):
+    photographer_website = models.ForeignKey(PhotographerWebsiteProfile, on_delete=models.CASCADE, related_name="equipment_items")
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to=photographer_website_equipment_upload_path)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return self.name
 
 
 class PhotographerWebsiteSection(models.Model):
