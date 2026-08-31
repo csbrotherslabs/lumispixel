@@ -187,28 +187,43 @@
   position: relative;
   width: min(29vw, 390px);
   min-width: 290px;
-  min-height: 360px;
-  padding: 38px 32px;
+  min-height: 430px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid #3a3a3a;
   background: #1d1d1d;
   scroll-snap-align: start;
 }
 
-.showcase-equipment-card > i {
-  display: grid;
-  width: 62px;
-  height: 62px;
-  place-items: center;
-  border: 1px solid rgba(255,255,255,.26);
-  border-radius: 50%;
-  color: var(--showcase-accent);
-  font-size: 27px;
+.showcase-equipment-card__media {
+  position: relative;
+  height: 238px;
+  overflow: hidden;
+  background: #282828;
 }
 
-.showcase-equipment-card h3 { margin: 76px 0 16px; color: #fff; font-size: 25px; }
+.lumis-showcase-page .showcase-equipment-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
+}
+
+.showcase-equipment-card:hover .showcase-equipment-card__media img { transform: scale(1.035); }
+
+.showcase-equipment-card__media > i {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--showcase-accent);
+  font-size: 54px;
+}
+
+.showcase-equipment-card__body { padding: 27px 28px 30px; }
+.showcase-equipment-card h3 { margin: 0 0 13px; color: #fff; font-size: 23px; }
 .showcase-equipment-card p { margin: 0; color: #aaa; font-size: 14px; line-height: 1.7; }
-.showcase-equipment-card__index { position: absolute; top: 28px; right: 28px; color: #777; font-size: 11px; }
+.showcase-equipment-card__index { position: absolute; top: 16px; right: 16px; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: rgba(0,0,0,.62); color: #fff; font-size: 10px; backdrop-filter: blur(5px); }
 
 .showcase-equipment__controls { display: flex; gap: 12px; margin-top: 28px; }
 .showcase-equipment__controls button { border-color: #555; color: #fff; }
