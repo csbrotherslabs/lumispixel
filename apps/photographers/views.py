@@ -197,6 +197,7 @@ def website_content(request):
             profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
             return redirect("photographer_workspace:dashboard")
     panels = _section_content_panels(form, profile.website_theme, selected_sections)
+    equipment_slots = _equipment_slots(website)
     return render(request, "photographers/onboarding_website_content.html", _context(
         5,
         "photographer-onboarding-content-title",
@@ -205,7 +206,9 @@ def website_content(request):
         website=website,
         projects=list(website.projects.all()[:3]),
         panels=panels,
-        equipment_slots=_equipment_slots(website),
+        equipment_slots=equipment_slots,
+        equipment_indices=",".join(str(slot["index"]) for slot in equipment_slots),
+        next_equipment_index=_next_equipment_index(website),
         selected_sections=selected_sections,
         builder_mode=builder_mode,
     ))
@@ -228,14 +231,30 @@ def _section_content_panels(form, theme, selected_sections):
     return panels
 
 
-def _equipment_slots(website, count=6):
-    items = {item.display_order: item for item in website.equipment_items.all()}
-    return [{"index": index, "item": items.get(index)} for index in range(count)]
+def _equipment_slots(website):
+    items = list(website.equipment_items.all())
+    if items:
+        return [{"index": item.display_order, "item": item} for item in items]
+    return [{"index": 0, "item": None}]
+
+
+def _next_equipment_index(website):
+    last = website.equipment_items.order_by("-display_order").values_list("display_order", flat=True).first()
+    return (last + 1) if last is not None else 1
+
+
+def _posted_equipment_indices(request):
+    indices = []
+    for value in request.POST.get("equipment_indices", "").split(","):
+        value = value.strip()
+        if value.isdigit() and int(value) not in indices:
+            indices.append(int(value))
+    return indices[:200]
 
 
 def _equipment_upload_error(request, website):
     existing = {item.display_order: item for item in website.equipment_items.all()}
-    for index in range(6):
+    for position, index in enumerate(_posted_equipment_indices(request), start=1):
         if request.POST.get(f"equipment_{index}_remove"):
             continue
         name = request.POST.get(f"equipment_{index}_name", "").strip()
@@ -244,19 +263,19 @@ def _equipment_upload_error(request, website):
         if not (name or description or image):
             continue
         if not name:
-            return f"Equipment item {index + 1} needs a name."
+            return f"Equipment item {position} needs a name."
         if index not in existing and not image:
-            return f"Equipment item {index + 1} needs an image."
+            return f"Equipment item {position} needs an image."
         if image and image.content_type not in IMAGE_TYPES:
-            return f"Equipment item {index + 1} must use a JPG, PNG, GIF, or WebP image."
+            return f"Equipment item {position} must use a JPG, PNG, GIF, or WebP image."
         if image and image.size > MAX_IMAGE_SIZE:
-            return f"Equipment item {index + 1} must be 5 MB or smaller."
+            return f"Equipment item {position} must be 5 MB or smaller."
     return None
 
 
 def _save_equipment_drafts(request, website):
     existing = {item.display_order: item for item in website.equipment_items.all()}
-    for index in range(6):
+    for index in _posted_equipment_indices(request):
         item = existing.get(index)
         if request.POST.get(f"equipment_{index}_remove"):
             if item:

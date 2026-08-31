@@ -287,6 +287,7 @@ class PhotographerThemeExperienceTests(TestCase):
         image = SimpleUploadedFile("camera.gif", b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;", content_type="image/gif")
         response = self.client.post(reverse("photographers:onboarding-website-content"), {
             "website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
+            "equipment_indices": "0",
             "equipment_0_name": "Primary cinema camera",
             "equipment_0_description": "Dual-card capture protects every frame.",
             "equipment_0_image": image,
@@ -300,6 +301,29 @@ class PhotographerThemeExperienceTests(TestCase):
         self.assertContains(preview, "Primary cinema camera")
         self.assertContains(preview, item.image.url)
         self.assertContains(preview, "showcase-equipment-card__media")
+
+    def test_equipment_editor_adds_more_than_six_items_dynamically(self):
+        self.client.post(reverse("photographers:onboarding-theme"), {
+            "website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
+            "website_sections": ["hero", "equipment", "contact"],
+            "section_order": "hero,equipment,contact",
+            "action": "continue_to_content",
+        })
+        editor = self.client.get(reverse("photographers:onboarding-website-content"))
+        self.assertContains(editor, "data-equipment-add")
+        self.assertContains(editor, "data-equipment-template")
+        self.assertContains(editor, "js/photographer_equipment_editor")
+
+        payload = {"website_theme": PhotographerProfile.WebsiteTheme.MODERN_STUDIO, "equipment_indices": "0,1,2,3,4,5,6", "action": "save_draft"}
+        gif = b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        for index in range(7):
+            payload[f"equipment_{index}_name"] = f"Equipment item {index + 1}"
+            payload[f"equipment_{index}_description"] = "Prepared for reliable client coverage."
+            payload[f"equipment_{index}_image"] = SimpleUploadedFile(f"equipment-{index}.gif", gif, content_type="image/gif")
+        response = self.client.post(reverse("photographers:onboarding-website-content"), payload)
+
+        self.assertRedirects(response, reverse("photographers:setup-dashboard"), fetch_redirect_response=False)
+        self.assertEqual(self.profile.website_profile.equipment_items.count(), 7)
 
     def test_custom_preview_renders_equipment_and_privacy_safe_booking_availability(self):
         crm_client = Client.objects.create(photographer=self.profile, first_name="Private", last_name="Client")
