@@ -104,6 +104,14 @@
 .photographer-onboarding-v2 .lumis-content-section__inherited{display:flex;gap:10px;align-items:flex-start;margin:0;padding:16px;border-radius:10px;background:#f4f1ee;color:#625b55;font-size:13px;line-height:1.6}
 .photographer-onboarding-v2 .lumis-content-section__inherited i{color:#4c9b68;font-size:17px}
 @media(max-width:575px){.photographer-onboarding-v2 .lumis-content-section{padding:20px}.photographer-onboarding-v2 .lumis-content-section__heading{grid-template-columns:34px 1fr}.photographer-onboarding-v2 .lumis-content-section__heading>span{width:32px;height:32px}.photographer-onboarding-v2 .lumis-content-section__heading h2{font-size:21px}}
+.photographer-onboarding-v2 .lumis-equipment-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.photographer-onboarding-v2 .lumis-equipment-editor__intro{grid-column:1/-1;margin:0 0 4px;color:#706760;font-size:13px}
+.photographer-onboarding-v2 .lumis-equipment-editor__item{display:grid;gap:12px;min-width:0;margin:0;padding:18px;border:1px solid #e4dcd6;border-radius:12px;background:#fff}
+.photographer-onboarding-v2 .lumis-equipment-editor__item legend{float:none;width:auto;margin:0;padding:0;color:#1c1c1c;font-size:15px;font-weight:700}
+.photographer-onboarding-v2 .lumis-equipment-editor__item>img{width:100%;height:180px;border-radius:9px;object-fit:cover}
+.photographer-onboarding-v2 .lumis-equipment-editor__item label{display:grid;gap:6px;color:#49433e;font-size:12px;font-weight:600}
+.photographer-onboarding-v2 .lumis-equipment-editor__remove{display:flex!important;align-items:center;grid-template-columns:auto 1fr!important;color:#a42b30!important}
+@media(max-width:767px){.photographer-onboarding-v2 .lumis-equipment-editor{grid-template-columns:1fr}}
 .photographer-onboarding-v2 .lumis-theme-preview-link{width:max-content;margin-top:5px;color:var(--co-red);font-size:.72rem;font-weight:600}
 .photographer-onboarding-v2 .lumis-theme-selected{font-size:.7rem;font-weight:600;text-transform:none!important}
 .photographer-onboarding-v2 .lumis-section-builder{margin-top:24px;padding:22px;border:1px solid #e5ddd7;border-radius:15px;background:#fff}
