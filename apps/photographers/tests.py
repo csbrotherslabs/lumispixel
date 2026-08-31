@@ -264,6 +264,8 @@ class PhotographerThemeExperienceTests(TestCase):
         ):
             self.assertNotContains(response, source)
         self.assertContains(response, "lumis-onboarding__theme-grid")
+        self.assertContains(response, "theme-preview-placeholder.svg", count=6)
+        self.assertContains(response, "completed website preview placeholder", count=6)
         self.assertContains(response, "Continue to Customize")
         self.assertNotContains(response, "lumis-theme-config")
         self.assertNotContains(response, "equipment_inventory")
