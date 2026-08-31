@@ -83,7 +83,14 @@ def preview_content(profile, website, overrides=None):
     content.update({key: value for key, value in (overrides or {}).items() if value not in (None, "")})
     demo = deepcopy(DEMO_CONTENT)
     equipment = parse_equipment(content.get("equipment_inventory"))
-    if equipment:
+    stored_equipment = [
+        {"name": item.name, "description": item.description, "image_url": item.image.url, "icon": "bi-camera"}
+        for item in website.equipment_items.filter(is_featured=True)
+        if item.image
+    ]
+    if stored_equipment:
+        demo["equipment"] = stored_equipment
+    elif equipment:
         demo["equipment"] = equipment
     demo["availability"] = public_availability(profile, content.get("availability_window_months", 2))
     demo["availability_call_to_action"] = content.get("availability_call_to_action") or "Request this date"
