@@ -11,8 +11,8 @@
   <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
     {% for theme in theme_options %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
-        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
-        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}"><img src="{% static theme.preview_image %}" alt="{{ theme.name }} completed website preview placeholder" loading="lazy" width="1200" height="675"></span>
+        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" data-default-sections="{{ theme.sections|join:',' }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
+        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}"><img src="{% static theme.preview_image %}" alt="{{ theme.name }} completed website preview showing {{ theme.included_sections|join:', ' }}" loading="lazy" width="1200" height="675"></span>
         <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview"><span>View completed preview</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
       </label>
     {% endfor %}
@@ -34,11 +34,10 @@
 </form>
 <script>
 (function(){
-  var defaults={basic:['hero','portfolio','contact'],elegant:['hero','services','about','portfolio','stats','reviews','contact'],modern_studio:['hero','services','about','equipment','portfolio','reviews','contact'],cinematic:['hero','about','services','equipment','portfolio','reviews','contact'],portfolio_editorial:['hero','portfolio','about','team','reviews','contact'],sports_events:['hero','services','equipment','stats','portfolio','reviews','team','contact']};
   var list=document.querySelector('[data-section-list]');var orderInput=document.querySelector('[data-section-order-input]');
   function applyInitialOrder(){var keys=(orderInput.value||'').split(',').filter(Boolean);keys.slice().reverse().forEach(function(key){var item=list.querySelector('[data-section-item="'+key+'"]');if(item)list.insertBefore(item,list.firstElementChild);});}
   function writeOrder(){orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}
-  function sync(resetSections){var checked=document.querySelector('input[name="website_theme"]:checked');if(resetSections&&checked){list.querySelectorAll('input[type="checkbox"]').forEach(function(box){box.checked=defaults[checked.value].includes(box.value)||box.hasAttribute('data-required-section')});writeOrder();}}
+  function sync(resetSections){var checked=document.querySelector('input[name="website_theme"]:checked');if(resetSections&&checked){var defaults=(checked.dataset.defaultSections||'').split(',').filter(Boolean);list.querySelectorAll('input[type="checkbox"]').forEach(function(box){box.checked=defaults.includes(box.value)||box.hasAttribute('data-required-section')});writeOrder();}}
   document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',function(){sync(true)})});
   list.addEventListener('change',function(event){if(event.target.hasAttribute('data-required-section'))event.target.checked=true;writeOrder()});
   list.addEventListener('click',function(event){var button=event.target.closest('[data-move]');if(!button)return;var item=button.closest('[data-section-item]');var sibling=button.dataset.move==='up'?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;if(button.dataset.move==='up')list.insertBefore(item,sibling);else list.insertBefore(sibling,item);writeOrder()});
