@@ -14,6 +14,8 @@ SECTION_LIBRARY = {
     "contact": {"name": "Contact", "description": "A clear inquiry and booking call to action."},
 }
 
+REQUIRED_THEME_SECTIONS = ("hero", "contact")
+
 
 THEME_DEFINITIONS = {
     "basic": {
@@ -144,6 +146,26 @@ def theme_options():
 
 def theme_by_slug(slug):
     return next((dict(value=value, **definition) for value, definition in THEME_DEFINITIONS.items() if definition["slug"] == slug or value.replace("_", "-") == slug), None)
+
+
+def resolved_section_keys(theme_value, selected=None, requested_order=None):
+    """Return one canonical, valid section list for cards, previews, and saved layouts."""
+    definition = THEME_DEFINITIONS.get(theme_value)
+    if not definition:
+        return []
+    source = definition["sections"] if selected is None else selected
+    chosen = []
+    for key in source:
+        if key in SECTION_LIBRARY and key not in chosen:
+            chosen.append(key)
+    for key in REQUIRED_THEME_SECTIONS:
+        if key not in chosen:
+            chosen.append(key)
+    ordered = []
+    for key in requested_order or []:
+        if key in chosen and key not in ordered:
+            ordered.append(key)
+    return ordered + [key for key in chosen if key not in ordered]
 
 
 def section_options():

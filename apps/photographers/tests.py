@@ -9,7 +9,7 @@ from django.utils import timezone
 from apps.accounts.models import AdministrativeRegion, ClientProfile, Country, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteEquipment, PhotographerWebsiteProfile
 from apps.clients.models import Client, ClientSession
 from apps.photographers.forms import PhotographerSpecialtiesForm
-from apps.photographers.themes import THEME_DEFINITIONS
+from apps.photographers.themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
 User = get_user_model()
 
@@ -265,7 +265,9 @@ class PhotographerThemeExperienceTests(TestCase):
             self.assertNotContains(response, source)
         self.assertContains(response, "lumis-onboarding__theme-grid")
         self.assertContains(response, "theme-preview-placeholder.svg", count=6)
-        self.assertContains(response, "completed website preview placeholder", count=6)
+        self.assertContains(response, "completed website preview showing", count=6)
+        for theme in THEME_DEFINITIONS.values():
+            self.assertContains(response, f'data-default-sections="{",".join(theme["sections"])}"')
         self.assertContains(response, "Continue to Customize")
         self.assertNotContains(response, "lumis-theme-config")
         self.assertNotContains(response, "equipment_inventory")
@@ -278,6 +280,19 @@ class PhotographerThemeExperienceTests(TestCase):
             self.assertIn("equipment", THEME_DEFINITIONS[key]["sections"])
         for key in ("basic", "elegant", "portfolio_editorial"):
             self.assertNotIn("equipment", THEME_DEFINITIONS[key]["sections"])
+
+    def test_each_completed_preview_exactly_matches_its_includes_list(self):
+        for definition in THEME_DEFINITIONS.values():
+            with self.subTest(theme=definition["slug"]):
+                response = self.client.get(reverse("photographers:theme-preview", args=[definition["slug"]]))
+                content = response.content.decode()
+                included = definition["sections"]
+                for key in included:
+                    self.assertIn(f'id="{key}"', content)
+                for key in set(SECTION_LIBRARY) - set(included):
+                    self.assertNotIn(f'id="{key}"', content)
+                positions = [content.index(f'id="{key}"') for key in included]
+                self.assertEqual(positions, sorted(positions))
 
     def test_photographer_uploads_equipment_image_and_preview_uses_it(self):
         self.client.post(reverse("photographers:onboarding-theme"), {

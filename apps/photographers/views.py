@@ -9,7 +9,7 @@ from apps.accounts.onboarding import get_photographer_onboarding_resume_url
 from apps.accounts.views import _authenticated_destination_url
 
 from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
-from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, section_options, theme_by_slug, theme_options
+from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, resolved_section_keys, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
 
 THEME_OPTIONS = theme_options()
@@ -326,7 +326,8 @@ def theme_preview(request, theme_slug):
     if not theme:
         return redirect("photographers:onboarding-theme")
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
-    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in theme["sections"]]
+    section_keys = resolved_section_keys(theme["value"])
+    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in section_keys]
     return render(request, theme["preview_template"], {"profile": profile, "website": website, "projects": website.projects.all()[:3], "theme": theme, "sections": sections, "demo": preview_content(profile, website), "sample_label": "Completed theme preview"})
 
 
@@ -345,16 +346,8 @@ def selected_theme_preview(request):
             return redirect("photographers:onboarding-theme")
 
         requested_sections = request.POST.getlist("website_sections")
-        selected = []
-        for key in requested_sections:
-            if key in SECTION_LIBRARY and key not in selected:
-                selected.append(key)
-        for required_section in ("hero", "contact"):
-            if required_section not in selected:
-                selected.append(required_section)
-
-        requested_order = [key for key in request.POST.get("section_order", "").split(",") if key in selected]
-        sections = list(dict.fromkeys(requested_order + selected))
+        requested_order = request.POST.get("section_order", "").split(",")
+        sections = resolved_section_keys(theme_value, requested_sections, requested_order)
         return_context = "builder" if request.POST.get("preview_context") == "builder" else "onboarding"
         request.session[SELECTED_THEME_PREVIEW_SESSION_KEY] = {
             "theme_value": theme_value,
