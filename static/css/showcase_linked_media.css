@@ -1,0 +1,74 @@
+.showcase-calendar__cta {
+  gap: 14px;
+  justify-content: flex-start;
+}
+
+.showcase-calendar__cta-media {
+  width: 72px;
+  height: 52px;
+  flex: 0 0 72px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.lumis-showcase-page .showcase-calendar__cta-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.showcase-calendar__cta-copy {
+  flex: 1 1 auto;
+}
+
+.showcase-calendar__cta > i {
+  flex: 0 0 auto;
+}
+
+.showcase-contact__link {
+  display: inline-grid !important;
+  grid-template-columns: 88px auto 24px;
+  gap: 14px;
+  align-items: center;
+  max-width: min(100%, 560px);
+  padding: 10px 14px 10px 10px !important;
+  border: 1px solid rgba(255,255,255,.4) !important;
+  background: rgba(0,0,0,.12);
+  text-align: left;
+}
+
+.showcase-contact__link-media {
+  width: 88px;
+  height: 66px;
+  overflow: hidden;
+}
+
+.lumis-showcase-page .showcase-contact__link-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.showcase-contact__link-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .showcase-calendar__cta-media {
+    width: 58px;
+    height: 46px;
+    flex-basis: 58px;
+  }
+
+  .showcase-contact__link {
+    grid-template-columns: 72px minmax(0,1fr) 20px;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .showcase-contact__link-media {
+    width: 72px;
+    height: 56px;
+  }
+}
