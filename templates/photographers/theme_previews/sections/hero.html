@@ -1,10 +1,11 @@
-{% load static %}
+{% load static theme_preview_media %}
+{% theme_media_list theme.slug "hero" as hero_images %}
 {% if theme.slug == "frame" %}
 <section class="showcase-hero showcase-frame-carousel" id="hero" data-frame-carousel aria-roledescription="carousel" aria-label="Featured photography">
   <div class="showcase-frame-carousel__slides">
-    {% for image in demo.images %}
+    {% for image in hero_images %}
       <div class="showcase-frame-carousel__slide{% if forloop.first %} is-active{% endif %}" data-frame-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
-        <img src="{% static image %}" alt="Featured photography {{ forloop.counter }} of {{ demo.images|length }}">
+        <img src="{% static image %}" alt="Featured photography {{ forloop.counter }} of {{ hero_images|length }}">
       </div>
     {% endfor %}
   </div>
@@ -13,12 +14,13 @@
   <div class="showcase-frame-carousel__controls">
     <button type="button" data-frame-previous aria-label="Previous featured photograph"><i class="bi bi-arrow-left" aria-hidden="true"></i></button>
     <div class="showcase-frame-carousel__dots" role="group" aria-label="Choose a featured photograph">
-      {% for image in demo.images %}<button type="button" data-frame-dot="{{ forloop.counter0 }}" class="{% if forloop.first %}is-active{% endif %}" aria-label="Show photograph {{ forloop.counter }}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}"></button>{% endfor %}
+      {% for image in hero_images %}<button type="button" data-frame-dot="{{ forloop.counter0 }}" class="{% if forloop.first %}is-active{% endif %}" aria-label="Show photograph {{ forloop.counter }}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}"></button>{% endfor %}
     </div>
     <button type="button" data-frame-next aria-label="Next featured photograph"><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
   </div>
-  <div class="showcase-hero__index" aria-live="polite"><span data-frame-current>01</span> / {{ demo.images|length|stringformat:"02d" }}</div>
+  <div class="showcase-hero__index" aria-live="polite"><span data-frame-current>01</span> / {{ hero_images|length|stringformat:"02d" }}</div>
 </section>
 {% else %}
-<section class="showcase-hero" id="hero"><img src="{% static demo.images.0 %}" alt="Bride in a completed photographer website preview"><div class="showcase-hero__shade"></div><div class="showcase-hero__content"><span>{{ demo.eyebrow }}</span><h1>{{ demo.headline }}</h1><p>{{ demo.intro }}</p><a href="#portfolio">Explore selected work <i class="bi bi-arrow-down-right"></i></a></div></section>
+  {% theme_media theme.slug "hero" 0 as hero_image %}
+  <section class="showcase-hero" id="hero"><img src="{% if hero_image %}{% static hero_image %}{% else %}{% static demo.images.0 %}{% endif %}" alt="{{ theme.name }} photographer website hero"><div class="showcase-hero__shade"></div><div class="showcase-hero__content"><span>{{ demo.eyebrow }}</span><h1>{{ demo.headline }}</h1><p>{{ demo.intro }}</p><a href="#portfolio">Explore selected work <i class="bi bi-arrow-down-right"></i></a></div></section>
 {% endif %}
