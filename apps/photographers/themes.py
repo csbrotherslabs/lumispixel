@@ -2,16 +2,56 @@ from copy import deepcopy
 
 
 SECTION_LIBRARY = {
-    "hero": {"name": "Hero", "description": "Opening image, positioning statement, and primary action."},
-    "about": {"name": "About", "description": "The photographer or studio story."},
-    "services": {"name": "Services", "description": "Photography specialties and client offerings."},
-    "portfolio": {"name": "Selected work", "description": "A curated project and portfolio presentation."},
-    "stats": {"name": "Experience", "description": "Selected business and experience highlights."},
-    "team": {"name": "Team", "description": "Photographers, editors, and studio collaborators."},
-    "reviews": {"name": "Ratings & reviews", "description": "Verified LumisPixel client feedback."},
-    "availability": {"name": "Availability", "description": "Privacy-safe public dates connected to your LumisPixel schedule."},
-    "equipment": {"name": "Equipment & capabilities", "description": "A carousel showing the professional tools behind your work."},
-    "contact": {"name": "Contact", "description": "A clear inquiry and booking call to action."},
+    "hero": {
+        "name": "Hero",
+        "description": "Opening image, positioning statement, and primary action.",
+        "image": "img/photographers/theme-previews/Narrative/narrative-hero-wedding.webp",
+    },
+    "about": {
+        "name": "About",
+        "description": "The photographer or studio story.",
+        "image": "img/photographers/theme-previews/Narrative/narrative-about-photographer.webp",
+    },
+    "services": {
+        "name": "Services",
+        "description": "Photography specialties and client offerings.",
+        "image": "img/photographers/theme-previews/Atelier/atelier-studio-fashion-shoot.webp",
+    },
+    "portfolio": {
+        "name": "Selected work",
+        "description": "A curated project and portfolio presentation.",
+        "image": "img/photographers/theme-previews/Panorama/panorama-commercial-campaign.webp",
+    },
+    "stats": {
+        "name": "Experience",
+        "description": "Selected business and experience highlights.",
+        "image": "img/photographers/theme-previews/Panorama/panorama-corporate-event.webp",
+    },
+    "team": {
+        "name": "Team",
+        "description": "Photographers, editors, and studio collaborators.",
+        "image": "img/photographers/theme-previews/Atelier/atelier-studio-production.webp",
+    },
+    "reviews": {
+        "name": "Ratings & reviews",
+        "description": "Verified LumisPixel client feedback.",
+        "image": "img/photographers/theme-previews/Reviews/reviews-client-wedding.webp",
+    },
+    "availability": {
+        "name": "Availability",
+        "description": "Privacy-safe public dates connected to your LumisPixel schedule.",
+        "image": "img/photographers/theme-previews/Narrative/narrative-couple-lifestyle.webp",
+    },
+    "equipment": {
+        "name": "Equipment & capabilities",
+        "description": "A carousel showing the professional tools behind your work.",
+        "image": "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
+    },
+    "contact": {
+        "name": "Contact",
+        "description": "A clear inquiry and booking call to action.",
+        "image": "img/photographers/theme-previews/Collective/collective-anniversary-dinner.webp",
+    },
 }
 
 REQUIRED_THEME_SECTIONS = ("hero", "contact")
