@@ -25,7 +25,11 @@
     <div class="lumis-section-builder__list" data-section-list>
       {% for section in section_options %}
       <div class="lumis-section-builder__item" data-section-item="{{ section.key }}">
-        <label for="section-{{ section.key }}"><input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}><span><strong>{{ section.name }}</strong><small>{{ section.description }}</small></span></label>
+        <label for="section-{{ section.key }}">
+          <span class="lumis-section-builder__media"><img src="{% static section.image %}" alt="{{ section.name }} section example" loading="lazy"></span>
+          <input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}>
+          <span class="lumis-section-builder__copy"><strong>{{ section.name }}</strong><small>{{ section.description }}</small></span>
+        </label>
         <span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>
       </div>
       {% endfor %}
