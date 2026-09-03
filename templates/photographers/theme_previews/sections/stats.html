@@ -1,2 +1,1 @@
-{% load static %}
-<section class="showcase-stats" id="stats"><div><span>Studio experience</span><h2>Trusted to preserve what matters.</h2><figure class="showcase-section-visual showcase-section-visual--stats"><img src="{% static 'img/photographers/theme-previews/Panorama/panorama-corporate-event.webp' %}" alt="Professional event photography in action" loading="lazy"></figure></div><dl>{% for value,label in demo.stats %}<div><dt>{{ value }}</dt><dd>{{ label }}</dd></div>{% endfor %}</dl></section>
+<section class="showcase-stats" id="stats"><div><span>Studio experience</span><h2>Trusted to preserve what matters.</h2></div><dl>{% for value,label in demo.stats %}<div><dt>{{ value }}</dt><dd>{{ label }}</dd></div>{% endfor %}</dl></section>
