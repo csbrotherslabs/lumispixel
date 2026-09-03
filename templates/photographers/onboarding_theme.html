@@ -1,5 +1,5 @@
 {% extends "photographers/onboarding_base.html" %}
-{% load static %}
+{% load static theme_preview_media %}
 {% block title %}Choose Your Client Experience | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
 <div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">{% if builder_mode %}Build Your Photographer Website{% else %}Choose Your Website{% endif %}</h1><p class="wptb-item--description mx-auto">{% if builder_mode %}Change templates or add, remove, and rearrange sections without losing saved section content.{% else %}Start with a complete Kimono layout, then choose the sections your photography business needs.{% endif %}</p></div>
@@ -10,9 +10,10 @@
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
   <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
     {% for theme in theme_options %}
+      {% theme_media theme.slug "hero" 0 as theme_card_image %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
         <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" data-default-sections="{{ theme.sections|join:',' }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
-        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}"><img src="{% static theme.preview_image %}" alt="{{ theme.name }} completed website preview showing {{ theme.included_sections|join:', ' }}" loading="lazy" width="1200" height="675"></span>
+        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}"><img src="{% if theme_card_image %}{% static theme_card_image %}{% else %}{% static theme.preview_image %}{% endif %}" alt="{{ theme.name }} completed website preview showing {{ theme.included_sections|join:', ' }}" loading="lazy" width="1200" height="675"></span>
         <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview"><span>View completed preview</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
       </label>
     {% endfor %}
