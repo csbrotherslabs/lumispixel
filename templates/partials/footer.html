@@ -27,11 +27,12 @@
                             </div>
 
                             <h6 class="widget-title">Sign up for all the latest <br> news and offers </h6>
-                            <form class="newsletter-form" method="post">
-                                <div class="form-group">
-                                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                            <form class="newsletter-form lumis-footer-newsletter" method="post">
+                                <div class="form-group lumis-footer-newsletter__field">
+                                    <i class="bi bi-envelope lumis-footer-newsletter__icon" aria-hidden="true"></i>
+                                    <input type="email" name="email" class="form-control" placeholder="Enter your email address" aria-label="Email address" required>
                                 </div>
-                                <button type="submit" class="btn btn-two">
+                                <button type="submit" class="btn btn-two lumis-footer-newsletter__button">
                                     <span class="btn-wrap">
                                         <span class="text-first">Subscribe</span>
                                         <span class="text-second"><i class="bi bi-arrow-up-right"></i> <i class="bi bi-arrow-up-right"></i></span>
@@ -65,14 +66,12 @@
         <div class="container">
             <div class="footer-bottom-inner">
                 <div class="copyright">
-                    <p><a href="https://themeforest.net/user/wpthemebooster">kimono</a> photography, All Rights Reserved</p>
+                    <p>&copy; {% now "Y" %} LumisPixel, All rights reserved.</p>
                 </div>
                 <div class="social-box style-oval">
                     <ul>
-                        <li><a href="https://www.facebook.com/" class="bi bi-facebook"></a></li>
-                        <li><a href="https://www.instagram.com/" class="bi bi-instagram"></a></li>
-                        <li><a href="https://www.linkedin.com/" class="bi bi-linkedin"></a></li>
-                        <li><a href="https://www.behance.com/" class="bi bi-behance"></a></li>
+                        <li><a href="https://www.instagram.com/" class="bi bi-instagram" aria-label="Instagram"></a></li>
+                        <li><a href="https://www.facebook.com/" class="bi bi-facebook" aria-label="Facebook"></a></li>
                     </ul>
                 </div>
             </div>
