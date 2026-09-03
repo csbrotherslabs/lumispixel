@@ -1,3 +1,4 @@
+{% load static %}
 <section class="showcase-services wptb-services pb-4" id="services">
   <div class="showcase-services__inner">
     <div class="showcase-services__heading">
@@ -7,6 +8,7 @@
       </div>
       <p>We create thoughtful photography and films that preserve what matters, communicate clearly, and stay meaningful long after they are delivered.</p>
     </div>
+    <figure class="showcase-section-visual showcase-section-visual--services"><img src="{% static 'img/photographers/theme-previews/Atelier/atelier-studio-fashion-shoot.webp' %}" alt="Professional photography studio session" loading="lazy"></figure>
     <div class="showcase-services__grid">
       {% for service in demo.services %}
       <article class="showcase-service-card">
