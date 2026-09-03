@@ -1,10 +1,12 @@
-{% load static %}
-<section class="showcase-reviews wptb-testimonial-one testimonial-colored bg-image" id="reviews" style="background-image: url('{% static 'img/background/bg-16.jpg' %}');" data-review-carousel>
+{% load static theme_preview_media %}
+{% review_background as reviews_background %}
+<section class="showcase-reviews wptb-testimonial-one testimonial-colored bg-image" id="reviews" style="background-image: url('{% static reviews_background %}');" data-review-carousel>
   <div class="showcase-reviews__overlay"></div>
   <div class="showcase-reviews__inner">
     <div class="showcase-reviews__carousel" aria-roledescription="carousel" aria-label="Verified client reviews">
       <div class="showcase-reviews__slides" aria-live="polite">
         {% for review in demo.reviews %}
+        {% review_client_image forloop.counter0 as review_image %}
         <article class="showcase-review-card{% if forloop.first %} is-active{% endif %}" data-review-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
           <div class="showcase-review-card__top">
             <span class="showcase-review-card__stars" aria-label="Five out of five stars">
@@ -17,7 +19,7 @@
             <button class="showcase-review-card__more" type="button" data-review-more aria-label="Read the full review from {{ review.name }}" hidden>…</button>
           </div>
           <footer class="showcase-review-card__client">
-            <img src="{% static review.image %}" alt="Portrait of {{ review.name }}">
+            <img src="{% if review_image %}{% static review_image %}{% else %}{% static review.image %}{% endif %}" alt="Portrait of {{ review.name }}">
             <div><strong>{{ review.name }}</strong><span>{{ review.location }} · Verified client</span></div>
           </footer>
         </article>
