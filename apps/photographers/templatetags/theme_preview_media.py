@@ -4,6 +4,12 @@ register = template.Library()
 
 
 PRISM_FILTER_IMAGE = "img/photographers/theme-previews/Atelier/atelier-prism-creative-filters.webp"
+TEAM_IMAGES = [
+    "img/photographers/theme-previews/Team/team-amara-reed.webp",
+    "img/photographers/theme-previews/Team/team-noah-bennett.webp",
+    "img/photographers/theme-previews/Team/team-mila-chen.webp",
+    "img/photographers/theme-previews/Team/team-elias-morgan.webp",
+]
 
 THEME_PREVIEW_MEDIA = {
     "frame": {
@@ -23,12 +29,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/frame/frame-studio-portrait.webp",
             "img/photographers/theme-previews/frame/frame-commercial.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/frame/frame-studio-portrait.webp",
-            "img/photographers/theme-previews/frame/frame-commercial.webp",
-            "img/photographers/theme-previews/frame/frame-family.webp",
-            "img/photographers/theme-previews/frame/frame-graduation.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
@@ -48,12 +49,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/Narrative/narrative-editorial-portrait.webp",
             "img/photographers/theme-previews/Narrative/narrative-brand.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/Narrative/narrative-about-photographer.webp",
-            "img/photographers/theme-previews/Narrative/narrative-brand.webp",
-            "img/photographers/theme-previews/Narrative/narrative-editorial-portrait.webp",
-            "img/photographers/theme-previews/Narrative/narrative-couple-lifestyle.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
@@ -73,12 +69,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/Panorama/panorama-wedding-barn.webp",
             "img/photographers/theme-previews/Panorama/panorama-editorial-portrait-alt.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/Panorama/panorama-editorial-portrait.webp",
-            "img/photographers/theme-previews/Panorama/panorama-corporate-event.webp",
-            "img/photographers/theme-previews/Panorama/panorama-editorial-portrait-alt.webp",
-            "img/photographers/theme-previews/Panorama/panorama-commercial-campaign.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
@@ -98,12 +89,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/Monograph/monograph-beauty-editorial.webp",
             "img/photographers/theme-previews/Monograph/monograph-monochrome-portrait.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/Monograph/monograph-about-photographer.webp",
-            "img/photographers/theme-previews/Monograph/monograph-fashion-editorial.webp",
-            "img/photographers/theme-previews/Monograph/monograph-beauty-editorial.webp",
-            "img/photographers/theme-previews/Monograph/monograph-monochrome-portrait.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
@@ -123,12 +109,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/Collective/collective-family-reunion-latina.webp",
             "img/photographers/theme-previews/Collective/collective-surprise-proposal-guests.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/Collective/collective-couple-city-session-wide.webp",
-            "img/photographers/theme-previews/Collective/collective-birthday-backyard.webp",
-            "img/photographers/theme-previews/Collective/collective-first-birthday-living-room.webp",
-            "img/photographers/theme-previews/Collective/collective-family-reunion-poolside.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
@@ -148,12 +129,7 @@ THEME_PREVIEW_MEDIA = {
             "img/photographers/theme-previews/Atelier/atelier-studio-production.webp",
             "img/photographers/theme-previews/Atelier/atelier-about-photographer.webp",
         ],
-        "team": [
-            "img/photographers/theme-previews/Atelier/atelier-about-photographer.webp",
-            "img/photographers/theme-previews/Atelier/atelier-corporate-portrait.webp",
-            "img/photographers/theme-previews/Atelier/atelier-studio-production.webp",
-            "img/photographers/theme-previews/Atelier/atelier-studio-fashion-shoot.webp",
-        ],
+        "team": TEAM_IMAGES,
         "equipment": [
             "img/photographers/theme-previews/Panorama/panorama-equipment-camera.webp",
             "img/photographers/theme-previews/Panorama/panorama-equipment-drone.webp",
