@@ -35,7 +35,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"], "libraries": {"notification_tags": "apps.notifications.templatetags.notification_tags"}}}]
+TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"], "libraries": {"notification_tags": "apps.notifications.templatetags.notification_tags", "theme_preview_media": "apps.photographers.templatetags.theme_preview_media"}}}]
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
