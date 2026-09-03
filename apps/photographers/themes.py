@@ -22,6 +22,11 @@ SECTION_LIBRARY = {
         "description": "A curated project and portfolio presentation.",
         "image": "img/photographers/theme-previews/Panorama/panorama-commercial-campaign.webp",
     },
+    "films": {
+        "name": "Films",
+        "description": "Cinematic wedding and event films alongside the photography portfolio.",
+        "image": "img/photographers/theme-previews/Narrative/narrative-wedding-celebration.webp",
+    },
     "stats": {
         "name": "Experience",
         "description": "Selected business and experience highlights.",
@@ -79,7 +84,7 @@ THEME_DEFINITIONS = {
         "description": "A complete agency-style story with services, work, proof, and a strong inquiry path.",
         "preview_class": "is-narrative",
         "preview_image": "img/photographers/theme-preview-placeholder.svg",
-        "sections": ["hero", "services", "about", "portfolio", "stats", "reviews", "contact"],
+        "sections": ["hero", "services", "about", "portfolio", "films", "stats", "reviews", "contact"],
         "accent": "#e34e42",
     },
     "modern_studio": {
