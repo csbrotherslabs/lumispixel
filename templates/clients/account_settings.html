@@ -33,8 +33,8 @@
             <div class="client-profile-form__field"><label for="{{ form.first_name.id_for_label }}">First name <b>*</b></label>{{ form.first_name }}{% if form.first_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.first_name.errors|striptags }}</div>{% endif %}</div>
             <div class="client-profile-form__field"><label for="{{ form.last_name.id_for_label }}">Last name <b>*</b></label>{{ form.last_name }}{% if form.last_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.last_name.errors|striptags }}</div>{% endif %}</div>
             <div class="client-profile-form__field client-profile-form__field--full"><label for="{{ form.display_name.id_for_label }}">Display name <span>Optional</span></label>{{ form.display_name }}<small>The name photographers and galleries may show for you.</small>{% if form.display_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.display_name.errors|striptags }}</div>{% endif %}</div>
-            <div class="client-profile-form__field"><label for="{{ form.country.id_for_label }}">Country <b>*</b></label>{{ form.country }}{% if form.country.errors %}<div class="client-profile-form__error" role="alert">{{ form.country.errors|striptags }}</div>{% endif %}</div>
-            <div class="client-profile-form__field"><label for="{{ form.state.id_for_label }}">State or region <b>*</b></label>{{ form.state }}{% if form.state.errors %}<div class="client-profile-form__error" role="alert">{{ form.state.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.country_record.id_for_label }}">Country <b>*</b></label>{{ form.country_record }}{% if form.country_record.errors %}<div class="client-profile-form__error" role="alert">{{ form.country_record.errors|striptags }}</div>{% endif %}</div>
+            <div class="client-profile-form__field"><label for="{{ form.administrative_region.id_for_label }}">State or region <b>*</b></label>{{ form.administrative_region }}{% if form.administrative_region.errors %}<div class="client-profile-form__error" role="alert">{{ form.administrative_region.errors|striptags }}</div>{% endif %}</div>
             <div class="client-profile-form__field"><label for="{{ form.city.id_for_label }}">City <b>*</b></label>{{ form.city }}{% if form.city.errors %}<div class="client-profile-form__error" role="alert">{{ form.city.errors|striptags }}</div>{% endif %}</div>
             <div class="client-profile-form__field"><label for="{{ form.timezone.id_for_label }}">Time zone <b>*</b></label>{{ form.timezone }}{% if form.timezone.errors %}<div class="client-profile-form__error" role="alert">{{ form.timezone.errors|striptags }}</div>{% endif %}</div>
           </div>
@@ -62,3 +62,4 @@
   </div>
 </section>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/location_selects.js' %}"></script>{% endblock %}

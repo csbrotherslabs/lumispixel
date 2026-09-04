@@ -1,4 +1,5 @@
 {% extends "clients/onboarding_base.html" %}
+{% load static %}
 {% block title %}Complete Profile | Client Onboarding{% endblock %}
 {% block onboarding_content %}
 <div class="client-onboarding-v2__profile-heading">
@@ -38,12 +39,12 @@
   </div>
   <div class="client-profile-form__grid client-profile-form__grid--location">
     <div class="client-profile-form__field">
-      <label for="{{ form.country.id_for_label }}">Country <b>*</b></label>{{ form.country }}
-      {% if form.country.errors %}<div class="client-profile-form__error" role="alert">{{ form.country.errors|striptags }}</div>{% endif %}
+      <label for="{{ form.country_record.id_for_label }}">Country <b>*</b></label>{{ form.country_record }}
+      {% if form.country_record.errors %}<div class="client-profile-form__error" role="alert">{{ form.country_record.errors|striptags }}</div>{% endif %}
     </div>
     <div class="client-profile-form__field">
-      <label for="{{ form.state.id_for_label }}">State or region <b>*</b></label>{{ form.state }}
-      {% if form.state.errors %}<div class="client-profile-form__error" role="alert">{{ form.state.errors|striptags }}</div>{% endif %}
+      <label for="{{ form.administrative_region.id_for_label }}">State or region <b>*</b></label>{{ form.administrative_region }}
+      {% if form.administrative_region.errors %}<div class="client-profile-form__error" role="alert">{{ form.administrative_region.errors|striptags }}</div>{% endif %}
     </div>
     <div class="client-profile-form__field">
       <label for="{{ form.city.id_for_label }}">City <b>*</b></label>{{ form.city }}
@@ -83,3 +84,4 @@
   </div>
 </form>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/location_selects.js' %}"></script>{% endblock %}
