@@ -24,12 +24,14 @@
                 <img src="{% static 'img/default-avatar.svg' %}" class="mobile-avatar" alt="Avatar for {{ request.user.get_full_name|default:request.user.username }}">
                 <div>
                     <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
-                    <span>{% if request.user.is_staff %}Admin{% else %}Client{% endif %}</span>
+                    <span>{% if request.user.is_staff %}Admin{% elif request.user.can_use_photographer_workspace %}Photographer{% else %}Client{% endif %}</span>
                 </div>
             </div>
             <ul class="mobile-account-links sidebar-account-links">
-                <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
-                <li><a href="{% if request.user.is_client %}{% url 'clients:account-settings' %}{% else %}{% url 'photographer_workspace:settings' %}{% endif %}">Account Settings</a></li>
+                <li><a href="{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}{% url 'clients:dashboard' %}{% elif request.user.can_use_photographer_workspace %}{% url 'photographer_workspace:dashboard' %}{% else %}{% url 'clients:dashboard' %}{% endif %}">{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}Dashboard{% else %}Workspace{% endif %}</a></li>
+                {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>{% endif %}
+                <li><a href="{% url 'accounts:account-settings' %}">Account Settings</a></li>
+                {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:settings' %}">Workspace Settings</a></li>{% endif %}
                 <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
                 <li>
                     <form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">
