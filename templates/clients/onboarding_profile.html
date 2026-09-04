@@ -1,6 +1,21 @@
 {% extends "clients/onboarding_base.html" %}
 {% load static %}
 {% block title %}Complete Profile | Client Onboarding{% endblock %}
+{% block extra_css %}
+{{ block.super }}
+<style>
+  .client-profile-form__field #id_timezone,
+  .client-profile-form__field #id_timezone + .nice-select {
+    line-height: 42px;
+  }
+  .client-profile-form__field #id_timezone + .nice-select .current {
+    display: inline-flex;
+    align-items: center;
+    height: 42px;
+    line-height: normal;
+  }
+</style>
+{% endblock %}
 {% block onboarding_content %}
 <div class="client-onboarding-v2__profile-heading">
   <div>
