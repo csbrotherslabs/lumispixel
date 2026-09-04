@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .profile_views import photographer_profile
 
 app_name = "photographer_workspace"
 
@@ -44,7 +45,7 @@ urlpatterns = [
     path("billing/", views.module_placeholder, {"module_key": "billing"}, name="billing"),
     path("analytics/", views.analytics_overview, name="analytics"),
     path("marketing/", views.module_placeholder, {"module_key": "marketing"}, name="marketing"),
-    path("profile/", views.module_placeholder, {"module_key": "profile"}, name="profile"),
+    path("profile/", photographer_profile, name="profile"),
     path("settings/", views.module_placeholder, {"module_key": "settings"}, name="settings"),
     path("crm/", views.clients_crm, name="crm"),
     path("crm/leads/add/", views.add_lead, name="add_lead"),
@@ -72,10 +73,8 @@ urlpatterns = [
     path("contracts/<int:pk>/preview/", views.contract_preview, name="contract_preview"),
     path("contracts/<int:pk>/send/", views.contract_send, name="contract_send"),
     path("contracts/<int:pk>/signed-pdf/", views.signed_contract_pdf, name="signed_contract_pdf"),
-    path("contracts/<int:pk>/signed-pdf/download/", views.signed_contract_pdf,
-         {"disposition": "attachment"}, name="signed_contract_pdf_download"),
-    path("contracts/<int:pk>/signed-pdf/retry/", views.signed_contract_pdf_retry,
-         name="signed_contract_pdf_retry"),
+    path("contracts/<int:pk>/signed-pdf/download/", views.signed_contract_pdf, {"disposition": "attachment"}, name="signed_contract_pdf_download"),
+    path("contracts/<int:pk>/signed-pdf/retry/", views.signed_contract_pdf_retry, name="signed_contract_pdf_retry"),
     path("settings/contract-templates/", views.contract_templates, name="contract_templates"),
     path("settings/contract-templates/create/", views.contract_template_form, name="contract_template_create"),
     path("settings/contract-templates/<int:pk>/", views.contract_template_form, name="contract_template_edit"),
