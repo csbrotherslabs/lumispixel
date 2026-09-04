@@ -18,7 +18,7 @@ class PhotographerProfilePageTests(TestCase):
             last_active_workspace=User.Workspace.PHOTOGRAPHER,
         )
 
-    def test_owner_profile_renders_person_and_contexts(self):
+    def test_owner_profile_renders_person_and_contexts_without_workspace_sidebar(self):
         user = self._user()
         PhotographerProfile.objects.create(user=user, business_name="North & Pine", onboarding_completed=True)
         ClientProfile.objects.create(user=user, onboarding_completed=True)
@@ -27,27 +27,25 @@ class PhotographerProfilePageTests(TestCase):
         response = self.client.get(reverse("photographer_workspace:profile"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "My Profile")
+        self.assertContains(response, "Amara Reed")
         self.assertContains(response, "North &amp; Pine")
         self.assertContains(response, "Personal photo space")
+        self.assertContains(response, "Back to workspace")
+        self.assertNotContains(response, 'class="lpw-sidebar"')
 
-    def test_profile_updates_user_identity_not_business_profile(self):
+    def test_profile_is_display_only(self):
         user = self._user()
-        studio = PhotographerProfile.objects.create(user=user, display_name="North & Pine Studio", onboarding_completed=True)
+        PhotographerProfile.objects.create(user=user, display_name="North & Pine Studio", onboarding_completed=True)
         self.client.force_login(user)
 
-        response = self.client.post(reverse("photographer_workspace:profile"), {
-            "first_name": "Amara Updated",
-            "last_name": "Reed",
-        })
+        response = self.client.get(reverse("photographer_workspace:profile"))
 
-        self.assertRedirects(response, reverse("photographer_workspace:profile"))
-        user.refresh_from_db()
-        studio.refresh_from_db()
-        self.assertEqual(user.first_name, "Amara Updated")
-        self.assertEqual(studio.display_name, "North & Pine Studio")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Save changes")
+        self.assertNotContains(response, 'method="post"')
+        self.assertContains(response, "Edit profile")
 
-    def test_team_member_can_manage_same_person_profile(self):
+    def test_team_member_sees_person_profile_and_studio_context(self):
         owner = self._user("studio-owner@example.com")
         studio = PhotographerProfile.objects.create(user=owner, business_name="Collective Studio", onboarding_completed=True)
         member = self._user("member@example.com")
@@ -61,6 +59,17 @@ class PhotographerProfilePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Collective Studio")
         self.assertContains(response, "Photographer")
+
+    def test_profile_rejects_post_edits(self):
+        user = self._user()
+        PhotographerProfile.objects.create(user=user, onboarding_completed=True)
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("photographer_workspace:profile"), {"first_name": "Changed"})
+
+        self.assertEqual(response.status_code, 405)
+        user.refresh_from_db()
+        self.assertEqual(user.first_name, "Amara")
 
     def test_profile_requires_photographer_workspace_access(self):
         user = self._user("client-only@example.com")
