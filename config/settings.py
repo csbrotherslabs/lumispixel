@@ -79,7 +79,7 @@ LOGIN_REDIRECT_URL = "accounts:post-login-redirect"
 LOGOUT_REDIRECT_URL = "core:index"
 
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "email-smtp.us-east-1.amazonaws.com")
+EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "smtp-relay.brevo.com")
 EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD", "")
