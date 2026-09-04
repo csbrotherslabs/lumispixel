@@ -10,14 +10,14 @@
   <link rel="stylesheet" href="{% static 'css/workspace_design_system.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_workspace.css' %}">
 </head>
-<body class="lumis-workspace-body">
+<body class="lumis-workspace-body{% if hide_workspace_sidebar %} lpw-account-page{% endif %}">
 <a class="skip-link" href="#workspace-main">Skip to main content</a>
-<div class="lpw-mobile-scrim" data-workspace-scrim hidden></div>
-<div class="lpw-shell">
-  {% include "photographer_workspace/components/sidebar.html" %}
+{% if not hide_workspace_sidebar %}<div class="lpw-mobile-scrim" data-workspace-scrim hidden></div>{% endif %}
+<div class="lpw-shell{% if hide_workspace_sidebar %} lpw-shell--account{% endif %}">
+  {% if not hide_workspace_sidebar %}{% include "photographer_workspace/components/sidebar.html" %}{% endif %}
   <div class="lpw-main-wrap">
     {% include "photographer_workspace/components/topbar.html" %}
-    <main id="workspace-main" class="lpw-main" tabindex="-1" aria-labelledby="workspace-page-title">
+    <main id="workspace-main" class="lpw-main{% if hide_workspace_sidebar %} lpw-main--account{% endif %}" tabindex="-1" aria-labelledby="workspace-page-title">
       {% if messages %}<div aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}
       {% block workspace_content %}{% endblock %}
     </main>
