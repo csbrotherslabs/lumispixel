@@ -1,71 +1,21 @@
 {% load static notification_tags %}
 <!-- Main Header -->
 <header class="header color-fixed {% if request.resolver_match.view_name == 'core:index' %}navbar--transparent{% else %}navbar--sticky{% endif %}">
-    <div class="header-inner">
-        <div class="container-fluid pe-0">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="header_left_part d-flex align-items-center">
-                    <div class="logo">
-                        <a href="{% url 'core:index' %}" class="light_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a>
-                        <a href="{% url 'core:index' %}" class="dark_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a>
-                    </div>
-                </div>
-
-                <div class="header_center_part d-none d-xxl-block">
-                    <nav class="mainnav" aria-label="Primary navigation">
-                        <ul class="main-menu">
-                            <li class="menu-item{% if request.resolver_match.view_name == 'core:index' %} active current{% endif %}"><a href="{% url 'core:index' %}"{% if request.resolver_match.view_name == 'core:index' %} aria-current="page"{% endif %}>Home</a></li>
-                            <li class="menu-item{% if request.resolver_match.view_name == 'core:products' or request.resolver_match.view_name == 'core:for_photographers' or request.resolver_match.view_name == 'clients:for_clients' or request.resolver_match.view_name == 'galleries:client_galleries' or request.resolver_match.view_name == 'ai_engine:photo_search' or request.resolver_match.view_name == 'ai_engine:editing_culling' or request.resolver_match.view_name == 'photographers:websites' or request.resolver_match.view_name == 'marketplace:find_photographer' or request.resolver_match.view_name == 'marketplace:marketplace' %} active current{% endif %}"><a href="{% url 'core:products' %}">Products</a></li>
-                            <li class="menu-item{% if request.path|slice:':11' == '/solutions/' %} active current{% endif %}"><a href="{% url 'core:solutions' %}">Solutions</a></li>
-                            <li class="menu-item{% if request.path|slice:':14' == '/business-hub/' %} active current{% endif %}"><a href="{% url 'core:business_hub' %}">Business Hub</a></li>
-                            <li class="menu-item{% if request.resolver_match.view_name == 'core:pricing' %} active current{% endif %}"><a href="{% url 'core:pricing' %}"{% if request.resolver_match.view_name == 'core:pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
-                            <li class="menu-item{% if request.path|slice:':11' == '/resources/' %} active current{% endif %}"><a href="{% url 'core:resources' %}">Resources</a></li>
-                            <li class="menu-item{% if request.path|slice:':9' == '/company/' %} active current{% endif %}"><a href="{% url 'core:company' %}">Company</a></li>
-                        </ul>
-                    </nav>
-                </div>
-
-                <div class="header_right_part d-flex align-items-center">
-                    <div class="nav-account d-none d-xxl-flex align-items-center">
-                        {% if request.user.is_authenticated %}
-                            {% unread_notifications as nav_unread_count %}
-                            <a class="nav-workspace-link" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}"><i class="bi bi-grid" aria-hidden="true"></i>{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
-                            <a class="nav-notification-link" href="{% url 'notifications:index' %}" aria-label="Notifications{% if nav_unread_count %}, {{ nav_unread_count }} unread{% endif %}">
-                                <i class="bi bi-bell" aria-hidden="true"></i>
-                                {% if nav_unread_count %}<span>{% if nav_unread_count > 99 %}99+{% else %}{{ nav_unread_count }}{% endif %}</span>{% endif %}
-                            </a>
-                            <div class="nav-user-menu">
-                                <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
-                                    <img src="{% if request.user.is_client and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="nav-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo">
-                                    <span class="nav-user-copy">
-                                        <span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span>
-                                    </span>
-                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                                </button>
-                                <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent>
-                                    <li class="nav-user-dropdown__identity"><strong>{% if request.user.first_name %}{{ request.user.first_name }} {{ request.user.last_name }}{% else %}{{ request.user.get_username }}{% endif %}</strong><span>{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span></li>
-                                    <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
-                                    {% if request.user.is_client %}
-                                    <li><a href="{% url 'clients:account-settings' %}">Account Settings</a></li>
-                                    {% else %}
-                                    <li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>
-                                    <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
-                                    {% endif %}
-                                    <li><a href="{% url 'notifications:index' %}">Notifications{% if nav_unread_count %}<span class="nav-user-dropdown__count">{{ nav_unread_count }}</span>{% endif %}</a></li>
-                                    <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
-                                    <li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li>
-                                </ul>
-                            </div>
-                        {% else %}
-                            <a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a>
-                            <a class="nav-start-free" href="{% url 'accounts:get-started' %}">Get Started</a>
-                        {% endif %}
-                    </div>
-                    <button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false"><span class="aside-open--inner" aria-hidden="true"><span></span><span></span><span></span></span></button>
-                    <button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation"><i class="bi bi-list"></i></button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="header-inner"><div class="container-fluid pe-0"><div class="d-flex align-items-center justify-content-between">
+        <div class="header_left_part d-flex align-items-center"><div class="logo"><a href="{% url 'core:index' %}" class="light_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a><a href="{% url 'core:index' %}" class="dark_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a></div></div>
+        <div class="header_center_part d-none d-xxl-block"><nav class="mainnav" aria-label="Primary navigation"><ul class="main-menu"><li class="menu-item{% if request.resolver_match.view_name == 'core:index' %} active current{% endif %}"><a href="{% url 'core:index' %}">Home</a></li><li class="menu-item"><a href="{% url 'core:products' %}">Products</a></li><li class="menu-item"><a href="{% url 'core:solutions' %}">Solutions</a></li><li class="menu-item"><a href="{% url 'core:business_hub' %}">Business Hub</a></li><li class="menu-item"><a href="{% url 'core:pricing' %}">Pricing</a></li><li class="menu-item"><a href="{% url 'core:resources' %}">Resources</a></li><li class="menu-item"><a href="{% url 'core:company' %}">Company</a></li></ul></nav></div>
+        <div class="header_right_part d-flex align-items-center"><div class="nav-account d-none d-xxl-flex align-items-center">
+        {% if request.user.is_authenticated %}{% unread_notifications as nav_unread_count %}
+          <a class="nav-workspace-link" href="{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}{% url 'clients:dashboard' %}{% elif request.user.can_use_photographer_workspace %}{% url 'photographer_workspace:dashboard' %}{% else %}{% url 'clients:dashboard' %}{% endif %}"><i class="bi bi-grid"></i>{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}Dashboard{% else %}Workspace{% endif %}</a>
+          <a class="nav-notification-link" href="{% url 'notifications:index' %}" aria-label="Notifications{% if nav_unread_count %}, {{ nav_unread_count }} unread{% endif %}"><i class="bi bi-bell"></i>{% if nav_unread_count %}<span>{% if nav_unread_count > 99 %}99+{% else %}{{ nav_unread_count }}{% endif %}</span>{% endif %}</a>
+          <div class="nav-user-menu"><button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown"><img src="{% if request.user.has_client_profile and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.has_photographer_profile and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="nav-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo"><span class="nav-user-copy"><span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span></span><i class="bi bi-chevron-down"></i></button>
+          <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent><li class="nav-user-dropdown__identity"><strong>{% if request.user.first_name %}{{ request.user.first_name }} {{ request.user.last_name }}{% else %}{{ request.user.get_username }}{% endif %}</strong><span>LumisPixel account</span></li>
+          {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>{% endif %}
+          <li><a href="{% url 'accounts:account-settings' %}">Account Settings</a></li>
+          {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:settings' %}">Workspace Settings</a></li>{% endif %}
+          <li><a href="{% url 'notifications:index' %}">Notifications{% if nav_unread_count %}<span class="nav-user-dropdown__count">{{ nav_unread_count }}</span>{% endif %}</a></li><li><a href="{% url 'core:help_center' %}">Help Center</a></li><li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li></ul></div>
+        {% else %}<a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a><a class="nav-start-free" href="{% url 'accounts:get-started' %}">Get Started</a>{% endif %}
+        </div><button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false"><span class="aside-open--inner"><span></span><span></span><span></span></span></button><button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation"><i class="bi bi-list"></i></button></div>
+    </div></div></div>
 </header>
 <!-- End Main Header -->
