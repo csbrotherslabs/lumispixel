@@ -1,0 +1,73 @@
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block title %}My Profile | LumisPixel{% endblock %}
+{% block workspace_content %}
+<link rel="stylesheet" href="{% static 'css/photographer_profile.css' %}">
+<section class="lp-profile-page">
+  <header class="lp-profile-hero">
+    <div>
+      <p class="lp-profile-eyebrow">Personal profile</p>
+      <h1 id="workspace-page-title">My Profile</h1>
+      <p>Your identity across LumisPixel. Business details, studio roles, and client access stay separate from your personal information.</p>
+    </div>
+    <span class="lp-profile-status"><i class="bi bi-check-circle-fill"></i>{{ account_status_label }}</span>
+  </header>
+
+  <div class="lp-profile-layout">
+    <aside class="lp-profile-summary">
+      <div class="lp-profile-avatar-wrap">
+        {% if identity.image_url %}<img class="lp-profile-avatar-image" src="{{ identity.image_url }}" alt="{{ identity.image_alt }}">
+        {% else %}<span class="lp-profile-avatar-large">{{ identity.initials }}</span>{% endif %}
+      </div>
+      <h2>{{ identity.name }}</h2>
+      <p>{{ profile_user.email }}</p>
+      <span class="lp-profile-email-state"><i class="bi bi-patch-check-fill"></i>{% if profile_user.email_verified %}Email verified{% else %}Email verification pending{% endif %}</span>
+      <div class="lp-profile-summary-note">
+        <i class="bi bi-person-vcard"></i>
+        <p>This is your personal identity. Your business brand and public photographer information are managed separately.</p>
+      </div>
+    </aside>
+
+    <div class="lp-profile-main">
+      <form method="post" class="lp-profile-card" novalidate>
+        {% csrf_token %}
+        <div class="lp-profile-card-heading">
+          <div><span>Identity</span><h2>Personal information</h2><p>Used to identify you when you sign in, collaborate with studios, and use LumisPixel as a client.</p></div>
+          <button class="lp-profile-save" type="submit"><i class="bi bi-check2"></i>Save changes</button>
+        </div>
+        {% if form.non_field_errors %}<div class="lp-profile-error">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="lp-profile-fields">
+          <label><span>First name</span>{{ form.first_name }}{% for error in form.first_name.errors %}<small class="lp-profile-error">{{ error }}</small>{% endfor %}</label>
+          <label><span>Last name</span>{{ form.last_name }}{% for error in form.last_name.errors %}<small class="lp-profile-error">{{ error }}</small>{% endfor %}</label>
+          <label class="lp-profile-field-wide"><span>Email address</span><div class="lp-profile-readonly"><span>{{ profile_user.email }}</span>{% if profile_user.email_verified %}<i class="bi bi-patch-check-fill" title="Verified"></i>{% endif %}</div><small>Email changes will be handled through account security settings.</small></label>
+        </div>
+      </form>
+
+      <section class="lp-profile-card">
+        <div class="lp-profile-card-heading">
+          <div><span>Access</span><h2>Your LumisPixel contexts</h2><p>One account can participate in several parts of LumisPixel without creating duplicate identities.</p></div>
+        </div>
+        <div class="lp-profile-contexts">
+          {% for context in contexts %}
+          <article><span class="lp-profile-context-icon"><i class="bi {{ context.icon }}"></i></span><div><strong>{{ context.label }}</strong><small>{{ context.kind }}</small></div><i class="bi bi-check2-circle"></i></article>
+          {% empty %}
+          <p class="lp-profile-muted">No additional contexts are connected to this account yet.</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="lp-profile-card lp-profile-business-card">
+        <div class="lp-profile-card-heading">
+          <div><span>Workspace</span><h2>Business information lives elsewhere</h2><p>Studio name, logo, business contact information, specialties, marketplace settings, and branding belong to the business—not to your personal identity.</p></div>
+          {% if has_owned_studio %}<a class="lp-profile-secondary" href="{{ settings_url }}"><i class="bi bi-building-gear"></i>Business settings</a>{% endif %}
+        </div>
+        <div class="lp-profile-separation-grid">
+          <div><i class="bi bi-person"></i><strong>Personal profile</strong><p>Your name, sign-in identity, and account-level information.</p></div>
+          <div><i class="bi bi-building"></i><strong>Business profile</strong><p>Studio identity, public brand, business contact details, and business preferences.</p></div>
+          <div><i class="bi bi-people"></i><strong>Studio membership</strong><p>Your role, permissions, availability, and assignments inside another studio.</p></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}
