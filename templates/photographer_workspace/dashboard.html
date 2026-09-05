@@ -1,4 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_dashboard.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:galleries' as upload_url %}{% url 'photographer_workspace:bookings' as booking_url %}
 {% include "photographer_workspace/components/page_header.html" with greeting=greeting|add:", "|add:welcome_name|add:"." title="Dashboard" visually_hidden_title=True description=day_summary date=today primary_url=upload_url primary_label="Upload Photos" primary_icon="bi-cloud-arrow-up" secondary_url=booking_url secondary_label="Create Booking" secondary_icon="bi-calendar-plus" only %}
