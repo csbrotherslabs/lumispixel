@@ -34,9 +34,11 @@
       <ul class="lp-booking-stage-list">{% for stage in booking_stages %}<li><span><i class="lp-booking-stage-dot lp-booking-stage-dot--{{ stage.key }}" aria-hidden="true"></i>{{ stage.label }}</span><strong>{{ stage.count }}</strong><small>{{ stage.percent }}%</small></li>{% endfor %}</ul>
     </section>
 
-    <section class="lpw-command-card lpw-quick-panel lp-booking-command-panel" aria-labelledby="actions-title">
-      {% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Common tasks" title="Quick Actions" section_id="actions-title" only %}
-      <div class="lp-booking-actions">{% for action in booking_quick_actions %}{% include "photographer_workspace/components/quick_action.html" with title=action.label description=action.help icon=action.icon event_type=action.event_type %}{% endfor %}</div>
+    <section class="lpw-command-card lpw-quick-panel lp-booking-command-panel lp-booking-quick-panel" aria-labelledby="actions-title">
+      {% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Next step" title="Quick Actions" section_id="actions-title" only %}
+      <div class="lpw-quick-actions lp-booking-quick-actions">
+        {% for action in booking_quick_actions %}<button{% if forloop.first %} class="is-emphasis"{% endif %} type="button"{% if action.event_type %} data-event-form-open="{{ action.event_type }}"{% endif %}><span class="lpw-widget-icon"><i class="bi {{ action.icon }}" aria-hidden="true"></i></span>{{ action.label }}<i class="bi bi-chevron-right" aria-hidden="true"></i></button>{% endfor %}
+      </div>
     </section>
 
     <section class="lpw-command-card lpw-quick-panel lp-booking-command-panel" aria-labelledby="activity-title">
