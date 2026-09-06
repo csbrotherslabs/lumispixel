@@ -1,0 +1,209 @@
+/* Schedule page refresh aligned to the approved CRM visual system. */
+
+.lpw-schedule-page>.lpw-breadcrumb{
+  position:relative;
+  z-index:2;
+  margin:22px 0 0;
+  padding:20px 38px 0;
+  border:1px solid #e8e1dc;
+  border-bottom:0;
+  border-radius:24px 24px 0 0;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  color:#6f6762;
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lpw-schedule-page>.lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lpw-schedule-page>.lpw-breadcrumb a:hover,
+.lpw-schedule-page>.lpw-breadcrumb a:focus-visible{color:#25211f}
+
+.lpw-schedule-page>.lpw-breadcrumb a,
+.lpw-schedule-page>.lpw-breadcrumb strong,
+.lpw-schedule-page>.lpw-breadcrumb i{font-size:11px}
+
+.lpw-schedule-page .lpw-schedule-header{
+  position:relative;
+  top:auto;
+  isolation:isolate;
+  overflow:visible;
+  margin:0;
+  padding:18px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-top:0;
+  border-radius:0 0 24px 24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+  backdrop-filter:none;
+}
+
+.lpw-schedule-page .lpw-schedule-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-210px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lpw-schedule-page .lpw-schedule-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lpw-schedule-page .lpw-schedule-header .lp-page-title{margin-top:0}
+
+/* Treat navigation, filters, and calendar as one continuous workspace surface. */
+.lpw-schedule-page .lpw-schedule-controls{
+  margin:22px 0 0;
+  padding:16px 18px;
+  border:1px solid var(--lp-color-border);
+  border-bottom:0;
+  border-radius:16px 16px 0 0;
+  background:var(--lp-color-surface);
+  box-shadow:0 12px 30px rgba(47,37,30,.05);
+}
+
+.lpw-schedule-page .lpw-schedule-filterbar{
+  margin:0;
+  padding:0 18px 16px;
+  border-right:1px solid var(--lp-color-border);
+  border-left:1px solid var(--lp-color-border);
+  background:var(--lp-color-surface);
+}
+
+.lpw-schedule-page .lpw-schedule-filter-form{
+  margin:0;
+  padding-top:0;
+}
+
+.lpw-schedule-page .lpw-schedule-workspace,
+.lpw-schedule-page .lpw-schedule-workspace.has-collapsed-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:18px;
+  margin:0;
+}
+
+.lpw-schedule-page .lpw-schedule-calendar-area{
+  min-width:0;
+  margin:0;
+  padding:18px;
+  border:1px solid var(--lp-color-border);
+  border-top:0;
+  border-radius:0 0 16px 16px;
+  background:var(--lp-color-surface);
+  box-shadow:0 12px 30px rgba(47,37,30,.05);
+}
+
+.lpw-schedule-page .lpw-month-calendar,
+.lpw-schedule-page .lpw-time-calendar,
+.lpw-schedule-page .lpw-booking-list,
+.lpw-schedule-page .lpw-agenda-group{
+  box-shadow:none;
+}
+
+/* Daily operations becomes a dedicated full-width row beneath the calendar. */
+.lpw-schedule-page .lpw-schedule-summary{
+  position:static;
+  grid-row:2;
+  width:100%;
+  overflow:hidden;
+  border:1px solid var(--lp-color-border);
+  border-radius:16px;
+  background:var(--lp-color-surface);
+  box-shadow:0 12px 30px rgba(47,37,30,.05);
+}
+
+.lpw-schedule-page .lpw-summary-heading{
+  padding:16px 18px;
+  border-bottom:1px solid var(--lp-color-border);
+  background:#fcfaf8;
+}
+
+.lpw-schedule-page .lpw-summary-heading span{
+  color:#d71920;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+
+.lpw-schedule-page .lpw-summary-heading h2{
+  margin-top:3px;
+  color:#25211f;
+  font-size:18px;
+}
+
+.lpw-schedule-page .lpw-summary-panels{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  max-height:none;
+  overflow:visible;
+}
+
+.lpw-schedule-page .lpw-summary-panel{
+  min-width:0;
+  padding:18px;
+  border-right:1px solid var(--lp-color-border);
+  border-bottom:0;
+}
+
+.lpw-schedule-page .lpw-summary-panel:last-child{border-right:0}
+
+.lpw-schedule-page .lpw-schedule-summary.is-collapsed{
+  width:100%;
+  overflow:hidden;
+}
+
+.lpw-schedule-page .lpw-schedule-summary.is-collapsed .lpw-summary-heading{
+  justify-content:space-between;
+  padding:16px 18px;
+}
+
+.lpw-schedule-page .lpw-schedule-summary.is-collapsed .lpw-summary-heading>div{display:block}
+.lpw-schedule-page .lpw-schedule-summary.is-collapsed .lpw-summary-heading button{width:auto;height:auto}
+
+@media(max-width:900px){
+  .lpw-schedule-page>.lpw-breadcrumb{padding:18px 28px 0}
+  .lpw-schedule-page .lpw-schedule-header{padding:18px 28px 30px}
+  .lpw-schedule-page .lpw-summary-panels{grid-template-columns:1fr 1fr}
+  .lpw-schedule-page .lpw-summary-panel:last-child{grid-column:1/-1;border-top:1px solid var(--lp-color-border)}
+}
+
+@media(max-width:700px){
+  .lpw-schedule-page>.lpw-breadcrumb{
+    margin:0 16px;
+    padding:16px 20px 0;
+    border-radius:20px 20px 0 0;
+  }
+  .lpw-schedule-page .lpw-schedule-header{
+    margin:0 16px;
+    padding:16px 20px 24px;
+    border-radius:0 0 20px 20px;
+  }
+  .lpw-schedule-page .lpw-schedule-controls{
+    margin-top:16px;
+    padding:14px;
+    border-radius:14px 14px 0 0;
+  }
+  .lpw-schedule-page .lpw-schedule-filterbar{padding:0 14px 14px}
+  .lpw-schedule-page .lpw-schedule-calendar-area{padding:14px;border-radius:0 0 14px 14px}
+  .lpw-schedule-page .lpw-summary-panels{display:block}
+  .lpw-schedule-page .lpw-summary-panel{border-right:0;border-bottom:1px solid var(--lp-color-border)}
+  .lpw-schedule-page .lpw-summary-panel:last-child{border-bottom:0}
+}
