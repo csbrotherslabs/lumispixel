@@ -152,6 +152,75 @@
   gap:16px;
 }
 
+/* Match the CRM Quick Actions card exactly while preserving booking drawer actions. */
+.lp-bookings-overview .lp-booking-quick-panel .lpw-quick-actions{
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:14px;
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  min-height:58px;
+  padding:11px 12px;
+  border:1px solid var(--lpw-border);
+  border-radius:10px;
+  background:var(--lp-color-page);
+  box-shadow:none;
+  color:var(--lpw-text);
+  font:inherit;
+  font-size:13px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+  transition:transform var(--lp-transition-duration),border-color var(--lp-transition-duration),background var(--lp-transition-duration);
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button:hover,
+.lp-bookings-overview .lp-booking-quick-actions>button:focus-visible{
+  border-color:var(--lp-color-brand-border);
+  background:var(--lp-color-surface);
+  transform:translateY(-2px);
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button>.lpw-widget-icon{
+  display:grid;
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  place-items:center;
+  border:0;
+  border-radius:11px;
+  background:#fff0f0;
+  color:var(--lpw-accent);
+  box-shadow:none;
+  font-size:15px;
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button>.bi-chevron-right{
+  margin-left:auto;
+  color:#9b918a;
+  font-size:11px;
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button.is-emphasis{
+  border-color:var(--lp-color-brand);
+  background:var(--lp-color-brand);
+  color:#fff;
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button.is-emphasis .lpw-widget-icon{
+  background:rgba(255,255,255,.16);
+  color:#fff;
+}
+
+.lp-bookings-overview .lp-booking-quick-actions>button.is-emphasis>.bi-chevron-right{
+  color:#fff;
+}
+
 @media(max-width:1050px){
   .lp-bookings-overview .lp-booking-operations-grid{grid-template-columns:1fr 1fr}
   .lp-bookings-overview .lp-booking-operations-grid>section:last-child{grid-column:1/-1}
@@ -170,4 +239,5 @@
   .lp-bookings-overview .lp-booking-command-panel{padding:17px}
   .lp-bookings-overview .lp-booking-operations-grid{grid-template-columns:1fr}
   .lp-bookings-overview .lp-booking-operations-grid>section:last-child{grid-column:auto}
+  .lp-bookings-overview .lp-booking-quick-panel .lpw-quick-actions{grid-template-columns:1fr}
 }
