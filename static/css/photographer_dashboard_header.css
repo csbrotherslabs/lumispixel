@@ -1,5 +1,5 @@
-/* Photographer workspace dashboard header only.
-   Intentionally scoped so dashboard cards, metrics, buttons, and body layout remain unchanged. */
+/* Photographer workspace dashboard refinements.
+   Scoped to the dashboard header and KPI section so the rest of the workspace remains unchanged. */
 
 .lpw-dashboard-header{
   position:relative;
@@ -44,8 +44,134 @@
   z-index:1;
 }
 
+/* Dashboard KPI cards */
+.lpw-kpi-grid{
+  gap:16px;
+}
+
+.lpw-kpi-grid .lpw-kpi-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:154px;
+  padding:22px 22px 20px;
+  border:1px solid #e7e1dc;
+  border-radius:20px;
+  background:linear-gradient(145deg,#ffffff 0%,#fdfbf9 100%);
+  box-shadow:0 10px 28px rgba(47,37,30,.045);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.lpw-kpi-grid .lpw-kpi-card::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:0;
+  left:0;
+  width:100%;
+  height:4px;
+  background:linear-gradient(90deg,#d71920 0%,#e7a2a5 48%,rgba(231,162,165,0) 100%);
+  opacity:.9;
+}
+
+.lpw-kpi-grid .lpw-kpi-card::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:110px;
+  height:110px;
+  top:-68px;
+  right:-48px;
+  border:1px solid rgba(215,25,32,.08);
+  border-radius:50%;
+  background:rgba(248,244,240,.45);
+  pointer-events:none;
+}
+
+.lpw-kpi-grid .lpw-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:#dcd2cb;
+  box-shadow:0 16px 34px rgba(47,37,30,.075);
+}
+
+.lpw-kpi-grid .lpw-kpi-card>span:first-child{
+  align-self:start;
+  color:#7d7671;
+  font-size:10px;
+  font-weight:800;
+  line-height:1.3;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>.lpw-widget-icon{
+  width:44px;
+  height:44px;
+  border:1px solid #eadfd9;
+  border-radius:13px;
+  background:#f5eeea;
+  color:#d71920;
+  font-size:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.lpw-kpi-grid .lpw-kpi-card>strong{
+  margin-top:7px;
+  color:#272321;
+  font-size:clamp(26px,2.3vw,32px);
+  font-weight:780;
+  line-height:1.05;
+  letter-spacing:-.04em;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>strong.is-unavailable{
+  font-size:17px;
+  letter-spacing:-.015em;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>small{
+  margin-top:3px;
+  color:#8a837e;
+  font-size:11px;
+  line-height:1.45;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>em{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-top:9px;
+  width:max-content;
+  max-width:100%;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#f5f2ef;
+  color:#6f6863;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.2;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>em.is-increase{
+  background:#eef6ef;
+  color:#47704b;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>em.is-decrease{
+  background:#fbefef;
+  color:#985054;
+}
+
+.lpw-kpi-grid .lpw-kpi-card>em span{
+  color:inherit;
+  opacity:.75;
+  font-weight:600;
+}
+
 @media(max-width:860px){
   .lpw-dashboard-header{padding:30px 28px}
+  .lpw-kpi-grid{gap:14px}
+  .lpw-kpi-grid .lpw-kpi-card{min-height:146px;padding:20px}
 }
 
 @media(max-width:620px){
@@ -53,4 +179,9 @@
     padding:26px 22px;
     border-radius:20px;
   }
+  .lpw-kpi-grid .lpw-kpi-card{
+    min-height:138px;
+    border-radius:17px;
+  }
+  .lpw-kpi-grid .lpw-kpi-card>strong{font-size:28px}
 }
