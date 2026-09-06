@@ -19,7 +19,7 @@
         {% endif %}
         <div class="lpw-nav-group__items" id="{{ group.id }}"{% if group.title and not group.expanded %} hidden{% endif %}>
           {% for item in group.items %}
-            <a href="{{ item.url }}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %} data-tooltip="{{ item.title }}">
+            <a href="{{ item.url }}{% if item.key == 'calendar' %}?view=month{% endif %}" class="{% if item.active %}is-active{% endif %}" {% if item.active %}aria-current="page"{% endif %} data-tooltip="{{ item.title }}">
               <i class="bi {{ item.icon }}" aria-hidden="true"></i>
               <span>{{ item.title }}</span>
             </a>
