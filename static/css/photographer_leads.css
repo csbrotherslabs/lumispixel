@@ -1,0 +1,220 @@
+/* Photographer workspace Leads page enhancements.
+   Mirrors the approved CRM visual language while staying scoped to /leads/. */
+
+.lp-leads .lp-leads-header{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-leads .lp-leads-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-leads .lp-leads-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-leads .lp-leads-header .lp-page-heading,
+.lp-leads .lp-leads-header .lp-header-actions{
+  position:relative;
+  z-index:1;
+}
+
+.lp-leads .lp-leads-header .lpw-breadcrumb{
+  margin:0 0 18px;
+  padding:0;
+  background:transparent;
+}
+
+.lp-leads .lp-leads-header .lpw-breadcrumb a,
+.lp-leads .lp-leads-header .lpw-breadcrumb span,
+.lp-leads .lp-leads-header .lpw-breadcrumb strong,
+.lp-leads .lp-leads-header .lpw-breadcrumb i{
+  font-size:11px;
+}
+
+.lp-leads .lp-leads-header .lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lp-leads .lp-leads-header .lpw-breadcrumb a:hover,
+.lp-leads .lp-leads-header .lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+}
+
+.lp-leads .lp-leads-header .lp-page-title{margin-top:0}
+
+/* Lead summary matches the CRM KPI treatment. */
+.lp-leads .lp-leads-kpis{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:154px;
+  padding:22px 22px 20px;
+  border:1px solid #e8e1dc;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+  box-shadow:0 12px 30px rgba(47,37,30,.055);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:4px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.46) 42%,rgba(215,25,32,0) 100%);
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:120px;
+  height:120px;
+  top:-72px;
+  right:-58px;
+  border:1px solid rgba(215,25,32,.08);
+  border-radius:50%;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:#ddd2cb;
+  box-shadow:0 18px 38px rgba(47,37,30,.085);
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card__label{
+  color:#7d7671;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card__icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  border:1px solid #eee4de;
+  border-radius:13px;
+  background:linear-gradient(145deg,#fbf5f2,#f5ece8);
+  color:#d71920;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+  font-size:18px;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card__value{
+  display:block;
+  margin-top:10px;
+  color:#25211f;
+  font-size:clamp(24px,2.4vw,24px);
+  font-weight:500;
+  line-height:1.05;
+  letter-spacing:-.035em;
+}
+
+.lp-leads .lp-leads-kpis .lp-kpi-card__comparison{
+  margin:5px 0 0;
+  color:#8a837e;
+  font-size:11px;
+  line-height:1.45;
+}
+
+/* Operational sections mirror dashboard Quick Actions command cards. */
+.lp-leads .lp-leads-controls,
+.lp-leads .lp-leads-board-wrap,
+.lp-leads .lp-leads-command-panel{
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-leads .lp-leads-controls{padding:18px}
+.lp-leads .lp-leads-board-wrap{padding:16px}
+
+.lp-leads .lp-leads-command-panel{
+  min-height:0;
+  padding:22px;
+}
+
+.lp-leads .lp-leads-command-panel .lpw-command-card__head{
+  padding-bottom:14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-leads .lp-leads-command-panel .lpw-command-card__head p{
+  margin:4px 0 0;
+  color:var(--lp-color-text-muted);
+  font-size:12px;
+}
+
+.lp-leads .lp-leads-command-panel .lpw-command-card__head>a{
+  color:var(--lp-color-text-secondary);
+}
+
+.lp-leads .lp-leads-command-panel .lpw-command-card__head>a:hover{
+  color:var(--lp-color-brand);
+}
+
+.lp-leads .lp-leads-command-panel .lp-followup-list,
+.lp-leads .lp-leads-command-panel .lp-activity-list,
+.lp-leads .lp-leads-command-panel .lp-source-table{
+  margin-top:14px;
+}
+
+@media(max-width:900px){
+  .lp-leads .lp-leads-header{padding:28px}
+  .lp-leads .lp-leads-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+}
+
+@media(max-width:620px){
+  .lp-leads .lp-leads-header{padding:24px 22px;border-radius:20px}
+  .lp-leads .lp-leads-header .lpw-breadcrumb{margin-bottom:14px}
+  .lp-leads .lp-leads-kpis{grid-template-columns:1fr;gap:12px}
+  .lp-leads .lp-leads-kpis .lp-kpi-card{min-height:138px;padding:18px}
+  .lp-leads .lp-leads-controls,.lp-leads .lp-leads-board-wrap,.lp-leads .lp-leads-command-panel{padding:17px}
+}
