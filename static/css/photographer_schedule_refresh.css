@@ -125,7 +125,7 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 }
 
 .lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover>summary{
-  min-height:42px;
+  min-height:40px;
   border:1px solid #f2c9cb;
   background:#fff0f0;
   color:#b91920;
