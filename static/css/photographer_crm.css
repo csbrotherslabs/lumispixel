@@ -73,7 +73,7 @@
 
 .lp-crm-page .lp-crm-kpis{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:16px;
 }
 
@@ -202,6 +202,8 @@
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
   margin-top:14px;
+  border:0!important;
+  box-shadow:none;
 }
 
 .lp-crm-page .lp-crm-pipeline>a{
@@ -295,10 +297,28 @@
   color:var(--lpw-accent);
 }
 
-/* CRM Quick Actions now mirrors the dashboard Quick Actions panel. */
-.lp-crm-page .lp-crm-quick-panel{
+/* CRM panels aligned to the dashboard Quick Actions card treatment. */
+.lp-crm-page .lp-crm-quick-panel,
+.lp-crm-page .lp-crm-info-panel{
   min-height:0;
   padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-crm-page .lp-crm-info-panel>.lpw-command-card__head,
+.lp-crm-page .lp-crm-quick-panel>.lpw-command-card__head{
+  padding-bottom:14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-crm-page .lp-crm-info-panel .lp-crm-lead-list,
+.lp-crm-page .lp-crm-info-panel .lp-crm-session-list,
+.lp-crm-page .lp-crm-info-panel .lpw-task-list,
+.lp-crm-page .lp-crm-info-panel .lp-activity-list{
+  margin-top:14px;
 }
 
 .lp-crm-page .lp-crm-quick-panel .lpw-quick-actions{
@@ -318,6 +338,6 @@
   .lp-crm-page .lp-crm-header .lpw-breadcrumb{margin-bottom:14px}
   .lp-crm-page .lp-crm-kpis{grid-template-columns:1fr;gap:12px}
   .lp-crm-page .lp-crm-kpis .lp-kpi-card{min-height:138px;padding:18px}
-  .lp-crm-page .lp-crm-section,.lp-crm-page .lp-crm-quick-panel{padding:17px}
+  .lp-crm-page .lp-crm-section,.lp-crm-page .lp-crm-quick-panel,.lp-crm-page .lp-crm-info-panel{padding:17px}
   .lp-crm-page .lp-crm-pipeline,.lp-crm-page .lp-crm-quick-panel .lpw-quick-actions{grid-template-columns:1fr}
 }
