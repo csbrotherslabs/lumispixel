@@ -46,6 +46,7 @@
 
 /* KPI summary cards */
 .lpw-kpi-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:16px;
 }
 
@@ -174,6 +175,7 @@
 
 @media(max-width:860px){
   .lpw-dashboard-header{padding:30px 28px}
+  .lpw-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lpw-kpi-grid .lpw-kpi-card{min-height:146px;padding:20px}
 }
 
@@ -182,7 +184,7 @@
     padding:26px 22px;
     border-radius:20px;
   }
-  .lpw-kpi-grid{gap:12px}
+  .lpw-kpi-grid{grid-template-columns:1fr;gap:12px}
   .lpw-kpi-grid .lpw-kpi-card{min-height:138px;padding:18px}
   .lpw-kpi-grid .lpw-kpi-card>strong{font-size:28px}
 }
