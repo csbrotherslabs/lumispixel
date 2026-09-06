@@ -93,8 +93,4 @@
       loadResults(pageLink.href);
     }
   });
-
-  window.addEventListener('popstate', () => {
-    loadResults(window.location.href);
-  });
 })();
