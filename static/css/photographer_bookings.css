@@ -1,0 +1,173 @@
+/* Photographer workspace Bookings overview enhancements.
+   Mirrors the approved CRM visual language while staying scoped to /bookings/. */
+
+.lp-bookings-overview .lp-bookings-header{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-bookings-overview .lp-bookings-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-bookings-overview .lp-bookings-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-bookings-overview .lp-bookings-header .lp-page-heading,
+.lp-bookings-overview .lp-bookings-header .lpw-command-header__actions{
+  position:relative;
+  z-index:1;
+}
+
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb{
+  margin:0 0 18px;
+  padding:0;
+  background:transparent;
+}
+
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb a,
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb strong,
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb i{
+  font-size:11px;
+}
+
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb a:hover,
+.lp-bookings-overview .lp-bookings-header .lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+}
+
+.lp-bookings-overview .lp-bookings-header .lp-page-title{margin-top:0}
+
+.lp-bookings-overview .lp-booking-kpis{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+
+.lp-bookings-overview .lp-booking-kpis .lp-kpi-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-width:0;
+  min-height:154px;
+  padding:22px 22px 20px;
+  border:1px solid #e8e1dc;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+  box-shadow:0 12px 30px rgba(47,37,30,.055);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.lp-bookings-overview .lp-booking-kpis .lp-kpi-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:4px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.46) 42%,rgba(215,25,32,0) 100%);
+}
+
+.lp-bookings-overview .lp-booking-kpis .lp-kpi-card::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:120px;
+  height:120px;
+  top:-72px;
+  right:-58px;
+  border:1px solid rgba(215,25,32,.08);
+  border-radius:50%;
+}
+
+.lp-bookings-overview .lp-booking-kpis .lp-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:#ddd2cb;
+  box-shadow:0 18px 38px rgba(47,37,30,.085);
+}
+
+.lp-bookings-overview .lp-booking-kpis .lp-kpi-card__value{
+  font-size:clamp(24px,2.4vw,24px);
+  font-weight:500;
+}
+
+.lp-bookings-overview .lp-booking-command-panel{
+  min-height:0;
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-bookings-overview .lp-booking-command-panel>.lpw-command-card__head{
+  padding-bottom:14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-bookings-overview .lp-booking-session-list,
+.lp-bookings-overview .lp-booking-stage-list,
+.lp-bookings-overview .lp-booking-actions,
+.lp-bookings-overview .lp-activity-list{
+  margin-top:14px;
+}
+
+.lp-bookings-overview .lp-booking-upcoming{
+  margin-top:0;
+}
+
+.lp-bookings-overview .lp-booking-operations-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+
+@media(max-width:1050px){
+  .lp-bookings-overview .lp-booking-operations-grid{grid-template-columns:1fr 1fr}
+  .lp-bookings-overview .lp-booking-operations-grid>section:last-child{grid-column:1/-1}
+}
+
+@media(max-width:900px){
+  .lp-bookings-overview .lp-bookings-header{padding:28px}
+  .lp-bookings-overview .lp-booking-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+}
+
+@media(max-width:620px){
+  .lp-bookings-overview .lp-bookings-header{padding:24px 22px;border-radius:20px}
+  .lp-bookings-overview .lp-bookings-header .lpw-breadcrumb{margin-bottom:14px}
+  .lp-bookings-overview .lp-booking-kpis{grid-template-columns:1fr;gap:12px}
+  .lp-bookings-overview .lp-booking-kpis .lp-kpi-card{min-height:138px;padding:18px}
+  .lp-bookings-overview .lp-booking-command-panel{padding:17px}
+  .lp-bookings-overview .lp-booking-operations-grid{grid-template-columns:1fr}
+  .lp-bookings-overview .lp-booking-operations-grid>section:last-child{grid-column:auto}
+}
