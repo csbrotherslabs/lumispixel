@@ -1,0 +1,30 @@
+/* Focused refinements for the Galleries dashboard. */
+
+.lp-gallery-crm-page .lp-gallery-storage-kpi .lp-kpi-card__value{
+  max-width:100%;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage-kpi__progress{
+  margin:8px 0 0;
+  color:#8a837e;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage-kpi__progress .lp-progress{
+  margin:0;
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll{
+  margin-left:0!important;
+  margin-right:0!important;
+  border:0!important;
+}
+
+.lp-gallery-crm-page .lp-gallery-lower{
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+}
+
+@media(max-width:900px){
+  .lp-gallery-crm-page .lp-gallery-lower{
+    grid-template-columns:1fr;
+  }
+}
