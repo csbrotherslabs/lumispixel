@@ -1,0 +1,281 @@
+/* Photographer workspace Clients page enhancements.
+   Mirrors the approved Leads/CRM visual language while staying scoped to /clients/. */
+
+.lp-clients .lp-clients-header{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-clients .lp-clients-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-clients .lp-clients-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-clients .lp-clients-header .lp-page-heading,
+.lp-clients .lp-clients-header .lp-header-actions{position:relative;z-index:1}
+.lp-clients .lp-clients-header .lpw-breadcrumb{margin:0 0 18px;padding:0;background:transparent}
+.lp-clients .lp-clients-header .lpw-breadcrumb a{color:#d71920;transition:color .18s ease}
+.lp-clients .lp-clients-header .lpw-breadcrumb a:hover,
+.lp-clients .lp-clients-header .lpw-breadcrumb a:focus-visible{color:#25211f}
+
+.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:100%;
+  gap:16px;
+}
+
+.lp-clients .lp-clients-kpis .lp-kpi-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-width:0;
+  min-height:154px;
+  padding:22px 22px 20px;
+  border:1px solid #e8e1dc;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+  box-shadow:0 12px 30px rgba(47,37,30,.055);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.lp-clients .lp-clients-kpis .lp-kpi-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.46) 42%,rgba(215,25,32,0) 100%);
+}
+
+.lp-clients .lp-clients-kpis .lp-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:#ddd2cb;
+  box-shadow:0 18px 38px rgba(47,37,30,.085);
+}
+
+.lp-clients .lp-clients-kpis .lp-kpi-card__value{
+  font-size:clamp(24px,2.4vw,24px);
+  font-weight:500;
+}
+
+.lp-clients .lp-clients-controls{
+  overflow:hidden;
+  padding:0;
+  border:1px solid var(--lp-color-border);
+  border-radius:16px;
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-clients .lp-clients-filters{padding:20px 20px 0}
+.lp-clients .lp-clients-filter-bar{
+  display:grid;
+  grid-template-columns:minmax(260px,1.6fr) repeat(3,minmax(150px,1fr));
+  gap:12px;
+  align-items:end;
+}
+.lp-clients .lp-clients-filter-fields{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(180px,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+.lp-clients .lp-clients-filters label{display:grid;gap:6px}
+.lp-clients .lp-clients-filters label>span{font-size:11px;font-weight:800;color:#7d7671;letter-spacing:.04em}
+.lp-clients .lp-clients-filters input,
+.lp-clients .lp-clients-filters select{
+  min-height:42px;
+  border:1px solid #e6ddd7;
+  border-radius:10px;
+  background:#fff;
+  color:#25211f;
+  padding:0 12px;
+}
+
+.lp-clients .lp-clients-view-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-top:18px;
+  padding:14px 20px;
+  border-top:1px solid var(--lp-color-border);
+  border-bottom:1px solid var(--lp-color-border);
+  background:#fcfaf8;
+}
+.lp-clients .lp-clients-result{margin:0;color:#766f6a;font-size:13px}
+.lp-clients .lp-clients-result strong{color:#25211f;font-size:15px}
+.lp-clients .lp-clients-view-actions,
+.lp-clients .lp-clients-filter-actions{display:flex;align-items:center;gap:10px}
+.lp-clients .lp-clients-filter-actions .lp-text-action{white-space:nowrap}
+.lp-clients .lp-clients-ajax-status{min-height:0;padding:0 20px;color:#7a726d;font-size:12px}
+.lp-clients .lp-clients-controls.is-loading .lp-clients-table-wrap{opacity:.55;pointer-events:none}
+
+.lp-clients .lp-clients-list{padding:18px 20px 20px}
+.lp-clients .lp-clients-table-wrap{
+  overflow:auto;
+  border:1px solid #ebe3de;
+  border-radius:14px;
+  background:#fff;
+  transition:opacity .18s ease;
+}
+.lp-clients .lp-clients-table{width:100%;border-collapse:separate;border-spacing:0;min-width:1040px}
+.lp-clients .lp-clients-table thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  padding:13px 15px;
+  border-bottom:1px solid #e9e1dc;
+  background:#f8f5f2;
+  color:#746d68;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  text-align:left;
+}
+.lp-clients .lp-clients-table tbody td{
+  padding:15px;
+  border-bottom:1px solid #f0e9e5;
+  color:#4c4541;
+  font-size:13px;
+  vertical-align:middle;
+}
+.lp-clients .lp-clients-table tbody tr:last-child td{border-bottom:0}
+.lp-clients .lp-clients-table tbody tr{transition:background .16s ease,box-shadow .16s ease}
+.lp-clients .lp-clients-table tbody tr:hover{background:#fffafa;box-shadow:inset 3px 0 0 #d71920}
+.lp-clients .lp-clients-table td>strong,
+.lp-clients .lp-clients-table td small{display:block}
+.lp-clients .lp-clients-table td small{margin-top:3px;color:#8e8580;font-size:11px}
+
+.lp-clients .lp-client-identity{display:flex;align-items:center;gap:11px;min-width:220px}
+.lp-clients .lp-client-identity>span,
+.lp-clients .lp-client-identity>img{
+  display:grid;
+  width:38px;height:38px;
+  flex:0 0 38px;
+  place-items:center;
+  border:1px solid #eaded8;
+  border-radius:12px;
+  background:#fff0f0;
+  color:#d71920;
+  object-fit:cover;
+  font-size:12px;
+  font-weight:800;
+}
+.lp-clients .lp-client-identity a{color:#25211f;text-decoration:none}
+.lp-clients .lp-client-identity a:hover{color:#d71920}
+.lp-clients .lp-client-type{
+  display:inline-flex;
+  padding:6px 9px;
+  border:1px solid #ece3de;
+  border-radius:999px;
+  background:#fbf8f6;
+  color:#645d58;
+  font-size:11px;
+  font-weight:700;
+}
+.lp-clients .lp-client-status{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border:1px solid #e7ddd7;
+  border-radius:999px;
+  background:#fff;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.lp-clients .lp-client-status i{width:6px;height:6px;border-radius:50%;background:#8e8580}
+.lp-clients .lp-client-status--active i{background:#23865d}
+.lp-clients .lp-client-balance{color:#b4232a}
+.lp-clients .lp-client-muted{color:#9a918b}
+
+.lp-clients .lp-client-row-action{text-align:right}
+.lp-clients .lp-client-menu{position:relative;display:inline-block}
+.lp-clients .lp-client-menu>summary{
+  display:grid;
+  width:34px;height:34px;
+  place-items:center;
+  border:1px solid #e8dfda;
+  border-radius:10px;
+  background:#fff;
+  cursor:pointer;
+  list-style:none;
+}
+.lp-clients .lp-client-menu>summary::-webkit-details-marker{display:none}
+.lp-clients .lp-client-menu>div{
+  position:absolute;
+  z-index:10;
+  right:0;
+  top:40px;
+  min-width:180px;
+  padding:7px;
+  border:1px solid #e6ddd7;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 16px 34px rgba(42,31,25,.14);
+}
+.lp-clients .lp-client-menu>div a{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;color:#403936;font-size:12px;text-decoration:none}
+.lp-clients .lp-client-menu>div a:hover{background:#fff4f4;color:#d71920}
+
+.lp-clients .lp-client-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid #eee6e1;
+}
+.lp-clients .lp-client-pagination p{margin:0;color:#8a817b;font-size:12px}
+.lp-clients .lp-client-pagination>div{display:flex;align-items:center;gap:10px}
+.lp-clients .lp-client-pagination span{font-size:12px;color:#6f6762}
+
+@media(max-width:1050px){
+  .lp-clients .lp-clients-filter-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .lp-clients .lp-clients-header{padding:28px}
+  .lp-clients .lp-clients-view-bar{align-items:flex-start;flex-direction:column}
+  .lp-clients .lp-clients-view-actions{width:100%;justify-content:space-between}
+}
+@media(max-width:620px){
+  .lp-clients .lp-clients-header{padding:24px 22px;border-radius:20px}
+  .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{grid-template-columns:1fr!important;gap:12px}
+  .lp-clients .lp-clients-filter-bar,
+  .lp-clients .lp-clients-filter-fields{grid-template-columns:1fr}
+  .lp-clients .lp-clients-filters{padding:16px 16px 0}
+  .lp-clients .lp-clients-view-bar{padding:13px 16px}
+  .lp-clients .lp-clients-view-actions{align-items:stretch;flex-direction:column}
+  .lp-clients .lp-clients-filter-actions{justify-content:space-between}
+  .lp-clients .lp-clients-list{padding:16px}
+  .lp-clients .lp-client-pagination{align-items:flex-start;flex-direction:column}
+}
