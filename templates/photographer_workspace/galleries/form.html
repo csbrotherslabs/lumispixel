@@ -1,8 +1,10 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}">{% endblock %}
 {% block workspace_content %}
 {% if is_create_gallery %}
 <form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
-  <header class="form-page-header lp-page-header">
+  <header class="form-page-header lp-page-header lp-gallery-create-header">
     <div class="lp-gallery-create-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Create Gallery</strong></nav>
       <div><span class="lp-gallery-create-heading__icon"><i class="bi bi-images" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery builder</span><h1 class="lp-page-title" id="workspace-page-title">Create Gallery</h1><p class="lp-page-description">Build the client-facing foundation now, then add photos and delivery settings.</p></div></div>
