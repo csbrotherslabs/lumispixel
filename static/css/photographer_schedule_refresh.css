@@ -5,17 +5,21 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   z-index:100;
 }
 
-.lpw-schedule-page>.lpw-breadcrumb{
+.lpw-schedule-page{
   position:relative;
+}
+
+.lpw-schedule-page>.lpw-breadcrumb{
+  position:absolute;
   z-index:2;
-  margin:22px 0 0;
-  padding:20px 38px 0;
-  border:1px solid #e8e1dc;
-  border-bottom:0;
-  border-radius:24px 24px 0 0;
-  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  top:52px;
+  left:38px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
   color:#6f6762;
-  box-shadow:0 18px 48px rgba(47,37,30,.07);
+  box-shadow:none;
 }
 
 .lpw-schedule-page>.lpw-breadcrumb a{
@@ -36,11 +40,10 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   z-index:1;
   isolation:isolate;
   overflow:visible;
-  margin:0;
-  padding:18px 38px 34px;
+  margin:22px 0 0;
+  padding:69px 38px 34px;
   border:1px solid #e8e1dc;
-  border-top:0;
-  border-radius:0 0 24px 24px;
+  border-radius:24px;
   background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
   box-shadow:0 18px 48px rgba(47,37,30,.07);
   backdrop-filter:none;
@@ -61,7 +64,7 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   z-index:-1;
   width:280px;
   height:280px;
-  top:-210px;
+  top:-185px;
   right:6%;
   border:1px solid rgba(215,25,32,.16);
   border-radius:50%;
@@ -110,6 +113,49 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 .lpw-schedule-page .lpw-schedule-filter-form{
   margin:0;
   padding-top:0;
+}
+
+/* Keep Search, Filters, Legend, and More aligned on one row. */
+.lpw-schedule-page .lpw-schedule-commandbar{
+  display:grid!important;
+  grid-template-columns:minmax(280px,1fr) auto auto auto;
+  align-items:center!important;
+  gap:10px;
+  min-height:44px;
+  flex-wrap:nowrap!important;
+}
+
+.lpw-schedule-page .lpw-schedule-search{
+  align-self:center;
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+
+.lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover{
+  align-self:center;
+  margin:0;
+}
+
+.lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover>summary{
+  min-height:42px;
+  border:1px solid #f2c9cb;
+  background:#fff0f0;
+  color:#b91920;
+  box-shadow:none;
+}
+
+.lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover>summary:hover,
+.lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover>summary:focus-visible{
+  border-color:#eaaeb1;
+  background:#ffe6e7;
+  color:#9f151b;
+}
+
+.lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-options>summary{
+  width:42px;
+  min-width:42px;
+  justify-content:center;
 }
 
 .lpw-schedule-page .lpw-schedule-workspace,
@@ -204,22 +250,22 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 .lpw-schedule-page .lpw-schedule-summary.is-collapsed .lpw-summary-heading button{width:auto;height:auto}
 
 @media(max-width:900px){
-  .lpw-schedule-page>.lpw-breadcrumb{padding:18px 28px 0}
-  .lpw-schedule-page .lpw-schedule-header{padding:18px 28px 30px}
+  .lpw-schedule-page>.lpw-breadcrumb{top:50px;left:28px}
+  .lpw-schedule-page .lpw-schedule-header{padding:66px 28px 30px}
+  .lpw-schedule-page .lpw-schedule-commandbar{grid-template-columns:minmax(220px,1fr) auto auto auto}
   .lpw-schedule-page .lpw-summary-panels{grid-template-columns:1fr 1fr}
   .lpw-schedule-page .lpw-summary-panel:last-child{grid-column:1/-1;border-top:1px solid var(--lp-color-border)}
 }
 
 @media(max-width:700px){
   .lpw-schedule-page>.lpw-breadcrumb{
-    margin:0 16px;
-    padding:16px 20px 0;
-    border-radius:20px 20px 0 0;
+    top:18px;
+    left:36px;
   }
   .lpw-schedule-page .lpw-schedule-header{
     margin:0 16px;
-    padding:16px 20px 24px;
-    border-radius:0 0 20px 20px;
+    padding:58px 20px 24px;
+    border-radius:20px;
   }
   .lpw-schedule-page .lpw-schedule-controls{
     margin-top:16px;
@@ -227,6 +273,16 @@ body:has(.lpw-schedule-page) .lpw-topbar{
     border-radius:14px 14px 0 0;
   }
   .lpw-schedule-page .lpw-schedule-filterbar{padding:0 14px 14px}
+  .lpw-schedule-page .lpw-schedule-commandbar{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px;
+    overflow-x:auto;
+    flex-wrap:nowrap!important;
+    padding-bottom:2px;
+  }
+  .lpw-schedule-page .lpw-schedule-search{flex:1 0 220px}
+  .lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover{flex:none}
   .lpw-schedule-page .lpw-schedule-calendar-area{padding:14px;border-radius:0 0 14px 14px}
   .lpw-schedule-page .lpw-summary-panels{display:block}
   .lpw-schedule-page .lpw-summary-panel{border-right:0;border-bottom:1px solid var(--lp-color-border)}
