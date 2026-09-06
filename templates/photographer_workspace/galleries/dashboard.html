@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_galleries.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_galleries.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_galleries_refine.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:all_galleries' as all_galleries_url %}
 {% url 'photographer_workspace:create_gallery' as create_gallery_url %}
@@ -42,7 +42,11 @@
     {% else %}
       {% for metric in gallery_summary %}
         {% if metric.label == "Storage Used" %}
-          {% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note progress_value=metric.percent progress_value_text=metric.percent|add:"%" progress_label="Storage used" only %}
+          <article class="lp-card lp-kpi-card lp-gallery-storage-kpi" aria-label="{{ metric.label }}">
+            <header><span class="lp-kpi-card__label">{{ metric.label }}</span><span class="lp-kpi-card__icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span></header>
+            <strong class="lp-kpi-card__value">{{ metric.note }}</strong>
+            <div class="lp-kpi-card__comparison lp-gallery-storage-kpi__progress">{% include "photographer_workspace/components/progress.html" with label="Storage used" value=metric.percent value_text=metric.percent|add:"%" only %}</div>
+          </article>
         {% else %}
           {% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note only %}
         {% endif %}
