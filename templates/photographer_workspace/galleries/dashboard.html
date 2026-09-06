@@ -38,16 +38,10 @@
 
   <section class="lp-card-grid lp-gallery-kpis" aria-label="Gallery summary">
     {% if gallery_dashboard_loading %}
-      {% for slot in "1234" %}{% include "photographer_workspace/components/kpi_card.html" with loading=True label="Loading gallery summary" only %}{% endfor %}
+      {% for slot in "123" %}{% include "photographer_workspace/components/kpi_card.html" with loading=True label="Loading gallery summary" only %}{% endfor %}
     {% else %}
       {% for metric in gallery_summary %}
-        {% if metric.label == "Storage Used" %}
-          <article class="lp-card lp-kpi-card lp-gallery-storage-kpi" aria-label="{{ metric.label }}">
-            <header><span class="lp-kpi-card__label">{{ metric.label }}</span><span class="lp-kpi-card__icon"><i class="bi {{ metric.icon }}" aria-hidden="true"></i></span></header>
-            <strong class="lp-kpi-card__value">{{ metric.note }}</strong>
-            <div class="lp-kpi-card__comparison lp-gallery-storage-kpi__progress">{% include "photographer_workspace/components/progress.html" with label="Storage used" value=metric.percent value_text=metric.percent|add:"%" only %}</div>
-          </article>
-        {% else %}
+        {% if metric.label != "Storage Used" %}
           {% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note only %}
         {% endif %}
       {% endfor %}
@@ -63,7 +57,7 @@
   </section>
 
   <div class="lp-gallery-lower">
-    <section class="lpw-command-card lpw-quick-panel lp-gallery-command-panel lp-gallery-storage" aria-labelledby="storage-title"><div><header><span class="lp-gallery-section-eyebrow">Storage Overview</span><h2 id="storage-title">{{ storage.used }} of 100 GB used</h2><p>{{ storage.available }} remains available. Upcoming Deadlines and workflow issues appear above only when relevant.</p></header>{% include "photographer_workspace/components/progress.html" with label="Gallery storage" value=storage.percent value_text=storage.percent_display description="Storage usage across all galleries" only %}</div><a class="lp-text-action" href="{{ upload_url }}">Manage uploads <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>
+    <section class="lpw-command-card lpw-quick-panel lp-gallery-command-panel lp-gallery-storage" aria-labelledby="storage-title"><header class="lp-section-header"><div><span class="lp-gallery-section-eyebrow">Storage</span><h2 id="storage-title">Storage Overview</h2><p>{{ storage.available }} remains available.</p></div></header><div class="lp-gallery-storage__content"><strong>{{ storage.used }} of 100 GB used</strong>{% include "photographer_workspace/components/progress.html" with label="Gallery storage" value=storage.percent value_text=storage.percent_display description="Storage usage across all galleries" only %}<a class="lp-text-action" href="{{ upload_url }}">Manage uploads <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></section>
     <section class="lpw-command-card lpw-quick-panel lp-gallery-command-panel lp-gallery-activity" aria-labelledby="activity-title"><header class="lp-section-header"><div><span class="lp-gallery-section-eyebrow">Client activity</span><h2 id="activity-title">Recent Client Activity</h2><p>Latest client interactions with your galleries.</p></div></header>{% if gallery_dashboard_loading %}{% include "photographer_workspace/components/skeleton.html" with variant="activity" only %}{% elif recent_client_activity %}<ol class="lp-activity-list">{% for item in recent_client_activity %}{% include "photographer_workspace/components/activity_item.html" with description=item.action entity=item.gallery timestamp=item.time|timesince|add:" ago" datetime=item.time|date:'c' icon=item.icon url=item.url only %}{% endfor %}</ol>{% else %}<p class="lp-gallery-inline-empty"><i class="bi bi-clock-history" aria-hidden="true"></i><span>Client interactions will appear here after a gallery is shared.</span></p>{% endif %}</section>
   </div>
 

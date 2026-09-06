@@ -1,18 +1,5 @@
 /* Focused refinements for the Galleries dashboard. */
 
-.lp-gallery-crm-page .lp-gallery-storage-kpi .lp-kpi-card__value{
-  max-width:100%;
-}
-
-.lp-gallery-crm-page .lp-gallery-storage-kpi__progress{
-  margin:8px 0 0;
-  color:#8a837e;
-}
-
-.lp-gallery-crm-page .lp-gallery-storage-kpi__progress .lp-progress{
-  margin:0;
-}
-
 .lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll{
   display:block;
   width:100%!important;
@@ -33,6 +20,41 @@
 
 .lp-gallery-crm-page>.lp-gallery-pipeline{
   width:100%;
+}
+
+/* Storage Overview now follows the same command-card structure as Client Activity. */
+.lp-gallery-crm-page .lp-gallery-storage{
+  display:block;
+  align-items:initial;
+  justify-content:initial;
+  gap:0;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage>header{
+  margin:0;
+  padding:0 0 14px;
+  border-bottom:1px solid var(--lp-color-border);
+  background:transparent;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage__content{
+  display:grid;
+  gap:12px;
+  margin-top:14px;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage__content>strong{
+  color:#25211f;
+  font-size:14px;
+  font-weight:700;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage__content .lp-progress{
+  margin:0;
+}
+
+.lp-gallery-crm-page .lp-gallery-storage__content .lp-text-action{
+  width:max-content;
 }
 
 @media(max-width:900px){
