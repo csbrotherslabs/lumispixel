@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}">{% endblock %}
 {% block workspace_content %}
 {% if is_create_gallery %}
 <form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
