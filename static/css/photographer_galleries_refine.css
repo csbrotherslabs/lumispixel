@@ -12,6 +12,29 @@
   margin-right:0!important;
   border:0!important;
   box-sizing:border-box;
+  scrollbar-width:thin;
+  scrollbar-color:#d8aeb0 #f7f2ef;
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll::-webkit-scrollbar{
+  height:10px;
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll::-webkit-scrollbar-track{
+  background:#f7f2ef;
+  border-radius:999px;
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll::-webkit-scrollbar-thumb{
+  min-width:56px;
+  border:2px solid #f7f2ef;
+  border-radius:999px;
+  background:linear-gradient(90deg,#dfb8ba 0%,#c98286 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(90deg,#d99da0 0%,#b9656a 100%);
 }
 
 .lp-gallery-crm-page .lp-gallery-recent .lp-gallery-operations-table{
@@ -30,6 +53,50 @@
   display:grid;
   grid-template-columns:repeat(7,minmax(0,1fr));
   gap:9px;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:
+    "label label"
+    "progress progress"
+    "count percent";
+  gap:8px 10px;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li>div{
+  display:contents;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li>div>span{
+  grid-area:label;
+  min-width:0;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li>div>strong{
+  grid-area:count;
+  align-self:center;
+  justify-self:start;
+  min-width:0;
+  height:auto;
+  padding:0;
+  border-radius:0;
+  background:transparent;
+  color:#d71920;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li>progress{
+  grid-area:progress;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline li>small{
+  grid-area:percent;
+  align-self:center;
+  justify-self:end;
+  margin-top:0;
+  color:#89817c;
+  font-weight:700;
 }
 
 /* Storage Overview now follows the same command-card structure as Client Activity. */
