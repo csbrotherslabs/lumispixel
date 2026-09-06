@@ -14,13 +14,25 @@
 }
 
 .lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll{
+  display:block;
+  width:100%!important;
+  max-width:none!important;
   margin-left:0!important;
   margin-right:0!important;
   border:0!important;
+  box-sizing:border-box;
+}
+
+.lp-gallery-crm-page .lp-gallery-recent .lp-gallery-operations-table{
+  width:100%;
 }
 
 .lp-gallery-crm-page .lp-gallery-lower{
   grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+}
+
+.lp-gallery-crm-page>.lp-gallery-pipeline{
+  width:100%;
 }
 
 @media(max-width:900px){
