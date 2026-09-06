@@ -46,6 +46,15 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   backdrop-filter:none;
 }
 
+/* Raise only the open Create schedule item menu above the filter surface while keeping the navbar on top. */
+.lpw-schedule-page .lpw-schedule-header:has(.lpw-create-menu[open]){
+  z-index:30;
+}
+
+.lpw-schedule-page .lpw-create-menu>div{
+  z-index:40;
+}
+
 .lpw-schedule-page .lpw-schedule-header::before{
   content:"";
   position:absolute;
