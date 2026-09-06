@@ -45,11 +45,21 @@
 .lp-clients .lp-clients-header .lpw-breadcrumb a:hover,
 .lp-clients .lp-clients-header .lpw-breadcrumb a:focus-visible{color:#25211f}
 
+/* Force the three remaining summary cards into one row. */
 .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-flow:column!important;
+  grid-auto-columns:minmax(0,1fr)!important;
   width:100%;
   gap:16px;
+}
+
+.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis>.lp-kpi-card{
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:auto!important;
+  max-width:none!important;
 }
 
 .lp-clients .lp-clients-kpis .lp-kpi-card{
@@ -93,24 +103,45 @@
   box-shadow:var(--lp-shadow-subtle);
 }
 
-.lp-clients .lp-clients-filters{padding:20px 20px 0}
+/* Keep shared form CSS from breaking the page-specific filter rows. */
+.lp-clients .lp-clients-filters{
+  display:block!important;
+  width:100%;
+  padding:20px 20px 0;
+}
+
 .lp-clients .lp-clients-filter-bar{
-  display:grid;
-  grid-template-columns:minmax(260px,1.6fr) repeat(3,minmax(150px,1fr));
+  display:grid!important;
+  grid-template-columns:minmax(280px,1.7fr) repeat(3,minmax(150px,1fr));
   gap:12px;
   align-items:end;
+  width:100%;
 }
+
 .lp-clients .lp-clients-filter-fields{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(180px,1fr));
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(220px,1fr));
   gap:12px;
+  width:100%;
   margin-top:12px;
 }
-.lp-clients .lp-clients-filters label{display:grid;gap:6px}
+
+.lp-clients .lp-clients-filters label{
+  display:grid!important;
+  gap:6px;
+  min-width:0;
+  width:100%;
+  margin:0;
+}
+
 .lp-clients .lp-clients-filters label>span{font-size:11px;font-weight:800;color:#7d7671;letter-spacing:.04em}
 .lp-clients .lp-clients-filters input,
 .lp-clients .lp-clients-filters select{
+  display:block;
+  width:100%;
+  min-width:0;
   min-height:42px;
+  box-sizing:border-box;
   border:1px solid #e6ddd7;
   border-radius:10px;
   background:#fff;
@@ -269,7 +300,12 @@
 }
 @media(max-width:620px){
   .lp-clients .lp-clients-header{padding:24px 22px;border-radius:20px}
-  .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{grid-template-columns:1fr!important;gap:12px}
+  .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{
+    grid-template-columns:1fr!important;
+    grid-auto-flow:row!important;
+    grid-auto-columns:auto!important;
+    gap:12px;
+  }
   .lp-clients .lp-clients-filter-bar,
   .lp-clients .lp-clients-filter-fields{grid-template-columns:1fr}
   .lp-clients .lp-clients-filters{padding:16px 16px 0}
