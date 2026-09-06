@@ -5,6 +5,16 @@
   padding-top:0!important;
 }
 
+/* Match the CRM page's outer content width and gutters. The shared .lpw-main
+   already supplies the workspace padding, so the create form should not add
+   a second lp-container gutter or narrower container width. */
+.lp-gallery-create-modern.lp-container{
+  width:100%!important;
+  max-width:none!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+
 .lp-gallery-create-modern .lp-gallery-create-header{
   position:relative!important;
   top:auto!important;
