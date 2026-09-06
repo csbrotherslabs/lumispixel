@@ -1,7 +1,7 @@
 /* Focused refinements for the Create Gallery page. */
 
 .lp-gallery-create-modern{
-  margin-top:18px!important;
+  margin-top:0!important;
   padding-top:0!important;
 }
 
@@ -50,7 +50,7 @@
 
 @media(max-width:760px){
   .lp-gallery-create-modern{
-    margin-top:14px!important;
+    margin-top:0!important;
   }
 
   .lp-gallery-create-modern .lp-gallery-create-header{
