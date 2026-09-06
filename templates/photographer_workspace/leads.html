@@ -21,7 +21,7 @@
 
   {% if not lead_summary.0.value and not has_filters %}<section class="lp-leads-onboarding" aria-labelledby="lead-start-title"><div><h2 id="lead-start-title">Build your first pipeline</h2><p>Keep each inquiry and its next step in one operational view.</p></div><ol><li><b>1</b>Add or import a lead</li><li><b>2</b>Record the source</li><li><b>3</b>Schedule a follow-up</li><li><b>4</b>Move toward booking</li></ol></section>{% endif %}
 
-  <section class="lp-leads-controls" aria-label="Search and filter leads">
+  <section class="lp-leads-workspace" data-leads-workspace aria-label="Lead directory">
     <form method="get" class="lp-leads-filters" id="lead-filter-form" data-lead-filters>
       <div class="lp-leads-filter-bar">
         <label class="lp-leads-search"><span>Search leads</span><input type="search" name="q" value="{{ lead_query }}" placeholder="Name, email, or service"></label>
@@ -37,23 +37,33 @@
         <input type="hidden" name="terminal" value="{{ terminal }}">
       </div>
     </form>
+
     <div class="lp-leads-view-bar">
-      <div class="lp-leads-result"><strong>{{ result_count }}</strong> result{{ result_count|pluralize }}{% if terminal != 'all' %}<span>· Terminal leads from the last 90 days</span><a href="?terminal=all">Show all</a>{% endif %}</div>
-      <div class="lp-leads-view-actions">
-        <div class="lp-leads-filter-actions"><button class="lp-button lp-button--primary lp-button--md" type="submit" form="lead-filter-form"><span>Apply filters</span></button>{% if has_filters %}<a class="lp-text-action" href="{% url 'photographer_workspace:leads' %}">Clear all</a>{% endif %}</div>
-        <div class="lp-view-switcher" role="group" aria-label="Lead display"><button type="button" class="is-active" data-lead-view="board" aria-pressed="true"><i class="bi bi-kanban" aria-hidden="true"></i>Board</button><button type="button" data-lead-view="list" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i>List</button></div>
-      </div>
+      <div class="lp-leads-result"><strong>{{ result_count }}</strong> result{{ result_count|pluralize }}{% if terminal != 'all' %}<span>· Terminal leads from the last 90 days</span><a href="?terminal=all" data-leads-page>Show all</a>{% endif %}</div>
+      <div class="lp-leads-filter-actions"><button class="lp-button lp-button--primary lp-button--md" type="submit" form="lead-filter-form" data-apply-filters><span>Apply filters</span></button>{% if has_filters %}<a class="lp-text-action" href="{% url 'photographer_workspace:leads' %}" data-clear-filters>Clear all</a>{% endif %}</div>
     </div>
-  </section>
 
-  <section class="lp-leads-board-wrap" data-lead-panel="board" aria-label="Lead pipeline board" tabindex="0" aria-describedby="board-instructions"><p class="lp-sr-only" id="board-instructions">Pipeline stages scroll horizontally. Move a lead by dragging its card or by using the stage selector on the card.</p><div class="lp-leads-board">
-    {% for stage in lead_stages %}<section class="lp-leads-column lp-leads-column--{{ stage.key }}" data-stage="{{ stage.key }}" aria-labelledby="stage-{{ stage.key }}"><header><div class="lp-stage-heading"><i class="lp-stage-indicator" aria-hidden="true"></i><h2 id="stage-{{ stage.key }}">{{ stage.label }}</h2><span aria-label="{{ stage.count }} lead{{ stage.count|pluralize }}">{{ stage.count }}</span></div><p>{{ photographer_profile.default_currency }} {{ stage.value|floatformat:0 }} estimated value</p></header><div class="lp-leads-stack" data-lead-dropzone aria-label="{{ stage.label }} leads">
-      {% for lead in stage.leads %}{% include "photographer_workspace/components/lead_card.html" with lead=lead today=today currency=photographer_profile.default_currency %}{% empty %}<div class="lp-leads-stage-empty"><i class="bi bi-inbox" aria-hidden="true"></i><span>No leads in this stage.</span>{% if stage.key == 'new' %}<a href="{% url 'photographer_workspace:add_lead' %}">Add the first lead</a>{% endif %}</div>{% endfor %}
-    </div></section>{% endfor %}
-  </div><p class="lp-leads-board-status" data-lead-status role="status" aria-live="polite"></p></section>
+    <div class="lp-leads-ajax-status" data-leads-ajax-status role="status" aria-live="polite"></div>
 
-  <section class="lp-leads-list" data-lead-panel="list" hidden aria-label="Lead list"><div class="lp-leads-table-wrap"><table><thead><tr><th>Lead</th><th>Service</th><th>Stage</th><th>Estimated value</th><th>Source</th><th>Last contact</th><th>Next follow-up</th><th>Created</th><th><span class="lp-sr-only">Actions</span></th></tr></thead><tbody>{% for lead in lead_page %}<tr><td data-label="Lead"><a href="{% url 'photographer_workspace:edit_lead' lead.pk %}"><strong>{{ lead }}</strong><small>{{ lead.email|default:"No email recorded" }}</small></a></td><td data-label="Service">{{ lead.event_type|default:"General inquiry" }}</td><td data-label="Stage"><span class="lp-leads-status">{{ lead.get_status_display }}</span></td><td data-label="Estimated value">{% if lead.estimated_value != None %}{{ photographer_profile.default_currency }} {{ lead.estimated_value|floatformat:0 }}{% else %}Unavailable{% endif %}</td><td data-label="Source">{{ lead.lead_source|default:"Not recorded" }}</td><td data-label="Last contact">{{ lead.last_contacted_at|date:"M j, Y"|default:"Not recorded" }}</td><td data-label="Next follow-up">{{ lead.next_follow_up|date:"M j, Y"|default:"Not scheduled" }}</td><td data-label="Created">{{ lead.created_at|date:"M j, Y" }}</td><td><a class="lp-icon-action" href="{% url 'photographer_workspace:edit_lead' lead.pk %}" aria-label="Open {{ lead }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></a></td></tr>{% empty %}<tr><td colspan="9"><div class="lp-leads-empty">No leads match these filters. <a href="{% url 'photographer_workspace:leads' %}">Clear all filters</a></div></td></tr>{% endfor %}</tbody></table></div>
-    {% if lead_page.paginator.num_pages > 1 %}<nav class="lp-pagination" aria-label="Lead pages"><span>Page {{ lead_page.number }} of {{ lead_page.paginator.num_pages }}</span>{% if lead_page.has_previous %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ lead_page.previous_page_number }}">Previous</a>{% endif %}{% if lead_page.has_next %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ lead_page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+    <div class="lp-leads-table-region" data-leads-table-region>
+      <div class="lp-leads-table-wrap">
+        <table class="lp-leads-modern-table">
+          <thead><tr><th>Lead</th><th>Service</th><th>Stage</th><th>Estimated value</th><th>Source</th><th>Last contact</th><th>Next follow-up</th><th>Created</th><th><span class="lp-sr-only">Actions</span></th></tr></thead>
+          <tbody>{% for lead in lead_page %}<tr>
+            <td data-label="Lead"><a class="lp-lead-person" href="{% url 'photographer_workspace:edit_lead' lead.pk %}"><span class="lp-lead-person__avatar" aria-hidden="true"><i class="bi bi-person"></i></span><span><strong>{{ lead }}</strong><small>{{ lead.email|default:"No email recorded" }}</small></span></a></td>
+            <td data-label="Service"><span class="lp-leads-cell-main">{{ lead.event_type|default:"General inquiry" }}</span></td>
+            <td data-label="Stage"><span class="lp-leads-status">{{ lead.get_status_display }}</span></td>
+            <td data-label="Estimated value"><span class="lp-leads-value">{% if lead.estimated_value != None %}{{ photographer_profile.default_currency }} {{ lead.estimated_value|floatformat:0 }}{% else %}Unavailable{% endif %}</span></td>
+            <td data-label="Source">{{ lead.lead_source|default:"Not recorded" }}</td>
+            <td data-label="Last contact">{{ lead.last_contacted_at|date:"M j, Y"|default:"Not recorded" }}</td>
+            <td data-label="Next follow-up"><span class="{% if lead.next_follow_up and lead.next_follow_up <= today %}is-due{% endif %}">{{ lead.next_follow_up|date:"M j, Y"|default:"Not scheduled" }}</span></td>
+            <td data-label="Created">{{ lead.created_at|date:"M j, Y" }}</td>
+            <td class="lp-leads-row-action"><a class="lp-icon-action" href="{% url 'photographer_workspace:edit_lead' lead.pk %}" aria-label="Open {{ lead }}"><i class="bi bi-chevron-right" aria-hidden="true"></i></a></td>
+          </tr>{% empty %}<tr><td colspan="9"><div class="lp-leads-empty">No leads match these filters. <a href="{% url 'photographer_workspace:leads' %}" data-clear-filters>Clear all filters</a></div></td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% if lead_page.paginator.num_pages > 1 %}<nav class="lp-pagination" aria-label="Lead pages"><span>Page {{ lead_page.number }} of {{ lead_page.paginator.num_pages }}</span>{% if lead_page.has_previous %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ lead_page.previous_page_number }}" data-leads-page>Previous</a>{% endif %}{% if lead_page.has_next %}<a href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ lead_page.next_page_number }}" data-leads-page>Next</a>{% endif %}</nav>{% endif %}
+    </div>
   </section>
 
   <div class="lp-leads-support">
@@ -62,4 +72,5 @@
   </div>
   <section class="lpw-command-card lpw-quick-panel lp-leads-panel lp-leads-command-panel lp-source-performance" aria-labelledby="sources-title">{% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Performance" title="Lead-source performance" section_id="sources-title" only %}{% if source_rows %}<div class="lp-source-table"><div class="lp-source-head"><span>Source</span><span>Leads</span><span>Booked</span><span>Conversion</span><span>Open pipeline</span></div>{% for row in source_rows %}<div><strong>{{ row.lead_source }}</strong><span>{{ row.count }}</span><span>{{ row.booked }}</span><span>{{ row.conversion|floatformat:1 }}%</span><span>{{ photographer_profile.default_currency }} {{ row.pipeline_value|floatformat:0 }}</span></div>{% endfor %}</div>{% else %}<p class="lp-leads-empty">Record a source on leads to compare acquisition performance.</p>{% endif %}</section>
 </div>
+<script src="{% static 'js/photographer_leads.js' %}"></script>
 {% endblock %}
