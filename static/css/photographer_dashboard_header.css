@@ -23,6 +23,9 @@
 .lpw-kpi-grid .lpw-kpi-card>em.is-decrease{background:#f8eeee;color:#9a4a4e}
 .lpw-kpi-grid .lpw-kpi-card>em.is-neutral{background:#f5f1ee;color:#746e69}
 
+/* Keep dashboard shortcuts in a single vertical stack. */
+.lpw-quick-panel .lpw-quick-actions{grid-template-columns:1fr;gap:8px}
+
 @media(max-width:1180px){.lpw-kpi-grid{gap:14px}}
 @media(max-width:860px){.lpw-dashboard-header{padding:30px 28px}.lpw-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lpw-kpi-grid .lpw-kpi-card{min-height:146px;padding:20px}}
 @media(max-width:620px){.lpw-dashboard-header{padding:26px 22px;border-radius:20px}.lpw-kpi-grid{grid-template-columns:1fr;gap:12px}.lpw-kpi-grid .lpw-kpi-card{min-height:138px;padding:18px}.lpw-kpi-grid .lpw-kpi-card>strong{font-size:24px}}
