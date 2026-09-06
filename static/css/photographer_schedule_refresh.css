@@ -102,6 +102,11 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   background:var(--lp-color-surface);
 }
 
+/* Scope selection is intentionally removed from the visible Schedule filter bar. */
+.lpw-schedule-page .lpw-schedule-filterbar .lpw-scope-toggle{
+  display:none;
+}
+
 .lpw-schedule-page .lpw-schedule-filter-form{
   margin:0;
   padding-top:0;
