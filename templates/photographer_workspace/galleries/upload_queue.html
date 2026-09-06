@@ -1,7 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_upload_queue.css' %}">{% endblock %}
 {% block workspace_content %}
 <main class="workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
-  <header class="form-page-header lp-page-header">
+  <header class="form-page-header lp-page-header lp-upload-page-header">
     <div class="lp-upload-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
       <div class="lp-upload-heading__title"><span class="lp-upload-heading__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Gallery delivery</span><h1 class="lp-page-title" id="workspace-page-title">Upload Queue</h1><p class="lp-page-description">Move finished photos into a client gallery and follow every transfer in one place.</p></div></div>

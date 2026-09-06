@@ -1,0 +1,190 @@
+/* CRM/Create Gallery-aligned visual refresh for the Upload Queue page. */
+.lp-upload-page-modern{
+  display:grid;
+  gap:22px;
+  width:100%!important;
+  max-width:none!important;
+  margin-inline:0!important;
+  padding-inline:0!important;
+}
+
+.lp-upload-page-modern .lp-upload-page-header{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  margin:0;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-upload-page-modern .lp-upload-page-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-upload-page-modern .lp-upload-page-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-upload-page-modern .lp-upload-heading,
+.lp-upload-page-modern .lp-upload-page-header>.lp-button{
+  position:relative;
+  z-index:1;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb{
+  margin:0 0 18px;
+  padding:0;
+  background:transparent;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a,
+.lp-upload-page-modern .lpw-breadcrumb strong,
+.lp-upload-page-modern .lpw-breadcrumb i{
+  font-size:11px;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a:hover,
+.lp-upload-page-modern .lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+}
+
+.lp-upload-page-modern .lp-upload-heading__title{
+  display:block;
+}
+
+.lp-upload-page-modern .lp-upload-heading__icon{
+  display:none!important;
+}
+
+.lp-upload-page-modern .lp-page-title{
+  margin-top:2px;
+}
+
+.lp-upload-page-modern .lp-page-description{
+  max-width:680px;
+}
+
+.lp-upload-page-modern .lp-upload-stats{
+  gap:16px;
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card,
+.lp-upload-page-modern .lp-upload-create,
+.lp-upload-page-modern .lp-storage,
+.lp-upload-page-modern .lp-queue{
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:3px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.4) 45%,rgba(215,25,32,0) 100%);
+}
+
+.lp-upload-page-modern .lp-upload-create,
+.lp-upload-page-modern .lp-storage,
+.lp-upload-page-modern .lp-queue{
+  padding:22px;
+}
+
+.lp-upload-page-modern .lp-upload-step-head,
+.lp-upload-page-modern .lp-queue>header{
+  padding-bottom:14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-upload-page-modern .lp-upload-drop{
+  border-color:#d9c9c2;
+  border-radius:16px;
+  background:linear-gradient(145deg,#fdfbf9 0%,#faf5f2 100%);
+}
+
+.lp-upload-page-modern .lp-upload-drop:hover,
+.lp-upload-page-modern .lp-upload-drop:focus-visible{
+  border-color:#df9fa2;
+  background:#fffafa;
+  box-shadow:0 0 0 3px rgba(215,25,32,.055);
+}
+
+.lp-upload-page-modern .lp-gallery-search input,
+.lp-upload-page-modern select{
+  min-height:44px;
+  border:1px solid #ddd5d0;
+  border-radius:11px;
+  background:#fff;
+}
+
+.lp-upload-page-modern .lp-gallery-search input:focus,
+.lp-upload-page-modern select:focus{
+  border-color:#df9fa2;
+  box-shadow:0 0 0 3px rgba(215,25,32,.08);
+  outline:none;
+}
+
+@media(max-width:860px){
+  .lp-upload-page-modern .lp-upload-page-header{
+    align-items:flex-start;
+    flex-direction:column;
+    padding:26px 28px;
+  }
+}
+
+@media(max-width:620px){
+  .lp-upload-page-modern{
+    gap:16px;
+  }
+
+  .lp-upload-page-modern .lp-upload-page-header{
+    padding:22px;
+    border-radius:20px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create,
+  .lp-upload-page-modern .lp-storage,
+  .lp-upload-page-modern .lp-queue{
+    padding:17px;
+  }
+}
