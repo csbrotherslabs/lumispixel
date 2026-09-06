@@ -152,9 +152,9 @@
   gap:16px;
 }
 
-/* Match the CRM Quick Actions card exactly while preserving booking drawer actions. */
+/* Match the CRM Quick Actions card styling while using a single-column stack. */
 .lp-bookings-overview .lp-booking-quick-panel .lpw-quick-actions{
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:1fr;
   gap:8px;
   margin-top:14px;
 }
