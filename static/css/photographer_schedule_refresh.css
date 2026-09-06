@@ -9,10 +9,11 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   position:relative;
 }
 
+/* Match the CRM breadcrumb offset inside the header surface. */
 .lpw-schedule-page>.lpw-breadcrumb{
   position:absolute;
   z-index:2;
-  top:52px;
+  top:30px;
   left:38px;
   margin:0;
   padding:0;
@@ -34,17 +35,21 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 .lpw-schedule-page>.lpw-breadcrumb strong,
 .lpw-schedule-page>.lpw-breadcrumb i{font-size:11px}
 
+/* Mirror the CRM header proportions without allowing decorative arcs to spill outside the card. */
 .lpw-schedule-page .lpw-schedule-header{
   position:relative;
   top:auto;
   z-index:1;
   isolation:isolate;
   overflow:visible;
-  margin:22px 0 0;
-  padding:69px 38px 34px;
+  margin:0;
+  padding:64px 38px 34px;
   border:1px solid #e8e1dc;
   border-radius:24px;
-  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  background:
+    radial-gradient(circle at 93% -65%, transparent 139px, rgba(215,25,32,.16) 140px, rgba(215,25,32,.16) 141px, transparent 142px),
+    radial-gradient(circle at 82% 145%, transparent 74px, rgba(47,37,30,.08) 75px, rgba(47,37,30,.08) 76px, transparent 77px),
+    linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
   box-shadow:0 18px 48px rgba(47,37,30,.07);
   backdrop-filter:none;
 }
@@ -58,30 +63,10 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   z-index:40;
 }
 
-.lpw-schedule-page .lpw-schedule-header::before{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  width:280px;
-  height:280px;
-  top:-185px;
-  right:6%;
-  border:1px solid rgba(215,25,32,.16);
-  border-radius:50%;
-  pointer-events:none;
-}
-
+/* Decorative arcs are now painted into the background so they cannot overflow. */
+.lpw-schedule-page .lpw-schedule-header::before,
 .lpw-schedule-page .lpw-schedule-header::after{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  width:150px;
-  height:150px;
-  right:18%;
-  bottom:-118px;
-  border:1px solid rgba(47,37,30,.08);
-  border-radius:50%;
-  pointer-events:none;
+  content:none;
 }
 
 .lpw-schedule-page .lpw-schedule-header .lp-page-title{margin-top:0}
@@ -123,6 +108,8 @@ body:has(.lpw-schedule-page) .lpw-topbar{
   gap:10px;
   min-height:44px;
   flex-wrap:nowrap!important;
+  border:0!important;
+  box-shadow:none!important;
 }
 
 .lpw-schedule-page .lpw-schedule-search{
@@ -250,8 +237,8 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 .lpw-schedule-page .lpw-schedule-summary.is-collapsed .lpw-summary-heading button{width:auto;height:auto}
 
 @media(max-width:900px){
-  .lpw-schedule-page>.lpw-breadcrumb{top:50px;left:28px}
-  .lpw-schedule-page .lpw-schedule-header{padding:66px 28px 30px}
+  .lpw-schedule-page>.lpw-breadcrumb{top:28px;left:28px}
+  .lpw-schedule-page .lpw-schedule-header{padding:62px 28px 30px}
   .lpw-schedule-page .lpw-schedule-commandbar{grid-template-columns:minmax(220px,1fr) auto auto auto}
   .lpw-schedule-page .lpw-summary-panels{grid-template-columns:1fr 1fr}
   .lpw-schedule-page .lpw-summary-panel:last-child{grid-column:1/-1;border-top:1px solid var(--lp-color-border)}
@@ -259,12 +246,12 @@ body:has(.lpw-schedule-page) .lpw-topbar{
 
 @media(max-width:700px){
   .lpw-schedule-page>.lpw-breadcrumb{
-    top:18px;
+    top:16px;
     left:36px;
   }
   .lpw-schedule-page .lpw-schedule-header{
     margin:0 16px;
-    padding:58px 20px 24px;
+    padding:54px 20px 24px;
     border-radius:20px;
   }
   .lpw-schedule-page .lpw-schedule-controls{
@@ -280,6 +267,8 @@ body:has(.lpw-schedule-page) .lpw-topbar{
     overflow-x:auto;
     flex-wrap:nowrap!important;
     padding-bottom:2px;
+    border:0!important;
+    box-shadow:none!important;
   }
   .lpw-schedule-page .lpw-schedule-search{flex:1 0 220px}
   .lpw-schedule-page .lpw-schedule-commandbar>.lpw-schedule-popover{flex:none}
