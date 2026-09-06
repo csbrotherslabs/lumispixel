@@ -1,5 +1,9 @@
 /* Focused refinements for the Galleries dashboard. */
 
+.lp-gallery-crm-page .lp-gallery-kpis{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
 .lp-gallery-crm-page .lp-gallery-recent .lp-gallery-table-scroll{
   display:block;
   width:100%!important;
@@ -20,6 +24,12 @@
 
 .lp-gallery-crm-page>.lp-gallery-pipeline{
   width:100%;
+}
+
+.lp-gallery-crm-page .lp-gallery-pipeline ol{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:9px;
 }
 
 /* Storage Overview now follows the same command-card structure as Client Activity. */
@@ -57,8 +67,29 @@
   width:max-content;
 }
 
+@media(max-width:1200px){
+  .lp-gallery-crm-page .lp-gallery-pipeline ol{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
 @media(max-width:900px){
+  .lp-gallery-crm-page .lp-gallery-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
   .lp-gallery-crm-page .lp-gallery-lower{
     grid-template-columns:1fr;
+  }
+
+  .lp-gallery-crm-page .lp-gallery-pipeline ol{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:620px){
+  .lp-gallery-crm-page .lp-gallery-kpis,
+  .lp-gallery-crm-page .lp-gallery-pipeline ol{
+    grid-template-columns:1fr!important;
   }
 }
