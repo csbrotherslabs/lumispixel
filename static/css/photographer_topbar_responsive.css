@@ -1,0 +1,107 @@
+/* Responsive prioritization for the shared Photographer Workspace topbar. */
+
+/* Keep the action cluster intrinsically sized so notification/help/profile controls never collide. */
+.lpw-topbar{
+  grid-template-columns:minmax(0,1fr) minmax(220px,430px) max-content;
+}
+
+.lpw-topbar-start,
+.lpw-top-actions,
+.lpw-global-search,
+.lpw-page-heading{
+  min-width:0;
+}
+
+.lpw-top-actions{
+  flex:none;
+}
+
+.lpw-top-actions .lpw-icon-btn{
+  flex:0 0 44px;
+}
+
+/* First responsive step: remove low-priority workspace context and let search absorb shrinking. */
+@media(max-width:1280px){
+  .lpw-topbar{
+    grid-template-columns:minmax(170px,280px) minmax(180px,1fr) max-content;
+    gap:12px;
+    padding-inline:20px;
+  }
+
+  .lpw-topbar .lpw-breadcrumb{
+    display:none;
+  }
+
+  .lpw-page-heading{
+    max-width:none;
+  }
+
+  .lpw-global-search{
+    max-width:none;
+    margin:0;
+  }
+
+  .lpw-profile-copy{
+    display:none;
+  }
+
+  .lpw-profile-trigger{
+    padding:4px 8px 4px 4px;
+  }
+
+  .lpw-profile-chevron{
+    display:block;
+  }
+}
+
+/* Tight desktop/tablet widths: preserve page title and actions, reduce spacing before hiding controls. */
+@media(max-width:1020px){
+  .lpw-topbar{
+    grid-template-columns:minmax(145px,220px) minmax(150px,1fr) max-content;
+    gap:9px;
+    padding-inline:16px;
+  }
+
+  .lpw-topbar-start{
+    gap:10px;
+  }
+
+  .lpw-top-actions{
+    gap:6px;
+  }
+
+  .lpw-global-search kbd{
+    display:none;
+  }
+}
+
+/* At tablet size, keep the title visible and allow the existing icon-search behavior to take over cleanly. */
+@media(max-width:860px){
+  .lpw-topbar{
+    grid-template-columns:minmax(130px,1fr) minmax(160px,260px) max-content;
+  }
+}
+
+@media(max-width:720px){
+  .lpw-topbar{
+    grid-template-columns:minmax(0,1fr) 44px max-content;
+  }
+
+  .lpw-topbar h1{
+    max-width:100%;
+  }
+
+  .lpw-profile-trigger{
+    padding:4px;
+  }
+
+  .lpw-profile-chevron{
+    display:none;
+  }
+}
+
+@media(max-width:480px){
+  .lpw-topbar{
+    grid-template-columns:minmax(0,1fr) 40px max-content;
+  }
+}
