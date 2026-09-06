@@ -14,7 +14,7 @@
 .lpw-kpi-grid .lpw-kpi-card:hover{transform:translateY(-3px);border-color:#ddd2cb;box-shadow:0 18px 38px rgba(47,37,30,.085)}
 .lpw-kpi-grid .lpw-kpi-card>span:first-child{align-self:center;color:#7d7671;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .lpw-kpi-grid .lpw-kpi-card>.lpw-widget-icon{width:44px;height:44px;border:1px solid #eee4de;border-radius:13px;background:linear-gradient(145deg,#fbf5f2,#f5ece8);color:#d71920;box-shadow:inset 0 1px 0 rgba(255,255,255,.9);font-size:18px}
-.lpw-kpi-grid .lpw-kpi-card>strong{margin-top:10px;color:#25211f;font-size:clamp(27px,2.4vw,34px);font-weight:780;line-height:1.05;letter-spacing:-.045em}
+.lpw-kpi-grid .lpw-kpi-card>strong{margin-top:10px;color:#25211f;font-size:clamp(24px,2.4vw,24px);font-weight:500;line-height:1.05;letter-spacing:-.045em}
 .lpw-kpi-grid .lpw-kpi-card>strong.is-unavailable{font-size:17px;letter-spacing:-.02em}
 .lpw-kpi-grid .lpw-kpi-card>small{margin-top:4px;color:#8a837e;font-size:11px;line-height:1.45}
 .lpw-kpi-grid .lpw-kpi-card>em{display:inline-flex;align-items:center;width:max-content;max-width:100%;gap:5px;margin-top:9px;padding:5px 8px;border-radius:999px;background:#f5f1ee;color:#6f6863;font-size:10px;font-style:normal;font-weight:750;line-height:1.2}
@@ -25,4 +25,4 @@
 
 @media(max-width:1180px){.lpw-kpi-grid{gap:14px}}
 @media(max-width:860px){.lpw-dashboard-header{padding:30px 28px}.lpw-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lpw-kpi-grid .lpw-kpi-card{min-height:146px;padding:20px}}
-@media(max-width:620px){.lpw-dashboard-header{padding:26px 22px;border-radius:20px}.lpw-kpi-grid{grid-template-columns:1fr;gap:12px}.lpw-kpi-grid .lpw-kpi-card{min-height:138px;padding:18px}.lpw-kpi-grid .lpw-kpi-card>strong{font-size:28px}}
+@media(max-width:620px){.lpw-dashboard-header{padding:26px 22px;border-radius:20px}.lpw-kpi-grid{grid-template-columns:1fr;gap:12px}.lpw-kpi-grid .lpw-kpi-card{min-height:138px;padding:18px}.lpw-kpi-grid .lpw-kpi-card>strong{font-size:24px}}
