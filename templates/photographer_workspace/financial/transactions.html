@@ -1,7 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_transactions_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lpw-transactions-page" id="main-content">
-  <header class="lp-page-header lpw-transactions-header">
+  <header class="lpw-command-header lpw-dashboard-header lp-page-header lpw-transactions-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:financial_overview' %}">Financial</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Transactions</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Transactions</h1>
@@ -15,16 +17,16 @@
         </select>
       </form>
       <div class="lp-header-actions lpw-transactions-actions">
-      <a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a>
-      <button class="lp-button lp-button--secondary lp-button--md" type="button" data-financial-open="payment"><i class="bi bi-cash-coin" aria-hidden="true"></i>Record Payment</button>
-      <details class="lpw-financial-menu">
-        <summary class="lp-button lp-button--ghost lp-button--md"><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
-        <div>
-          <button type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue Refund</strong><small>Return a completed payment</small></span></button>
-          <button type="button" data-financial-open="credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add Credit</strong><small>Apply credit to a client balance</small></span></button>
-          <a href="{% url 'photographer_workspace:financial_transaction_export' %}?{{ request.GET.urlencode }}"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export filtered view</strong><small>Download approved columns as CSV</small></span></a>
-        </div>
-      </details>
+        <details class="lpw-financial-menu">
+          <summary class="lp-button lp-button--ghost lp-button--md lpw-transactions-more-trigger" aria-haspopup="menu"><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+          <div role="menu">
+            <a role="menuitem" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i><span><strong>Create Invoice</strong><small>Start a new client invoice</small></span></a>
+            <button role="menuitem" type="button" data-financial-open="payment"><i class="bi bi-cash-coin" aria-hidden="true"></i><span><strong>Record Payment</strong><small>Add a received client payment</small></span></button>
+            <button role="menuitem" type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue Refund</strong><small>Return a completed payment</small></span></button>
+            <button role="menuitem" type="button" data-financial-open="credit"><i class="bi bi-plus-circle" aria-hidden="true"></i><span><strong>Add Credit</strong><small>Apply credit to a client balance</small></span></button>
+            <a role="menuitem" href="{% url 'photographer_workspace:financial_transaction_export' %}?{{ request.GET.urlencode }}"><i class="bi bi-download" aria-hidden="true"></i><span><strong>Export filtered view</strong><small>Download approved columns as CSV</small></span></a>
+          </div>
+        </details>
       </div>
     </div>
   </header>
@@ -37,20 +39,14 @@
       </article>{% endfor %}
     </section>
 
-    <section class="lpw-transaction-controls" aria-label="Transaction views and filters">
-      <nav class="lpw-transaction-tabs" aria-label="Transaction views">
-        {% for item in transaction_views %}<a href="{{ item.url }}"{% if item.active %} class="is-active" aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
-      </nav>
-
+    <section class="lpw-transaction-controls" aria-label="Transaction filters">
       <form class="lpw-transaction-filter-form" method="get" role="search">
-        <input type="hidden" name="view" value="{{ transaction_view }}">
         <div class="lpw-transaction-primary-filters">
           <label class="lpw-transaction-search"><span>Search transactions</span><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="{{ selected_filters.q }}" placeholder="Client, booking, reference, invoice, or amount"></label>
           <label><span>Date range</span><select name="range">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
           <label><span>Status</span><select name="status"><option value="">Any status</option><option value="draft"{% if selected_filters.status == 'draft' %} selected{% endif %}>Draft</option><option value="pending"{% if selected_filters.status == 'pending' %} selected{% endif %}>Pending</option><option value="completed"{% if selected_filters.status == 'completed' %} selected{% endif %}>Completed</option><option value="failed"{% if selected_filters.status == 'failed' %} selected{% endif %}>Failed</option><option value="overdue"{% if selected_filters.status == 'overdue' %} selected{% endif %}>Overdue</option></select></label>
           <label><span>Record type</span><select name="record_type"><option value="">All records</option><option value="invoice"{% if selected_filters.record_type == 'invoice' %} selected{% endif %}>Invoice</option><option value="payment"{% if selected_filters.record_type == 'payment' %} selected{% endif %}>Payment</option><option value="refund"{% if selected_filters.record_type == 'refund' %} selected{% endif %}>Refund</option><option value="credit"{% if selected_filters.record_type == 'credit' %} selected{% endif %}>Credit</option></select></label>
         </div>
-        <label class="lpw-transaction-mobile-view"><span>View</span><select aria-label="View" data-view-select>{% for item in transaction_views %}<option value="{{ item.url }}"{% if item.active %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
         <div class="lpw-transaction-secondary-filters">
           <label><span>Client</span><input name="client" value="{{ selected_filters.client }}" placeholder="All clients"></label>
           <label><span>Booking</span><input name="booking" value="{{ selected_filters.booking }}" placeholder="All bookings"></label>
@@ -91,8 +87,6 @@
       <section class="lpw-financial-state lpw-financial-state--error" role="alert"><span><i class="bi bi-exclamation-circle" aria-hidden="true"></i></span><h2>Transactions could not be loaded</h2><p>Financial activity is temporarily unavailable. Your records have not been changed.</p><a class="lpw-btn" href="{% url 'photographer_workspace:transactions' %}?range={{ range_key }}">Try again</a></section>
     {% elif active_filter_count and transaction_state == 'empty' %}
       <section class="lpw-financial-state lpw-financial-state--compact" aria-labelledby="transactions-no-results-title"><span><i class="bi bi-search" aria-hidden="true"></i></span><h2 id="transactions-no-results-title">No matching transactions</h2><p>Try changing or clearing filters to see more financial activity.</p><a class="lp-button lp-button--primary lp-button--md" href="{{ clear_filters_url }}">Clear Filters</a></section>
-    {% elif transaction_state == 'empty' and transaction_view != 'all' and not active_filter_count %}
-      <section class="lpw-financial-state lpw-financial-state--compact"><span><i class="bi bi-inbox" aria-hidden="true"></i></span><h2>No records in this view</h2><p>Choose another transaction view or create a new financial record.</p></section>
     {% elif transaction_state == 'empty' and not transaction_has_activity and range_key == 'all_time' %}
       <section class="lpw-financial-state lpw-financial-state--compact"><span><i class="bi bi-stars" aria-hidden="true"></i></span><h2>No financial records yet</h2><p>Create an invoice or record a payment to begin tracking financial activity.</p><div class="lpw-empty-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a><button class="lp-button lp-button--secondary lp-button--md" type="button" data-financial-open="payment">Record Payment</button></div></section>
     {% elif transaction_state == 'empty' or not transaction_has_activity %}
@@ -135,8 +129,8 @@
 <div class="lpw-record-layer" data-record-layer data-endpoint="{% url 'photographer_workspace:financial_record_detail' '__type__' 0 %}" hidden>
   <aside class="lpw-record-drawer" data-record-panel role="dialog" aria-modal="true" aria-labelledby="financial-record-title" tabindex="-1"><div data-record-content></div></aside>
 </div>
-{% load static %}<script src="{% static 'js/financial_record_drawer.js' %}"></script>
+<script src="{% static 'js/financial_record_drawer.js' %}"></script>
 <script src="{% static 'js/financial_actions.js' %}"></script>
 <script src="{% static 'js/financial_transactions.js' %}" data-bulk-endpoint="{% url 'photographer_workspace:financial_transaction_bulk' %}" data-export-endpoint="{% url 'photographer_workspace:financial_transaction_export' %}"></script>
-<script>document.querySelector('[data-view-select]')?.addEventListener('change',function(){window.location.assign(this.value)});document.querySelectorAll('[data-row-url]').forEach(function(row){row.addEventListener('keydown',function(event){if((event.key==='Enter'||event.key===' ')&&!event.target.closest('a,button,input,select,details,summary')){event.preventDefault();row.click()}})});</script>
+<script>document.querySelectorAll('[data-row-url]').forEach(function(row){row.addEventListener('keydown',function(event){if((event.key==='Enter'||event.key===' ')&&!event.target.closest('a,button,input,select,details,summary')){event.preventDefault();row.click()}})});</script>
 {% endblock %}
