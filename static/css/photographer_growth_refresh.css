@@ -1,0 +1,774 @@
+/* CRM-aligned Growth overview refresh. Scoped to Growth so shared workspace pages remain unchanged. */
+
+.lpw-main:has(.lp-growth-overview){
+  background:var(--lp-color-page);
+}
+
+.lp-growth-overview{
+  width:100%;
+  max-width:none;
+  gap:18px;
+  padding:0 0 var(--lp-space-10);
+}
+
+/* Visually fold the existing breadcrumb into the CRM-style header surface. */
+.lp-growth-overview>.lpw-breadcrumb{
+  position:relative;
+  z-index:3;
+  width:max-content;
+  max-width:calc(100% - 76px);
+  margin:24px 38px -60px;
+  padding:0;
+  background:transparent;
+  color:#8a817a;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+.lp-growth-overview>.lpw-breadcrumb a{
+  color:#d71920;
+  text-decoration:none;
+}
+
+.lp-growth-overview>.lpw-breadcrumb a:hover,
+.lp-growth-overview>.lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+}
+
+.lp-growth-overview>.lpw-breadcrumb i{
+  color:#aaa09a;
+  font-size:9px;
+}
+
+.lp-growth-overview .lp-growth-header{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  min-height:178px;
+  padding:72px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-growth-overview .lp-growth-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-growth-overview .lp-growth-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-growth-overview .lp-growth-header .lp-page-heading,
+.lp-growth-overview .lp-growth-header .lp-header-actions{
+  position:relative;
+  z-index:1;
+}
+
+.lp-growth-overview .lp-growth-header .lp-page-title{
+  margin:0;
+  color:#25211f;
+}
+
+.lp-growth-overview .lp-growth-header .lp-page-description{
+  max-width:680px;
+  margin-top:6px;
+  color:#665f5a;
+}
+
+.lp-growth-overview .lp-header-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.lp-growth-overview .lp-growth-filters{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:0;
+}
+
+.lp-growth-overview .lp-growth-select{
+  min-height:44px;
+  padding:0 12px;
+  border:1px solid #d8cec8;
+  border-radius:11px;
+  background:rgba(255,255,255,.82);
+  color:#625b56;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.lp-growth-overview .lp-growth-select select{
+  min-height:42px;
+  padding-right:4px;
+  color:#312b28;
+  font-size:11px;
+  font-weight:750;
+}
+
+.lp-growth-overview .lp-growth-compare{
+  min-height:44px;
+  padding:0 12px;
+  border:1px solid #d8cec8;
+  border-radius:11px;
+  background:rgba(255,255,255,.72);
+  color:#5f5853;
+  font-size:11px;
+  font-weight:700;
+}
+
+.lp-growth-overview .lp-growth-compare input{
+  width:15px;
+  height:15px;
+}
+
+.lp-growth-overview .lp-header-actions>.lp-button{
+  min-height:44px;
+  border-color:#c80f16;
+  border-radius:11px;
+  background:#d71920;
+  box-shadow:0 8px 18px rgba(215,25,32,.15);
+  color:#fff;
+}
+
+.lp-growth-overview .lp-header-actions>.lp-button:hover,
+.lp-growth-overview .lp-header-actions>.lp-button:focus-visible{
+  border-color:#a90f14;
+  background:#bd151b;
+}
+
+/* Match CRM KPI hierarchy. */
+.lp-growth-overview .lp-growth-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:154px;
+  padding:22px 22px 20px;
+  border:1px solid #e8e1dc;
+  border-radius:18px;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+  box-shadow:0 12px 30px rgba(47,37,30,.055);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:4px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.46) 42%,rgba(215,25,32,0) 100%);
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:120px;
+  height:120px;
+  top:-72px;
+  right:-58px;
+  border:1px solid rgba(215,25,32,.08);
+  border-radius:50%;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:#ddd2cb;
+  box-shadow:0 18px 38px rgba(47,37,30,.085);
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card__label{
+  color:#7d7671;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card__icon{
+  width:44px;
+  height:44px;
+  border:1px solid #eee4de;
+  border-radius:13px;
+  background:linear-gradient(145deg,#fbf5f2,#f5ece8);
+  color:#d71920;
+  font-size:18px;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card__value{
+  margin-top:10px;
+  color:#25211f;
+  font-size:clamp(24px,2.4vw,30px);
+  font-weight:550;
+  letter-spacing:-.035em;
+}
+
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card__comparison,
+.lp-growth-overview .lp-growth-kpis .lp-kpi-card__supporting{
+  color:#8a837e;
+  font-size:11px;
+  line-height:1.45;
+}
+
+/* Supporting metrics become compact CRM-style navigation cards. */
+.lp-growth-overview .lp-growth-supporting{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.lp-growth-overview .lp-growth-supporting>a{
+  min-height:68px;
+  padding:13px 15px;
+  border:1px solid #e7dfda;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 7px 20px rgba(47,37,30,.035);
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+
+.lp-growth-overview .lp-growth-supporting>a:hover,
+.lp-growth-overview .lp-growth-supporting>a:focus-visible{
+  transform:translateY(-2px);
+  border-color:#efc8ca;
+  background:#fffafa;
+}
+
+.lp-growth-overview .lp-growth-supporting>a>i{
+  display:grid;
+  width:36px;
+  height:36px;
+  flex:none;
+  place-items:center;
+  border-radius:11px;
+  background:#fff0f0;
+  color:#d71920;
+}
+
+.lp-growth-overview .lp-growth-supporting span{
+  color:#403a36;
+  font-size:12px;
+}
+
+.lp-growth-overview .lp-growth-supporting small{
+  margin-top:2px;
+  color:#8c837d;
+  font-size:10px;
+}
+
+.lp-growth-overview .lp-growth-supporting strong{
+  color:#2e2926;
+  font-size:16px;
+}
+
+/* All analytical sections now use the CRM command-card treatment. */
+.lp-growth-overview .lp-growth-content{
+  gap:16px;
+}
+
+.lp-growth-overview .lp-growth-grid{
+  gap:16px;
+}
+
+.lp-growth-overview .lp-growth-panel{
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-growth-overview .lp-growth-panel__header{
+  align-items:flex-start;
+  margin:0 0 14px;
+  padding:0 0 14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-growth-overview .lp-growth-panel__header>div{
+  gap:3px;
+}
+
+.lp-growth-overview .lp-growth-panel__header span{
+  color:#d71920;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.lp-growth-overview .lp-growth-panel__header h2{
+  color:#25211f;
+  font-size:18px;
+  line-height:1.25;
+}
+
+.lp-growth-overview .lp-growth-panel__header p{
+  max-width:720px;
+  margin-top:2px;
+  color:var(--lp-color-text-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+
+.lp-growth-overview .lp-growth-panel__header form{
+  align-self:center;
+}
+
+.lp-growth-overview .lp-growth-panel__header select{
+  min-height:40px;
+  padding:0 30px 0 10px;
+  border:1px solid #ddd5d0;
+  border-radius:10px;
+  background:#fff;
+}
+
+/* Funnel reads like CRM pipeline actions instead of a chart fragment. */
+.lp-growth-overview .lp-growth-funnel{
+  gap:8px;
+}
+
+.lp-growth-overview .lp-growth-funnel li::after{
+  content:none;
+}
+
+.lp-growth-overview .lp-growth-funnel a{
+  gap:7px;
+  min-height:112px;
+  margin:0;
+  padding:13px;
+  border:1px solid #e7dfda;
+  border-radius:11px;
+  background:#fbf8f6;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+
+.lp-growth-overview .lp-growth-funnel a:hover,
+.lp-growth-overview .lp-growth-funnel a:focus-visible{
+  transform:translateY(-2px);
+  border-color:#efc8ca;
+  background:#fff;
+}
+
+.lp-growth-overview .lp-growth-funnel span{
+  min-height:0;
+  color:#5f5752;
+  font-size:11px;
+  font-weight:800;
+}
+
+.lp-growth-overview .lp-growth-funnel strong{
+  color:#25211f;
+  font-size:24px;
+  font-weight:650;
+}
+
+.lp-growth-overview .lp-growth-funnel small{
+  margin-top:auto;
+  color:#8e857f;
+  font-size:9px;
+  line-height:1.35;
+}
+
+/* Growth opportunities become actionable CRM attention rows. */
+.lp-growth-overview .lp-growth-opportunities{
+  gap:8px;
+}
+
+.lp-growth-overview .lp-growth-opportunities article{
+  gap:11px;
+  padding:12px;
+  border:1px solid #eee6e1;
+  border-radius:11px;
+  background:#fbf8f6;
+}
+
+.lp-growth-overview .lp-growth-opportunities article:last-child{
+  padding:12px;
+  border:1px solid #eee6e1;
+}
+
+.lp-growth-overview .lp-growth-opportunities>article>i{
+  display:grid;
+  width:34px;
+  height:34px;
+  flex:none;
+  place-items:center;
+  border-radius:10px;
+  background:#fff0f0;
+  color:#d71920;
+}
+
+.lp-growth-overview .lp-growth-opportunities span{
+  color:#918680;
+  font-size:9px;
+}
+
+.lp-growth-overview .lp-growth-opportunities h3{
+  margin:2px 0 3px;
+  color:#3b3531;
+  font-size:12px;
+}
+
+.lp-growth-overview .lp-growth-opportunities p{
+  color:#766d67;
+  font-size:10px;
+  line-height:1.5;
+}
+
+.lp-growth-overview .lp-growth-opportunities a{
+  margin-top:6px;
+  color:#d71920;
+  font-size:10px;
+}
+
+/* Data tables get a calmer operational surface. */
+.lp-growth-overview .lp-growth-table{
+  overflow-x:auto;
+  border:1px solid #eee6e1;
+  border-radius:12px;
+}
+
+.lp-growth-overview .lp-growth-table table{
+  background:#fff;
+}
+
+.lp-growth-overview .lp-growth-table thead{
+  background:#faf7f5;
+}
+
+.lp-growth-overview .lp-growth-table th,
+.lp-growth-overview .lp-growth-table td{
+  padding:12px 14px;
+  border-color:#eee8e4;
+  font-size:11px;
+}
+
+.lp-growth-overview .lp-growth-table thead th{
+  color:#827972;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.05em;
+}
+
+.lp-growth-overview .lp-growth-table tbody tr:hover{
+  background:#fdfaf8;
+}
+
+.lp-growth-overview .lp-growth-table a{
+  color:#332e2b;
+}
+
+.lp-growth-overview .lp-growth-table a:hover,
+.lp-growth-overview .lp-growth-table a:focus-visible{
+  color:#d71920;
+}
+
+/* Ranking, review and activity content receive the same card-inside-card hierarchy used by CRM. */
+.lp-growth-overview .lp-growth-ranking{
+  gap:8px;
+}
+
+.lp-growth-overview .lp-growth-ranking li{
+  padding:11px 12px;
+  border:1px solid #eee6e1;
+  border-radius:11px;
+  background:#fbf8f6;
+}
+
+.lp-growth-overview .lp-growth-ranking strong,
+.lp-growth-overview .lp-growth-ranking b{
+  color:#3c3632;
+  font-size:11px;
+}
+
+.lp-growth-overview .lp-growth-ranking small{
+  margin-top:2px;
+  color:#8e857f;
+  font-size:9px;
+}
+
+.lp-growth-overview .lp-growth-ranking progress{
+  height:6px;
+  overflow:hidden;
+  border-radius:999px;
+}
+
+.lp-growth-overview .lp-growth-review-summary{
+  gap:8px;
+}
+
+.lp-growth-overview .lp-growth-review-summary>div{
+  padding:13px 14px;
+  border:1px solid #eee6e1;
+  border-radius:11px;
+  background:#fbf8f6;
+}
+
+.lp-growth-overview .lp-growth-review-summary span{
+  color:#8d837c;
+  font-size:9px;
+  font-weight:750;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.lp-growth-overview .lp-growth-review-summary strong{
+  margin-top:4px;
+  color:#2f2a27;
+  font-size:20px;
+}
+
+.lp-growth-overview .lp-growth-review{
+  margin-top:12px;
+  padding:13px;
+  border:1px solid #eee6e1;
+  border-radius:11px;
+  background:#fff;
+}
+
+.lp-growth-overview .lp-growth-activity{
+  display:grid;
+  gap:8px;
+}
+
+.lp-growth-overview .lp-growth-activity li{
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:11px;
+  padding:11px 12px;
+  border:1px solid #eee6e1;
+  border-radius:11px;
+  background:#fbf8f6;
+}
+
+.lp-growth-overview .lp-growth-activity>li>i{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:#fff0f0;
+  color:#d71920;
+}
+
+.lp-growth-overview .lp-growth-activity strong{
+  color:#403a36;
+  font-size:11px;
+}
+
+.lp-growth-overview .lp-growth-activity div span,
+.lp-growth-overview .lp-growth-activity time,
+.lp-growth-overview .lp-growth-activity time small{
+  color:#8e857f;
+  font-size:9px;
+}
+
+.lp-growth-overview .lp-growth-activity a{
+  display:grid;
+  width:30px;
+  height:30px;
+  place-items:center;
+  border-radius:9px;
+  background:#fff;
+  color:#d71920;
+}
+
+/* All non-happy states use the same composed surface language. */
+.lp-growth-overview .lp-growth-empty,
+.lp-growth-overview .lp-growth-onboarding,
+.lp-growth-overview>.lp-growth-panel[role]{
+  border-color:#e5ddd8;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-growth-overview .lp-growth-empty{
+  min-height:88px;
+  padding:14px;
+  border-style:dashed;
+}
+
+.lp-growth-overview .lp-growth-empty>i{
+  display:grid;
+  width:38px;
+  height:38px;
+  flex:none;
+  place-items:center;
+  border-radius:11px;
+  background:#fff0f0;
+  color:#d71920;
+}
+
+.lp-growth-overview .lp-growth-empty strong{
+  color:#403a36;
+  font-size:11px;
+}
+
+.lp-growth-overview .lp-growth-empty p{
+  color:#837a74;
+  font-size:10px;
+  line-height:1.45;
+}
+
+.lp-growth-overview .lp-growth-onboarding{
+  padding:22px;
+}
+
+.lp-growth-overview .lp-growth-onboarding>div>span{
+  color:#d71920;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.lp-growth-overview .lp-growth-onboarding h2{
+  color:#25211f;
+  font-size:20px;
+}
+
+.lp-growth-overview .lp-growth-onboarding li{
+  border:1px solid #eee6e1;
+  background:#fbf8f6;
+}
+
+@media(max-width:1180px){
+  .lp-growth-overview .lp-growth-header{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .lp-growth-overview .lp-header-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
+@media(max-width:980px){
+  .lp-growth-overview .lp-growth-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .lp-growth-overview .lp-growth-grid--primary,
+  .lp-growth-overview .lp-growth-grid--sources,
+  .lp-growth-overview .lp-growth-grid--equal{
+    grid-template-columns:1fr;
+  }
+  .lp-growth-overview .lp-growth-funnel{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media(max-width:700px){
+  .lp-growth-overview{
+    gap:14px;
+  }
+  .lp-growth-overview>.lpw-breadcrumb{
+    max-width:calc(100% - 44px);
+    margin:20px 22px -56px;
+  }
+  .lp-growth-overview .lp-growth-header{
+    min-height:0;
+    padding:68px 22px 24px;
+    border-radius:20px;
+  }
+  .lp-growth-overview .lp-header-actions,
+  .lp-growth-overview .lp-growth-filters{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .lp-growth-overview .lp-growth-select,
+  .lp-growth-overview .lp-growth-compare,
+  .lp-growth-overview .lp-header-actions>.lp-button{
+    width:100%;
+  }
+  .lp-growth-overview .lp-growth-select{
+    justify-content:space-between;
+  }
+  .lp-growth-overview .lp-growth-select select{
+    flex:1;
+  }
+  .lp-growth-overview .lp-growth-panel{
+    padding:17px;
+  }
+  .lp-growth-overview .lp-growth-panel__header{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .lp-growth-overview .lp-growth-panel__header form{
+    width:100%;
+    align-self:stretch;
+  }
+  .lp-growth-overview .lp-growth-panel__header select{
+    width:100%;
+  }
+}
+
+@media(max-width:620px){
+  .lp-growth-overview .lp-growth-kpis,
+  .lp-growth-overview .lp-growth-supporting,
+  .lp-growth-overview .lp-growth-funnel{
+    grid-template-columns:1fr;
+  }
+  .lp-growth-overview .lp-growth-kpis .lp-kpi-card{
+    min-height:138px;
+    padding:18px;
+  }
+  .lp-growth-overview .lp-growth-table{
+    border:0;
+    overflow:visible;
+  }
+  .lp-growth-overview .lp-growth-table tr{
+    margin-bottom:8px;
+    padding:8px;
+    border:1px solid #eee6e1;
+    border-radius:11px;
+    background:#fbf8f6;
+  }
+  .lp-growth-overview .lp-growth-activity li{
+    grid-template-columns:auto minmax(0,1fr) auto;
+  }
+  .lp-growth-overview .lp-growth-activity time{
+    grid-column:2;
+  }
+  .lp-growth-overview .lp-growth-activity li>a{
+    grid-column:3;
+    grid-row:1/3;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .lp-growth-overview *{
+    transition-duration:.01ms;
+  }
+}
