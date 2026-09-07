@@ -1,22 +1,49 @@
 /* Gallery workspace action menu + overview metadata refinement. */
 
-.lp-gallery-workspace-v2 .lp-gw-commandbar{
-  position:relative;
+/*
+ * Keep the header itself as the positioning surface for Actions. The menu is
+ * intentionally allowed to escape the header so it is never clipped by the
+ * rounded CRM-style surface.
+ */
+.lp-gallery-workspace-v2 .lp-gw-head{
+  z-index:20;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:32px;
   overflow:visible;
+  background:
+    radial-gradient(circle at 88% -38%,transparent 0 118px,rgba(215,25,32,.16) 119px 120px,transparent 121px),
+    radial-gradient(circle at 76% 132%,transparent 0 70px,rgba(47,37,30,.08) 71px 72px,transparent 73px),
+    linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
 }
 
-.lp-gallery-workspace-v2 .lp-gw-commandbar dl{
-  flex:1 1 auto;
+/* The old pseudo rings depended on overflow:hidden. The radial layers above
+   preserve the visual treatment without clipping the dropdown. */
+.lp-gallery-workspace-v2 .lp-gw-head::before,
+.lp-gallery-workspace-v2 .lp-gw-head::after{
+  display:none;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-heading{
+  min-width:0;
+  max-width:100%;
 }
 
 .lp-gallery-workspace-v2 .lp-gw-actions{
   position:relative;
-  margin-left:auto;
+  z-index:30;
+  display:flex;
+  width:auto;
+  min-width:max-content;
+  align-items:center;
+  justify-content:flex-end;
+  justify-self:end;
+  margin:0;
 }
 
 .lp-gallery-workspace-v2 .lp-gw-actions-menu{
   position:relative;
-  z-index:24;
+  z-index:31;
 }
 
 .lp-gallery-workspace-v2 .lp-gw-actions-menu>summary{
@@ -47,10 +74,12 @@
   position:absolute;
   top:calc(100% + 8px);
   right:0;
-  z-index:40;
+  z-index:80;
   display:grid;
   width:250px;
+  max-width:min(250px,calc(100vw - 32px));
   padding:8px;
+  overflow:visible;
   border:1px solid #e4ddd8;
   border-radius:14px;
   background:#fff;
@@ -106,6 +135,11 @@
   background:#eee7e2;
 }
 
+/* Keep the sticky tabs below the open header menu in the stacking order. */
+.lp-gallery-workspace-v2 .lp-gw-tabs{
+  z-index:9;
+}
+
 .lp-gallery-workspace-v2 .lp-gw-overview-summary__copy{
   gap:16px;
 }
@@ -141,33 +175,31 @@
   overflow-wrap:anywhere;
 }
 
+/* Stack before the heading and action control can compete for horizontal room. */
 @media(max-width:900px){
-  .lp-gallery-workspace-v2 .lp-gw-commandbar{
-    flex-direction:row;
-    align-items:center;
+  .lp-gallery-workspace-v2 .lp-gw-head{
+    grid-template-columns:minmax(0,1fr);
+    align-items:start;
+    row-gap:18px;
   }
 
-  .lp-gallery-workspace-v2 .lp-gw-commandbar dl{
-    display:block;
+  .lp-gallery-workspace-v2 .lp-gw-actions{
     width:auto;
+    min-width:0;
+    justify-self:start;
   }
 
-  .lp-gallery-workspace-v2 .lp-gw-commandbar dl div,
-  .lp-gallery-workspace-v2 .lp-gw-commandbar dl div:first-child{
-    padding:0;
-    border:0;
+  .lp-gallery-workspace-v2 .lp-gw-actions-menu>div{
+    right:auto;
+    left:0;
   }
 }
 
 @media(max-width:700px){
-  .lp-gallery-workspace-v2 .lp-gw-commandbar{
-    align-items:stretch;
-    flex-direction:column;
-  }
-
   .lp-gallery-workspace-v2 .lp-gw-actions{
+    display:flex;
     width:100%;
-    margin-left:0;
+    justify-self:stretch;
   }
 
   .lp-gallery-workspace-v2 .lp-gw-actions-menu,
@@ -176,9 +208,10 @@
   }
 
   .lp-gallery-workspace-v2 .lp-gw-actions-menu>div{
-    right:auto;
+    right:0;
     left:0;
     width:100%;
+    max-width:100%;
   }
 
   .lp-gallery-workspace-v2 .lp-gw-overview-meta{
