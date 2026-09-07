@@ -1,0 +1,374 @@
+/* CRM-aligned polish for the gallery detail workspace. Scoped to gallery detail only. */
+
+.lp-gallery-workspace-modern .lp-gw-head{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  gap:24px;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-gallery-workspace-modern .lp-gw-head::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-gallery-workspace-modern .lp-gw-head::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-gallery-workspace-modern .lp-gw-heading,
+.lp-gallery-workspace-modern .lp-gw-commandbar{
+  position:relative;
+  z-index:1;
+}
+
+.lp-gallery-workspace-modern .lp-gw-heading{
+  gap:14px;
+}
+
+.lp-gallery-workspace-modern .lpw-breadcrumb{
+  margin:0;
+  padding:0;
+  background:transparent;
+}
+
+.lp-gallery-workspace-modern .lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lp-gallery-workspace-modern .lpw-breadcrumb a:hover,
+.lp-gallery-workspace-modern .lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+  text-decoration:none;
+}
+
+.lp-gallery-workspace-modern .lp-gw-title__icon{
+  display:none;
+}
+
+.lp-gallery-workspace-modern .lp-gw-title{
+  gap:0;
+}
+
+.lp-gallery-workspace-modern .lp-gw-title>div{
+  gap:5px;
+}
+
+.lp-gallery-workspace-modern .lp-gw-title h1{
+  color:#25211f;
+}
+
+.lp-gallery-workspace-modern .lp-gw-commandbar{
+  padding:15px 18px;
+  border:1px solid rgba(224,214,207,.92);
+  border-radius:16px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 10px 26px rgba(47,37,30,.045);
+  backdrop-filter:blur(8px);
+}
+
+.lp-gallery-workspace-modern .lp-gw-commandbar dl div{
+  min-width:100px;
+}
+
+.lp-gallery-workspace-modern .lp-gw-commandbar dt{
+  color:#8b827c;
+}
+
+.lp-gallery-workspace-modern .lp-gw-commandbar dd{
+  color:#312b28;
+}
+
+.lp-gallery-workspace-modern .lp-gw-tabs{
+  margin-top:18px;
+  border-radius:16px;
+}
+
+.lp-gallery-workspace-modern .lp-gw-content{
+  margin-top:14px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Overview uses a deliberate CRM-style information hierarchy. */
+.lp-gallery-workspace-modern .lp-overview-grid{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  grid-template-areas:
+    "summary summary summary summary summary summary summary client client client client client"
+    "summary summary summary summary summary summary summary delivery delivery delivery delivery delivery"
+    "settings settings settings settings settings settings upload upload upload upload upload upload"
+    "activity activity activity activity activity activity quick quick quick quick quick quick";
+  gap:16px;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(1){grid-area:summary}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(2){grid-area:client}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(3){grid-area:delivery}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(4){grid-area:upload}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(5){grid-area:activity}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6){grid-area:quick}
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(7){grid-area:settings}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card,
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card.lp-summary,
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card.lp-settings-summary{
+  min-width:0;
+  grid-column:auto;
+  grid-row:auto;
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(47,37,30,.05);
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card>header{
+  min-height:34px;
+  margin:0 0 14px;
+  padding:0 0 12px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card>header h2{
+  color:#25211f;
+  font-size:15px;
+  font-weight:700;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card>header>a{
+  color:#d71920;
+  font-size:11px;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:not(.lp-summary):hover{
+  border-color:#ddd2cb;
+  box-shadow:0 14px 34px rgba(47,37,30,.075);
+}
+
+.lp-gallery-workspace-modern .lp-cover{
+  height:300px;
+  border:1px solid #eee5df;
+  background:linear-gradient(145deg,#f8f4f1,#f2ebe6);
+}
+
+.lp-gallery-workspace-modern .lp-storage-track{
+  height:8px;
+  margin-top:16px;
+  background:#f0e9e5;
+}
+
+.lp-gallery-workspace-modern .lp-settings-summary dl{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+
+.lp-gallery-workspace-modern .lp-settings-summary dl>div{
+  padding:12px;
+  border:1px solid #eee5df;
+  border-radius:11px;
+  background:#fbf8f6;
+}
+
+.lp-gallery-workspace-modern .lp-settings-summary dt{
+  color:#8a817b;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.lp-gallery-workspace-modern .lp-settings-summary dd{
+  margin:5px 0 0;
+  color:#302a27;
+  font-size:12px;
+  font-weight:700;
+}
+
+/* Match Bookings Quick Actions: single-column rows with icon tile and chevron. */
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  min-height:58px;
+  padding:11px 38px 11px 12px;
+  border:1px solid var(--lpw-border);
+  border-radius:10px;
+  background:var(--lp-color-page);
+  box-shadow:none;
+  color:var(--lpw-text);
+  font-size:13px;
+  font-weight:700;
+  text-align:left;
+  text-decoration:none;
+  transition:transform var(--lp-transition-duration),border-color var(--lp-transition-duration),background var(--lp-transition-duration);
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a>i{
+  display:grid;
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  place-items:center;
+  border-radius:11px;
+  background:#fff0f0;
+  color:var(--lpw-accent);
+  font-size:15px;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a::after{
+  content:"›";
+  position:absolute;
+  right:14px;
+  color:#9b918a;
+  font-size:20px;
+  line-height:1;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a:hover,
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a:focus-visible{
+  transform:translateY(-2px);
+  border-color:var(--lp-color-brand-border);
+  background:#fff;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a:first-child{
+  border-color:var(--lp-color-brand);
+  background:var(--lp-color-brand);
+  color:#fff;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a:first-child>i{
+  background:rgba(255,255,255,.16);
+  color:#fff;
+}
+
+.lp-gallery-workspace-modern .lp-overview-grid>.lp-gw-card:nth-child(6) .lp-quick>a:first-child::after{
+  color:#fff;
+}
+
+.lp-gallery-workspace-modern .lp-activity{
+  min-height:56px;
+  padding:9px 0;
+}
+
+.lp-gallery-workspace-modern .lp-activity+.lp-activity{
+  border-top:1px solid #f0eae6;
+}
+
+@media(max-width:1180px){
+  .lp-gallery-workspace-modern .lp-gw-head{
+    padding:28px;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-commandbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-commandbar .lp-gw-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
+@media(max-width:1050px){
+  .lp-gallery-workspace-modern .lp-overview-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-areas:
+      "summary summary"
+      "client delivery"
+      "settings upload"
+      "activity quick";
+  }
+
+  .lp-gallery-workspace-modern .lp-cover{
+    height:250px;
+  }
+}
+
+@media(max-width:700px){
+  .lp-gallery-workspace-modern .lp-gw-head{
+    padding:24px 22px;
+    border-radius:20px;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-commandbar{
+    padding:14px;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-commandbar dl{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-actions{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .lp-gallery-workspace-modern .lp-overview-grid{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "summary"
+      "client"
+      "delivery"
+      "settings"
+      "upload"
+      "activity"
+      "quick";
+  }
+
+  .lp-gallery-workspace-modern .lp-settings-summary dl{
+    grid-template-columns:1fr;
+  }
+
+  .lp-gallery-workspace-modern .lp-cover{
+    height:220px;
+  }
+}
+
+@media(max-width:430px){
+  .lp-gallery-workspace-modern .lp-gw-head{
+    padding:20px 18px;
+  }
+
+  .lp-gallery-workspace-modern .lp-gw-actions{
+    grid-template-columns:1fr;
+  }
+}
