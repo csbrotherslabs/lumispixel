@@ -1,5 +1,13 @@
 /* Final Team header structure aligned with the newer Bookings and Galleries pages. */
 
+/* Match CRM's workspace main shell exactly and neutralize legacy Team offsets. */
+.lpw-main:has(> .lpt-page){
+  max-width:var(--lp-container-wide);
+  gap:var(--lp-space-6);
+  padding:clamp(24px,3vw,40px) var(--lp-page-gutter) 52px;
+  background:var(--lp-color-page);
+}
+
 /* Match CRM's full-width page shell instead of adding lp-container's extra gutter. */
 .lpt-page.lp-container{
   width:100%;
@@ -19,12 +27,16 @@
 
 .lpt-page .lpt-header{
   box-sizing:border-box;
+  position:relative;
+  top:auto;
+  inset-block-start:auto;
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,auto);
   align-items:center;
   gap:24px;
   width:100%;
   max-width:100%;
+  margin:0;
   overflow:hidden;
 }
 
@@ -128,6 +140,12 @@
   }
 }
 
+@media(max-width:1000px){
+  .lpw-main:has(> .lpt-page){
+    padding-top:28px;
+  }
+}
+
 @media(max-width:700px){
   .lpt-page .lpt-header-actions{
     width:100%;
@@ -136,6 +154,12 @@
   .lpt-page,
   .lpt-page .lpt-content{
     gap:var(--lp-space-5);
+  }
+}
+
+@media(max-width:620px){
+  .lpw-main:has(> .lpt-page){
+    padding:22px 16px 40px;
   }
 }
 
