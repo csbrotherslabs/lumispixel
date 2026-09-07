@@ -9,6 +9,10 @@
   font-size:clamp(27px,2vw,33px);
 }
 
+.lp-gallery-workspace-v2 .lp-cover{
+  height:234px;
+}
+
 /*
  * Keep the header itself as the positioning surface for Actions. The menu is
  * intentionally allowed to escape the header so it is never clipped by the

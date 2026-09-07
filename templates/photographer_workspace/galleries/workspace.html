@@ -20,11 +20,11 @@
 
   <div class="lp-gw-overview-row">
     <section class="lp-gw-overview-card lp-gw-client-card"><header><h2>Client information</h2></header><strong>{{ gallery.client|default:"No client assigned" }}</strong>{% if gallery.client %}<p>{{ gallery.client.email|default:"No email provided" }}</p>{% endif %}<a href="{% url 'photographer_workspace:edit_gallery' gallery.pk %}">Manage client</a></section>
-    <section class="lp-gw-overview-card lp-gw-delivery-card"><header><h2>Delivery status</h2></header><div class="lp-delivery"><i class="bi bi-send-check"></i><div><strong>{{ gallery.get_status_display }}</strong><p>{{ gallery.get_visibility_display }} access</p></div></div></section>
+    <section class="lp-gw-overview-card lp-settings-summary"><header><h2>Gallery settings</h2><a href="?tab=settings">View settings</a></header><dl><div><dt>Visibility</dt><dd>{{ gallery.get_visibility_display }}</dd></div><div><dt>Expiration</dt><dd>{{ gallery.expires_at|date:"M j, Y"|default:"No expiration" }}</dd></div><div><dt>Downloads</dt><dd>Not configured</dd></div></dl></section>
   </div>
 
   <div class="lp-gw-overview-row">
-    <section class="lp-gw-overview-card lp-settings-summary"><header><h2>Gallery settings</h2><a href="?tab=settings">View settings</a></header><dl><div><dt>Visibility</dt><dd>{{ gallery.get_visibility_display }}</dd></div><div><dt>Expiration</dt><dd>{{ gallery.expires_at|date:"M j, Y"|default:"No expiration" }}</dd></div><div><dt>Downloads</dt><dd>Not configured</dd></div></dl></section>
+    <section class="lp-gw-overview-card lp-gw-delivery-card"><header><h2>Delivery status</h2></header><div class="lp-delivery"><i class="bi bi-send-check"></i><div><strong>{{ gallery.get_status_display }}</strong><p>{{ gallery.get_visibility_display }} access</p></div></div></section>
     <section class="lp-gw-overview-card lp-gw-upload-card"><header><h2>Upload progress</h2><span>{{ upload_percent }}%</span></header><div class="lp-storage-track"><i style="width:{{ upload_percent }}%"></i></div><p>{{ gallery.image_count }} photos · {{ storage_display }}</p></section>
   </div>
 
