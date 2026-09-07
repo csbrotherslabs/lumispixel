@@ -1,5 +1,22 @@
 /* Final Team header structure aligned with the newer Bookings and Galleries pages. */
 
+/* Match CRM's full-width page shell instead of adding lp-container's extra gutter. */
+.lpt-page.lp-container{
+  width:100%;
+  max-width:none;
+  margin-inline:0;
+  padding-inline:0;
+}
+
+/* CRM uses the workspace 24px rhythm between its top-level surfaces. */
+.lpt-page{
+  gap:var(--lp-space-6);
+}
+
+.lpt-page .lpt-content{
+  gap:var(--lp-space-6);
+}
+
 .lpt-page .lpt-header{
   box-sizing:border-box;
   display:grid;
@@ -88,6 +105,17 @@
   display:block;
 }
 
+/* Keep the first content surfaces at the same cadence as CRM. */
+.lpt-page .lpt-updated{
+  margin:0;
+}
+
+.lpt-page .lpt-section,
+.lpt-page .lpt-status-section,
+.lpt-page .lpt-bottom-grid{
+  margin:0;
+}
+
 @media(max-width:1180px){
   .lpt-page .lpt-header{
     grid-template-columns:1fr;
@@ -103,6 +131,11 @@
 @media(max-width:700px){
   .lpt-page .lpt-header-actions{
     width:100%;
+  }
+
+  .lpt-page,
+  .lpt-page .lpt-content{
+    gap:var(--lp-space-5);
   }
 }
 
