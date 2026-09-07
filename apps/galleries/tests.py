@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
@@ -26,6 +28,24 @@ class GalleryModelTests(TestCase):
         self.assertEqual(report["counts"]["favorites"], 1)
         self.assertEqual(report["counts"]["visitors"], 1)
         self.assertEqual(GalleryAnalyticsEvent.objects.for_photographer(owner).count(), 2)
+
+    def test_analytics_purchase_revenue_is_aggregated_as_decimal(self):
+        user = User.objects.create_user(email="analytics-revenue@example.com", password="testpass")
+        owner = PhotographerProfile.objects.create(user=user, slug="analytics-revenue-owner")
+        gallery = Gallery.objects.create(photographer=owner, name="Revenue", slug="analytics-revenue")
+
+        track_gallery_event(
+            gallery=gallery,
+            event_type=GalleryAnalyticsEvent.EventType.PURCHASE,
+            visitor_identifier="opaque-revenue",
+            session_identifier="session-revenue",
+            metadata={"revenue": "42.50"},
+        )
+
+        report = gallery_analytics_report(gallery=gallery)
+
+        self.assertEqual(report["counts"]["revenue"], Decimal("42.50"))
+        self.assertEqual(report["store"]["revenue"], Decimal("42.50"))
 
     def test_analytics_event_rejects_cross_gallery_photo(self):
         user = User.objects.create_user(email="analytics-photo@example.com", password="testpass")
