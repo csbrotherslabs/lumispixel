@@ -128,6 +128,75 @@
   margin:0;
 }
 
+/* Daily team operations now mirrors the Galleries "Library" command-panel treatment. */
+.lpt-page .lpt-team-library{
+  display:block;
+  min-height:0;
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lpt-page .lpt-team-library>.lp-section-header{
+  margin:0;
+  padding:0 0 14px;
+  border-bottom:1px solid var(--lp-color-border);
+  background:transparent;
+}
+
+.lpt-page .lpt-team-library>.lp-section-header h2{
+  margin:3px 0 0;
+  color:#25211f;
+  font-size:18px;
+  line-height:1.25;
+}
+
+.lpt-page .lpt-team-library>.lp-section-header p{
+  margin:4px 0 0;
+  color:var(--lp-color-text-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+
+.lpt-page .lpt-team-library>.lp-section-header>a{
+  color:var(--lp-color-text-secondary);
+  font-size:12px;
+  font-weight:700;
+  text-decoration:none;
+}
+
+.lpt-page .lpt-team-library>.lp-section-header>a:hover,
+.lpt-page .lpt-team-library>.lp-section-header>a:focus-visible{
+  color:var(--lp-color-brand);
+}
+
+.lpt-page .lpt-team-library .lpt-eyebrow{
+  color:var(--lp-color-brand);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+.lpt-page .lpt-team-library .lpt-member-table{
+  width:100%;
+  margin-top:14px;
+  overflow:hidden;
+  border:1px solid #ece5e0;
+  border-radius:13px;
+  background:#fff;
+}
+
+.lpt-page .lpt-team-library .lpt-member-head{
+  background:#fbf8f6;
+}
+
+.lpt-page .lpt-team-library .lpt-member-card:last-child{
+  border-bottom:0;
+}
+
 @media(max-width:1180px){
   .lpt-page .lpt-header{
     grid-template-columns:1fr;
@@ -160,6 +229,10 @@
 @media(max-width:620px){
   .lpw-main:has(> .lpt-page){
     padding:22px 16px 40px;
+  }
+
+  .lpt-page .lpt-team-library{
+    padding:17px;
   }
 }
 
