@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_refresh.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_team_header_refine.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lp-container lpt-page">
   <header class="lp-page-header lpt-header lpw-command-header">
@@ -19,14 +19,14 @@
         </div>
       </details>
     </div>
+    {% if is_solo %}<div class="lpt-notice lpt-header-notice" role="status"><i class="bi bi-info-circle" aria-hidden="true"></i><div><strong>Partial team data</strong><p>Working hours, leave, and member assignments are not stored. Unavailable values are never estimated.</p></div></div>{% endif %}
   </header>
 
   <div class="lpt-content">
     <p class="lpt-updated"><i class="bi bi-clock-history" aria-hidden="true"></i> Updated <time datetime="{{ last_updated|date:'c' }}">{{ last_updated|date:'M j, g:i A' }}</time> from current saved records.</p>
-    {% if is_solo %}<div class="lpt-notice" role="status"><i class="bi bi-info-circle" aria-hidden="true"></i><div><strong>Partial team data</strong><p>Working hours, leave, and member assignments are not stored. Unavailable values are never estimated.</p></div></div>{% endif %}
 
-    <section aria-labelledby="team-status-title">
-      <div class="lp-section-header"><div><h2 id="team-status-title">Today at a glance</h2><p>{% if is_today %}Current daily operations{% else %}Operations for {{ selected_date|date:'F j, Y' }}{% endif %}</p></div></div>
+    <section class="lpt-status-section" aria-labelledby="team-status-title">
+      <div class="lpt-status-heading"><h2 id="team-status-title">Today at a glance</h2><p>{% if is_today %}Current daily operations{% else %}Operations for {{ selected_date|date:'F j, Y' }}{% endif %}</p></div>
       <div class="lpt-summary-grid">
         {% for kpi in kpis %}<article class="lp-card lpt-kpi">
           <span class="lpt-kpi-icon lpt-tone-{{ kpi.tone }}"><i class="bi {{ kpi.icon }}" aria-hidden="true"></i></span>
