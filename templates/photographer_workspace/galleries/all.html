@@ -1,7 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_all_galleries.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-gallery-library" id="main-content">
-<header class="lp-page-header lpw-all-gallery-head">
+<div class="lp-gallery-library lp-gallery-all-page" id="main-content">
+<header class="lp-page-header lpw-all-gallery-head lp-gallery-all-header">
   <div class="lp-page-heading">
     <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">All Galleries</strong></nav>
     <h1 id="workspace-page-title" class="lp-page-title">All Galleries</h1>
@@ -17,9 +19,8 @@
 <section class="lpw-gallery-toolbar" aria-label="Gallery controls">
   <form method="get">
     <label class="lpw-gallery-search"><i class="bi bi-search"></i><span class="sr-only">Search</span><input type="search" name="q" value="{{ gallery_query }}" placeholder="Search gallery name or client"></label>
-    <label><span class="sr-only">Status</span><select name="status"><option value="">Status</option>{% for value,label in gallery_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
     <label><span class="sr-only">Sort galleries</span><select name="sort"><option value="updated"{% if selected_sort == 'updated' %} selected{% endif %}>Recently updated</option><option value="newest"{% if selected_sort == 'newest' %} selected{% endif %}>Newest created</option><option value="name"{% if selected_sort == 'name' %} selected{% endif %}>Name A–Z</option><option value="event_soon"{% if selected_sort == 'event_soon' %} selected{% endif %}>Event date</option><option value="images"{% if selected_sort == 'images' %} selected{% endif %}>Most images</option></select></label>
-    <details class="lpw-gallery-more"><summary><i class="bi bi-sliders" aria-hidden="true"></i>More filters{% if selected_event_date or selected_client %}<span aria-label="Additional filters active"></span>{% endif %}</summary><div><label><span>Modified / event date</span><input type="date" name="event_date" value="{{ selected_event_date }}"></label><label><span>Client</span><select name="client"><option value="">All clients</option>{% for client in gallery_clients %}<option value="{{ client.pk }}"{% if selected_client == client.pk|stringformat:'s' %} selected{% endif %}>{{ client }}</option>{% endfor %}</select></label></div></details>
+    <details class="lpw-gallery-more"><summary><i class="bi bi-sliders" aria-hidden="true"></i>More filters{% if selected_status or selected_event_date or selected_client %}<span aria-label="Additional filters active"></span>{% endif %}</summary><div><label><span>Status</span><select name="status"><option value="">All statuses</option>{% for value,label in gallery_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label><span>Modified / event date</span><input type="date" name="event_date" value="{{ selected_event_date }}"></label><label><span>Client</span><select name="client"><option value="">All clients</option>{% for client in gallery_clients %}<option value="{{ client.pk }}"{% if selected_client == client.pk|stringformat:'s' %} selected{% endif %}>{{ client }}</option>{% endfor %}</select></label></div></details>
     <button class="lpw-toolbar-apply" type="submit">Apply</button>{% if has_filters %}<a href="{% url 'photographer_workspace:all_galleries' %}" class="lpw-gallery-clear"><i class="bi bi-x-circle" aria-hidden="true"></i>Clear filters</a>{% endif %}
   </form>
   <div class="lpw-gallery-toolbar-end"><p><strong>{{ gallery_page.paginator.count }}</strong> result{{ gallery_page.paginator.count|pluralize }}</p><div class="lpw-view-toggle" role="group" aria-label="Gallery view"><button type="button" class="is-active" data-gallery-view="grid" aria-pressed="true" aria-label="Grid view" title="Grid view"><i class="bi bi-grid" aria-hidden="true"></i></button><button type="button" data-gallery-view="list" aria-pressed="false" aria-label="List view" title="List view"><i class="bi bi-list-ul" aria-hidden="true"></i></button></div></div>
