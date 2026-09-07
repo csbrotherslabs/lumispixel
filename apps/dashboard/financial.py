@@ -131,21 +131,15 @@ def financial_summary(profile, range_key, currency="USD", today=None):
     previous = scoped_financial_records(profile, window.previous_start, window.previous_end, today) if window.previous_end else None
     definitions = [
         ("Total Revenue", "net_revenue", "bi-graph-up-arrow", "Completed payments less completed refunds in the selected period."),
-        ("Collected", "collected", "bi-check2-circle", "Completed payments received in the selected period."),
-        ("Outstanding", "outstanding", "bi-hourglass-split", "Unpaid invoice value after payments and applied credits."),
-        ("Overdue", "overdue", "bi-exclamation-circle", "Outstanding non-draft invoice balances past their due date."),
+        ("Payments Received", "collected", "bi-cash-coin", "Completed payments received in the selected period."),
+        ("Total Refunded", "refunds", "bi-arrow-counterclockwise", "Completed refunds issued in the selected period."),
     ]
     cards = []
     for title, key, icon, tooltip in definitions:
         value = current[key]
         percentage, trend = _comparison(value, previous[key] if previous else None)
-        # Direction and meaning are deliberately separate. An increasing overdue
-        # balance needs attention, while an increasing collected total is healthy;
-        # outstanding (but not overdue) remains informational in either direction.
         direction = "increase" if trend == "positive" else "decrease" if trend == "negative" else "neutral"
-        if key == "outstanding":
-            change_variant = "neutral"
-        elif key == "overdue":
+        if key == "refunds":
             change_variant = "danger" if trend == "positive" else "success" if trend == "negative" else "neutral"
         else:
             change_variant = "success" if trend == "positive" else "danger" if trend == "negative" else "neutral"
