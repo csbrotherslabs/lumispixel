@@ -14,20 +14,17 @@
       <span>Quantity</span>
       <input aria-label="Quantity" name="item_quantity[]" type="number" min=".01" step=".01" value="{{ line.quantity|default:'1.00' }}" required>
     </label>
-    <label class="money lpw-line-field">
-      <span class="lpw-line-field-label">Unit price</span>
-      <span class="lpw-line-affix" aria-hidden="true" data-currency-prefix>$</span>
-      <input aria-label="Unit price" name="item_unit_price[]" type="number" min="0" step=".01" value="{{ line.unit_price|default:'0.00' }}" required>
+    <label class="lpw-line-field">
+      <span>Unit price</span>
+      <span class="lpw-line-input-shell"><i aria-hidden="true" data-currency-prefix>$</i><input aria-label="Unit price" name="item_unit_price[]" type="number" min="0" step=".01" value="{{ line.unit_price|default:'0.00' }}" required></span>
     </label>
-    <label class="suffix lpw-line-field">
-      <span class="lpw-line-field-label">Discount</span>
-      <input aria-label="Discount percentage" name="item_discount[]" type="number" min="0" max="100" step=".01" value="{{ line.discount_percent|default:'0.00' }}">
-      <span class="lpw-line-affix" aria-hidden="true">%</span>
+    <label class="lpw-line-field">
+      <span>Discount</span>
+      <span class="lpw-line-input-shell lpw-line-input-shell--suffix"><input aria-label="Discount percentage" name="item_discount[]" type="number" min="0" max="100" step=".01" value="{{ line.discount_percent|default:'0.00' }}"><i aria-hidden="true">%</i></span>
     </label>
-    <label class="suffix lpw-line-field">
-      <span class="lpw-line-field-label">Tax</span>
-      <input aria-label="Tax percentage" name="item_tax[]" type="number" min="0" max="100" step=".01" value="{{ line.tax_percent|default:'0.00' }}">
-      <span class="lpw-line-affix" aria-hidden="true">%</span>
+    <label class="lpw-line-field">
+      <span>Tax</span>
+      <span class="lpw-line-input-shell lpw-line-input-shell--suffix"><input aria-label="Tax percentage" name="item_tax[]" type="number" min="0" max="100" step=".01" value="{{ line.tax_percent|default:'0.00' }}"><i aria-hidden="true">%</i></span>
     </label>
     <div class="lpw-line-total-wrap">
       <span>Total</span>
