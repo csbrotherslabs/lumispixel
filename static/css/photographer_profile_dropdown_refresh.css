@@ -1,0 +1,92 @@
+/* Profile dropdown aligned with the Gallery actions overlay treatment. */
+.lpw-topbar,
+.lpw-top-actions,
+.lpw-profile-menu{
+  overflow:visible;
+}
+
+.lpw-profile-menu{
+  position:relative;
+  z-index:1000;
+}
+
+.lpw-profile-dropdown{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:10000;
+  display:grid;
+  width:250px;
+  padding:8px;
+  border:1px solid #e4ddd8;
+  border-radius:14px;
+  background:var(--lp-color-surface-elevated, #fff);
+  box-shadow:0 18px 42px rgba(47,37,30,.14);
+  transform-origin:top right;
+}
+
+.lpw-profile-dropdown[hidden]{
+  display:none;
+}
+
+.lpw-profile-dropdown a,
+.lpw-profile-dropdown button{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-height:42px;
+  padding:0 12px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:#312b28;
+  font:inherit;
+  font-size:12px;
+  font-weight:650;
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.lpw-profile-dropdown a:hover,
+.lpw-profile-dropdown button:hover,
+.lpw-profile-dropdown a:focus-visible,
+.lpw-profile-dropdown button:focus-visible{
+  background:#f8f4f1;
+  color:var(--lp-color-brand, #d71920);
+  outline:none;
+}
+
+.lpw-profile-dropdown a i,
+.lpw-profile-dropdown button i{
+  width:18px;
+  flex:none;
+  color:var(--lp-color-brand, #d71920);
+  font-size:14px;
+  text-align:center;
+}
+
+.lpw-profile-dropdown form{
+  margin:6px 4px 0;
+  padding-top:6px;
+  border-top:1px solid #eee7e2;
+}
+
+.lpw-dropdown-identity{
+  display:grid;
+  gap:2px;
+  margin:0 4px 6px;
+  padding:8px 8px 10px;
+  border-bottom:1px solid #eee7e2;
+}
+
+@media(max-width:480px){
+  .lpw-profile-dropdown{
+    position:fixed;
+    top:64px;
+    right:10px;
+    z-index:10000;
+    width:min(250px,calc(100vw - 20px));
+  }
+}
