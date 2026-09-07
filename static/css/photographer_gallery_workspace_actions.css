@@ -13,6 +13,29 @@
   height:234px;
 }
 
+/* Give horizontally scrollable gallery tabs a slim, rounded, brand-aware scrollbar. */
+.lp-gallery-workspace-v2 .lp-gw-tabs{
+  scrollbar-width:thin;
+  scrollbar-color:#c9bdb6 transparent;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-tabs::-webkit-scrollbar{
+  height:6px;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-tabs::-webkit-scrollbar-track{
+  background:transparent;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-tabs::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:#c9bdb6;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-tabs::-webkit-scrollbar-thumb:hover{
+  background:#a99b93;
+}
+
 /* Merge the first two overview card groups into a three-column status row. */
 .lp-gallery-workspace-v2 .lp-gw-overview{
   grid-template-columns:repeat(3,minmax(0,1fr));
