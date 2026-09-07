@@ -3,6 +3,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.dashboard.workspace_settings import workspace_settings
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("apps.core.urls")),
@@ -15,6 +17,7 @@ urlpatterns = [
     path("marketplace/", include("apps.marketplace.urls")),
     path("billing/", include("apps.billing.urls")),
     path("notifications/", include("apps.notifications.urls")),
+    path("photographer/workspace/settings/", workspace_settings),
     path("photographer/workspace/", include("apps.dashboard.urls")),
     path("api/", include("apps.api.urls")),
 ]
