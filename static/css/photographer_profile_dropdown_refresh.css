@@ -5,16 +5,27 @@
   overflow:visible;
 }
 
+/* Keep the entire topbar stacking context above sticky/page-level workspace headers.
+   A child dropdown cannot escape a lower parent stacking context, regardless of its own z-index. */
+.lpw-topbar{
+  z-index:120;
+}
+
+.lpw-top-actions{
+  position:relative;
+  z-index:2;
+}
+
 .lpw-profile-menu{
   position:relative;
-  z-index:1000;
+  z-index:3;
 }
 
 .lpw-profile-dropdown{
   position:absolute;
   top:calc(100% + 8px);
   right:0;
-  z-index:10000;
+  z-index:40;
   display:grid;
   width:250px;
   padding:8px;
@@ -86,7 +97,7 @@
     position:fixed;
     top:64px;
     right:10px;
-    z-index:10000;
+    z-index:40;
     width:min(250px,calc(100vw - 20px));
   }
 }
