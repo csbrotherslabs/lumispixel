@@ -13,6 +13,41 @@
   height:234px;
 }
 
+/* Merge the first two overview card groups into a three-column status row. */
+.lp-gallery-workspace-v2 .lp-gw-overview{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.lp-gallery-workspace-v2 .lp-gw-overview-summary,
+.lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-activity-card){
+  grid-column:1 / -1;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-client-card),
+.lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-delivery-card){
+  display:contents;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-client-card{
+  grid-column:1;
+  grid-row:2;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-delivery-card{
+  grid-column:2;
+  grid-row:2;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-upload-card{
+  grid-column:3;
+  grid-row:2;
+}
+
+.lp-gallery-workspace-v2 .lp-settings-summary{
+  grid-column:1 / -1;
+  grid-row:3;
+}
+
 /*
  * Keep the header itself as the positioning surface for Actions. The menu is
  * intentionally allowed to escape the header so it is never clipped by the
@@ -209,6 +244,26 @@
 }
 
 @media(max-width:700px){
+  .lp-gallery-workspace-v2 .lp-gw-overview{
+    grid-template-columns:1fr;
+  }
+
+  .lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-client-card),
+  .lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-delivery-card){
+    display:grid;
+    grid-column:1;
+    grid-template-columns:1fr;
+  }
+
+  .lp-gallery-workspace-v2 .lp-gw-client-card,
+  .lp-gallery-workspace-v2 .lp-gw-delivery-card,
+  .lp-gallery-workspace-v2 .lp-gw-upload-card,
+  .lp-gallery-workspace-v2 .lp-settings-summary,
+  .lp-gallery-workspace-v2 .lp-gw-overview-row:has(.lp-gw-activity-card){
+    grid-column:1;
+    grid-row:auto;
+  }
+
   .lp-gallery-workspace-v2 .lp-gw-actions{
     display:flex;
     width:100%;
