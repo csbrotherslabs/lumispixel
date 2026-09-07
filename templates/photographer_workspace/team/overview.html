@@ -1,7 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lp-container lpt-page">
-  <header class="lp-page-header lpt-header">
+  <header class="lp-page-header lpt-header lpw-command-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Overview</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Team Overview</h1>
@@ -9,8 +11,13 @@
     </div>
     <div class="lp-header-actions lpt-header-actions">
       <form method="get" aria-label="Choose overview date"><label class="lpt-date-control"><span class="lp-sr-only">Date</span><input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" aria-label="Overview date" onchange="this.form.submit()"></label>{% if selected_location %}<input type="hidden" name="location" value="{{ selected_location }}">{% endif %}<button class="lp-button lp-button--ghost lpt-refresh" type="submit"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></button></form>
-      <a class="lp-button lp-button--secondary" href="{% url 'photographer_workspace:schedule' %}?date={{ selected_date|date:'Y-m-d' }}"><i class="bi bi-calendar3" aria-hidden="true"></i>View Schedule</a>
-      <a class="lp-button lp-button--primary" href="{% url 'photographer_workspace:team_members' %}"><i class="bi bi-person-plus" aria-hidden="true"></i>Invite Member</a>
+      <details class="lpt-more-actions">
+        <summary aria-haspopup="menu"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div class="lpt-more-actions__menu" role="menu">
+          <a role="menuitem" href="{% url 'photographer_workspace:schedule' %}?date={{ selected_date|date:'Y-m-d' }}"><i class="bi bi-calendar3" aria-hidden="true"></i><span><strong>View Schedule</strong><small>Open the schedule for the selected date.</small></span></a>
+          <a role="menuitem" href="{% url 'photographer_workspace:team_members' %}"><i class="bi bi-person-plus" aria-hidden="true"></i><span><strong>Invite Member</strong><small>Open Team Members to add or configure your team.</small></span></a>
+        </div>
+      </details>
     </div>
   </header>
 
