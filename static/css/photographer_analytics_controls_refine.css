@@ -48,6 +48,18 @@
 .lpa-page .lpa-contributions details p,
 .lpa-page .lpa-health-empty{font-size:12.5px;line-height:1.55}
 
+/* Quick breakdown: show gallery engagement metrics as a clean vertical stack. */
+.lpa-page .lpa-executive-breakdown .lpa-gallery-kpis{display:grid;grid-template-columns:1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+.lpa-page .lpa-executive-breakdown .lpa-gallery-kpis>article{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:62px;padding:12px 14px;border:1px solid #eee7e2;border-radius:10px;background:#fbf9f7}
+.lpa-page .lpa-executive-breakdown .lpa-gallery-kpis>article>i{display:grid;width:34px;height:34px;place-items:center;border-radius:9px;background:#fff0f0;color:#d71920;font-size:14px}
+.lpa-page .lpa-executive-breakdown .lpa-gallery-kpis>article>span{font-size:12.5px;line-height:1.4}
+.lpa-page .lpa-executive-breakdown .lpa-gallery-kpis>article>strong{font-size:18px;line-height:1.15;text-align:right}
+
+/* Next best actions: promote the empty-state Bookings CTA to the current workspace action style. */
+.lpa-page .lpa-insights-empty .lpw-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border:1px solid #b9151b;border-radius:10px;background:#d71920;color:#fff;font-size:12.5px;font-weight:750;line-height:1;text-decoration:none;box-shadow:0 8px 18px rgba(215,25,32,.16);transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+.lpa-page .lpa-insights-empty .lpw-btn-primary:hover,.lpa-page .lpa-insights-empty .lpw-btn-primary:focus-visible{background:#b9151b;color:#fff;box-shadow:0 10px 22px rgba(215,25,32,.22);transform:translateY(-1px)}
+.lpa-page .lpa-insights-empty .lpw-btn-primary:focus-visible{outline:3px solid rgba(215,25,32,.16);outline-offset:2px}
+
 @media(max-width:900px){
   .lpa-page .lpa-performance-heading{align-items:flex-start}
   .lpa-page .lpa-performance-actions{width:100%;justify-content:flex-start}
@@ -61,4 +73,6 @@
   .lpa-page .lpa-contributions{padding:16px}
   .lpa-page .lpa-contributions li{grid-template-columns:minmax(0,1fr) auto;align-items:start}
   .lpa-page .lpa-contributions meter{grid-column:1/-1;width:100%}
+  .lpa-page .lpa-executive-breakdown .lpa-gallery-kpis>article{grid-template-columns:auto minmax(0,1fr) auto}
+  .lpa-page .lpa-insights-empty .lpw-btn-primary{width:100%;max-width:260px}
 }
