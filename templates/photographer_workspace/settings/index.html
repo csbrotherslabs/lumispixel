@@ -1,0 +1,43 @@
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_workspace_settings.css' %}">{% endblock %}
+{% block workspace_content %}
+<div class="lps-page lp-clients-main-width">
+  <header class="lps-header lpw-command-header lpw-dashboard-header">
+    <div class="lp-page-heading">
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Settings</strong></nav>
+      <h1 class="lp-page-title" id="workspace-page-title">Settings</h1>
+      <p class="lp-page-description">Configure the business-wide identity, preferences, and website design used across your LumisPixel workspace.</p>
+    </div>
+  </header>
+
+  <main class="lps-content">
+    <form class="lps-panel" method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}<input type="hidden" name="action" value="save_business">
+      <div class="lps-panel-head"><div><span class="lps-eyebrow">Business</span><h2>Business Information</h2><p>These details identify your studio across LumisPixel. Personal login information remains in Account Settings.</p></div><button class="lp-button lp-button--primary lp-button--md" type="submit">Save settings</button></div>
+      {% if form.non_field_errors %}<div class="lps-form-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="lps-form-grid">
+        <label><span>Business name</span>{{ form.business_name }}{% for error in form.business_name.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label>
+        <label><span>Business phone</span>{{ form.phone_number }}{% for error in form.phone_number.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label>
+        <label class="lps-wide"><span>External website <small>Optional</small></span>{{ form.website }}{% for error in form.website.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label>
+        <label><span>City</span>{{ form.city }}</label><label><span>State / region</span>{{ form.state }}</label><label><span>Country</span>{{ form.country }}</label>
+      </div>
+      <div class="lps-subsection"><div><h3>Workspace preferences</h3><p>Used for schedules, timestamps, and business-level monetary displays.</p></div><div class="lps-preference-grid"><label><span>Timezone</span>{{ form.timezone }}{% for error in form.timezone.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label><label><span>Default currency</span>{{ form.default_currency }}{% for error in form.default_currency.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label></div></div>
+      <div class="lps-subsection lps-brand-row"><div><h3>Business logo</h3><p>Your global studio identity. Gallery-specific branding continues to live in Galleries.</p></div><div class="lps-logo-control">{% if profile.business_logo %}<img src="{{ profile.business_logo.url }}" alt="{{ profile.business_name|default:'Business' }} logo">{% else %}<span class="lps-logo-placeholder"><i class="bi bi-image" aria-hidden="true"></i></span>{% endif %}<label class="lps-file"><span>Choose logo</span>{{ form.business_logo }}</label></div></div>
+    </form>
+
+    <section class="lps-panel lps-website" aria-labelledby="website-settings-title">
+      <div class="lps-panel-head"><div><span class="lps-eyebrow">Brand &amp; website</span><h2 id="website-settings-title">Website Design</h2><p>Preview any design before switching. A design is changed only when you explicitly choose Use design.</p></div><a class="lp-button lp-button--secondary lp-button--md" href="{{ website_content_url }}"><i class="bi bi-pencil-square" aria-hidden="true"></i>Edit website content</a></div>
+      {% if current_theme %}<div class="lps-current-theme"><span class="lps-current-icon"><i class="bi bi-window" aria-hidden="true"></i></span><div><small>Current design</small><strong>{{ current_theme.name }}</strong><p>{{ current_theme.description }}</p></div><div class="lps-current-actions"><a class="lp-button lp-button--outline lp-button--sm" href="{{ current_theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview current website</a><a class="lp-text-action" href="{{ website_builder_url }}">Open full website builder <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>{% endif %}
+      <div class="lps-theme-heading"><div><h3>Available designs</h3><p>Compare the six LumisPixel website systems using the completed previews.</p></div></div>
+      <div class="lps-theme-grid">
+        {% for theme in themes %}<article class="lps-theme-card{% if theme.active %} is-active{% endif %}"><div class="lps-theme-card__top"><div><span>{{ theme.best_for }}</span><h3>{{ theme.name }}</h3></div>{% if theme.active %}<span class="lps-active-badge"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Current</span>{% endif %}</div><p>{{ theme.description }}</p><div class="lps-includes"><small>Includes</small><span>{{ theme.included_sections|join:", " }}</span></div><footer><a class="lp-button lp-button--outline lp-button--sm" href="{{ theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview</a>{% if not theme.active %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="activate_theme"><input type="hidden" name="theme_value" value="{{ theme.value }}"><button class="lp-button lp-button--secondary lp-button--sm" type="submit">Use design</button></form>{% endif %}</footer></article>{% endfor %}
+      </div>
+    </section>
+
+    <section class="lps-panel" aria-labelledby="workspace-ownership-title"><div class="lps-panel-head"><div><span class="lps-eyebrow">Configuration</span><h2 id="workspace-ownership-title">Where other settings live</h2><p>Feature-specific defaults stay with the feature they control, so you never have to maintain the same setting in two places.</p></div></div><div class="lps-destination-grid"><a href="{{ galleries_url }}"><span><i class="bi bi-images" aria-hidden="true"></i></span><div><strong>Galleries</strong><p>Client access, gallery presentation, downloads, privacy, and delivery.</p></div><i class="bi bi-chevron-right" aria-hidden="true"></i></a><a href="{{ financial_url }}"><span><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><strong>Financials</strong><p>Invoices, payments, transaction settings, and financial operations.</p></div><i class="bi bi-chevron-right" aria-hidden="true"></i></a><a href="{{ team_url }}"><span><i class="bi bi-people" aria-hidden="true"></i></span><div><strong>Team</strong><p>Members, assignments, roles, access, and team performance.</p></div><i class="bi bi-chevron-right" aria-hidden="true"></i></a><a href="{{ notifications_url }}"><span><i class="bi bi-bell" aria-hidden="true"></i></span><div><strong>Notifications</strong><p>Notification delivery controls will live with the notification center as they become available.</p></div><i class="bi bi-chevron-right" aria-hidden="true"></i></a></div></section>
+
+    <section class="lps-panel lps-connections" aria-labelledby="connections-title"><div class="lps-panel-head"><div><span class="lps-eyebrow">Connections</span><h2 id="connections-title">Integrations</h2><p>External provider connections will appear here when they are enabled for your workspace.</p></div></div><div class="lps-empty-state"><span><i class="bi bi-plug" aria-hidden="true"></i></span><div><strong>No external integrations configured</strong><p>LumisPixel will show connected calendars, payment services, storage providers, and publishing integrations here without duplicating their feature settings.</p></div></div></section>
+  </main>
+</div>
+{% endblock %}
