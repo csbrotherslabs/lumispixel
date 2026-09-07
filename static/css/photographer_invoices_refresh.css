@@ -62,18 +62,34 @@
 
 .lpw-invoices-page .lp-header-actions .lp-button{
   min-height:44px;
-  border:1px solid #b9151b;
   border-radius:10px;
-  background:#d71920;
-  color:#fff;
   box-shadow:0 6px 16px rgba(47,37,30,.05);
 }
 
-.lpw-invoices-page .lp-header-actions .lp-button:hover,
-.lpw-invoices-page .lp-header-actions .lp-button:focus-visible{
+.lpw-invoices-page .lp-header-actions .lp-button--primary{
+  border:1px solid #b9151b;
+  background:#d71920;
+  color:#fff;
+}
+
+.lpw-invoices-page .lp-header-actions .lp-button--primary:hover,
+.lpw-invoices-page .lp-header-actions .lp-button--primary:focus-visible{
   border-color:#9f1117;
   background:#b9151b;
   color:#fff;
+}
+
+.lpw-invoices-page .lp-header-actions .lp-button--secondary{
+  border:1px solid #d8cec8;
+  background:#fff;
+  color:#3d3733;
+}
+
+.lpw-invoices-page .lp-header-actions .lp-button--secondary:hover,
+.lpw-invoices-page .lp-header-actions .lp-button--secondary:focus-visible{
+  border-color:#d71920;
+  background:#fff7f7;
+  color:#d71920;
 }
 
 .lpw-invoices-page .lpw-invoices-content{
