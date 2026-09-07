@@ -1,0 +1,227 @@
+/* Gallery detail workspace second pass: explicit layout, CRM visual language, no positional card hacks. */
+
+.lpw-main:has(.lp-gallery-workspace-v2){background:var(--lp-color-page)}
+
+.lp-gallery-workspace-v2{
+  display:grid;
+  gap:18px;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:0 0 var(--lp-space-8);
+  color:var(--lp-text-primary);
+}
+
+/* Header: use the approved CRM visual language, while preserving gallery actions. */
+.lp-gallery-workspace-v2 .lp-gw-head{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:20px;
+  width:100%;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-gallery-workspace-v2 .lp-gw-head::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-head::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-gallery-workspace-v2 .lp-gw-heading,
+.lp-gallery-workspace-v2 .lp-gw-commandbar{position:relative;z-index:1}
+.lp-gallery-workspace-v2 .lp-gw-heading{display:grid;gap:12px;min-width:0}
+.lp-gallery-workspace-v2 .lpw-breadcrumb{display:flex;align-items:center;gap:7px;margin:0;padding:0;background:transparent;color:#8a817a;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none}
+.lp-gallery-workspace-v2 .lpw-breadcrumb a{color:#d71920;text-decoration:none;transition:color .18s ease}
+.lp-gallery-workspace-v2 .lpw-breadcrumb a:hover,.lp-gallery-workspace-v2 .lpw-breadcrumb a:focus-visible{color:#25211f}
+.lp-gallery-workspace-v2 .lpw-breadcrumb i{color:#aaa09a;font-size:9px}
+.lp-gallery-workspace-v2 .lp-gw-title{display:block}
+.lp-gallery-workspace-v2 .lp-gw-title__icon{display:none}
+.lp-gallery-workspace-v2 .lp-gw-title>div{display:grid;gap:5px;min-width:0}
+.lp-gallery-workspace-v2 .lp-gw-title>div>div{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lp-gallery-workspace-v2 .lp-gw-title h1{margin:0;color:#25211f;font-size:clamp(30px,3vw,42px);font-weight:750;line-height:1.08;letter-spacing:-.035em}
+.lp-gallery-workspace-v2 .lp-gw-title p{max-width:720px;margin:0;color:#665f5a;font-size:14px;line-height:1.55}
+
+.lp-gallery-workspace-v2 .lp-gw-commandbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  width:100%;
+  padding:14px 16px;
+  border:1px solid rgba(224,214,207,.92);
+  border-radius:16px;
+  background:rgba(255,255,255,.76);
+  box-shadow:0 8px 24px rgba(47,37,30,.04);
+  backdrop-filter:blur(8px);
+}
+
+.lp-gallery-workspace-v2 .lp-gw-commandbar dl{display:flex;align-items:center;gap:0;flex:1;min-width:0;margin:0;padding:0}
+.lp-gallery-workspace-v2 .lp-gw-commandbar dl div{display:grid;gap:2px;min-width:112px;padding:0 16px;border-left:1px solid #e5ddd8}
+.lp-gallery-workspace-v2 .lp-gw-commandbar dl div:first-child{padding-left:0;border-left:0}
+.lp-gallery-workspace-v2 .lp-gw-commandbar dt{color:#8b827c;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+.lp-gallery-workspace-v2 .lp-gw-commandbar dd{margin:0;color:#312b28;font-size:12px;font-weight:700}
+.lp-gallery-workspace-v2 .lp-gw-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:none;flex-wrap:wrap}
+.lp-gallery-workspace-v2 .lp-gw-publish-form{margin:0}
+
+/* Tabs are visually separated from the header instead of being fused into the overview. */
+.lp-gallery-workspace-v2 .lp-gw-tabs{
+  position:sticky;
+  z-index:9;
+  top:73px;
+  display:flex;
+  gap:4px;
+  margin:0;
+  padding:8px;
+  overflow-x:auto;
+  border:1px solid var(--lp-color-border);
+  border-radius:16px;
+  background:rgba(255,255,255,.96);
+  box-shadow:var(--lp-shadow-subtle);
+  white-space:nowrap;
+  scrollbar-width:thin;
+}
+.lp-gallery-workspace-v2 .lp-gw-tabs a{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 12px;border-radius:10px;color:#716861;font-size:11px;font-weight:700;text-decoration:none}
+.lp-gallery-workspace-v2 .lp-gw-tabs a:hover{background:#f8f4f1;color:#25211f}
+.lp-gallery-workspace-v2 .lp-gw-tabs a.is-active{background:#d71920;color:#fff}
+.lp-gallery-workspace-v2 .lp-gw-tabs a.is-active i{color:#fff}
+
+.lp-gallery-workspace-v2 .lp-gw-content{min-width:0;padding:0;border:0;background:transparent;box-shadow:none}
+
+/* Explicit overview structure. Each row owns its layout, so no nth-child placement is needed. */
+.lp-gallery-workspace-v2 .lp-gw-overview{display:grid;gap:16px}
+.lp-gallery-workspace-v2 .lp-gw-overview-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
+.lp-gallery-workspace-v2 .lp-gw-overview-card{
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(47,37,30,.05);
+}
+.lp-gallery-workspace-v2 .lp-gw-overview-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:0 0 12px;border-bottom:1px solid var(--lp-color-border)}
+.lp-gallery-workspace-v2 .lp-gw-overview-card>header h2{margin:0;color:#25211f;font-size:15px;font-weight:750}
+.lp-gallery-workspace-v2 .lp-gw-overview-card>header>a{color:#d71920;font-size:11px;font-weight:700;text-decoration:none}
+.lp-gallery-workspace-v2 .lp-gw-overview-card p{color:#756d67;font-size:12px;line-height:1.55}
+
+/* Summary: full-width, compact, and content-driven instead of spanning artificial rows. */
+.lp-gallery-workspace-v2 .lp-gw-overview-summary__body{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:22px;align-items:center}
+.lp-gallery-workspace-v2 .lp-gw-overview-summary__copy{display:grid;gap:10px;align-content:start}
+.lp-gallery-workspace-v2 .lp-gw-overview-summary__copy p{max-width:760px;margin:0;font-size:13px}
+.lp-gallery-workspace-v2 .lp-cover{display:grid;height:170px;margin:0;overflow:hidden;place-content:center;justify-items:center;gap:6px;border:1px solid #eee5df;border-radius:13px;background:#f8f5f2;color:#8e847c}
+.lp-gallery-workspace-v2 .lp-cover img{width:100%;height:100%;object-fit:cover}
+
+/* Client + delivery cards. */
+.lp-gallery-workspace-v2 .lp-gw-client-card>strong{display:block;margin-bottom:3px;color:#2e2926;font-size:16px}
+.lp-gallery-workspace-v2 .lp-gw-client-card>p{margin:0 0 10px}
+.lp-gallery-workspace-v2 .lp-gw-client-card>a{color:#d71920;font-size:11px;font-weight:700;text-decoration:none}
+.lp-gallery-workspace-v2 .lp-delivery{display:flex;align-items:center;gap:12px}
+.lp-gallery-workspace-v2 .lp-delivery>i{display:grid;width:40px;height:40px;flex:none;place-items:center;border-radius:11px;background:#fff0f0;color:#d71920;font-size:17px}
+.lp-gallery-workspace-v2 .lp-delivery strong{font-size:14px}
+.lp-gallery-workspace-v2 .lp-delivery p{margin:2px 0 0}
+
+/* Settings + upload row. */
+.lp-gallery-workspace-v2 .lp-settings-summary dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}
+.lp-gallery-workspace-v2 .lp-settings-summary dl div{min-width:0;padding:13px 14px;border:1px solid #eee5df;border-radius:11px;background:#fbf9f7}
+.lp-gallery-workspace-v2 .lp-settings-summary dt{color:#8d837b;font-size:9px;font-weight:750;letter-spacing:.04em;text-transform:uppercase}
+.lp-gallery-workspace-v2 .lp-settings-summary dd{margin:5px 0 0;color:#312b28;font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.lp-gallery-workspace-v2 .lp-gw-upload-card .lp-storage-track{height:8px;margin:6px 0 10px;overflow:hidden;border-radius:999px;background:#eee8e4}
+.lp-gallery-workspace-v2 .lp-gw-upload-card .lp-storage-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#d71920,#ee696d)}
+.lp-gallery-workspace-v2 .lp-gw-upload-card>p{margin:0}
+
+/* Recent activity + Quick Actions row. */
+.lp-gallery-workspace-v2 .lp-gw-activity-list{display:grid;gap:8px}
+.lp-gallery-workspace-v2 .lp-activity{display:flex;align-items:center;gap:12px;padding:10px 0}
+.lp-gallery-workspace-v2 .lp-activity+.lp-activity{border-top:1px solid #f0ebe7}
+.lp-gallery-workspace-v2 .lp-activity>i{display:grid;width:36px;height:36px;flex:none;place-items:center;border-radius:10px;background:#fff0f0;color:#d71920;font-size:15px}
+.lp-gallery-workspace-v2 .lp-activity strong{font-size:12px}
+.lp-gallery-workspace-v2 .lp-activity p{margin:2px 0 0;font-size:11px}
+
+.lp-gallery-workspace-v2 .lp-gw-quick-actions{display:grid;grid-template-columns:1fr;gap:8px}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  min-height:58px;
+  padding:11px 12px;
+  border:1px solid var(--lpw-border);
+  border-radius:10px;
+  background:var(--lp-color-page);
+  color:var(--lpw-text);
+  font-size:13px;
+  font-weight:700;
+  text-align:left;
+  text-decoration:none;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a:hover,.lp-gallery-workspace-v2 .lp-gw-quick-actions>a:focus-visible{transform:translateY(-2px);border-color:var(--lp-color-brand-border);background:#fff}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions .lpw-widget-icon{display:grid;width:34px;height:34px;flex:0 0 34px;place-items:center;border-radius:11px;background:#fff0f0;color:#d71920;font-size:15px}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a>.bi-chevron-right{margin-left:auto;color:#9b918a;font-size:11px}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a.is-emphasis{border-color:#d71920;background:#d71920;color:#fff}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a.is-emphasis .lpw-widget-icon{background:rgba(255,255,255,.16);color:#fff}
+.lp-gallery-workspace-v2 .lp-gw-quick-actions>a.is-emphasis>.bi-chevron-right{color:#fff}
+
+/* Preserve all non-overview gallery tabs; only normalize the content shell. */
+.lp-gallery-workspace-v2 .lp-gw-content>:not(.lp-gw-overview){min-width:0}
+
+@media(max-width:1180px){
+  .lp-gallery-workspace-v2 .lp-gw-commandbar{align-items:flex-start;flex-direction:column}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl{width:100%}
+  .lp-gallery-workspace-v2 .lp-gw-actions{justify-content:flex-start;width:100%}
+}
+
+@media(max-width:900px){
+  .lp-gallery-workspace-v2 .lp-gw-head{padding:28px}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl div,.lp-gallery-workspace-v2 .lp-gw-commandbar dl div:first-child{min-width:0;padding:10px 12px;border-left:0;border-top:1px solid #e5ddd8}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl div:nth-child(-n+2){border-top:0}
+  .lp-gallery-workspace-v2 .lp-gw-overview-summary__body{grid-template-columns:1fr minmax(210px,280px)}
+  .lp-gallery-workspace-v2 .lp-settings-summary dl{grid-template-columns:1fr}
+}
+
+@media(max-width:700px){
+  .lp-gallery-workspace-v2{gap:14px}
+  .lp-gallery-workspace-v2 .lp-gw-head{padding:24px 22px;border-radius:20px}
+  .lp-gallery-workspace-v2 .lp-gw-title>div>div{align-items:flex-start;flex-direction:column;gap:7px}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar{padding:12px}
+  .lp-gallery-workspace-v2 .lp-gw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lp-gallery-workspace-v2 .lp-gw-actions>.lp-button,.lp-gallery-workspace-v2 .lp-gw-actions>form,.lp-gallery-workspace-v2 .lp-gw-actions>form>.lp-button{width:100%;justify-content:center}
+  .lp-gallery-workspace-v2 .lp-gw-tabs{top:64px;border-radius:14px}
+  .lp-gallery-workspace-v2 .lp-gw-overview-row{grid-template-columns:1fr}
+  .lp-gallery-workspace-v2 .lp-gw-overview-summary__body{grid-template-columns:1fr}
+  .lp-gallery-workspace-v2 .lp-cover{height:190px}
+}
+
+@media(max-width:430px){
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl{grid-template-columns:1fr}
+  .lp-gallery-workspace-v2 .lp-gw-commandbar dl div:nth-child(2){border-top:1px solid #e5ddd8}
+  .lp-gallery-workspace-v2 .lp-gw-actions{grid-template-columns:1fr}
+  .lp-gallery-workspace-v2 .lp-gw-overview-card{padding:18px}
+}
