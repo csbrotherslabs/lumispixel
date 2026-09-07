@@ -69,9 +69,9 @@
 .lp-gallery-workspace-v2 .lp-invitations{padding:22px 24px}
 .lp-gallery-workspace-v2 .lp-invitations__head{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--lp-color-border)}
 .lp-gallery-workspace-v2 .lp-invite-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px 12px;align-items:end;padding:16px;border:1px solid #eee7e2;border-radius:14px;background:#fbf9f7}
-.lp-gallery-workspace-v2 .lp-invite-form label{display:grid;gap:6px;color:var(--lp-text-primary);font-size:11px;font-weight:700}
-.lp-gallery-workspace-v2 .lp-invite-form input{min-height:42px;padding:0 12px;border:1px solid var(--lp-color-border);border-radius:10px;background:#fff;color:var(--lp-text-primary);font:inherit}
-.lp-gallery-workspace-v2 .lp-invite-form>button{min-height:42px;height:42px;align-self:end}
+.lp-gallery-workspace-v2 .lp-invite-form label{display:grid;grid-template-rows:auto 42px;gap:6px;margin:0;color:var(--lp-text-primary);font-size:11px;font-weight:700}
+.lp-gallery-workspace-v2 .lp-invite-form input{box-sizing:border-box;width:100%;height:42px;min-height:42px;margin:0;padding:0 12px;border:1px solid var(--lp-color-border);border-radius:10px;background:#fff;color:var(--lp-text-primary);font:inherit}
+.lp-gallery-workspace-v2 .lp-invite-form>button{box-sizing:border-box;height:42px;min-height:42px;margin:0;align-self:end}
 .lp-gallery-workspace-v2 .lp-invite-form input:focus{border-color:var(--lp-color-brand,#d71920);outline:2px solid rgba(215,25,32,.1);outline-offset:1px}
 .lp-gallery-workspace-v2 .lp-invite-form>small{grid-column:1/-1;color:var(--lp-text-secondary);font-size:10px}
 .lp-gallery-workspace-v2 .lp-access-table{margin-top:16px;overflow-x:auto;border:1px solid var(--lp-color-border);border-radius:13px}
