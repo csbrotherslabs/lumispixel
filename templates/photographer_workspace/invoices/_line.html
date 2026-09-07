@@ -1,12 +1,38 @@
 <div class="lpw-line-row" data-line>
-  <div class="lpw-line-item">
-    <label><span class="sr-only">Item or description</span><input name="item_description[]" value="{{ line.description }}" placeholder="Item or service" required></label>
-    <label><span class="sr-only">Item type</span><select name="item_type[]" aria-label="Item type">{% for value,label in item_types %}<option value="{{ value }}"{% if line.item_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <div class="lpw-line-primary">
+    <label class="lpw-line-description">
+      <span>Description</span>
+      <input name="item_description[]" value="{{ line.description }}" placeholder="Item or service" required>
+    </label>
+    <label class="lpw-line-type">
+      <span>Type</span>
+      <select name="item_type[]" aria-label="Item type">{% for value,label in item_types %}<option value="{{ value }}"{% if line.item_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </label>
   </div>
-  <label class="lpw-line-field"><span class="lpw-mobile-label">Qty</span><input aria-label="Quantity" name="item_quantity[]" type="number" min=".01" step=".01" value="{{ line.quantity|default:'1.00' }}" required></label>
-  <label class="money lpw-line-field"><span aria-hidden="true" data-currency-prefix>$</span><input aria-label="Unit price" name="item_unit_price[]" type="number" min="0" step=".01" value="{{ line.unit_price|default:'0.00' }}" required></label>
-  <label class="suffix lpw-line-field"><input aria-label="Discount percentage" name="item_discount[]" type="number" min="0" max="100" step=".01" value="{{ line.discount_percent|default:'0.00' }}"><span aria-hidden="true">%</span></label>
-  <label class="suffix lpw-line-field"><input aria-label="Tax percentage" name="item_tax[]" type="number" min="0" max="100" step=".01" value="{{ line.tax_percent|default:'0.00' }}"><span aria-hidden="true">%</span></label>
-  <output data-line-total aria-label="Line item total">$0.00</output>
-  <button class="lpw-line-remove" type="button" data-remove aria-label="Remove line item" data-tooltip="Remove line item"><i class="bi bi-trash" aria-hidden="true"></i></button>
+  <div class="lpw-line-secondary">
+    <label class="lpw-line-field">
+      <span>Quantity</span>
+      <input aria-label="Quantity" name="item_quantity[]" type="number" min=".01" step=".01" value="{{ line.quantity|default:'1.00' }}" required>
+    </label>
+    <label class="lpw-line-field">
+      <span>Unit price</span>
+      <span class="lpw-line-input-shell"><i aria-hidden="true" data-currency-prefix>$</i><input aria-label="Unit price" name="item_unit_price[]" type="number" min="0" step=".01" value="{{ line.unit_price|default:'0.00' }}" required></span>
+    </label>
+    <label class="lpw-line-field">
+      <span>Discount</span>
+      <span class="lpw-line-input-shell lpw-line-input-shell--suffix"><input aria-label="Discount percentage" name="item_discount[]" type="number" min="0" max="100" step=".01" value="{{ line.discount_percent|default:'0.00' }}"><i aria-hidden="true">%</i></span>
+    </label>
+    <label class="lpw-line-field">
+      <span>Tax</span>
+      <span class="lpw-line-input-shell lpw-line-input-shell--suffix"><input aria-label="Tax percentage" name="item_tax[]" type="number" min="0" max="100" step=".01" value="{{ line.tax_percent|default:'0.00' }}"><i aria-hidden="true">%</i></span>
+    </label>
+    <div class="lpw-line-total-wrap">
+      <span>Total</span>
+      <output data-line-total aria-label="Line item total">$0.00</output>
+    </div>
+    <div class="lpw-line-action">
+      <span>Action</span>
+      <button class="lpw-line-remove" type="button" data-remove aria-label="Remove line item" data-tooltip="Remove line item"><i class="bi bi-trash" aria-hidden="true"></i></button>
+    </div>
+  </div>
 </div>
