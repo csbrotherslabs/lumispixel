@@ -58,6 +58,33 @@
   padding:0!important;
 }
 
+/* Edit Gallery intentionally inherits the Create Gallery system. These rules
+   only account for persisted cover media and edit-specific guidance content. */
+.lp-gallery-edit-modern .lp-gallery-create__cover>img,
+.lp-gallery-edit-modern .lp-gallery-create__preview-cover>img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.lp-gallery-edit-modern .lp-gallery-create__cover>img{
+  position:absolute;
+  inset:0;
+}
+
+.lp-gallery-edit-modern .lp-gallery-create__cover-actions{
+  position:absolute;
+  z-index:2;
+  right:14px;
+  bottom:14px;
+}
+
+.lp-gallery-edit-modern .lp-gallery-create__guidance>.lp-button{
+  width:100%;
+  margin-top:14px;
+}
+
 @media(max-width:760px){
   .lp-gallery-create-modern{
     margin-top:0!important;
