@@ -20,10 +20,13 @@ def money(value, field):
 
 
 def next_invoice_number(profile):
+    """Return the next display number, locking existing rows only inside an atomic save."""
     year = timezone.localdate().year
     prefix = f"INV-{year}-"
-    last = (ClientInvoice.objects.select_for_update().filter(photographer=profile, invoice_number__startswith=prefix)
-            .order_by("-invoice_number").values_list("invoice_number", flat=True).first())
+    invoices = ClientInvoice.objects.filter(photographer=profile, invoice_number__startswith=prefix)
+    if transaction.get_connection().in_atomic_block:
+        invoices = invoices.select_for_update()
+    last = invoices.order_by("-invoice_number").values_list("invoice_number", flat=True).first()
     sequence = int(last.rsplit("-", 1)[-1]) + 1 if last else 1
     return f"{prefix}{sequence:04d}"
 
