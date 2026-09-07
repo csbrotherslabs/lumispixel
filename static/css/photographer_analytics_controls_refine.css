@@ -23,6 +23,7 @@
 .lpa-page .lpa-performance-actions .lpa-view-details{align-self:center;min-height:36px;white-space:nowrap}
 
 .lpa-page .lpa-performance-body{display:grid;gap:14px;padding:2px 0 0}
+.lpa-page .lpa-performance-intro{display:none}
 
 /* Remove the old nested-card visual treatment from the performance chart area. */
 .lpa-page .lpa-performance-section .lpa-trend-primary{border:0;background:transparent;box-shadow:none;padding:0}
