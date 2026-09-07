@@ -42,6 +42,47 @@
   <section class="lp-access-panel lp-invitations" id="invite-client">
     <header class="lp-invitations__head"><div><span class="lp-access-panel__icon"><i class="bi bi-envelope"></i></span><div><h3>Client Invitations</h3><p>Prepare secure access and manage invited clients.</p></div></div></header>
     <form method="post" class="lp-invite-form">{% csrf_token %}<input type="hidden" name="action" value="invite"><label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>Email delivery is not connected yet. LumisPixel will prepare a secure access token.</small></form>
-    <div class="lp-access-table"><table><thead><tr><th>Client</th><th>Email</th><th>Invited</th><th>Last Access</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>{% for invitation in invitations %}<tr><td><strong><i>{{ invitation.client_name|slice:':1' }}</i>{{ invitation.client_name }}</strong></td><td>{{ invitation.email }}</td><td>{{ invitation.invited_at|date:"M j, Y" }}</td><td>{{ invitation.last_access_at|timesince|default:"Never" }}{% if invitation.last_access_at %} ago{% endif %}</td><td><span class="lp-invite-status is-{{ invitation.status }}"><i></i>{{ invitation.get_status_display }}</span></td><td><form method="post" class="lp-invite-actions">{% csrf_token %}<input type="hidden" name="invitation_id" value="{{ invitation.pk }}"><button class="lpw-btn lpw-btn-outline" type="submit" name="action" value="resend">Resend</button><button class="lpw-btn lpw-btn-outline" type="submit" name="action" value="disable">Disable</button><button class="lpw-btn lpw-btn-outline is-danger" type="submit" name="action" value="remove">Remove</button></form></td></tr>{% empty %}<tr><td colspan="6"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Prepare a secure invitation above to get started.</span></div></td></tr>{% endfor %}</tbody></table></div>
+    <div class="lp-access-table">
+      <table>
+        <thead><tr><th>Email</th><th>Invited</th><th>Last Access</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          {% for invitation in invitations %}
+            <tr>
+              <td>{{ invitation.email }}</td>
+              <td>{{ invitation.invited_at|date:"M j, Y" }}</td>
+              <td>{{ invitation.last_access_at|timesince|default:"Never" }}{% if invitation.last_access_at %} ago{% endif %}</td>
+              <td><span class="lp-invite-status is-{{ invitation.status }}"><i></i>{{ invitation.get_status_display }}</span></td>
+              <td class="lp-invite-actions-cell"><button class="lpw-btn lpw-btn-outline lp-invite-actions-toggle" type="button" aria-expanded="false" aria-controls="invite-actions-{{ invitation.pk }}" data-invite-actions-toggle="invite-actions-{{ invitation.pk }}">Actions <i class="bi bi-chevron-down" aria-hidden="true"></i></button></td>
+            </tr>
+            <tr class="lp-invite-actions-row" id="invite-actions-{{ invitation.pk }}" hidden>
+              <td colspan="5">
+                <div class="lp-invite-actions-panel">
+                  <div class="lp-invite-client-name"><span>Client</span><strong>{{ invitation.client_name }}</strong></div>
+                  <div class="lp-invite-action-buttons">
+                    <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="resend" data-action-label="Resend invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Resend</button>
+                    <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="disable" data-action-label="Disable access" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Disable</button>
+                    <button class="lpw-btn lpw-btn-outline is-danger" type="button" data-invite-confirm data-action="remove" data-action-label="Remove invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Remove</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Prepare a secure invitation above to get started.</span></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
 </section>
+
+<div class="lp-invite-confirm-modal" id="lp-invite-confirm-modal" hidden>
+  <div class="lp-invite-confirm-modal__backdrop" data-invite-modal-close></div>
+  <section class="lp-invite-confirm-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="lp-invite-confirm-title" aria-describedby="lp-invite-confirm-copy" tabindex="-1">
+    <button class="lp-invite-confirm-modal__close" type="button" aria-label="Close confirmation" data-invite-modal-close><i class="bi bi-x-lg"></i></button>
+    <span class="lp-invite-confirm-modal__icon"><i class="bi bi-shield-exclamation"></i></span>
+    <h3 id="lp-invite-confirm-title">Confirm action</h3>
+    <p id="lp-invite-confirm-copy">Confirm this invitation action before continuing.</p>
+    <form method="post" id="lp-invite-confirm-form">{% csrf_token %}<input type="hidden" name="invitation_id" id="lp-invite-confirm-id"><input type="hidden" name="action" id="lp-invite-confirm-action"><div class="lp-invite-confirm-modal__actions"><button class="lpw-btn lpw-btn-outline" type="button" data-invite-modal-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="submit" id="lp-invite-confirm-submit">Confirm</button></div></form>
+  </section>
+</div>
+<script src="{% static 'js/photographer_gallery_client_access.js' %}" defer></script>
