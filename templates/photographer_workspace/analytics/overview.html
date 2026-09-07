@@ -1,19 +1,37 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_analytics_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lpa-page lp-container lp-container--wide" id="main-content">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Analytics</strong></nav>
 
-  <header class="lpa-header lp-page-header">
+  <header class="lpa-header lp-page-header lpw-command-header lpw-dashboard-header">
     <div class="lpa-heading lp-page-heading">
+      <nav class="lpa-header-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Analytics</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Analytics</h1>
       <p class="lp-page-description">See how your business is performing, what changed, and what needs attention.</p>
     </div>
-    <form class="lpa-header-actions" method="get" data-analytics-form>
-      <label><span class="sr-only">Date range</span><i class="bi bi-calendar3"></i><select name="range" aria-label="Date range">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-      <label><span class="sr-only">Comparison period</span><i class="bi bi-arrow-left-right"></i><select name="compare" aria-label="Comparison period">{% for value, label in compare_options %}<option value="{{ value }}"{% if compare_key == value %} selected{% endif %}>Compare: {{ label }}</option>{% endfor %}</select></label>
-      <button class="lp-button lp-button--secondary" type="button" data-analytics-filter-open aria-haspopup="dialog"><i class="bi bi-sliders" aria-hidden="true"></i>Filters{% if active_chips %}<span class="lpa-filter-count">{{ active_chips|length }}</span>{% endif %}</button>
-      <button class="lp-button lp-button--primary" type="submit">Update</button>
-      <details class="lpa-export"><summary class="lp-button lp-button--ghost"><span>Export</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary><div><a href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}export=csv"><i class="bi bi-filetype-csv" aria-hidden="true"></i><span><strong>Download summary CSV</strong><small>Export the active analytics summary</small></span></a><button type="button" data-print-report><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span><strong>Print / save PDF</strong><small>Open this summary in the browser print dialog</small></span></button></div></details>
+    <div class="lpa-header-actions">
+      <details class="lpa-more-actions">
+        <summary class="lp-button lp-button--secondary lp-button--md" aria-haspopup="menu"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div role="menu">
+          <a role="menuitem" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}export=csv"><i class="bi bi-filetype-csv" aria-hidden="true"></i><span><strong>Download Summary CSV</strong><small>Export the active analytics summary and filters.</small></span></a>
+          <button role="menuitem" type="button" data-print-report><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span><strong>Print / Save PDF</strong><small>Open this analytics view in the browser print dialog.</small></span></button>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <section class="lpa-report-controls" aria-labelledby="analytics-controls-title">
+    <div class="lpa-report-controls__head">
+      <div><span>Report controls</span><h2 id="analytics-controls-title">Focus this business view</h2><p>Choose the period and comparison first, then use filters only when you need a narrower view.</p></div>
+      {% if active_chips %}<small>{{ active_chips|length }} active filter{{ active_chips|length|pluralize }}</small>{% endif %}
+    </div>
+    <form class="lpa-report-controls__form" method="get" data-analytics-form>
+      <label class="lpa-control-field"><span>Date range</span><span class="lpa-control-shell"><i class="bi bi-calendar3" aria-hidden="true"></i><select name="range" aria-label="Date range">{% for value, label in range_options %}<option value="{{ value }}"{% if range_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></span></label>
+      <label class="lpa-control-field"><span>Comparison</span><span class="lpa-control-shell"><i class="bi bi-arrow-left-right" aria-hidden="true"></i><select name="compare" aria-label="Comparison period">{% for value, label in compare_options %}<option value="{{ value }}"{% if compare_key == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></span></label>
+      <button class="lp-button lp-button--secondary lp-button--md" type="button" data-analytics-filter-open aria-haspopup="dialog"><i class="bi bi-sliders" aria-hidden="true"></i>Filters{% if active_chips %}<span class="lpa-filter-count">{{ active_chips|length }}</span>{% endif %}</button>
+      <button class="lp-button lp-button--primary lp-button--md" type="submit"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Update View</button>
 
       <dialog class="lpa-filter-drawer" data-analytics-filter-dialog aria-labelledby="analytics-filter-title">
         <header><div><span class="lpa-eyebrow">Focus the report</span><h2 id="analytics-filter-title">Filter analytics</h2><p>Use only the filters that materially change the business overview.</p></div><button type="button" data-analytics-filter-close aria-label="Close filters"><i class="bi bi-x-lg"></i></button></header>
@@ -26,11 +44,10 @@
         <footer><a href="{% url 'photographer_workspace:analytics' %}">Clear all</a><button class="lpw-btn" type="button" data-analytics-filter-close>Cancel</button><button class="lpw-btn lpw-btn-primary" type="submit">Apply filters</button></footer>
       </dialog>
     </form>
-  </header>
+    {% if active_chips %}<div class="lpa-active-filters" aria-label="Active filters"><strong>Active filters</strong>{% for chip in active_chips %}<button type="button" data-remove-filter="{{ chip.key }}" aria-label="Remove {{ chip.label }} filter: {{ chip.display }}"><span>{{ chip.label }}:</span> {{ chip.display }} <i class="bi bi-x"></i></button>{% endfor %}<a href="{% url 'photographer_workspace:analytics' %}">Clear all</a></div>{% endif %}
+  </section>
 
   <div class="lpa-content">
-    {% if active_chips %}<div class="lpa-active-filters" aria-label="Active filters"><strong>Active filters</strong>{% for chip in active_chips %}<button type="button" data-remove-filter="{{ chip.key }}" aria-label="Remove {{ chip.label }} filter: {{ chip.display }}"><span>{{ chip.label }}:</span> {{ chip.display }} <i class="bi bi-x"></i></button>{% endfor %}<a href="{% url 'photographer_workspace:analytics' %}">Clear all</a></div>{% endif %}
-
     {% if analytics_state != 'ready' %}
       {% include "photographer_workspace/analytics/components/state.html" with state=analytics_state %}
     {% else %}
