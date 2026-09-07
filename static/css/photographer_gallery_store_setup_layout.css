@@ -1,0 +1,33 @@
+/* Store Setup row layout: Name/Currency first, boolean controls second. */
+.lp-gallery-workspace-v2 .lp-store-setup-form{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-primary-field{grid-column:span 3}
+.lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-toggle-field{grid-column:span 2}
+.lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-toggle-field{
+  min-height:66px;
+  padding:12px 14px;
+  border:1px solid var(--lp-color-border);
+  border-radius:12px;
+  background:#fbf9f7;
+  align-content:center;
+}
+.lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-toggle-field label{
+  color:var(--lp-text-primary);
+}
+.lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-toggle-field input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  margin:0;
+  accent-color:var(--lp-color-brand,#d71920);
+}
+.lp-gallery-workspace-v2 .lp-store-setup-form>div.wide,
+.lp-gallery-workspace-v2 .lp-store-setup-form>footer{grid-column:1/-1}
+
+@media(max-width:760px){
+  .lp-gallery-workspace-v2 .lp-store-setup-form{grid-template-columns:1fr}
+  .lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-primary-field,
+  .lp-gallery-workspace-v2 .lp-store-setup-form>.is-store-toggle-field,
+  .lp-gallery-workspace-v2 .lp-store-setup-form>div.wide,
+  .lp-gallery-workspace-v2 .lp-store-setup-form>footer{grid-column:auto}
+}
