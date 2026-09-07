@@ -20,6 +20,7 @@
         <details class="lpw-financial-menu">
           <summary class="lp-button lp-button--ghost lp-button--md lpw-transactions-more-trigger" aria-haspopup="menu"><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
           <div role="menu">
+            <a role="menuitem" href="{% url 'photographer_workspace:invoices' %}"><i class="bi bi-receipt" aria-hidden="true"></i><span><strong>View All Invoices</strong><small>Open the complete invoice workspace</small></span></a>
             <a role="menuitem" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i><span><strong>Create Invoice</strong><small>Start a new client invoice</small></span></a>
             <button role="menuitem" type="button" data-financial-open="payment"><i class="bi bi-cash-coin" aria-hidden="true"></i><span><strong>Record Payment</strong><small>Add a received client payment</small></span></button>
             <button role="menuitem" type="button" data-financial-open="refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span><strong>Issue Refund</strong><small>Return a completed payment</small></span></button>
@@ -129,7 +130,7 @@
 <div class="lpw-record-layer" data-record-layer data-endpoint="{% url 'photographer_workspace:financial_record_detail' '__type__' 0 %}" hidden>
   <aside class="lpw-record-drawer" data-record-panel role="dialog" aria-modal="true" aria-labelledby="financial-record-title" tabindex="-1"><div data-record-content></div></aside>
 </div>
-<script src="{% static 'js/financial_record_drawer.js' %}"></script>
+{% load static %}<script src="{% static 'js/financial_record_drawer.js' %}"></script>
 <script src="{% static 'js/financial_actions.js' %}"></script>
 <script src="{% static 'js/financial_transactions.js' %}" data-bulk-endpoint="{% url 'photographer_workspace:financial_transaction_bulk' %}" data-export-endpoint="{% url 'photographer_workspace:financial_transaction_export' %}"></script>
 <script>document.querySelectorAll('[data-row-url]').forEach(function(row){row.addEventListener('keydown',function(event){if((event.key==='Enter'||event.key===' ')&&!event.target.closest('a,button,input,select,details,summary')){event.preventDefault();row.click()}})});</script>
