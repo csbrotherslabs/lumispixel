@@ -28,6 +28,26 @@
 /* Remove the old nested-card visual treatment from the performance chart area. */
 .lpa-page .lpa-performance-section .lpa-trend-primary{border:0;background:transparent;box-shadow:none;padding:0}
 
+/* Business Health: make the score primary, then move score breakdown to its own row. */
+.lpa-page .lpa-health-grid{grid-template-columns:1fr;gap:14px}
+.lpa-page .lpa-health-grid>.lpa-health-card,
+.lpa-page .lpa-health-grid>.lpa-contributions{width:100%;min-width:0}
+.lpa-page .lpa-contributions{padding:20px}
+.lpa-page .lpa-contributions header{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #eee7e2}
+.lpa-page .lpa-contributions header h3{font-size:16px;line-height:1.3}
+.lpa-page .lpa-contributions header p{font-size:13px;line-height:1.5}
+.lpa-page .lpa-contributions .lpa-eyebrow{font-size:10.5px}
+.lpa-page .lpa-contributions ul{display:grid;gap:12px;margin:0;padding:0}
+.lpa-page .lpa-contributions li{gap:12px;padding:12px 0;font-size:13px;line-height:1.45}
+.lpa-page .lpa-contributions li>div{display:grid;gap:3px;min-width:0}
+.lpa-page .lpa-contributions li a{font-size:13.5px;font-weight:750;line-height:1.35}
+.lpa-page .lpa-contributions li span{font-size:12.5px;line-height:1.5}
+.lpa-page .lpa-contributions li b{font-size:13px;line-height:1.35}
+.lpa-page .lpa-contributions details{margin-top:12px}
+.lpa-page .lpa-contributions details summary{font-size:12.5px;font-weight:700;line-height:1.4}
+.lpa-page .lpa-contributions details p,
+.lpa-page .lpa-health-empty{font-size:12.5px;line-height:1.55}
+
 @media(max-width:900px){
   .lpa-page .lpa-performance-heading{align-items:flex-start}
   .lpa-page .lpa-performance-actions{width:100%;justify-content:flex-start}
@@ -38,4 +58,7 @@
   .lpa-page .lpa-performance-actions .lpa-grouping{min-width:0;flex:1}
   .lpa-page .lpa-performance-actions .lpa-grouping select{min-width:0;max-width:150px;flex:1}
   .lpa-page .lpa-performance-actions .lpa-view-details{width:auto;flex:none;padding-inline:9px}
+  .lpa-page .lpa-contributions{padding:16px}
+  .lpa-page .lpa-contributions li{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+  .lpa-page .lpa-contributions meter{grid-column:1/-1;width:100%}
 }
