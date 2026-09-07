@@ -45,7 +45,7 @@
     <form method="post" class="lp-invite-form">{% csrf_token %}<input type="hidden" name="action" value="invite"><label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>Email delivery is not connected yet. LumisPixel will prepare a secure access token.</small></form>
     <div class="lp-access-table">
       <table>
-        <thead><tr><th>Email</th><th>Invited</th><th>Last Access</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <thead><tr><th>Email</th><th>Invited</th><th>Last Access</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {% for invitation in invitations %}
             <tr>
