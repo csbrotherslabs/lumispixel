@@ -1,0 +1,292 @@
+/* Invoice builder refresh: align the create/edit experience with the approved Bookings workspace language. */
+
+.lp-invoice-builder{
+  display:grid;
+  gap:var(--lp-space-6);
+}
+
+.lp-invoice-builder .lp-invoice-builder-header{
+  position:relative;
+  isolation:isolate;
+  overflow:visible;
+  padding:30px 38px 34px;
+  border:1px solid var(--lp-color-border);
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-invoice-builder .lp-invoice-builder-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:-185px;
+  right:6%;
+  width:280px;
+  height:280px;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:18%;
+  bottom:-118px;
+  width:150px;
+  height:150px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lpw-invoice-heading,
+.lp-invoice-builder .lp-invoice-builder-header .lpw-invoice-actions{
+  position:relative;
+  z-index:1;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb{
+  margin:0 0 18px;
+  padding:0;
+  background:transparent;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb a,
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb strong,
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb i{
+  font-size:11px;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb a{
+  color:var(--lp-text-brand);
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb a:hover,
+.lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb a:focus-visible{
+  color:var(--lp-text-primary);
+}
+
+.lp-invoice-builder .lp-invoice-builder__title{
+  display:block;
+}
+
+.lp-invoice-builder .lp-invoice-builder__title>.lp-page-heading{
+  gap:var(--lp-space-2);
+}
+
+.lp-invoice-builder .lp-invoice-builder__title>.lp-page-heading>div{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:var(--lp-space-3);
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lp-page-title{
+  margin:0;
+}
+
+.lp-invoice-builder .lp-invoice-builder-header .lp-page-description{
+  max-width:680px;
+  margin:0;
+}
+
+.lp-invoice-builder .lpw-invoice-actions{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:var(--lp-space-2);
+}
+
+.lp-invoice-builder .workspace-form-layout{
+  gap:var(--lp-space-5);
+  align-items:start;
+}
+
+.lp-invoice-builder .workspace-form-main{
+  display:grid;
+  gap:var(--lp-space-4);
+}
+
+.lp-invoice-builder .lpw-invoice-card,
+.lp-invoice-builder .lpw-invoice-summary-panel{
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-invoice-builder .lpw-invoice-card>header,
+.lp-invoice-builder .lpw-invoice-summary-panel>header{
+  display:flex;
+  align-items:flex-start;
+  gap:var(--lp-space-3);
+  padding-bottom:14px;
+  margin-bottom:var(--lp-space-4);
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-invoice-builder .lpw-invoice-card>header>b{
+  display:grid;
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  place-items:center;
+  border-radius:10px;
+  background:var(--lp-color-brand-subtle);
+  color:var(--lp-text-brand);
+  font-size:var(--lp-type-caption);
+}
+
+.lp-invoice-builder .lpw-invoice-card>header h2,
+.lp-invoice-builder .lpw-invoice-summary-panel h2{
+  margin:0;
+  color:var(--lp-text-primary);
+  font-size:var(--lp-type-card-title);
+}
+
+.lp-invoice-builder .lpw-invoice-card>header p{
+  margin:var(--lp-space-1) 0 0;
+  color:var(--lp-text-secondary);
+  font-size:var(--lp-type-caption);
+  line-height:var(--lp-leading-caption);
+}
+
+.lp-invoice-builder .lpw-form-grid label>span,
+.lp-invoice-builder .lpw-system-value>span{
+  color:var(--lp-text-secondary);
+  font-size:var(--lp-type-label);
+  font-weight:700;
+}
+
+.lp-invoice-builder input,
+.lp-invoice-builder select,
+.lp-invoice-builder textarea{
+  border-color:var(--lp-color-border-strong);
+  border-radius:var(--lp-radius-sm);
+  background:var(--lp-color-surface);
+  color:var(--lp-text-primary);
+}
+
+.lp-invoice-builder input:focus,
+.lp-invoice-builder select:focus,
+.lp-invoice-builder textarea:focus{
+  border-color:var(--lp-color-brand-border);
+  outline:var(--lp-focus-ring);
+  outline-offset:2px;
+}
+
+.lp-invoice-builder .lpw-system-value{
+  min-height:44px;
+  padding:var(--lp-space-3);
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-sm);
+  background:var(--lp-color-page);
+}
+
+.lp-invoice-builder .lpw-system-value strong{
+  color:var(--lp-text-primary);
+}
+
+.lp-invoice-builder .lpw-add-line{
+  min-height:44px;
+  border:1px solid var(--lp-color-border-strong);
+  border-radius:var(--lp-radius-sm);
+  background:var(--lp-color-surface);
+  color:var(--lp-text-primary);
+  transition:transform var(--lp-transition-duration) var(--lp-transition-easing),border-color var(--lp-transition-duration) var(--lp-transition-easing),background var(--lp-transition-duration) var(--lp-transition-easing);
+}
+
+.lp-invoice-builder .lpw-add-line:hover,
+.lp-invoice-builder .lpw-add-line:focus-visible{
+  border-color:var(--lp-color-brand-border);
+  background:var(--lp-color-brand-subtle);
+  transform:translateY(-1px);
+}
+
+.lp-invoice-builder .lpw-invoice-summary-panel{
+  position:sticky;
+  top:104px;
+}
+
+.lp-invoice-builder .lpw-summary-total{
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-page);
+}
+
+.lp-invoice-builder .lpw-invoice-alert{
+  border:1px solid var(--lp-color-danger);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-danger-subtle);
+  color:var(--lp-text-danger);
+}
+
+@media(max-width:1100px){
+  .lp-invoice-builder .lp-invoice-builder-header{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .lp-invoice-builder .lpw-invoice-actions{
+    justify-content:flex-start;
+    width:100%;
+  }
+
+  .lp-invoice-builder .lpw-invoice-summary-panel{
+    position:static;
+  }
+}
+
+@media(max-width:900px){
+  .lp-invoice-builder .lp-invoice-builder-header{
+    padding:28px;
+  }
+}
+
+@media(max-width:680px){
+  .lp-invoice-builder{
+    gap:var(--lp-space-5);
+  }
+
+  .lp-invoice-builder .lp-invoice-builder-header{
+    padding:24px 22px;
+    border-radius:20px;
+  }
+
+  .lp-invoice-builder .lp-invoice-builder-header .lpw-breadcrumb{
+    margin-bottom:14px;
+  }
+
+  .lp-invoice-builder .lpw-invoice-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .lp-invoice-builder .lpw-invoice-actions .lp-button{
+    width:100%;
+  }
+
+  .lp-invoice-builder .lpw-invoice-actions .lp-button--primary{
+    grid-column:1/-1;
+  }
+
+  .lp-invoice-builder .lpw-invoice-card,
+  .lp-invoice-builder .lpw-invoice-summary-panel{
+    padding:17px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .lp-invoice-builder .lpw-add-line{
+    transition:none;
+  }
+
+  .lp-invoice-builder .lpw-add-line:hover,
+  .lp-invoice-builder .lpw-add-line:focus-visible{
+    transform:none;
+  }
+}
