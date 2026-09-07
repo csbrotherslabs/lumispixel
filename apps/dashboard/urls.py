@@ -2,7 +2,6 @@ from django.urls import path
 
 from . import views
 from .profile_views import photographer_profile
-from .settings_views import photographer_settings, switch_website_theme
 
 app_name = "photographer_workspace"
 
@@ -47,8 +46,7 @@ urlpatterns = [
     path("analytics/", views.analytics_overview, name="analytics"),
     path("marketing/", views.module_placeholder, {"module_key": "marketing"}, name="marketing"),
     path("profile/", photographer_profile, name="profile"),
-    path("settings/", photographer_settings, name="settings"),
-    path("settings/website/switch/", switch_website_theme, name="switch_website_theme"),
+    path("settings/", views.module_placeholder, {"module_key": "settings"}, name="settings"),
     path("crm/", views.clients_crm, name="crm"),
     path("crm/leads/add/", views.add_lead, name="add_lead"),
     path("crm/clients/add/", views.add_client, name="add_client"),
