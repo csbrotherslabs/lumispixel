@@ -1,11 +1,16 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_financial_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:invoice_create' as create_invoice_url %}{% url 'photographer_workspace:transactions' as transactions_url %}
 <div class="lp-financial-overview" id="main-content">
-  <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Overview</strong></nav>
-  <header class="lp-page-header">
-    <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Financial Overview</h1><p class="lp-page-description">Track revenue, payments, balances, and financial activity.</p></div>
-    <div class="lp-header-actions" role="group" aria-label="Financial actions">
+  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-financial-header">
+    <div class="lp-page-heading">
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Financial</strong></nav>
+      <h1 class="lp-page-title" id="workspace-page-title">Overview</h1>
+      <p class="lpw-dashboard-summary lp-page-description">Track revenue, payments, refunds, balances, and financial activity.</p>
+    </div>
+    <div class="lpw-command-header__actions lp-header-actions" role="group" aria-label="Financial actions">
       {% include "photographer_workspace/components/button.html" with variant="primary" label="Create Invoice" leading_icon="bi-plus-lg" href=create_invoice_url %}
       {% include "photographer_workspace/components/button.html" with variant="secondary" label="View Transactions" leading_icon="bi-arrow-left-right" href=transactions_url %}
       <details class="lp-financial-more"><summary class="lp-button lp-button--ghost lp-button--md" aria-label="More financial actions" aria-haspopup="menu"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></summary><div role="menu"><a role="menuitem" href="{{ transactions_url }}?action=record-payment"><i class="bi bi-cash-coin" aria-hidden="true"></i>Record payment</a><a role="menuitem" href="{{ transactions_url }}?action=issue-refund"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Issue refund</a><a role="menuitem" href="{{ transactions_url }}?action=add-credit"><i class="bi bi-plus-circle" aria-hidden="true"></i>Add credit</a></div></details>
