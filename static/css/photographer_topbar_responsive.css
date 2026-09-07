@@ -75,6 +75,32 @@
   }
 }
 
+/* All Galleries: tighten the layout once the workspace drops below 991px. */
+@media(max-width:990px){
+  .lp-gallery-all-page .lpw-gallery-summary{
+    display:none!important;
+  }
+
+  .lp-gallery-all-page .lp-gallery-all-header .lp-header-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:repeat(2,auto);
+    gap:10px;
+    width:min(220px,100%);
+    max-width:220px;
+  }
+
+  .lp-gallery-all-page .lp-gallery-all-header .lp-header-actions .lp-button{
+    width:100%;
+    justify-content:center;
+  }
+
+  .lp-gallery-all-page .lpw-gallery-card-grid{
+    padding-top:6px!important;
+    margin-top:0!important;
+  }
+}
+
 /* At tablet size, keep the title visible and allow the existing icon-search behavior to take over cleanly. */
 @media(max-width:860px){
   .lpw-topbar{
