@@ -1,0 +1,38 @@
+.lp-gallery-workspace-v2 .lp-invite-actions-cell{text-align:right}
+.lp-gallery-workspace-v2 .lp-invite-actions-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:92px}
+.lp-gallery-workspace-v2 .lp-invite-actions-toggle>i{font-size:10px;transition:transform .18s ease}
+.lp-gallery-workspace-v2 .lp-invite-actions-toggle[aria-expanded="true"]>i{transform:rotate(180deg)}
+.lp-gallery-workspace-v2 .lp-invite-actions-row>td{padding:0;border-top:0;background:#fcfaf8}
+.lp-gallery-workspace-v2 .lp-invite-actions-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px;border-top:1px solid #f0ebe7;border-bottom:1px solid #f0ebe7}
+.lp-gallery-workspace-v2 .lp-invite-client-name{display:grid;gap:3px;min-width:0}
+.lp-gallery-workspace-v2 .lp-invite-client-name span{color:var(--lp-text-secondary);font-size:9px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
+.lp-gallery-workspace-v2 .lp-invite-client-name strong{overflow:hidden;color:var(--lp-text-primary);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.lp-gallery-workspace-v2 .lp-invite-action-buttons{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+
+.lp-invite-confirm-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px}
+.lp-invite-confirm-modal[hidden]{display:none}
+.lp-invite-confirm-modal__backdrop{position:absolute;inset:0;background:rgba(24,20,18,.48);backdrop-filter:blur(2px)}
+.lp-invite-confirm-modal__dialog{position:relative;z-index:1;width:min(430px,100%);padding:28px;border:1px solid var(--lp-color-border,#e6dfda);border-radius:18px;background:var(--lp-color-surface-elevated,#fff);box-shadow:var(--lp-shadow-elevated,0 24px 60px rgba(30,24,20,.22));text-align:center}
+.lp-invite-confirm-modal__dialog:focus{outline:none}
+.lp-invite-confirm-modal__close{position:absolute;top:14px;right:14px;display:grid;width:34px;height:34px;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--lp-text-secondary,#756b65);cursor:pointer}
+.lp-invite-confirm-modal__close:hover,.lp-invite-confirm-modal__close:focus-visible{background:#f8f4f1;color:var(--lp-color-brand,#d71920);outline:none}
+.lp-invite-confirm-modal__icon{display:grid;width:48px;height:48px;margin:0 auto 14px;place-items:center;border-radius:14px;background:#fff0f0;color:var(--lp-color-brand,#d71920);font-size:20px}
+.lp-invite-confirm-modal h3{margin:0;color:var(--lp-text-primary,#302925);font-size:18px;font-weight:750}
+.lp-invite-confirm-modal p{margin:8px auto 0;max-width:34ch;color:var(--lp-text-secondary,#756b65);font-size:12px;line-height:1.55}
+.lp-invite-confirm-modal__actions{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:22px}
+.lp-invite-confirm-modal.is-danger .lp-invite-confirm-modal__icon{background:#fff0f0;color:var(--lp-color-brand,#d71920)}
+.lp-invite-confirm-modal.is-danger #lp-invite-confirm-submit{background:var(--lp-color-brand,#d71920);border-color:var(--lp-color-brand,#d71920)}
+body.lp-invite-modal-open{overflow:hidden}
+
+@media(max-width:700px){
+  .lp-gallery-workspace-v2 .lp-invite-actions-panel{align-items:flex-start;flex-direction:column}
+  .lp-gallery-workspace-v2 .lp-invite-action-buttons{justify-content:flex-start;width:100%}
+  .lp-gallery-workspace-v2 .lp-invite-action-buttons .lpw-btn{flex:1 1 auto}
+  .lp-invite-confirm-modal__dialog{padding:24px 20px}
+  .lp-invite-confirm-modal__actions{align-items:stretch;flex-direction:column-reverse}
+  .lp-invite-confirm-modal__actions .lpw-btn{width:100%;justify-content:center}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .lp-gallery-workspace-v2 .lp-invite-actions-toggle>i{transition:none}
+}
