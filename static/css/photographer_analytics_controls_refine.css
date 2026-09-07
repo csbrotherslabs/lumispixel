@@ -16,16 +16,14 @@
 .lpa-page .lpa-active-filters>a{font-size:11px}
 
 .lpa-page .lpa-performance-heading{align-items:center}
-.lpa-page .lpa-performance-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:nowrap}
+.lpa-page .lpa-performance-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:nowrap;white-space:nowrap}
 .lpa-page .lpa-performance-actions .lpa-grouping{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-wrap:nowrap}
 .lpa-page .lpa-performance-actions .lpa-grouping>span{white-space:nowrap;font-size:11.5px;font-weight:700;color:#6f6762;text-transform:none;letter-spacing:0}
 .lpa-page .lpa-performance-actions .lpa-grouping select{min-width:110px;min-height:36px;padding:0 28px 0 10px;font-size:11.5px}
-.lpa-page .lpa-performance-actions .lpa-view-details{align-self:center;min-height:36px}
+.lpa-page .lpa-performance-actions .lpa-view-details{align-self:center;min-height:36px;white-space:nowrap}
 
 .lpa-page .lpa-performance-body{display:grid;gap:14px;padding:2px 0 0}
-.lpa-page .lpa-performance-intro{display:grid;gap:4px;max-width:720px}
-.lpa-page .lpa-performance-intro h3{margin:0;color:#2d2926;font-size:15px;line-height:1.3;font-weight:750}
-.lpa-page .lpa-performance-intro p{margin:0;color:#766f69;font-size:12.5px;line-height:1.5}
+.lpa-page .lpa-performance-intro{display:none}
 
 /* Remove the old nested-card visual treatment from the performance chart area. */
 .lpa-page .lpa-performance-section .lpa-trend-primary{border:0;background:transparent;box-shadow:none;padding:0}
@@ -36,8 +34,8 @@
 }
 
 @media(max-width:620px){
-  .lpa-page .lpa-performance-actions{align-items:stretch;flex-direction:column}
-  .lpa-page .lpa-performance-actions .lpa-grouping{width:100%;justify-content:space-between}
-  .lpa-page .lpa-performance-actions .lpa-grouping select{flex:1;max-width:180px}
-  .lpa-page .lpa-performance-actions .lpa-view-details{width:100%}
+  .lpa-page .lpa-performance-actions{width:100%;align-items:center;justify-content:space-between;gap:8px;flex-direction:row;flex-wrap:nowrap}
+  .lpa-page .lpa-performance-actions .lpa-grouping{min-width:0;flex:1}
+  .lpa-page .lpa-performance-actions .lpa-grouping select{min-width:0;max-width:150px;flex:1}
+  .lpa-page .lpa-performance-actions .lpa-view-details{width:auto;flex:none;padding-inline:9px}
 }
