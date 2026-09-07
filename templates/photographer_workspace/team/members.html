@@ -5,7 +5,7 @@
 <div class="lpm-page lpm-crm-page lp-clients-main-width" data-members-page>
 <header class="lpm-header lp-page-header lpw-command-header lpw-dashboard-header"><div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Members</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Team Members</h1><p class="lp-page-description lpw-dashboard-summary">Manage your team, roles, access, and availability.</p></div>{% if can_invite %}<button class="lpm-primary lp-button lp-button--primary lp-button--md" type="button" data-member-dialog-open="invite"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Invite Member</span></button>{% endif %}</header>
 <main class="lpm-content">
-<section class="lpm-summary lp-card-grid lpm-kpis" aria-label="Team summary">
+<section class="lp-card-grid lpm-kpis" aria-label="Team summary">
   {% include "photographer_workspace/components/kpi_card.html" with label="Team Members" value=summary.total icon="bi-people" supporting_text="People with workspace access or invitations." only %}
   {% include "photographer_workspace/components/kpi_card.html" with label="Active" value=summary.active icon="bi-person-check" supporting_text="Members currently active in the workspace." only %}
   {% include "photographer_workspace/components/kpi_card.html" with label="Pending" value=summary.pending icon="bi-person-clock" supporting_text="Invitations waiting to be accepted." only %}
