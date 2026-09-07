@@ -34,37 +34,23 @@
       </div>
     </section>
 
-    <section class="lpt-section" aria-labelledby="today-title"><div class="lp-section-header"><div><span class="lpt-eyebrow">{{ selected_date|date:'D, M j' }}</span><h2 id="today-title">Daily team operations</h2><p>Who is available and what is scheduled.</p></div></div>
-      <div class="lpt-today-grid">
-        <section class="lp-card lpt-panel lpt-team-panel" aria-labelledby="team-title">
-          <header><div><h2 id="team-title">Today’s Team</h2><p>Availability, assignments, and capacity from saved records.</p></div><a href="{% url 'photographer_workspace:team_members' %}">View Members</a></header>
-          {% if not member_matches %}<div class="lpt-empty"><strong>No members match these filters.</strong><a href="?date={{ selected_date|date:'Y-m-d' }}">Clear filters</a></div>{% else %}
-          <div class="lpt-member-table" role="table" aria-label="Today’s team status">
-            <div class="lpt-member-head" role="row"><span role="columnheader">Member</span><span role="columnheader">Availability</span><span role="columnheader">Assignment</span><span role="columnheader">Capacity</span><span role="columnheader">Location</span><span role="columnheader">Action</span></div>
-            <article class="lpt-member-card" role="row">
-              <div class="lpt-member-name" role="cell"><span class="lpt-avatar" aria-hidden="true">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><span>Owner</span></div></div>
-              <div class="lpt-member-value" role="cell" data-label="Availability"><span class="lp-badge lp-badge--neutral">Not configured</span><button class="lpt-info" type="button" aria-label="About availability" data-tooltip="Working hours or leave haven't been configured."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
-              <div class="lpt-member-value" role="cell" data-label="Assignment"><span>Unavailable</span><button class="lpt-info" type="button" aria-label="About assignment status" data-tooltip="Member assignment records aren't available."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
-              <div class="lpt-member-value" role="cell" data-label="Capacity"><span aria-label="Unavailable">—</span><button class="lpt-info" type="button" aria-label="About capacity" data-tooltip="Configure working hours to calculate capacity."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
-              <div class="lpt-member-location" role="cell" data-label="Location" data-tooltip="{{ owner_location }}" tabindex="0">{{ owner_location }}</div>
-              <a class="lp-button lp-button--secondary lp-button--sm lpt-row-action" role="cell" href="{% url 'photographer_workspace:team_members' %}">Configure</a>
-            </article>
-          </div>{% endif %}
-        </section>
-
-        <section class="lp-card lpt-panel" aria-labelledby="assignments-title">
-          <header><div><h2 id="assignments-title">Today’s Assignments</h2><p>{{ selected_date|date:'l, F j' }}{% if selected_location %} · {{ selected_location }}{% endif %}</p></div><a href="{% url 'photographer_workspace:schedule' %}?date={{ selected_date|date:'Y-m-d' }}">View Schedule</a></header>
-          <div class="lpt-assignment-list">
-          {% for row in today_assignments %}<article class="lpt-assignment lpt-tone-{{ row.tone }}">
-            <time datetime="{{ row.session.starts_at|date:'c' }}">{{ row.session.starts_at|date:'g:i A' }}<small>{{ row.session.duration_minutes }} min</small></time>
-            <div><strong>{{ row.session.client }}</strong><span>{{ row.session.session_type }}</span><small>{{ row.session.location|default:'Location not set' }}</small></div>
-            <div><span class="lp-badge lp-badge--{{ row.tone }}"><i class="bi {% if row.status == 'Conflict' %}bi-exclamation-triangle{% elif row.status == 'Completed' %}bi-check2{% else %}bi-person-dash{% endif %}" aria-hidden="true"></i>{{ row.status }}</span><small>Assigned member: Unassigned</small></div>
-            <a aria-label="View {{ row.session.session_type }} booking" href="{% url 'photographer_workspace:booking_detail' row.session.pk %}"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
-            <p><i class="bi bi-exclamation-circle" aria-hidden="true"></i> {{ row.issue }}</p>
-          </article>{% empty %}<div class="lpt-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><strong>Your team has no shoots scheduled today.</strong></div>{% endfor %}
-          </div>
-        </section>
+    <section class="lpt-section lpt-team-library" aria-labelledby="today-title">
+      <div class="lp-section-header">
+        <div><span class="lpt-eyebrow">{{ selected_date|date:'D, M j' }}</span><h2 id="today-title">Daily team operations</h2><p>Availability, assignments, and capacity from saved records.</p></div>
+        <a href="{% url 'photographer_workspace:team_members' %}">View Members</a>
       </div>
+      {% if not member_matches %}<div class="lpt-empty"><strong>No members match these filters.</strong><a href="?date={{ selected_date|date:'Y-m-d' }}">Clear filters</a></div>{% else %}
+      <div class="lpt-member-table" role="table" aria-label="Today’s team status">
+        <div class="lpt-member-head" role="row"><span role="columnheader">Member</span><span role="columnheader">Availability</span><span role="columnheader">Assignment</span><span role="columnheader">Capacity</span><span role="columnheader">Location</span><span role="columnheader">Action</span></div>
+        <article class="lpt-member-card" role="row">
+          <div class="lpt-member-name" role="cell"><span class="lpt-avatar" aria-hidden="true">{{ owner_initials }}</span><div><strong>{{ owner_name }}</strong><span>Owner</span></div></div>
+          <div class="lpt-member-value" role="cell" data-label="Availability"><span class="lp-badge lp-badge--neutral">Not configured</span><button class="lpt-info" type="button" aria-label="About availability" data-tooltip="Working hours or leave haven't been configured."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+          <div class="lpt-member-value" role="cell" data-label="Assignment"><span>Unavailable</span><button class="lpt-info" type="button" aria-label="About assignment status" data-tooltip="Member assignment records aren't available."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+          <div class="lpt-member-value" role="cell" data-label="Capacity"><span aria-label="Unavailable">—</span><button class="lpt-info" type="button" aria-label="About capacity" data-tooltip="Configure working hours to calculate capacity."><i class="bi bi-info-circle" aria-hidden="true"></i></button></div>
+          <div class="lpt-member-location" role="cell" data-label="Location" data-tooltip="{{ owner_location }}" tabindex="0">{{ owner_location }}</div>
+          <a class="lp-button lp-button--secondary lp-button--sm lpt-row-action" role="cell" href="{% url 'photographer_workspace:team_members' %}">Configure</a>
+        </article>
+      </div>{% endif %}
     </section>
 
     <section class="lpt-section" aria-labelledby="next-title"><div class="lp-section-header"><div><span class="lpt-eyebrow">Next</span><h2 id="next-title">Upcoming Shoots</h2><p>Next 14 days, with attention items first.</p></div><a href="{% url 'photographer_workspace:bookings' %}?date_from={{ selected_date|date:'Y-m-d' }}&amp;date_to={{ upcoming_end|date:'Y-m-d' }}">View All Bookings</a></div>
