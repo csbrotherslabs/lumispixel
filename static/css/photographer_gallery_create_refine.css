@@ -60,6 +60,10 @@
 
 /* Edit Gallery intentionally inherits the Create Gallery system. These rules
    only account for persisted cover media and edit-specific guidance content. */
+.lp-gallery-edit-modern .lp-page-heading>.lp-contract-eyebrow{
+  display:none;
+}
+
 .lp-gallery-edit-modern .lp-gallery-create__cover>img,
 .lp-gallery-edit-modern .lp-gallery-create__preview-cover>img{
   display:block;
