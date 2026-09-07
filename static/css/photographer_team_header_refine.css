@@ -128,7 +128,7 @@
   margin:0;
 }
 
-/* Daily team operations now mirrors the Galleries "Library" command-panel treatment. */
+/* Daily operations, Upcoming Shoots, and Workload now share the Galleries "Library" command-panel treatment. */
 .lpt-page .lpt-team-library{
   display:block;
   min-height:0;
@@ -180,21 +180,34 @@
   text-transform:uppercase;
 }
 
-.lpt-page .lpt-team-library .lpt-member-table{
+.lpt-page .lpt-team-library :is(.lpt-member-table,.lpt-upcoming-list,.lpt-workload){
   width:100%;
   margin-top:14px;
   overflow:hidden;
   border:1px solid #ece5e0;
   border-radius:13px;
   background:#fff;
+  box-shadow:none;
 }
 
-.lpt-page .lpt-team-library .lpt-member-head{
+.lpt-page .lpt-team-library .lpt-member-head,
+.lpt-page .lpt-team-library .lpt-workload-head{
   background:#fbf8f6;
 }
 
-.lpt-page .lpt-team-library .lpt-member-card:last-child{
+.lpt-page .lpt-team-library .lpt-member-card:last-child,
+.lpt-page .lpt-team-library .lpt-upcoming-list>article:last-child,
+.lpt-page .lpt-team-library .lpt-workload-table>article:last-child{
   border-bottom:0;
+}
+
+.lpt-page .lpt-team-library .lpt-upcoming-list>article{
+  min-height:70px;
+}
+
+.lpt-page .lpt-team-library .lpt-workload>.lpt-notice{
+  margin:0 14px 14px;
+  border-radius:11px;
 }
 
 @media(max-width:1180px){
