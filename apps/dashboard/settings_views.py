@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -11,9 +12,15 @@ from apps.photographers.themes import THEME_DEFINITIONS, theme_options
 from .views import _dashboard_context, photographer_workspace_required
 
 
+def _require_settings_access(request):
+    if not request.studio_access.allows("financials"):
+        raise PermissionDenied
+
+
 @photographer_workspace_required
 @require_GET
 def photographer_settings(request):
+    _require_settings_access(request)
     profile = request.studio
     website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
     themes = []
@@ -35,6 +42,7 @@ def photographer_settings(request):
 @photographer_workspace_required
 @require_POST
 def switch_website_theme(request):
+    _require_settings_access(request)
     profile = request.studio
     requested_theme = request.POST.get("website_theme", "").strip()
     definition = THEME_DEFINITIONS.get(requested_theme)
