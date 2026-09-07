@@ -5,6 +5,13 @@
   gap:16px;
 }
 
+/* Neutralize the shared 12-column lp-card-grid child span so this page
+   behaves like the CRM KPI row: three equal cards across on desktop. */
+.lpm-crm-page .lpm-kpis>.lp-kpi-card{
+  grid-column:auto;
+  display:grid;
+}
+
 .lpm-crm-page .lpm-kpis .lp-kpi-card{
   position:relative;
   isolation:isolate;
