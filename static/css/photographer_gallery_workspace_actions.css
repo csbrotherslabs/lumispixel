@@ -1,5 +1,10 @@
 /* Gallery workspace action menu + overview metadata refinement. */
 
+/* Remove eyebrow labels from gallery workspace headers and tab section headers. */
+.lp-gallery-workspace-v2 .lp-contract-eyebrow{
+  display:none;
+}
+
 /*
  * Keep the header itself as the positioning surface for Actions. The menu is
  * intentionally allowed to escape the header so it is never clipped by the
