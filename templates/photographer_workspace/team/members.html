@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_members_refresh.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_members_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_team_members_toolbar_refine.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lpm-page lpm-crm-page lp-clients-main-width" data-members-page>
 <header class="lpm-header lp-page-header lpw-command-header lpw-dashboard-header"><div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Members</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Team Members</h1><p class="lp-page-description lpw-dashboard-summary">Manage your team, roles, access, and availability.</p></div>{% if can_invite %}<button class="lpm-primary lp-button lp-button--primary lp-button--md" type="button" data-member-dialog-open="invite"><i class="bi bi-person-plus" aria-hidden="true"></i><span>Invite Member</span></button>{% endif %}</header>
