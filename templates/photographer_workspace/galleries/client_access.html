@@ -45,20 +45,20 @@
     <form method="post" class="lp-invite-form">{% csrf_token %}<input type="hidden" name="action" value="invite"><label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>Email delivery is not connected yet. LumisPixel will prepare a secure access token.</small></form>
     <div class="lp-access-table">
       <table>
-        <thead><tr><th>Email</th><th>Invited</th><th>Last Access</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Email</th><th>Last Access</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {% for invitation in invitations %}
             <tr>
               <td>{{ invitation.email }}</td>
-              <td>{{ invitation.invited_at|date:"M j, Y" }}</td>
               <td>{{ invitation.last_access_at|timesince|default:"Never" }}{% if invitation.last_access_at %} ago{% endif %}</td>
               <td><span class="lp-invite-status is-{{ invitation.status }}"><i></i>{{ invitation.get_status_display }}</span></td>
               <td class="lp-invite-actions-cell"><button class="lpw-btn lpw-btn-outline lp-invite-actions-toggle" type="button" aria-expanded="false" aria-controls="invite-actions-{{ invitation.pk }}" data-invite-actions-toggle="invite-actions-{{ invitation.pk }}">Actions <i class="bi bi-chevron-down" aria-hidden="true"></i></button></td>
             </tr>
             <tr class="lp-invite-actions-row" id="invite-actions-{{ invitation.pk }}" hidden>
-              <td colspan="5">
+              <td colspan="4">
                 <div class="lp-invite-actions-panel">
                   <div class="lp-invite-client-name"><span>Client</span><strong>{{ invitation.client_name }}</strong></div>
+                  <div class="lp-invite-client-name"><span>Invited</span><strong>{{ invitation.invited_at|date:"M j, Y" }}</strong></div>
                   <div class="lp-invite-action-buttons">
                     <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="resend" data-action-label="Resend invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Resend</button>
                     <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="disable" data-action-label="Disable access" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Disable</button>
@@ -68,7 +68,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="5"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Prepare a secure invitation above to get started.</span></div></td></tr>
+            <tr><td colspan="4"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Prepare a secure invitation above to get started.</span></div></td></tr>
           {% endfor %}
         </tbody>
       </table>
