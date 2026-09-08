@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import QueryDict
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -30,6 +31,10 @@ def workspace_settings(request):
             messages.error(request, "Choose a valid website design.")
             return redirect("photographer_workspace:settings")
 
+        if theme_value == profile.website_theme:
+            messages.info(request, f"{definition['name']} is already your active website design.")
+            return redirect("photographer_workspace:settings")
+
         data = QueryDict(mutable=True)
         data["website_theme"] = theme_value
         sections = list(definition["sections"])
@@ -42,8 +47,12 @@ def workspace_settings(request):
             draft=True,
         )
         if theme_form.is_valid():
-            theme_form.save_structure()
-            messages.success(request, f"{definition['name']} is now your website design.")
+            with transaction.atomic():
+                theme_form.save_structure()
+            messages.success(
+                request,
+                f"{definition['name']} is now your website design. Your saved website content was kept.",
+            )
         else:
             messages.error(request, "We could not change the website design. Please try again.")
         return redirect("photographer_workspace:settings")
