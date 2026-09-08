@@ -23,26 +23,59 @@
         <label><span>City</span>{{ form.city }}</label><label><span>State / region</span>{{ form.state }}</label><label><span>Country</span>{{ form.country }}</label>
       </div>
       <div class="lps-subsection"><div><h3>Workspace preferences</h3><p>Used for schedules, timestamps, and business-level monetary displays.</p></div><div class="lps-preference-grid"><label><span>Timezone</span>{{ form.timezone }}{% for error in form.timezone.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label><label><span>Default currency</span>{{ form.default_currency }}{% for error in form.default_currency.errors %}<small class="is-error">{{ error }}</small>{% endfor %}</label></div></div>
-      <div class="lps-subsection lps-brand-row">
+
+      <section class="lps-subsection lps-brand-row" aria-labelledby="business-logo-title">
         <div class="lps-brand-copy">
           <span class="lps-section-kicker">Brand identity</span>
-          <h3>Business logo</h3>
+          <h3 id="business-logo-title">Business logo</h3>
           <p>Your logo is used as your global studio identity across LumisPixel. Gallery-specific branding continues to live in Galleries.</p>
           <div class="lps-brand-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Use a square or horizontal PNG, JPG, or SVG with a transparent or clean background for the best result.</span></div>
+          <ul class="lps-brand-checklist" aria-label="Logo recommendations">
+            <li><i class="bi bi-check" aria-hidden="true"></i><span>Recommended size: at least 400 × 400 px</span></li>
+            <li><i class="bi bi-check" aria-hidden="true"></i><span>Formats: PNG, JPG, or SVG</span></li>
+            <li><i class="bi bi-check" aria-hidden="true"></i><span>Maximum file size: 5 MB</span></li>
+          </ul>
         </div>
-        <div class="lps-logo-control">
-          <div class="lps-logo-preview">
-            <span class="lps-logo-preview__label">Current logo</span>
-            <div class="lps-logo-preview__frame">{% if profile.business_logo %}<img src="{{ profile.business_logo.url }}" alt="{{ profile.business_name|default:'Business' }} logo">{% else %}<span class="lps-logo-placeholder"><i class="bi bi-image" aria-hidden="true"></i><small>No logo uploaded</small></span>{% endif %}</div>
+
+        <div class="lps-current-logo-card">
+          <span class="lps-logo-preview__label">Current logo</span>
+          <div class="lps-current-logo-card__frame">
+            {% if profile.business_logo %}
+              <img src="{{ profile.business_logo.url }}" alt="{{ profile.business_name|default:'Business' }} logo">
+            {% else %}
+              <span class="lps-logo-placeholder"><i class="bi bi-image" aria-hidden="true"></i><small>No logo uploaded</small></span>
+            {% endif %}
           </div>
-          <label class="lps-file">
-            <span class="lps-file__title">Upload a new logo</span>
-            <span class="lps-file__hint">Choose a file from your computer. Your current logo stays in place until you save settings.</span>
-            <span class="lps-file__input">{{ form.business_logo }}</span>
-            {% for error in form.business_logo.errors %}<small class="is-error">{{ error }}</small>{% endfor %}
-          </label>
+          {% if profile.business_logo %}
+            <div class="lps-current-logo-card__meta">
+              <strong>{{ profile.business_logo.name|cut:"photographer_profiles/logos/" }}</strong>
+              <span>Current workspace logo</span>
+            </div>
+            <label class="lps-remove-logo" for="business_logo-clear_id">
+              <input type="checkbox" name="{{ form.business_logo.html_name }}-clear" id="business_logo-clear_id">
+              <span><i class="bi bi-trash3" aria-hidden="true"></i>Remove logo</span>
+            </label>
+          {% else %}
+            <p class="lps-current-logo-card__empty">Upload a logo to establish your workspace brand identity.</p>
+          {% endif %}
         </div>
-      </div>
+
+        <div class="lps-logo-upload-card">
+          <div class="lps-logo-upload-card__head">
+            <h4>Upload a new logo</h4>
+            <p>Choose a file from your computer. Your current logo stays in place until you save settings.</p>
+          </div>
+          <label class="lps-dropzone" for="{{ form.business_logo.id_for_label }}">
+            <input type="file" name="{{ form.business_logo.html_name }}" id="{{ form.business_logo.id_for_label }}" accept="image/png,image/jpeg,image/svg+xml">
+            <span class="lps-dropzone__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span>
+            <strong>Drag and drop your logo here</strong>
+            <span class="lps-dropzone__or">or</span>
+            <span class="lps-dropzone__button">Choose file</span>
+            <span class="lps-dropzone__filename" data-logo-filename>No file chosen</span>
+          </label>
+          {% for error in form.business_logo.errors %}<small class="is-error">{{ error }}</small>{% endfor %}
+        </div>
+      </section>
     </form>
 
     <section class="lps-panel lps-website" aria-labelledby="website-settings-title">
@@ -59,4 +92,14 @@
     <section class="lps-panel lps-connections" aria-labelledby="connections-title"><div class="lps-panel-head"><div><span class="lps-eyebrow">Connections</span><h2 id="connections-title">Integrations</h2><p>External provider connections will appear here when they are enabled for your workspace.</p></div></div><div class="lps-empty-state"><span><i class="bi bi-plug" aria-hidden="true"></i></span><div><strong>No external integrations configured</strong><p>LumisPixel will show connected calendars, payment services, storage providers, and publishing integrations here without duplicating their feature settings.</p></div></div></section>
   </main>
 </div>
+<script>
+  (function () {
+    const input = document.getElementById('{{ form.business_logo.id_for_label }}');
+    const filename = document.querySelector('[data-logo-filename]');
+    if (!input || !filename) return;
+    input.addEventListener('change', function () {
+      filename.textContent = this.files && this.files.length ? this.files[0].name : 'No file chosen';
+    });
+  }());
+</script>
 {% endblock %}
