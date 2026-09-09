@@ -1,41 +1,64 @@
 /* Keep Event type as a true section title above the selectable event cards. */
 body:has(.lpw-schedule-page) .lpw-event-types{
-  display:block;
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 18px;
+  padding:78px 0 0;
+  border:0;
 }
 
 body:has(.lpw-schedule-page) .lpw-event-types legend{
+  position:absolute;
+  top:0;
+  left:0;
   display:block;
   float:none;
   width:100%;
-  margin:0 0 12px;
+  max-width:none;
+  margin:0;
   padding:0;
-  color:#4f4844;
+  color:#25211f;
+  font-size:18px;
+  font-weight:750;
+  line-height:1.25;
+  letter-spacing:-.015em;
+  text-transform:none;
+}
+
+body:has(.lpw-schedule-page) .lpw-event-types legend::after{
+  display:block;
+  margin-top:5px;
+  color:#716964;
+  content:"Choose the type of event you want to add.";
   font-size:12px;
-  font-weight:800;
-  line-height:1.35;
-  letter-spacing:.055em;
-  text-transform:uppercase;
+  font-weight:500;
+  line-height:1.5;
+  letter-spacing:0;
 }
 
 body:has(.lpw-schedule-page) .lpw-event-types label{
-  display:inline-block;
-  width:calc((100% - 18px)/3);
-  margin:0 9px 9px 0;
-  vertical-align:top;
+  display:block;
+  width:auto;
+  margin:0;
 }
 
-body:has(.lpw-schedule-page) .lpw-event-types label:nth-of-type(3n){
-  margin-right:0;
+body:has(.lpw-schedule-page) .lpw-event-types label>span{
+  min-height:58px;
+  padding:13px 14px;
+  border-radius:12px;
 }
 
 @media(max-width:760px){
-  body:has(.lpw-schedule-page) .lpw-event-types label{
-    width:calc((100% - 9px)/2);
+  body:has(.lpw-schedule-page) .lpw-event-types{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding-top:76px;
   }
-  body:has(.lpw-schedule-page) .lpw-event-types label:nth-of-type(3n){
-    margin-right:9px;
-  }
-  body:has(.lpw-schedule-page) .lpw-event-types label:nth-of-type(2n){
-    margin-right:0;
+}
+
+@media(max-width:440px){
+  body:has(.lpw-schedule-page) .lpw-event-types{
+    grid-template-columns:1fr;
   }
 }
