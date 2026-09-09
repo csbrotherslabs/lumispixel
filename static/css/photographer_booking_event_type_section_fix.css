@@ -1,5 +1,5 @@
 /* Keep Event type as a true section title above the selectable event cards. */
-body:has(.lpw-schedule-page) .lpw-event-types{
+.lpw-event-form-layer .lpw-event-types{
   position:relative;
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -9,7 +9,7 @@ body:has(.lpw-schedule-page) .lpw-event-types{
   border:0;
 }
 
-body:has(.lpw-schedule-page) .lpw-event-types legend{
+.lpw-event-form-layer .lpw-event-types legend{
   position:absolute;
   top:0;
   left:0;
@@ -27,7 +27,7 @@ body:has(.lpw-schedule-page) .lpw-event-types legend{
   text-transform:none;
 }
 
-body:has(.lpw-schedule-page) .lpw-event-types legend::after{
+.lpw-event-form-layer .lpw-event-types legend::after{
   display:block;
   margin-top:5px;
   color:#716964;
@@ -38,27 +38,27 @@ body:has(.lpw-schedule-page) .lpw-event-types legend::after{
   letter-spacing:0;
 }
 
-body:has(.lpw-schedule-page) .lpw-event-types label{
+.lpw-event-form-layer .lpw-event-types label{
   display:block;
   width:auto;
   margin:0;
 }
 
-body:has(.lpw-schedule-page) .lpw-event-types label>span{
+.lpw-event-form-layer .lpw-event-types label>span{
   min-height:58px;
   padding:13px 14px;
   border-radius:12px;
 }
 
 @media(max-width:760px){
-  body:has(.lpw-schedule-page) .lpw-event-types{
+  .lpw-event-form-layer .lpw-event-types{
     grid-template-columns:repeat(2,minmax(0,1fr));
     padding-top:76px;
   }
 }
 
 @media(max-width:440px){
-  body:has(.lpw-schedule-page) .lpw-event-types{
+  .lpw-event-form-layer .lpw-event-types{
     grid-template-columns:1fr;
   }
 }
