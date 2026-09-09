@@ -1,0 +1,29 @@
+/* Required-field markers for Add Client, Add Lead, and Edit Client forms. */
+:is(.lp-add-lead,.lp-edit-client) .form-field>label .required-mark{
+  display:inline-block;
+  margin-left:2px;
+  color:#d71920;
+  font-size:14px;
+  font-weight:900;
+  line-height:1;
+  vertical-align:top;
+}
+
+/* Fallback: if a required Django widget is rendered without the shared marker,
+   append the marker to its visible field title. */
+:is(.lp-add-lead,.lp-edit-client) .form-field:has(input[required],select[required],textarea[required])>label:not(:has(.required-mark))::after{
+  margin-left:2px;
+  color:#d71920;
+  content:"*";
+  font-size:14px;
+  font-weight:900;
+  line-height:1;
+}
+
+/* Keep a future required profile-photo input consistent with the same convention. */
+:is(.lp-add-lead,.lp-edit-client) .contextual-panel>section:has(input[type="file"][required])>header h2::after{
+  margin-left:4px;
+  color:#d71920;
+  content:"*";
+  font-weight:900;
+}
