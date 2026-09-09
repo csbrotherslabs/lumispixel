@@ -1,0 +1,50 @@
+/* Horizontal scrolling treatment for the Photographer Workspace client directory table. */
+.lp-clients .lp-clients-table-wrap{
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#c9bdb6 #f5f1ee;
+  scrollbar-gutter:stable;
+}
+
+.lp-clients .lp-clients-table{
+  min-width:1120px;
+}
+
+.lp-clients .lp-clients-table-wrap::-webkit-scrollbar{
+  height:10px;
+  width:10px;
+}
+
+.lp-clients .lp-clients-table-wrap::-webkit-scrollbar-track{
+  background:#f5f1ee;
+  border-radius:999px;
+}
+
+.lp-clients .lp-clients-table-wrap::-webkit-scrollbar-thumb{
+  min-width:54px;
+  border:2px solid #f5f1ee;
+  border-radius:999px;
+  background:#c9bdb6;
+}
+
+.lp-clients .lp-clients-table-wrap::-webkit-scrollbar-thumb:hover{
+  background:#a99b93;
+}
+
+.lp-clients .lp-clients-table-wrap::-webkit-scrollbar-corner{
+  background:#f5f1ee;
+}
+
+@media(max-width:760px){
+  .lp-clients .lp-clients-table-wrap{
+    margin-inline:-2px;
+  }
+
+  .lp-clients .lp-clients-table{
+    min-width:1080px;
+  }
+}
