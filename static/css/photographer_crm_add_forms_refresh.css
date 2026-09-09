@@ -1,118 +1,79 @@
 .lp-add-lead .form-page-header.lp-page-header{
-  position:relative;
-  isolation:isolate;
-  overflow:hidden;
-  top:auto;
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:28px;
-  margin:0 0 24px;
-  padding:30px 38px 34px;
-  border:1px solid #e8e1dc;
-  border-radius:24px;
-  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
-  box-shadow:0 18px 48px rgba(47,37,30,.07);
+  position:relative;isolation:isolate;overflow:hidden;top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin:0 0 24px;padding:30px 38px 34px;border:1px solid #e8e1dc;border-radius:24px;background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);box-shadow:0 18px 48px rgba(47,37,30,.07)
 }
-.lp-add-lead .form-page-header.lp-page-header::before,
-.lp-add-lead .form-page-header.lp-page-header::after{
-  position:absolute;
-  z-index:-1;
-  border-radius:50%;
-  content:"";
-  pointer-events:none;
+.lp-add-lead .form-page-header.lp-page-header::before,.lp-add-lead .form-page-header.lp-page-header::after{position:absolute;z-index:-1;border-radius:50%;content:"";pointer-events:none}
+.lp-add-lead .form-page-header.lp-page-header::before{width:280px;height:280px;top:-185px;right:6%;border:1px solid rgba(215,25,32,.16)}
+.lp-add-lead .form-page-header.lp-page-header::after{width:150px;height:150px;right:18%;bottom:-118px;border:1px solid rgba(47,37,30,.08)}
+.lp-add-lead .form-page-header .lp-page-heading,.lp-add-lead .form-page-header .sticky-form-actions{position:relative;z-index:1}
+.lp-add-lead .form-page-header .lpw-breadcrumb{display:flex;align-items:center;gap:8px;margin:0 0 18px;padding:0;background:transparent}
+.lp-add-lead .form-page-header .lpw-breadcrumb a,.lp-add-lead .form-page-header .lpw-breadcrumb strong,.lp-add-lead .form-page-header .lpw-breadcrumb i{font-size:11px}
+.lp-add-lead .form-page-header .lpw-breadcrumb a{color:#d71920;text-decoration:none;transition:color .18s ease}
+.lp-add-lead .form-page-header .lpw-breadcrumb a:hover,.lp-add-lead .form-page-header .lpw-breadcrumb a:focus-visible{color:#25211f}
+.lp-add-lead .form-page-header .lp-page-title{margin:0}
+.lp-add-lead .form-page-header .lp-page-description{max-width:700px;margin:6px 0 0;color:var(--workspace-text-secondary);font-size:14px;line-height:1.5}
+.lp-add-lead .form-page-header .sticky-form-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:none;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
+.lp-add-lead .form-page-header .sticky-form-actions .lp-button{white-space:nowrap}
+
+/* Modern CRM add-form controls: shared by Add Client and Add Lead only. */
+.lp-add-lead .workspace-form-main{display:grid;gap:20px}
+.lp-add-lead .form-section-card{overflow:visible;padding:24px;border:1px solid #e8e1dc;border-radius:18px;background:linear-gradient(145deg,#fff 0%,#fefcfb 100%);box-shadow:0 8px 26px rgba(47,37,30,.045)}
+.lp-add-lead .form-section-card>header{display:flex;align-items:flex-start;gap:13px;margin:0 0 22px;padding:0 0 17px;border-bottom:1px solid #eee7e2}
+.lp-add-lead .form-section-card>header>i{display:grid;width:38px;height:38px;flex:0 0 38px;place-items:center;border:1px solid #f0dede;border-radius:11px;background:#fff4f4;color:#d71920;font-size:16px}
+.lp-add-lead .form-section-card>header h2{margin:1px 0 3px;color:#25211f;font-size:16px;font-weight:750;letter-spacing:-.01em}
+.lp-add-lead .form-section-card>header p{margin:0;color:#827a75;font-size:12px;line-height:1.5}
+.lp-add-lead .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 18px}
+.lp-add-lead .form-field{display:grid;align-content:start;gap:8px;min-width:0;margin:0}
+.lp-add-lead .form-field--wide{grid-column:1/-1}
+.lp-add-lead .form-field>label{display:flex;align-items:center;gap:4px;margin:0;color:#4b4541;font-size:11px;font-weight:800;letter-spacing:.045em;text-transform:uppercase}
+.lp-add-lead .form-field .required-mark{color:#d71920;font-size:13px;line-height:1}
+.lp-add-lead .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.lp-add-lead .form-field select,
+.lp-add-lead .form-field textarea,
+.lp-add-lead .tag-editor{
+  width:100%;min-width:0;border:1px solid #ddd5cf;border-radius:12px;background:#fff;color:#25211f;box-shadow:0 1px 2px rgba(47,37,30,.025),inset 0 1px 0 rgba(255,255,255,.85);font-family:inherit;font-size:13px;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease
 }
-.lp-add-lead .form-page-header.lp-page-header::before{
-  width:280px;
-  height:280px;
-  top:-185px;
-  right:6%;
-  border:1px solid rgba(215,25,32,.16);
-}
-.lp-add-lead .form-page-header.lp-page-header::after{
-  width:150px;
-  height:150px;
-  right:18%;
-  bottom:-118px;
-  border:1px solid rgba(47,37,30,.08);
-}
-.lp-add-lead .form-page-header .lp-page-heading,
-.lp-add-lead .form-page-header .sticky-form-actions{
-  position:relative;
-  z-index:1;
-}
-.lp-add-lead .form-page-header .lpw-breadcrumb{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin:0 0 18px;
-  padding:0;
-  background:transparent;
-}
-.lp-add-lead .form-page-header .lpw-breadcrumb a,
-.lp-add-lead .form-page-header .lpw-breadcrumb strong,
-.lp-add-lead .form-page-header .lpw-breadcrumb i{
-  font-size:11px;
-}
-.lp-add-lead .form-page-header .lpw-breadcrumb a{
-  color:#d71920;
-  text-decoration:none;
-  transition:color .18s ease;
-}
-.lp-add-lead .form-page-header .lpw-breadcrumb a:hover,
-.lp-add-lead .form-page-header .lpw-breadcrumb a:focus-visible{
-  color:#25211f;
-}
-.lp-add-lead .form-page-header .lp-page-title{
-  margin:0;
-}
-.lp-add-lead .form-page-header .lp-page-description{
-  max-width:700px;
-  margin:6px 0 0;
-  color:var(--workspace-text-secondary);
-  font-size:14px;
-  line-height:1.5;
-}
-.lp-add-lead .form-page-header .sticky-form-actions{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:10px;
-  flex:none;
-  margin:0;
-  padding:0;
-  background:transparent;
-  border:0;
-  box-shadow:none;
-}
-.lp-add-lead .form-page-header .sticky-form-actions .lp-button{
-  white-space:nowrap;
-}
+.lp-add-lead .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),.lp-add-lead .form-field select{height:48px;padding:0 14px}
+.lp-add-lead .form-field select{padding-right:40px;cursor:pointer}
+.lp-add-lead .form-field textarea{min-height:132px;padding:13px 14px;line-height:1.55;resize:vertical}
+.lp-add-lead .form-field input::placeholder,.lp-add-lead .form-field textarea::placeholder{color:#aaa19b}
+.lp-add-lead .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.lp-add-lead .form-field select:hover,.lp-add-lead .form-field textarea:hover,.lp-add-lead .tag-editor:hover{border-color:#c9beb7;background:#fff}
+.lp-add-lead .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.lp-add-lead .form-field select:focus,.lp-add-lead .form-field textarea:focus,.lp-add-lead .tag-editor:focus-within{outline:none;border-color:#d71920;background:#fff;box-shadow:0 0 0 3px rgba(215,25,32,.09),0 5px 16px rgba(47,37,30,.05)}
+.lp-add-lead .form-field small{margin:0;color:#8d847e;font-size:10px;line-height:1.45}
+.lp-add-lead .form-field.has-error input,.lp-add-lead .form-field.has-error select,.lp-add-lead .form-field.has-error textarea,.lp-add-lead .form-field.has-error .tag-editor{border-color:#c83b41;background:#fffafa}
+.lp-add-lead .field-error{display:flex;align-items:flex-start;gap:6px;margin-top:1px;color:#b4232a;font-size:11px;line-height:1.4}
+.lp-add-lead .form-field-prefix{display:flex;align-items:stretch;width:100%;border:1px solid #ddd5cf;border-radius:12px;background:#fff;overflow:hidden;transition:border-color .18s ease,box-shadow .18s ease}
+.lp-add-lead .form-field-prefix>span{display:flex;align-items:center;justify-content:center;min-width:54px;padding:0 11px;border-right:1px solid #e7dfda;background:#f8f5f3;color:#706862;font-size:11px;font-weight:800;text-transform:uppercase}
+.lp-add-lead .form-field-prefix input{border:0!important;border-radius:0!important;box-shadow:none!important}
+.lp-add-lead .form-field-prefix:focus-within{border-color:#d71920;box-shadow:0 0 0 3px rgba(215,25,32,.09),0 5px 16px rgba(47,37,30,.05)}
+.lp-add-lead .tag-editor{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-height:48px;padding:7px 10px}
+.lp-add-lead .tag-editor input{flex:1;min-width:150px;height:32px!important;padding:0 4px!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important}
+.lp-add-lead .tag-list{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.lp-add-lead .character-feedback{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;color:#938a84;font-size:10px}
+.lp-add-lead .character-feedback b{color:#5b534e;font-weight:700}
+
+/* Supporting side controls should feel like part of the same form system. */
+.lp-add-lead .contextual-panel{display:grid;align-content:start;gap:16px}
+.lp-add-lead .contextual-panel>section{padding:20px;border:1px solid #e8e1dc;border-radius:16px;background:#fff;box-shadow:0 6px 20px rgba(47,37,30,.035)}
+.lp-add-lead .upload-dropzone{display:grid;place-items:center;gap:7px;min-height:190px;margin-top:14px;padding:20px;border:1px dashed #d9cbc3;border-radius:14px;background:#fdfaf8;color:#706761;text-align:center;cursor:pointer;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.lp-add-lead .upload-dropzone:hover,.lp-add-lead .upload-dropzone:focus-within{border-color:#d71920;background:#fff7f7;box-shadow:0 0 0 3px rgba(215,25,32,.06)}
+.lp-add-lead .upload-preview{display:grid;width:54px;height:54px;place-items:center;overflow:hidden;border:1px solid #eeded8;border-radius:14px;background:#fff;color:#d71920;font-size:22px}
+.lp-add-lead .upload-preview img{width:100%;height:100%;object-fit:cover}
+.lp-add-lead .upload-dropzone strong{color:#403936;font-size:12px}
+.lp-add-lead .upload-dropzone>span:not(.upload-preview),.lp-add-lead .upload-dropzone small{color:#948a84;font-size:10px}
+
 @media(max-width:900px){
-  .lp-add-lead .form-page-header.lp-page-header{
-    align-items:flex-start;
-    flex-direction:column;
-    padding:28px;
-  }
-  .lp-add-lead .form-page-header .sticky-form-actions{
-    width:100%;
-    justify-content:flex-start;
-  }
+  .lp-add-lead .form-page-header.lp-page-header{align-items:flex-start;flex-direction:column;padding:28px}
+  .lp-add-lead .form-page-header .sticky-form-actions{width:100%;justify-content:flex-start}
 }
 @media(max-width:620px){
-  .lp-add-lead .form-page-header.lp-page-header{
-    padding:24px 22px;
-    border-radius:20px;
-  }
-  .lp-add-lead .form-page-header .lpw-breadcrumb{
-    margin-bottom:14px;
-    flex-wrap:wrap;
-  }
-  .lp-add-lead .form-page-header .sticky-form-actions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-  }
-  .lp-add-lead .form-page-header .sticky-form-actions .lp-button{
-    width:100%;
-  }
+  .lp-add-lead .form-page-header.lp-page-header{padding:24px 22px;border-radius:20px}
+  .lp-add-lead .form-page-header .lpw-breadcrumb{margin-bottom:14px;flex-wrap:wrap}
+  .lp-add-lead .form-page-header .sticky-form-actions{display:grid;grid-template-columns:1fr 1fr}
+  .lp-add-lead .form-page-header .sticky-form-actions .lp-button{width:100%}
+  .lp-add-lead .form-section-card{padding:19px 17px;border-radius:15px}
+  .lp-add-lead .form-grid{grid-template-columns:1fr;gap:16px}
+  .lp-add-lead .form-field--wide{grid-column:auto}
+  .lp-add-lead .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),.lp-add-lead .form-field select{height:46px}
 }
