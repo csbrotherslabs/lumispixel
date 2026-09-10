@@ -1,0 +1,27 @@
+/* Homepage hero: keep the image, slide, and controls on one continuous canvas. */
+.page-home .wptb-slider.style3,
+.page-home .wptb-slider.style3 .swiper-container,
+.page-home .wptb-slider.style3 .swiper-wrapper,
+.page-home .wptb-slider.style3 .swiper-slide,
+.page-home .wptb-slider.style3 .wptb-slider--item {
+    min-height: min(820px, 90svh);
+}
+
+.page-home .wptb-slider.style3 .swiper-container,
+.page-home .wptb-slider.style3 .swiper-wrapper,
+.page-home .wptb-slider.style3 .swiper-slide,
+.page-home .wptb-slider.style3 .wptb-slider--item {
+    height: 100%;
+}
+
+.page-home .wptb-slider.style3 .wptb-slider--image {
+    position: absolute !important;
+    inset: 0;
+    width: 100%;
+    height: 100% !important;
+}
+
+.page-home .wptb-slider.style3 .wptb-bottom-pane {
+    height: 46px;
+    background: transparent;
+}
