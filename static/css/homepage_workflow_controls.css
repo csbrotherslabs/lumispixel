@@ -1,0 +1,40 @@
+/* Homepage photographer workflow refinements */
+.page-home .lumis-photographer-workflow {
+    background: #6f3131;
+}
+
+.page-home .lumis-photographer-workflow__carousel {
+    position: relative;
+}
+
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-prev,
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-next {
+    position: absolute;
+    top: 50%;
+    width: 54px;
+    height: 54px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff !important;
+    font-size: 30px !important;
+    transform: translateY(-50%);
+    z-index: 8;
+}
+
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-prev {
+    left: 16px;
+    right: auto;
+}
+
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-next {
+    right: 16px;
+    left: auto;
+}
+
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-prev::after,
+.page-home .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-next::after {
+    color: #fff !important;
+    font-size: 30px !important;
+}
