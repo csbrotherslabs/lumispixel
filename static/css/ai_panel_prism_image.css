@@ -1,0 +1,21 @@
+.page-home .lumis-ai-product-panel__main-image {
+    position: relative;
+    overflow: hidden;
+    background-image: linear-gradient(180deg, rgba(8, 8, 8, 0.08), rgba(8, 8, 8, 0.26)), url('/static/img/landing/gallery/prism-creative-lady.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.page-home .lumis-ai-product-panel__main-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 45%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+.page-home .lumis-ai-product-panel__main-image > * {
+    position: relative;
+    z-index: 1;
+}
