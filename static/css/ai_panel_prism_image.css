@@ -15,7 +15,11 @@
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 45%, rgba(0, 0, 0, 0.28) 100%);
 }
 
-.page-home .lumis-ai-product-panel__main-image > * {
+.page-home .lumis-ai-product-panel__main-image > .lumis-ai-product-panel__image-label {
     position: relative;
+    z-index: 1;
+}
+
+.page-home .lumis-ai-product-panel__main-image > .lumis-ai-product-panel__focus-chip {
     z-index: 1;
 }
