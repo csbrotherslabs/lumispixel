@@ -38,3 +38,30 @@
     color: #fff !important;
     font-size: 30px !important;
 }
+
+/* Keep the pagination hollow: white outer ring + white center dot. */
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet {
+    position: relative;
+    box-sizing: border-box;
+    background: transparent !important;
+    border-color: #fff !important;
+    opacity: 1 !important;
+}
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet::after {
+    border-color: #fff !important;
+}
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before {
+    background: #fff !important;
+}
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet-active {
+    background: transparent !important;
+    border-color: #fff !important;
+}
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet-active::before {
+    background: #fff !important;
+}
