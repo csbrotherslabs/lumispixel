@@ -38,3 +38,18 @@
     color: #fff !important;
     font-size: 30px !important;
 }
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-clickable,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullets,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-horizontal,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet-active {
+    color: #fff !important;
+}
+
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet,
+.page-home .lumis-photographer-workflow__carousel .swiper-pagination-bullet-active {
+    background: #fff !important;
+    opacity: 1;
+}
