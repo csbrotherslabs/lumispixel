@@ -1,0 +1,13 @@
+.wptb-swiper-arrow.swiper-button-next,
+.wptb-swiper-arrow.swiper-button-next::before,
+.wptb-swiper-arrow.swiper-button-next::after,
+.wptb-swiper-arrow.swiper-button-next i,
+.wptb-swiper-arrow.swiper-button-next svg {
+    color: #fff !important;
+}
+
+.wptb-swiper-arrow.swiper-button-next svg,
+.wptb-swiper-arrow.swiper-button-next svg * {
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
