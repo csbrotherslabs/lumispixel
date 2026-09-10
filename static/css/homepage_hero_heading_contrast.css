@@ -1,0 +1,14 @@
+/* Improve homepage hero copy readability without obscuring the photography. */
+.page-home .wptb-slider.style3 .wptb-heading {
+    position: relative;
+    padding: clamp(22px, 3vw, 34px);
+    border-radius: 20px;
+    background: linear-gradient(
+        90deg,
+        rgba(8, 8, 8, 0.72) 0%,
+        rgba(8, 8, 8, 0.56) 68%,
+        rgba(8, 8, 8, 0.18) 100%
+    );
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
