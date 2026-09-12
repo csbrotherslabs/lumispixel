@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Q
+from django.utils import timezone
 
 
 class AIJobQuerySet(models.QuerySet):
@@ -48,6 +49,14 @@ class AIJob(models.Model):
     error_details = models.TextField(blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     worker_metadata = models.JSONField(default=dict, blank=True)
+    usage_reservation = models.ForeignKey(
+        "billing.AIUsageTransaction",
+        on_delete=models.PROTECT,
+        related_name="ai_jobs",
+        blank=True,
+        null=True,
+        help_text="Current-attempt AI usage reservation. Historical ledger rows remain append-only.",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = AIJobQuerySet.as_manager()
@@ -62,6 +71,73 @@ class AIJob(models.Model):
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
             raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+    @staticmethod
+    def _extend_update_fields(kwargs, *fields):
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | set(fields)
+
+    def save(self, *args, **kwargs):
+        """Keep processing status and AI-credit accounting in one DB transaction.
+
+        Jobs are free while queued. Entering RUNNING reserves one AI action per
+        gallery image. COMPLETED settles the reservation; FAILED/CANCELLED
+        releases it. Each retry gets a new attempt-scoped idempotency key.
+        """
+        if self._state.adding or not self.pk:
+            return super().save(*args, **kwargs)
+
+        from apps.billing.ai_usage import release_ai_usage, reserve_ai_usage, settle_ai_usage
+
+        terminal_statuses = {self.Status.COMPLETED, self.Status.FAILED, self.Status.CANCELLED}
+        with transaction.atomic():
+            previous = AIJob.objects.select_for_update().select_related("usage_reservation").get(pk=self.pk)
+            entering_running = self.status == self.Status.RUNNING and previous.status != self.Status.RUNNING
+            entering_terminal = self.status in terminal_statuses and previous.status not in terminal_statuses
+
+            if entering_running:
+                self.attempts = previous.attempts + 1
+                self.started_at = self.started_at or timezone.now()
+                self.completed_at = None
+                image_units = self.gallery.image_count
+                if image_units > 0:
+                    reservation = reserve_ai_usage(
+                        self.photographer,
+                        self.task_type,
+                        units=image_units,
+                        idempotency_key=f"ai-job:{self.pk}:attempt:{self.attempts}:reserve",
+                        source_reference=f"ai-job:{self.pk}",
+                        metadata={"job_id": self.pk, "gallery_id": self.gallery_id, "attempt": self.attempts},
+                    )
+                    self.usage_reservation = reservation
+                else:
+                    self.usage_reservation = None
+                self._extend_update_fields(kwargs, "attempts", "started_at", "completed_at", "usage_reservation")
+
+            if entering_terminal:
+                reservation = previous.usage_reservation
+                if reservation is not None:
+                    if self.status == self.Status.COMPLETED:
+                        progress = AIProcessingStatus.objects.filter(job_id=self.pk).first()
+                        actual_units = reservation.total_units
+                        if progress is not None and progress.completed_images > 0:
+                            actual_units = min(progress.completed_images, reservation.total_units)
+                        settle_ai_usage(
+                            reservation,
+                            actual_units=actual_units,
+                            idempotency_key=f"ai-job:{self.pk}:attempt:{previous.attempts}:settle",
+                            metadata={"job_id": self.pk, "status": self.status},
+                        )
+                    else:
+                        release_ai_usage(
+                            reservation,
+                            idempotency_key=f"ai-job:{self.pk}:attempt:{previous.attempts}:release",
+                            metadata={"job_id": self.pk, "status": self.status},
+                        )
+                self.completed_at = self.completed_at or timezone.now()
+                self._extend_update_fields(kwargs, "completed_at")
+
+            return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.gallery} — {self.get_task_type_display()}"
