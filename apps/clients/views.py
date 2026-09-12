@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 
+from apps.accounts.account_settings import account_settings as consolidated_account_settings
 from apps.accounts.models import ClientProfile
 from apps.accounts.onboarding import get_client_onboarding_resume_url
 from apps.notifications.models import Notification
@@ -92,7 +93,12 @@ def dashboard(request):
     return render(request,"clients/dashboard.html",{"client_profile":profile,"display_name":display_name,"find_photos_url":reverse("accounts:find-photos-placeholder"),"saved_photos_url":"#saved-photos","notification_count":notifications.count(),"unread_notification_count":notifications.filter(is_read=False).count()})
 
 @login_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def account_settings(request):
-    """Backward-compatible client URL; personal settings now live at account level."""
-    return redirect("accounts:account-settings")
+    """Compatibility client URL for the consolidated person-level settings page."""
+    if not request.user.has_client_profile:
+        return redirect("accounts:post-login-redirect")
+    profile = _client_profile(request.user)
+    if not profile.onboarding_completed:
+        return redirect("clients:setup-dashboard")
+    return consolidated_account_settings(request)
