@@ -25,6 +25,7 @@ jobs:
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "ci-only-secret-key"
       DJANGO_EMAIL_BACKEND: "django.core.mail.backends.locmem.EmailBackend"
+      DJANGO_STATICFILES_STORAGE: "django.contrib.staticfiles.storage.StaticFilesStorage"
       USE_SPACES: "0"
 
     steps:
