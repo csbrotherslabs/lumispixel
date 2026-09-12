@@ -41,8 +41,8 @@
   </form>
 
   <section class="lp-access-panel lp-invitations" id="invite-client">
-    <header class="lp-invitations__head"><div><span class="lp-access-panel__icon"><i class="bi bi-envelope"></i></span><div><h3>Client Invitations</h3><p>Prepare secure access and manage invited clients.</p></div></div></header>
-    <form method="post" class="lp-invite-form">{% csrf_token %}<input type="hidden" name="action" value="invite"><label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>Email delivery is not connected yet. LumisPixel will prepare a secure access token.</small></form>
+    <header class="lp-invitations__head"><div><span class="lp-access-panel__icon"><i class="bi bi-envelope"></i></span><div><h3>Client Invitations</h3><p>Send secure gallery access and manage invited clients.</p></div></div></header>
+    <form method="post" action="{% url 'galleries:prepare_client_gallery_invitation' gallery.pk %}" class="lp-invite-form">{% csrf_token %}<label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>LumisPixel will create secure access and email the gallery invitation immediately.</small></form>
     <div class="lp-access-table">
       <table>
         <thead><tr><th>Email</th><th>Last Access</th><th>Status</th><th>Actions</th></tr></thead>
@@ -60,7 +60,7 @@
                   <div class="lp-invite-client-name"><span>Client</span><strong>{{ invitation.client_name }}</strong></div>
                   <div class="lp-invite-client-name"><span>Invited</span><strong>{{ invitation.invited_at|date:"M j, Y" }}</strong></div>
                   <div class="lp-invite-action-buttons">
-                    <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="resend" data-action-label="Resend invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Resend</button>
+                    <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="resend" data-action-label="Resend invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}" data-resend-url="{% url 'galleries:resend_client_gallery_invitation' gallery.pk invitation.pk %}">Resend</button>
                     <button class="lpw-btn lpw-btn-outline" type="button" data-invite-confirm data-action="disable" data-action-label="Disable access" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Disable</button>
                     <button class="lpw-btn lpw-btn-outline is-danger" type="button" data-invite-confirm data-action="remove" data-action-label="Remove invitation" data-client-name="{{ invitation.client_name|escape }}" data-invitation-id="{{ invitation.pk }}">Remove</button>
                   </div>
@@ -68,7 +68,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="4"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Prepare a secure invitation above to get started.</span></div></td></tr>
+            <tr><td colspan="4"><div class="lp-table-empty"><i class="bi bi-person-plus"></i><b>No clients invited yet</b><span>Send a secure invitation above to get started.</span></div></td></tr>
           {% endfor %}
         </tbody>
       </table>

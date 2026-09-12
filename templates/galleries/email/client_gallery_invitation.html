@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Your {{ gallery.name }} gallery is ready</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#ffffff;border:1px solid #e6e9ee;border-radius:18px;overflow:hidden;">
+        <tr>
+          <td style="padding:28px 34px 18px;border-bottom:1px solid #eef0f3;">
+            <div style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:#111827;">Lumis<span style="color:#d82f3f;">Pixel</span></div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:34px;">
+            <div style="display:inline-block;background:#eaf8ef;color:#16833c;font-size:12px;font-weight:800;border-radius:999px;padding:7px 11px;margin-bottom:18px;">PRIVATE GALLERY</div>
+            <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;color:#111827;">Your gallery is ready</h1>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#5f6773;">Hi {{ invitation.client_name }},</p>
+            <p style="margin:0 0 24px;font-size:16px;line-height:1.65;color:#5f6773;"><strong style="color:#222936;">{{ studio_name }}</strong> has shared <strong style="color:#222936;">{{ gallery.name }}</strong> with you through LumisPixel.</p>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:10px;background:#d82f3f;">
+                  <a href="{{ gallery_url }}" style="display:inline-block;padding:14px 22px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;">Open your gallery</a>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f9fb;border:1px solid #eceef2;border-radius:12px;margin-bottom:24px;">
+              <tr><td style="padding:16px 18px;font-size:13px;line-height:1.55;color:#68707c;">
+                <strong style="display:block;color:#303744;margin-bottom:5px;">Secure access</strong>
+                This private link is tied to your invitation. Please avoid forwarding it unless your photographer has asked you to share access.
+                {% if gallery.expires_at %}<br><br><strong style="color:#303744;">Available until:</strong> {{ gallery.expires_at|date:"F j, Y" }}{% endif %}
+              </td></tr>
+            </table>
+
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#8b929c;">If the button does not work, copy and paste this link into your browser:<br><a href="{{ gallery_url }}" style="color:#d82f3f;word-break:break-all;">{{ gallery_url }}</a></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 34px;background:#fafbfc;border-top:1px solid #eef0f3;font-size:12px;color:#8b929c;">
+            Delivered securely with LumisPixel.
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
