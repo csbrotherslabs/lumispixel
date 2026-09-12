@@ -1,8 +1,29 @@
+from datetime import datetime
+
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 
-from .models import Plan, PlanAllowance, PlanPrice, Subscription
+from .ai_usage import (
+    AIUsageLimitExceeded,
+    AIUsageReservationError,
+    get_usage_balance,
+    release_ai_usage,
+    reserve_ai_usage,
+    reverse_ai_usage,
+    settle_ai_usage,
+)
+from .models import (
+    AIOperation,
+    AIUsageAccount,
+    AIUsagePeriod,
+    AIUsageTransaction,
+    Plan,
+    PlanAllowance,
+    PlanPrice,
+    Subscription,
+)
 from .services import PlanUnavailableError, get_allowance, has_entitlement, select_plan
 
 
@@ -110,3 +131,170 @@ class SubscriptionFoundationTests(TestCase):
         select_plan(self.photographer, "pro", enforce_customer_selectable=False)
         self.assertTrue(has_entitlement(self.photographer, "custom_domain"))
         self.assertEqual(get_allowance(self.photographer, "ai_monthly_actions").value, 2000)
+
+
+class AIUsageLedgerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="ai-ledger@example.com",
+            password="strong-test-password",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+        )
+        self.photographer = PhotographerProfile.objects.create(
+            user=self.user,
+            display_name="AI Ledger Studio",
+        )
+        self.operation = AIOperation.objects.create(
+            code="test-edit",
+            name="Test Edit",
+            default_units=1,
+        )
+
+    def test_current_period_snapshots_free_monthly_allowance(self):
+        balance = get_usage_balance(self.photographer)
+        self.assertEqual(balance.included_allowance, 100)
+        self.assertEqual(balance.included_consumed, 0)
+        self.assertEqual(balance.included_remaining, 100)
+        self.assertEqual(balance.purchased_balance, 0)
+        period = AIUsagePeriod.objects.get(account__photographer=self.photographer)
+        self.assertEqual(period.plan_code_snapshot, "free")
+
+    def test_reserve_then_settle_consumes_included_units(self):
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=4,
+            idempotency_key="reserve-1",
+            source_reference="image:123",
+        )
+        self.assertEqual(reservation.kind, AIUsageTransaction.Kind.RESERVE)
+        self.assertEqual(reservation.included_units, 4)
+        self.assertEqual(get_usage_balance(self.photographer).included_reserved, 4)
+
+        settlement = settle_ai_usage(reservation, idempotency_key="settle-1")
+        self.assertEqual(settlement.kind, AIUsageTransaction.Kind.SETTLE)
+        balance = get_usage_balance(self.photographer)
+        self.assertEqual(balance.included_reserved, 0)
+        self.assertEqual(balance.included_consumed, 4)
+        self.assertEqual(balance.included_remaining, 96)
+
+    def test_partial_settlement_automatically_releases_unused_units(self):
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=5,
+            idempotency_key="reserve-partial",
+        )
+        settlement = settle_ai_usage(
+            reservation,
+            idempotency_key="settle-partial",
+            actual_units=2,
+        )
+        self.assertEqual(settlement.included_units, 2)
+        self.assertTrue(
+            reservation.follow_up_transactions.filter(
+                kind=AIUsageTransaction.Kind.RELEASE,
+                included_units=3,
+            ).exists()
+        )
+        balance = get_usage_balance(self.photographer)
+        self.assertEqual(balance.included_consumed, 2)
+        self.assertEqual(balance.included_reserved, 0)
+
+    def test_release_after_failure_restores_available_allowance(self):
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=7,
+            idempotency_key="reserve-failed",
+        )
+        released = release_ai_usage(reservation, idempotency_key="release-failed")
+        self.assertEqual(released.kind, AIUsageTransaction.Kind.RELEASE)
+        balance = get_usage_balance(self.photographer)
+        self.assertEqual(balance.included_consumed, 0)
+        self.assertEqual(balance.included_reserved, 0)
+        self.assertEqual(balance.included_remaining, 100)
+
+    def test_settlement_can_be_reversed_without_mutating_history(self):
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=3,
+            idempotency_key="reserve-reverse",
+        )
+        settlement = settle_ai_usage(reservation, idempotency_key="settle-reverse")
+        reversal = reverse_ai_usage(settlement, idempotency_key="reverse-1")
+        self.assertEqual(reversal.kind, AIUsageTransaction.Kind.REVERSE)
+        self.assertEqual(get_usage_balance(self.photographer).included_consumed, 0)
+        self.assertEqual(AIUsageTransaction.objects.count(), 3)
+
+    def test_duplicate_idempotency_key_does_not_double_reserve(self):
+        first = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=6,
+            idempotency_key="same-request",
+        )
+        second = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=6,
+            idempotency_key="same-request",
+        )
+        self.assertEqual(first.pk, second.pk)
+        self.assertEqual(AIUsageTransaction.objects.filter(kind=AIUsageTransaction.Kind.RESERVE).count(), 1)
+        self.assertEqual(get_usage_balance(self.photographer).included_reserved, 6)
+
+    def test_reservation_rejects_usage_beyond_available_balance(self):
+        with self.assertRaises(AIUsageLimitExceeded):
+            reserve_ai_usage(
+                self.photographer,
+                self.operation.code,
+                units=101,
+                idempotency_key="too-many",
+            )
+        self.assertFalse(AIUsageTransaction.objects.filter(idempotency_key="too-many").exists())
+
+    def test_purchased_balance_is_reserved_after_included_allowance(self):
+        account = AIUsageAccount.objects.create(photographer=self.photographer, purchased_balance=10)
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=105,
+            idempotency_key="reserve-purchased",
+        )
+        self.assertEqual(reservation.included_units, 100)
+        self.assertEqual(reservation.purchased_units, 5)
+        settlement = settle_ai_usage(reservation, idempotency_key="settle-purchased")
+        account.refresh_from_db()
+        self.assertEqual(settlement.purchased_units, 5)
+        self.assertEqual(account.purchased_balance, 5)
+
+    def test_monthly_included_allowance_resets_in_new_calendar_month(self):
+        tz = timezone.get_current_timezone()
+        september = timezone.make_aware(datetime(2026, 9, 15, 12, 0), tz)
+        october = timezone.make_aware(datetime(2026, 10, 1, 12, 0), tz)
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=20,
+            idempotency_key="sept-reserve",
+            moment=september,
+        )
+        settle_ai_usage(reservation, idempotency_key="sept-settle")
+        september_balance = get_usage_balance(self.photographer, moment=september)
+        october_balance = get_usage_balance(self.photographer, moment=october)
+        self.assertEqual(september_balance.included_remaining, 80)
+        self.assertEqual(october_balance.included_remaining, 100)
+        self.assertEqual(AIUsagePeriod.objects.filter(account__photographer=self.photographer).count(), 2)
+
+    def test_fully_resolved_reservation_cannot_be_released_again(self):
+        reservation = reserve_ai_usage(
+            self.photographer,
+            self.operation.code,
+            units=2,
+            idempotency_key="resolved-reserve",
+        )
+        settle_ai_usage(reservation, idempotency_key="resolved-settle")
+        with self.assertRaises(AIUsageReservationError):
+            release_ai_usage(reservation, idempotency_key="resolved-release")
