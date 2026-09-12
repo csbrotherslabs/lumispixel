@@ -41,11 +41,19 @@ def get_default_plan():
 
 
 def ensure_subscription(photographer):
-    """Provision the launch-safe Free subscription for a photographer workspace."""
-    try:
-        return photographer.billing_subscription
-    except Subscription.DoesNotExist:
-        pass
+    """Return the authoritative workspace subscription or provision Free.
+
+    Query the subscription table directly rather than relying on Django's
+    reverse one-to-one cache so entitlement and allowance checks always use the
+    latest server-side plan assignment.
+    """
+    subscription = (
+        Subscription.objects.select_related("plan")
+        .filter(photographer=photographer)
+        .first()
+    )
+    if subscription is not None:
+        return subscription
 
     free_plan = get_default_plan()
     subscription, _ = Subscription.objects.get_or_create(
@@ -57,7 +65,7 @@ def ensure_subscription(photographer):
             "provider": Subscription.Provider.NONE,
         },
     )
-    return subscription
+    return Subscription.objects.select_related("plan").get(pk=subscription.pk)
 
 
 def select_plan(photographer, plan_code, *, enforce_customer_selectable=True):
