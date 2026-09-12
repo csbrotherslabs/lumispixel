@@ -1,0 +1,48 @@
+/* Homepage pricing rail: four tiers remain readable at every viewport width. */
+.page-home .lumis-pricing-plans {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 8px 4px 18px;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.page-home .lumis-pricing-plans .lumis-pricing-card {
+    flex: 0 0 clamp(270px, 28vw, 330px);
+    min-width: 270px;
+    max-width: 330px;
+    scroll-snap-align: start;
+}
+
+.page-home .lumis-pricing-plans .lumis-pricing-card__features {
+    flex: 1 1 auto;
+}
+
+.page-home .lumis-pricing-card__disclaimer {
+    margin: 12px 0 0;
+    color: rgba(255, 255, 255, .58);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+@media (max-width: 767px) {
+    .page-home .lumis-pricing-plans {
+        gap: 12px;
+        margin-right: -16px;
+        padding-right: 16px;
+    }
+
+    .page-home .lumis-pricing-plans .lumis-pricing-card {
+        flex-basis: min(82vw, 300px);
+        min-width: min(82vw, 300px);
+    }
+}
