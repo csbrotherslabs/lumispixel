@@ -48,13 +48,13 @@
     }
 
     .h1, h1{
-        font-size: var(--fs-42);
+        font-size: clamp(48px, 7.4vw, 55px);
         line-height: 1.3em;
     }
 
     .blog-details .post-header .post-title,
     .h2, h2{
-        font-size: var(--fs-30);
+        font-size: clamp(36px, 5vw, 45px);
         line-height: 1.2em;
     }
     
@@ -153,11 +153,11 @@
 
 @media screen and (max-width: 767px) {
     .h1, h1{
-        font-size: var(--fs-42);
+        font-size: clamp(48px, 7.4vw, 55px);
     }
     
     .h2, h2{
-        font-size: var(--fs-30);
+        font-size: clamp(36px, 5vw, 45px);
     }
     
     .h3, h3{
@@ -273,11 +273,11 @@
 
 @media screen and (max-width: 575px) {
     .h1, h1{
-        font-size: var(--fs-36);
+        font-size: clamp(48px, 7.4vw, 55px);
     }
     
     .h2, h2{
-        font-size: var(--fs-26);
+        font-size: clamp(36px, 5vw, 45px);
     }
     
     .h3, h3{
