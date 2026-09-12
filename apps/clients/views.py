@@ -6,6 +6,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.accounts.models import ClientProfile
 from apps.accounts.onboarding import get_client_onboarding_resume_url
+from apps.galleries.account_views import available_invitations_for_user
 from apps.notifications.models import Notification
 
 from .forms import ClientOnboardingProfileForm
@@ -89,7 +90,21 @@ def dashboard(request):
     if not profile.onboarding_completed:return redirect("clients:setup-dashboard")
     display_name=profile.display_name or user.first_name or user.display_name
     notifications=Notification.objects.filter(recipient=user)
-    return render(request,"clients/dashboard.html",{"client_profile":profile,"display_name":display_name,"find_photos_url":reverse("accounts:find-photos-placeholder"),"saved_photos_url":"#saved-photos","notification_count":notifications.count(),"unread_notification_count":notifications.filter(is_read=False).count()})
+    invited_galleries=list(available_invitations_for_user(user))
+    for invitation in invited_galleries:
+        invitation.account_access_url=reverse("galleries:client_account_gallery_access", args=[invitation.pk])
+        photographer=invitation.gallery.photographer
+        invitation.studio_name=photographer.business_name or photographer.display_name or photographer.user.display_name
+    return render(request,"clients/dashboard.html",{
+        "client_profile":profile,
+        "display_name":display_name,
+        "find_photos_url":reverse("accounts:find-photos-placeholder"),
+        "saved_photos_url":"#saved-photos",
+        "notification_count":notifications.count(),
+        "unread_notification_count":notifications.filter(is_read=False).count(),
+        "invited_galleries":invited_galleries,
+        "invited_gallery_count":len(invited_galleries),
+    })
 
 @login_required
 @require_GET
