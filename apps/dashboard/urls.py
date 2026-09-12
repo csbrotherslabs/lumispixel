@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .billing_views import billing_account
 from .profile_views import photographer_profile
 
 app_name = "photographer_workspace"
@@ -42,7 +43,7 @@ urlpatterns = [
     path("website/", views.module_placeholder, {"module_key": "website"}, name="website"),
     path("marketplace/", views.module_placeholder, {"module_key": "marketplace"}, name="marketplace"),
     path("orders/", views.module_placeholder, {"module_key": "orders"}, name="orders"),
-    path("billing/", views.module_placeholder, {"module_key": "billing"}, name="billing"),
+    path("billing/", billing_account, name="billing"),
     path("analytics/", views.analytics_overview, name="analytics"),
     path("marketing/", views.module_placeholder, {"module_key": "marketing"}, name="marketing"),
     path("profile/", photographer_profile, name="profile"),
