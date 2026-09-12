@@ -77,6 +77,17 @@ class GalleryForm(forms.ModelForm):
             raise forms.ValidationError("Expiration date must be on or after the event date.")
         return expiration
 
+    def clean(self):
+        cleaned_data = super().clean()
+        expiration = cleaned_data.get("expiration_date")
+        status = cleaned_data.get("status")
+        if expiration and status == Gallery.Status.PUBLISHED:
+            expires_at = timezone.make_aware(datetime.combine(expiration, time.max))
+            published_at = self.instance.published_at if self.instance and self.instance.published_at else timezone.now()
+            if expires_at <= published_at:
+                self.add_error("expiration_date", "Expiration date must be after the gallery is published.")
+        return cleaned_data
+
     def save(self, commit=True):
         gallery = super().save(commit=False)
         expiration = self.cleaned_data.get("expiration_date")
