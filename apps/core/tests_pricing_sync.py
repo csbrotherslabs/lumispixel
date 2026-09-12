@@ -41,13 +41,18 @@ class PricingMarketingSynchronizationTests(TestCase):
 
     def test_paid_plans_remain_marketing_visible_but_not_selectable(self):
         response = self.client.get(reverse("core:pricing"))
+        content = response.content.decode()
 
+        self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Paid upgrades are coming after AI launch readiness", count=3)
-        self.assertContains(response, "Coming soon", count=2)
+        self.assertContains(response, 'data-pricing-plan="pro"')
+        self.assertContains(response, 'data-pricing-plan="studio"')
+        self.assertContains(response, 'data-pricing-plan="enterprise"')
         self.assertContains(response, "Contact Sales")
         self.assertContains(response, "Start Free")
         self.assertNotContains(response, "Start Pro Free")
         self.assertNotContains(response, "Start Studio Free")
+        self.assertNotIn('data-pricing-plan="pro"', content.split("Start Free", 1)[0])
 
     def test_homepage_catalog_payload_comes_from_same_billing_records(self):
         response = self.client.get(reverse("core:index"))
