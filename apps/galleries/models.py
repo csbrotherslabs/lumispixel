@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 import hashlib
 import secrets
+
+from .storage import gallery_photo_storage
 
 
 class GalleryQuerySet(models.QuerySet):
@@ -243,11 +244,8 @@ class GalleryAnalyticsEvent(models.Model):
             raise ValidationError({"related_album": "Album must belong to this gallery."})
 
 
-private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
-
-
 def gallery_photo_path(instance, filename):
-    """Keep originals in an owner/gallery namespace (served only by an authorized view)."""
+    """Keep originals in an owner/gallery namespace (served only by authorized access)."""
     return f"galleries/{instance.photographer_id}/{instance.gallery_id}/{filename}"
 
 
@@ -257,7 +255,7 @@ class GalleryPhotoQuerySet(models.QuerySet):
 
 
 class GalleryPhoto(models.Model):
-    """Storage-agnostic upload record for a gallery original."""
+    """Private original stored in DigitalOcean Spaces when USE_SPACES is enabled."""
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
@@ -269,7 +267,7 @@ class GalleryPhoto(models.Model):
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photos")
     photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_photos")
-    file = models.ImageField(storage=private_gallery_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
+    file = models.ImageField(storage=gallery_photo_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
     original_name = models.CharField(max_length=255)
     file_size = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.QUEUED)
