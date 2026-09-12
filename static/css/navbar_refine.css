@@ -8,6 +8,11 @@
 .header.sticky .mainnav ul.main-menu>li.current>a:before,.header.sticky .mainnav ul.main-menu>li.active>a:before,.header.sticky .mainnav ul.main-menu>li>a:before{bottom:17px}
 .header .mainnav ul.main-menu>li.current>a:before,.header .mainnav ul.main-menu>li.active>a:before,.header .mainnav ul.main-menu>li:hover>a:before{width:18px;background:var(--color-one)}
 .nav-account{gap:8px;margin-right:18px}
+.nav-signin{color:rgba(255,255,255,.82)!important}
+.nav-signin:hover,.nav-signin:focus-visible{color:#fff!important}
+.header .nav-start-free{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 22px;border:1px solid rgba(255,255,255,.92);border-radius:999px;background:#fff;color:#171717!important;font-size:11px;font-weight:800;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;box-shadow:0 5px 18px rgba(0,0,0,.16);transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
+.header .nav-start-free:hover,.header .nav-start-free:focus-visible{border-color:#fff;background:#f1f1f1;color:#b90e15!important;transform:translateY(-1px)}
+.header .nav-start-free:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .nav-workspace-link{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 13px;border:1px solid rgba(255,255,255,.17);border-radius:10px;background:rgba(255,255,255,.055);color:#fff;font-size:10px;font-weight:750;letter-spacing:.045em;text-decoration:none;text-transform:uppercase;transition:background-color .2s ease,border-color .2s ease,color .2s ease}
 .nav-workspace-link i{color:#e36060;font-size:12px}.nav-workspace-link:hover,.nav-workspace-link:focus-visible{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff}
 .nav-notification-link{position:relative;display:grid;width:36px;height:36px;place-items:center;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.035);color:rgba(255,255,255,.76);font-size:14px;text-decoration:none;transition:background-color .2s ease,border-color .2s ease,color .2s ease}
@@ -21,7 +26,7 @@
 .nav-user-dropdown__identity{padding:10px 12px 12px}.nav-user-dropdown__identity strong,.nav-user-dropdown__identity span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nav-user-dropdown__identity strong{color:#fff;font-size:12px}.nav-user-dropdown__identity span{margin-top:3px;color:rgba(255,255,255,.45);font-size:8px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.nav-user-dropdown__count,.mobile-account-links__count{display:grid;min-width:17px;height:17px;place-items:center;padding:0 4px;border-radius:99px;background:rgba(185,14,21,.24);color:#ff8b8f;font-size:7px;font-weight:850}
 .mobile-avatar--fallback{display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);background:#302a27;color:#fff;font-size:14px;font-weight:800}.mobile-account-links a{display:flex;align-items:center;justify-content:space-between}
 .nav-workspace-link:focus-visible,.nav-notification-link:focus-visible{outline:2px solid var(--color-one);outline-offset:3px}
-@media(min-width:1400px) and (max-width:1599px){.header .mainnav ul.main-menu>li+li{margin-left:17px}.header .mainnav ul.main-menu>li>a{font-size:10px;letter-spacing:.035em}.nav-account{gap:6px;margin-right:10px}.nav-workspace-link{padding:0 10px}.nav-user-name{max-width:76px}}
+@media(min-width:1400px) and (max-width:1599px){.header .mainnav ul.main-menu>li+li{margin-left:17px}.header .mainnav ul.main-menu>li>a{font-size:10px;letter-spacing:.035em}.nav-account{gap:6px;margin-right:10px}.nav-workspace-link{padding:0 10px}.nav-user-name{max-width:76px}.header .nav-start-free{min-height:40px;padding:0 18px;font-size:10px}}
 
 /* Mobile navigation panels */
 .mr_menu ul.main-menu>li:nth-child(7)>a:before{content:'\F4D7'}
