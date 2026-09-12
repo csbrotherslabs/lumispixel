@@ -23,7 +23,7 @@ class HomePageTests(TestCase):
         response = self.client.get(reverse("core:index"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="swiper-slide"', count=4)
+        self.assertContains(response, 'class="wptb-slider--item"', count=4)
         self.assertContains(response, "Photography, Powered by AI.")
         self.assertContains(response, "Find Your Photos in Seconds.")
         self.assertContains(response, "One Workspace. Your Entire Business.")
