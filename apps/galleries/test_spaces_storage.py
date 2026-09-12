@@ -20,6 +20,7 @@ SPACES_SETTINGS = {
     "SPACES_REGION": "nyc3",
     "SPACES_ENDPOINT_URL": "https://nyc3.digitaloceanspaces.com",
     "SPACES_SIGNED_URL_TTL": 321,
+    "SPACES_ENVIRONMENT": "dev",
 }
 
 
@@ -33,17 +34,29 @@ class GallerySpacesStorageConfigurationTests(SimpleTestCase):
         self.assertIsInstance(storage, PrivateGallerySpacesStorage)
         self.assertEqual(storage.bucket_name, "lumispixel-test")
         self.assertEqual(storage.endpoint_url, "https://nyc3.digitaloceanspaces.com")
-        self.assertEqual(storage.location, "private")
+        self.assertEqual(storage.location, "private/dev")
         self.assertEqual(storage.default_acl, "private")
         self.assertTrue(storage.querystring_auth)
         self.assertEqual(storage.querystring_expire, 321)
         self.assertFalse(storage.file_overwrite)
+
+    @override_settings(**{**SPACES_SETTINGS, "SPACES_ENVIRONMENT": "prod"})
+    def test_prod_uses_separate_spaces_prefix(self):
+        storage = gallery_photo_storage()
+        self.assertEqual(storage.location, "private/prod")
+
+    @override_settings(**SPACES_SETTINGS)
+    def test_spaces_filename_adds_originals_namespace(self):
+        storage = gallery_photo_storage()
+        generated = storage.generate_filename("galleries/12/87/photo.jpg")
+        self.assertEqual(generated, "galleries/12/87/originals/photo.jpg")
 
     @override_settings(
         USE_SPACES=True,
         SPACES_ACCESS_KEY="",
         SPACES_SECRET_KEY="",
         SPACES_BUCKET_NAME="",
+        SPACES_ENVIRONMENT="dev",
     )
     def test_spaces_enabled_fails_closed_when_credentials_are_missing(self):
         with patch("apps.galleries.storage.FileSystemStorage") as local_storage:
@@ -51,6 +64,11 @@ class GallerySpacesStorageConfigurationTests(SimpleTestCase):
                 gallery_photo_storage()
 
         local_storage.assert_not_called()
+
+    @override_settings(**{**SPACES_SETTINGS, "SPACES_ENVIRONMENT": "staging"})
+    def test_unknown_environment_fails_closed(self):
+        with self.assertRaises(ImproperlyConfigured):
+            gallery_photo_storage()
 
     def test_gallery_photo_field_is_wired_to_storage_resolver(self):
         field = GalleryPhoto._meta.get_field("file")
@@ -112,7 +130,11 @@ class GallerySpacesUploadTests(TestCase):
         saved_name = spaces_save.call_args.args[0]
         self.assertEqual(
             saved_name,
-            f"galleries/{self.photographer.pk}/{self.gallery.pk}/spaces-proof.jpg",
+            f"galleries/{self.photographer.pk}/{self.gallery.pk}/originals/spaces-proof.jpg",
+        )
+        self.assertEqual(
+            f"{spaces_storage.location}/{saved_name}",
+            f"private/dev/galleries/{self.photographer.pk}/{self.gallery.pk}/originals/spaces-proof.jpg",
         )
 
         photo = GalleryPhoto.objects.get(gallery=self.gallery)
