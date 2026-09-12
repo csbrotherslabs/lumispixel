@@ -22,6 +22,41 @@
       <span class="client-hub__status"><i aria-hidden="true"></i> Account ready</span>
     </header>
 
+    {% if invited_galleries %}
+    <section class="client-hub__galleries" aria-labelledby="my-galleries-title">
+      <div class="client-hub__section-heading">
+        <div><span class="client-hub__eyebrow">Private access</span><h2 id="my-galleries-title">Your galleries</h2></div>
+        <p>Galleries sent to your verified email appear here automatically.</p>
+      </div>
+      <div class="client-hub__gallery-grid">
+        {% for invitation in invited_galleries %}
+        <article class="client-hub__gallery-card">
+          <div class="client-hub__gallery-cover">
+            {% if invitation.gallery.cover_image %}
+              <img src="{{ invitation.gallery.cover_image.url }}" alt="">
+            {% else %}
+              <span aria-hidden="true"><i class="bi bi-images"></i></span>
+            {% endif %}
+            <span class="client-hub__gallery-badge"><i class="bi bi-shield-lock" aria-hidden="true"></i> Private</span>
+          </div>
+          <div class="client-hub__gallery-body">
+            <div>
+              <span class="client-hub__gallery-studio">{{ invitation.studio_name }}</span>
+              <h3>{{ invitation.gallery.name }}</h3>
+              <p>{% if invitation.gallery.event_date %}{{ invitation.gallery.event_date|date:"M j, Y" }} · {% endif %}{{ invitation.gallery.image_count }} photo{{ invitation.gallery.image_count|pluralize }}</p>
+            </div>
+            <dl>
+              <div><dt>Invited</dt><dd>{{ invitation.invited_at|date:"M j, Y" }}</dd></div>
+              <div><dt>Access</dt><dd>{% if invitation.gallery.expires_at %}Until {{ invitation.gallery.expires_at|date:"M j, Y" }}{% else %}No expiration{% endif %}</dd></div>
+            </dl>
+            <a class="client-hub__gallery-open" href="{{ invitation.account_access_url }}">Open gallery <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
     <section class="client-hub__search" aria-labelledby="find-my-photos-title">
       <div class="client-hub__section-heading">
         <div><span class="client-hub__eyebrow">Find my photos</span><h2 id="find-my-photos-title">How would you like to search?</h2></div>
@@ -52,7 +87,7 @@
         <a href="#find-my-photos-title">Find more photos <i class="bi bi-arrow-up" aria-hidden="true"></i></a>
       </div>
       <div class="client-hub__activity-grid">
-        <article class="client-hub__activity-card"><span class="client-hub__activity-icon"><i class="bi bi-images" aria-hidden="true"></i></span><div><span>Recent galleries</span><strong>0</strong><p>Your opened galleries will appear here.</p></div></article>
+        <article class="client-hub__activity-card"><span class="client-hub__activity-icon"><i class="bi bi-images" aria-hidden="true"></i></span><div><span>Available galleries</span><strong>{{ invited_gallery_count }}</strong><p>Private galleries tied to your verified email.</p></div></article>
         <article class="client-hub__activity-card" id="saved-photos"><span class="client-hub__activity-icon client-hub__activity-icon--saved"><i class="bi bi-heart" aria-hidden="true"></i></span><div><span>Saved photos</span><strong>0</strong><p>Favorite moments stay easy to revisit.</p></div></article>
         <article class="client-hub__activity-card"><span class="client-hub__activity-icon client-hub__activity-icon--download"><i class="bi bi-cloud-arrow-down" aria-hidden="true"></i></span><div><span>Downloads</span><strong>0</strong><p>Completed downloads will be tracked here.</p></div></article>
         <article class="client-hub__activity-card client-hub__activity-card--clear"><span class="client-hub__activity-icon client-hub__activity-icon--clear"><i class="bi bi-bell" aria-hidden="true"></i></span><div><span>Notifications</span><strong>{% if unread_notification_count %}{{ unread_notification_count }} new{% else %}All clear{% endif %}</strong><p>{% if unread_notification_count %}You have unread updates waiting.{% else %}You are completely caught up.{% endif %}</p></div></article>
@@ -60,7 +95,7 @@
     </section>
 
     <nav class="client-hub__utility" aria-label="Client quick actions">
-      <div><span class="client-hub__utility-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><p><strong>Ready when your photos are.</strong><small>Use a selfie or event code to begin.</small></p></div>
+      <div><span class="client-hub__utility-icon"><i class="bi bi-stars" aria-hidden="true"></i></span><p><strong>Ready when your photos are.</strong><small>Your verified-email galleries stay connected to this account.</small></p></div>
       <div class="client-hub__utility-actions">
         <a href="{{ saved_photos_url }}"><i class="bi bi-heart" aria-hidden="true"></i> Saved photos</a>
         <a href="{% url 'notifications:index' %}"><i class="bi bi-bell" aria-hidden="true"></i> Notifications</a>
