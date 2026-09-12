@@ -49,5 +49,8 @@ jobs:
       - name: Verify committed migrations
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Audit brittle test contracts
+        run: python scripts/audit_test_contracts.py
+
       - name: Run Django test suite
         run: python manage.py test --verbosity 2
