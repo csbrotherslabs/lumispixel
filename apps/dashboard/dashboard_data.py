@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.clients.models import Client, ClientActivity, ClientInvoice, ClientSession, InvoicePayment, Lead
 from apps.dashboard.access import scope_assigned
+from apps.dashboard.ai_wallet import build_ai_wallet
 from apps.galleries.models import Gallery, GalleryActivity
 
 MONEY = DecimalField(max_digits=14, decimal_places=2)
@@ -190,4 +191,4 @@ def build_dashboard(access, *, now=None):
     return {"today": today, "day_summary": day_summary, "attention_items": attentions[:3], "attention_total": len(attentions),
             "kpis": kpis, "schedule_items": schedule, "gallery_queue": gallery_queue, "activity_items": activity,
             "performance_chart": chart, "can_view_financials": financial, "storage_bytes": storage, "insight": insight,
-            "has_business_data": has_business_data}
+            "ai_wallet": build_ai_wallet(access.studio, moment=now), "has_business_data": has_business_data}
