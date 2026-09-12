@@ -11,6 +11,7 @@
   const title=document.getElementById('lp-invite-confirm-title');
   const copy=document.getElementById('lp-invite-confirm-copy');
   const submit=document.getElementById('lp-invite-confirm-submit');
+  const defaultConfirmAction=`${window.location.pathname}${window.location.search}`;
   let lastTrigger=null;
 
   const galleryMatch=window.location.pathname.match(/\/photographer\/workspace\/galleries\/(\d+)\//);
@@ -65,6 +66,7 @@
     const clientName=actionButton.dataset.clientName||'this client';
     const invitationId=actionButton.dataset.invitationId;
 
+    confirmForm.action=action==='resend'&&actionButton.dataset.resendUrl?actionButton.dataset.resendUrl:defaultConfirmAction;
     idInput.value=invitationId||'';
     actionInput.value=action||'';
     title.textContent=actionLabel;
