@@ -50,6 +50,11 @@ class BillingCatalogTests(TestCase):
             PlanAllowance.LimitType.CUSTOM,
         )
 
+    def test_higher_plans_include_lower_plan_entitlements(self):
+        self.assertTrue(Plan.objects.get(code="pro").entitlements.filter(code="password_protected_galleries").exists())
+        self.assertTrue(Plan.objects.get(code="studio").entitlements.filter(code="custom_domain").exists())
+        self.assertTrue(Plan.objects.get(code="enterprise").entitlements.filter(code="advanced_workflow_automation").exists())
+
 
 class SubscriptionFoundationTests(TestCase):
     def setUp(self):
