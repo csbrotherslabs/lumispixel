@@ -10,68 +10,124 @@
 
 {% block workspace_content %}
 <section class="lp-share-ready" aria-labelledby="workspace-page-title">
-  <div class="lp-share-ready__card">
-    <div class="lp-share-ready__success" aria-hidden="true">
-      <i class="bi bi-check-lg"></i>
-    </div>
+  <nav class="lp-share-ready__breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access">Client Access</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <span>Share Link</span>
+  </nav>
 
-    <div class="lp-share-ready__intro">
-      <span class="lp-share-ready__eyebrow">Secure client delivery</span>
-      <h1 id="workspace-page-title">Gallery link ready</h1>
-      <p>A private gallery link has been created for <strong>{{ invitation.client_name }}</strong>. Copy it below and share it directly with your client.</p>
-    </div>
-
-    <section class="lp-share-ready__link-panel" aria-labelledby="secure-link-title">
-      <div class="lp-share-ready__link-heading">
-        <div>
-          <span class="lp-share-ready__label" id="secure-link-title">Secure gallery link</span>
-          <small>Only people with this invitation link can use this access token.</small>
-        </div>
-        <span class="lp-share-ready__status"><i class="bi bi-shield-check" aria-hidden="true"></i> Protected</span>
+  <section class="lp-share-ready__hero">
+    <div class="lp-share-ready__hero-copy">
+      <span class="lp-share-ready__success" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+      <div>
+        <span class="lp-share-ready__eyebrow">Secure client delivery</span>
+        <h1 id="workspace-page-title">Client gallery link ready</h1>
+        <p>A secure invitation link has been created for <strong>{{ invitation.client_name }}</strong>.</p>
+        <small>Share this link with your client so they can open the gallery using the permissions you configured.</small>
       </div>
-
-      <div class="lp-share-ready__copy-row">
-        <input id="client-gallery-share-url" type="text" value="{{ share_url }}" readonly aria-label="Secure client gallery link">
-        <button class="lpw-btn lpw-btn-primary lp-share-ready__copy" type="button" data-copy-gallery-link data-copy-target="client-gallery-share-url">
-          <i class="bi bi-copy" aria-hidden="true"></i>
-          <span data-copy-label>Copy link</span>
+    </div>
+    <div class="lp-share-ready__hero-actions">
+      <a class="lp-share-action lp-share-action--primary" href="{{ share_url }}" target="_blank" rel="noopener">
+        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span>Open Client Gallery</span>
+      </a>
+      <button class="lp-share-action lp-share-action--secondary" type="button" data-copy-gallery-link data-copy-target="client-gallery-share-url">
+        <i class="bi bi-copy" aria-hidden="true"></i><span data-copy-label>Copy Link</span>
+      </button>
+      {% if invitation.email %}
+        <button class="lp-share-action lp-share-action--secondary" type="button" data-email-gallery-link data-email="{{ invitation.email|escape }}" data-share-url="{{ share_url|escape }}" data-gallery-name="{{ gallery.name|escape }}">
+          <i class="bi bi-envelope" aria-hidden="true"></i><span>Send via Email</span>
         </button>
-      </div>
+      {% endif %}
       <p class="lp-share-ready__copy-feedback" data-copy-feedback role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section class="lp-share-ready__gallery-card" aria-labelledby="gallery-summary-title">
+    <div class="lp-share-ready__cover">
+      {% if gallery.cover_image %}
+        <img src="{{ gallery.cover_image.url }}" alt="Cover image for {{ gallery.name }}">
+      {% else %}
+        <div class="lp-share-ready__cover-placeholder" aria-hidden="true"><i class="bi bi-images"></i></div>
+      {% endif %}
+    </div>
+
+    <div class="lp-share-ready__gallery-body">
+      <div class="lp-share-ready__gallery-heading">
+        <div>
+          <h2 id="gallery-summary-title">{{ gallery.name }}</h2>
+          <div class="lp-share-ready__gallery-meta">
+            <span><i class="bi bi-image" aria-hidden="true"></i>{{ gallery.image_count }} photo{{ gallery.image_count|pluralize }}</span>
+            {% if gallery.event_date %}<span><i class="bi bi-calendar3" aria-hidden="true"></i>{{ gallery.event_date|date:"M j, Y" }}</span>{% endif %}
+            <span><i class="bi bi-clock" aria-hidden="true"></i>Created {{ gallery.created_at|date:"M j, Y" }}</span>
+          </div>
+        </div>
+        <a class="lp-share-action lp-share-action--quiet" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">
+          <i class="bi bi-info-circle" aria-hidden="true"></i><span>View Gallery Details</span>
+        </a>
+      </div>
+
+      <div class="lp-share-ready__info-grid">
+        <article class="lp-share-info">
+          <span class="lp-share-info__icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+          <div><span class="lp-share-info__label">Recipient</span><strong>{{ invitation.client_name }}</strong>{% if invitation.email %}<small>{{ invitation.email }}</small>{% endif %}</div>
+        </article>
+        <article class="lp-share-info">
+          <span class="lp-share-info__icon"><i class="bi bi-lock" aria-hidden="true"></i></span>
+          <div><span class="lp-share-info__label">Access</span><strong><i class="lp-share-ready__active-dot" aria-hidden="true"></i>Secure invitation</strong><small>{{ gallery.get_visibility_display }} gallery access</small></div>
+        </article>
+        <article class="lp-share-info">
+          <span class="lp-share-info__icon"><i class="bi bi-calendar-event" aria-hidden="true"></i></span>
+          <div><span class="lp-share-info__label">Expires</span><strong>{% if gallery.expires_at %}{{ gallery.expires_at|date:"M j, Y" }}{% else %}No expiration set{% endif %}</strong><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access#client-access-settings">{% if gallery.expires_at %}Change expiration{% else %}Set expiration{% endif %}</a></div>
+        </article>
+        <article class="lp-share-info">
+          <span class="lp-share-info__icon"><i class="bi bi-link-45deg" aria-hidden="true"></i></span>
+          <div><span class="lp-share-info__label">Invitation Link</span><strong>Active</strong><small>Created {{ invitation.invited_at|date:"M j, Y" }}</small><small>Last used: {% if invitation.last_access_at %}{{ invitation.last_access_at|timesince }} ago{% else %}Never{% endif %}</small></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-share-ready__link-card" aria-labelledby="secure-link-title">
+    <div>
+      <h2 id="secure-link-title">Client Gallery Link</h2>
+      <p>Share this secure link with your client. Access remains tied to this invitation.</p>
+    </div>
+    <div class="lp-share-ready__copy-row">
+      <input id="client-gallery-share-url" type="text" value="{{ share_url }}" readonly aria-label="Secure client gallery link" onclick="this.select()">
+      <button class="lp-share-action lp-share-action--copy" type="button" data-copy-gallery-link data-copy-target="client-gallery-share-url">
+        <i class="bi bi-copy" aria-hidden="true"></i><span data-copy-label>Copy Link</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="lp-share-ready__support-grid">
+    <section class="lp-share-ready__support-card lp-share-ready__support-card--security" aria-labelledby="security-title">
+      <header><span><i class="bi bi-shield-check" aria-hidden="true"></i></span><h2 id="security-title">Security &amp; Privacy</h2></header>
+      <ul>
+        <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>This link is private and tied to this invitation.</span></li>
+        <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Gallery actions follow the permissions configured in Client Access.</span></li>
+        <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>You can disable or replace this invitation from Client Access.</span></li>
+        <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Client views, favorites, and downloads are tracked when those actions are enabled.</span></li>
+      </ul>
     </section>
 
-    <dl class="lp-share-ready__details">
-      <div>
-        <dt>Gallery</dt>
-        <dd>{{ gallery.name }}</dd>
-      </div>
-      <div>
-        <dt>Recipient</dt>
-        <dd>{{ invitation.client_name }}{% if invitation.email %}<span>{{ invitation.email }}</span>{% endif %}</dd>
-      </div>
-      <div>
-        <dt>Access</dt>
-        <dd><span class="lp-share-ready__active-dot" aria-hidden="true"></span>Secure invitation</dd>
-      </div>
-      <div>
-        <dt>Expires</dt>
-        <dd>{% if gallery.expires_at %}{{ gallery.expires_at|date:"M j, Y" }}{% else %}No expiration set{% endif %}</dd>
-      </div>
-    </dl>
+    <section class="lp-share-ready__support-card lp-share-ready__support-card--steps" aria-labelledby="next-steps-title">
+      <header><span><i class="bi bi-lightbulb" aria-hidden="true"></i></span><h2 id="next-steps-title">Next Steps</h2></header>
+      <ol>
+        <li><span>1</span><p>Copy the link above or use <strong>Send via Email</strong>.</p></li>
+        <li><span>2</span><p>Share it directly with your client.</p></li>
+        <li><span>3</span><p>Your client can open the gallery and use the actions you enabled.</p></li>
+        <li><span>4</span><p>Manage, resend, disable, or replace access from Client Access.</p></li>
+      </ol>
+    </section>
+  </div>
 
-    <div class="lp-share-ready__actions">
-      <a class="lpw-btn lpw-btn-primary lp-share-ready__open" href="{{ share_url }}" target="_blank" rel="noopener">
-        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>Open client gallery
-      </a>
-      <a class="lpw-btn lpw-btn-outline" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Client Access
-      </a>
-    </div>
-
-    <div class="lp-share-ready__notice">
-      <i class="bi bi-info-circle" aria-hidden="true"></i>
-      <p><strong>Keep this link private.</strong> Creating a new secure link for this invitation will revoke the previous active link.</p>
-    </div>
+  <div class="lp-share-ready__footer-actions">
+    <a class="lp-share-action lp-share-action--back" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i><span>Back to Client Access</span>
+    </a>
   </div>
 </section>
 <script src="{% static 'js/gallery_share_link_ready.js' %}" defer></script>
