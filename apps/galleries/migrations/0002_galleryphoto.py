@@ -4,7 +4,7 @@ import apps.galleries.models
 import django.core.files.storage
 import django.core.validators
 import django.db.models.deletion
-import pathlib
+from django.conf import settings
 from django.db import migrations, models
 
 
@@ -32,9 +32,7 @@ class Migration(migrations.Migration):
                     "file",
                     models.ImageField(
                         storage=django.core.files.storage.FileSystemStorage(
-                            location=pathlib.PurePosixPath(
-                                "/workspace/lumispixel/private_media"
-                            )
+                            location=settings.PRIVATE_MEDIA_ROOT
                         ),
                         upload_to=apps.galleries.models.gallery_photo_path,
                         validators=[
