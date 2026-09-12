@@ -1,1 +1,78 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Share gallery | LumisPixel</title></head><body><main><h1>Client gallery link ready</h1><p>Share this secure link with {{ invitation.client_name }}.</p><p><input value="{{ share_url }}" readonly onclick="this.select()" aria-label="Secure client gallery link"></p><p><a href="{{ share_url }}">Open client gallery</a></p><p><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access">Back to Client Access</a></p></main></body></html>
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+
+{% block title %}Gallery link ready | Photographer Workspace | LumisPixel{% endblock %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/gallery_share_link_ready.css' %}">
+{% endblock %}
+
+{% block workspace_content %}
+<section class="lp-share-ready" aria-labelledby="workspace-page-title">
+  <div class="lp-share-ready__card">
+    <div class="lp-share-ready__success" aria-hidden="true">
+      <i class="bi bi-check-lg"></i>
+    </div>
+
+    <div class="lp-share-ready__intro">
+      <span class="lp-share-ready__eyebrow">Secure client delivery</span>
+      <h1 id="workspace-page-title">Gallery link ready</h1>
+      <p>A private gallery link has been created for <strong>{{ invitation.client_name }}</strong>. Copy it below and share it directly with your client.</p>
+    </div>
+
+    <section class="lp-share-ready__link-panel" aria-labelledby="secure-link-title">
+      <div class="lp-share-ready__link-heading">
+        <div>
+          <span class="lp-share-ready__label" id="secure-link-title">Secure gallery link</span>
+          <small>Only people with this invitation link can use this access token.</small>
+        </div>
+        <span class="lp-share-ready__status"><i class="bi bi-shield-check" aria-hidden="true"></i> Protected</span>
+      </div>
+
+      <div class="lp-share-ready__copy-row">
+        <input id="client-gallery-share-url" type="text" value="{{ share_url }}" readonly aria-label="Secure client gallery link">
+        <button class="lpw-btn lpw-btn-primary lp-share-ready__copy" type="button" data-copy-gallery-link data-copy-target="client-gallery-share-url">
+          <i class="bi bi-copy" aria-hidden="true"></i>
+          <span data-copy-label>Copy link</span>
+        </button>
+      </div>
+      <p class="lp-share-ready__copy-feedback" data-copy-feedback role="status" aria-live="polite"></p>
+    </section>
+
+    <dl class="lp-share-ready__details">
+      <div>
+        <dt>Gallery</dt>
+        <dd>{{ gallery.name }}</dd>
+      </div>
+      <div>
+        <dt>Recipient</dt>
+        <dd>{{ invitation.client_name }}{% if invitation.email %}<span>{{ invitation.email }}</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Access</dt>
+        <dd><span class="lp-share-ready__active-dot" aria-hidden="true"></span>Secure invitation</dd>
+      </div>
+      <div>
+        <dt>Expires</dt>
+        <dd>{% if gallery.expires_at %}{{ gallery.expires_at|date:"M j, Y" }}{% else %}No expiration set{% endif %}</dd>
+      </div>
+    </dl>
+
+    <div class="lp-share-ready__actions">
+      <a class="lpw-btn lpw-btn-primary lp-share-ready__open" href="{{ share_url }}" target="_blank" rel="noopener">
+        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>Open client gallery
+      </a>
+      <a class="lpw-btn lpw-btn-outline" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=client-access">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Client Access
+      </a>
+    </div>
+
+    <div class="lp-share-ready__notice">
+      <i class="bi bi-info-circle" aria-hidden="true"></i>
+      <p><strong>Keep this link private.</strong> Creating a new secure link for this invitation will revoke the previous active link.</p>
+    </div>
+  </div>
+</section>
+<script src="{% static 'js/gallery_share_link_ready.js' %}" defer></script>
+{% endblock %}
