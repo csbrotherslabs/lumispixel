@@ -96,18 +96,35 @@ class FinancialDatabaseSelectorTests(TestCase):
 
     def test_kpi_change_semantics_are_not_inferred_from_direction_alone(self):
         profile = self.profile("semantic-kpis")
-        self.invoice(profile, suffix="previous", total=Decimal("100.00"), created=date(2026, 6, 1),
-                     status=ClientInvoice.Status.SENT, due_date=date(2026, 6, 15))
-        self.invoice(profile, suffix="current", total=Decimal("500.00"),
-                     status=ClientInvoice.Status.SENT, due_date=date(2026, 7, 1))
+        previous_invoice = self.invoice(profile, suffix="previous", total=Decimal("200.00"), created=date(2026, 6, 1),
+                                        status=ClientInvoice.Status.PARTIALLY_PAID, due_date=date(2026, 6, 15))
+        current_invoice = self.invoice(profile, suffix="current", total=Decimal("700.00"),
+                                       status=ClientInvoice.Status.PARTIALLY_PAID, due_date=date(2026, 7, 1))
+        previous_payment = InvoicePayment.objects.create(
+            photographer=profile, invoice=previous_invoice, amount=Decimal("100.00"),
+            paid_at=timezone.make_aware(datetime(2026, 6, 10)),
+        )
+        current_payment = InvoicePayment.objects.create(
+            photographer=profile, invoice=current_invoice, amount=Decimal("500.00"),
+            paid_at=timezone.make_aware(datetime(2026, 7, 10)),
+        )
+        PaymentRefund.objects.create(
+            photographer=profile, payment=previous_payment, amount=Decimal("10.00"),
+            refunded_at=timezone.make_aware(datetime(2026, 6, 12)),
+        )
+        PaymentRefund.objects.create(
+            photographer=profile, payment=current_payment, amount=Decimal("50.00"),
+            refunded_at=timezone.make_aware(datetime(2026, 7, 12)),
+        )
 
         cards = {card["title"]: card for card in financial_summary(
             profile, "this_month", today=self.today
         )["cards"]}
 
-        self.assertEqual(cards["Outstanding"]["change_variant"], "neutral")
-        self.assertEqual(cards["Overdue"]["change_variant"], "danger")
-        self.assertEqual(cards["Overdue"]["display_trend"], "increase")
+        self.assertEqual(cards["Payments Received"]["change_variant"], "success")
+        self.assertEqual(cards["Payments Received"]["display_trend"], "increase")
+        self.assertEqual(cards["Total Refunded"]["change_variant"], "danger")
+        self.assertEqual(cards["Total Refunded"]["display_trend"], "increase")
 
     def test_transactions_page_uses_real_view_summary_and_active_navigation(self):
         profile = self.profile("transactions")
