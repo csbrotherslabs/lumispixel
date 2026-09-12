@@ -1,0 +1,114 @@
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+
+{% block workspace_extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/workspace_billing.css' %}">
+{% endblock %}
+
+{% block workspace_content %}
+<section class="lpb-page" aria-labelledby="billing-title">
+  <header class="lpb-hero">
+    <div>
+      <p class="lpw-kicker">Account management</p>
+      <h2 id="billing-title">Billing &amp; Plan</h2>
+      <p>Review your current LumisPixel plan, usage, allowances, and launch availability from one place.</p>
+    </div>
+    <a class="lpw-btn lpw-btn-secondary" href="{{ pricing_url }}">View public pricing</a>
+  </header>
+
+  <div class="lpb-notice" role="status">
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
+    <span>{{ launch_notice }}</span>
+  </div>
+
+  <div class="lpb-grid lpb-grid--summary">
+    <article class="lpb-card lpb-card--plan">
+      <div class="lpb-card__label">Current plan</div>
+      <div class="lpb-current-plan">
+        <div>
+          <h3>{{ current_plan.name }}</h3>
+          <p>{{ current_plan.description }}</p>
+        </div>
+        <span class="lpb-status lpb-status--active">{{ subscription.get_status_display }}</span>
+      </div>
+      <dl class="lpb-meta">
+        <div><dt>Billing interval</dt><dd>{{ subscription.get_billing_interval_display }}</dd></div>
+        <div><dt>Provider</dt><dd>{% if subscription.provider == 'none' %}Not connected{% else %}{{ subscription.get_provider_display }}{% endif %}</dd></div>
+        <div><dt>Auto-renewal</dt><dd>{% if subscription.cancel_at_period_end %}Ends after current period{% else %}No paid renewal configured{% endif %}</dd></div>
+      </dl>
+    </article>
+
+    <article class="lpb-card">
+      <div class="lpb-card__label">Gallery storage</div>
+      <div class="lpb-metric"><strong>{{ storage_summary.used }}</strong><span>used</span></div>
+      <p class="lpb-muted">{{ storage_summary.limit }} plan allowance{% if storage_summary.remaining %} · {{ storage_summary.remaining }} remaining{% endif %}</p>
+      {% if storage_summary.percent is not None %}
+      <div class="lpb-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ storage_summary.percent }}">
+        <span style="width: {{ storage_summary.percent }}%"></span>
+      </div>
+      <small>{{ storage_summary.percent_raw }}% used</small>
+      {% endif %}
+    </article>
+
+    <article class="lpb-card">
+      <div class="lpb-card__label">AI wallet</div>
+      {% if ai_summary.limit_type == 'unlimited' %}
+        <div class="lpb-metric"><strong>Unlimited</strong><span>monthly actions</span></div>
+      {% elif ai_summary.limit_type == 'custom' %}
+        <div class="lpb-metric"><strong>Custom</strong><span>monthly allowance</span></div>
+      {% else %}
+        <div class="lpb-metric"><strong>{{ ai_summary.remaining|default:0 }}</strong><span>included actions remaining</span></div>
+      {% endif %}
+      <dl class="lpb-meta lpb-meta--compact">
+        <div><dt>Used</dt><dd>{{ ai_summary.used }}</dd></div>
+        <div><dt>Pending</dt><dd>{{ ai_summary.reserved }}</dd></div>
+        <div><dt>Extra credits</dt><dd>{{ ai_summary.purchased_available }}</dd></div>
+      </dl>
+      <p class="lpb-muted">Monthly allowance resets at the start of the next usage period.</p>
+    </article>
+  </div>
+
+  <section class="lpb-section" aria-labelledby="plans-title">
+    <div class="lpb-section__heading">
+      <div><p class="lpw-kicker">Plan catalog</p><h3 id="plans-title">Plans &amp; launch availability</h3></div>
+      <p>Plan limits come directly from the LumisPixel billing catalog.</p>
+    </div>
+    <div class="lpb-plan-grid">
+      {% for plan in plan_cards %}
+      <article class="lpb-plan{% if plan.is_current %} is-current{% endif %}">
+        <div class="lpb-plan__top">
+          <div>
+            <h4>{{ plan.name }}</h4>
+            <p>{{ plan.description }}</p>
+          </div>
+          {% if plan.is_current %}<span class="lpb-status lpb-status--active">Current</span>{% endif %}
+        </div>
+        <div class="lpb-plan__price">{{ plan.price.monthly }} <span>· {{ plan.price.annual }}</span></div>
+        <ul>
+          {% for label, value in plan.allowances %}<li><span>{{ label }}</span><strong>{{ value }}</strong></li>{% endfor %}
+        </ul>
+        {% if plan.is_current %}
+          <button class="lpw-btn lpw-btn-secondary" type="button" disabled>Current plan</button>
+        {% elif plan.selectable %}
+          <form method="post">{% csrf_token %}<input type="hidden" name="plan" value="{{ plan.code }}"><button class="lpw-btn lpw-btn-primary" type="submit">Select {{ plan.name }}</button></form>
+        {% elif plan.code == 'enterprise' %}
+          <a class="lpw-btn lpw-btn-secondary" href="{% url 'core:contact' %}">Contact Sales</a>
+        {% else %}
+          <button class="lpw-btn lpw-btn-secondary" type="button" disabled>Coming soon</button>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="lpb-section" aria-labelledby="included-title">
+    <div class="lpb-section__heading">
+      <div><p class="lpw-kicker">Included with {{ current_plan.name }}</p><h3 id="included-title">Enabled capabilities</h3></div>
+    </div>
+    <div class="lpb-entitlements">
+      {% for entitlement in entitlements %}<span><i class="bi bi-check2" aria-hidden="true"></i>{{ entitlement }}</span>{% empty %}<p>No enabled entitlements are configured for this plan.</p>{% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}
