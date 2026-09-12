@@ -15,7 +15,9 @@
         <div class="nav-sidebar-actions">
             <a href="{% url 'clients:for_clients' %}">Find My Photos</a>
             <a href="{% url 'marketplace:find_photographer' %}">Hire a Photographer</a>
-            <a href="{% url 'core:pricing' %}">Pricing</a>
+            {% if not request.user.is_authenticated or request.user.can_use_photographer_workspace %}
+                <a href="{% url 'core:pricing' %}">Pricing</a>
+            {% endif %}
         </div>
 
         <h6>// Account</h6>
