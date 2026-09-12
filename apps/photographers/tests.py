@@ -295,8 +295,12 @@ class PhotographerThemeBehaviorTests(TestCase):
             PhotographerProfile.WebsiteTheme.MODERN_STUDIO,
         )
 
-    def test_theme_preview_rejects_unknown_theme(self):
+    def test_unknown_theme_preview_returns_to_theme_selection(self):
         response = self.client.get(
             reverse("photographers:theme-preview", args=["not-a-real-theme"])
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertRedirects(
+            response,
+            reverse("photographers:onboarding-theme"),
+            fetch_redirect_response=False,
+        )
