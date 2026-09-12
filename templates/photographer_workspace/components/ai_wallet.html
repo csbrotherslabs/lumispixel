@@ -1,0 +1,34 @@
+{% if ai_wallet %}
+<section class="lpw-command-card lpw-ai-wallet" aria-labelledby="ai-wallet-title" data-ai-wallet>
+  {% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="AI usage" title="AI Wallet" section_id="ai-wallet-title" only %}
+
+  <div class="lpw-ai-wallet__plan"><span>{{ ai_wallet.plan_name }} plan</span><i class="bi bi-stars" aria-hidden="true"></i></div>
+
+  {% if not ai_wallet.configured %}
+    <p class="lpw-ai-wallet__status">{{ ai_wallet.status_message }}</p>
+  {% elif ai_wallet.is_custom %}
+    <strong class="lpw-ai-wallet__headline">Custom allowance</strong>
+    <p class="lpw-ai-wallet__status">{{ ai_wallet.status_message }}</p>
+  {% elif ai_wallet.is_unlimited %}
+    <strong class="lpw-ai-wallet__headline">Unlimited AI actions</strong>
+    <p class="lpw-ai-wallet__status">{{ ai_wallet.included_consumed }} used{% if ai_wallet.included_reserved %} · {{ ai_wallet.included_reserved }} pending{% endif %} this month.</p>
+    {% if ai_wallet.reset_date %}<p class="lpw-ai-wallet__reset">Usage period resets {{ ai_wallet.reset_date|date:"M j" }}.</p>{% endif %}
+  {% else %}
+    <div class="lpw-ai-wallet__balance">
+      <strong>{{ ai_wallet.total_available|default:0 }}</strong>
+      <span>AI actions available</span>
+    </div>
+    <div class="lpw-ai-wallet__meter" role="img" aria-label="{{ ai_wallet.included_consumed }} of {{ ai_wallet.included_allowance }} monthly AI actions used{% if ai_wallet.included_reserved %}, with {{ ai_wallet.included_reserved }} pending{% endif %}.">
+      <span class="lpw-ai-wallet__meter-used" style="width: {{ ai_wallet.used_percent }}%"></span>
+      <span class="lpw-ai-wallet__meter-pending" style="width: {{ ai_wallet.pending_percent }}%"></span>
+    </div>
+    <div class="lpw-ai-wallet__usage-row"><span>{{ ai_wallet.included_consumed }} used</span><span>{{ ai_wallet.included_allowance }} included / month</span></div>
+    <div class="lpw-ai-wallet__stats">
+      <div><span>Monthly remaining</span><strong>{{ ai_wallet.included_remaining }}</strong></div>
+      <div><span>Pending</span><strong>{{ ai_wallet.included_reserved }}</strong></div>
+      <div><span>Extra credits</span><strong>{{ ai_wallet.purchased_available }}</strong></div>
+    </div>
+    {% if ai_wallet.reset_date %}<p class="lpw-ai-wallet__reset"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Included actions reset {{ ai_wallet.reset_date|date:"M j" }}. Extra credits do not reset.</p>{% endif %}
+  {% endif %}
+</section>
+{% endif %}
