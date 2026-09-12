@@ -13,6 +13,28 @@
   const submit=document.getElementById('lp-invite-confirm-submit');
   let lastTrigger=null;
 
+  const galleryMatch=window.location.pathname.match(/\/photographer\/workspace\/galleries\/(\d+)\//);
+  const galleryId=galleryMatch?.[1];
+  const csrf=confirmForm?.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+  if(galleryId&&csrf){
+    root.querySelectorAll('[data-invite-confirm][data-invitation-id]').forEach((button)=>{
+      const panel=button.closest('.lp-invite-action-buttons');
+      const invitationId=button.dataset.invitationId;
+      if(!panel||!invitationId||panel.querySelector('[data-gallery-share-link]'))return;
+      const form=document.createElement('form');
+      form.method='post';
+      form.action=`/galleries/share-link/${galleryId}/${invitationId}/`;
+      form.dataset.galleryShareLink='true';
+      form.style.display='inline-flex';
+      const token=document.createElement('input');
+      token.type='hidden';token.name='csrfmiddlewaretoken';token.value=csrf;
+      const share=document.createElement('button');
+      share.type='submit';share.className='lpw-btn lpw-btn-primary';share.textContent='Create secure link';
+      form.append(token,share);
+      panel.prepend(form);
+    });
+  }
+
   const closeExpandedRows=(exceptId)=>{
     root.querySelectorAll('[data-invite-actions-toggle]').forEach((toggle)=>{
       const rowId=toggle.dataset.inviteActionsToggle;
