@@ -1,22 +1,18 @@
 (function () {
   "use strict";
 
-  var priceData = {
-    monthly: { pro: { price: "$29", billing: "Billed monthly" }, studio: { price: "$59", billing: "Billed monthly" } },
-    annual: { pro: { price: "$23", billing: "Billed annually at $276" }, studio: { price: "$47", billing: "Billed annually at $564" } }
-  };
-
   function updateBilling(mode) {
     document.querySelectorAll("[data-billing-option]").forEach(function (button) {
       var active = button.getAttribute("data-billing-option") === mode;
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-checked", active ? "true" : "false");
     });
-    ["pro", "studio"].forEach(function (plan) {
-      var price = document.querySelector('[data-plan-price="' + plan + '"]');
-      var billing = document.querySelector('[data-plan-billing="' + plan + '"]');
-      if (price) price.textContent = priceData[mode][plan].price;
-      if (billing) billing.textContent = priceData[mode][plan].billing;
+
+    document.querySelectorAll("[data-plan-price]").forEach(function (price) {
+      var value = mode === "annual"
+        ? price.getAttribute("data-annual-copy")
+        : price.getAttribute("data-monthly-copy");
+      if (value) price.textContent = value;
     });
   }
 
