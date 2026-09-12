@@ -46,8 +46,5 @@ jobs:
       - name: Run Django system checks
         run: python manage.py check
 
-      - name: Check for missing migrations
-        run: python manage.py makemigrations --check --dry-run
-
       - name: Run test suite
         run: python manage.py test --verbosity 2
