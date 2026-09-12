@@ -1,20 +1,5 @@
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from storages.backends.s3 import S3Storage
-
-
-class PrivateGalleryFileSystemStorage(FileSystemStorage):
-    """Private local storage whose migration identity is environment-independent.
-
-    Passing an absolute PRIVATE_MEDIA_ROOT directly to FileSystemStorage causes
-    Django migrations to serialize a machine-specific path. Instantiating this
-    subclass without constructor arguments keeps migration state stable while
-    resolving the actual private-media location at runtime.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("location", settings.PRIVATE_MEDIA_ROOT)
-        super().__init__(*args, **kwargs)
 
 
 class PrivateGalleryStorage(S3Storage):
