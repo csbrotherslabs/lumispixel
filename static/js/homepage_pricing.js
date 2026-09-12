@@ -13,7 +13,7 @@
         });
     }
 
-    function pricingCard(plan, pricingUrl, signupUrl, showFreeCta) {
+    function pricingCard(plan, pricingUrl, signupUrl) {
         var featuredClass = plan.featured ? " lumis-pricing-card--featured" : "";
         var primaryClass = plan.featured ? " lumis-pricing-card__cta--primary" : "";
         var badge = plan.badge ? '<div class="lumis-pricing-card__badge">' + escapeHtml(plan.badge) + "</div>" : "";
@@ -23,9 +23,9 @@
         }).join("");
         var cta = "";
 
-        if (plan.code === "free" && showFreeCta && signupUrl) {
-            cta = '<a class="lumis-pricing-card__cta" href="' + escapeHtml(signupUrl) + '">Start Free</a>';
-        } else if (plan.code !== "free" && pricingUrl) {
+        if (plan.code === "free") {
+            cta = '<a class="lumis-pricing-card__cta" href="' + escapeHtml(pricingUrl || signupUrl || "#") + '">View Free</a>';
+        } else if (pricingUrl) {
             cta = '<a class="lumis-pricing-card__cta' + primaryClass + '" href="' + escapeHtml(pricingUrl) + '">' + escapeHtml(plan.cta) + "</a>";
         }
 
@@ -50,7 +50,6 @@
         var pricingLink = existingCards.length > 1 ? existingCards[1].querySelector(".lumis-pricing-card__cta") : null;
         var signupUrl = signupLink ? signupLink.getAttribute("href") : "";
         var pricingUrl = pricingLink ? pricingLink.getAttribute("href") : window.location.pathname;
-        var showFreeCta = Boolean(signupLink);
 
         var plans = [
             {
@@ -60,7 +59,7 @@
                 monthly: "$0",
                 annual: "$0",
                 features: ["3 active galleries", "5 GB storage", "Core client tools", "1 team member", "100 AI image actions"],
-                cta: "Start Free",
+                cta: "View Free",
                 available: true
             },
             {
@@ -98,7 +97,7 @@
         ];
 
         plansContainer.innerHTML = plans.map(function (plan) {
-            return pricingCard(plan, pricingUrl, signupUrl, showFreeCta);
+            return pricingCard(plan, pricingUrl, signupUrl);
         }).join("");
     }
 
