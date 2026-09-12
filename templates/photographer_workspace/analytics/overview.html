@@ -12,14 +12,14 @@
     <div class="lpa-heading lp-page-heading">
       <nav class="lpa-header-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Analytics</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Analytics</h1>
-      <p class="lp-page-description">See how your business is performing, what changed, and what needs attention.</p>
+      <p class="lp-page-description">Understand business performance, trends, risks, and opportunities.</p>
     </div>
     <div class="lpa-header-actions">
       <details class="lpa-more-actions">
         <summary class="lp-button lp-button--secondary lp-button--md" aria-haspopup="menu"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More Actions</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
         <div role="menu">
-          <a role="menuitem" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}export=csv"><i class="bi bi-filetype-csv" aria-hidden="true"></i><span><strong>Download Summary CSV</strong><small>Export the active analytics summary and filters.</small></span></a>
-          <button role="menuitem" type="button" data-print-report><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span><strong>Print / Save PDF</strong><small>Open this analytics view in the browser print dialog.</small></span></button>
+          <a role="menuitem" href="?{{ request.GET.urlencode }}{% if request.GET %}&{% endif %}export=csv"><i class="bi bi-filetype-csv" aria-hidden="true"></i><span><strong>Download Summary CSV</strong><small>Export approved metrics for the active date range and filters.</small></span></a>
+          <button role="menuitem" type="button" data-print-report><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i><span><strong>Print / save PDF</strong><small>Open the current analytics view in the browser print dialog.</small></span></button>
         </div>
       </details>
     </div>
