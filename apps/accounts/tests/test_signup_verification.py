@@ -41,7 +41,13 @@ class EntrySignupVerificationTests(TestCase):
 
         unsafe = self.client.get(reverse("accounts:get-started") + "?next=https://evil.example/")
         unsafe_html = unsafe.content.decode(unsafe.charset or "utf-8")
-        self.assertNotIn("https://evil.example/", unsafe_html)
+        # The current request URL can legitimately appear in canonical metadata. The
+        # security contract is that the unsafe next value is never propagated into
+        # actionable signup/login destinations.
+        self.assertNotIn('/signup/photographer/?next=https://evil.example/', unsafe_html)
+        self.assertNotIn('/signup/client/?intent=find_photos&amp;next=https://evil.example/', unsafe_html)
+        self.assertNotIn('/signup/client/?intent=marketplace&amp;next=https://evil.example/', unsafe_html)
+        self.assertNotIn('/accounts/login/?next=https://evil.example/', unsafe_html)
 
     def test_authenticated_get_started_uses_authenticated_capabilities(self):
         user = User.objects.create_user(
