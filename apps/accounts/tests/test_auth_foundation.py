@@ -261,8 +261,10 @@ class LoginTests(TestCase):
         ClientProfile.objects.create(user=user, onboarding_completed=True)
         self.client.force_login(user)
 
-        response = self.client.get(reverse("clients:account-settings"))
+        legacy_response = self.client.get(reverse("clients:account-settings"))
+        self.assertRedirects(legacy_response, reverse("accounts:account-settings"), fetch_redirect_response=False)
 
+        response = self.client.get(reverse("accounts:account-settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Your account, in one place.")
         self.assertContains(response, "Profile")
@@ -270,12 +272,16 @@ class LoginTests(TestCase):
         self.assertContains(response, "Security")
         self.assertNotContains(response, ">My Profile<")
 
-    def test_incomplete_client_settings_redirects_to_onboarding(self):
+    def test_incomplete_client_settings_uses_shared_account_settings_route(self):
         user = make_user(email="incomplete-settings@example.com")
         ClientProfile.objects.create(user=user, onboarding_completed=False)
         self.client.force_login(user)
 
-        self.assertRedirects(self.client.get(reverse("clients:account-settings")), reverse("clients:setup-dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(
+            self.client.get(reverse("clients:account-settings")),
+            reverse("accounts:account-settings"),
+            fetch_redirect_response=False,
+        )
 
     def test_user_without_client_profile_cannot_access_client_dashboard(self):
         user = make_user(
