@@ -1,0 +1,136 @@
+.lpw-ai-wallet {
+  position: relative;
+  overflow: hidden;
+}
+
+.lpw-ai-wallet::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #bd101b, #f05a65 55%, #f7b2b7);
+}
+
+.lpw-ai-wallet__plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 2px 0 18px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.lpw-ai-wallet__plan i {
+  color: #bd101b;
+  font-size: 18px;
+}
+
+.lpw-ai-wallet__balance {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.lpw-ai-wallet__balance strong,
+.lpw-ai-wallet__headline {
+  color: #111827;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lpw-ai-wallet__balance span {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lpw-ai-wallet__meter {
+  display: flex;
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceff3;
+  box-shadow: inset 0 0 0 1px rgba(17, 24, 39, .04);
+}
+
+.lpw-ai-wallet__meter-used {
+  display: block;
+  height: 100%;
+  background: #bd101b;
+}
+
+.lpw-ai-wallet__meter-pending {
+  display: block;
+  height: 100%;
+  background: #f3a1a7;
+}
+
+.lpw-ai-wallet__usage-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 7px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.lpw-ai-wallet__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.lpw-ai-wallet__stats > div {
+  padding: 10px;
+  border: 1px solid #edf0f3;
+  border-radius: 12px;
+  background: #fafbfc;
+}
+
+.lpw-ai-wallet__stats span {
+  display: block;
+  min-height: 30px;
+  color: #7b818b;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.lpw-ai-wallet__stats strong {
+  display: block;
+  margin-top: 3px;
+  color: #111827;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.lpw-ai-wallet__reset,
+.lpw-ai-wallet__status {
+  margin: 14px 0 0;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.lpw-ai-wallet__reset i {
+  margin-right: 4px;
+  color: #bd101b;
+}
+
+@media (max-width: 520px) {
+  .lpw-ai-wallet__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .lpw-ai-wallet__stats span {
+    min-height: 0;
+  }
+}
