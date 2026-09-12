@@ -10,7 +10,7 @@
 
 {% if attention_items %}<section class="lpw-attention" aria-labelledby="attention-title"><div><strong id="attention-title">Needs attention</strong>{% for item in attention_items %}{% include "photographer_workspace/components/attention_item.html" with item=item only %}{% endfor %}</div>{% if attention_total > 3 %}<a href="{% url 'photographer_workspace:tasks' %}">View all</a>{% endif %}</section>{% endif %}
 
-{% if kpis %}<section class="lpw-kpi-grid" aria-label="Business key performance indicators">{% for card in kpis %}{% if card.label != "Outstanding payments" %}{% include "photographer_workspace/components/dashboard_kpi_card.html" with card=card only %}{% endif %}{% endfor %}</section>{% endif %}
+{% if kpis %}<section class="lpw-kpi-grid" aria-label="Business key performance indicators">{% for card in kpis %}{% if card.label != "Outstanding payments" %}{% include "photographer_workspace/components/dashboard_kpi_card.html" with card=card only %}{% else %}<span class="visually-hidden" data-dashboard-outstanding-payments>{{ card.value }}</span>{% endif %}{% endfor %}</section>{% endif %}
 
 {% if not has_business_data and not dashboard_error %}<section class="lpw-onboarding"><div><span>Start here</span><h2>Build your workspace in a few focused steps</h2><p>Add your first client, then create a booking. Uploads and gallery delivery will follow naturally.</p></div><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:add_client' %}"><i class="bi bi-person-plus"></i>Add your first client</a></section>{% endif %}
 

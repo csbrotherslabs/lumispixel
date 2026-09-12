@@ -31,3 +31,18 @@ python manage.py check
 ```
 
 Every clients migration should be marked with `[X]`.
+
+## Tests and pull request gate
+
+Before opening or merging a pull request into `dev`, run the same checks enforced
+by GitHub Actions:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test --verbosity 2
+```
+
+Pull requests targeting `dev` run `.github/workflows/django-tests.yml`. The
+`Django tests` job must pass before merge once that status check is configured as
+required in the `dev` branch ruleset/protection settings.
