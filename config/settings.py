@@ -73,6 +73,9 @@ SPACES_BUCKET_NAME = os.getenv("SPACES_BUCKET_NAME", "")
 SPACES_REGION = os.getenv("SPACES_REGION", "nyc3")
 SPACES_ENDPOINT_URL = os.getenv("SPACES_ENDPOINT_URL", f"https://{SPACES_REGION}.digitaloceanspaces.com")
 SPACES_SIGNED_URL_TTL = int(os.getenv("SPACES_SIGNED_URL_TTL", "900"))
+SPACES_ENVIRONMENT = os.getenv("SPACES_ENVIRONMENT", "dev" if DEBUG else "prod").strip().lower()
+if SPACES_ENVIRONMENT not in {"dev", "prod"}:
+    raise RuntimeError("SPACES_ENVIRONMENT must be either 'dev' or 'prod'.")
 if USE_SPACES and not all([SPACES_ACCESS_KEY, SPACES_SECRET_KEY, SPACES_BUCKET_NAME]):
     raise RuntimeError("Spaces credentials and bucket are required when USE_SPACES=1.")
 
