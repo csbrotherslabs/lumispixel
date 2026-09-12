@@ -13,7 +13,7 @@
         });
     }
 
-    function pricingCard(plan, pricingUrl, signupUrl, showFreeCta) {
+    function pricingCard(plan, pricingUrl) {
         var featuredClass = plan.featured ? " lumis-pricing-card--featured" : "";
         var primaryClass = plan.featured ? " lumis-pricing-card__cta--primary" : "";
         var badge = plan.badge ? '<div class="lumis-pricing-card__badge">' + escapeHtml(plan.badge) + "</div>" : "";
@@ -21,13 +21,9 @@
         var features = plan.features.map(function (feature) {
             return "<li>" + escapeHtml(feature) + "</li>";
         }).join("");
-        var cta = "";
-
-        if (plan.code === "free" && showFreeCta && signupUrl) {
-            cta = '<a class="lumis-pricing-card__cta" href="' + escapeHtml(signupUrl) + '">Start Free</a>';
-        } else if (plan.code !== "free" && pricingUrl) {
-            cta = '<a class="lumis-pricing-card__cta' + primaryClass + '" href="' + escapeHtml(pricingUrl) + '">' + escapeHtml(plan.cta) + "</a>";
-        }
+        var cta = pricingUrl
+            ? '<a class="lumis-pricing-card__cta' + primaryClass + '" href="' + escapeHtml(pricingUrl) + '">' + escapeHtml(plan.cta) + "</a>"
+            : "";
 
         return '<article class="lumis-pricing-card' + featuredClass + '" data-home-plan="' + escapeHtml(plan.code) + '">' +
             '<div class="lumis-pricing-card__badge-row"' + badgeHidden + ">" + badge + "</div>" +
@@ -46,11 +42,8 @@
         if (!plansContainer) return;
 
         var existingCards = plansContainer.querySelectorAll(".lumis-pricing-card");
-        var signupLink = existingCards.length ? existingCards[0].querySelector(".lumis-pricing-card__cta") : null;
         var pricingLink = existingCards.length > 1 ? existingCards[1].querySelector(".lumis-pricing-card__cta") : null;
-        var signupUrl = signupLink ? signupLink.getAttribute("href") : "";
         var pricingUrl = pricingLink ? pricingLink.getAttribute("href") : window.location.pathname;
-        var showFreeCta = Boolean(signupLink);
 
         var plans = [
             {
@@ -60,7 +53,7 @@
                 monthly: "$0",
                 annual: "$0",
                 features: ["3 active galleries", "5 GB storage", "Core client tools", "1 team member", "100 AI image actions"],
-                cta: "Start Free",
+                cta: "View Free",
                 available: true
             },
             {
@@ -98,7 +91,7 @@
         ];
 
         plansContainer.innerHTML = plans.map(function (plan) {
-            return pricingCard(plan, pricingUrl, signupUrl, showFreeCta);
+            return pricingCard(plan, pricingUrl);
         }).join("");
     }
 
