@@ -89,10 +89,11 @@ class AIJob(models.Model):
 
         from apps.billing.ai_usage import release_ai_usage, reserve_ai_usage, settle_ai_usage
 
+        terminal_statuses = {self.Status.COMPLETED, self.Status.FAILED, self.Status.CANCELLED}
         with transaction.atomic():
             previous = AIJob.objects.select_for_update().select_related("usage_reservation").get(pk=self.pk)
             entering_running = self.status == self.Status.RUNNING and previous.status != self.Status.RUNNING
-            entering_terminal = self.status in {self.Status.COMPLETED, self.Status.FAILED, self.Status.CANCELLED} and previous.status != self.status
+            entering_terminal = self.status in terminal_statuses and previous.status not in terminal_statuses
 
             if entering_running:
                 self.attempts = previous.attempts + 1
