@@ -56,6 +56,7 @@
         <a href="#"><i class="bi bi-chevron-up"></i></a>
     </div>
 
+    {{ marketing_pricing_plans|json_script:"marketing-pricing-data" }}
     <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <script src="{% static 'plugins/wow/wow.min.js' %}"></script>
