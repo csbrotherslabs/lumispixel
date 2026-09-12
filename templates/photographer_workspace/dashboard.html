@@ -1,5 +1,5 @@
 {% extends "photographer_workspace/base.html" %}
-{% load static dashboard_ai %}
+{% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_dashboard_header.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_ai_wallet.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:gallery_upload_queue' as upload_url %}{% url 'photographer_workspace:bookings' as booking_url %}
@@ -23,7 +23,7 @@
   <section class="lpw-command-card" aria-labelledby="activity-title">{% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Latest updates" title="Recent activity" section_id="activity-title" only %}{% if activity_items %}<ul class="lpw-timeline">{% for item in activity_items %}{% include "photographer_workspace/components/activity_item.html" with description=item.description entity=item.entity timestamp=item.at|timesince|add:" ago" datetime=item.at|date:"c" url=item.url %}{% endfor %}</ul>{% else %}{% include "photographer_workspace/components/dashboard_empty_state.html" with compact=True icon="bi-activity" title="No activity yet" description="Saved client and gallery events will appear here." only %}{% endif %}</section>
 </main><aside>
   <section class="lpw-command-card lpw-quick-panel" aria-labelledby="quick-title">{% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Shortcuts" title="Quick actions" section_id="quick-title" only %}<div class="lpw-quick-actions">{% for action in quick_actions %}<a href="{% if action.label == 'Upload Photos' %}{% url 'photographer_workspace:gallery_upload_queue' %}{% else %}{{ action.url }}{% endif %}"{% if action.emphasis and action.label != 'Create Gallery' %} class="is-emphasis"{% endif %}><span class="lpw-widget-icon"><i class="bi {{ action.icon }}" aria-hidden="true"></i></span>{{ action.label }}<i class="bi bi-chevron-right" aria-hidden="true"></i></a>{% endfor %}</div></section>
-  {% ai_wallet_for request.studio as ai_wallet %}{% include "photographer_workspace/components/ai_wallet.html" with ai_wallet=ai_wallet only %}
+  {% include "photographer_workspace/components/ai_wallet.html" with ai_wallet=ai_wallet only %}
   <section class="lpw-command-card lpw-usage" aria-labelledby="usage-title">{% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Current usage" title="Gallery storage" section_id="usage-title" only %}<strong>{{ storage_bytes|filesizeformat }}</strong><p>Stored across active galleries. A plan allowance is not currently available, so no percentage is estimated.</p><div class="lpw-usage-track" aria-hidden="true"><span></span></div></section>
 </aside></div>
 {% if insight %}<section class="lpw-insight"><i class="bi bi-lightbulb"></i><div><span>{{ insight.label }}</span><h2>{{ insight.title }}</h2><p>{{ insight.body }}</p></div></section>{% endif %}
