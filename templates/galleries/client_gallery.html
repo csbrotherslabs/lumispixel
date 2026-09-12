@@ -1,0 +1,52 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ gallery.name }} | LumisPixel</title>
+  <link rel="stylesheet" href="{% static 'css/client_gallery_delivery.css' %}">
+</head>
+<body class="lp-client-gallery" style="--gallery-accent: {{ gallery_settings.accent_color }};">
+  <header class="lp-client-gallery__hero">
+    <div>
+      <span class="lp-client-gallery__eyebrow">Private gallery</span>
+      <h1>{{ gallery.name }}</h1>
+      {% if gallery.description %}<p>{{ gallery.description }}</p>{% endif %}
+      <small>Shared with {{ invitation.client_name }}</small>
+    </div>
+  </header>
+
+  <main class="lp-client-gallery__main">
+    {% if albums %}
+      <nav class="lp-client-gallery__albums" aria-label="Gallery albums">
+        {% for album in albums %}<a href="#album-{{ album.pk }}">{{ album.name }}</a>{% endfor %}
+      </nav>
+    {% endif %}
+
+    <section class="lp-client-gallery__grid" aria-label="Gallery photos">
+      {% for photo in photos %}
+        <article class="lp-client-photo" id="photo-{{ photo.pk }}">
+          <a class="lp-client-photo__image" href="{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}">
+            <img loading="lazy" src="{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}" alt="{{ photo.original_name }}">
+          </a>
+          <div class="lp-client-photo__actions">
+            {% if can_favorite %}
+              <form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}">{% csrf_token %}
+                <button type="submit" {% if photo.is_client_favorite %}aria-pressed="true" disabled{% else %}aria-pressed="false"{% endif %}>
+                  {% if photo.is_client_favorite %}Favorited{% else %}Favorite{% endif %}
+                </button>
+              </form>
+            {% endif %}
+            {% if can_download %}
+              <a href="{% url 'galleries:client_gallery_download' access_token photo.pk %}">Download</a>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="lp-client-gallery__empty" role="status">This gallery does not have client-ready photos yet.</div>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>
