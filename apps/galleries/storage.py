@@ -1,3 +1,5 @@
+from pathlib import PurePosixPath
+
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import FileSystemStorage
@@ -7,9 +9,8 @@ from storages.backends.s3 import S3Storage
 class PrivateGallerySpacesStorage(S3Storage):
     """Private DigitalOcean Spaces storage for gallery originals.
 
-    Gallery media remains private and is accessed through application-authorized
-    views or short-lived signed object URLs. Public ACLs and overwrite behavior
-    are intentionally disabled.
+    Objects are isolated by environment and organized so future derivatives can
+    live alongside originals without changing the gallery namespace.
     """
 
     default_acl = "private"
@@ -29,6 +30,12 @@ class PrivateGallerySpacesStorage(S3Storage):
                 + ", ".join(missing)
             )
 
+        environment = settings.SPACES_ENVIRONMENT
+        if environment not in {"dev", "prod"}:
+            raise ImproperlyConfigured(
+                "SPACES_ENVIRONMENT must be either 'dev' or 'prod'."
+            )
+
         kwargs.setdefault("access_key", settings.SPACES_ACCESS_KEY)
         kwargs.setdefault("secret_key", settings.SPACES_SECRET_KEY)
         kwargs.setdefault("bucket_name", settings.SPACES_BUCKET_NAME)
@@ -39,8 +46,21 @@ class PrivateGallerySpacesStorage(S3Storage):
         kwargs.setdefault("default_acl", "private")
         kwargs.setdefault("file_overwrite", False)
         kwargs.setdefault("custom_domain", None)
-        kwargs.setdefault("location", "private")
+        kwargs.setdefault("location", f"private/{environment}")
         super().__init__(*args, **kwargs)
+
+    def generate_filename(self, filename):
+        """Place gallery uploads beneath an explicit originals namespace.
+
+        GalleryPhoto.upload_to produces galleries/<photographer>/<gallery>/<file>.
+        Spaces expands that to:
+        private/<environment>/galleries/<photographer>/<gallery>/originals/<file>.
+        """
+        path = PurePosixPath(str(filename).replace("\\", "/"))
+        parts = path.parts
+        if len(parts) >= 4 and parts[0] == "galleries" and parts[3] != "originals":
+            path = PurePosixPath(*parts[:3], "originals", *parts[3:])
+        return super().generate_filename(str(path))
 
 
 def gallery_photo_storage():
