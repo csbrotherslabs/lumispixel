@@ -31,3 +31,22 @@ python manage.py check
 ```
 
 Every clients migration should be marked with `[X]`.
+
+## Tests and CI
+
+Before opening or merging a pull request into `dev`, run the same checks used by
+GitHub Actions:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test --verbosity 2
+```
+
+The `Django CI` workflow runs these checks automatically for every pull request
+targeting `dev` and again after changes land on `dev`. CI intentionally uses the
+normal development-safe defaults: SQLite, local/in-memory email behavior, and no
+production database, Redis, Spaces, or email credentials.
+
+Repository rules for `dev` should require the `Django CI / checks-and-tests`
+status check before a pull request can merge.
