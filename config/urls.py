@@ -3,13 +3,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from apps.core.support_views import help_center, support_ticket_detail
+from apps.core.support_views import help_center, support_attachment_download, support_ticket_detail
 from apps.dashboard.workspace_settings import workspace_settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("resources/help-center/", help_center, name="support_help_center"),
     path("resources/help-center/tickets/<str:reference>/", support_ticket_detail, name="support_ticket_detail"),
+    path("resources/help-center/tickets/<str:reference>/attachments/<uuid:attachment_id>/download/", support_attachment_download, name="support_attachment_download"),
     path("", include("apps.core.urls")),
     path("", include("apps.accounts.urls")),
     path("photographer/", include("apps.photographers.urls")),
