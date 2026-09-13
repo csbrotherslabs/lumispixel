@@ -2,21 +2,26 @@
 {% load static %}
 {% block title %}Employees | LumisPixel Internal{% endblock %}
 {% block page_title %}Employees{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}"><link rel="stylesheet" href="{% static 'css/internal_operations_polish.css' %}">{% endblock %}
 {% block content %}
-<div class="emp-page">
-    <section class="emp-head"><div><span class="li-kicker">People operations</span><h1>Employee directory</h1><p>Manage LumisPixel employees, departments, roles, reporting lines, and internal access.</p></div>{% if can_manage_employees %}<a class="emp-btn is-primary" href="{% url 'internal_ops:employee_create' %}"><i class="bi bi-person-plus"></i> Add employee</a>{% endif %}</section>
+<div class="emp-page opx-page">
+    <section class="opx-hero"><div><span class="li-kicker">People operations</span><h1>Employee directory</h1><p>Manage LumisPixel employees, departments, roles, reporting lines, and internal access.</p></div><div class="opx-hero__aside"><span>People workspace</span><strong>{% if can_manage_employees %}Employee management enabled{% else %}Directory access{% endif %}</strong><small>{% if can_manage_employees %}Create and manage employee profiles, roles, and access.{% else %}Review employee and organization information.{% endif %}</small>{% if can_manage_employees %}<a class="emp-btn is-primary" href="{% url 'internal_ops:employee_create' %}"><i class="bi bi-person-plus"></i> Add employee</a>{% endif %}</div></section>
     {% if messages %}{% for message in messages %}<div class="emp-message">{{ message }}</div>{% endfor %}{% endif %}
-    <section class="emp-stats"><article class="emp-stat"><small>Total employees</small><strong>{{ total_count }}</strong></article><article class="emp-stat"><small>Active</small><strong>{{ active_count }}</strong></article><article class="emp-stat"><small>Invited</small><strong>{{ invited_count }}</strong></article><article class="emp-stat"><small>Suspended</small><strong>{{ suspended_count }}</strong></article></section>
-    <section class="emp-card">
-        <form method="get" class="emp-filters">
+    <section class="opx-stats">
+        <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-people"></i></div><div><span>Total employees</span><strong>{{ total_count }}</strong><small>All employee profiles</small></div></article>
+        <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-person-check"></i></div><div><span>Active</span><strong>{{ active_count }}</strong><small>Current internal access</small></div></article>
+        <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-envelope-check"></i></div><div><span>Invited</span><strong>{{ invited_count }}</strong><small>Awaiting activation</small></div></article>
+        <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-person-lock"></i></div><div><span>Suspended</span><strong>{{ suspended_count }}</strong><small>Access currently disabled</small></div></article>
+    </section>
+    <section class="emp-card opx-surface">
+        <form method="get" class="emp-filters opx-filterbar opx-filterbar--employees">
             <label class="emp-label">Search<input class="emp-field" type="search" name="q" value="{{ query }}" placeholder="Name, email, title or employee ID"></label>
             <label class="emp-label">Department<select class="emp-field" name="department"><option value="all">All departments</option>{% for department in departments %}<option value="{{ department.code }}" {% if selected_department == department.code %}selected{% endif %}>{{ department.name }} ({{ department.employee_count }})</option>{% endfor %}</select></label>
             <label class="emp-label">Status<select class="emp-field" name="status"><option value="all">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <button class="emp-btn" type="submit"><i class="bi bi-search"></i> Filter</button>
+            <button class="emp-btn" type="submit"><i class="bi bi-funnel"></i> Apply filters</button>
         </form>
     </section>
-    <section class="emp-card emp-table-wrap">
+    <section class="emp-card emp-table-wrap opx-surface">
         <table class="emp-table"><thead><tr><th>Employee</th><th>Department</th><th>Role / title</th><th>Manager</th><th>Status</th><th>Last access</th></tr></thead><tbody>{% for item in employees %}<tr><td><div class="emp-person"><span class="emp-avatar">{{ item.user.first_name|default:item.user.email|slice:":1"|upper }}</span><div><a href="{% url 'internal_ops:employee_detail' item.employee_id %}">{{ item.user.display_name }}</a><small>{{ item.employee_id }} · {{ item.user.email }}</small></div></div></td><td>{{ item.department.name|default:"—" }}</td><td>{{ item.role.name|default:item.title|default:"—" }}{% if item.role and item.title %}<br><small>{{ item.title }}</small>{% endif %}</td><td>{% if item.manager %}{{ item.manager.user.display_name }}{% else %}—{% endif %}</td><td><span class="emp-chip is-{{ item.status }}">{{ item.get_status_display }}</span></td><td>{% if item.last_internal_access_at %}{{ item.last_internal_access_at|date:"M j, Y" }}{% else %}Never{% endif %}</td></tr>{% empty %}<tr><td colspan="6"><div class="emp-empty">No employees match the current filters.</div></td></tr>{% endfor %}</tbody></table>
     </section>
 </div>
