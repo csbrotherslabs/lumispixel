@@ -3,55 +3,56 @@
 {% block content %}
 <section class="li-hero">
     <div>
-        <span class="li-kicker">Internal Operations & Intelligence</span>
-        <h1>Welcome back, {{ request.user.first_name|default:"team" }}.</h1>
-        <p>This is the foundation for LumisPixel employee operations, customer support, AI and billing oversight, executive reporting, and audit controls.</p>
+        <span class="li-kicker li-kicker--light">Internal Operations & Intelligence</span>
+        <h1>Good to see you, {{ request.user.first_name|default:"team" }}.</h1>
+        <p>One operating view for LumisPixel's people, customers, support, AI, billing, economics, governance, and platform health.</p>
     </div>
-    <div class="li-status"><span></span>Internal access active</div>
+    <div class="li-hero__aside">
+        <span class="li-hero__label">Access</span>
+        <strong>{% if is_internal_superuser %}Executive administration{% elif employee.department %}{{ employee.department.name }}{% else %}Internal employee{% endif %}</strong>
+        <small>{% if employee and employee.role %}{{ employee.role.name }}{% elif is_internal_superuser %}Full internal workspace access{% else %}Role pending assignment{% endif %}</small>
+    </div>
 </section>
 
 <section class="li-stats" aria-label="Internal workspace summary">
-    <article><span>Active employees</span><strong>{{ employee_count }}</strong><small>Authorized internal users</small></article>
-    <article><span>Departments</span><strong>{{ department_count }}</strong><small>Active operating groups</small></article>
-    <article>
-        <span>My access</span>
-        {% if employee %}
-            <strong>{{ employee.department.name|default:"Unassigned" }}</strong>
-            <small>{{ employee.role.name|default:"Role not assigned" }}</small>
-        {% elif is_internal_superuser %}
-            <strong>Superuser</strong>
-            <small>Full LumisPixel Internal access</small>
-        {% else %}
-            <strong>Internal</strong>
-            <small>Authorized access</small>
-        {% endif %}
-    </article>
+    <article><div class="li-stat-icon"><i class="bi bi-person-check"></i></div><div><span>Active employees</span><strong>{{ employee_count }}</strong><small>Authorized employee profiles</small></div></article>
+    <article><div class="li-stat-icon"><i class="bi bi-diagram-3"></i></div><div><span>Departments</span><strong>{{ department_count }}</strong><small>LumisPixel operating groups</small></div></article>
+    <article><div class="li-stat-icon"><i class="bi bi-shield-check"></i></div><div><span>Activity today</span><strong>{{ activity_today }}</strong><small>Recorded internal audit events</small></div></article>
+    <article><div class="li-stat-icon"><i class="bi bi-check-circle"></i></div><div><span>Workspace status</span><strong class="li-stat-text">Operational</strong><small>Internal access controls active</small></div></article>
+</section>
+
+<section class="li-command-grid">
+    <div class="li-command-main">
+        <section class="li-section">
+            <div class="li-section__heading"><div><span class="li-kicker">Operate</span><h2>Internal workspaces</h2></div><p>The Command Center is the entry point. Each module will become permission-aware as its workflows are implemented.</p></div>
+            <div class="li-module-grid">
+                {% for module in modules %}
+                <article class="li-module-card">
+                    <div class="li-module-card__top"><div class="li-module-card__icon"><i class="bi {{ module.icon }}"></i></div><span>{{ module.group }}</span></div>
+                    <div><h3>{{ module.name }}</h3><p>{{ module.description }}</p></div>
+                    <div class="li-module-card__footer"><span>Foundation ready</span><i class="bi bi-arrow-right"></i></div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+    <aside class="li-command-side">
+        <section class="li-section li-section--activity">
+            <div class="li-section__heading"><div><span class="li-kicker">Governance</span><h2>Recent activity</h2></div></div>
+            <div class="li-activity-list">
+                {% for event in recent_activity %}
+                <article><div class="li-activity-icon"><i class="bi bi-shield-check"></i></div><div><strong>{{ event.summary }}</strong><span>{% if event.actor %}{{ event.actor.user.display_name }}{% elif event.metadata.superuser %}Administrator{% else %}System{% endif %} · {{ event.get_category_display }}</span><time>{{ event.created_at|date:"M j, g:i A" }}</time></div></article>
+                {% empty %}<div class="li-empty">Internal activity will appear here as the team uses the platform.</div>{% endfor %}
+            </div>
+        </section>
+    </aside>
 </section>
 
 <section class="li-section">
-    <div class="li-section__heading"><div><span class="li-kicker">Platform map</span><h2>Internal workspaces</h2></div><p>Modules will become permission-aware as each operating area is implemented.</p></div>
-    <div class="li-module-grid">
-        {% for module in modules %}
-        <article class="li-module-card">
-            <div class="li-module-card__icon"><i class="bi {{ module.icon }}"></i></div>
-            <div><h3>{{ module.name }}</h3><p>{{ module.description }}</p></div>
-            <span class="li-coming">Foundation</span>
-        </article>
-        {% endfor %}
-    </div>
-</section>
-
-<section class="li-section li-section--activity">
-    <div class="li-section__heading"><div><span class="li-kicker">Governance</span><h2>Recent internal activity</h2></div></div>
-    <div class="li-activity-list">
-        {% for event in recent_activity %}
-        <article>
-            <div class="li-activity-icon"><i class="bi bi-shield-check"></i></div>
-            <div><strong>{{ event.summary }}</strong><span>{{ event.actor.user.display_name|default:"System" }} · {{ event.get_category_display }}</span></div>
-            <time>{{ event.created_at|date:"M j, g:i A" }}</time>
-        </article>
-        {% empty %}
-        <div class="li-empty">Internal activity will appear here as employees use the platform.</div>
+    <div class="li-section__heading"><div><span class="li-kicker">Organization</span><h2>LumisPixel departments</h2></div><p>These operating groups will drive employee assignment, permissions, reporting, ticket routing, and ownership.</p></div>
+    <div class="li-department-grid">
+        {% for department in department_cards %}
+        <article class="li-department-card"><div><span class="li-department-dot"></span><strong>{{ department.name }}</strong></div><p>{{ department.description }}</p><footer><span>{{ department.employee_count }} active employee{{ department.employee_count|pluralize }}</span><code>{{ department.code }}</code></footer></article>
         {% endfor %}
     </div>
 </section>
