@@ -1,5 +1,7 @@
 {% extends "internal_ops/base.html" %}
+{% load static %}
 {% block title %}Command Center | LumisPixel Internal{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_command_center.css' %}">{% endblock %}
 {% block content %}
 <section class="li-hero">
     <div>
@@ -48,7 +50,7 @@
     </aside>
 </section>
 
-<section class="li-section">
+<section class="li-section li-section--departments">
     <div class="li-section__heading"><div><span class="li-kicker">Organization</span><h2>LumisPixel departments</h2></div><p>These operating groups drive employee assignment, permissions, reporting, ticket routing, and ownership.</p></div>
     <div class="li-department-grid">
         {% for department in department_cards %}
