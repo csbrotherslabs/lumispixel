@@ -23,6 +23,12 @@ class InternalSidebarShellTests(TestCase):
         self.assertContains(response, "internal_sidebar.css")
         self.assertContains(response, "internal_sidebar.js")
 
+    def test_sidebar_brand_uses_colored_lumis_mark(self):
+        response = self.client.get(reverse("internal_ops:dashboard"))
+        self.assertContains(response, "lumis_favicon_v2.png")
+        self.assertContains(response, 'class="li-brand__word">LUMIS</span>')
+        self.assertContains(response, 'class="li-brand__pill">Internal</span>')
+
     def test_employee_navigation_remains_available_in_sidebar(self):
         response = self.client.get(reverse("internal_ops:dashboard"))
         self.assertContains(response, reverse("internal_ops:employees"))
