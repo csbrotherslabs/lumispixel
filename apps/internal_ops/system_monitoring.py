@@ -7,7 +7,7 @@ from django.utils import timezone
 from apps.notifications.models import Notification
 from apps.notifications.services import notify_user
 
-from .models import Department, EmployeeProfile, SupportTicket, SystemAlert
+from .models import EmployeeProfile, SupportTicket, SystemAlert
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,8 @@ def _upsert_alert(*, key, component, severity, title, message, metadata, departm
         alert.title = title
         alert.message = message
         alert.metadata = metadata
-        alert.status = SystemAlert.Status.OPEN
+        if previous_status == SystemAlert.Status.RESOLVED:
+            alert.status = SystemAlert.Status.OPEN
         alert.resolved_at = None
         alert.resolved_by = None
         alert.save()
@@ -103,7 +104,6 @@ def run_system_monitoring():
     results = []
     now = timezone.now()
 
-    # Database connectivity. A failure is returned even if persistence of an alert is impossible.
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
