@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketComment
+from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketAttachment, SupportTicketComment
 
 
 @admin.register(Department)
@@ -40,6 +40,20 @@ class SupportTicketAdmin(admin.ModelAdmin):
     autocomplete_fields = ("requester", "assignee", "queue")
     readonly_fields = ("reference", "requester_type", "created_at", "updated_at", "resolved_at")
     inlines = (SupportTicketCommentInline,)
+
+
+@admin.register(SupportTicketAttachment)
+class SupportTicketAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("original_name", "ticket", "is_internal", "size_bytes", "created_at")
+    search_fields = ("original_name", "ticket__reference", "ticket__requester__email")
+    list_filter = ("is_internal", "created_at")
+    readonly_fields = ("ticket", "comment", "file", "original_name", "content_type", "size_bytes", "uploaded_by_user", "uploaded_by_employee", "is_internal", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(InternalAuditEvent)
