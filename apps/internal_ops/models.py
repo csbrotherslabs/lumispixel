@@ -10,6 +10,10 @@ def support_ticket_reference():
     return f"LP-{uuid.uuid4().hex[:8].upper()}"
 
 
+def approval_reference():
+    return f"APR-{uuid.uuid4().hex[:8].upper()}"
+
+
 def support_attachment_upload_to(instance, filename):
     extension = os.path.splitext(filename)[1].lower()
     return f"support-attachments/{instance.ticket.reference}/{uuid.uuid4().hex}{extension}"
@@ -109,6 +113,61 @@ class InternalAuditEvent(models.Model):
 
     def __str__(self):
         return f"{self.get_category_display()}: {self.summary}"
+
+
+class ApprovalRequest(models.Model):
+    class Kind(models.TextChoices):
+        AI_CREDITS = "ai_credits", "AI credit adjustment"
+        PLAN_OVERRIDE = "plan_override", "Plan or entitlement override"
+        ACCOUNT_RESTRICTION = "account_restriction", "Account restriction"
+        EMPLOYEE_ACCESS = "employee_access", "Employee access change"
+        DATA_EXPORT = "data_export", "Sensitive data export"
+        OTHER = "other", "Other sensitive action"
+
+    class Risk(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+        EXECUTED = "executed", "Executed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reference = models.CharField(max_length=16, unique=True, default=approval_reference, editable=False)
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+    risk_level = models.CharField(max_length=16, choices=Risk.choices, default=Risk.MEDIUM)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    title = models.CharField(max_length=180)
+    reason = models.TextField()
+    target_type = models.CharField(max_length=80, blank=True)
+    target_id = models.CharField(max_length=100, blank=True)
+    proposed_changes = models.JSONField(default=dict, blank=True)
+    requester = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="approval_requests", null=True, blank=True)
+    requester_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="internal_approval_requests", null=True, blank=True)
+    approver_department = models.ForeignKey(Department, on_delete=models.SET_NULL, related_name="approval_requests", null=True, blank=True)
+    reviewed_by = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="approval_reviews", null=True, blank=True)
+    reviewed_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="internal_approval_reviews", null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+    executed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=("status", "risk_level", "created_at"), name="approval_state_risk_idx"),
+            models.Index(fields=("approver_department", "status"), name="approval_dept_state_idx"),
+            models.Index(fields=("target_type", "target_id"), name="approval_target_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.reference} — {self.title}"
 
 
 class SupportTicket(models.Model):
