@@ -13,7 +13,19 @@
 <section class="li-stats" aria-label="Internal workspace summary">
     <article><span>Active employees</span><strong>{{ employee_count }}</strong><small>Authorized internal users</small></article>
     <article><span>Departments</span><strong>{{ department_count }}</strong><small>Active operating groups</small></article>
-    <article><span>My department</span><strong>{{ employee.department.name|default:"Unassigned" }}</strong><small>{{ employee.role.name|default:"Role not assigned" }}</small></article>
+    <article>
+        <span>My access</span>
+        {% if employee %}
+            <strong>{{ employee.department.name|default:"Unassigned" }}</strong>
+            <small>{{ employee.role.name|default:"Role not assigned" }}</small>
+        {% elif is_internal_superuser %}
+            <strong>Superuser</strong>
+            <small>Full LumisPixel Internal access</small>
+        {% else %}
+            <strong>Internal</strong>
+            <small>Authorized access</small>
+        {% endif %}
+    </article>
 </section>
 
 <section class="li-section">
