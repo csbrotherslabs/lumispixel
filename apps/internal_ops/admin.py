@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole
+from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketComment
 
 
 @admin.register(Department)
@@ -25,22 +25,29 @@ class EmployeeProfileAdmin(admin.ModelAdmin):
     autocomplete_fields = ("user", "manager")
 
 
+class SupportTicketCommentInline(admin.TabularInline):
+    model = SupportTicketComment
+    extra = 0
+    readonly_fields = ("author_employee", "author_user", "body", "is_internal", "created_at")
+    can_delete = False
+
+
+@admin.register(SupportTicket)
+class SupportTicketAdmin(admin.ModelAdmin):
+    list_display = ("reference", "subject", "requester", "status", "priority", "queue", "assignee", "updated_at")
+    search_fields = ("reference", "subject", "requester__email", "requester__first_name", "requester__last_name")
+    list_filter = ("status", "priority", "category", "queue", "created_at")
+    autocomplete_fields = ("requester", "assignee", "queue")
+    readonly_fields = ("reference", "requester_type", "created_at", "updated_at", "resolved_at")
+    inlines = (SupportTicketCommentInline,)
+
+
 @admin.register(InternalAuditEvent)
 class InternalAuditEventAdmin(admin.ModelAdmin):
     list_display = ("created_at", "category", "action", "actor", "summary")
     search_fields = ("action", "summary", "target_id", "actor__user__email")
     list_filter = ("category", "created_at")
-    readonly_fields = (
-        "actor",
-        "category",
-        "action",
-        "target_type",
-        "target_id",
-        "summary",
-        "reason",
-        "metadata",
-        "created_at",
-    )
+    readonly_fields = ("actor", "category", "action", "target_type", "target_id", "summary", "reason", "metadata", "created_at")
 
     def has_add_permission(self, request):
         return False
