@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketAttachment, SupportTicketComment
+from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketAttachment, SupportTicketComment, SystemAlert
 
 
 @admin.register(Department)
@@ -53,6 +53,23 @@ class SupportTicketAttachmentAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SystemAlert)
+class SystemAlertAdmin(admin.ModelAdmin):
+    list_display = ("key", "component", "severity", "status", "last_seen_at")
+    search_fields = ("key", "component", "title", "message")
+    list_filter = ("severity", "status", "component")
+    readonly_fields = ("key", "component", "severity", "status", "title", "message", "metadata", "first_seen_at", "last_seen_at", "acknowledged_at", "acknowledged_by", "resolved_at", "resolved_by")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
