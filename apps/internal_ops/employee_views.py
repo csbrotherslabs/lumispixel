@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -90,7 +91,7 @@ def employee_detail(request, employee_id):
 def employee_create(request):
     employee = actor_for_request(request)
     if not is_employee_manager(request.user, employee):
-        return render(request, "internal_ops/forbidden.html", _base_context(request), status=403)
+        return HttpResponseForbidden("You do not have permission to add LumisPixel employees.")
 
     form = EmployeeCreateForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -121,7 +122,7 @@ def employee_create(request):
 def employee_edit(request, employee_id):
     actor = actor_for_request(request)
     if not is_employee_manager(request.user, actor):
-        return render(request, "internal_ops/forbidden.html", _base_context(request), status=403)
+        return HttpResponseForbidden("You do not have permission to manage LumisPixel employees.")
 
     target = get_object_or_404(
         EmployeeProfile.objects.select_related("user", "department", "role", "manager__user"),
