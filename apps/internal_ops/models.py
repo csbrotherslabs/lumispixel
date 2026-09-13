@@ -199,3 +199,39 @@ class SupportTicketAttachment(models.Model):
 
     def __str__(self):
         return f"Attachment {self.original_name} on {self.ticket.reference}"
+
+
+class SystemAlert(models.Model):
+    class Severity(models.TextChoices):
+        INFO = "info", "Info"
+        WARNING = "warning", "Warning"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        ACKNOWLEDGED = "acknowledged", "Acknowledged"
+        RESOLVED = "resolved", "Resolved"
+
+    key = models.CharField(max_length=120, unique=True)
+    component = models.CharField(max_length=80)
+    severity = models.CharField(max_length=16, choices=Severity.choices, default=Severity.WARNING)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    title = models.CharField(max_length=180)
+    message = models.TextField(max_length=1200)
+    metadata = models.JSONField(default=dict, blank=True)
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_by = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="acknowledged_system_alerts", null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="resolved_system_alerts", null=True, blank=True)
+
+    class Meta:
+        ordering = ("-last_seen_at",)
+        indexes = [
+            models.Index(fields=("status", "severity", "last_seen_at"), name="system_alert_state_idx"),
+            models.Index(fields=("component", "last_seen_at"), name="system_alert_comp_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_severity_display()} — {self.title}"
