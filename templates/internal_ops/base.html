@@ -9,43 +9,61 @@
     <link rel="icon" href="{% static 'img/lumis_favicon_v1.png' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'css/internal_ops.css' %}">
+    <link rel="stylesheet" href="{% static 'css/internal_sidebar.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="li-body">
 <div class="li-shell">
-    <aside class="li-sidebar">
-        <a class="li-brand" href="{% url 'internal_ops:dashboard' %}"><img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel"><span>Internal</span></a>
+    <aside class="li-sidebar" id="internalSidebar" aria-label="LumisPixel Internal sidebar">
+        <div class="li-sidebar__header">
+            <a class="li-brand" href="{% url 'internal_ops:dashboard' %}" aria-label="LumisPixel Internal Command Center"><img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel"><span>Internal</span></a>
+            <button class="li-sidebar__desktop-toggle" type="button" data-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">
+                <i class="bi bi-layout-sidebar-inset"></i>
+            </button>
+            <button class="li-sidebar__mobile-close" type="button" data-sidebar-close aria-label="Close navigation">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
         <div class="li-workspace-label"><small>Operations & Intelligence</small><strong>Internal Workspace</strong></div>
-        <nav class="li-nav" aria-label="LumisPixel Internal navigation">
-            <a class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
+        <nav class="li-nav" aria-label="LumisPixel Internal navigation" data-sidebar-nav>
+            <a class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'internal_ops:dashboard' %}" title="Command Center"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
             <span class="li-nav__section">Operations</span>
-            <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'internal_ops:customers' %}"><i class="bi bi-people"></i><span>Customers</span></a>
-            <a class="{% if request.resolver_match.url_name == 'tickets' or request.resolver_match.url_name == 'ticket_detail' %}is-active{% endif %}" href="{% url 'internal_ops:tickets' %}"><i class="bi bi-ticket-perforated"></i><span>Tickets</span></a>
-            <a class="{% if request.resolver_match.url_name == 'employees' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_detail' or request.resolver_match.url_name == 'employee_edit' %}is-active{% endif %}" href="{% url 'internal_ops:employees' %}"><i class="bi bi-person-badge"></i><span>Employees</span></a>
+            <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'internal_ops:customers' %}" title="Customers"><i class="bi bi-people"></i><span>Customers</span></a>
+            <a class="{% if request.resolver_match.url_name == 'tickets' or request.resolver_match.url_name == 'ticket_detail' %}is-active{% endif %}" href="{% url 'internal_ops:tickets' %}" title="Tickets"><i class="bi bi-ticket-perforated"></i><span>Tickets</span></a>
+            <a class="{% if request.resolver_match.url_name == 'employees' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_detail' or request.resolver_match.url_name == 'employee_edit' %}is-active{% endif %}" href="{% url 'internal_ops:employees' %}" title="Employees"><i class="bi bi-person-badge"></i><span>Employees</span></a>
             <span class="li-nav__section">Intelligence</span>
-            <a class="{% if request.resolver_match.url_name == 'ai_operations' %}is-active{% endif %}" href="{% url 'internal_ops:ai_operations' %}"><i class="bi bi-stars"></i><span>AI Operations</span></a>
-            <a class="{% if request.resolver_match.url_name == 'storage_operations' %}is-active{% endif %}" href="{% url 'internal_ops:storage_operations' %}"><i class="bi bi-hdd-stack"></i><span>Storage</span></a>
-            <a class="{% if request.resolver_match.url_name == 'billing_operations' %}is-active{% endif %}" href="{% url 'internal_ops:billing_operations' %}"><i class="bi bi-credit-card"></i><span>Billing & Usage</span></a>
-            <a href="#"><i class="bi bi-graph-up-arrow"></i><span>Reports</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'ai_operations' %}is-active{% endif %}" href="{% url 'internal_ops:ai_operations' %}" title="AI Operations"><i class="bi bi-stars"></i><span>AI Operations</span></a>
+            <a class="{% if request.resolver_match.url_name == 'storage_operations' %}is-active{% endif %}" href="{% url 'internal_ops:storage_operations' %}" title="Storage"><i class="bi bi-hdd-stack"></i><span>Storage</span></a>
+            <a class="{% if request.resolver_match.url_name == 'billing_operations' %}is-active{% endif %}" href="{% url 'internal_ops:billing_operations' %}" title="Billing & Usage"><i class="bi bi-credit-card"></i><span>Billing & Usage</span></a>
+            <a href="#" title="Reports"><i class="bi bi-graph-up-arrow"></i><span>Reports</span><em>Soon</em></a>
             <span class="li-nav__section">Governance</span>
-            <a class="{% if request.resolver_match.url_name == 'approvals' or request.resolver_match.url_name == 'approval_create' or request.resolver_match.url_name == 'approval_detail' or request.resolver_match.url_name == 'approved_operation' %}is-active{% endif %}" href="{% url 'internal_ops:approvals' %}"><i class="bi bi-check2-square"></i><span>Approvals</span></a>
-            <a class="{% if request.resolver_match.url_name == 'audit' or request.resolver_match.url_name == 'audit_detail' or request.resolver_match.url_name == 'audit_export' %}is-active{% endif %}" href="{% url 'internal_ops:audit' %}"><i class="bi bi-shield-check"></i><span>Audit</span></a>
-            <a class="{% if request.resolver_match.url_name == 'system' or request.resolver_match.url_name == 'system_alert_action' %}is-active{% endif %}" href="{% url 'internal_ops:system' %}"><i class="bi bi-activity"></i><span>System</span></a>
+            <a class="{% if request.resolver_match.url_name == 'approvals' or request.resolver_match.url_name == 'approval_create' or request.resolver_match.url_name == 'approval_detail' or request.resolver_match.url_name == 'approved_operation' %}is-active{% endif %}" href="{% url 'internal_ops:approvals' %}" title="Approvals"><i class="bi bi-check2-square"></i><span>Approvals</span></a>
+            <a class="{% if request.resolver_match.url_name == 'audit' or request.resolver_match.url_name == 'audit_detail' or request.resolver_match.url_name == 'audit_export' %}is-active{% endif %}" href="{% url 'internal_ops:audit' %}" title="Audit"><i class="bi bi-shield-check"></i><span>Audit</span></a>
+            <a class="{% if request.resolver_match.url_name == 'system' or request.resolver_match.url_name == 'system_alert_action' %}is-active{% endif %}" href="{% url 'internal_ops:system' %}" title="System"><i class="bi bi-activity"></i><span>System</span></a>
         </nav>
         <div class="li-sidebar__footer">
-            {% if employee %}<span>{{ employee.employee_id }}</span>{% elif is_internal_superuser %}<span>Superuser</span>{% endif %}
-            <strong>{{ request.user.display_name }}</strong>
-            <small>{% if employee %}{{ employee.title|default:"LumisPixel employee" }}{% else %}LumisPixel administrator{% endif %}</small>
-            <a href="{% url 'core:index' %}"><i class="bi bi-arrow-left"></i> Back to LumisPixel</a>
+            <div class="li-sidebar__identity">
+                {% if employee %}<span>{{ employee.employee_id }}</span>{% elif is_internal_superuser %}<span>Superuser</span>{% endif %}
+                <strong>{{ request.user.display_name }}</strong>
+                <small>{% if employee %}{{ employee.title|default:"LumisPixel employee" }}{% else %}LumisPixel administrator{% endif %}</small>
+            </div>
+            <a href="{% url 'core:index' %}" title="Back to LumisPixel"><i class="bi bi-arrow-left"></i><span>Back to LumisPixel</span></a>
         </div>
     </aside>
+    <button class="li-sidebar-overlay" type="button" data-sidebar-close aria-label="Close navigation" tabindex="-1"></button>
     <div class="li-main">
         <header class="li-topbar">
-            <div><span class="li-kicker">LumisPixel Internal</span><strong>{% block page_title %}Command Center{% endblock %}</strong></div>
+            <div class="li-topbar__leading">
+                <button class="li-topbar__menu" type="button" data-sidebar-toggle aria-controls="internalSidebar" aria-expanded="true" aria-label="Toggle navigation">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div><span class="li-kicker">LumisPixel Internal</span><strong>{% block page_title %}Command Center{% endblock %}</strong></div>
+            </div>
             <div class="li-topbar__actions"><div class="li-access-pill"><span></span>{% if is_internal_superuser %}Administrator{% else %}Employee access{% endif %}</div><a href="{% url 'notifications:index' %}" aria-label="Notifications"><i class="bi bi-bell"></i></a><span class="li-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span></div>
         </header>
         <main class="li-content">{% block content %}{% endblock %}</main>
     </div>
 </div>
+<script src="{% static 'js/internal_sidebar.js' %}" defer></script>
 </body>
 </html>
