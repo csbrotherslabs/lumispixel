@@ -1,0 +1,10 @@
+{% extends "internal_ops/base.html" %}
+{% load static %}
+{% block title %}Execute {{ approval.reference }} | LumisPixel Internal{% endblock %}
+{% block page_title %}Execute Approved Operation{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_resources.css' %}">{% endblock %}
+{% block content %}
+<div class="ops-page"><section class="ops-head"><div><span class="li-kicker">{{ approval.reference }}</span><h1>{{ approval.title }}</h1><p>This page performs the approved domain mutation and records the result in the LumisPixel audit trail.</p></div><a class="ops-btn is-soft" href="{% url 'internal_ops:approval_detail' approval.reference %}">Back to approval</a></section>
+<div class="ops-split"><section class="ops-panel"><span class="li-kicker">Target workspace</span><h2>{{ photographer.business_name|default:photographer.user.email }}</h2><p>{{ photographer.user.email }}</p><div class="ops-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="ops-card"><small>Current plan</small><strong style="font-size:20px">{{ subscription.plan.name }}</strong></div><div class="ops-card"><small>Purchased AI available</small><strong style="font-size:20px">{{ ai_balance.purchased_available }}</strong></div></div><h2>Approved change</h2><pre class="ops-code">{{ approval.proposed_changes }}</pre><p><strong>Approval decision:</strong> {{ approval.decision_note }}</p></section>
+<aside class="ops-panel"><span class="li-kicker">Execution control</span><h2>Execute approved change</h2>{% if can_execute %}<div class="ops-callout">Execution is atomic with its audit/ledger update. The requester cannot execute their own approval.</div><form method="post" class="ops-form">{% csrf_token %}<label>Execution note<textarea name="note" rows="5" required placeholder="Document what you verified before executing this operation."></textarea></label><button class="ops-btn" type="submit">Execute approved operation</button></form>{% else %}<div class="ops-callout">You cannot execute this request. It must be approved and executed by an authorized employee who is not the requester.</div>{% endif %}</aside></div></div>
+{% endblock %}
