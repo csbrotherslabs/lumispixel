@@ -1,0 +1,43 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}Tickets | LumisPixel Internal{% endblock %}
+{% block page_title %}Ticket Operations{% endblock %}
+{% block content %}
+<section class="li-page-head">
+    <div><span class="li-kicker">Support Operations</span><h1>Tickets</h1><p>Review incoming customer requests, prioritize work, assign ownership, and track resolution.</p></div>
+</section>
+
+<section class="li-ticket-stats">
+    <article><span>Open</span><strong>{{ open_count }}</strong></article>
+    <article><span>In progress</span><strong>{{ progress_count }}</strong></article>
+    <article><span>Waiting on customer</span><strong>{{ waiting_count }}</strong></article>
+    <article><span>Urgent</span><strong>{{ urgent_count }}</strong></article>
+</section>
+
+<section class="li-customer-panel">
+    <form method="get" class="li-customer-filters">
+        <label class="li-search"><i class="bi bi-search"></i><input type="search" name="q" value="{{ query }}" placeholder="Search reference, subject, customer"></label>
+        <select name="status"><option value="all">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <select name="priority"><option value="all">All priorities</option>{% for value,label in priority_choices %}<option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        {% if employee %}<label class="li-checkbox"><input type="checkbox" name="mine" value="1" {% if mine %}checked{% endif %}> My tickets</label>{% endif %}
+        <button type="submit">Apply filters</button>
+    </form>
+    <div class="li-customer-table-wrap">
+        <table class="li-customer-table">
+            <thead><tr><th>Ticket</th><th>Customer</th><th>Status</th><th>Priority</th><th>Owner</th><th>Updated</th><th></th></tr></thead>
+            <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td><div class="li-ticket-ref"><strong>{{ ticket.reference }}</strong><span>{{ ticket.subject }}</span><small>{{ ticket.get_category_display }}</small></div></td>
+                <td><div class="li-ticket-customer"><strong>{{ ticket.requester.display_name }}</strong><small>{{ ticket.requester.email }}</small></div></td>
+                <td><span class="li-ticket-badge is-{{ ticket.status }}">{{ ticket.get_status_display }}</span></td>
+                <td><span class="li-priority is-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span></td>
+                <td>{% if ticket.assignee %}{{ ticket.assignee.user.display_name }}{% else %}<span class="li-muted">Unassigned</span>{% endif %}</td>
+                <td>{{ ticket.updated_at|date:"M j, g:i A" }}</td>
+                <td><a class="li-row-action" href="{% url 'internal_ops:ticket_detail' ticket.reference %}">Open <i class="bi bi-arrow-right"></i></a></td>
+            </tr>
+            {% empty %}<tr><td colspan="7" class="li-table-empty">No tickets match these filters.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
