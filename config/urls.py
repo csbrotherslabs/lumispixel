@@ -19,6 +19,7 @@ urlpatterns = [
     path("notifications/", include("apps.notifications.urls")),
     path("photographer/workspace/settings/", workspace_settings),
     path("photographer/workspace/", include("apps.dashboard.urls")),
+    path("internal/", include("apps.internal_ops.urls")),
     path("api/", include("apps.api.urls")),
 ]
 

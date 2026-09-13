@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
-    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.api.apps.ApiConfig",
+    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig", "apps.api.apps.ApiConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware", "django.contrib.sessions.middleware.SessionMiddleware",
@@ -35,7 +35,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "apps.core.context_processors.marketing_pricing"], "libraries": {"notification_tags": "apps.notifications.templatetags.notification_tags", "theme_preview_media": "apps.photographers.templatetags.theme_preview_media"}}}]
+TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True, "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "apps.core.context_processors.marketing_pricing", "apps.internal_ops.context_processors.internal_workspace"], "libraries": {"notification_tags": "apps.notifications.templatetags.notification_tags", "theme_preview_media": "apps.photographers.templatetags.theme_preview_media"}}}]
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
