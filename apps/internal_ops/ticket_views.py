@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from .decorators import internal_employee_required
 from .models import Department, EmployeeProfile, InternalAuditEvent, SupportTicket, SupportTicketComment
 from .support_attachments import create_support_attachment, validate_support_attachment
+from .support_notifications import notify_staff_reply, notify_ticket_assigned, notify_ticket_status_changed
 
 
 def _actor(request):
@@ -67,6 +68,8 @@ def ticket_detail(request, reference):
         action = request.POST.get("action")
         if action == "update":
             old = {"status": ticket.status, "priority": ticket.priority, "assignee_id": ticket.assignee_id, "queue_id": ticket.queue_id}
+            old_status = ticket.status
+            old_assignee_id = ticket.assignee_id
             ticket.status = _valid_choice(request.POST.get("status"), SupportTicket.Status.choices, ticket.status)
             ticket.priority = _valid_choice(request.POST.get("priority"), SupportTicket.Priority.choices, ticket.priority)
             assignee_id = request.POST.get("assignee") or None
@@ -82,6 +85,8 @@ def ticket_detail(request, reference):
             elif ticket.status not in {SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED}:
                 ticket.resolved_at = None
             ticket.save()
+            notify_ticket_status_changed(ticket, old_status)
+            notify_ticket_assigned(ticket, old_assignee_id)
             InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.update", target_type="support_ticket", target_id=ticket.reference, summary=f"Updated ticket {ticket.reference}", metadata={"before": old, "status": ticket.status, "priority": ticket.priority, "assignee_id": ticket.assignee_id, "queue_id": ticket.queue_id, "superuser": request.user.is_superuser})
             messages.success(request, "Ticket updated.")
         elif action in {"note", "reply"}:
@@ -121,6 +126,7 @@ def ticket_detail(request, reference):
                 if ticket.status not in {SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED}:
                     ticket.status = SupportTicket.Status.WAITING_CUSTOMER
                     ticket.save(update_fields=["status", "updated_at"])
+                notify_staff_reply(ticket, comment)
                 InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.reply", target_type="support_ticket", target_id=ticket.reference, summary=f"Replied to customer on {ticket.reference}", metadata={"attachment": bool(upload), "superuser": request.user.is_superuser})
                 messages.success(request, "Reply sent to the customer thread.")
         return redirect("internal_ops:ticket_detail", reference=ticket.reference)
