@@ -3,58 +3,31 @@
 {% block title %}Help Center | LumisPixel{% endblock %}
 {% block content %}
 <section class="hc-shell">
-    <div class="hc-hero">
-        <span class="hc-kicker">LumisPixel Support</span>
-        <h1>How can we help?</h1>
-        <p>Submit a support ticket for account access, galleries, AI tools, billing, websites, bookings, client access, or technical issues.</p>
-    </div>
-
-    {% if submitted_reference %}
-    <div class="hc-success"><i class="bi bi-check-circle-fill"></i><div><strong>Ticket {{ submitted_reference }} submitted</strong><span>Our support team can now track this request from LumisPixel Internal.</span></div></div>
-    {% endif %}
-
+    <div class="hc-hero"><span class="hc-kicker">LumisPixel Support</span><h1>How can we help?</h1><p>Submit a support ticket for account access, galleries, AI tools, billing, websites, bookings, client access, or technical issues.</p></div>
+    {% if submitted_reference %}<div class="hc-success"><i class="bi bi-check-circle-fill"></i><div><strong>Ticket {{ submitted_reference }} submitted</strong><span>Your support conversation is ready. Open the ticket below to continue the thread.</span></div></div>{% endif %}
     <div class="hc-grid">
         <section class="hc-panel">
             <div class="hc-panel__head"><span class="hc-kicker">Support request</span><h2>Open a ticket</h2><p>Your ticket will be linked to your LumisPixel account automatically.</p></div>
             {% if request.user.is_authenticated %}
-            <form method="post" class="hc-form">
+            <form method="post" enctype="multipart/form-data" class="hc-form">
                 {% csrf_token %}
                 {% if form.non_field_errors %}<div class="hc-errors">{{ form.non_field_errors }}</div>{% endif %}
                 <label>Issue category{{ form.category }}{{ form.category.errors }}</label>
                 <label>Subject{{ form.subject }}{{ form.subject.errors }}</label>
                 <label>What happened?{{ form.description }}{{ form.description.errors }}</label>
                 <label>Related LumisPixel page <small>Optional</small>{{ form.related_url }}{{ form.related_url.errors }}</label>
+                <label>Attachment <small>Optional · image, PDF, text/log, CSV or Word · max 10 MB</small><input class="hc-field" type="file" name="attachment" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.txt,.log,.csv,.doc,.docx"></label>
                 <button type="submit" class="hc-submit">Submit support ticket <i class="bi bi-arrow-right"></i></button>
             </form>
             {% else %}
-            <div class="hc-signin">
-                <div class="hc-signin__icon"><i class="bi bi-shield-lock"></i></div>
-                <h3>Sign in to contact support</h3>
-                <p>Signing in lets us securely connect your request to the correct photographer, studio, or client account.</p>
-                <a href="{% url 'accounts:login' %}?next=/resources/help-center/">Sign in to LumisPixel</a>
-            </div>
+            <div class="hc-signin"><div class="hc-signin__icon"><i class="bi bi-shield-lock"></i></div><h3>Sign in to contact support</h3><p>Signing in lets us securely connect your request to the correct photographer, studio, or client account.</p><a href="{% url 'accounts:login' %}?next=/resources/help-center/">Sign in to LumisPixel</a></div>
             {% endif %}
         </section>
-
-        <aside class="hc-side">
-            <article><i class="bi bi-lightning-charge"></i><div><strong>Faster routing</strong><p>Tickets are categorized and routed directly into LumisPixel Support Operations.</p></div></article>
-            <article><i class="bi bi-person-check"></i><div><strong>Account-aware support</strong><p>We can see the account context tied to your request without asking you to repeat basic details.</p></div></article>
-            <article><i class="bi bi-shield-check"></i><div><strong>Tracked resolution</strong><p>Each request receives a unique ticket reference and internal history.</p></div></article>
-        </aside>
+        <aside class="hc-side"><article><i class="bi bi-lightning-charge"></i><div><strong>Faster routing</strong><p>Tickets are categorized and routed directly into LumisPixel Support Operations.</p></div></article><article><i class="bi bi-chat-dots"></i><div><strong>Conversation threads</strong><p>Keep the entire customer-support conversation attached to one ticket from start to resolution.</p></div></article><article><i class="bi bi-paperclip"></i><div><strong>Helpful attachments</strong><p>Add screenshots, PDFs, logs, CSVs, or documents when they help explain the issue.</p></div></article></aside>
     </div>
-
-    {% if request.user.is_authenticated %}
-    <section class="hc-recent">
-        <div class="hc-panel__head"><span class="hc-kicker">Your support</span><h2>Recent tickets</h2></div>
-        <div class="hc-ticket-list">
-            {% for ticket in recent_tickets %}
-            <article><div><strong>{{ ticket.reference }}</strong><span>{{ ticket.subject }}</span></div><div><span class="hc-ticket-status">{{ ticket.get_status_display }}</span><small>{{ ticket.updated_at|date:"M j, Y" }}</small></div></article>
-            {% empty %}<div class="hc-empty">You have not submitted any support tickets yet.</div>{% endfor %}
-        </div>
-    </section>
-    {% endif %}
+    {% if request.user.is_authenticated %}<section class="hc-recent"><div class="hc-panel__head"><span class="hc-kicker">Your support</span><h2>Recent tickets</h2><p>Open any ticket to read the support thread or send a reply.</p></div><div class="hc-ticket-list">{% for ticket in recent_tickets %}<a class="hc-ticket-row" href="{% url 'support_ticket_detail' ticket.reference %}"><div><strong>{{ ticket.reference }}</strong><span>{{ ticket.subject }}</span></div><div><span class="hc-ticket-status">{{ ticket.get_status_display }}</span><small>{{ ticket.updated_at|date:"M j, Y" }}</small><i class="bi bi-arrow-right"></i></div></a>{% empty %}<div class="hc-empty">You have not submitted any support tickets yet.</div>{% endfor %}</div></section>{% endif %}
 </section>
 <style>
-.hc-shell{max-width:1180px;margin:0 auto;padding:70px 24px 90px}.hc-hero{max-width:760px;margin-bottom:34px}.hc-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d7193f}.hc-hero h1{font-size:clamp(42px,6vw,70px);margin:10px 0 12px;letter-spacing:-.045em}.hc-hero p,.hc-panel__head p,.hc-side p,.hc-signin p{color:#6d7280;line-height:1.65}.hc-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.7fr);gap:24px}.hc-panel,.hc-side article,.hc-recent{background:#fff;border:1px solid #e5e7eb;border-radius:20px}.hc-panel{padding:28px}.hc-panel__head h2{font-size:28px;margin:7px 0 6px}.hc-form{display:grid;gap:18px;margin-top:24px}.hc-form label{display:grid;gap:8px;font-size:12px;font-weight:750}.hc-form label small{font-weight:500;color:#8a8f98}.hc-field{width:100%;box-sizing:border-box;border:1px solid #dfe2e7;border-radius:12px;padding:13px 14px;background:#fafafa;font:inherit}.hc-field:focus{outline:none;border-color:#b7bbc3;background:#fff;box-shadow:0 0 0 3px rgba(0,0,0,.03)}.hc-submit{border:0;border-radius:12px;background:#151821;color:#fff;padding:14px 18px;font-weight:800;display:flex;justify-content:center;gap:10px;cursor:pointer}.hc-side{display:grid;gap:14px;align-content:start}.hc-side article{padding:20px;display:flex;gap:14px}.hc-side i{font-size:20px;color:#d7193f}.hc-side strong{font-size:14px}.hc-side p{font-size:12px;margin:6px 0 0}.hc-success{margin-bottom:22px;padding:16px 18px;border:1px solid #cde7d2;background:#f2fbf4;border-radius:14px;display:flex;gap:12px;align-items:center}.hc-success i{color:#2e9c50}.hc-success div{display:grid;gap:3px}.hc-success span{font-size:12px;color:#607064}.hc-signin{text-align:center;padding:40px 20px 20px}.hc-signin__icon{width:56px;height:56px;border-radius:16px;background:#f4f5f7;display:grid;place-items:center;margin:0 auto 14px;font-size:24px}.hc-signin a{display:inline-block;margin-top:8px;background:#151821;color:#fff;text-decoration:none;padding:12px 18px;border-radius:11px;font-weight:750}.hc-recent{margin-top:26px;padding:26px}.hc-ticket-list{display:grid;border-top:1px solid #eef0f2}.hc-ticket-list article{padding:14px 0;border-bottom:1px solid #eef0f2;display:flex;justify-content:space-between;gap:18px}.hc-ticket-list article>div{display:grid;gap:4px}.hc-ticket-list span,.hc-ticket-list small{color:#747a84;font-size:11px}.hc-ticket-status{font-weight:700;color:#30343c!important}.hc-empty{padding:18px 0;color:#7d828b;font-size:12px}@media(max-width:820px){.hc-grid{grid-template-columns:1fr}.hc-shell{padding-top:44px}}
+.hc-shell{max-width:1180px;margin:0 auto;padding:70px 24px 90px}.hc-hero{max-width:760px;margin-bottom:34px}.hc-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d7193f}.hc-hero h1{font-size:clamp(42px,6vw,70px);margin:10px 0 12px;letter-spacing:-.045em}.hc-hero p,.hc-panel__head p,.hc-side p,.hc-signin p{color:#6d7280;line-height:1.65}.hc-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.7fr);gap:24px}.hc-panel,.hc-side article,.hc-recent{background:#fff;border:1px solid #e5e7eb;border-radius:20px}.hc-panel{padding:28px}.hc-panel__head h2{font-size:28px;margin:7px 0 6px}.hc-form{display:grid;gap:18px;margin-top:24px}.hc-form label{display:grid;gap:8px;font-size:12px;font-weight:750}.hc-form label small{font-weight:500;color:#8a8f98}.hc-field{width:100%;box-sizing:border-box;border:1px solid #dfe2e7;border-radius:12px;padding:13px 14px;background:#fafafa;font:inherit}.hc-field:focus{outline:none;border-color:#b7bbc3;background:#fff;box-shadow:0 0 0 3px rgba(0,0,0,.03)}.hc-submit{border:0;border-radius:12px;background:#151821;color:#fff;padding:14px 18px;font-weight:800;display:flex;justify-content:center;gap:10px;cursor:pointer}.hc-side{display:grid;gap:14px;align-content:start}.hc-side article{padding:20px;display:flex;gap:14px}.hc-side i{font-size:20px;color:#d7193f}.hc-side strong{font-size:14px}.hc-side p{font-size:12px;margin:6px 0 0}.hc-success{margin-bottom:22px;padding:16px 18px;border:1px solid #cde7d2;background:#f2fbf4;border-radius:14px;display:flex;gap:12px;align-items:center}.hc-success i{color:#2e9c50}.hc-success div{display:grid;gap:3px}.hc-success span{font-size:12px;color:#607064}.hc-signin{text-align:center;padding:40px 20px 20px}.hc-signin__icon{width:56px;height:56px;border-radius:16px;background:#f4f5f7;display:grid;place-items:center;margin:0 auto 14px;font-size:24px}.hc-signin a{display:inline-block;margin-top:8px;background:#151821;color:#fff;text-decoration:none;padding:12px 18px;border-radius:11px;font-weight:750}.hc-recent{margin-top:26px;padding:26px}.hc-ticket-list{display:grid;border-top:1px solid #eef0f2}.hc-ticket-row{padding:14px 0;border-bottom:1px solid #eef0f2;display:flex;justify-content:space-between;gap:18px;color:inherit;text-decoration:none}.hc-ticket-row:hover strong{color:#d7193f}.hc-ticket-row>div{display:grid;gap:4px}.hc-ticket-row>div:last-child{grid-template-columns:auto auto auto;align-items:center}.hc-ticket-list span,.hc-ticket-list small{color:#747a84;font-size:11px}.hc-ticket-status{font-weight:700;color:#30343c!important}.hc-empty{padding:18px 0;color:#7d828b;font-size:12px}@media(max-width:820px){.hc-grid{grid-template-columns:1fr}.hc-shell{padding-top:44px}}
 </style>
 {% endblock %}

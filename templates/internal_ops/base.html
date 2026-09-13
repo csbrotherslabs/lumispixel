@@ -28,7 +28,7 @@
             <a href="#"><i class="bi bi-graph-up-arrow"></i><span>Reports</span><em>Soon</em></a>
             <span class="li-nav__section">Governance</span>
             <a href="#"><i class="bi bi-shield-check"></i><span>Audit</span><em>Soon</em></a>
-            <a href="#"><i class="bi bi-activity"></i><span>System</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'system' or request.resolver_match.url_name == 'system_alert_action' %}is-active{% endif %}" href="{% url 'internal_ops:system' %}"><i class="bi bi-activity"></i><span>System</span></a>
         </nav>
         <div class="li-sidebar__footer">
             {% if employee %}<span>{{ employee.employee_id }}</span>{% elif is_internal_superuser %}<span>Superuser</span>{% endif %}

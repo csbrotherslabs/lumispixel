@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.conf import settings
@@ -7,6 +8,11 @@ from django.utils import timezone
 
 def support_ticket_reference():
     return f"LP-{uuid.uuid4().hex[:8].upper()}"
+
+
+def support_attachment_upload_to(instance, filename):
+    extension = os.path.splitext(filename)[1].lower()
+    return f"support-attachments/{instance.ticket.reference}/{uuid.uuid4().hex}{extension}"
 
 
 class Department(models.Model):
@@ -172,3 +178,60 @@ class SupportTicketComment(models.Model):
 
     def __str__(self):
         return f"Comment on {self.ticket.reference}"
+
+
+class SupportTicketAttachment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name="attachments")
+    comment = models.ForeignKey(SupportTicketComment, on_delete=models.CASCADE, related_name="attachments", null=True, blank=True)
+    file = models.FileField(upload_to=support_attachment_upload_to)
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=120, blank=True)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="support_ticket_attachments", null=True, blank=True)
+    uploaded_by_employee = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="support_ticket_attachments", null=True, blank=True)
+    is_internal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at",)
+        indexes = [models.Index(fields=("ticket", "created_at"), name="support_attach_ticket_idx")]
+
+    def __str__(self):
+        return f"Attachment {self.original_name} on {self.ticket.reference}"
+
+
+class SystemAlert(models.Model):
+    class Severity(models.TextChoices):
+        INFO = "info", "Info"
+        WARNING = "warning", "Warning"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        ACKNOWLEDGED = "acknowledged", "Acknowledged"
+        RESOLVED = "resolved", "Resolved"
+
+    key = models.CharField(max_length=120, unique=True)
+    component = models.CharField(max_length=80)
+    severity = models.CharField(max_length=16, choices=Severity.choices, default=Severity.WARNING)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    title = models.CharField(max_length=180)
+    message = models.TextField(max_length=1200)
+    metadata = models.JSONField(default=dict, blank=True)
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_by = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="acknowledged_system_alerts", null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="resolved_system_alerts", null=True, blank=True)
+
+    class Meta:
+        ordering = ("-last_seen_at",)
+        indexes = [
+            models.Index(fields=("status", "severity", "last_seen_at"), name="system_alert_state_idx"),
+            models.Index(fields=("component", "last_seen_at"), name="system_alert_comp_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_severity_display()} — {self.title}"

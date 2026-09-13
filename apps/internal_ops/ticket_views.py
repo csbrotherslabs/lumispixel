@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -8,6 +9,8 @@ from django.views.decorators.http import require_http_methods
 
 from .decorators import internal_employee_required
 from .models import Department, EmployeeProfile, InternalAuditEvent, SupportTicket, SupportTicketComment
+from .support_attachments import create_support_attachment, validate_support_attachment
+from .support_notifications import notify_staff_reply, notify_ticket_assigned, notify_ticket_status_changed
 
 
 def _actor(request):
@@ -65,6 +68,8 @@ def ticket_detail(request, reference):
         action = request.POST.get("action")
         if action == "update":
             old = {"status": ticket.status, "priority": ticket.priority, "assignee_id": ticket.assignee_id, "queue_id": ticket.queue_id}
+            old_status = ticket.status
+            old_assignee_id = ticket.assignee_id
             ticket.status = _valid_choice(request.POST.get("status"), SupportTicket.Status.choices, ticket.status)
             ticket.priority = _valid_choice(request.POST.get("priority"), SupportTicket.Priority.choices, ticket.priority)
             assignee_id = request.POST.get("assignee") or None
@@ -80,14 +85,50 @@ def ticket_detail(request, reference):
             elif ticket.status not in {SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED}:
                 ticket.resolved_at = None
             ticket.save()
+            notify_ticket_status_changed(ticket, old_status)
+            notify_ticket_assigned(ticket, old_assignee_id)
             InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.update", target_type="support_ticket", target_id=ticket.reference, summary=f"Updated ticket {ticket.reference}", metadata={"before": old, "status": ticket.status, "priority": ticket.priority, "assignee_id": ticket.assignee_id, "queue_id": ticket.queue_id, "superuser": request.user.is_superuser})
             messages.success(request, "Ticket updated.")
-        elif action == "note":
+        elif action in {"note", "reply"}:
             body = request.POST.get("body", "").strip()
-            if body:
-                SupportTicketComment.objects.create(ticket=ticket, author_employee=actor, author_user=request.user if actor is None else None, body=body, is_internal=True)
-                InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.note", target_type="support_ticket", target_id=ticket.reference, summary=f"Added internal note to {ticket.reference}", metadata={"superuser": request.user.is_superuser})
+            upload = request.FILES.get("attachment")
+            if not body and not upload:
+                messages.error(request, "Enter a message or attach a file.")
+                return redirect("internal_ops:ticket_detail", reference=ticket.reference)
+            try:
+                if upload:
+                    validate_support_attachment(upload)
+            except ValidationError as exc:
+                messages.error(request, exc.messages[0])
+                return redirect("internal_ops:ticket_detail", reference=ticket.reference)
+
+            is_internal = action == "note"
+            comment = SupportTicketComment.objects.create(
+                ticket=ticket,
+                author_employee=actor,
+                author_user=request.user if actor is None else None,
+                body=body,
+                is_internal=is_internal,
+            )
+            if upload:
+                create_support_attachment(
+                    ticket=ticket,
+                    comment=comment,
+                    upload=upload,
+                    user=request.user if actor is None else None,
+                    employee=actor,
+                    is_internal=is_internal,
+                )
+            if is_internal:
+                InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.note", target_type="support_ticket", target_id=ticket.reference, summary=f"Added internal note to {ticket.reference}", metadata={"attachment": bool(upload), "superuser": request.user.is_superuser})
                 messages.success(request, "Internal note added.")
+            else:
+                if ticket.status not in {SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED}:
+                    ticket.status = SupportTicket.Status.WAITING_CUSTOMER
+                    ticket.save(update_fields=["status", "updated_at"])
+                notify_staff_reply(ticket, comment)
+                InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.reply", target_type="support_ticket", target_id=ticket.reference, summary=f"Replied to customer on {ticket.reference}", metadata={"attachment": bool(upload), "superuser": request.user.is_superuser})
+                messages.success(request, "Reply sent to the customer thread.")
         return redirect("internal_ops:ticket_detail", reference=ticket.reference)
 
     InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.view", target_type="support_ticket", target_id=ticket.reference, summary=f"Opened ticket {ticket.reference}", metadata={"superuser": request.user.is_superuser})
@@ -100,5 +141,7 @@ def ticket_detail(request, reference):
         "departments": Department.objects.filter(is_active=True),
         "status_choices": SupportTicket.Status.choices,
         "priority_choices": SupportTicket.Priority.choices,
-        "comments": ticket.comments.select_related("author_employee__user", "author_user"),
+        "public_comments": ticket.comments.filter(is_internal=False).select_related("author_employee__user", "author_user").prefetch_related("attachments"),
+        "internal_comments": ticket.comments.filter(is_internal=True).select_related("author_employee__user", "author_user").prefetch_related("attachments"),
+        "initial_attachments": ticket.attachments.filter(comment__isnull=True),
     })
