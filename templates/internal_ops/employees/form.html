@@ -2,13 +2,16 @@
 {% load static %}
 {% block title %}{% if editing %}Edit {{ target_employee.user.display_name }}{% else %}Add Employee{% endif %} | LumisPixel Internal{% endblock %}
 {% block page_title %}{% if editing %}Edit Employee{% else %}Add Employee{% endif %}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}"><link rel="stylesheet" href="{% static 'css/internal_operations_polish.css' %}">{% endblock %}
 {% block content %}
-<div class="emp-page">
-    <section class="emp-head"><div><span class="li-kicker">People operations</span><h1>{% if editing %}Update {{ target_employee.user.display_name }}{% else %}Add a LumisPixel employee{% endif %}</h1><p>{% if editing %}Update organization, reporting, and access details. Every change requires a reason and is written to the audit trail.{% else %}Create or link a LumisPixel account, assign the employee to the organization, and send account-access instructions.{% endif %}</p></div><a class="emp-btn" href="{% if editing %}{% url 'internal_ops:employee_detail' target_employee.employee_id %}{% else %}{% url 'internal_ops:employees' %}{% endif %}"><i class="bi bi-arrow-left"></i> Back</a></section>
+<div class="emp-page opx-page">
+    <section class="opx-hero">
+        <div><span class="li-kicker">People operations</span><h1>{% if editing %}Update {{ target_employee.user.display_name }}{% else %}Add a LumisPixel employee{% endif %}</h1><p>{% if editing %}Update organization, reporting, and access details. Every change requires a reason and is written to the audit trail.{% else %}Create or link a LumisPixel account, assign the employee to the organization, and send account-access instructions.{% endif %}</p></div>
+        <div class="opx-hero__aside"><span>Employee management</span><strong>{% if editing %}Update employee record{% else %}Create employee access{% endif %}</strong><small>Identity, organization, access, and reporting details remain audit protected.</small><a class="emp-btn" href="{% if editing %}{% url 'internal_ops:employee_detail' target_employee.employee_id %}{% else %}{% url 'internal_ops:employees' %}{% endif %}"><i class="bi bi-arrow-left"></i> Back</a></div>
+    </section>
     {% if messages %}{% for message in messages %}<div class="emp-message">{{ message }}</div>{% endfor %}{% endif %}
-    <section class="emp-card">
-        <form method="post" class="emp-form">{% csrf_token %}
+    <section class="emp-card opx-surface opx-form-surface">
+        <form method="post" class="emp-form opx-standard-form">{% csrf_token %}
             {% if form.non_field_errors %}<div class="emp-message">{{ form.non_field_errors }}</div>{% endif %}
             <div class="emp-form-grid">
                 <label class="emp-label">First name{{ form.first_name }}{{ form.first_name.errors }}</label>
