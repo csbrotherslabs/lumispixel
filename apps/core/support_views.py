@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 
 from apps.internal_ops.models import Department, EmployeeProfile, SupportTicket, SupportTicketAttachment, SupportTicketComment
 from apps.internal_ops.support_attachments import create_support_attachment, validate_support_attachment
+from apps.internal_ops.support_notifications import notify_customer_reply, notify_ticket_created
 
 from .support_forms import SupportTicketIntakeForm
 
@@ -51,6 +52,7 @@ def help_center(request):
             ticket.save()
             if upload:
                 create_support_attachment(ticket=ticket, upload=upload, user=request.user)
+            notify_ticket_created(ticket)
             request.session["support_ticket_reference"] = ticket.reference
             return redirect("support_ticket_detail", reference=ticket.reference)
 
@@ -99,6 +101,7 @@ def support_ticket_detail(request, reference):
                 if ticket.status == SupportTicket.Status.WAITING_CUSTOMER:
                     ticket.status = SupportTicket.Status.OPEN
                     ticket.save(update_fields=["status", "updated_at"])
+                notify_customer_reply(ticket, comment)
                 messages.success(request, "Your reply was sent to LumisPixel Support.")
                 return redirect("support_ticket_detail", reference=ticket.reference)
 
