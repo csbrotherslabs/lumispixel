@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.notifications.models import Notification
 from apps.notifications.services import notify_user
 
-from .models import ApprovalRequest, Department, EmployeeProfile, InternalAuditEvent
+from .models import ApprovalRequest, EmployeeProfile, InternalAuditEvent
 
 
 def actor_for_request(request):
@@ -68,13 +68,13 @@ def _notify(users, *, title, message, approval):
 
 
 def can_review_approval(user, employee, approval):
+    if approval.requester_user_id and approval.requester_user_id == user.pk:
+        return False
+    if approval.requester_id and employee and approval.requester_id == employee.pk:
+        return False
     if user.is_superuser:
         return True
     if not employee or employee.status != EmployeeProfile.Status.ACTIVE:
-        return False
-    if approval.requester_id and approval.requester_id == employee.pk:
-        return False
-    if approval.requester_user_id and approval.requester_user_id == user.pk:
         return False
     if employee.role and employee.role.is_executive:
         return True
@@ -200,7 +200,7 @@ def mark_approval_executed(*, approval, executor_user, executor_employee, execut
     approval = ApprovalRequest.objects.select_for_update().get(pk=approval.pk)
     if approval.status != ApprovalRequest.Status.APPROVED:
         raise ValueError("Only approved requests can be marked executed.")
-    if approval.requester_user_id == executor_user.pk and not executor_user.is_superuser:
+    if approval.requester_user_id == executor_user.pk:
         raise PermissionError("The requester cannot execute their own approved request.")
     approval.status = ApprovalRequest.Status.EXECUTED
     approval.executed_at = timezone.now()
