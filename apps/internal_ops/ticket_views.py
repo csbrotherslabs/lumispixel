@@ -88,6 +88,15 @@ def ticket_detail(request, reference):
                 SupportTicketComment.objects.create(ticket=ticket, author_employee=actor, author_user=request.user if actor is None else None, body=body, is_internal=True)
                 InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.note", target_type="support_ticket", target_id=ticket.reference, summary=f"Added internal note to {ticket.reference}", metadata={"superuser": request.user.is_superuser})
                 messages.success(request, "Internal note added.")
+        elif action == "reply":
+            body = request.POST.get("body", "").strip()
+            if body:
+                SupportTicketComment.objects.create(ticket=ticket, author_employee=actor, author_user=request.user if actor is None else None, body=body, is_internal=False)
+                if ticket.status not in {SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED}:
+                    ticket.status = SupportTicket.Status.WAITING_CUSTOMER
+                    ticket.save(update_fields=["status", "updated_at"])
+                InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.reply", target_type="support_ticket", target_id=ticket.reference, summary=f"Replied to customer on {ticket.reference}", metadata={"superuser": request.user.is_superuser})
+                messages.success(request, "Reply sent to the customer thread.")
         return redirect("internal_ops:ticket_detail", reference=ticket.reference)
 
     InternalAuditEvent.objects.create(actor=actor, category=InternalAuditEvent.Category.SUPPORT, action="internal.ticket.view", target_type="support_ticket", target_id=ticket.reference, summary=f"Opened ticket {ticket.reference}", metadata={"superuser": request.user.is_superuser})
@@ -101,4 +110,6 @@ def ticket_detail(request, reference):
         "status_choices": SupportTicket.Status.choices,
         "priority_choices": SupportTicket.Priority.choices,
         "comments": ticket.comments.select_related("author_employee__user", "author_user"),
+        "public_comments": ticket.comments.filter(is_internal=False).select_related("author_employee__user", "author_user"),
+        "internal_comments": ticket.comments.filter(is_internal=True).select_related("author_employee__user", "author_user"),
     })
