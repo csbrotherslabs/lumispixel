@@ -16,7 +16,11 @@
 <div class="li-shell">
     <aside class="li-sidebar" id="internalSidebar" aria-label="LumisPixel Internal sidebar">
         <div class="li-sidebar__header">
-            <a class="li-brand" href="{% url 'internal_ops:dashboard' %}" aria-label="LumisPixel Internal Command Center"><img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel"><span>Internal</span></a>
+            <a class="li-brand" href="{% url 'internal_ops:dashboard' %}" aria-label="LumisPixel Internal Command Center">
+                <img class="li-brand__mark" src="{% static 'img/lumis_favicon_v2.png' %}" alt="">
+                <span class="li-brand__word">LUMIS</span>
+                <span class="li-brand__pill">Internal</span>
+            </a>
             <button class="li-sidebar__desktop-toggle" type="button" data-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">
                 <i class="bi bi-layout-sidebar-inset"></i>
             </button>
