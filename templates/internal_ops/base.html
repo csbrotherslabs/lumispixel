@@ -21,7 +21,7 @@
             <span class="li-nav__section">Operations</span>
             <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'internal_ops:customers' %}"><i class="bi bi-people"></i><span>Customers</span></a>
             <a class="{% if request.resolver_match.url_name == 'tickets' or request.resolver_match.url_name == 'ticket_detail' %}is-active{% endif %}" href="{% url 'internal_ops:tickets' %}"><i class="bi bi-ticket-perforated"></i><span>Tickets</span></a>
-            <a href="#"><i class="bi bi-person-badge"></i><span>Employees</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'employees' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_detail' or request.resolver_match.url_name == 'employee_edit' %}is-active{% endif %}" href="{% url 'internal_ops:employees' %}"><i class="bi bi-person-badge"></i><span>Employees</span></a>
             <span class="li-nav__section">Intelligence</span>
             <a class="{% if request.resolver_match.url_name == 'ai_operations' %}is-active{% endif %}" href="{% url 'internal_ops:ai_operations' %}"><i class="bi bi-stars"></i><span>AI Operations</span></a>
             <a class="{% if request.resolver_match.url_name == 'storage_operations' %}is-active{% endif %}" href="{% url 'internal_ops:storage_operations' %}"><i class="bi bi-hdd-stack"></i><span>Storage</span></a>
