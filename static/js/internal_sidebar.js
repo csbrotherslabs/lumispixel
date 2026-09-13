@@ -13,17 +13,31 @@
         toggles.forEach((button) => button.setAttribute('aria-expanded', expanded ? 'true' : 'false'));
     };
 
+    const setMobileAccessibility = (open) => {
+        if (desktopQuery.matches) {
+            sidebar.removeAttribute('aria-hidden');
+            sidebar.inert = false;
+            return;
+        }
+        sidebar.setAttribute('aria-hidden', open ? 'false' : 'true');
+        sidebar.inert = !open;
+    };
+
     const applyDesktopPreference = () => {
         if (!desktopQuery.matches) return;
         const collapsed = window.localStorage.getItem(storageKey) === 'true';
         body.classList.toggle('is-sidebar-collapsed', collapsed);
         body.classList.remove('is-mobile-nav-open');
         setExpandedState(!collapsed);
+        setMobileAccessibility(true);
     };
 
     const closeMobile = () => {
         body.classList.remove('is-mobile-nav-open');
-        if (!desktopQuery.matches) setExpandedState(false);
+        if (!desktopQuery.matches) {
+            setExpandedState(false);
+            setMobileAccessibility(false);
+        }
     };
 
     const toggleSidebar = () => {
@@ -37,6 +51,7 @@
         const open = !body.classList.contains('is-mobile-nav-open');
         body.classList.toggle('is-mobile-nav-open', open);
         setExpandedState(open);
+        setMobileAccessibility(open);
     };
 
     toggles.forEach((button) => button.addEventListener('click', toggleSidebar));
@@ -56,6 +71,7 @@
         } else {
             body.classList.remove('is-sidebar-collapsed', 'is-mobile-nav-open');
             setExpandedState(false);
+            setMobileAccessibility(false);
         }
     };
 
