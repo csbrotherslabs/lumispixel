@@ -1,16 +1,35 @@
 {% extends "internal_ops/base.html" %}
+{% load static %}
 {% block title %}Customers | LumisPixel Internal{% endblock %}
 {% block page_title %}Customer Operations{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_customers.css' %}">{% endblock %}
 {% block content %}
-<section class="li-page-head">
-    <div><span class="li-kicker">Customer & Account Operations</span><h1>Customers</h1><p>Search LumisPixel accounts and review customer status, account type, plan, and workspace context.</p></div>
-    <div class="li-readonly-badge"><i class="bi bi-eye"></i> Read-only operations</div>
+<section class="li-page-head li-page-head--hero">
+    <div>
+        <span class="li-kicker li-kicker--light">Customer & Account Operations</span>
+        <h1>Customers</h1>
+        <p>Search LumisPixel accounts and review customer status, account type, plan, and workspace context.</p>
+    </div>
+    <div class="li-page-head__aside">
+        <span class="li-page-head__label">Workspace mode</span>
+        <strong>Read-only operations</strong>
+        <small>Review account context without changing customer data.</small>
+    </div>
 </section>
 
-<section class="li-customer-stats">
-    <article><span>Total customer accounts</span><strong>{{ customer_count }}</strong></article>
-    <article><span>Photographer accounts</span><strong>{{ photographer_count }}</strong></article>
-    <article><span>Client accounts</span><strong>{{ client_count }}</strong></article>
+<section class="li-customer-stats" aria-label="Customer account summary">
+    <article>
+        <div class="li-customer-stat-icon"><i class="bi bi-people"></i></div>
+        <div><span>Total customer accounts</span><strong>{{ customer_count }}</strong><small>All LumisPixel customer identities</small></div>
+    </article>
+    <article>
+        <div class="li-customer-stat-icon"><i class="bi bi-camera"></i></div>
+        <div><span>Photographer accounts</span><strong>{{ photographer_count }}</strong><small>Photographers and studio accounts</small></div>
+    </article>
+    <article>
+        <div class="li-customer-stat-icon"><i class="bi bi-person-heart"></i></div>
+        <div><span>Client accounts</span><strong>{{ client_count }}</strong><small>Client-side LumisPixel accounts</small></div>
+    </article>
 </section>
 
 <section class="li-customer-panel">
@@ -28,8 +47,8 @@
             <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
             <option value="deactivated" {% if status_filter == 'deactivated' %}selected{% endif %}>Deactivated</option>
         </select>
-        <button type="submit">Apply filters</button>
-        {% if query or account_type != 'all' or status_filter != 'all' %}<a href="{% url 'internal_ops:customers' %}">Clear</a>{% endif %}
+        <button type="submit"><i class="bi bi-funnel"></i><span>Apply filters</span></button>
+        {% if query or account_type != 'all' or status_filter != 'all' %}<a class="li-filter-clear" href="{% url 'internal_ops:customers' %}">Clear</a>{% else %}<span class="li-filter-clear li-filter-clear--placeholder" aria-hidden="true">Clear</span>{% endif %}
     </form>
 
     <div class="li-customer-table-wrap">
