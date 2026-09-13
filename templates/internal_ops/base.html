@@ -61,7 +61,11 @@
                 <button class="li-topbar__menu" type="button" data-sidebar-toggle aria-controls="internalSidebar" aria-expanded="true" aria-label="Toggle navigation">
                     <i class="bi bi-list"></i>
                 </button>
-                <div><span class="li-kicker">LumisPixel Internal</span><strong>{% block page_title %}Command Center{% endblock %}</strong></div>
+                <div class="li-topbar__context">
+                    <span class="li-kicker">LumisPixel Internal</span>
+                    <span class="li-topbar__divider" aria-hidden="true"></span>
+                    <strong>{% block page_title %}Command Center{% endblock %}</strong>
+                </div>
             </div>
             <div class="li-topbar__actions"><div class="li-access-pill"><span></span>{% if is_internal_superuser %}Administrator{% else %}Employee access{% endif %}</div><a href="{% url 'notifications:index' %}" aria-label="Notifications"><i class="bi bi-bell"></i></a><span class="li-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span></div>
         </header>
