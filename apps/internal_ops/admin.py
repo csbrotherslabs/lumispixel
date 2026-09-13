@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketAttachment, SupportTicketComment, SystemAlert
+from .models import ApprovalRequest, Department, EmployeeProfile, InternalAuditEvent, InternalRole, SupportTicket, SupportTicketAttachment, SupportTicketComment, SystemAlert
 
 
 @admin.register(Department)
@@ -53,6 +53,27 @@ class SupportTicketAttachmentAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ApprovalRequest)
+class ApprovalRequestAdmin(admin.ModelAdmin):
+    list_display = ("reference", "kind", "risk_level", "status", "requester_user", "approver_department", "created_at")
+    search_fields = ("reference", "title", "target_id", "requester_user__email")
+    list_filter = ("status", "risk_level", "kind", "approver_department", "created_at")
+    readonly_fields = (
+        "reference", "kind", "risk_level", "status", "title", "reason", "target_type", "target_id",
+        "proposed_changes", "requester", "requester_user", "approver_department", "reviewed_by",
+        "reviewed_by_user", "reviewed_at", "decision_note", "executed_at", "created_at", "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
