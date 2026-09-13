@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.conf import settings
@@ -7,6 +8,11 @@ from django.utils import timezone
 
 def support_ticket_reference():
     return f"LP-{uuid.uuid4().hex[:8].upper()}"
+
+
+def support_attachment_upload_to(instance, filename):
+    extension = os.path.splitext(filename)[1].lower()
+    return f"support-attachments/{instance.ticket.reference}/{uuid.uuid4().hex}{extension}"
 
 
 class Department(models.Model):
@@ -172,3 +178,24 @@ class SupportTicketComment(models.Model):
 
     def __str__(self):
         return f"Comment on {self.ticket.reference}"
+
+
+class SupportTicketAttachment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name="attachments")
+    comment = models.ForeignKey(SupportTicketComment, on_delete=models.CASCADE, related_name="attachments", null=True, blank=True)
+    file = models.FileField(upload_to=support_attachment_upload_to)
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=120, blank=True)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    uploaded_by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="support_ticket_attachments", null=True, blank=True)
+    uploaded_by_employee = models.ForeignKey(EmployeeProfile, on_delete=models.SET_NULL, related_name="support_ticket_attachments", null=True, blank=True)
+    is_internal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at",)
+        indexes = [models.Index(fields=("ticket", "created_at"), name="support_attach_ticket_idx")]
+
+    def __str__(self):
+        return f"Attachment {self.original_name} on {self.ticket.reference}"
