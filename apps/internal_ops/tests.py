@@ -41,6 +41,25 @@ class InternalWorkspaceTests(TestCase):
             ).exists()
         )
 
+    def test_superuser_without_employee_profile_can_open_internal_workspace(self):
+        superuser = User.objects.create_superuser(
+            email="admin@lumispixel.com",
+            password="test-pass-123",
+            first_name="Admin",
+        )
+        self.client.force_login(superuser)
+        response = self.client.get(reverse("internal_ops:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Superuser")
+        self.assertContains(response, "Full LumisPixel Internal access")
+        self.assertTrue(
+            InternalAuditEvent.objects.filter(
+                actor__isnull=True,
+                action="internal.dashboard.view",
+                metadata__superuser=True,
+            ).exists()
+        )
+
     def test_non_employee_is_forbidden(self):
         outsider = User.objects.create_user(
             email="customer@example.com",
@@ -66,5 +85,14 @@ class InternalWorkspaceTests(TestCase):
 
     def test_employee_navigation_entry_is_visible(self):
         self.client.force_login(self.user)
+        response = self.client.get(reverse("core:index"))
+        self.assertContains(response, "LumisPixel Internal")
+
+    def test_superuser_navigation_entry_is_visible_without_employee_profile(self):
+        superuser = User.objects.create_superuser(
+            email="admin-nav@lumispixel.com",
+            password="test-pass-123",
+        )
+        self.client.force_login(superuser)
         response = self.client.get(reverse("core:index"))
         self.assertContains(response, "LumisPixel Internal")
