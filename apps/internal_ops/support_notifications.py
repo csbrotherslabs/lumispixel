@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.utils.html import escape
 
 from .models import EmployeeProfile
 
@@ -61,25 +62,26 @@ def _send(subject, plain_body, html_body, recipients):
 def _html(title, intro, ticket, cta_label, cta_url, message_text=""):
     message_block = ""
     if message_text:
-        safe_text = (
-            message_text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\n", "<br>")
-        )
+        safe_text = escape(message_text).replace("\n", "<br>")
         message_block = f'<div style="margin:18px 0;padding:14px 16px;background:#f7f8fa;border-radius:10px;color:#30343c;line-height:1.6;">{safe_text}</div>'
+    safe_title = escape(title)
+    safe_intro = escape(intro)
+    safe_reference = escape(ticket.reference)
+    safe_subject = escape(ticket.subject)
+    safe_cta_label = escape(cta_label)
+    safe_cta_url = escape(cta_url)
     return f"""
     <div style="font-family:Arial,sans-serif;background:#f6f7f9;padding:28px;color:#171b24;">
       <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #e5e7eb;">
         <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#d7193f;text-transform:uppercase;">LumisPixel Support</div>
-        <h1 style="font-size:26px;margin:10px 0 12px;">{title}</h1>
-        <p style="color:#626875;line-height:1.6;">{intro}</p>
+        <h1 style="font-size:26px;margin:10px 0 12px;">{safe_title}</h1>
+        <p style="color:#626875;line-height:1.6;">{safe_intro}</p>
         <div style="margin:18px 0;padding:14px 16px;background:#fafafa;border:1px solid #eceef1;border-radius:10px;">
-          <strong>{ticket.reference}</strong><br>
-          <span style="color:#626875;">{ticket.subject}</span>
+          <strong>{safe_reference}</strong><br>
+          <span style="color:#626875;">{safe_subject}</span>
         </div>
         {message_block}
-        <a href="{cta_url}" style="display:inline-block;background:#171b24;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;">{cta_label}</a>
+        <a href="{safe_cta_url}" style="display:inline-block;background:#171b24;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;">{safe_cta_label}</a>
         <p style="margin-top:24px;font-size:12px;color:#8a9099;">This is an automated LumisPixel support notification.</p>
       </div>
     </div>
