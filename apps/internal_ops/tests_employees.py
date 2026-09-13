@@ -12,9 +12,18 @@ User = get_user_model()
 
 class EmployeeManagementTests(TestCase):
     def setUp(self):
-        self.hr_department = Department.objects.create(name="Human Resources", code="human-resources")
-        self.executive_department = Department.objects.create(name="Executive", code="executive")
-        self.engineering_department = Department.objects.create(name="Engineering", code="engineering")
+        self.hr_department, _ = Department.objects.get_or_create(
+            code="human-resources",
+            defaults={"name": "Human Resources"},
+        )
+        self.executive_department, _ = Department.objects.get_or_create(
+            code="executive",
+            defaults={"name": "Executive"},
+        )
+        self.engineering_department, _ = Department.objects.get_or_create(
+            code="engineering",
+            defaults={"name": "Engineering"},
+        )
         self.hr_user = self._user("hr@lumispixel.test", "Helen", "HR")
         self.hr_employee = EmployeeProfile.objects.create(
             user=self.hr_user,
