@@ -6,14 +6,14 @@ from .models import Department, EmployeeProfile, InternalAuditEvent
 
 
 COMMAND_CENTER_MODULES = [
-    {"name": "Customers", "icon": "bi-people", "description": "Account support, customer history, usage, and service operations.", "group": "Operations"},
-    {"name": "Tickets", "icon": "bi-ticket-perforated", "description": "Assigned work, queues, escalations, priorities, and SLAs.", "group": "Operations"},
-    {"name": "Employees", "icon": "bi-person-badge", "description": "Organization, departments, roles, access, and employee records.", "group": "People"},
-    {"name": "AI Operations", "icon": "bi-stars", "description": "AI usage, processing health, costs, failures, and exceptions.", "group": "Intelligence"},
-    {"name": "Billing & Usage", "icon": "bi-credit-card", "description": "Plans, allowances, storage, credits, and customer economics.", "group": "Intelligence"},
+    {"name": "Customers", "icon": "bi-people", "description": "Account support, customer history, usage, and service operations.", "group": "Operations", "url_name": "internal_ops:customers"},
+    {"name": "Tickets", "icon": "bi-ticket-perforated", "description": "Assigned work, queues, escalations, priorities, and SLAs.", "group": "Operations", "url_name": "internal_ops:tickets"},
+    {"name": "Employees", "icon": "bi-person-badge", "description": "Organization, departments, roles, access, and employee records.", "group": "People", "url_name": "internal_ops:employees"},
+    {"name": "AI Operations", "icon": "bi-stars", "description": "AI usage, processing health, costs, failures, and exceptions.", "group": "Intelligence", "url_name": "internal_ops:ai_operations"},
+    {"name": "Billing & Usage", "icon": "bi-credit-card", "description": "Plans, allowances, storage, credits, and customer economics.", "group": "Intelligence", "url_name": "internal_ops:billing_operations"},
     {"name": "Reports", "icon": "bi-graph-up-arrow", "description": "Executive, financial, operational, support, and growth intelligence.", "group": "Intelligence"},
-    {"name": "Audit", "icon": "bi-shield-check", "description": "Sensitive actions, access history, approvals, and compliance records.", "group": "Governance"},
-    {"name": "System", "icon": "bi-activity", "description": "Platform health, incidents, queues, integrations, and internal alerts.", "group": "Governance"},
+    {"name": "Audit", "icon": "bi-shield-check", "description": "Sensitive actions, access history, approvals, and compliance records.", "group": "Governance", "url_name": "internal_ops:audit"},
+    {"name": "System", "icon": "bi-activity", "description": "Platform health, incidents, queues, integrations, and internal alerts.", "group": "Governance", "url_name": "internal_ops:system"},
 ]
 
 

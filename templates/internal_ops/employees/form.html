@@ -1,0 +1,30 @@
+{% extends "internal_ops/base.html" %}
+{% load static %}
+{% block title %}{% if editing %}Edit {{ target_employee.user.display_name }}{% else %}Add Employee{% endif %} | LumisPixel Internal{% endblock %}
+{% block page_title %}{% if editing %}Edit Employee{% else %}Add Employee{% endif %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}">{% endblock %}
+{% block content %}
+<div class="emp-page">
+    <section class="emp-head"><div><span class="li-kicker">People operations</span><h1>{% if editing %}Update {{ target_employee.user.display_name }}{% else %}Add a LumisPixel employee{% endif %}</h1><p>{% if editing %}Update organization, reporting, and access details. Every change requires a reason and is written to the audit trail.{% else %}Create or link a LumisPixel account, assign the employee to the organization, and send account-access instructions.{% endif %}</p></div><a class="emp-btn" href="{% if editing %}{% url 'internal_ops:employee_detail' target_employee.employee_id %}{% else %}{% url 'internal_ops:employees' %}{% endif %}"><i class="bi bi-arrow-left"></i> Back</a></section>
+    {% if messages %}{% for message in messages %}<div class="emp-message">{{ message }}</div>{% endfor %}{% endif %}
+    <section class="emp-card">
+        <form method="post" class="emp-form">{% csrf_token %}
+            {% if form.non_field_errors %}<div class="emp-message">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="emp-form-grid">
+                <label class="emp-label">First name{{ form.first_name }}{{ form.first_name.errors }}</label>
+                <label class="emp-label">Last name{{ form.last_name }}{{ form.last_name.errors }}</label>
+                {% if not editing %}<label class="emp-label">Work email{{ form.email }}{{ form.email.errors }}<span class="emp-help">Existing LumisPixel accounts keep their current customer/photographer access.</span></label><label class="emp-label">Employee ID{{ form.employee_id }}{{ form.employee_id.errors }}<span class="emp-help">{{ form.employee_id.help_text }}</span></label>{% endif %}
+                <label class="emp-label">Job title{{ form.title }}{{ form.title.errors }}</label>
+                <label class="emp-label">Department{{ form.department }}{{ form.department.errors }}</label>
+                <label class="emp-label">Internal role{{ form.role }}{{ form.role.errors }}<span class="emp-help">Executive roles can only be assigned by a Superuser or Executive.</span></label>
+                <label class="emp-label">Manager{{ form.manager }}{{ form.manager.errors }}</label>
+                <label class="emp-label">Hire date{{ form.hire_date }}{{ form.hire_date.errors }}</label>
+                {% if editing %}<label class="emp-label">Access / employment status{{ form.status }}{{ form.status.errors }}</label>{% endif %}
+            </div>
+            {% if editing %}<label class="emp-label">Reason for change{{ form.reason }}{{ form.reason.errors }}<span class="emp-help">{{ form.reason.help_text }}</span></label>{% endif %}
+            <div class="emp-notice">{% if editing %}<strong>Audit protected.</strong> Department, role, manager, status, and identity changes are recorded with the acting employee and reason.{% else %}<strong>Account behavior.</strong> New email addresses receive a secure set-password invitation. Existing LumisPixel users are linked to the employee workspace without replacing their other roles.{% endif %}</div>
+            <div class="emp-actions"><button class="emp-btn is-primary" type="submit"><i class="bi bi-check2"></i> {% if editing %}Save employee changes{% else %}Add employee{% endif %}</button></div>
+        </form>
+    </section>
+</div>
+{% endblock %}

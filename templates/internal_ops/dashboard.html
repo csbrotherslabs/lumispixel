@@ -24,13 +24,13 @@
 <section class="li-command-grid">
     <div class="li-command-main">
         <section class="li-section">
-            <div class="li-section__heading"><div><span class="li-kicker">Operate</span><h2>Internal workspaces</h2></div><p>The Command Center is the entry point. Each module will become permission-aware as its workflows are implemented.</p></div>
+            <div class="li-section__heading"><div><span class="li-kicker">Operate</span><h2>Internal workspaces</h2></div><p>The Command Center is the entry point. Each module becomes permission-aware as its workflows are implemented.</p></div>
             <div class="li-module-grid">
                 {% for module in modules %}
                 <article class="li-module-card">
                     <div class="li-module-card__top"><div class="li-module-card__icon"><i class="bi {{ module.icon }}"></i></div><span>{{ module.group }}</span></div>
                     <div><h3>{{ module.name }}</h3><p>{{ module.description }}</p></div>
-                    <div class="li-module-card__footer"><span>Foundation ready</span><i class="bi bi-arrow-right"></i></div>
+                    <div class="li-module-card__footer">{% if module.url_name %}<a href="{% url module.url_name %}">Open module <i class="bi bi-arrow-right"></i></a>{% else %}<span>Coming soon</span><i class="bi bi-lock"></i>{% endif %}</div>
                 </article>
                 {% endfor %}
             </div>
@@ -49,7 +49,7 @@
 </section>
 
 <section class="li-section">
-    <div class="li-section__heading"><div><span class="li-kicker">Organization</span><h2>LumisPixel departments</h2></div><p>These operating groups will drive employee assignment, permissions, reporting, ticket routing, and ownership.</p></div>
+    <div class="li-section__heading"><div><span class="li-kicker">Organization</span><h2>LumisPixel departments</h2></div><p>These operating groups drive employee assignment, permissions, reporting, ticket routing, and ownership.</p></div>
     <div class="li-department-grid">
         {% for department in department_cards %}
         <article class="li-department-card"><div><span class="li-department-dot"></span><strong>{{ department.name }}</strong></div><p>{{ department.description }}</p><footer><span>{{ department.employee_count }} active employee{{ department.employee_count|pluralize }}</span><code>{{ department.code }}</code></footer></article>
