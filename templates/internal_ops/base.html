@@ -14,15 +14,12 @@
 <body class="li-body">
 <div class="li-shell">
     <aside class="li-sidebar">
-        <a class="li-brand" href="{% url 'internal_ops:dashboard' %}">
-            <img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel">
-            <span>Internal</span>
-        </a>
+        <a class="li-brand" href="{% url 'internal_ops:dashboard' %}"><img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel"><span>Internal</span></a>
         <div class="li-workspace-label"><small>Operations & Intelligence</small><strong>Internal Workspace</strong></div>
         <nav class="li-nav" aria-label="LumisPixel Internal navigation">
-            <a class="is-active" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
+            <a class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
             <span class="li-nav__section">Operations</span>
-            <a href="#"><i class="bi bi-people"></i><span>Customers</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'internal_ops:customers' %}"><i class="bi bi-people"></i><span>Customers</span></a>
             <a href="#"><i class="bi bi-ticket-perforated"></i><span>Tickets</span><em>Soon</em></a>
             <a href="#"><i class="bi bi-person-badge"></i><span>Employees</span><em>Soon</em></a>
             <span class="li-nav__section">Intelligence</span>
@@ -43,11 +40,7 @@
     <div class="li-main">
         <header class="li-topbar">
             <div><span class="li-kicker">LumisPixel Internal</span><strong>{% block page_title %}Command Center{% endblock %}</strong></div>
-            <div class="li-topbar__actions">
-                <div class="li-access-pill"><span></span>{% if is_internal_superuser %}Administrator{% else %}Employee access{% endif %}</div>
-                <a href="{% url 'notifications:index' %}" aria-label="Notifications"><i class="bi bi-bell"></i></a>
-                <span class="li-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
-            </div>
+            <div class="li-topbar__actions"><div class="li-access-pill"><span></span>{% if is_internal_superuser %}Administrator{% else %}Employee access{% endif %}</div><a href="{% url 'notifications:index' %}" aria-label="Notifications"><i class="bi bi-bell"></i></a><span class="li-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span></div>
         </header>
         <main class="li-content">{% block content %}{% endblock %}</main>
     </div>
