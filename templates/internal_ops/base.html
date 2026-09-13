@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>{% block title %}LumisPixel Internal{% endblock %}</title>
+    <link rel="icon" href="{% static 'img/lumis_favicon_v1.png' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/internal_ops.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="li-body">
+<div class="li-shell">
+    <aside class="li-sidebar">
+        <a class="li-brand" href="{% url 'internal_ops:dashboard' %}">
+            <img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel">
+            <span>Internal</span>
+        </a>
+        <nav class="li-nav" aria-label="LumisPixel Internal navigation">
+            <a class="is-active" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
+            <span class="li-nav__section">Operations</span>
+            <a href="#"><i class="bi bi-people"></i><span>Customers</span></a>
+            <a href="#"><i class="bi bi-ticket-perforated"></i><span>Tickets</span></a>
+            <a href="#"><i class="bi bi-person-badge"></i><span>Employees</span></a>
+            <span class="li-nav__section">Intelligence</span>
+            <a href="#"><i class="bi bi-stars"></i><span>AI Operations</span></a>
+            <a href="#"><i class="bi bi-credit-card"></i><span>Billing & Usage</span></a>
+            <a href="#"><i class="bi bi-graph-up-arrow"></i><span>Reports</span></a>
+            <span class="li-nav__section">Governance</span>
+            <a href="#"><i class="bi bi-shield-check"></i><span>Audit</span></a>
+            <a href="#"><i class="bi bi-activity"></i><span>System</span></a>
+        </nav>
+        <div class="li-sidebar__footer">
+            <span>{{ employee.employee_id }}</span>
+            <strong>{{ request.user.display_name }}</strong>
+            <small>{{ employee.title|default:"LumisPixel employee" }}</small>
+            <a href="{% url 'core:index' %}"><i class="bi bi-arrow-left"></i> Back to LumisPixel</a>
+        </div>
+    </aside>
+    <div class="li-main">
+        <header class="li-topbar">
+            <div><span class="li-kicker">LumisPixel Internal</span><strong>{% block page_title %}Command Center{% endblock %}</strong></div>
+            <div class="li-topbar__actions">
+                <a href="{% url 'notifications:index' %}" aria-label="Notifications"><i class="bi bi-bell"></i></a>
+                <span class="li-avatar">{{ request.user.first_name|default:request.user.email|slice:":1"|upper }}</span>
+            </div>
+        </header>
+        <main class="li-content">{% block content %}{% endblock %}</main>
+    </div>
+</div>
+</body>
+</html>
