@@ -27,7 +27,8 @@
             <a href="#"><i class="bi bi-credit-card"></i><span>Billing & Usage</span><em>Soon</em></a>
             <a href="#"><i class="bi bi-graph-up-arrow"></i><span>Reports</span><em>Soon</em></a>
             <span class="li-nav__section">Governance</span>
-            <a href="#"><i class="bi bi-shield-check"></i><span>Audit</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'approvals' or request.resolver_match.url_name == 'approval_create' or request.resolver_match.url_name == 'approval_detail' %}is-active{% endif %}" href="{% url 'internal_ops:approvals' %}"><i class="bi bi-check2-square"></i><span>Approvals</span></a>
+            <a class="{% if request.resolver_match.url_name == 'audit' or request.resolver_match.url_name == 'audit_detail' or request.resolver_match.url_name == 'audit_export' %}is-active{% endif %}" href="{% url 'internal_ops:audit' %}"><i class="bi bi-shield-check"></i><span>Audit</span></a>
             <a class="{% if request.resolver_match.url_name == 'system' or request.resolver_match.url_name == 'system_alert_action' %}is-active{% endif %}" href="{% url 'internal_ops:system' %}"><i class="bi bi-activity"></i><span>System</span></a>
         </nav>
         <div class="li-sidebar__footer">
