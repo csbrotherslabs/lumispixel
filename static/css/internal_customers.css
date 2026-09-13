@@ -1,0 +1,44 @@
+.li-page-head--hero{padding:32px 34px;border:0;border-radius:22px;background:radial-gradient(circle at 86% 18%,rgba(215,25,63,.28),transparent 30%),linear-gradient(135deg,#1b202b,#0e1118);color:#fff;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;box-shadow:0 18px 45px rgba(17,21,29,.12)}
+.li-page-head--hero h1{margin:10px 0 9px;color:#fff;font-size:clamp(32px,4vw,46px);letter-spacing:-.04em}
+.li-page-head--hero p{max-width:720px;margin:0;color:rgba(255,255,255,.72);font-size:14px;line-height:1.65}
+.li-page-head__aside{min-width:230px;padding:16px 18px;border:1px solid rgba(255,255,255,.12);border-radius:15px;background:rgba(255,255,255,.055);display:grid;gap:4px}
+.li-page-head__label{color:rgba(255,255,255,.48);font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.li-page-head__aside strong{color:#fff;font-size:13px}
+.li-page-head__aside small{color:rgba(255,255,255,.58);font-size:11px;line-height:1.45}
+
+.li-customer-stats{margin-top:18px;gap:14px}
+.li-customer-stats article{min-height:104px;padding:18px 19px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(20,24,33,.035)}
+.li-customer-stats article>div:last-child{display:grid;gap:3px;min-width:0}
+.li-customer-stat-icon{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:#f3f4f6;display:grid;place-items:center;color:var(--li-red);font-size:17px}
+.li-customer-stats span{color:var(--li-muted);font-size:11px;font-weight:650}
+.li-customer-stats strong{color:var(--li-ink);font-size:25px;letter-spacing:-.03em}
+.li-customer-stats small{color:var(--li-muted);font-size:10px;line-height:1.4}
+
+.li-customer-panel{margin-top:22px;border-color:#dde0e5;box-shadow:0 10px 30px rgba(20,24,33,.035)}
+.li-customer-filters{display:grid;grid-template-columns:minmax(280px,1fr) minmax(155px,190px) minmax(155px,190px) auto auto;gap:10px;align-items:center;padding:16px 17px;background:#fbfbfc}
+.li-customer-filters .li-search{min-width:0;width:100%;height:42px;background:#fff}
+.li-search input{font-size:12px;color:var(--li-ink)}
+.li-search input::placeholder{color:#9298a2}
+.li-customer-filters select{width:100%;height:42px;padding:0 11px;font-size:11px;color:var(--li-ink);background:#fff}
+.li-customer-filters button{height:42px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;font-size:11px}
+.li-filter-clear{display:inline-flex;align-items:center;justify-content:center;min-width:38px;color:var(--li-muted);font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap}
+.li-filter-clear:hover{color:var(--li-red)}
+.li-filter-clear--placeholder{visibility:hidden;pointer-events:none}
+
+.li-customer-table th{padding:12px 15px;font-size:9px;color:#777e89}
+.li-customer-table td{padding:14px 15px;font-size:11px;color:var(--li-ink)}
+.li-customer-id strong{font-size:12px;color:var(--li-ink)}
+.li-customer-id small{font-size:9.5px;color:var(--li-muted)}
+.li-type-tags span,.li-account-status{font-size:9px}
+.li-row-action{font-size:10px}
+.li-empty{font-size:12px}
+
+@media(max-width:1100px){
+  .li-customer-filters{grid-template-columns:minmax(240px,1fr) minmax(145px,175px) minmax(145px,175px) auto}.li-filter-clear{grid-column:1/-1;justify-self:end}.li-filter-clear--placeholder{display:none}
+}
+@media(max-width:820px){
+  .li-page-head--hero{align-items:flex-start;flex-direction:column;padding:26px}.li-page-head__aside{width:100%;min-width:0;box-sizing:border-box}.li-customer-stats{grid-template-columns:1fr}.li-customer-filters{grid-template-columns:1fr 1fr}.li-customer-filters .li-search{grid-column:1/-1}.li-customer-filters button{grid-column:1/-1}.li-filter-clear{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:560px){
+  .li-page-head--hero{padding:22px 20px;border-radius:18px}.li-page-head--hero h1{font-size:30px}.li-page-head--hero p{font-size:13px}.li-customer-filters{grid-template-columns:1fr;padding:13px}.li-customer-filters .li-search,.li-customer-filters button,.li-filter-clear{grid-column:1}.li-customer-filters select{width:100%}.li-customer-stats article{min-height:92px}
+}
