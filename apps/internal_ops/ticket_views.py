@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,6 +12,11 @@ from .models import Department, EmployeeProfile, InternalAuditEvent, SupportTick
 
 def _actor(request):
     return getattr(request, "employee_profile", None)
+
+
+def _valid_choice(value, choices, fallback):
+    allowed = {item[0] for item in choices}
+    return value if value in allowed else fallback
 
 
 @internal_employee_required
@@ -58,15 +65,15 @@ def ticket_detail(request, reference):
         action = request.POST.get("action")
         if action == "update":
             old = {"status": ticket.status, "priority": ticket.priority, "assignee_id": ticket.assignee_id, "queue_id": ticket.queue_id}
-            ticket.status = request.POST.get("status", ticket.status)
-            ticket.priority = request.POST.get("priority", ticket.priority)
+            ticket.status = _valid_choice(request.POST.get("status"), SupportTicket.Status.choices, ticket.status)
+            ticket.priority = _valid_choice(request.POST.get("priority"), SupportTicket.Priority.choices, ticket.priority)
             assignee_id = request.POST.get("assignee") or None
             queue_id = request.POST.get("queue") or None
             ticket.assignee = EmployeeProfile.objects.filter(pk=assignee_id, status=EmployeeProfile.Status.ACTIVE).first() if assignee_id else None
             ticket.queue = Department.objects.filter(pk=queue_id, is_active=True).first() if queue_id else None
             due_at = request.POST.get("due_at", "").strip()
-            ticket.due_at = timezone.datetime.fromisoformat(due_at) if due_at else None
-            if timezone.is_naive(ticket.due_at) if ticket.due_at else False:
+            ticket.due_at = datetime.fromisoformat(due_at) if due_at else None
+            if ticket.due_at and timezone.is_naive(ticket.due_at):
                 ticket.due_at = timezone.make_aware(ticket.due_at)
             if ticket.status == SupportTicket.Status.RESOLVED and not ticket.resolved_at:
                 ticket.resolved_at = timezone.now()
