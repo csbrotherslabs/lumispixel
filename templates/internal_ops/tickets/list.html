@@ -2,24 +2,26 @@
 {% load static %}
 {% block title %}Tickets | LumisPixel Internal{% endblock %}
 {% block page_title %}Ticket Operations{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_tickets.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_tickets.css' %}"><link rel="stylesheet" href="{% static 'css/internal_operations_polish.css' %}">{% endblock %}
 {% block content %}
-<section class="li-page-head">
+<div class="opx-page">
+<section class="opx-hero">
     <div><span class="li-kicker">Support Operations</span><h1>Tickets</h1><p>Review incoming customer requests, prioritize work, assign ownership, and track resolution.</p></div>
+    <div class="opx-hero__aside"><span>Support workspace</span><strong>Queue & resolution operations</strong><small>Use filters to focus the active queue and ownership workload.</small></div>
 </section>
-<section class="li-ticket-stats">
-    <article><span>Open</span><strong>{{ open_count }}</strong></article>
-    <article><span>In progress</span><strong>{{ progress_count }}</strong></article>
-    <article><span>Waiting on customer</span><strong>{{ waiting_count }}</strong></article>
-    <article><span>Urgent</span><strong>{{ urgent_count }}</strong></article>
+<section class="opx-stats">
+    <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-inbox"></i></div><div><span>Open</span><strong>{{ open_count }}</strong><small>Tickets awaiting work</small></div></article>
+    <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-arrow-repeat"></i></div><div><span>In progress</span><strong>{{ progress_count }}</strong><small>Currently being handled</small></div></article>
+    <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-hourglass-split"></i></div><div><span>Waiting on customer</span><strong>{{ waiting_count }}</strong><small>Pending customer response</small></div></article>
+    <article class="opx-stat"><div class="opx-stat__icon"><i class="bi bi-exclamation-triangle"></i></div><div><span>Urgent</span><strong>{{ urgent_count }}</strong><small>Highest-priority tickets</small></div></article>
 </section>
-<section class="li-customer-panel">
-    <form method="get" class="li-customer-filters">
+<section class="li-customer-panel opx-surface">
+    <form method="get" class="li-customer-filters opx-filterbar opx-filterbar--tickets">
         <label class="li-search"><i class="bi bi-search"></i><input type="search" name="q" value="{{ query }}" placeholder="Search reference, subject, customer"></label>
         <select name="status"><option value="all">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
         <select name="priority"><option value="all">All priorities</option>{% for value,label in priority_choices %}<option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
         {% if employee %}<label class="li-checkbox"><input type="checkbox" name="mine" value="1" {% if mine %}checked{% endif %}> My tickets</label>{% endif %}
-        <button type="submit">Apply filters</button>
+        <button type="submit"><i class="bi bi-funnel"></i> Apply filters</button>
     </form>
     <div class="li-customer-table-wrap">
         <table class="li-customer-table">
@@ -36,4 +38,5 @@
         </table>
     </div>
 </section>
+</div>
 {% endblock %}
