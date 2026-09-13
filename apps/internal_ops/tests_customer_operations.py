@@ -57,7 +57,7 @@ class InternalCustomerOperationsTests(TestCase):
         self.client.force_login(self.staff_user)
         response = self.client.get(reverse("internal_ops:customers"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Customer &amp; Account Operations")
+        self.assertContains(response, "Customer & Account Operations")
         self.assertContains(response, "jordan@example.com")
         self.assertContains(response, "North Light Studio")
 
