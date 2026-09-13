@@ -1,0 +1,55 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}Customers | LumisPixel Internal{% endblock %}
+{% block page_title %}Customer Operations{% endblock %}
+{% block content %}
+<section class="li-page-head">
+    <div><span class="li-kicker">Customer & Account Operations</span><h1>Customers</h1><p>Search LumisPixel accounts and review customer status, account type, plan, and workspace context.</p></div>
+    <div class="li-readonly-badge"><i class="bi bi-eye"></i> Read-only operations</div>
+</section>
+
+<section class="li-customer-stats">
+    <article><span>Total customer accounts</span><strong>{{ customer_count }}</strong></article>
+    <article><span>Photographer accounts</span><strong>{{ photographer_count }}</strong></article>
+    <article><span>Client accounts</span><strong>{{ client_count }}</strong></article>
+</section>
+
+<section class="li-customer-panel">
+    <form method="get" class="li-customer-filters">
+        <label class="li-search"><i class="bi bi-search"></i><input type="search" name="q" value="{{ query }}" placeholder="Search name, email, or business"></label>
+        <select name="type" aria-label="Account type">
+            <option value="all" {% if account_type == 'all' %}selected{% endif %}>All account types</option>
+            <option value="photographer" {% if account_type == 'photographer' %}selected{% endif %}>Photographers</option>
+            <option value="client" {% if account_type == 'client' %}selected{% endif %}>Clients</option>
+        </select>
+        <select name="status" aria-label="Account status">
+            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All statuses</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+            <option value="restricted" {% if status_filter == 'restricted' %}selected{% endif %}>Restricted</option>
+            <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+            <option value="deactivated" {% if status_filter == 'deactivated' %}selected{% endif %}>Deactivated</option>
+        </select>
+        <button type="submit">Apply filters</button>
+        {% if query or account_type != 'all' or status_filter != 'all' %}<a href="{% url 'internal_ops:customers' %}">Clear</a>{% endif %}
+    </form>
+
+    <div class="li-customer-table-wrap">
+        <table class="li-customer-table">
+            <thead><tr><th>Customer</th><th>Account type</th><th>Status</th><th>Plan</th><th>Joined</th><th></th></tr></thead>
+            <tbody>
+            {% for row in customer_rows %}
+                <tr>
+                    <td><div class="li-customer-id"><span>{{ row.user.first_name|default:row.user.email|slice:":1"|upper }}</span><div><strong>{{ row.user.display_name }}</strong><small>{{ row.user.email }}{% if row.photographer.business_name %} · {{ row.photographer.business_name }}{% endif %}</small></div></div></td>
+                    <td><div class="li-type-tags">{% if row.photographer %}<span>Photographer</span>{% endif %}{% if row.client %}<span>Client</span>{% endif %}</div></td>
+                    <td><span class="li-account-status is-{{ row.user.account_status }}">{{ row.user.get_account_status_display }}</span></td>
+                    <td>{% if row.subscription %}<strong>{{ row.subscription.plan.name }}</strong>{% else %}<span class="li-muted">—</span>{% endif %}</td>
+                    <td>{{ row.user.date_joined|date:"M j, Y" }}</td>
+                    <td><a class="li-row-action" href="{% url 'internal_ops:customer_detail' row.user.pk %}">Open account <i class="bi bi-arrow-right"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6"><div class="li-empty">No customer accounts match these filters.</div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
