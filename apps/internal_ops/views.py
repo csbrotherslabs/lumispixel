@@ -7,7 +7,8 @@ from .models import Department, EmployeeProfile, InternalAuditEvent
 @internal_employee_required
 def dashboard(request):
     profile = request.employee_profile
-    profile.record_access()
+    if profile is not None:
+        profile.record_access()
 
     InternalAuditEvent.objects.create(
         actor=profile,
@@ -15,10 +16,16 @@ def dashboard(request):
         action="internal.dashboard.view",
         target_type="internal_workspace",
         summary="Opened LumisPixel Internal",
+        metadata={
+            "user_id": str(request.user.pk),
+            "user_email": request.user.email,
+            "superuser": request.user.is_superuser,
+        },
     )
 
     context = {
         "employee": profile,
+        "is_internal_superuser": request.user.is_superuser,
         "employee_count": EmployeeProfile.objects.filter(status=EmployeeProfile.Status.ACTIVE).count(),
         "department_count": Department.objects.filter(is_active=True).count(),
         "recent_activity": InternalAuditEvent.objects.select_related("actor__user")[:8],
