@@ -4,6 +4,9 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 
+from apps.notifications.models import Notification
+from apps.notifications.services import notify_user
+
 from .models import EmployeeProfile
 
 
@@ -22,10 +25,9 @@ def _internal_ticket_url(ticket):
     return f"{_base_url()}/internal/tickets/{ticket.reference}/"
 
 
-def _support_recipients(ticket):
+def _support_profiles(ticket):
     if ticket.assignee and ticket.assignee.status == EmployeeProfile.Status.ACTIVE:
-        email = ticket.assignee.user.email
-        return [email] if email else []
+        return [ticket.assignee]
     if not ticket.queue_id:
         return []
     return list(
@@ -33,11 +35,26 @@ def _support_recipients(ticket):
             status=EmployeeProfile.Status.ACTIVE,
             department_id=ticket.queue_id,
             user__is_active=True,
-        )
-        .exclude(user__email="")
-        .values_list("user__email", flat=True)
-        .distinct()
+        ).select_related("user").distinct()
     )
+
+
+def _support_recipients(ticket):
+    return [profile.user.email for profile in _support_profiles(ticket) if profile.user.email]
+
+
+def _notify_internal(ticket, *, title, message, profiles=None):
+    profiles = profiles if profiles is not None else _support_profiles(ticket)
+    for profile in profiles:
+        notify_user(
+            recipient=profile.user,
+            category=Notification.Category.MESSAGE,
+            title=title,
+            message=message,
+            action_url=f"/internal/tickets/{ticket.reference}/",
+            action_label="Open ticket",
+            metadata={"support_ticket_reference": ticket.reference, "internal_support": True},
+        )
 
 
 def _send(subject, plain_body, html_body, recipients):
@@ -107,6 +124,7 @@ def notify_ticket_created(ticket):
         [ticket.requester.email],
     )
 
+    support_profiles = _support_profiles(ticket)
     support_subject = f"New support ticket {ticket.reference}: {ticket.subject}"
     support_plain = (
         f"New ticket from {ticket.requester.display_name} ({ticket.requester.email}).\n"
@@ -124,11 +142,18 @@ def notify_ticket_created(ticket):
             _internal_ticket_url(ticket),
             ticket.description,
         ),
-        _support_recipients(ticket),
+        [profile.user.email for profile in support_profiles if profile.user.email],
+    )
+    _notify_internal(
+        ticket,
+        title=f"New support ticket {ticket.reference}",
+        message=f"{ticket.requester.display_name} submitted: {ticket.subject}",
+        profiles=support_profiles,
     )
 
 
 def notify_customer_reply(ticket, comment):
+    support_profiles = _support_profiles(ticket)
     subject = f"Customer replied to {ticket.reference}: {ticket.subject}"
     plain = (
         f"{ticket.requester.display_name} replied to ticket {ticket.reference}.\n\n"
@@ -145,7 +170,13 @@ def notify_customer_reply(ticket, comment):
             _internal_ticket_url(ticket),
             comment.body,
         ),
-        _support_recipients(ticket),
+        [profile.user.email for profile in support_profiles if profile.user.email],
+    )
+    _notify_internal(
+        ticket,
+        title=f"Customer replied to {ticket.reference}",
+        message=f"{ticket.requester.display_name} added a new reply to {ticket.subject}.",
+        profiles=support_profiles,
     )
 
 
@@ -208,4 +239,10 @@ def notify_ticket_assigned(ticket, old_assignee_id):
             _internal_ticket_url(ticket),
         ),
         [ticket.assignee.user.email],
+    )
+    _notify_internal(
+        ticket,
+        title=f"Ticket {ticket.reference} assigned to you",
+        message=ticket.subject,
+        profiles=[ticket.assignee],
     )
