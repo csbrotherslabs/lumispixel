@@ -7,46 +7,25 @@
     <div class="li-account-identity"><span class="li-account-avatar">{{ customer.first_name|default:customer.email|slice:":1"|upper }}</span><div><span class="li-kicker">Customer account</span><h1>{{ customer.display_name }}</h1><p>{{ customer.email }}</p><div class="li-type-tags">{% for account_type in account_types %}<span>{{ account_type }}</span>{% endfor %}</div></div></div>
     <div class="li-account-hero__meta"><span class="li-account-status is-{{ customer.account_status }}">{{ customer.get_account_status_display }}</span><small>Joined {{ customer.date_joined|date:"M j, Y" }}</small></div>
 </section>
-
 <section class="li-account-grid">
     <div class="li-account-main">
         <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Account</span><h2>Account overview</h2></div><span class="li-readonly-badge"><i class="bi bi-eye"></i> Read only</span></div>
-            <div class="li-info-grid">
-                <article><span>Email verification</span><strong>{% if customer.email_verified %}Verified{% else %}Not verified{% endif %}</strong></article>
-                <article><span>Primary role</span><strong>{{ customer.get_primary_role_display }}</strong></article>
-                <article><span>Last workspace</span><strong>{{ customer.get_last_active_workspace_display }}</strong></article>
-                <article><span>Login eligibility</span><strong>{% if customer.can_login %}Allowed{% else %}Blocked{% endif %}</strong></article>
-            </div>
+            <div class="li-info-grid"><article><span>Email verification</span><strong>{% if customer.email_verified %}Verified{% else %}Not verified{% endif %}</strong></article><article><span>Primary role</span><strong>{{ customer.get_primary_role_display }}</strong></article><article><span>Last workspace</span><strong>{{ customer.get_last_active_workspace_display }}</strong></article><article><span>Login eligibility</span><strong>{% if customer.can_login %}Allowed{% else %}Blocked{% endif %}</strong></article></div>
         </section>
-
         {% if photographer %}
         <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Photographer business</span><h2>{{ photographer.business_name|default:photographer.display_name|default:"Photographer workspace" }}</h2></div></div>
-            <div class="li-info-grid">
-                <article><span>Business type</span><strong>{{ photographer.get_business_type_display }}</strong></article>
-                <article><span>Verification</span><strong>{{ photographer.get_verification_status_display }}</strong></article>
-                <article><span>Public profile</span><strong>{% if photographer.public_profile_enabled %}Enabled{% else %}Disabled{% endif %}</strong></article>
-                <article><span>Location</span><strong>{{ photographer.city|default:"—" }}{% if photographer.state %}, {{ photographer.state }}{% endif %}</strong></article>
-            </div>
+            <div class="li-info-grid"><article><span>Business type</span><strong>{{ photographer.get_business_type_display }}</strong></article><article><span>Verification</span><strong>{{ photographer.get_verification_status_display }}</strong></article><article><span>Public profile</span><strong>{% if photographer.public_profile_enabled %}Enabled{% else %}Disabled{% endif %}</strong></article><article><span>Location</span><strong>{{ photographer.city|default:"—" }}{% if photographer.state %}, {{ photographer.state }}{% endif %}</strong></article></div>
         </section>
-
         <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Usage</span><h2>Workspace consumption</h2></div></div>
-            <div class="li-usage-grid">
-                <article><div class="li-stat-icon"><i class="bi bi-images"></i></div><span>Galleries</span><strong>{{ gallery_count }}</strong><small>Total galleries in this photographer workspace</small></article>
-                <article><div class="li-stat-icon"><i class="bi bi-device-ssd"></i></div><span>Storage used</span><strong>{{ storage_used }}</strong><small>Across photographer galleries</small></article>
-                <article><div class="li-stat-icon"><i class="bi bi-credit-card"></i></div><span>Plan</span><strong>{% if subscription %}{{ subscription.plan.name }}{% else %}Not provisioned{% endif %}</strong><small>{% if subscription %}{{ subscription.get_status_display }} subscription{% else %}No billing subscription found{% endif %}</small></article>
-                <article><div class="li-stat-icon"><i class="bi bi-stars"></i></div><span>AI actions</span><strong>{% if ai_summary %}{{ ai_summary.used }}{% else %}—{% endif %}</strong><small>{% if ai_summary %}{% if ai_summary.remaining != None %}{{ ai_summary.remaining }} included remaining{% else %}Custom/unlimited allowance{% endif %}{% else %}No AI usage summary{% endif %}</small></article>
-            </div>
+            <div class="li-usage-grid"><article><div class="li-stat-icon"><i class="bi bi-images"></i></div><span>Galleries</span><strong>{{ gallery_count }}</strong><small>Total galleries in this photographer workspace</small></article><article><div class="li-stat-icon"><i class="bi bi-device-ssd"></i></div><span>Storage used</span><strong>{{ storage_used }}</strong><small>Across photographer galleries</small></article><article><div class="li-stat-icon"><i class="bi bi-credit-card"></i></div><span>Plan</span><strong>{% if subscription %}{{ subscription.plan.name }}{% else %}Not provisioned{% endif %}</strong><small>{% if subscription %}{{ subscription.get_status_display }} subscription{% else %}No billing subscription found{% endif %}</small></article><article><div class="li-stat-icon"><i class="bi bi-stars"></i></div><span>AI actions</span><strong>{% if ai_summary %}{{ ai_summary.used }}{% else %}—{% endif %}</strong><small>{% if ai_summary %}{% if ai_summary.remaining != None %}{{ ai_summary.remaining }} included remaining{% else %}Custom/unlimited allowance{% endif %}{% else %}No AI usage summary{% endif %}</small></article></div>
             {% if ai_summary %}<div class="li-ai-breakdown"><div><span>Included allowance</span><strong>{% if ai_summary.allowance != None %}{{ ai_summary.allowance }}{% else %}Custom / unlimited{% endif %}</strong></div><div><span>Pending</span><strong>{{ ai_summary.reserved }}</strong></div><div><span>Extra credits available</span><strong>{{ ai_summary.purchased }}</strong></div><div><span>Period ends</span><strong>{{ ai_summary.period_end|date:"M j, Y" }}</strong></div></div>{% endif %}
         </section>
         {% endif %}
-
-        {% if client_profile %}
-        <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Client profile</span><h2>Client information</h2></div></div>
-            <div class="li-info-grid"><article><span>Display name</span><strong>{{ client_profile.display_name|default:"—" }}</strong></article><article><span>Location</span><strong>{{ client_profile.city|default:"—" }}{% if client_profile.state %}, {{ client_profile.state }}{% endif %}</strong></article><article><span>Onboarding</span><strong>{% if client_profile.onboarding_completed %}Complete{% else %}In progress{% endif %}</strong></article><article><span>Marketing emails</span><strong>{% if client_profile.marketing_emails %}Opted in{% else %}Not opted in{% endif %}</strong></article></div>
+        {% if client_profile %}<section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Client profile</span><h2>Client information</h2></div></div><div class="li-info-grid"><article><span>Display name</span><strong>{{ client_profile.display_name|default:"—" }}</strong></article><article><span>Location</span><strong>{{ client_profile.city|default:"—" }}{% if client_profile.state %}, {{ client_profile.state }}{% endif %}</strong></article><article><span>Onboarding</span><strong>{% if client_profile.onboarding_completed %}Complete{% else %}In progress{% endif %}</strong></article><article><span>Marketing emails</span><strong>{% if client_profile.marketing_emails %}Opted in{% else %}Not opted in{% endif %}</strong></article></div></section>{% endif %}
+        <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Support</span><h2>Support tickets</h2></div><span class="li-readonly-badge">{{ open_ticket_count }} open</span></div>
+            <div class="li-mini-activity">{% for ticket in support_tickets %}<article><a href="{% url 'internal_ops:ticket_detail' ticket.reference %}"><strong>{{ ticket.reference }} · {{ ticket.subject }}</strong></a><span>{{ ticket.get_status_display }} · {{ ticket.get_priority_display }} · {{ ticket.updated_at|date:"M j, g:i A" }}</span></article>{% empty %}<div class="li-empty">No support tickets for this account.</div>{% endfor %}</div>
         </section>
-        {% endif %}
     </div>
-
     <aside class="li-account-side">
         <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Operations</span><h2>Account actions</h2></div></div><div class="li-safe-actions"><button disabled><i class="bi bi-pencil"></i> Change plan <span>Later phase</span></button><button disabled><i class="bi bi-stars"></i> Grant AI credits <span>Later phase</span></button><button disabled><i class="bi bi-person-lock"></i> Restrict account <span>Later phase</span></button></div><p class="li-safety-note"><i class="bi bi-shield-lock"></i> Sensitive account mutations will require permissions, a reason, and audit logging before they are enabled.</p></section>
         <section class="li-detail-section"><div class="li-detail-heading"><div><span class="li-kicker">Audit</span><h2>Internal access history</h2></div></div><div class="li-mini-activity">{% for event in recent_customer_activity %}<article><strong>{{ event.summary }}</strong><span>{% if event.actor %}{{ event.actor.user.display_name }}{% else %}Administrator{% endif %} · {{ event.created_at|date:"M j, g:i A" }}</span></article>{% empty %}<div class="li-empty">No internal customer activity yet.</div>{% endfor %}</div></section>

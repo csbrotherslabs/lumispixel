@@ -3,10 +3,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.support_views import help_center
 from apps.dashboard.workspace_settings import workspace_settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("resources/help-center/", help_center, name="support_help_center"),
     path("", include("apps.core.urls")),
     path("", include("apps.accounts.urls")),
     path("photographer/", include("apps.photographers.urls")),

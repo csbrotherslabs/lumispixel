@@ -7,7 +7,7 @@ from apps.billing.models import Subscription
 from apps.galleries.models import Gallery
 
 from .decorators import internal_employee_required
-from .models import InternalAuditEvent
+from .models import InternalAuditEvent, SupportTicket
 
 
 User = get_user_model()
@@ -27,9 +27,7 @@ def _format_bytes(value):
 
 
 def _customer_queryset():
-    return User.objects.filter(
-        Q(client_profile__isnull=False) | Q(photographer_profile__isnull=False)
-    ).distinct().order_by("-date_joined")
+    return User.objects.filter(Q(client_profile__isnull=False) | Q(photographer_profile__isnull=False)).distinct().order_by("-date_joined")
 
 
 @internal_employee_required
@@ -37,17 +35,9 @@ def customer_list(request):
     query = request.GET.get("q", "").strip()
     account_type = request.GET.get("type", "all").strip().lower()
     status = request.GET.get("status", "all").strip().lower()
-
     customers = _customer_queryset()
     if query:
-        customers = customers.filter(
-            Q(email__icontains=query)
-            | Q(first_name__icontains=query)
-            | Q(last_name__icontains=query)
-            | Q(photographer_profile__business_name__icontains=query)
-            | Q(photographer_profile__display_name__icontains=query)
-            | Q(client_profile__display_name__icontains=query)
-        ).distinct()
+        customers = customers.filter(Q(email__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(photographer_profile__business_name__icontains=query) | Q(photographer_profile__display_name__icontains=query) | Q(client_profile__display_name__icontains=query)).distinct()
     if account_type == "photographer":
         customers = customers.filter(photographer_profile__isnull=False)
     elif account_type == "client":
@@ -58,15 +48,8 @@ def customer_list(request):
     customer_rows = []
     for customer in customers[:100]:
         photographer = getattr(customer, "photographer_profile", None)
-        subscription = None
-        if photographer:
-            subscription = Subscription.objects.select_related("plan").filter(photographer=photographer).first()
-        customer_rows.append({
-            "user": customer,
-            "photographer": photographer,
-            "client": getattr(customer, "client_profile", None),
-            "subscription": subscription,
-        })
+        subscription = Subscription.objects.select_related("plan").filter(photographer=photographer).first() if photographer else None
+        customer_rows.append({"user": customer, "photographer": photographer, "client": getattr(customer, "client_profile", None), "subscription": subscription})
 
     return render(request, "internal_ops/customers/list.html", {
         "customer_rows": customer_rows,
@@ -96,15 +79,7 @@ def customer_detail(request, user_id):
         storage_used = gallery_qs.aggregate(total=Sum("storage_used"))["total"] or 0
         if subscription:
             balance = get_usage_balance(photographer)
-            ai_summary = {
-                "used": balance.included_consumed,
-                "reserved": balance.included_reserved,
-                "remaining": balance.included_remaining,
-                "allowance": balance.included_allowance,
-                "purchased": balance.purchased_available,
-                "limit_type": balance.allowance_limit_type,
-                "period_end": balance.period_ends_at,
-            }
+            ai_summary = {"used": balance.included_consumed, "reserved": balance.included_reserved, "remaining": balance.included_remaining, "allowance": balance.included_allowance, "purchased": balance.purchased_available, "limit_type": balance.allowance_limit_type, "period_end": balance.period_ends_at}
 
     InternalAuditEvent.objects.create(
         actor=request.employee_profile,
@@ -131,7 +106,7 @@ def customer_detail(request, user_id):
         "gallery_count": gallery_count,
         "storage_used": _format_bytes(storage_used),
         "ai_summary": ai_summary,
-        "recent_customer_activity": InternalAuditEvent.objects.filter(
-            target_type="accounts.User", target_id=str(customer.pk)
-        ).select_related("actor__user")[:10],
+        "support_tickets": SupportTicket.objects.filter(requester=customer).select_related("assignee__user")[:8],
+        "open_ticket_count": SupportTicket.objects.filter(requester=customer).exclude(status__in=[SupportTicket.Status.RESOLVED, SupportTicket.Status.CLOSED]).count(),
+        "recent_customer_activity": InternalAuditEvent.objects.filter(target_type="accounts.User", target_id=str(customer.pk)).select_related("actor__user")[:10],
     })

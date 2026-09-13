@@ -20,7 +20,7 @@
             <a class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-grid-1x2"></i><span>Command Center</span></a>
             <span class="li-nav__section">Operations</span>
             <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'internal_ops:customers' %}"><i class="bi bi-people"></i><span>Customers</span></a>
-            <a href="#"><i class="bi bi-ticket-perforated"></i><span>Tickets</span><em>Soon</em></a>
+            <a class="{% if request.resolver_match.url_name == 'tickets' or request.resolver_match.url_name == 'ticket_detail' %}is-active{% endif %}" href="{% url 'internal_ops:tickets' %}"><i class="bi bi-ticket-perforated"></i><span>Tickets</span></a>
             <a href="#"><i class="bi bi-person-badge"></i><span>Employees</span><em>Soon</em></a>
             <span class="li-nav__section">Intelligence</span>
             <a href="#"><i class="bi bi-stars"></i><span>AI Operations</span><em>Soon</em></a>
