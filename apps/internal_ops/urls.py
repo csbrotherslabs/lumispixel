@@ -2,7 +2,7 @@ from django.urls import path
 
 from . import views
 from .customer_views import customer_detail, customer_list
-from .employee_views import employee_create, employee_detail, employee_edit, employee_list
+from .employee_views import employee_create, employee_detail, employee_edit, employee_list, employee_resend_invitation
 from .governance_views import approval_create, approval_detail, approval_list, audit_event_detail, audit_export_csv, audit_trail
 from .resource_views import ai_operations, approved_operation, billing_operations, request_ai_credit_grant, request_plan_override, storage_operations
 from .system_views import system_alert_action, system_monitor
@@ -20,6 +20,7 @@ urlpatterns = [
     path("employees/add/", employee_create, name="employee_create"),
     path("employees/<str:employee_id>/", employee_detail, name="employee_detail"),
     path("employees/<str:employee_id>/edit/", employee_edit, name="employee_edit"),
+    path("employees/<str:employee_id>/resend-invitation/", employee_resend_invitation, name="employee_resend_invitation"),
     path("ai-operations/", ai_operations, name="ai_operations"),
     path("ai-operations/request-credit-grant/", request_ai_credit_grant, name="request_ai_credit_grant"),
     path("storage-operations/", storage_operations, name="storage_operations"),
