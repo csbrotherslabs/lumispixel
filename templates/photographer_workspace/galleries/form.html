@@ -18,10 +18,11 @@
   <div class="workspace-form-layout">
     <div class="workspace-form-main">
       <section class="form-section-card" aria-labelledby="gallery-details-title">
-        <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-details-title">Gallery Details</h2><p>Name the collection and connect it to your client.</p></div></header>
+        <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-details-title">Gallery Details</h2><p>Name the collection and connect it to your client and booking.</p></div></header>
         <div class="form-grid">
           {% include "photographer_workspace/components/form_field.html" with field=form.name %}
           {% include "photographer_workspace/components/form_field.html" with field=form.client %}
+          {% include "photographer_workspace/components/form_field.html" with field=form.booking %}
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
           {% include "photographer_workspace/components/form_field.html" with field=form.description wide=True %}
         </div>
@@ -74,10 +75,11 @@
   <div class="workspace-form-layout">
     <div class="workspace-form-main">
       <section class="form-section-card" aria-labelledby="gallery-edit-details-title">
-        <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-edit-details-title">Gallery Details</h2><p>Name the collection and connect it to your client.</p></div></header>
+        <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-edit-details-title">Gallery Details</h2><p>Name the collection and connect it to your client and booking.</p></div></header>
         <div class="form-grid">
           {% include "photographer_workspace/components/form_field.html" with field=form.name %}
           {% include "photographer_workspace/components/form_field.html" with field=form.client %}
+          {% include "photographer_workspace/components/form_field.html" with field=form.booking %}
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
           {% include "photographer_workspace/components/form_field.html" with field=form.description wide=True %}
         </div>
