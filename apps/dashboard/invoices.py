@@ -2,14 +2,22 @@
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceActivity, InvoiceLineItem, InvoicePaymentSchedule
 
 CENT = Decimal("0.01")
 ZERO = Decimal("0.00")
+
+
+class InvoiceDeliveryError(Exception):
+    """The invoice email could not be accepted by the configured email backend."""
 
 
 def money(value, field):
@@ -64,6 +72,79 @@ def calculate_items(post):
     return rows
 
 
+def _invoice_recipient(invoice):
+    recipient = (invoice.client.email or "").strip()
+    if not recipient:
+        raise ValidationError({"client": "An email address is required to send this invoice."})
+    try:
+        validate_email(recipient)
+    except ValidationError as exc:
+        raise ValidationError({"client": "Enter a valid client email address before sending this invoice."}) from exc
+    return recipient
+
+
+def _studio_name(invoice):
+    profile = invoice.photographer
+    user = profile.user
+    return profile.business_name or profile.display_name or user.full_name or user.email
+
+
+def deliver_invoice_email(invoice):
+    """Deliver one invoice email without mutating invoice lifecycle state."""
+    recipient = _invoice_recipient(invoice)
+    studio_name = _studio_name(invoice)
+    context = {"invoice": invoice, "studio_name": studio_name}
+    invoice_html = render_to_string("photographer_workspace/invoices/print.html", context)
+    message = EmailMultiAlternatives(
+        f"Invoice {invoice.invoice_number} from {studio_name}",
+        render_to_string("photographer_workspace/invoices/email/invoice.txt", context),
+        settings.DEFAULT_FROM_EMAIL,
+        [recipient],
+    )
+    message.attach_alternative(
+        render_to_string("photographer_workspace/invoices/email/invoice.html", context),
+        "text/html",
+    )
+    message.attach(f"{invoice.invoice_number}.html", invoice_html, "text/html")
+    try:
+        delivered = message.send(fail_silently=False)
+    except Exception as exc:
+        raise InvoiceDeliveryError("Invoice email delivery failed.") from exc
+    if delivered != 1:
+        raise InvoiceDeliveryError("Invoice email delivery failed.")
+
+
+def _mark_invoice_delivered(invoice, action):
+    if invoice.status == ClientInvoice.Status.DRAFT:
+        invoice.status = ClientInvoice.Status.SENT
+    invoice.sent_at = timezone.now()
+    invoice.save(update_fields=["status", "sent_at"])
+    InvoiceActivity.objects.create(
+        photographer=invoice.photographer,
+        invoice=invoice,
+        action=action,
+        description="Invoice emailed to client.",
+    )
+
+
+@transaction.atomic
+def send_existing_invoice(profile, invoice, action="send"):
+    """Deliver an existing invoice, then record state only after successful delivery."""
+    invoice = ClientInvoice.objects.select_for_update().select_related(
+        "client", "photographer", "photographer__user"
+    ).prefetch_related("line_items", "payment_schedule").get(pk=invoice.pk, photographer=profile)
+    if action not in {"send", "resend"}:
+        raise ValidationError("Choose a valid invoice delivery action.")
+    if invoice.status not in {
+        ClientInvoice.Status.DRAFT, ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID
+    }:
+        raise ValidationError("This invoice cannot be sent in its current state.")
+    _invoice_recipient(invoice)
+    deliver_invoice_email(invoice)
+    _mark_invoice_delivered(invoice, action)
+    return invoice
+
+
 @transaction.atomic
 def save_invoice(profile, post, invoice=None, send=False):
     if invoice and invoice.is_locked:
@@ -103,9 +184,7 @@ def save_invoice(profile, post, invoice=None, send=False):
     invoice.client_notes, invoice.internal_notes, invoice.terms = post.get("client_notes", ""), post.get("internal_notes", ""), post.get("terms", "")
     invoice.delivery_email, invoice.reminders_enabled = post.get("delivery_email") == "on", post.get("reminders_enabled") == "on"
     if send:
-        if not client.email:
-            raise ValidationError({"client": "An email address is required to send this invoice."})
-        invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
+        _invoice_recipient(invoice)
     invoice.full_clean()
     invoice.save()
     invoice.line_items.all().delete()
@@ -122,6 +201,11 @@ def save_invoice(profile, post, invoice=None, send=False):
         InvoicePaymentSchedule.objects.create(invoice=invoice, label=row["label"] or f"Payment {i + 1}", amount=amount, due_date=scheduled_date, position=i)
     if invoice.payment_schedule.exists() and sum((p.amount for p in invoice.payment_schedule.all()), ZERO) != total:
         raise ValidationError({"payment_schedule": "Scheduled payments must add up to the invoice total."})
-    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="sent" if send else "saved",
-                                   description="Invoice sent to client." if send else "Invoice saved as draft.")
+    if send:
+        deliver_invoice_email(invoice)
+        _mark_invoice_delivered(invoice, "sent")
+    else:
+        InvoiceActivity.objects.create(
+            photographer=profile, invoice=invoice, action="saved", description="Invoice saved as draft."
+        )
     return invoice
