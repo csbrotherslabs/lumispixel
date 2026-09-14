@@ -110,6 +110,14 @@ class GalleryBookingRelationshipTests(TestCase):
         self.assertNotIn(self.other_booking.pk, ids)
         self.assertNotIn(self.consultation.pk, ids)
 
+    def test_booking_options_include_client_metadata_for_ui_filtering(self):
+        form = GalleryForm(photographer=self.photographer)
+        html = str(form["booking"])
+        self.assertIn(f'value="{self.booking.pk}"', html)
+        self.assertIn(f'data-client-id="{self.client.pk}"', html)
+        self.assertIn(f'data-client-id="{self.second_client.pk}"', html)
+        self.assertIn('data-gallery-booking-select', html)
+
     def test_form_rejects_booking_for_different_selected_client(self):
         form = GalleryForm(
             data={
