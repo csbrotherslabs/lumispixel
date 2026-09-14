@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#181818;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f5;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:32px;">
+            <tr><td style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#777777;">LumisPixel</td></tr>
+            <tr><td style="padding-top:18px;font-size:26px;font-weight:700;">Invoice {{ invoice.invoice_number }}</td></tr>
+            <tr><td style="padding-top:12px;font-size:16px;line-height:1.6;">Hello {{ invoice.client.first_name|default:"there" }},</td></tr>
+            <tr><td style="padding-top:8px;font-size:16px;line-height:1.6;">{{ studio_name }} sent you an invoice.</td></tr>
+            <tr>
+              <td style="padding-top:24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fafafa;border-radius:12px;padding:20px;">
+                  <tr><td style="font-size:14px;color:#666666;">Amount due</td><td align="right" style="font-size:18px;font-weight:700;">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</td></tr>
+                  <tr><td style="padding-top:12px;font-size:14px;color:#666666;">Due date</td><td align="right" style="padding-top:12px;font-size:14px;font-weight:600;">{{ invoice.due_date|date:"F j, Y" }}</td></tr>
+                </table>
+              </td>
+            </tr>
+            {% if invoice.client_notes %}
+            <tr><td style="padding-top:24px;font-size:14px;font-weight:700;">Message from {{ studio_name }}</td></tr>
+            <tr><td style="padding-top:8px;font-size:15px;line-height:1.6;white-space:pre-line;">{{ invoice.client_notes }}</td></tr>
+            {% endif %}
+            <tr><td style="padding-top:28px;font-size:13px;line-height:1.6;color:#777777;">If you have questions about this invoice, please contact {{ studio_name }} directly.</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
