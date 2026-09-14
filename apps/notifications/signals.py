@@ -23,7 +23,7 @@ def notify_existing_client_about_gallery(sender, instance, created, **kwargs):
     notify_user(
         recipient=client_user,
         category=Notification.Category.GALLERY,
-        title=f"{instance.gallery.title} was shared with you",
+        title=f"{instance.gallery.name} was shared with you",
         message=f"{photographer_name} invited you to view a gallery.",
         action_url=reverse("clients:dashboard"),
         action_label="Open client dashboard",
