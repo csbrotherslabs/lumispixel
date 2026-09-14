@@ -48,7 +48,11 @@ class WorkflowAutomationTests(TestCase):
         self.assertEqual(len(rules), 7)
         self.assertEqual(AutomationRule.objects.filter(photographer=self.photographer).count(), 7)
         self.assertFalse(AutomationRule.objects.filter(photographer=self.photographer, enabled=True).exists())
-        self.assertTrue(AutomationRule.objects.filter(trigger=AutomationRule.Trigger.GALLERY_EXPIRING, config__days_before=7).exists())
+        expiration_rule = AutomationRule.objects.get(
+            photographer=self.photographer,
+            trigger=AutomationRule.Trigger.GALLERY_EXPIRING,
+        )
+        self.assertEqual(expiration_rule.config["days_before"], 7)
 
     def test_workflows_url_is_real_automation_module_not_placeholder(self):
         self.client.force_login(self.user)
