@@ -5,8 +5,8 @@ from apps.accounts.models import PhotographerProfile, User
 
 
 class PhotographerWorkspaceNotificationsNavigationTests(TestCase):
-    def test_workspace_topbar_links_to_real_notifications_inbox(self):
-        user = User.objects.create_user(
+    def setUp(self):
+        self.user = User.objects.create_user(
             email="photographer@example.com",
             password="TestPass123!",
             first_name="Amara",
@@ -17,12 +17,13 @@ class PhotographerWorkspaceNotificationsNavigationTests(TestCase):
             last_active_workspace=User.Workspace.PHOTOGRAPHER,
         )
         PhotographerProfile.objects.create(
-            user=user,
+            user=self.user,
             business_name="North & Pine",
             onboarding_completed=True,
         )
-        self.client.force_login(user)
+        self.client.force_login(self.user)
 
+    def test_workspace_topbar_links_to_real_notifications_inbox(self):
         response = self.client.get(reverse("photographer_workspace:dashboard"))
 
         self.assertEqual(response.status_code, 200)
@@ -30,3 +31,11 @@ class PhotographerWorkspaceNotificationsNavigationTests(TestCase):
         placeholder_url = reverse("photographer_workspace:notifications")
         self.assertContains(response, f'href="{notifications_url}"', count=2)
         self.assertNotContains(response, f'href="{placeholder_url}"')
+
+    def test_workspace_search_is_labeled_as_navigation_search(self):
+        response = self.client.get(reverse("photographer_workspace:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'placeholder="Search navigation..."')
+        self.assertContains(response, 'aria-label="Search workspace navigation"')
+        self.assertNotContains(response, 'placeholder="Search workspace..."')
