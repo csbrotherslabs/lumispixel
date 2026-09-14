@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.workflows.views import automation_dashboard
+
 from . import views
 from .billing_views import billing_account
 from .profile_views import photographer_profile
@@ -106,7 +108,7 @@ urlpatterns = [
     path("revenue/", views.module_placeholder, {"module_key": "revenue"}, name="revenue"),
     path("reviews/", views.module_placeholder, {"module_key": "reviews"}, name="reviews"),
     path("referrals/", views.module_placeholder, {"module_key": "referrals"}, name="referrals"),
-    path("workflows/", views.module_placeholder, {"module_key": "workflows"}, name="workflows"),
+    path("workflows/", automation_dashboard, name="workflows"),
     path("ai-assistant/", views.module_placeholder, {"module_key": "ai_assistant"}, name="ai_assistant"),
     path("team/", views.team_placeholder, {"page_key": "team_overview"}, name="team_overview"),
     path("team/members/", views.team_placeholder, {"page_key": "team_members"}, name="team_members"),
