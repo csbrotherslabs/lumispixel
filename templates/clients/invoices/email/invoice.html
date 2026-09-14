@@ -4,7 +4,7 @@
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f5;padding:32px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:32px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:16px;padding:32px;">
             <tr><td style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#777777;">LumisPixel</td></tr>
             <tr><td style="padding-top:18px;font-size:26px;font-weight:700;">Invoice {{ invoice.invoice_number }}</td></tr>
             <tr><td style="padding-top:12px;font-size:16px;line-height:1.6;">Hello {{ invoice.client.first_name|default:"there" }},</td></tr>
@@ -12,14 +12,41 @@
             <tr>
               <td style="padding-top:24px;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fafafa;border-radius:12px;padding:20px;">
-                  <tr><td style="font-size:14px;color:#666666;">Amount due</td><td align="right" style="font-size:18px;font-weight:700;">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</td></tr>
-                  <tr><td style="padding-top:12px;font-size:14px;color:#666666;">Due date</td><td align="right" style="padding-top:12px;font-size:14px;font-weight:600;">{{ invoice.due_date|date:"F j, Y" }}</td></tr>
+                  <tr><td style="font-size:14px;color:#666666;">Invoice date</td><td align="right" style="font-size:14px;font-weight:600;">{{ invoice.issue_date|date:"F j, Y" }}</td></tr>
+                  <tr><td style="padding-top:10px;font-size:14px;color:#666666;">Due date</td><td align="right" style="padding-top:10px;font-size:14px;font-weight:600;">{{ invoice.due_date|date:"F j, Y" }}</td></tr>
                 </table>
               </td>
             </tr>
+            <tr><td style="padding-top:26px;font-size:16px;font-weight:700;">Invoice details</td></tr>
+            <tr>
+              <td style="padding-top:10px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                  {% for item in invoice.line_items.all %}
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #eeeeee;font-size:14px;line-height:1.4;">{{ item.description }}<br><span style="color:#777777;">{{ item.quantity }} × {{ invoice.currency }} {{ item.unit_price|floatformat:2 }}</span></td>
+                    <td align="right" style="padding:10px 0;border-bottom:1px solid #eeeeee;font-size:14px;font-weight:600;">{{ invoice.currency }} {{ item.total|floatformat:2 }}</td>
+                  </tr>
+                  {% endfor %}
+                  <tr><td style="padding-top:14px;font-size:14px;color:#666666;">Subtotal</td><td align="right" style="padding-top:14px;font-size:14px;">{{ invoice.currency }} {{ invoice.subtotal|floatformat:2 }}</td></tr>
+                  {% if invoice.discount_total %}<tr><td style="padding-top:8px;font-size:14px;color:#666666;">Discounts</td><td align="right" style="padding-top:8px;font-size:14px;">-{{ invoice.currency }} {{ invoice.discount_total|floatformat:2 }}</td></tr>{% endif %}
+                  {% if invoice.tax_total %}<tr><td style="padding-top:8px;font-size:14px;color:#666666;">Tax</td><td align="right" style="padding-top:8px;font-size:14px;">{{ invoice.currency }} {{ invoice.tax_total|floatformat:2 }}</td></tr>{% endif %}
+                  <tr><td style="padding-top:14px;font-size:16px;font-weight:700;">Amount due</td><td align="right" style="padding-top:14px;font-size:18px;font-weight:700;">{{ invoice.currency }} {{ invoice.total|floatformat:2 }}</td></tr>
+                </table>
+              </td>
+            </tr>
+            {% if invoice.payment_schedule.all %}
+            <tr><td style="padding-top:26px;font-size:16px;font-weight:700;">Payment schedule</td></tr>
+            <tr><td style="padding-top:8px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+              {% for payment in invoice.payment_schedule.all %}<tr><td style="padding:6px 0;font-size:14px;">{{ payment.label }} — due {{ payment.due_date|date:"F j, Y" }}</td><td align="right" style="padding:6px 0;font-size:14px;font-weight:600;">{{ invoice.currency }} {{ payment.amount|floatformat:2 }}</td></tr>{% endfor %}
+            </table></td></tr>
+            {% endif %}
             {% if invoice.client_notes %}
             <tr><td style="padding-top:24px;font-size:14px;font-weight:700;">Message from {{ studio_name }}</td></tr>
             <tr><td style="padding-top:8px;font-size:15px;line-height:1.6;white-space:pre-line;">{{ invoice.client_notes }}</td></tr>
+            {% endif %}
+            {% if invoice.terms %}
+            <tr><td style="padding-top:24px;font-size:14px;font-weight:700;">Payment information / terms</td></tr>
+            <tr><td style="padding-top:8px;font-size:14px;line-height:1.6;white-space:pre-line;">{{ invoice.terms }}</td></tr>
             {% endif %}
             <tr><td style="padding-top:28px;font-size:13px;line-height:1.6;color:#777777;">If you have questions about this invoice, please contact {{ studio_name }} directly.</td></tr>
           </table>
