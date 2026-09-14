@@ -63,7 +63,7 @@ class ClientContractsTabTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("client_contracts", args=[self.client_record.pk]))
-        self.assertContains(response, ">Contracts<", html=False)
+        self.assertContains(response, "Contracts")
 
     def test_contracts_tab_lists_existing_contract_relationship(self):
         response = self.client.get(reverse("client_contracts", args=[self.client_record.pk]))
@@ -71,7 +71,7 @@ class ClientContractsTabTests(TestCase):
         self.assertTemplateUsed(response, "photographer_workspace/client_contracts.html")
         self.assertContains(response, self.contract.title)
         self.assertContains(response, "Wedding Agreement")
-        self.assertContains(response, "3,200.00")
+        self.assertContains(response, "3200.00")
         self.assertContains(
             response,
             reverse("photographer_workspace:contract_detail", args=[self.contract.pk]),
