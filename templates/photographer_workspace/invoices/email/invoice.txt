@@ -1,0 +1,14 @@
+Hi {{ invoice.client.first_name|default:"there" }},
+
+{{ studio_name }} sent you invoice {{ invoice.invoice_number }}.
+
+Total: {{ invoice.currency }} {{ invoice.total }}
+Due: {{ invoice.due_date }}
+
+Your invoice is attached to this email as an HTML document.
+{% if invoice.client_notes %}
+{{ invoice.client_notes }}
+{% endif %}
+
+Thank you,
+{{ studio_name }}
