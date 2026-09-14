@@ -10,8 +10,8 @@ from .models import AutomationExecution, AutomationRule
 from .services import dispatch_event, run_execution
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
-def execute_automation(self, execution_id):
+@shared_task
+def execute_automation(execution_id):
     execution = AutomationExecution.objects.select_related("rule", "photographer").get(pk=execution_id)
     if execution.status in {
         AutomationExecution.Status.SUCCEEDED,
@@ -78,9 +78,10 @@ def scan_scheduled_automations():
         end = start + timedelta(days=1)
         galleries = Gallery.objects.filter(
             photographer=rule.photographer,
+            status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED],
             expires_at__gte=start,
             expires_at__lt=end,
-        ).exclude(status=Gallery.Status.DRAFT)
+        )
         for gallery in galleries:
             dispatch_event(
                 trigger=AutomationRule.Trigger.GALLERY_EXPIRING,
