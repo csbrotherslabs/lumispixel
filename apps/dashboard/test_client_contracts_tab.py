@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientSession, Contract, ContractTemplate
@@ -69,7 +70,7 @@ class ClientContractsTabTests(TestCase):
         response = self.client.get(reverse("client_contracts", args=[self.client_record.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "photographer_workspace/client_contracts.html")
-        self.assertContains(response, self.contract.title)
+        self.assertContains(response, escape(self.contract.title))
         self.assertContains(response, "Wedding Agreement")
         self.assertContains(response, "3200.00")
         self.assertContains(
