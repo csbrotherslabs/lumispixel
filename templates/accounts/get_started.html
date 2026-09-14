@@ -5,33 +5,60 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/get_started_polish.css' %}">{% endblock %}
 {% block content %}
 <section class="lumis-get-started" aria-labelledby="get-started-title">
-  <div class="container lumis-get-started__container">
-    {% if not user.is_authenticated %}
-      <div class="lumis-get-started__signin-top">
-        <span>Already have an account?</span>
-        <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+  <div class="lumis-get-started__hero">
+    <img class="lumis-get-started__hero-image" src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer capturing a landscape at golden hour" loading="eager">
+    <div class="lumis-get-started__hero-shade" aria-hidden="true"></div>
+
+    <div class="container lumis-get-started__hero-inner">
+      {% if not user.is_authenticated %}
+        <div class="lumis-get-started__signin-top">
+          <span>Already have an account?</span>
+          <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
+      {% endif %}
+
+      <div class="lumis-get-started__hero-copy">
+        <p class="lumis-get-started__eyebrow">CAPTURE&nbsp;&nbsp; CONNECT&nbsp;&nbsp; BELONG</p>
+        <h1 id="get-started-title">Let’s get you<br><em>started</em><span class="lumis-get-started__dot">.</span></h1>
+        <p class="lumis-get-started__lede">Join a community built for photographers, clients and photo lovers. Choose how you want to experience LumisPixel.</p>
+        <span class="lumis-get-started__accent-line" aria-hidden="true"></span>
+      </div>
+
+      <div class="lumis-get-started__story" aria-hidden="true">
+        <span>More</span><span>than photos.</span><span>A bigger story.</span>
+        <i></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="container lumis-get-started__content">
+    {% if user.is_authenticated %}
+      <div class="lumis-get-started__account-note">
+        <span class="lumis-get-started__account-icon" aria-hidden="true"><i class="bi bi-check2"></i></span>
+        <p>Signed in as <strong>{{ user.display_name }}</strong><small>Your existing access stays connected.</small></p>
       </div>
     {% endif %}
 
-    <header class="lumis-get-started__intro">
-      <p class="lumis-get-started__eyebrow">YOUR LUMISPIXEL</p>
-      <h1 id="get-started-title">What would you like to do?</h1>
-      <p class="lumis-get-started__lede">One LumisPixel account gives you access to your photos, photography tools, and the photographer marketplace.</p>
-      {% if user.is_authenticated %}
-        <div class="lumis-get-started__account-note">
-          <span class="lumis-get-started__account-icon" aria-hidden="true"><i class="bi bi-check2"></i></span>
-          <p>Signed in as <strong>{{ user.display_name }}</strong><small>Your existing access stays connected.</small></p>
-        </div>
-      {% endif %}
-    </header>
-
+    <p class="visually-hidden">What would you like to do?</p>
     <ol class="lumis-get-started__cards" aria-label="Ways to use LumisPixel">
       <li>
         <article id="get-started-photographer" class="lumis-path-card lumis-path-card--primary">
-          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working with clients" loading="eager"></div>
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working outdoors" loading="eager">
+            <div class="lumis-path-card__media-shade" aria-hidden="true"></div>
+            <div class="lumis-path-card__number-row"><span>01</span><i aria-hidden="true"></i></div>
+            <div class="lumis-path-card__heading">
+              <h2>I’m a<br>Photographer</h2>
+              <p>Grow your business. Do what you love.</p>
+            </div>
+          </div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">01</span><h2>I’m a photographer</h2>
-            <p>Build your photography business, deliver galleries, manage clients, bookings, contracts and more.</p>
+            <ul class="lumis-path-card__features">
+              <li><i class="bi bi-camera" aria-hidden="true"></i><span>Manage bookings &amp; clients</span></li>
+              <li><i class="bi bi-images" aria-hidden="true"></i><span>Deliver beautiful galleries</span></li>
+              <li><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Contracts, invoices and payments</span></li>
+              <li><i class="bi bi-bar-chart" aria-hidden="true"></i><span>Tools to help you grow</span></li>
+            </ul>
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated %}
                 {% if photographer_destination %}
@@ -40,7 +67,7 @@
                   <form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">{% csrf_token %}<button class="lumis-path-card__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
                 {% endif %}
               {% else %}
-                <a class="lumis-path-card__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Start as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                <a class="lumis-path-card__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Get started as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
               {% endif %}
             </div>
           </div>
@@ -49,10 +76,22 @@
 
       <li>
         <article id="get-started-photos" class="lumis-path-card">
-          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client enjoying photographs from a digital gallery" loading="lazy"></div>
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client viewing a photography gallery" loading="lazy">
+            <div class="lumis-path-card__media-shade" aria-hidden="true"></div>
+            <div class="lumis-path-card__number-row"><span>02</span><i aria-hidden="true"></i></div>
+            <div class="lumis-path-card__heading">
+              <h2>I’m here<br>for my photos</h2>
+              <p>View, save and share your memories.</p>
+            </div>
+          </div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">02</span><h2>I’m here for my photos</h2>
-            <p>View galleries, save favorites, download photos and keep your memories together.</p>
+            <ul class="lumis-path-card__features">
+              <li><i class="bi bi-image" aria-hidden="true"></i><span>Access your photo galleries</span></li>
+              <li><i class="bi bi-heart" aria-hidden="true"></i><span>Save your favorite photos</span></li>
+              <li><i class="bi bi-share" aria-hidden="true"></i><span>Share with family and friends</span></li>
+              <li><i class="bi bi-download" aria-hidden="true"></i><span>Download in high quality</span></li>
+            </ul>
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated %}
                 {% if has_client_profile %}
@@ -70,10 +109,22 @@
 
       <li>
         <article id="get-started-hire" class="lumis-path-card">
-          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Couple being photographed for a special occasion" loading="lazy"></div>
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Bride posing for a photographer at sunset" loading="lazy">
+            <div class="lumis-path-card__media-shade" aria-hidden="true"></div>
+            <div class="lumis-path-card__number-row"><span>03</span><i aria-hidden="true"></i></div>
+            <div class="lumis-path-card__heading">
+              <h2>I need a<br>Photographer</h2>
+              <p>Find the right photographer for your moment.</p>
+            </div>
+          </div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">03</span><h2>I need a photographer</h2>
-            <p>Discover photographers, compare styles and find the right photographer for your moment.</p>
+            <ul class="lumis-path-card__features">
+              <li><i class="bi bi-search" aria-hidden="true"></i><span>Discover talented photographers</span></li>
+              <li><i class="bi bi-people" aria-hidden="true"></i><span>Compare styles and portfolios</span></li>
+              <li><i class="bi bi-calendar3" aria-hidden="true"></i><span>Book with confidence</span></li>
+              <li><i class="bi bi-star" aria-hidden="true"></i><span>Read reviews from real clients</span></li>
+            </ul>
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated and not has_client_profile %}
                 <form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-path-card__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
@@ -88,10 +139,22 @@
       </li>
     </ol>
 
-    <div class="lumis-get-started__reassurance">
-      <span class="lumis-get-started__reassurance-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
-      <p><strong>Not sure? No problem.</strong><span>You can use all three experiences from the same LumisPixel account.</span></p>
+    <div class="lumis-get-started__trust" aria-label="Why LumisPixel">
+      <div class="lumis-trust-item"><i class="bi bi-people" aria-hidden="true"></i><p><strong>One Account</strong><span>Use all three experiences<br>with a single account.</span></p></div>
+      <div class="lumis-trust-item"><i class="bi bi-shield-check" aria-hidden="true"></i><p><strong>Your Privacy</strong><span>Your photos and data<br>are always protected.</span></p></div>
+      <div class="lumis-trust-item lumis-trust-item--red"><i class="bi bi-heart" aria-hidden="true"></i><p><strong>A Growing Community</strong><span>Photographers, clients and<br>creatives — all in one place.</span></p></div>
+      <div class="lumis-trust-item lumis-trust-item--red"><i class="bi bi-infinity" aria-hidden="true"></i><p><strong>More Possibilities</strong><span>Today a client. Tomorrow<br>a photographer. Always LumisPixel.</span></p></div>
     </div>
   </div>
+
+  <section class="lumis-get-started__closing" aria-label="LumisPixel community statement">
+    <img src="{% static 'img/landing/gallery/destination-canyon-sunset.webp' %}" alt="Mountain landscape at sunset" loading="lazy">
+    <div class="lumis-get-started__closing-shade" aria-hidden="true"></div>
+    <div class="lumis-get-started__closing-copy">
+      <blockquote>“Photography brings people together.<br>LumisPixel helps make it last.”</blockquote>
+      <span class="lumis-get-started__closing-line" aria-hidden="true"></span>
+      <p><i aria-hidden="true"></i> PHOTOS&nbsp;&nbsp;&nbsp; PEOPLE&nbsp;&nbsp;&nbsp; POSSIBILITIES <i aria-hidden="true"></i></p>
+    </div>
+  </section>
 </section>
 {% endblock %}
