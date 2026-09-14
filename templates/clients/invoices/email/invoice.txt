@@ -2,13 +2,26 @@ Hello {{ invoice.client.first_name|default:"there" }},
 
 {{ studio_name }} sent you invoice {{ invoice.invoice_number }}.
 
-Amount due: {{ invoice.currency }} {{ invoice.total|floatformat:2 }}
+Invoice date: {{ invoice.issue_date|date:"F j, Y" }}
 Due date: {{ invoice.due_date|date:"F j, Y" }}
-{% if invoice.client_notes %}
-Message from {{ studio_name }}:
-{{ invoice.client_notes }}
-{% endif %}
 
-If you have questions about this invoice, please contact {{ studio_name }} directly.
+Line items
+{% for item in invoice.line_items.all %}- {{ item.description }} — {{ item.quantity }} × {{ invoice.currency }} {{ item.unit_price|floatformat:2 }} = {{ invoice.currency }} {{ item.total|floatformat:2 }}
+{% endfor %}
+Subtotal: {{ invoice.currency }} {{ invoice.subtotal|floatformat:2 }}
+{% if invoice.discount_total %}Discounts: -{{ invoice.currency }} {{ invoice.discount_total|floatformat:2 }}
+{% endif %}{% if invoice.tax_total %}Tax: {{ invoice.currency }} {{ invoice.tax_total|floatformat:2 }}
+{% endif %}Amount due: {{ invoice.currency }} {{ invoice.total|floatformat:2 }}
+
+{% if invoice.payment_schedule.all %}Payment schedule
+{% for payment in invoice.payment_schedule.all %}- {{ payment.label }}: {{ invoice.currency }} {{ payment.amount|floatformat:2 }} due {{ payment.due_date|date:"F j, Y" }}
+{% endfor %}
+{% endif %}{% if invoice.client_notes %}Message from {{ studio_name }}:
+{{ invoice.client_notes }}
+
+{% endif %}{% if invoice.terms %}Payment information / terms:
+{{ invoice.terms }}
+
+{% endif %}If you have questions about this invoice, please contact {{ studio_name }} directly.
 
 LumisPixel
