@@ -4,67 +4,114 @@
 {% block body_class %}marketing-page get-started-page{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/get_started_polish.css' %}">{% endblock %}
 {% block content %}
-<section class="lumis-get-started lumis-get-started-paths" aria-labelledby="get-started-title">
-  <div class="container">
-    <header class="wptb-heading lumis-get-started__heading">
-      <div class="wptb-item--inner">
-        <h6 class="wptb-item--subtitle">YOUR LUMISPIXEL</h6>
-        <h1 class="wptb-item--title" id="get-started-title">Choose what you want to do next.</h1>
-        <p class="wptb-item--description">One account can hold your personal photos, your photography business, and your team access.</p>
+<section class="gs-page" aria-labelledby="get-started-title">
+  <div class="gs-hero">
+    <img class="gs-hero__image" src="{% static 'img/landing/gallery/hero-photographer-workspace.webp' %}" alt="Photographer creating images on location">
+    <div class="gs-hero__shade" aria-hidden="true"></div>
+    <div class="gs-shell gs-hero__inner">
+      <div class="gs-hero__copy">
+        <p class="gs-eyebrow">CAPTURE&nbsp;&nbsp; CONNECT&nbsp;&nbsp; BELONG</p>
+        <h1 id="get-started-title">Let’s get you <em>started</em><span>.</span></h1>
+        <p class="gs-hero__intro">Join a community built for photographers, clients and photo lovers. Choose how you want to experience LumisPixel.</p>
+        <span class="gs-red-rule" aria-hidden="true"></span>
       </div>
-      {% if user.is_authenticated %}<div class="lumis-get-started__account-note"><span aria-hidden="true"><i class="bi bi-check2"></i></span><p>Signed in as <strong>{{ user.display_name }}</strong><small>Your existing access stays connected.</small></p></div>{% endif %}
-    </header>
-
-    <ol class="wptb-features lumis-get-started__paths" aria-label="Ways to use LumisPixel">
-      <li class="wptb-item active highlight">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-photographer"><span class="lumis-get-started__number">01</span><span>I photograph</span><small>Run a business or join a team</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-photographer">
-            <img src="{% static 'img/services/details.jpg' %}" alt="Photographer preparing a professional shoot">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">PHOTOGRAPHER</span><h2>Build from one connected workspace.</h2><p>Upload, organize, deliver, sell, and manage photography work—whether the business is yours or you are part of a studio team.</p>
-              {% if user.is_authenticated %}
-                {% if photographer_destination %}<a class="lumis-get-started__action" href="{{ photographer_destination }}">{% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                {% else %}<form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>{% endif %}
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Start as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
-          </div>
-        </div>
-      </li>
-
-      <li class="wptb-item">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-photos"><span class="lumis-get-started__number">02</span><span>I want my photos</span><small>Open galleries and saved moments</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-photos">
-            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Client viewing photographs in a private gallery">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">PERSONAL PHOTOS</span><h2>Find the moments meant for you.</h2><p>Use a gallery link, event code, invitation, or supported photo search to reach your images and keep favorites together.</p>
-              {% if user.is_authenticated %}
-                {% if has_client_profile %}<a class="lumis-get-started__action" href="{% url 'clients:dashboard' %}">Open my photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                {% else %}<form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Add personal photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>{% endif %}
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&amp;next={{ next|urlencode }}{% endif %}">Find my photos<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
-          </div>
-        </div>
-      </li>
-
-      <li class="wptb-item">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-hire"><span class="lumis-get-started__number">03</span><span>I need a photographer</span><small>Plan a shoot and find the right fit</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-hire">
-            <img src="{% static 'img/services/details-2.jpg' %}" alt="Photographer documenting a client event">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">FIND A PHOTOGRAPHER</span><h2>Start with what you are planning.</h2><p>Explore photography specialties and prepare to connect with professionals who match your location, style, and event.</p>
-              {% if user.is_authenticated and not has_client_profile %}<form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
-              {% elif user.is_authenticated %}<a class="lumis-get-started__action" href="{% url 'accounts:marketplace-request-placeholder' %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&amp;next={{ next|urlencode }}{% endif %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
-          </div>
-        </div>
-      </li>
-    </ol>
-
-    {% if not user.is_authenticated %}<p class="lumis-get-started__signin">Already have an account? <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in</a></p>{% endif %}
+      <div class="gs-hero__note" aria-hidden="true">More<br>than photos.<br>A bigger story.<span></span></div>
+    </div>
   </div>
+
+  <div class="gs-shell gs-paths" aria-label="Choose how you want to use LumisPixel">
+    <article class="gs-card gs-card--primary">
+      <div class="gs-card__media">
+        <img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working on location">
+        <div class="gs-card__media-shade" aria-hidden="true"></div>
+        <div class="gs-card__number"><b>01</b><span></span></div>
+        <div class="gs-card__title"><h2>I’m a<br>Photographer</h2><p>Grow your business. Do what you love.</p></div>
+      </div>
+      <div class="gs-card__body">
+        <ul class="gs-feature-list">
+          <li><i class="bi bi-camera" aria-hidden="true"></i><span>Manage bookings &amp; clients</span></li>
+          <li><i class="bi bi-images" aria-hidden="true"></i><span>Deliver beautiful galleries</span></li>
+          <li><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Contracts, invoices and payments</span></li>
+          <li><i class="bi bi-bar-chart" aria-hidden="true"></i><span>Tools to help you grow</span></li>
+        </ul>
+        {% if user.is_authenticated %}
+          {% if photographer_destination %}
+            <a class="gs-card__cta gs-card__cta--primary" href="{{ photographer_destination }}"><span>{% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          {% else %}
+            <form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">{% csrf_token %}<button class="gs-card__cta gs-card__cta--primary" type="submit"><span>Get started as a photographer</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
+          {% endif %}
+        {% else %}
+          <a class="gs-card__cta gs-card__cta--primary" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span>Get started as a photographer</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="gs-card">
+      <div class="gs-card__media">
+        <img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client enjoying photographs in a private gallery">
+        <div class="gs-card__media-shade" aria-hidden="true"></div>
+        <div class="gs-card__number"><b>02</b><span></span></div>
+        <div class="gs-card__title"><h2>I’m here<br>for my photos</h2><p>View, save and share your memories.</p></div>
+      </div>
+      <div class="gs-card__body">
+        <ul class="gs-feature-list">
+          <li><i class="bi bi-image" aria-hidden="true"></i><span>Access your photo galleries</span></li>
+          <li><i class="bi bi-heart" aria-hidden="true"></i><span>Save your favorite photos</span></li>
+          <li><i class="bi bi-share" aria-hidden="true"></i><span>Share with family and friends</span></li>
+          <li><i class="bi bi-download" aria-hidden="true"></i><span>Download in high quality</span></li>
+        </ul>
+        {% if user.is_authenticated %}
+          {% if has_client_profile %}
+            <a class="gs-card__cta" href="{% url 'clients:dashboard' %}"><span>View my photos</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          {% else %}
+            <form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="gs-card__cta" type="submit"><span>Add personal photo space</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
+          {% endif %}
+        {% else %}
+          <a class="gs-card__cta" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&amp;next={{ next|urlencode }}{% endif %}"><span>View my photos</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="gs-card">
+      <div class="gs-card__media">
+        <img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Client preparing for a professional photography session">
+        <div class="gs-card__media-shade" aria-hidden="true"></div>
+        <div class="gs-card__number"><b>03</b><span></span></div>
+        <div class="gs-card__title"><h2>I need a<br>Photographer</h2><p>Find the right photographer for your moment.</p></div>
+      </div>
+      <div class="gs-card__body">
+        <ul class="gs-feature-list">
+          <li><i class="bi bi-search" aria-hidden="true"></i><span>Discover talented photographers</span></li>
+          <li><i class="bi bi-people" aria-hidden="true"></i><span>Compare styles and portfolios</span></li>
+          <li><i class="bi bi-calendar3" aria-hidden="true"></i><span>Book with confidence</span></li>
+          <li><i class="bi bi-star" aria-hidden="true"></i><span>Read reviews from real clients</span></li>
+        </ul>
+        {% if user.is_authenticated and not has_client_profile %}
+          <form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="gs-card__cta" type="submit"><span>Add personal access</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
+        {% elif user.is_authenticated %}
+          <a class="gs-card__cta" href="{% url 'accounts:marketplace-request-placeholder' %}"><span>Find a photographer</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        {% else %}
+          <a class="gs-card__cta" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&amp;next={{ next|urlencode }}{% endif %}"><span>Find a photographer</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        {% endif %}
+      </div>
+    </article>
+  </div>
+
+  <div class="gs-shell gs-trust" aria-label="Why LumisPixel">
+    <div class="gs-trust__item"><i class="bi bi-people" aria-hidden="true"></i><div><h3>One Account</h3><p>Use all three experiences<br>with a single account.</p></div></div>
+    <div class="gs-trust__item"><i class="bi bi-shield-check" aria-hidden="true"></i><div><h3>Your Privacy</h3><p>Your photos and data<br>are always protected.</p></div></div>
+    <div class="gs-trust__item"><i class="bi bi-heart" aria-hidden="true"></i><div><h3>A Growing Community</h3><p>Photographers, clients and<br>creatives — all in one place.</p></div></div>
+    <div class="gs-trust__item"><i class="bi bi-infinity" aria-hidden="true"></i><div><h3>More Possibilities</h3><p>Today a client. Tomorrow<br>a photographer. Always LumisPixel.</p></div></div>
+  </div>
+
+  <section class="gs-closing" aria-label="LumisPixel community message">
+    <img src="{% static 'img/landing/gallery/destination-canyon-sunset.webp' %}" alt="Mountain landscape at sunset">
+    <div class="gs-closing__wash" aria-hidden="true"></div>
+    <div class="gs-closing__content">
+      <blockquote>“Photography brings people together.<br>LumisPixel helps make it last.”</blockquote>
+      <span class="gs-closing__red-rule" aria-hidden="true"></span>
+      <p><span></span> PHOTOS&nbsp;&nbsp;&nbsp;&nbsp; PEOPLE&nbsp;&nbsp;&nbsp;&nbsp; POSSIBILITIES <span></span></p>
+    </div>
+  </section>
 </section>
 {% endblock %}
