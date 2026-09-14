@@ -5,18 +5,25 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/get_started_polish.css' %}">{% endblock %}
 {% block content %}
 <section class="lumis-get-started" aria-labelledby="get-started-title">
-  <div class="lumis-get-started__hero">
-    <img class="lumis-get-started__hero-image" src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer capturing a landscape at golden hour" loading="eager">
-    <div class="lumis-get-started__hero-shade" aria-hidden="true"></div>
-
-    <div class="container lumis-get-started__hero-inner">
+  <header class="lumis-get-started__topbar">
+    <div class="lumis-get-started__topbar-inner">
+      <a class="lumis-get-started__brand" href="{% url 'core:index' %}" aria-label="LumisPixel home">
+        <img src="{% static 'img/lumis_logo_v1.png' %}" alt="LumisPixel">
+      </a>
       {% if not user.is_authenticated %}
         <div class="lumis-get-started__signin-top">
           <span>Already have an account?</span>
           <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
       {% endif %}
+    </div>
+  </header>
 
+  <div class="lumis-get-started__hero">
+    <img class="lumis-get-started__hero-image" src="{% static 'img/landing/gallery/hero-photographer-workspace.webp' %}" alt="Photographer creating images against a mountain landscape" loading="eager">
+    <div class="lumis-get-started__hero-shade" aria-hidden="true"></div>
+
+    <div class="lumis-get-started__hero-inner">
       <div class="lumis-get-started__hero-copy">
         <p class="lumis-get-started__eyebrow">CAPTURE&nbsp;&nbsp; CONNECT&nbsp;&nbsp; BELONG</p>
         <h1 id="get-started-title">Let’s get you<br><em>started</em><span class="lumis-get-started__dot">.</span></h1>
@@ -31,7 +38,7 @@
     </div>
   </div>
 
-  <div class="container lumis-get-started__content">
+  <div class="lumis-get-started__content">
     {% if user.is_authenticated %}
       <div class="lumis-get-started__account-note">
         <span class="lumis-get-started__account-icon" aria-hidden="true"><i class="bi bi-check2"></i></span>
