@@ -88,12 +88,15 @@ class WorkflowAutomationTests(TestCase):
         rule.save(update_fields=["enabled", "updated_at"])
 
         self.booking.status = ClientSession.Status.CONFIRMED
-        self.booking.save(update_fields=["status"])
+        with self.captureOnCommitCallbacks(execute=True):
+            self.booking.save(update_fields=["status"])
         self.assertEqual(AutomationExecution.objects.filter(rule=rule).count(), 1)
         delay.assert_called_once()
 
-        self.booking.save(update_fields=["status"])
+        with self.captureOnCommitCallbacks(execute=True):
+            self.booking.save(update_fields=["status"])
         self.assertEqual(AutomationExecution.objects.filter(rule=rule).count(), 1)
+        delay.assert_called_once()
 
     def test_completed_shoot_action_creates_gallery_task_idempotently(self):
         rule = ensure_default_rules(self.photographer)[4]
