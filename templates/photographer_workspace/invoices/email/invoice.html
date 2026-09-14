@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f6f7f9;font-family:Arial,sans-serif;color:#252a31;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7f9;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e7e9ed;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="padding:30px 32px 18px;">
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#d23f3f;">LumisPixel</div>
+                <h1 style="margin:12px 0 8px;font-size:26px;line-height:1.25;">Invoice {{ invoice.invoice_number }}</h1>
+                <p style="margin:0;color:#656b74;font-size:15px;line-height:1.6;">Hi {{ invoice.client.first_name|default:"there" }}, {{ studio_name }} sent you an invoice. A copy of the invoice is attached to this email.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fafafa;border:1px solid #eceef1;border-radius:10px;">
+                  <tr>
+                    <td style="padding:18px 20px;color:#656b74;font-size:13px;">Amount due</td>
+                    <td align="right" style="padding:18px 20px;font-size:20px;font-weight:700;">{{ invoice.currency }} {{ invoice.balance }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 20px 18px;color:#656b74;font-size:13px;">Due date</td>
+                    <td align="right" style="padding:0 20px 18px;font-size:14px;font-weight:600;">{{ invoice.due_date|date:"F j, Y" }}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {% if invoice.client_notes %}
+            <tr>
+              <td style="padding:0 32px 24px;">
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;">Note from {{ studio_name }}</p>
+                <p style="margin:0;color:#656b74;font-size:14px;line-height:1.6;">{{ invoice.client_notes }}</p>
+              </td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td style="padding:20px 32px 30px;border-top:1px solid #eceef1;color:#7a8089;font-size:12px;line-height:1.5;">This invoice was sent through LumisPixel on behalf of {{ studio_name }}.</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
