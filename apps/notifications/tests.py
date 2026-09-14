@@ -2,6 +2,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.accounts.models import PhotographerProfile
+from apps.galleries.models import Gallery, GalleryInvitation
+
 from .models import Notification
 from .services import notify_user
 
@@ -88,3 +91,50 @@ class NotificationInboxTests(TestCase):
         response = self.client.get(reverse("notifications:index"))
         self.assertNotContains(response, 'href="https://example.com"')
         self.assertEqual(unsafe.safe_action_url, "")
+
+
+class GalleryInvitationNotificationSignalTests(TestCase):
+    def setUp(self):
+        self.photographer_user = User.objects.create_user(
+            email="notification-photographer@example.com",
+            password="TestPass123!",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+        )
+        self.photographer = PhotographerProfile.objects.create(
+            user=self.photographer_user,
+            display_name="Avery Stone",
+            slug="notification-photographer",
+            onboarding_completed=True,
+        )
+        self.gallery = Gallery.objects.create(
+            photographer=self.photographer,
+            name="Coastal Wedding",
+            slug="coastal-wedding-notification",
+            status=Gallery.Status.PUBLISHED,
+        )
+        self.client_user = User.objects.create_user(
+            email="existing-client@example.com",
+            password="TestPass123!",
+            primary_role=User.PrimaryRole.CLIENT,
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+        )
+
+    def test_creating_invitation_for_existing_client_uses_gallery_name(self):
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery,
+            client_name="Existing Client",
+            email="existing-client@example.com",
+        )
+
+        notification = Notification.objects.get(
+            recipient=self.client_user,
+            category=Notification.Category.GALLERY,
+        )
+        self.assertEqual(notification.title, "Coastal Wedding was shared with you")
+        self.assertEqual(notification.message, "Avery Stone invited you to view a gallery.")
+        self.assertEqual(notification.action_url, reverse("clients:dashboard"))
+        self.assertEqual(notification.metadata["gallery_id"], self.gallery.pk)
+        self.assertEqual(notification.metadata["invitation_id"], invitation.pk)
