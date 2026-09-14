@@ -9,7 +9,7 @@ from apps.clients.contracts import send_contract_for_review
 from apps.clients.models import ClientInvoice, ClientTask, Contract, InvoiceActivity, InvoiceLineItem
 from apps.dashboard.invoices import next_invoice_number
 from apps.galleries.activity import log_gallery_activity
-from apps.galleries.models import AccessToken, GalleryActivity, GalleryInvitation
+from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryInvitation
 from apps.galleries.services import GalleryInvitationDeliveryError, send_gallery_invitation_email
 
 from .models import AutomationExecution, AutomationRule
@@ -20,7 +20,7 @@ DEFAULT_RULES = (
         "trigger": AutomationRule.Trigger.BOOKING_CONFIRMED,
         "action": AutomationRule.Action.SEND_CONTRACT,
         "name": "Send contract when booking is confirmed",
-        "description": "Send an existing unsigned booking contract after the booking becomes confirmed.",
+        "description": "Send an existing ready booking contract after the booking becomes confirmed.",
     },
     {
         "trigger": AutomationRule.Trigger.CONTRACT_SIGNED,
@@ -132,13 +132,16 @@ class _BackgroundRequest:
 
 def _send_contract(execution, booking):
     contract = (
-        Contract.objects.filter(photographer=execution.photographer, booking=booking)
-        .exclude(status__in=[Contract.Status.SIGNED, Contract.Status.VOIDED])
+        Contract.objects.filter(
+            photographer=execution.photographer,
+            booking=booking,
+            status=Contract.Status.READY,
+        )
         .order_by("-created_at", "-pk")
         .first()
     )
     if not contract:
-        return False, "No unsigned contract exists for this booking."
+        return False, "No ready contract exists for this booking."
     send_contract_for_review(
         contract=contract,
         actor=execution.photographer.user,
@@ -212,6 +215,8 @@ def _send_invoice_reminder(execution, invoice):
 
 
 def _create_gallery_task(execution, booking):
+    if Gallery.objects.filter(photographer=execution.photographer, booking=booking).exists():
+        return False, "A gallery is already linked to this booking."
     task, created = ClientTask.objects.get_or_create(
         photographer=execution.photographer,
         client=booking.client,
