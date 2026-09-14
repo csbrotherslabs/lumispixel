@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
-    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig", "apps.api.apps.ApiConfig",
+    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
+    "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware", "django.contrib.sessions.middleware.SessionMiddleware",
@@ -103,6 +104,12 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_BEAT_SCHEDULE = {
+    "scan-scheduled-workflow-automations": {
+        "task": "apps.workflows.tasks.scan_scheduled_automations",
+        "schedule": 3600.0,
+    },
+}
 FREE_STORAGE_LIMIT_BYTES = int(os.getenv("FREE_STORAGE_LIMIT_BYTES", str(50 * 1024**3)))
 MAX_GALLERY_UPLOAD_BYTES = int(os.getenv("MAX_GALLERY_UPLOAD_BYTES", str(100 * 1024**2)))
 

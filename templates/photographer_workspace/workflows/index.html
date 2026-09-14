@@ -1,0 +1,97 @@
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/photographer_workflows.css' %}">
+{% endblock %}
+
+{% block workspace_content %}
+<section class="lp-container lp-container--wide lp-automation" aria-labelledby="workspace-page-title">
+  <header class="lp-page-header lp-automation__header">
+    <div class="lp-page-heading">
+      <p class="lp-page-description">Run repeatable client and delivery workflows through LumisPixel's existing Celery worker and Beat scheduler.</p>
+    </div>
+    <div class="lp-automation__summary" aria-label="Automation summary">
+      <div><strong>{{ enabled_count }}</strong><span>Enabled</span></div>
+      <div><strong>{{ rules|length }}</strong><span>Launch rules</span></div>
+      <div><strong>{{ failure_count }}</strong><span>Recent failures</span></div>
+    </div>
+  </header>
+
+  <section class="lp-automation__intro" aria-labelledby="automation-rules-title">
+    <div>
+      <span class="lp-automation__eyebrow">Trigger → action</span>
+      <h2 id="automation-rules-title">Launch automations</h2>
+      <p>Each rule is intentionally opinionated for launch. LumisPixel only performs the action when the required booking, contract, invoice, gallery, or recipient data already exists. Otherwise the run is recorded as Skipped.</p>
+    </div>
+    <div class="lp-automation__runtime">
+      <i class="bi bi-cpu" aria-hidden="true"></i>
+      <div><strong>Celery + Beat</strong><span>Event triggers run through the worker. Due-date and expiration rules are scanned by the scheduler.</span></div>
+    </div>
+  </section>
+
+  <div class="lp-automation__rules">
+    {% for rule in rules %}
+      <article class="lp-automation-rule{% if rule.enabled %} is-enabled{% endif %}">
+        <div class="lp-automation-rule__icon" aria-hidden="true">
+          {% if rule.trigger == 'booking_confirmed' %}<i class="bi bi-calendar-check"></i>
+          {% elif rule.trigger == 'contract_signed' %}<i class="bi bi-file-earmark-check"></i>
+          {% elif rule.trigger == 'invoice_due' %}<i class="bi bi-receipt"></i>
+          {% elif rule.trigger == 'payment_received' %}<i class="bi bi-cash-coin"></i>
+          {% elif rule.trigger == 'shoot_completed' %}<i class="bi bi-camera"></i>
+          {% elif rule.trigger == 'gallery_published' %}<i class="bi bi-images"></i>
+          {% else %}<i class="bi bi-hourglass-split"></i>{% endif %}
+        </div>
+        <div class="lp-automation-rule__body">
+          <div class="lp-automation-rule__heading">
+            <div>
+              <span class="lp-automation-rule__status">{% if rule.enabled %}Enabled{% else %}Disabled{% endif %}</span>
+              <h3>{{ rule.name }}</h3>
+            </div>
+            <form method="post" class="lp-automation-rule__toggle-form">
+              {% csrf_token %}
+              <input type="hidden" name="rule_id" value="{{ rule.pk }}">
+              <label class="lp-automation-switch">
+                <input type="checkbox" name="enabled" {% if rule.enabled %}checked{% endif %} onchange="this.form.submit()" aria-label="Toggle {{ rule.name }}">
+                <span aria-hidden="true"></span>
+              </label>
+            </form>
+          </div>
+          <p>{{ rule.description }}</p>
+          <div class="lp-automation-rule__flow" aria-label="Automation flow">
+            <span>{{ rule.get_trigger_display }}</span><i class="bi bi-arrow-right" aria-hidden="true"></i><span>{{ rule.get_action_display }}</span>
+          </div>
+          {% if rule.config.days_before %}<small>Runs {{ rule.config.days_before }} day{{ rule.config.days_before|pluralize }} before the target date.</small>{% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <section class="lp-automation__history" aria-labelledby="automation-history-title">
+    <div class="lp-section-header">
+      <div><h2 id="automation-history-title">Execution history</h2><p>Recent runs are retained so the studio can see what happened and why a rule was skipped or failed.</p></div>
+    </div>
+    {% if executions %}
+      <div class="lp-automation-table-wrap">
+        <table class="lp-automation-table">
+          <thead><tr><th>Automation</th><th>Status</th><th>Target</th><th>Result</th><th>Time</th></tr></thead>
+          <tbody>
+          {% for execution in executions %}
+            <tr>
+              <td><strong>{{ execution.rule.name }}</strong><small>{{ execution.get_trigger_display }}</small></td>
+              <td><span class="lp-automation-badge lp-automation-badge--{{ execution.status }}">{{ execution.get_status_display }}</span></td>
+              <td>{{ execution.target_type }} #{{ execution.target_id }}</td>
+              <td>{% if execution.error %}<span class="lp-automation-error">{{ execution.error|truncatechars:120 }}</span>{% elif execution.message %}{{ execution.message }}{% else %}Waiting for worker execution.{% endif %}</td>
+              <td><time datetime="{{ execution.queued_at|date:'c' }}">{{ execution.queued_at|date:"M j, Y g:i A" }}</time></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="lp-automation__empty"><i class="bi bi-lightning-charge" aria-hidden="true"></i><div><h3>No automation runs yet</h3><p>Enable a launch rule above. Its first eligible event will appear here after LumisPixel queues it.</p></div></div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}
