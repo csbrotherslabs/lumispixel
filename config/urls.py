@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from apps.core.support_views import help_center, support_attachment_download, support_ticket_detail
+from apps.dashboard.client_contracts import client_contracts
 from apps.dashboard.workspace_settings import workspace_settings
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     path("billing/", include("apps.billing.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("photographer/workspace/settings/", workspace_settings),
+    path("photographer/workspace/clients/<int:pk>/contracts/", client_contracts, name="client_contracts"),
     path("photographer/workspace/", include("apps.dashboard.urls")),
     path("internal/", include("apps.internal_ops.urls")),
     path("api/", include("apps.api.urls")),
