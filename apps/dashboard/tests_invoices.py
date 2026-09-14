@@ -1,6 +1,8 @@
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -109,6 +111,59 @@ class InvoiceWorkspaceTests(TestCase):
         invoice.refresh_from_db()
         self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
         self.assertEqual(invoice.total, Decimal("284.63"))
+
+    def test_send_delivers_plain_and_html_invoice_email_to_client(self):
+        response = self.client.post(
+            reverse("photographer_workspace:invoice_create"),
+            self.payload(intent="send", client_notes="Thank you for choosing our studio."),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        invoice = ClientInvoice.objects.get()
+        self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
+        self.assertIsNotNone(invoice.sent_at)
+        self.assertEqual(len(mail.outbox), 1)
+
+        message = mail.outbox[0]
+        self.assertEqual(message.to, [self.client_record.email])
+        self.assertIn(invoice.invoice_number, message.subject)
+        self.assertIn(invoice.invoice_number, message.body)
+        self.assertIn("USD 284.63", message.body)
+        self.assertIn("Thank you for choosing our studio.", message.body)
+        self.assertEqual(len(message.alternatives), 1)
+        html, mimetype = message.alternatives[0]
+        self.assertEqual(mimetype, "text/html")
+        self.assertIn(invoice.invoice_number, html)
+        self.assertIn("USD 284.63", html)
+        self.assertNotIn("/workspace/", message.body)
+        self.assertNotIn("/workspace/", html)
+        self.assertEqual(InvoiceActivity.objects.get().action, "sent")
+
+    def test_delivery_failure_rolls_back_invoice_changes_and_sent_activity(self):
+        self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())
+        invoice = ClientInvoice.objects.get()
+        original_total = invoice.total
+        original_activity_count = InvoiceActivity.objects.count()
+
+        with patch("apps.dashboard.invoices.EmailMultiAlternatives.send", side_effect=RuntimeError("smtp unavailable")):
+            response = self.client.post(
+                reverse("photographer_workspace:invoice_edit", args=[invoice.pk]),
+                self.payload(
+                    intent="send",
+                    client_notes="This change must roll back.",
+                    **{"item_unit_price[]": ["200.00", "40.00"]},
+                ),
+            )
+
+        self.assertEqual(response.status_code, 400)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, ClientInvoice.Status.DRAFT)
+        self.assertIsNone(invoice.sent_at)
+        self.assertEqual(invoice.total, original_total)
+        self.assertEqual(invoice.client_notes, "")
+        self.assertEqual(InvoiceActivity.objects.count(), original_activity_count)
+        self.assertFalse(InvoiceActivity.objects.filter(action="sent").exists())
+        self.assertContains(response, "We couldn&#x27;t send this invoice email", status_code=400)
 
     def test_invalid_item_is_rejected_without_partial_invoice(self):
         response = self.client.post(
