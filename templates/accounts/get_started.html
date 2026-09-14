@@ -17,7 +17,6 @@
       <p class="lumis-get-started__eyebrow">YOUR LUMISPIXEL</p>
       <h1 id="get-started-title">What would you like to do?</h1>
       <p class="lumis-get-started__lede">One LumisPixel account gives you access to your photos, photography tools, and the photographer marketplace.</p>
-
       {% if user.is_authenticated %}
         <div class="lumis-get-started__account-note">
           <span class="lumis-get-started__account-icon" aria-hidden="true"><i class="bi bi-check2"></i></span>
@@ -28,27 +27,17 @@
 
     <ol class="lumis-get-started__cards" aria-label="Ways to use LumisPixel">
       <li>
-        <article class="lumis-path-card lumis-path-card--primary">
-          <div class="lumis-path-card__media">
-            <img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working with clients" loading="eager">
-          </div>
+        <article id="get-started-photographer" class="lumis-path-card lumis-path-card--primary">
+          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working with clients" loading="eager"></div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">01</span>
-            <h2>I’m a photographer</h2>
+            <span class="lumis-path-card__number">01</span><h2>I’m a photographer</h2>
             <p>Build your photography business, deliver galleries, manage clients, bookings, contracts and more.</p>
-
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated %}
                 {% if photographer_destination %}
-                  <a class="lumis-path-card__action" href="{{ photographer_destination }}">
-                    {% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}
-                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                  </a>
+                  <a class="lumis-path-card__action" href="{{ photographer_destination }}">{% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                 {% else %}
-                  <form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">
-                    {% csrf_token %}
-                    <button class="lumis-path-card__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-                  </form>
+                  <form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">{% csrf_token %}<button class="lumis-path-card__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
                 {% endif %}
               {% else %}
                 <a class="lumis-path-card__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Start as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
@@ -59,24 +48,17 @@
       </li>
 
       <li>
-        <article class="lumis-path-card">
-          <div class="lumis-path-card__media">
-            <img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client enjoying photographs from a digital gallery" loading="lazy">
-          </div>
+        <article id="get-started-photos" class="lumis-path-card">
+          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client enjoying photographs from a digital gallery" loading="lazy"></div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">02</span>
-            <h2>I’m here for my photos</h2>
+            <span class="lumis-path-card__number">02</span><h2>I’m here for my photos</h2>
             <p>View galleries, save favorites, download photos and keep your memories together.</p>
-
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated %}
                 {% if has_client_profile %}
                   <a class="lumis-path-card__action" href="{% url 'clients:dashboard' %}">Open my photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                 {% else %}
-                  <form method="post" action="{% url 'accounts:enable-client-profile' %}">
-                    {% csrf_token %}
-                    <button class="lumis-path-card__action" type="submit">Add personal photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-                  </form>
+                  <form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-path-card__action" type="submit">Add personal photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
                 {% endif %}
               {% else %}
                 <a class="lumis-path-card__action" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&amp;next={{ next|urlencode }}{% endif %}">View my photos<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
@@ -87,21 +69,14 @@
       </li>
 
       <li>
-        <article class="lumis-path-card">
-          <div class="lumis-path-card__media">
-            <img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Couple being photographed for a special occasion" loading="lazy">
-          </div>
+        <article id="get-started-hire" class="lumis-path-card">
+          <div class="lumis-path-card__media"><img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Couple being photographed for a special occasion" loading="lazy"></div>
           <div class="lumis-path-card__body">
-            <span class="lumis-path-card__number">03</span>
-            <h2>I need a photographer</h2>
+            <span class="lumis-path-card__number">03</span><h2>I need a photographer</h2>
             <p>Discover photographers, compare styles and find the right photographer for your moment.</p>
-
             <div class="lumis-path-card__action-wrap">
               {% if user.is_authenticated and not has_client_profile %}
-                <form method="post" action="{% url 'accounts:enable-client-profile' %}">
-                  {% csrf_token %}
-                  <button class="lumis-path-card__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-                </form>
+                <form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-path-card__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
               {% elif user.is_authenticated %}
                 <a class="lumis-path-card__action" href="{% url 'accounts:marketplace-request-placeholder' %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
               {% else %}
