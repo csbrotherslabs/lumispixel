@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.accounts.models import PhotographerProfile
+from apps.accounts.models import ClientProfile, PhotographerProfile
 from apps.galleries.models import Gallery, GalleryInvitation
 
 from .models import Notification
@@ -121,6 +121,7 @@ class GalleryInvitationNotificationSignalTests(TestCase):
             account_status=User.AccountStatus.ACTIVE,
             email_verified=True,
         )
+        ClientProfile.objects.create(user=self.client_user, display_name="Existing Client")
 
     def test_creating_invitation_for_existing_client_uses_gallery_name(self):
         invitation = GalleryInvitation.objects.create(
@@ -138,3 +139,58 @@ class GalleryInvitationNotificationSignalTests(TestCase):
         self.assertEqual(notification.action_url, reverse("clients:dashboard"))
         self.assertEqual(notification.metadata["gallery_id"], self.gallery.pk)
         self.assertEqual(notification.metadata["invitation_id"], invitation.pk)
+
+    def test_photographer_primary_user_with_client_profile_is_notified(self):
+        dual_role_user = User.objects.create_user(
+            email="dual-role-client@example.com",
+            password="TestPass123!",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+        )
+        ClientProfile.objects.create(user=dual_role_user, display_name="Dual Role Client")
+
+        GalleryInvitation.objects.create(
+            gallery=self.gallery,
+            client_name="Dual Role Client",
+            email="dual-role-client@example.com",
+        )
+
+        self.assertTrue(
+            Notification.objects.filter(
+                recipient=dual_role_user,
+                category=Notification.Category.GALLERY,
+                title="Coastal Wedding was shared with you",
+            ).exists()
+        )
+
+    def test_matching_user_without_client_profile_is_not_notified(self):
+        photographer_only_user = User.objects.create_user(
+            email="photographer-only@example.com",
+            password="TestPass123!",
+            primary_role=User.PrimaryRole.PHOTOGRAPHER,
+            account_status=User.AccountStatus.ACTIVE,
+            email_verified=True,
+        )
+
+        GalleryInvitation.objects.create(
+            gallery=self.gallery,
+            client_name="Photographer Only",
+            email="photographer-only@example.com",
+        )
+
+        self.assertFalse(
+            Notification.objects.filter(
+                recipient=photographer_only_user,
+                category=Notification.Category.GALLERY,
+            ).exists()
+        )
+
+    def test_invitation_for_unknown_email_does_not_create_notification(self):
+        before = Notification.objects.count()
+        GalleryInvitation.objects.create(
+            gallery=self.gallery,
+            client_name="Unknown Client",
+            email="unknown-client@example.com",
+        )
+        self.assertEqual(Notification.objects.count(), before)

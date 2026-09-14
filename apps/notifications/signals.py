@@ -13,9 +13,13 @@ from .services import notify_user
 def notify_existing_client_about_gallery(sender, instance, created, **kwargs):
     if not created:
         return
+    # Gallery notification eligibility follows actual client capability rather
+    # than the user's preferred/primary role. A LumisPixel account can own both
+    # client and photographer profiles, so primary_role must not suppress client
+    # notifications for a legitimate dual-role user.
     client_user = User.objects.filter(
         email__iexact=instance.email,
-        primary_role=User.PrimaryRole.CLIENT,
+        client_profile__isnull=False,
     ).first()
     if not client_user:
         return
