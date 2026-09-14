@@ -4,67 +4,119 @@
 {% block body_class %}marketing-page get-started-page{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/get_started_polish.css' %}">{% endblock %}
 {% block content %}
-<section class="lumis-get-started lumis-get-started-paths" aria-labelledby="get-started-title">
-  <div class="container">
-    <header class="wptb-heading lumis-get-started__heading">
-      <div class="wptb-item--inner">
-        <h6 class="wptb-item--subtitle">YOUR LUMISPIXEL</h6>
-        <h1 class="wptb-item--title" id="get-started-title">Choose what you want to do next.</h1>
-        <p class="wptb-item--description">One account can hold your personal photos, your photography business, and your team access.</p>
+<section class="lumis-get-started" aria-labelledby="get-started-title">
+  <div class="container lumis-get-started__container">
+    {% if not user.is_authenticated %}
+      <div class="lumis-get-started__signin-top">
+        <span>Already have an account?</span>
+        <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
       </div>
-      {% if user.is_authenticated %}<div class="lumis-get-started__account-note"><span aria-hidden="true"><i class="bi bi-check2"></i></span><p>Signed in as <strong>{{ user.display_name }}</strong><small>Your existing access stays connected.</small></p></div>{% endif %}
+    {% endif %}
+
+    <header class="lumis-get-started__intro">
+      <p class="lumis-get-started__eyebrow">YOUR LUMISPIXEL</p>
+      <h1 id="get-started-title">What would you like to do?</h1>
+      <p class="lumis-get-started__lede">One LumisPixel account gives you access to your photos, photography tools, and the photographer marketplace.</p>
+
+      {% if user.is_authenticated %}
+        <div class="lumis-get-started__account-note">
+          <span class="lumis-get-started__account-icon" aria-hidden="true"><i class="bi bi-check2"></i></span>
+          <p>Signed in as <strong>{{ user.display_name }}</strong><small>Your existing access stays connected.</small></p>
+        </div>
+      {% endif %}
     </header>
 
-    <ol class="wptb-features lumis-get-started__paths" aria-label="Ways to use LumisPixel">
-      <li class="wptb-item active highlight">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-photographer"><span class="lumis-get-started__number">01</span><span>I photograph</span><small>Run a business or join a team</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-photographer">
-            <img src="{% static 'img/services/details.jpg' %}" alt="Photographer preparing a professional shoot">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">PHOTOGRAPHER</span><h2>Build from one connected workspace.</h2><p>Upload, organize, deliver, sell, and manage photography work—whether the business is yours or you are part of a studio team.</p>
-              {% if user.is_authenticated %}
-                {% if photographer_destination %}<a class="lumis-get-started__action" href="{{ photographer_destination }}">{% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                {% else %}<form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>{% endif %}
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Start as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
+    <ol class="lumis-get-started__cards" aria-label="Ways to use LumisPixel">
+      <li>
+        <article class="lumis-path-card lumis-path-card--primary">
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer working with clients" loading="eager">
           </div>
-        </div>
+          <div class="lumis-path-card__body">
+            <span class="lumis-path-card__number">01</span>
+            <h2>I’m a photographer</h2>
+            <p>Build your photography business, deliver galleries, manage clients, bookings, contracts and more.</p>
+
+            <div class="lumis-path-card__action-wrap">
+              {% if user.is_authenticated %}
+                {% if photographer_destination %}
+                  <a class="lumis-path-card__action" href="{{ photographer_destination }}">
+                    {% if owned_photographer_profile and not owned_photographer_profile.onboarding_completed %}Continue business setup{% elif owned_photographer_profile %}Open my workspace{% else %}Open team workspace{% endif %}
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                  </a>
+                {% else %}
+                  <form method="post" action="{% url 'accounts:enable-photographer-workspace' %}">
+                    {% csrf_token %}
+                    <button class="lumis-path-card__action" type="submit">Create photography workspace<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+                  </form>
+                {% endif %}
+              {% else %}
+                <a class="lumis-path-card__action" href="{% url 'accounts:photographer-signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Start as a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              {% endif %}
+            </div>
+          </div>
+        </article>
       </li>
 
-      <li class="wptb-item">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-photos"><span class="lumis-get-started__number">02</span><span>I want my photos</span><small>Open galleries and saved moments</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-photos">
-            <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Client viewing photographs in a private gallery">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">PERSONAL PHOTOS</span><h2>Find the moments meant for you.</h2><p>Use a gallery link, event code, invitation, or supported photo search to reach your images and keep favorites together.</p>
-              {% if user.is_authenticated %}
-                {% if has_client_profile %}<a class="lumis-get-started__action" href="{% url 'clients:dashboard' %}">Open my photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                {% else %}<form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Add personal photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>{% endif %}
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&amp;next={{ next|urlencode }}{% endif %}">Find my photos<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
+      <li>
+        <article class="lumis-path-card">
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-clients.webp' %}" alt="Client enjoying photographs from a digital gallery" loading="lazy">
           </div>
-        </div>
+          <div class="lumis-path-card__body">
+            <span class="lumis-path-card__number">02</span>
+            <h2>I’m here for my photos</h2>
+            <p>View galleries, save favorites, download photos and keep your memories together.</p>
+
+            <div class="lumis-path-card__action-wrap">
+              {% if user.is_authenticated %}
+                {% if has_client_profile %}
+                  <a class="lumis-path-card__action" href="{% url 'clients:dashboard' %}">Open my photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                {% else %}
+                  <form method="post" action="{% url 'accounts:enable-client-profile' %}">
+                    {% csrf_token %}
+                    <button class="lumis-path-card__action" type="submit">Add personal photo space<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+                  </form>
+                {% endif %}
+              {% else %}
+                <a class="lumis-path-card__action" href="{% url 'accounts:client-signup' %}?intent=find_photos{% if next %}&amp;next={{ next|urlencode }}{% endif %}">View my photos<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              {% endif %}
+            </div>
+          </div>
+        </article>
       </li>
 
-      <li class="wptb-item">
-        <div class="wptb-item--inner">
-          <div class="wptb-item--features-holder"><div class="wptb-item--title"><a href="#get-started-hire"><span class="lumis-get-started__number">03</span><span>I need a photographer</span><small>Plan a shoot and find the right fit</small></a></div></div>
-          <div class="wptb-item--image" id="get-started-hire">
-            <img src="{% static 'img/services/details-2.jpg' %}" alt="Photographer documenting a client event">
-            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0">
-              <span class="lumis-get-started__label">FIND A PHOTOGRAPHER</span><h2>Start with what you are planning.</h2><p>Explore photography specialties and prepare to connect with professionals who match your location, style, and event.</p>
-              {% if user.is_authenticated and not has_client_profile %}<form method="post" action="{% url 'accounts:enable-client-profile' %}">{% csrf_token %}<button class="lumis-get-started__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
-              {% elif user.is_authenticated %}<a class="lumis-get-started__action" href="{% url 'accounts:marketplace-request-placeholder' %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-              {% else %}<a class="lumis-get-started__action" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&amp;next={{ next|urlencode }}{% endif %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
-            </div></div>
+      <li>
+        <article class="lumis-path-card">
+          <div class="lumis-path-card__media">
+            <img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Couple being photographed for a special occasion" loading="lazy">
           </div>
-        </div>
+          <div class="lumis-path-card__body">
+            <span class="lumis-path-card__number">03</span>
+            <h2>I need a photographer</h2>
+            <p>Discover photographers, compare styles and find the right photographer for your moment.</p>
+
+            <div class="lumis-path-card__action-wrap">
+              {% if user.is_authenticated and not has_client_profile %}
+                <form method="post" action="{% url 'accounts:enable-client-profile' %}">
+                  {% csrf_token %}
+                  <button class="lumis-path-card__action" type="submit">Add personal access<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+                </form>
+              {% elif user.is_authenticated %}
+                <a class="lumis-path-card__action" href="{% url 'accounts:marketplace-request-placeholder' %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              {% else %}
+                <a class="lumis-path-card__action" href="{% url 'accounts:client-signup' %}?intent=marketplace{% if next %}&amp;next={{ next|urlencode }}{% endif %}">Find a photographer<i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              {% endif %}
+            </div>
+          </div>
+        </article>
       </li>
     </ol>
 
-    {% if not user.is_authenticated %}<p class="lumis-get-started__signin">Already have an account? <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in</a></p>{% endif %}
+    <div class="lumis-get-started__reassurance">
+      <span class="lumis-get-started__reassurance-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
+      <p><strong>Not sure? No problem.</strong><span>You can use all three experiences from the same LumisPixel account.</span></p>
+    </div>
   </div>
 </section>
 {% endblock %}
