@@ -3,7 +3,7 @@ from datetime import datetime, time
 from django import forms
 from django.utils import timezone
 
-from apps.clients.models import Client
+from apps.clients.models import Client, ClientSession
 
 from .models import Album, DiscountCode, Gallery, GalleryStore, GallerySettings, StoreProduct
 
@@ -42,6 +42,15 @@ class DiscountCodeForm(forms.ModelForm):
     def clean_code(self): return self.cleaned_data["code"].strip().upper()
 
 
+class BookingSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            option["attrs"]["data-client-id"] = str(instance.client_id)
+        return option
+
+
 class GalleryForm(forms.ModelForm):
     expiration_date = forms.DateField(
         required=False,
@@ -51,7 +60,7 @@ class GalleryForm(forms.ModelForm):
 
     class Meta:
         model = Gallery
-        fields = ("name", "client", "event_date", "description", "cover_image", "status", "visibility")
+        fields = ("name", "client", "booking", "event_date", "description", "cover_image", "status", "visibility")
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Add a short note for your team or client…"}),
@@ -61,9 +70,19 @@ class GalleryForm(forms.ModelForm):
     def __init__(self, *args, photographer, **kwargs):
         super().__init__(*args, **kwargs)
         self.photographer = photographer
+        self.instance.photographer = photographer
         self.fields["client"].queryset = Client.objects.for_photographer(photographer).order_by("first_name", "last_name")
         self.fields["client"].required = False
         self.fields["client"].empty_label = "Search or choose a client"
+        self.fields["booking"].queryset = ClientSession.objects.for_photographer(photographer).filter(
+            event_kind=ClientSession.EventKind.BOOKING
+        ).select_related("client").order_by("-starts_at", "-pk")
+        self.fields["booking"].required = False
+        self.fields["booking"].label = "Booking / shoot"
+        self.fields["booking"].empty_label = "No booking linked"
+        self.fields["booking"].help_text = "Connect this gallery to the booking that produced it."
+        self.fields["booking"].widget = BookingSelect(attrs={"data-gallery-booking-select": ""})
+        self.fields["booking"].widget.choices = self.fields["booking"].choices
         if self.instance and self.instance.expires_at:
             self.fields["expiration_date"].initial = timezone.localtime(self.instance.expires_at).date()
         for name, field in self.fields.items():
@@ -81,6 +100,13 @@ class GalleryForm(forms.ModelForm):
         cleaned_data = super().clean()
         expiration = cleaned_data.get("expiration_date")
         status = cleaned_data.get("status")
+        client = cleaned_data.get("client")
+        booking = cleaned_data.get("booking")
+        if booking:
+            if booking.photographer_id != self.photographer.id:
+                self.add_error("booking", "Choose a booking belonging to this photographer.")
+            elif not client or booking.client_id != client.id:
+                self.add_error("booking", "Choose a booking belonging to the selected client.")
         if expiration and status == Gallery.Status.PUBLISHED:
             expires_at = timezone.make_aware(datetime.combine(expiration, time.max))
             published_at = self.instance.published_at if self.instance and self.instance.published_at else timezone.now()
@@ -90,6 +116,7 @@ class GalleryForm(forms.ModelForm):
 
     def save(self, commit=True):
         gallery = super().save(commit=False)
+        gallery.photographer = self.photographer
         expiration = self.cleaned_data.get("expiration_date")
         gallery.expires_at = timezone.make_aware(datetime.combine(expiration, time.max)) if expiration else None
         if commit:
