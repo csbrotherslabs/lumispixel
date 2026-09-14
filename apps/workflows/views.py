@@ -43,6 +43,7 @@ def automation_dashboard(request):
             "page_title": "Automation",
             "workspace_nav": _workspace_nav("workflows"),
             "identity": _identity(photographer, request.user),
+            "automation_active": True,
             "rules": rules,
             "executions": executions,
             "enabled_count": enabled_count,
