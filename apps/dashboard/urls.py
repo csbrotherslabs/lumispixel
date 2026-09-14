@@ -4,6 +4,7 @@ from apps.workflows.views import automation_dashboard
 
 from . import views
 from .billing_views import billing_account
+from .help_views import workspace_help
 from .profile_views import photographer_profile
 
 app_name = "photographer_workspace"
@@ -121,5 +122,5 @@ urlpatterns = [
     path("equipment/", views.module_placeholder, {"module_key": "equipment"}, name="equipment"),
     path("tasks/", views.module_placeholder, {"module_key": "tasks"}, name="tasks"),
     path("notifications/", views.module_placeholder, {"module_key": "notifications"}, name="notifications"),
-    path("help/", views.module_placeholder, {"module_key": "help"}, name="help"),
+    path("help/", workspace_help, name="help"),
 ]
