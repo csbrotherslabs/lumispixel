@@ -1,6 +1,7 @@
 Django
 python-dotenv
 Pillow
+qrcode[pil]
 psycopg[binary]
 dj-database-url
 django-storages[s3]
