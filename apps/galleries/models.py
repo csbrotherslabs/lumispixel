@@ -64,6 +64,9 @@ class Gallery(models.Model):
     client = models.ForeignKey(
         "clients.Client", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True
     )
+    booking = models.ForeignKey(
+        "clients.ClientSession", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True
+    )
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220)
     description = models.TextField(blank=True)
@@ -104,8 +107,16 @@ class Gallery(models.Model):
         ]
 
     def clean(self):
+        errors = {}
         if self.client_id and self.photographer_id and self.client.photographer_id != self.photographer_id:
-            raise ValidationError({"client": "Choose a client belonging to this photographer."})
+            errors["client"] = "Choose a client belonging to this photographer."
+        if self.booking_id:
+            if self.photographer_id and self.booking.photographer_id != self.photographer_id:
+                errors["booking"] = "Choose a booking belonging to this photographer."
+            if self.client_id and self.booking.client_id != self.client_id:
+                errors["booking"] = "Choose a booking belonging to this gallery client."
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return self.name
