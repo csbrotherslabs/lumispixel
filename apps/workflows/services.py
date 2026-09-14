@@ -32,7 +32,7 @@ DEFAULT_RULES = (
         "trigger": AutomationRule.Trigger.INVOICE_DUE,
         "action": AutomationRule.Action.SEND_INVOICE_REMINDER,
         "name": "Send invoice due reminder",
-        "description": "Email the client three days before an unpaid invoice is due.",
+        "description": "Email the client three days before an unpaid sent invoice is due when invoice reminders are enabled.",
         "config": {"days_before": 3},
     },
     {
@@ -190,6 +190,10 @@ def _prepare_invoice(execution, contract):
 
 
 def _send_invoice_reminder(execution, invoice):
+    if not invoice.reminders_enabled:
+        return False, "Invoice reminders are disabled for this invoice."
+    if invoice.status not in {ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.sent_at:
+        return False, "Invoice has not been sent to the client yet."
     if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID}:
         return False, "Invoice is already closed."
     if not invoice.client.email:
