@@ -1,0 +1,14 @@
+Hello {{ invoice.client.first_name|default:"there" }},
+
+{{ studio_name }} sent you invoice {{ invoice.invoice_number }}.
+
+Amount due: {{ invoice.currency }} {{ invoice.total|floatformat:2 }}
+Due date: {{ invoice.due_date|date:"F j, Y" }}
+{% if invoice.client_notes %}
+Message from {{ studio_name }}:
+{{ invoice.client_notes }}
+{% endif %}
+
+If you have questions about this invoice, please contact {{ studio_name }} directly.
+
+LumisPixel
