@@ -5,6 +5,7 @@ from django.urls import include, path
 
 from apps.core.support_views import help_center, support_attachment_download, support_ticket_detail
 from apps.dashboard.workspace_settings import workspace_settings
+from apps.workflows.views import automation_dashboard
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -22,6 +23,7 @@ urlpatterns = [
     path("billing/", include("apps.billing.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("photographer/workspace/settings/", workspace_settings),
+    path("photographer/workspace/workflows/", automation_dashboard),
     path("photographer/workspace/", include("apps.dashboard.urls")),
     path("internal/", include("apps.internal_ops.urls")),
     path("api/", include("apps.api.urls")),
