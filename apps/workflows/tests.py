@@ -120,7 +120,7 @@ class WorkflowAutomationTests(TestCase):
         self.assertEqual(ClientTask.objects.filter(photographer=self.photographer, client=self.client_record).count(), 1)
 
     @patch("apps.workflows.tasks.dispatch_event")
-    def test_beat_scanner_finds_invoice_due_on_configured_day(self, dispatch):
+    def test_beat_scanner_finds_sent_invoice_due_on_configured_day(self, dispatch):
         rule = ensure_default_rules(self.photographer)[2]
         rule.enabled = True
         rule.save(update_fields=["enabled", "updated_at"])
@@ -130,8 +130,69 @@ class WorkflowAutomationTests(TestCase):
             invoice_number="INV-AUTO-1",
             total="450.00",
             due_date=timezone.localdate() + timedelta(days=3),
+            status=ClientInvoice.Status.SENT,
+            sent_at=timezone.now(),
+            reminders_enabled=True,
         )
 
         scan_scheduled_automations.run()
 
         self.assertTrue(any(call.kwargs.get("target") == invoice for call in dispatch.call_args_list))
+
+    @patch("apps.workflows.tasks.dispatch_event")
+    def test_beat_scanner_ignores_disabled_reminders_and_draft_invoices(self, dispatch):
+        rule = ensure_default_rules(self.photographer)[2]
+        rule.enabled = True
+        rule.save(update_fields=["enabled", "updated_at"])
+        due_date = timezone.localdate() + timedelta(days=3)
+        disabled = ClientInvoice.objects.create(
+            photographer=self.photographer,
+            client=self.client_record,
+            invoice_number="INV-AUTO-DISABLED",
+            total="450.00",
+            due_date=due_date,
+            status=ClientInvoice.Status.SENT,
+            sent_at=timezone.now(),
+            reminders_enabled=False,
+        )
+        draft = ClientInvoice.objects.create(
+            photographer=self.photographer,
+            client=self.client_record,
+            invoice_number="INV-AUTO-DRAFT",
+            total="450.00",
+            due_date=due_date,
+            status=ClientInvoice.Status.DRAFT,
+            reminders_enabled=True,
+        )
+
+        scan_scheduled_automations.run()
+
+        targets = [call.kwargs.get("target") for call in dispatch.call_args_list]
+        self.assertNotIn(disabled, targets)
+        self.assertNotIn(draft, targets)
+
+    def test_queued_invoice_reminder_skips_if_reminders_are_disabled_before_execution(self):
+        rule = ensure_default_rules(self.photographer)[2]
+        invoice = ClientInvoice.objects.create(
+            photographer=self.photographer,
+            client=self.client_record,
+            invoice_number="INV-AUTO-QUEUED",
+            total="450.00",
+            due_date=timezone.localdate() + timedelta(days=3),
+            status=ClientInvoice.Status.SENT,
+            sent_at=timezone.now(),
+            reminders_enabled=False,
+        )
+        execution = AutomationExecution.objects.create(
+            rule=rule,
+            photographer=self.photographer,
+            event_key=f"invoice-due:{invoice.pk}:{invoice.due_date.isoformat()}",
+            trigger=rule.trigger,
+            target_type=invoice._meta.label_lower,
+            target_id=invoice.pk,
+        )
+
+        performed, message = run_execution(execution)
+
+        self.assertFalse(performed)
+        self.assertIn("disabled", message.lower())

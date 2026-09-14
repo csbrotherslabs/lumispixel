@@ -57,7 +57,10 @@ def scan_scheduled_automations():
         invoices = ClientInvoice.objects.filter(
             photographer=rule.photographer,
             due_date=due_date,
-        ).exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
+            reminders_enabled=True,
+            sent_at__isnull=False,
+            status__in=[ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID],
+        )
         for invoice in invoices:
             dispatch_event(
                 trigger=AutomationRule.Trigger.INVOICE_DUE,
