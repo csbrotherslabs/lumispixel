@@ -82,6 +82,7 @@ class GalleryForm(forms.ModelForm):
         self.fields["booking"].empty_label = "No booking linked"
         self.fields["booking"].help_text = "Connect this gallery to the booking that produced it."
         self.fields["booking"].widget = BookingSelect(attrs={"data-gallery-booking-select": ""})
+        self.fields["booking"].widget.choices = self.fields["booking"].choices
         if self.instance and self.instance.expires_at:
             self.fields["expiration_date"].initial = timezone.localtime(self.instance.expires_at).date()
         for name, field in self.fields.items():
