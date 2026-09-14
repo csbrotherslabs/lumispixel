@@ -3,7 +3,6 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.db import IntegrityError, transaction
-from django.urls import reverse
 from django.utils import timezone
 
 from apps.clients.contracts import send_contract_for_review
@@ -126,6 +125,11 @@ def _public_uri(path):
     return f"{base.rstrip('/')}{path}"
 
 
+class _BackgroundRequest:
+    def build_absolute_uri(self, path="/"):
+        return _public_uri(path)
+
+
 def _send_contract(execution, booking):
     contract = (
         Contract.objects.filter(photographer=execution.photographer, booking=booking)
@@ -165,7 +169,7 @@ def _prepare_invoice(execution, contract):
         )
         InvoiceLineItem.objects.create(
             invoice=invoice,
-            item_type=InvoiceLineItem.ItemType.SERVICE,
+            item_type=InvoiceLineItem.ItemType.SESSION,
             description=f"{booking.session_type} photography service",
             quantity=1,
             unit_price=amount,
@@ -229,8 +233,8 @@ def _notify_gallery_client(execution, gallery):
     for invitation in invitations:
         token_record, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
         try:
-            send_gallery_invitation_email(None, invitation=invitation, raw_token=raw_token)
-        except (GalleryInvitationDeliveryError, AttributeError):
+            send_gallery_invitation_email(_BackgroundRequest(), invitation=invitation, raw_token=raw_token)
+        except GalleryInvitationDeliveryError:
             token_record.revoked_at = timezone.now()
             token_record.save(update_fields=["revoked_at"])
             raise
