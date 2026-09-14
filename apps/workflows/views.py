@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -12,6 +13,8 @@ from .services import ensure_default_rules
 @require_http_methods(["GET", "POST"])
 def automation_dashboard(request):
     photographer = request.studio
+    if photographer.user_id != request.user.id:
+        raise PermissionDenied("Only the studio owner can manage automations.")
     ensure_default_rules(photographer)
 
     if request.method == "POST":
