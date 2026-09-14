@@ -1,5 +1,6 @@
+from datetime import datetime, time, timedelta
+
 from celery import shared_task
-from django.db import transaction
 from django.utils import timezone
 
 from apps.clients.models import ClientInvoice
@@ -52,7 +53,7 @@ def scan_scheduled_automations():
     )
     for rule in invoice_rules:
         days_before = int(rule.config.get("days_before", 3))
-        due_date = today + timezone.timedelta(days=days_before)
+        due_date = today + timedelta(days=days_before)
         invoices = ClientInvoice.objects.filter(
             photographer=rule.photographer,
             due_date=due_date,
@@ -72,9 +73,9 @@ def scan_scheduled_automations():
     )
     for rule in gallery_rules:
         days_before = int(rule.config.get("days_before", 7))
-        target_date = today + timezone.timedelta(days=days_before)
-        start = timezone.make_aware(timezone.datetime.combine(target_date, timezone.datetime.min.time()))
-        end = start + timezone.timedelta(days=1)
+        target_date = today + timedelta(days=days_before)
+        start = timezone.make_aware(datetime.combine(target_date, time.min))
+        end = start + timedelta(days=1)
         galleries = Gallery.objects.filter(
             photographer=rule.photographer,
             expires_at__gte=start,
