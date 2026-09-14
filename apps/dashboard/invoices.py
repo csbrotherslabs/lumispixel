@@ -2,14 +2,21 @@
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceActivity, InvoiceLineItem, InvoicePaymentSchedule
 
 CENT = Decimal("0.01")
 ZERO = Decimal("0.00")
+
+
+class InvoiceDeliveryError(ValidationError):
+    """An invoice email could not be delivered to the client."""
 
 
 def money(value, field):
@@ -64,6 +71,29 @@ def calculate_items(post):
     return rows
 
 
+def _send_invoice_email(invoice, profile):
+    """Deliver the persisted invoice snapshot without exposing workspace-only URLs."""
+    studio_name = profile.business_name or profile.display_name or profile.user.full_name or profile.user.email
+    context = {"invoice": invoice, "studio_name": studio_name}
+    message = EmailMultiAlternatives(
+        f"Invoice {invoice.invoice_number} from {studio_name}",
+        render_to_string("clients/invoices/email/invoice.txt", context),
+        settings.DEFAULT_FROM_EMAIL,
+        [invoice.client.email],
+    )
+    message.attach_alternative(render_to_string("clients/invoices/email/invoice.html", context), "text/html")
+    try:
+        delivered = message.send(fail_silently=False)
+    except Exception as exc:
+        raise InvoiceDeliveryError({
+            "delivery_email": "We couldn't send this invoice email. No changes were saved. Please try again."
+        }) from exc
+    if delivered != 1:
+        raise InvoiceDeliveryError({
+            "delivery_email": "We couldn't send this invoice email. No changes were saved. Please try again."
+        })
+
+
 @transaction.atomic
 def save_invoice(profile, post, invoice=None, send=False):
     if invoice and invoice.is_locked:
@@ -102,10 +132,8 @@ def save_invoice(profile, post, invoice=None, send=False):
     invoice.subtotal, invoice.discount_total, invoice.tax_total, invoice.total = subtotal, discounts, taxes, total
     invoice.client_notes, invoice.internal_notes, invoice.terms = post.get("client_notes", ""), post.get("internal_notes", ""), post.get("terms", "")
     invoice.delivery_email, invoice.reminders_enabled = post.get("delivery_email") == "on", post.get("reminders_enabled") == "on"
-    if send:
-        if not client.email:
-            raise ValidationError({"client": "An email address is required to send this invoice."})
-        invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
+    if send and not client.email:
+        raise ValidationError({"client": "An email address is required to send this invoice."})
     invoice.full_clean()
     invoice.save()
     invoice.line_items.all().delete()
@@ -115,13 +143,20 @@ def save_invoice(profile, post, invoice=None, send=False):
     invoice.payment_schedule.all().delete()
     schedules = _rows(post, "schedule", ("label", "amount", "due_date"))
     for i, row in enumerate(schedules):
-        if not any(row.values()): continue
+        if not any(row.values()):
+            continue
         amount = money(row["amount"], "payment_schedule")
-        try: scheduled_date = timezone.datetime.strptime(row["due_date"], "%Y-%m-%d").date()
-        except ValueError: raise ValidationError({"payment_schedule": "Every payment needs a valid due date."})
+        try:
+            scheduled_date = timezone.datetime.strptime(row["due_date"], "%Y-%m-%d").date()
+        except ValueError:
+            raise ValidationError({"payment_schedule": "Every payment needs a valid due date."})
         InvoicePaymentSchedule.objects.create(invoice=invoice, label=row["label"] or f"Payment {i + 1}", amount=amount, due_date=scheduled_date, position=i)
     if invoice.payment_schedule.exists() and sum((p.amount for p in invoice.payment_schedule.all()), ZERO) != total:
         raise ValidationError({"payment_schedule": "Scheduled payments must add up to the invoice total."})
+    if send:
+        _send_invoice_email(invoice, profile)
+        invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
+        invoice.save(update_fields=["status", "sent_at"])
     InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="sent" if send else "saved",
                                    description="Invoice sent to client." if send else "Invoice saved as draft.")
     return invoice
