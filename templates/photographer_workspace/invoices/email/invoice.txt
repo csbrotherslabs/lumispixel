@@ -1,0 +1,12 @@
+Hi {{ invoice.client.first_name|default:"there" }},
+
+Your invoice {{ invoice.invoice_number }} from {{ studio_name }} is attached to this email.
+
+Amount due: {{ invoice.currency }} {{ invoice.balance }}
+Due date: {{ invoice.due_date|date:"F j, Y" }}
+
+{% if invoice.client_notes %}Note from {{ studio_name }}:
+{{ invoice.client_notes }}
+
+{% endif %}Thank you,
+{{ studio_name }}
