@@ -150,7 +150,14 @@ class AlbumForm(forms.ModelForm):
 class GallerySettingsForm(forms.ModelForm):
     class Meta:
         model = GallerySettings
-        exclude = ("gallery",)
+        exclude = (
+            "gallery",
+            # Client authorization lives exclusively in GalleryPermission.
+            "allow_downloads",
+            "allow_original_downloads",
+            "enable_favorites",
+            "enable_comments",
+        )
         widgets = {
             "studio_logo": forms.FileInput(attrs={"accept": "image/png,image/jpeg,image/webp"}),
             "accent_color": forms.TextInput(attrs={"type": "color"}),
