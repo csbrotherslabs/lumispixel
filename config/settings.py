@@ -71,8 +71,8 @@ PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
 # to a single object-storage vendor. Local storage remains the safe default for
 # development and CI; production should set GALLERY_STORAGE_BACKEND=b2.
 GALLERY_STORAGE_BACKEND = os.getenv("GALLERY_STORAGE_BACKEND", "local").strip().lower()
-if GALLERY_STORAGE_BACKEND not in {"local", "b2", "spaces"}:
-    raise RuntimeError("GALLERY_STORAGE_BACKEND must be one of: local, b2, spaces.")
+if GALLERY_STORAGE_BACKEND not in {"local", "b2"}:
+    raise RuntimeError("GALLERY_STORAGE_BACKEND must be one of: local, b2.")
 
 GALLERY_STORAGE_ENVIRONMENT = os.getenv(
     "GALLERY_STORAGE_ENVIRONMENT", "dev" if DEBUG else "prod"
@@ -92,22 +92,6 @@ if GALLERY_STORAGE_BACKEND == "b2" and not all(
     raise RuntimeError(
         "B2_ACCESS_KEY_ID, B2_SECRET_ACCESS_KEY, B2_BUCKET_NAME, B2_REGION, "
         "and B2_ENDPOINT_URL are required when GALLERY_STORAGE_BACKEND=b2."
-    )
-
-# Temporary compatibility path for existing DigitalOcean Spaces deployments.
-SPACES_ACCESS_KEY = os.getenv("SPACES_ACCESS_KEY", "")
-SPACES_SECRET_KEY = os.getenv("SPACES_SECRET_KEY", "")
-SPACES_BUCKET_NAME = os.getenv("SPACES_BUCKET_NAME", "")
-SPACES_REGION = os.getenv("SPACES_REGION", "nyc3")
-SPACES_ENDPOINT_URL = os.getenv(
-    "SPACES_ENDPOINT_URL", f"https://{SPACES_REGION}.digitaloceanspaces.com"
-)
-SPACES_SIGNED_URL_TTL = int(os.getenv("SPACES_SIGNED_URL_TTL", "900"))
-if GALLERY_STORAGE_BACKEND == "spaces" and not all(
-    [SPACES_ACCESS_KEY, SPACES_SECRET_KEY, SPACES_BUCKET_NAME]
-):
-    raise RuntimeError(
-        "Spaces credentials and bucket are required when GALLERY_STORAGE_BACKEND=spaces."
     )
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
