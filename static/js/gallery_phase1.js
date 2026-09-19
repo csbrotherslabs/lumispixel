@@ -122,6 +122,93 @@
       }
       finishCheck();
     }
+    function apiJson(url, payload, signal) {
+      return fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        signal: signal,
+        headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/json'},
+        body: JSON.stringify(payload || {})
+      }).then(async function (response) {
+        let body = {};
+        try { body = await response.json(); } catch (_) {}
+        if (!response.ok) throw new Error(body.error || 'The upload request failed.');
+        return body;
+      });
+    }
+    function multipartUrl(uploadId, action) {
+      return page.dataset.multipartBaseUrl.replace(/initiate\/$/, uploadId + '/' + action + '/');
+    }
+    function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+    async function uploadPartWithRetry(url, blob, signal, onProgress) {
+      const maxAttempts = 4;
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          return await new Promise(function (resolve, reject) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', url);
+            xhr.upload.onprogress = function (event) { if (event.lengthComputable) onProgress(event.loaded); };
+            xhr.onload = function () {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const etag = xhr.getResponseHeader('ETag');
+                if (!etag) reject(new Error('Storage did not return an ETag.'));
+                else resolve(etag);
+              } else reject(new Error('Storage rejected an upload part.'));
+            };
+            xhr.onerror = function () { reject(new Error('Network interrupted.')); };
+            xhr.onabort = function () { reject(new DOMException('Upload cancelled.', 'AbortError')); };
+            if (signal.aborted) { xhr.abort(); return; }
+            signal.addEventListener('abort', function () { xhr.abort(); }, {once: true});
+            xhr.send(blob);
+          });
+        } catch (err) {
+          if (signal.aborted || err.name === 'AbortError') throw err;
+          if (attempt === maxAttempts) throw err;
+          await sleep(500 * Math.pow(2, attempt - 1));
+        }
+      }
+    }
+    async function directMultipartUpload(job, updateProgress, signal) {
+      const file = job.file;
+      const init = await apiJson(page.dataset.multipartInitUrl, {
+        gallery: job.galleryId, name: file.name, content_type: file.type, size: file.size
+      }, signal);
+      job.multipartId = init.upload;
+      const partSize = Math.max(Number(init.part_size) || 5 * 1024 * 1024, 5 * 1024 * 1024);
+      const totalParts = Math.ceil(file.size / partSize);
+      if (totalParts > Number(init.max_parts || 10000)) throw new Error('This file requires too many upload parts.');
+      const loaded = new Array(totalParts).fill(0);
+      const completed = new Array(totalParts);
+      let nextPart = 0;
+      function report(partIndex, bytes) {
+        loaded[partIndex] = bytes;
+        updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
+      }
+      async function worker() {
+        while (true) {
+          const index = nextPart++;
+          if (index >= totalParts) return;
+          const partNumber = index + 1;
+          const start = index * partSize;
+          const end = Math.min(start + partSize, file.size);
+          const signed = await apiJson(multipartUrl(init.upload, 'part'), {part_number: partNumber}, signal);
+          const etag = await uploadPartWithRetry(signed.url, file.slice(start, end), signal, function (bytes) { report(index, bytes); });
+          loaded[index] = end - start;
+          completed[index] = {part_number: partNumber, etag: etag};
+          updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
+        }
+      }
+      try {
+        const partConcurrency = Math.min(4, totalParts);
+        await Promise.all(Array.from({length: partConcurrency}, worker));
+        return await apiJson(multipartUrl(init.upload, 'complete'), {parts: completed}, signal);
+      } catch (err) {
+        if (job.multipartId) {
+          try { await apiJson(multipartUrl(job.multipartId, 'abort'), {}, undefined); } catch (_) {}
+        }
+        throw err;
+      }
+    }
     function upload(job) {
       const row = job.row, file = job.file;
       active += 1; setStatus(row, 'uploading');
@@ -130,39 +217,36 @@
       slot.innerHTML = '<div class="lp-progress-copy"><span data-percent>0%</span><span data-transfer></span></div><progress max="100" value="0"></progress>';
       const progress = slot.querySelector('progress'); progress.setAttribute('aria-label', file.name + ': Uploading, 0 percent');
       const actions = row.querySelector('.lp-file-actions'); actions.innerHTML = '<button type="button" data-cancel aria-label="Cancel ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
-      const data = new FormData(); data.append('gallery', job.galleryId); data.append('files', file);
-      const xhr = new XMLHttpRequest(), started = performance.now(); let lastPaint = 0;
-      xhr.open('POST', page.dataset.uploadUrl); xhr.setRequestHeader('X-CSRFToken', csrf());
-      xhr.upload.onprogress = function (event) {
-        if (!event.lengthComputable) return;
-        const now = performance.now(); if (now - lastPaint < 100 && event.loaded < event.total) return; lastPaint = now;
-        const percent = Math.round(event.loaded / event.total * 100);
-        const elapsed = Math.max((now - started) / 1000, .1), speed = event.loaded / elapsed;
+      const controller = new AbortController(), started = performance.now(); let lastPaint = 0;
+      function paint(loaded, total) {
+        const now = performance.now(); if (now - lastPaint < 100 && loaded < total) return; lastPaint = now;
+        const percent = Math.min(100, Math.round(loaded / total * 100));
+        const elapsed = Math.max((now - started) / 1000, .1), speed = loaded / elapsed;
         progress.value = percent; progress.textContent = percent + '%'; progress.setAttribute('aria-label', file.name + ': Uploading, ' + percent + ' percent');
         slot.querySelector('[data-percent]').textContent = percent + '%';
-        const remaining = Math.ceil((event.total - event.loaded) / Math.max(speed, 1));
+        const remaining = Math.ceil((total - loaded) / Math.max(speed, 1));
         slot.querySelector('[data-transfer]').textContent = (speed / 1048576).toFixed(1) + ' MB/s · ' + remaining + ' sec remaining';
-      };
+      }
       function failed(reason) {
         setStatus(row, 'failed'); state.querySelector('strong').textContent = 'Upload failed'; state.querySelector('span').textContent = reason || 'Network interrupted'; slot.replaceChildren();
         actions.innerHTML = '<button type="button" data-retry aria-label="Retry ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
-        actions.querySelector('[data-retry]').onclick = function () { setStatus(row, 'queued'); state.querySelector('strong').textContent = 'Queued'; state.querySelector('span').textContent = 'Waiting to upload'; actions.innerHTML = '<button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button>'; pending.push(job); pump(); };
+        actions.querySelector('[data-retry]').onclick = function () { job.multipartId = null; setStatus(row, 'queued'); state.querySelector('strong').textContent = 'Queued'; state.querySelector('span').textContent = 'Waiting to upload'; actions.innerHTML = '<button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button>'; pending.push(job); pump(); };
         actions.querySelector('[data-remove]').onclick = function () { removeRow(row); finishCheck(); };
       }
-      xhr.onload = function () {
-        active -= 1;
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setStatus(row, 'completed'); availableStorage -= file.size; state.querySelector('strong').textContent = 'Uploaded'; state.querySelector('span').textContent = 'Upload complete';
-          slot.innerHTML = '<div class="lp-upload-success"><i class="bi bi-check2-circle" aria-hidden="true"></i>100%</div>';
-          actions.innerHTML = '<button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + ' from queue"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
-          actions.querySelector('[data-remove]').onclick = function () { removeRow(row); };
-        } else failed(serverMessage(xhr) || 'The upload could not be completed.');
+      actions.querySelector('[data-cancel]').onclick = function () { controller.abort(); };
+      directMultipartUpload(job, paint, controller.signal).then(function () {
+        active -= 1; paint(file.size, file.size);
+        setStatus(row, 'completed'); availableStorage -= file.size; state.querySelector('strong').textContent = 'Uploaded'; state.querySelector('span').textContent = 'Upload complete';
+        slot.innerHTML = '<div class="lp-upload-success"><i class="bi bi-check2-circle" aria-hidden="true"></i>100%</div>';
+        actions.innerHTML = '<button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + ' from queue"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
+        actions.querySelector('[data-remove]').onclick = function () { removeRow(row); };
         pump();
-      };
-      xhr.onerror = function () { active -= 1; failed('Network interrupted'); pump(); };
-      xhr.onabort = function () { active -= 1; removeRow(row); pump(); };
-      actions.querySelector('[data-cancel]').onclick = function () { xhr.abort(); };
-      xhr.send(data);
+      }).catch(function (err) {
+        active -= 1;
+        if (controller.signal.aborted) removeRow(row);
+        else failed(err.message || 'The upload could not be completed.');
+        pump();
+      });
     }
     function queue(files) {
       error.replaceChildren(); completion.hidden = true;
