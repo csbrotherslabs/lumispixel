@@ -10,6 +10,7 @@ import json
 from urllib.parse import urlencode
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
