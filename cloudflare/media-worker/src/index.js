@@ -110,6 +110,27 @@ export default {
       return textResponse("Not found", 404);
     }
 
+    const cache = caches.default;
+    const cacheUrl = new URL(requestUrl.origin + requestUrl.pathname);
+    const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
+    const isRangeRequest = request.headers.has("range");
+
+    // Authorization always runs before cache access. Query-string credentials are
+    // deliberately excluded from the cache key so authorized viewers share one
+    // cached object without making the cache itself a public authorization bypass.
+    if (request.method === "GET" && !isRangeRequest) {
+      const cachedResponse = await cache.match(cacheKey);
+      if (cachedResponse) {
+        const headers = new Headers(cachedResponse.headers);
+        headers.set("x-lumispixel-cache", "HIT");
+        return new Response(cachedResponse.body, {
+          status: cachedResponse.status,
+          statusText: cachedResponse.statusText,
+          headers,
+        });
+      }
+    }
+
     const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\/+$/, "");
     const bucket = encodeURIComponent(env.B2_BUCKET_NAME);
     const encodedKey = objectKey
@@ -148,12 +169,26 @@ export default {
 
     const headers = new Headers(originResponse.headers);
     headers.set("x-content-type-options", "nosniff");
-    headers.set("cache-control", "private, no-store");
+    headers.set("cache-control", "private, max-age=0, no-cache");
+    headers.set("x-lumispixel-cache", isRangeRequest ? "BYPASS" : "MISS");
 
-    return new Response(originResponse.body, {
+    const response = new Response(originResponse.body, {
       status: originResponse.status,
       statusText: originResponse.statusText,
       headers,
     });
+
+    // Cache only complete successful GET responses. Range/HEAD responses bypass
+    // cache to avoid serving partial objects as complete media.
+    if (request.method === "GET" && !isRangeRequest && originResponse.status === 200) {
+      const cacheTtl = Number(env.MEDIA_EDGE_CACHE_TTL || 86400);
+      if (Number.isFinite(cacheTtl) && cacheTtl > 0) {
+        const cacheResponse = new Response(response.clone().body, response);
+        cacheResponse.headers.set("cache-control", `public, max-age=${Math.floor(cacheTtl)}`);
+        await cache.put(cacheKey, cacheResponse);
+      }
+    }
+
+    return response;
   },
 };
