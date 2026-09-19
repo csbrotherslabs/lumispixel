@@ -34,14 +34,27 @@
       {% if form.non_field_errors %}<div class="lp-album-form-errors">{{ form.non_field_errors }}</div>{% endif %}
 
       <div class="lp-album-form-grid">
-        {% for field in form %}
-          <div class="lp-album-field lp-album-field--{{ field.name }}{% if field.name == 'description' %} lp-album-field--wide{% endif %}">
-            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true">*</span>{% endif %}</label>
-            <div class="lp-album-field__control">{{ field }}</div>
-            {% for error in field.errors %}<small class="lp-album-field__error"><i class="bi bi-exclamation-circle"></i>{{ error }}</small>{% endfor %}
-            {% if field.name == 'visibility' %}<small class="lp-album-field__help">Public can be shared broadly. Client Only follows gallery access. Hidden stays internal to the photographer workspace.</small>{% elif field.name == 'cover_image' %}<small class="lp-album-field__help">Choose an image that represents this collection. You can change it later.</small>{% elif field.name == 'display_order' %}<small class="lp-album-field__help">Lower numbers appear first when albums are displayed.</small>{% endif %}
-          </div>
-        {% endfor %}
+        {% with fields=form %}
+          {% for field in fields %}
+            {% if field.name == 'name' or field.name == 'visibility' or field.name == 'cover_image' or field.name == 'display_order' %}
+              <div class="lp-album-field lp-album-field--{{ field.name }}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true">*</span>{% endif %}</label>
+                <div class="lp-album-field__control">{{ field }}</div>
+                {% for error in field.errors %}<small class="lp-album-field__error"><i class="bi bi-exclamation-circle"></i>{{ error }}</small>{% endfor %}
+                {% if field.name == 'visibility' %}<small class="lp-album-field__help">Public can be shared broadly. Client Only follows gallery access. Hidden stays internal to the photographer workspace.</small>{% elif field.name == 'cover_image' %}<small class="lp-album-field__help">Choose an image that represents this collection. You can change it later.</small>{% elif field.name == 'display_order' %}<small class="lp-album-field__help">Lower numbers appear first when albums are displayed.</small>{% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+          {% for field in fields %}
+            {% if field.name == 'description' %}
+              <div class="lp-album-field lp-album-field--description lp-album-field--wide">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true">*</span>{% endif %}</label>
+                <div class="lp-album-field__control">{{ field }}</div>
+                {% for error in field.errors %}<small class="lp-album-field__error"><i class="bi bi-exclamation-circle"></i>{{ error }}</small>{% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endwith %}
       </div>
     </section>
 
