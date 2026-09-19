@@ -1922,10 +1922,9 @@ def gallery_photo_bulk_action(request, pk):
         # Remove database relationships first; delete storage objects only for the scoped photos.
         with transaction.atomic():
             GalleryPhoto.objects.filter(pk__in=deleted_ids).delete()
-            Gallery.objects.filter(pk=gallery.pk).update(
-                image_count=Coalesce(F("image_count"), Value(0)) - len(deleted_ids),
-                storage_used=Coalesce(F("storage_used"), Value(0), output_field=DecimalField()) - total_size,
-            )
+            gallery.image_count = max(gallery.image_count - len(deleted_ids), 0)
+            gallery.storage_used = max(gallery.storage_used - total_size, 0)
+            gallery.save(update_fields=["image_count", "storage_used", "updated_at"])
         for photo in photos:
             if photo.file:
                 try:
