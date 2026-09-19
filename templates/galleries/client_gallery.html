@@ -27,8 +27,8 @@
     <section class="lp-client-gallery__grid" aria-label="Gallery photos">
       {% for photo in photos %}
         <article class="lp-client-photo" id="photo-{{ photo.pk }}">
-          <a class="lp-client-photo__image" href="{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}">
-            <img loading="lazy" src="{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}" alt="{{ photo.original_name }}">
+          <a class="lp-client-photo__image" href="{{ photo.delivery_url }}">
+            <img loading="lazy" src="{{ photo.delivery_url }}" alt="{{ photo.original_name }}">
           </a>
           <div class="lp-client-photo__actions">
             {% if can_favorite %}
