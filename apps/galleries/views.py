@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
 from django.http import FileResponse, Http404, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -70,6 +70,28 @@ def client_galleries(request):
     }
     return render(request, "client_galleries.html", context)
 
+
+
+@require_GET
+def stable_gallery_access(request, public_id):
+    gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
+    now = timezone.now()
+    if gallery.expires_at and gallery.expires_at <= now:
+        raise Http404
+    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
+    if not permissions.view_gallery:
+        raise Http404
+    if request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
+        invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
+        if invitation:
+            _, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
+            return redirect("galleries:client_gallery_access", token=raw_token)
+    if gallery.visibility != Gallery.Visibility.PUBLIC:
+        return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
+    photos = list(GalleryPhoto.objects.filter(gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED).order_by("created_at", "pk"))
+    albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).order_by("display_order", "pk"))
+    return render(request, "galleries/client_gallery.html", {"gallery": gallery, "invitation": None, "photos": photos, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery})
 
 def _client_gallery_access(raw_token):
     token_hash = AccessToken.digest(raw_token)
@@ -173,6 +195,8 @@ def client_gallery_access(request, token):
             "access_token": token,
             "can_favorite": permissions.favorite_photos and settings.enable_favorites,
             "can_download": permissions.download_images and settings.allow_downloads,
+            "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])),
+            "can_share_gallery": permissions.share_gallery,
         },
     )
 
