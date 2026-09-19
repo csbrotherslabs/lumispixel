@@ -36,8 +36,8 @@
           <div class="lp-client-photo__actions">
             {% if can_favorite %}
               <form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}">{% csrf_token %}
-                <button type="submit" {% if photo.is_client_favorite %}aria-pressed="true" disabled{% else %}aria-pressed="false"{% endif %}>
-                  {% if photo.is_client_favorite %}Favorited{% else %}Favorite{% endif %}
+                <button type="submit" aria-pressed="{% if photo.is_client_favorite %}true{% else %}false{% endif %}">
+                  {% if photo.is_client_favorite %}Remove Favorite{% else %}Favorite{% endif %}
                 </button>
               </form>
             {% endif %}
