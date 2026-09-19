@@ -1455,8 +1455,9 @@ def gallery_upload_queue(request):
                                  metadata={"count": len(created), "files": [item["name"] for item in created[:10]]})
         return JsonResponse({"uploads": created, "errors": errors}, status=201 if created else 400)
     upload_records = GalleryPhoto.objects.for_photographer(profile)
-    counts = {status: upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
-    uploads = upload_records.select_related("gallery")[:100]
+    visible_upload_records = upload_records.filter(upload_queue_dismissed=False)
+    counts = {status: visible_upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
+    uploads = visible_upload_records.select_related("gallery")[:100]
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
     storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
     selected_gallery = galleries.filter(pk=request.GET.get("gallery")).first() if request.GET.get("gallery") else None
@@ -1895,8 +1896,9 @@ def gallery_photo_action(request, pk):
         photo.is_cover = True
         photo.save(update_fields=["is_cover", "updated_at"])
     elif action == "remove":
-        # Queue dismissal is a presentation concern; it must never delete the gallery original.
-        pass
+        # Persist only the transfer-manager dismissal. The photo and B2 original remain intact.
+        photo.upload_queue_dismissed = True
+        photo.save(update_fields=["upload_queue_dismissed", "updated_at"])
     elif action == "retry" and photo.status == GalleryPhoto.Status.FAILED:
         photo.status, photo.error_message = GalleryPhoto.Status.QUEUED, ""
         photo.save(update_fields=["status", "error_message", "updated_at"])
