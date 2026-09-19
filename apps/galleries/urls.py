@@ -10,6 +10,7 @@ urlpatterns = [
     path("access/<str:token>/", views.client_gallery_access, name="client_gallery_access"),
     path("access/<str:token>/photos/<int:photo_id>/media/", views.client_gallery_photo_media, name="client_gallery_photo_media"),
     path("access/<str:token>/photos/<int:photo_id>/favorite/", views.client_gallery_favorite, name="client_gallery_favorite"),
+    path("access/<str:token>/photos/<int:photo_id>/comment/", views.client_gallery_comment, name="client_gallery_comment"),
     path("access/<str:token>/photos/<int:photo_id>/download/", views.client_gallery_download, name="client_gallery_download"),
     path("access/<str:token>/photos/<int:photo_id>/download-original/", views.client_gallery_download_original, name="client_gallery_download_original"),
     path("access/<str:token>/download/", views.client_gallery_download_all, name="client_gallery_download_all"),
