@@ -197,7 +197,7 @@ def client_gallery_access(request, token):
 
     for photo in photos:
         photo.is_client_favorite = photo.pk in favorite_ids
-        photo.client_comments = comments_by_photo.get(photo.pk, [])
+        photo.client_comment_list = comments_by_photo.get(photo.pk, [])
 
     store = GalleryStore.objects.filter(
         gallery=gallery,
