@@ -420,6 +420,26 @@ class GalleryPermission(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class GalleryPhotoComment(models.Model):
+    """A client comment attached to a delivered gallery photo."""
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photo_comments")
+    photo = models.ForeignKey("GalleryPhoto", on_delete=models.CASCADE, related_name="client_comments")
+    invitation = models.ForeignKey(GalleryInvitation, on_delete=models.CASCADE, related_name="photo_comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+
+    def clean(self):
+        if self.photo_id and self.photo.gallery_id != self.gallery_id:
+            raise ValidationError({"photo": "Comment photo must belong to this gallery."})
+        if self.invitation_id and self.invitation.gallery_id != self.gallery_id:
+            raise ValidationError({"invitation": "Comment invitation must belong to this gallery."})
+
+
 class GallerySettings(models.Model):
     """Presentation, download, preference, and discovery settings for a gallery."""
 
