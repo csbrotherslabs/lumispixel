@@ -19,6 +19,7 @@ urlpatterns = [
     path("galleries/actions/", views.gallery_actions, name="gallery_actions"),
     path("galleries/upload-queue/", views.gallery_upload_queue, name="gallery_upload_queue"),
     path("galleries/uploads/multipart/initiate/", views.gallery_multipart_initiate, name="gallery_multipart_initiate"),
+    path("galleries/uploads/multipart/<uuid:upload_uuid>/resume/", views.gallery_multipart_resume, name="gallery_multipart_resume"),
     path("galleries/uploads/multipart/<uuid:upload_uuid>/part/", views.gallery_multipart_sign_part, name="gallery_multipart_sign_part"),
     path("galleries/uploads/multipart/<uuid:upload_uuid>/complete/", views.gallery_multipart_complete, name="gallery_multipart_complete"),
     path("galleries/uploads/multipart/<uuid:upload_uuid>/abort/", views.gallery_multipart_abort, name="gallery_multipart_abort"),
