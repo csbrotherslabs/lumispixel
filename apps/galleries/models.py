@@ -61,6 +61,7 @@ class Gallery(models.Model):
         SCHEDULED = "scheduled", "Scheduled for Deletion"
         DELETION_PENDING = "deletion_pending", "Deletion Pending"
 
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     photographer = models.ForeignKey(
         "accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="galleries"
     )

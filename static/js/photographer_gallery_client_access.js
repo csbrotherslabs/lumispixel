@@ -105,3 +105,23 @@
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
   });
 })();
+
+
+// Stable gallery link and QR actions.
+(() => {
+  const copyButton = document.querySelector('[data-copy-stable-gallery]');
+  const input = document.querySelector('#stable-gallery-url');
+  copyButton?.addEventListener('click', async () => {
+    if (!input) return;
+    try { await navigator.clipboard.writeText(input.value); copyButton.innerHTML = '<i class="bi bi-check2"></i>Copied'; setTimeout(() => { copyButton.innerHTML = '<i class="bi bi-copy"></i>Copy Link'; }, 1600); }
+    catch (_) { input.select(); document.execCommand('copy'); }
+  });
+  document.querySelector('[data-print-stable-qr]')?.addEventListener('click', () => {
+    const image = document.querySelector('.lp-gallery-qr-card__preview img');
+    if (!image) return;
+    const win = window.open('', '_blank', 'width=640,height=760');
+    if (!win) return;
+    win.document.write('<!doctype html><title>Gallery QR</title><body style="font-family:system-ui;text-align:center;padding:48px"><h1>'+document.title.replace(/</g,'&lt;')+'</h1><img src="'+image.src+'" style="width:360px;max-width:80vw"><p>Scan to open this LumisPixel gallery</p></body>');
+    win.document.close(); win.focus(); win.print();
+  });
+})();
