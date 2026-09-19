@@ -14,6 +14,10 @@
     const search = page.querySelector('[data-gallery-search]');
     const completion = page.querySelector('[data-queue-complete]');
     const pending = [];
+    const visibleQueuedLimit = 40;
+    const visibleCompletedLimit = 20;
+    let showAllQueued = false;
+    let showAllCompleted = false;
     let active = 0;
     let availableStorage = Number(page.dataset.storageAvailable);
     const concurrency = 3;
@@ -30,6 +34,24 @@
       const thumb = selected.querySelector('[data-selected-thumbnail]'); thumb.replaceChildren();
       if (option.dataset.thumbnail) { const image = document.createElement('img'); image.src = option.dataset.thumbnail; image.alt = ''; image.width = 64; image.height = 64; thumb.append(image); }
       else { const icon = document.createElement('i'); icon.className = 'bi bi-images'; icon.setAttribute('aria-hidden', 'true'); thumb.append(icon); }
+    }
+    function applyQueueVisibility() {
+      const queuedRows = Array.from(list.querySelectorAll('[data-local-upload][data-status="queued"]'));
+      const completedRows = Array.from(list.querySelectorAll('[data-local-upload][data-status="completed"]'));
+      queuedRows.forEach(function (row, index) { row.hidden = !showAllQueued && index >= visibleQueuedLimit; });
+      completedRows.forEach(function (row, index) { row.hidden = !showAllCompleted && index >= visibleCompletedLimit; });
+      const queuedToggle = page.querySelector('[data-toggle-queued]');
+      const completedToggle = page.querySelector('[data-toggle-completed]');
+      if (queuedToggle) {
+        const hidden = Math.max(queuedRows.length - visibleQueuedLimit, 0);
+        queuedToggle.hidden = !hidden && !showAllQueued;
+        queuedToggle.textContent = showAllQueued ? 'Collapse queued' : 'Show ' + hidden + ' more queued';
+      }
+      if (completedToggle) {
+        const hidden = Math.max(completedRows.length - visibleCompletedLimit, 0);
+        completedToggle.hidden = !hidden && !showAllCompleted;
+        completedToggle.textContent = showAllCompleted ? 'Collapse completed' : 'Show ' + hidden + ' more completed';
+      }
     }
     function counts() {
       const batch = page.querySelector('[data-batch-progress]');
@@ -58,6 +80,7 @@
       });
       const clear = page.querySelector('[data-clear-completed]');
       if (clear) clear.hidden = !list.querySelector('[data-status="completed"]');
+      applyQueueVisibility();
     }
     function setStatus(row, status) {
       row.className = 'lp-upload-row is-' + status; row.dataset.status = status; counts();
@@ -168,6 +191,8 @@
     drop.addEventListener('keydown', function (event) { if (!input.disabled && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); input.click(); } });
     ['dragover', 'dragenter'].forEach(function (name) { drop.addEventListener(name, function (event) { event.preventDefault(); if (!input.disabled) drop.classList.add('is-dragging'); }); });
     ['dragleave', 'drop'].forEach(function (name) { drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.remove('is-dragging'); if (name === 'drop' && !input.disabled) queue(event.dataTransfer.files); }); });
+    page.querySelector('[data-toggle-queued]')?.addEventListener('click', function () { showAllQueued = !showAllQueued; applyQueueVisibility(); });
+    page.querySelector('[data-toggle-completed]')?.addEventListener('click', function () { showAllCompleted = !showAllCompleted; applyQueueVisibility(); });
     page.querySelector('[data-clear-completed]')?.addEventListener('click', function () { list.querySelectorAll('[data-status="completed"]').forEach(removeRow); completion.hidden = true; });
     page.querySelector('[data-upload-more]')?.addEventListener('click', function () { completion.hidden = true; drop.focus(); input.click(); });
     window.addEventListener('beforeunload', function (event) { if (active || pending.length) { event.preventDefault(); event.returnValue = ''; } });
