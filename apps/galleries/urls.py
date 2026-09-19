@@ -5,6 +5,7 @@ from . import account_views, invitation_views, views
 app_name = "galleries"
 
 urlpatterns = [
+    path("g/<uuid:public_id>/", views.stable_gallery_access, name="stable_gallery_access"),
     path("client-galleries/", views.client_galleries, name="client_galleries"),
     path("access/<str:token>/", views.client_gallery_access, name="client_gallery_access"),
     path("access/<str:token>/photos/<int:photo_id>/media/", views.client_gallery_photo_media, name="client_gallery_photo_media"),
