@@ -11,6 +11,7 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
 from .analytics import gallery_analytics_report, track_gallery_event
+from .forms import GallerySettingsForm
 from .models import AccessToken, Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryPhotoComment, GallerySettings, GalleryStore, StoreProduct
 from .storage import PrivateGalleryB2Storage, gallery_photo_storage
 
@@ -617,3 +618,53 @@ class ClientPurchasePrintsPermissionTests(TestCase):
         self.product.save(update_fields=["product_type", "updated_at"])
         self.assertNotContains(self.client.get(self.gallery_url), "Shop Prints")
         self.assertEqual(self.client.get(self.store_url).status_code, 404)
+
+
+class GallerySettingsPermissionSeparationTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="settings-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="settings-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Settings Test", slug="settings-test"
+        )
+        self.settings = GallerySettings.objects.create(
+            gallery=self.gallery, gallery_url=self.gallery.slug,
+            allow_downloads=False, allow_original_downloads=False,
+            enable_favorites=False, enable_comments=False,
+        )
+
+    def test_gallery_settings_form_does_not_expose_client_authorization_fields(self):
+        form = GallerySettingsForm(instance=self.settings, photographer=self.owner)
+        for field_name in (
+            "allow_downloads",
+            "allow_original_downloads",
+            "enable_favorites",
+            "enable_comments",
+        ):
+            self.assertNotIn(field_name, form.fields)
+        self.assertIn("zip_downloads", form.fields)
+        self.assertIn("download_limit", form.fields)
+
+    def test_posting_legacy_permission_fields_cannot_change_them_through_settings_form(self):
+        form = GallerySettingsForm(
+            data={
+                "gallery_url": self.gallery.slug,
+                "accent_color": self.settings.accent_color,
+                "theme": self.settings.theme,
+                "watermark_position": self.settings.watermark_position,
+                "zip_downloads": self.settings.zip_downloads,
+                "download_limit": "",
+                "allow_downloads": "on",
+                "allow_original_downloads": "on",
+                "enable_favorites": "on",
+                "enable_comments": "on",
+            },
+            instance=self.settings,
+            photographer=self.owner,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        saved = form.save()
+        self.assertFalse(saved.allow_downloads)
+        self.assertFalse(saved.allow_original_downloads)
+        self.assertFalse(saved.enable_favorites)
+        self.assertFalse(saved.enable_comments)
