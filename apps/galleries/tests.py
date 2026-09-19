@@ -502,3 +502,58 @@ class ClientCommentPermissionTests(TestCase):
                 related_photo=self.photo,
             ).exists()
         )
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientSharePermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="share-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="share-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Share Test", slug="share-test",
+            status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(gallery=self.gallery, share_gallery=True)
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug)
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Share Client", email="share-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(invitation)
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.share_url = reverse("galleries:client_gallery_share", args=[self.raw_token])
+        self.stable_path = reverse("galleries:stable_gallery_access", args=[self.gallery.public_id])
+
+    def test_share_permission_controls_link_and_qr_ui(self):
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, self.stable_path)
+        self.assertContains(page, "Copy Link")
+        self.assertContains(page, "Download QR")
+
+        self.permissions.share_gallery = False
+        self.permissions.save(update_fields=["share_gallery", "updated_at"])
+        page = self.client.get(self.gallery_url)
+        self.assertNotContains(page, "Copy Link")
+        self.assertNotContains(page, "Download QR")
+        self.assertNotContains(page, self.share_url)
+
+    def test_disabled_share_permission_blocks_direct_share_endpoint(self):
+        self.permissions.share_gallery = False
+        self.permissions.save(update_fields=["share_gallery", "updated_at"])
+        self.assertEqual(self.client.post(self.share_url).status_code, 403)
+
+    def test_share_records_analytics_and_uses_stable_gallery_url(self):
+        response = self.client.post(self.share_url)
+        self.assertEqual(response.status_code, 302)
+        event = GalleryAnalyticsEvent.objects.filter(
+            gallery=self.gallery,
+            visitor_identifier=AccessToken.digest(self.raw_token),
+            event_type=GalleryAnalyticsEvent.EventType.SHARE,
+        ).latest("occurred_at")
+        self.assertIn(self.stable_path, event.metadata["shared_url"])
+        self.assertNotIn(self.raw_token, event.metadata["shared_url"])
+
+    def test_stable_share_url_preserves_private_gallery_access_rules(self):
+        response = self.client.get(self.stable_path)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "galleries/stable_gallery_gate.html")
