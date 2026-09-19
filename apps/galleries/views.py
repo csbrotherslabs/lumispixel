@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
+import io
+import zipfile
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -193,8 +195,11 @@ def client_gallery_access(request, token):
             "permissions": permissions,
             "gallery_settings": settings,
             "access_token": token,
-            "can_favorite": permissions.favorite_photos and settings.enable_favorites,
-            "can_download": permissions.download_images and settings.allow_downloads,
+            "can_favorite": permissions.favorite_photos,
+            "can_download": permissions.download_images and (not permissions.download_expires_at or permissions.download_expires_at > timezone.now()),
+            "can_download_originals": permissions.download_originals and (not permissions.download_expires_at or permissions.download_expires_at > timezone.now()),
+            "can_comment": permissions.comment,
+            "can_purchase_prints": permissions.purchase_prints,
             "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])),
             "can_share_gallery": permissions.share_gallery,
         },
@@ -226,7 +231,7 @@ def client_gallery_photo_media(request, token, photo_id):
 @require_POST
 def client_gallery_favorite(request, token, photo_id):
     token_record, _, gallery, permissions, settings = _client_gallery_access(token)
-    if not (permissions.favorite_photos and settings.enable_favorites):
+    if not permissions.favorite_photos:
         return HttpResponseForbidden()
     photo = get_object_or_404(
         GalleryPhoto,
@@ -270,7 +275,7 @@ def client_gallery_favorite(request, token, photo_id):
 def client_gallery_download(request, token, photo_id):
     token_record, _, gallery, permissions, settings = _client_gallery_access(token)
     now = timezone.now()
-    if not (permissions.download_images and settings.allow_downloads):
+    if not permissions.download_images:
         return HttpResponseForbidden()
     if permissions.download_expires_at and permissions.download_expires_at <= now:
         return HttpResponseForbidden()
@@ -309,6 +314,38 @@ def client_gallery_download(request, token, photo_id):
         related_object=photo,
     )
     return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
+
+
+@require_GET
+def client_gallery_download_all(request, token):
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    now = timezone.now()
+    if not permissions.download_images:
+        return HttpResponseForbidden()
+    if permissions.download_expires_at and permissions.download_expires_at <= now:
+        return HttpResponseForbidden()
+    photos = list(GalleryPhoto.objects.filter(gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED).order_by("created_at", "pk"))
+    archive = io.BytesIO()
+    used_names = set()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+        for photo in photos:
+            base_name = photo.original_name or f"photo-{photo.pk}.jpg"
+            name, suffix = base_name, 1
+            while name in used_names:
+                stem, dot, ext = base_name.rpartition(".")
+                name = f"{stem or base_name}-{suffix}{dot}{ext}" if dot else f"{base_name}-{suffix}"
+                suffix += 1
+            used_names.add(name)
+            with photo.file.open("rb") as source:
+                bundle.writestr(name, source.read())
+    archive.seek(0)
+    track_gallery_event(gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD,
+                        visitor_identifier=token_record.token_hash, session_identifier=_session_identifier(request),
+                        user=request.user, source="invite_link")
+    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
+    log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_DOWNLOADED,
+                         actor=request.user, actor_type=GalleryActivity.ActorType.CLIENT)
+    return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
 
 
 @login_required
