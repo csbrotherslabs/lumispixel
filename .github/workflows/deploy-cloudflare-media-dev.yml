@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: cloudflare/media-worker/package-lock.json
 
       - name: Install Worker dependencies
-        run: npm ci
+        run: npm install
 
       - name: Validate Cloudflare configuration
         run: |
