@@ -6,6 +6,7 @@ import io
 import mimetypes
 import zipfile
 import secrets
+import json
 from urllib.parse import urlencode
 
 from django.apps import apps
@@ -39,7 +40,8 @@ from apps.clients.contracts import (DEFAULT_SIGNATURE_CONSENT, ContractDeliveryE
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.multipart_uploads import ALLOWED_CONTENT_TYPES, abort as abort_multipart, complete as complete_multipart, initiate as initiate_multipart, multipart_object_key, sign_part
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -1242,6 +1244,145 @@ def gallery_actions(request):
     else:
         messages.error(request, "Choose a valid gallery action.")
     return redirect("photographer_workspace:all_galleries")
+
+
+
+def _json_body(request):
+    try:
+        return json.loads(request.body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+
+
+def _multipart_session(request, upload_uuid):
+    return get_object_or_404(
+        GalleryMultipartUpload.objects.select_related("gallery"),
+        pk=upload_uuid,
+        photographer=request.studio,
+    )
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_initiate(request):
+    data = _json_body(request)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+    gallery = get_object_or_404(Gallery.objects.for_photographer(request.studio), pk=data.get("gallery"))
+    name = str(data.get("name") or "")[:255]
+    content_type = str(data.get("content_type") or "")
+    try:
+        size = int(data.get("size"))
+    except (TypeError, ValueError):
+        size = 0
+    if not name or content_type not in ALLOWED_CONTENT_TYPES or size <= 0 or size > settings.MAX_GALLERY_UPLOAD_BYTES:
+        return JsonResponse({"error": "Use a JPG, PNG, or WebP image within the configured upload limit."}, status=400)
+    storage_used = Gallery.objects.for_photographer(request.studio).aggregate(
+        total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
+    )["total"]
+    reserved = GalleryMultipartUpload.objects.filter(
+        photographer=request.studio, completed_at__isnull=True, aborted_at__isnull=True
+    ).aggregate(total=Coalesce(Sum("file_size"), Value(0), output_field=DecimalField()))["total"]
+    if size > max(GALLERY_STORAGE_LIMIT - storage_used - reserved, 0):
+        return JsonResponse({"error": "Not enough storage to upload this file."}, status=400)
+    key = multipart_object_key(
+        photographer_id=request.studio.pk, gallery_id=gallery.pk,
+        original_name=name, content_type=content_type,
+    )
+    try:
+        upload_id = initiate_multipart(key=key, content_type=content_type)
+    except Exception:
+        return JsonResponse({"error": "Could not start direct upload."}, status=502)
+    session = GalleryMultipartUpload.objects.create(
+        gallery=gallery, photographer=request.studio, object_key=key, upload_id=upload_id,
+        original_name=name, content_type=content_type, file_size=size,
+    )
+    return JsonResponse({
+        "upload": str(session.pk), "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
+        "max_parts": settings.B2_MULTIPART_MAX_PARTS,
+    }, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_sign_part(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at or session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    data = _json_body(request)
+    try:
+        part_number = int((data or {}).get("part_number"))
+    except (TypeError, ValueError):
+        part_number = 0
+    if not 1 <= part_number <= settings.B2_MULTIPART_MAX_PARTS:
+        return JsonResponse({"error": "Invalid part number."}, status=400)
+    try:
+        url = sign_part(key=session.object_key, upload_id=session.upload_id, part_number=part_number)
+    except Exception:
+        return JsonResponse({"error": "Could not authorize upload part."}, status=502)
+    return JsonResponse({"part_number": part_number, "url": url})
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_complete(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at or session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    data = _json_body(request)
+    parts = (data or {}).get("parts")
+    if not isinstance(parts, list) or not parts:
+        return JsonResponse({"error": "Completed parts are required."}, status=400)
+    normalized = []
+    try:
+        for item in parts:
+            normalized.append({"PartNumber": int(item["part_number"]), "ETag": str(item["etag"])})
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({"error": "Invalid completed parts."}, status=400)
+    numbers = [item["PartNumber"] for item in normalized]
+    if numbers != sorted(set(numbers)) or numbers[0] != 1 or numbers[-1] > settings.B2_MULTIPART_MAX_PARTS:
+        return JsonResponse({"error": "Parts must be unique and ordered from part 1."}, status=400)
+    try:
+        complete_multipart(key=session.object_key, upload_id=session.upload_id, parts=normalized)
+    except Exception:
+        return JsonResponse({"error": "Could not complete direct upload."}, status=502)
+    prefix = f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"
+    if not session.object_key.startswith(prefix):
+        return JsonResponse({"error": "Invalid object key."}, status=500)
+    relative_name = session.object_key[len(prefix):]
+    with transaction.atomic():
+        photo = GalleryPhoto.objects.create(
+            gallery=session.gallery, photographer=request.studio, file=relative_name,
+            original_name=session.original_name, file_size=session.file_size,
+            status=GalleryPhoto.Status.COMPLETED,
+        )
+        Gallery.objects.filter(pk=session.gallery_id).update(
+            image_count=F("image_count") + 1, storage_used=F("storage_used") + session.file_size
+        )
+        session.completed_at = timezone.now()
+        session.save(update_fields=["completed_at"])
+        log_gallery_activity(
+            gallery=session.gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
+            description="1 photo uploaded successfully via direct multipart upload.",
+            actor=request.user, metadata={"count": 1, "files": [session.original_name]},
+        )
+    return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}}, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_abort(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at:
+        return JsonResponse({"error": "Completed uploads cannot be aborted."}, status=409)
+    if not session.aborted_at:
+        try:
+            abort_multipart(key=session.object_key, upload_id=session.upload_id)
+        except Exception:
+            return JsonResponse({"error": "Could not abort direct upload."}, status=502)
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+    return JsonResponse({"aborted": True})
 
 
 @photographer_workspace_required
