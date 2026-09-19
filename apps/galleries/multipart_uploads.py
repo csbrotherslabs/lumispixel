@@ -61,6 +61,23 @@ def sign_part(*, key, upload_id, part_number):
     )
 
 
+def list_parts(*, key, upload_id):
+    parts = []
+    marker = None
+    while True:
+        params = {"Bucket": settings.B2_BUCKET_NAME, "Key": key, "UploadId": upload_id}
+        if marker is not None:
+            params["PartNumberMarker"] = marker
+        response = _client().list_parts(**params)
+        parts.extend(
+            {"part_number": item["PartNumber"], "etag": item["ETag"], "size": item["Size"]}
+            for item in response.get("Parts", [])
+        )
+        if not response.get("IsTruncated"):
+            return parts
+        marker = response.get("NextPartNumberMarker")
+
+
 def complete(*, key, upload_id, parts):
     return _client().complete_multipart_upload(
         Bucket=settings.B2_BUCKET_NAME,
