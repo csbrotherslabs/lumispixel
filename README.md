@@ -73,6 +73,3 @@ The bucket remains private; Django storage URLs are signed and expire according
 to `B2_SIGNED_URL_TTL`. The object namespace remains
 `private/<environment>/galleries/<photographer>/<gallery>/originals/`.
 
-DigitalOcean Spaces remains available temporarily with
-`GALLERY_STORAGE_BACKEND=spaces` for migration compatibility. New production
-deployments should use B2.
