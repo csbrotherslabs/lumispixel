@@ -1,6 +1,4 @@
-import os
 import uuid
-from pathlib import PurePosixPath
 
 import boto3
 from django.conf import settings
@@ -27,12 +25,12 @@ def _client():
 
 
 def multipart_object_key(*, photographer_id, gallery_id, original_name, content_type):
-    suffix = PurePosixPath(original_name).suffix.lower()
     expected = ALLOWED_CONTENT_TYPES.get(content_type)
     if not expected:
         raise ValueError("Unsupported image content type.")
-    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
-        suffix = expected
+    # Object identity is independent of the client filename. Use the canonical
+    # extension implied by the validated MIME type so names cannot drift.
+    suffix = expected
     return (
         f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/galleries/"
         f"{photographer_id}/{gallery_id}/originals/{uuid.uuid4().hex}{suffix}"
