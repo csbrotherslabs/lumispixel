@@ -253,3 +253,93 @@ class ClientDownloadPermissionTests(TestCase):
             ).count(),
             1,
         )
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientOriginalDownloadPermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="original-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="original-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner,
+            name="Original Test",
+            slug="original-test",
+            status=Gallery.Status.PUBLISHED,
+            visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(
+            gallery=self.gallery,
+            download_images=True,
+            download_originals=False,
+        )
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug)
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Client", email="original-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(invitation)
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery,
+            photographer=self.owner,
+            file=SimpleUploadedFile("original.jpg", b"original-file-bytes", content_type="image/jpeg"),
+            original_name="original.jpg",
+            file_size=19,
+            status=GalleryPhoto.Status.COMPLETED,
+            is_visible=True,
+        )
+        self.original_url = reverse(
+            "galleries:client_gallery_download_original",
+            args=[self.raw_token, self.photo.pk],
+        )
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_original_download_is_hidden_and_forbidden_when_permission_is_off(self):
+        page = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertNotContains(page, self.original_url)
+        self.assertEqual(self.client.get(self.original_url).status_code, 403)
+
+    def test_original_download_is_visible_and_allowed_when_both_download_permissions_are_on(self):
+        self.permissions.download_originals = True
+        self.permissions.save(update_fields=["download_originals", "updated_at"])
+        page = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertContains(page, self.original_url)
+        response = self.client.get(self.original_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("attachment;", response["Content-Disposition"])
+
+    def test_original_permission_cannot_bypass_download_images_permission(self):
+        self.permissions.download_images = False
+        self.permissions.download_originals = True
+        self.permissions.save(update_fields=["download_images", "download_originals", "updated_at"])
+        page = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertNotContains(page, self.original_url)
+        self.assertEqual(self.client.get(self.original_url).status_code, 403)
+
+    def test_original_download_respects_expiration_and_download_limit(self):
+        self.permissions.download_originals = True
+        self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self.permissions.save(update_fields=["download_originals", "download_expires_at", "updated_at"])
+        self.assertEqual(self.client.get(self.original_url).status_code, 403)
+
+        self.permissions.download_expires_at = None
+        self.permissions.save(update_fields=["download_expires_at", "updated_at"])
+        settings = GallerySettings.objects.get(gallery=self.gallery)
+        settings.download_limit = 0
+        settings.save(update_fields=["download_limit", "updated_at"])
+        self.assertEqual(self.client.get(self.original_url).status_code, 403)
+
+    def test_original_download_is_recorded_as_an_original_download(self):
+        self.permissions.download_originals = True
+        self.permissions.save(update_fields=["download_originals", "updated_at"])
+        self.assertEqual(self.client.get(self.original_url).status_code, 200)
+        event = GalleryAnalyticsEvent.objects.filter(
+            gallery=self.gallery,
+            visitor_identifier=AccessToken.digest(self.raw_token),
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            related_photo=self.photo,
+        ).latest("occurred_at")
+        self.assertEqual(event.source, "original_download")
+        self.assertTrue(event.metadata.get("original"))
