@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_upload_queue.css' %}">{% endblock %}
 {% block workspace_content %}
-<main class="workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
+<main class="workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-multipart-init-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-multipart-base-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
   <header class="form-page-header lp-page-header lp-upload-page-header">
     <div class="lp-upload-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
