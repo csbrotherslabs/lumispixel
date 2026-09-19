@@ -11,7 +11,7 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
 from .analytics import gallery_analytics_report, track_gallery_event
-from .models import AccessToken, Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, StoreProduct
+from .models import AccessToken, Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryPhotoComment, GallerySettings, GalleryStore, StoreProduct
 from .storage import PrivateGalleryB2Storage, gallery_photo_storage
 
 
@@ -436,3 +436,69 @@ class ClientFavoritePermissionTests(TestCase):
         self.client.post(self.favorite_url)
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.favorite_count, 1)
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientCommentPermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="comment-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="comment-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Comment Test", slug="comment-test",
+            status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(gallery=self.gallery, comment=True)
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug, enable_comments=False)
+        self.invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Comment Client", email="comment-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(self.invitation)
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery, photographer=self.owner,
+            file=SimpleUploadedFile("comment.jpg", b"comment-file", content_type="image/jpeg"),
+            original_name="comment.jpg", file_size=12,
+            status=GalleryPhoto.Status.COMPLETED, is_visible=True,
+        )
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.comment_url = reverse("galleries:client_gallery_comment", args=[self.raw_token, self.photo.pk])
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_comment_permission_controls_ui_without_duplicate_gallery_setting(self):
+        self.assertContains(self.client.get(self.gallery_url), self.comment_url)
+        self.permissions.comment = False
+        self.permissions.save(update_fields=["comment", "updated_at"])
+        self.assertNotContains(self.client.get(self.gallery_url), self.comment_url)
+
+    def test_disabled_comment_permission_blocks_direct_endpoint(self):
+        self.permissions.comment = False
+        self.permissions.save(update_fields=["comment", "updated_at"])
+        self.assertEqual(self.client.post(self.comment_url, {"comment": "Please retouch this."}).status_code, 403)
+
+    def test_client_can_post_and_view_photo_comment(self):
+        response = self.client.post(self.comment_url, {"comment": "Please retouch this photo."})
+        self.assertEqual(response.status_code, 302)
+        comment = GalleryPhotoComment.objects.get(gallery=self.gallery, photo=self.photo)
+        self.assertEqual(comment.body, "Please retouch this photo.")
+        self.assertEqual(comment.invitation, self.invitation)
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, "Please retouch this photo.")
+        self.assertContains(page, "Comment Client")
+
+    def test_blank_comment_is_not_created(self):
+        self.client.post(self.comment_url, {"comment": "   "})
+        self.assertFalse(GalleryPhotoComment.objects.filter(gallery=self.gallery).exists())
+
+    def test_comment_records_analytics(self):
+        self.client.post(self.comment_url, {"comment": "Love this one."})
+        self.assertTrue(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                visitor_identifier=AccessToken.digest(self.raw_token),
+                event_type=GalleryAnalyticsEvent.EventType.COMMENT,
+                related_photo=self.photo,
+            ).exists()
+        )
