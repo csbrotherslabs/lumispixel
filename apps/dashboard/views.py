@@ -1671,7 +1671,8 @@ def gallery_workspace(request, pk):
         label = "Today" if event_date == today else "Yesterday" if event_date == today - timezone.timedelta(days=1) else "Earlier this week" if (today - event_date).days < 7 else event_date.strftime("%B %d, %Y").replace(" 0", " ")
         if not grouped_activity or grouped_activity[-1][0] != label: grouped_activity.append([label, []])
         grouped_activity[-1][1].append(event)
-    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+    stable_gallery_url = request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id]))
+    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums, "stable_gallery_url": stable_gallery_url,
                     "store": store, "store_form": store_form, "discount_form": discount_form, "products": products_page, "orders": orders_page,
                     "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
                     "general_form": general_form, "settings_form": settings_form,
