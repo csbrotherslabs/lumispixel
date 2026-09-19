@@ -22,6 +22,7 @@ from .models import (
     GalleryInvitation,
     GalleryPermission,
     GalleryPhoto,
+    GalleryPhotoComment,
     GallerySettings,
 )
 
@@ -181,8 +182,17 @@ def client_gallery_access(request, token):
             related_photo__isnull=False,
         ).values_list("related_photo_id", flat=True)
     )
+    comments_by_photo = {}
+    if permissions.comment:
+        for comment in GalleryPhotoComment.objects.filter(
+            gallery=gallery,
+            photo__in=photos,
+        ).select_related("invitation"):
+            comments_by_photo.setdefault(comment.photo_id, []).append(comment)
+
     for photo in photos:
         photo.is_client_favorite = photo.pk in favorite_ids
+        photo.client_comments = comments_by_photo.get(photo.pk, [])
 
     downloads_active = permissions.download_images and (
         not permissions.download_expires_at or permissions.download_expires_at > timezone.now()
@@ -240,6 +250,51 @@ def client_gallery_photo_media(request, token, photo_id):
         source="invite_link",
     )
     return FileResponse(photo.file.open("rb"), as_attachment=False, filename=photo.original_name)
+
+
+@require_POST
+def client_gallery_comment(request, token, photo_id):
+    token_record, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    if not permissions.comment:
+        return HttpResponseForbidden()
+    photo = get_object_or_404(
+        GalleryPhoto,
+        pk=photo_id,
+        gallery=gallery,
+        is_visible=True,
+        status=GalleryPhoto.Status.COMPLETED,
+    )
+    body = (request.POST.get("comment") or "").strip()
+    if not body:
+        return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
+    if len(body) > 2000:
+        return HttpResponseForbidden("Comment is too long.")
+
+    GalleryPhotoComment.objects.create(
+        gallery=gallery,
+        photo=photo,
+        invitation=invitation,
+        author=request.user if request.user.is_authenticated else None,
+        body=body,
+    )
+    track_gallery_event(
+        gallery=gallery,
+        event_type=GalleryAnalyticsEvent.EventType.COMMENT,
+        visitor_identifier=token_record.token_hash,
+        session_identifier=_session_identifier(request),
+        user=request.user,
+        photo=photo,
+        source="invite_link",
+    )
+    log_gallery_activity(
+        gallery=gallery,
+        event_type=GalleryActivity.EventType.CLIENT_COMMENTED,
+        actor=request.user,
+        actor_type=GalleryActivity.ActorType.CLIENT,
+        related_object=photo,
+        metadata={"client_name": invitation.client_name},
+    )
+    return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
 
 
 @require_POST
