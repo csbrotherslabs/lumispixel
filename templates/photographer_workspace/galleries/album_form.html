@@ -3,18 +3,16 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_album_form_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lp-album-form-page">
-  <nav class="lpw-breadcrumb lp-album-form-page__breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a>
-    <i class="bi bi-chevron-right" aria-hidden="true"></i>
-    <a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">{{ gallery.name }}</a>
-    <i class="bi bi-chevron-right" aria-hidden="true"></i>
-    <strong aria-current="page">{{ form_title }}</strong>
-  </nav>
-
   <header class="lp-album-form-hero">
     <div class="lp-album-form-hero__copy">
-      <span class="lp-album-form-hero__icon"><i class="bi bi-folder-plus" aria-hidden="true"></i></span>
       <div>
+        <nav class="lpw-breadcrumb lp-album-form-page__breadcrumb" aria-label="Breadcrumb">
+          <a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a>
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          <a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">{{ gallery.name }}</a>
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          <strong aria-current="page">{{ form_title }}</strong>
+        </nav>
         <span class="lp-album-form-hero__eyebrow">Gallery organization</span>
         <h1 id="workspace-page-title">{{ form_title }}</h1>
         <p>Curate a meaningful collection inside <strong>{{ gallery.name }}</strong>. Set the album details, client visibility, cover image, and display order.</p>
