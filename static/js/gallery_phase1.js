@@ -32,6 +32,26 @@
       else { const icon = document.createElement('i'); icon.className = 'bi bi-images'; icon.setAttribute('aria-hidden', 'true'); thumb.append(icon); }
     }
     function counts() {
+      const batch = page.querySelector('[data-batch-progress]');
+      const localRows = list.querySelectorAll('[data-local-upload]');
+      if (batch) {
+        const total = localRows.length;
+        const completed = list.querySelectorAll('[data-local-upload][data-status="completed"]').length;
+        const failed = list.querySelectorAll('[data-local-upload][data-status="failed"]').length;
+        const uploading = list.querySelectorAll('[data-local-upload][data-status="uploading"]').length;
+        const queued = list.querySelectorAll('[data-local-upload][data-status="queued"]').length;
+        const percent = total ? Math.round(completed / total * 100) : 0;
+        batch.hidden = !total;
+        batch.querySelector('[data-batch-done]').textContent = completed;
+        batch.querySelector('[data-batch-total]').textContent = total;
+        batch.querySelector('[data-batch-percent]').textContent = percent + '%';
+        batch.querySelector('[data-batch-uploading]').textContent = uploading;
+        batch.querySelector('[data-batch-queued]').textContent = queued;
+        batch.querySelector('[data-batch-completed]').textContent = completed;
+        batch.querySelector('[data-batch-failed]').textContent = failed;
+        const bar = batch.querySelector('[data-batch-progress-bar]');
+        bar.value = percent; bar.textContent = percent + '%';
+      }
       ['uploading', 'queued', 'completed', 'failed'].forEach(function (status) {
         const target = page.querySelector('[data-count="' + status + '"]');
         if (target) target.textContent = list.querySelectorAll('[data-status="' + status + '"]').length;
