@@ -82,8 +82,23 @@
       if (clear) clear.hidden = !list.querySelector('[data-status="completed"]');
       applyQueueVisibility();
     }
+    function sortQueueRows() {
+      const rows = Array.from(list.querySelectorAll('[data-local-upload]'));
+      const rank = {uploading: 0, queued: 1, failed: 2, completed: 3};
+      rows.sort(function (a, b) {
+        const statusDiff = (rank[a.dataset.status] ?? 9) - (rank[b.dataset.status] ?? 9);
+        if (statusDiff) return statusDiff;
+        if (a.dataset.status === 'completed') {
+          return Number(b.dataset.completedAt || 0) - Number(a.dataset.completedAt || 0);
+        }
+        return Number(a.dataset.queueOrder || 0) - Number(b.dataset.queueOrder || 0);
+      });
+      rows.forEach(function (row) { list.append(row); });
+    }
     function setStatus(row, status) {
-      row.className = 'lp-upload-row is-' + status; row.dataset.status = status; counts();
+      row.className = 'lp-upload-row is-' + status; row.dataset.status = status;
+      if (status === 'completed') row.dataset.completedAt = String(Date.now());
+      sortQueueRows(); counts();
     }
     function releasePreview(row) {
       if (row.dataset.previewUrl) { URL.revokeObjectURL(row.dataset.previewUrl); delete row.dataset.previewUrl; }
@@ -105,7 +120,7 @@
     }
     function createRow(file, galleryName) {
       const row = document.createElement('article'); row.className = 'lp-upload-row is-queued';
-      row.dataset.status = 'queued'; row.dataset.localUpload = 'true';
+      row.dataset.status = 'queued'; row.dataset.localUpload = 'true'; row.dataset.queueOrder = String(Date.now() + Math.random());
       row.innerHTML = '<div class="lp-file-icon"><img alt=""></div><div class="lp-file-main"><strong></strong><span></span><div data-progress-slot></div></div><div class="lp-file-state"><strong>Queued</strong><span>Waiting to upload</span></div><div class="lp-file-actions"><button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>';
       row.querySelector('.lp-file-main strong').textContent = file.name;
       row.querySelector('.lp-file-main span').textContent = (file.size / 1048576).toFixed(1) + ' MB · ' + galleryName;
@@ -317,7 +332,11 @@
     ['dragleave', 'drop'].forEach(function (name) { drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.remove('is-dragging'); if (name === 'drop' && !input.disabled) queue(event.dataTransfer.files); }); });
     page.querySelector('[data-toggle-queued]')?.addEventListener('click', function () { showAllQueued = !showAllQueued; applyQueueVisibility(); });
     page.querySelector('[data-toggle-completed]')?.addEventListener('click', function () { showAllCompleted = !showAllCompleted; applyQueueVisibility(); });
-    page.querySelector('[data-clear-completed]')?.addEventListener('click', function () { list.querySelectorAll('[data-status="completed"]').forEach(removeRow); completion.hidden = true; });
+    page.querySelector('[data-clear-completed]')?.addEventListener('click', function () {
+      // Queue rows are presentation state only. Removing them never deletes GalleryPhoto/B2 objects.
+      list.querySelectorAll('[data-local-upload][data-status="completed"]').forEach(removeRow);
+      completion.hidden = true;
+    });
     page.querySelector('[data-upload-more]')?.addEventListener('click', function () { completion.hidden = true; drop.focus(); input.click(); });
     window.addEventListener('beforeunload', function (event) { if (active || pending.length) { event.preventDefault(); event.returnValue = ''; } });
     setDestination(); counts();
