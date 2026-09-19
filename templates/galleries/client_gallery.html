@@ -43,6 +43,9 @@
             {% endif %}
             {% if can_download and access_token %}
               <a href="{% url 'galleries:client_gallery_download' access_token photo.pk %}">Download</a>
+              {% if can_download_originals %}
+                <a href="{% url 'galleries:client_gallery_download_original' access_token photo.pk %}">Download Original</a>
+              {% endif %}
             {% endif %}
           </div>
         </article>
