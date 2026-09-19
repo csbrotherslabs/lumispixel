@@ -1,9 +1,57 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_album_form_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
-<header class="lpw-gallery-form-head"><div><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums"><i class="bi bi-arrow-left"></i>Albums</a><h1 id="workspace-page-title">{{ form_title }}</h1><p>Curate a meaningful collection inside {{ gallery.name }}.</p></div><button class="lpw-btn lpw-btn-primary" form="album-form">{{ submit_label }}</button></header>
-<form id="album-form" class="lpw-gallery-form" method="post" enctype="multipart/form-data">{% csrf_token %}
-  <section class="lpw-gallery-form-card"><header><span><i class="bi bi-collection"></i></span><div><h2>Album details</h2><p>Define the story, access, cover, and placement.</p></div></header><div class="lpw-gallery-form-grid">
-  {% for field in form %}<div class="lpw-field{% if field.name == 'description' or field.name == 'cover_image' %} lpw-field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small class="lpw-field-error">{{ error }}</small>{% endfor %}{% if field.name == 'visibility' %}<small>Public is shareable, Client Only requires gallery access, and Hidden stays internal.</small>{% endif %}</div>{% endfor %}
-  </div></section><footer class="lpw-gallery-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">Cancel</a><button class="lpw-btn lpw-btn-primary">{{ submit_label }}</button></footer>
-</form>
+<div class="lp-album-form-page">
+  <nav class="lpw-breadcrumb lp-album-form-page__breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">{{ gallery.name }}</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <strong aria-current="page">{{ form_title }}</strong>
+  </nav>
+
+  <header class="lp-album-form-hero">
+    <div class="lp-album-form-hero__copy">
+      <span class="lp-album-form-hero__icon"><i class="bi bi-folder-plus" aria-hidden="true"></i></span>
+      <div>
+        <span class="lp-album-form-hero__eyebrow">Gallery organization</span>
+        <h1 id="workspace-page-title">{{ form_title }}</h1>
+        <p>Curate a meaningful collection inside <strong>{{ gallery.name }}</strong>. Set the album details, client visibility, cover image, and display order.</p>
+      </div>
+    </div>
+    <a class="lp-button lp-button--outline lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums"><i class="bi bi-arrow-left"></i>Back to Albums</a>
+  </header>
+
+  <form id="album-form" class="lp-album-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <section class="lp-album-form-card">
+      <header class="lp-album-form-card__head">
+        <span><i class="bi bi-collection" aria-hidden="true"></i></span>
+        <div><h2>Album details</h2><p>Define how this collection is named, described, displayed, and shared.</p></div>
+      </header>
+
+      {% if form.non_field_errors %}<div class="lp-album-form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="lp-album-form-grid">
+        {% for field in form %}
+          <div class="lp-album-field lp-album-field--{{ field.name }}{% if field.name == 'description' %} lp-album-field--wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true">*</span>{% endif %}</label>
+            <div class="lp-album-field__control">{{ field }}</div>
+            {% for error in field.errors %}<small class="lp-album-field__error"><i class="bi bi-exclamation-circle"></i>{{ error }}</small>{% endfor %}
+            {% if field.name == 'visibility' %}<small class="lp-album-field__help">Public can be shared broadly. Client Only follows gallery access. Hidden stays internal to the photographer workspace.</small>{% elif field.name == 'cover_image' %}<small class="lp-album-field__help">Choose an image that represents this collection. You can change it later.</small>{% elif field.name == 'display_order' %}<small class="lp-album-field__help">Lower numbers appear first when albums are displayed.</small>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <footer class="lp-album-form-actions">
+      <div><i class="bi bi-info-circle"></i><span>You can add or organize photos after the album is created.</span></div>
+      <div class="lp-album-form-actions__buttons">
+        <a class="lp-button lp-button--outline lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=albums">Cancel</a>
+        <button class="lp-button lp-button--primary lp-button--md" type="submit"><i class="bi bi-folder-plus"></i>{{ submit_label }}</button>
+      </div>
+    </footer>
+  </form>
+</div>
 {% endblock %}
