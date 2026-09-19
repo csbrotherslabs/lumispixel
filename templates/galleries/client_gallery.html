@@ -75,3 +75,13 @@
 {% if can_share_gallery %}<script>document.querySelector('[data-client-copy-link]')?.addEventListener('click',async function(){try{await navigator.clipboard.writeText(this.dataset.url);this.closest('form')?.requestSubmit();this.textContent='Copied';setTimeout(()=>this.textContent='Copy Link',1500)}catch(e){}});const q=document.querySelector('[data-client-qr-dialog]');document.querySelector('[data-client-qr-open]')?.addEventListener('click',()=>q.showModal());document.querySelector('[data-client-qr-close]')?.addEventListener('click',()=>q.close());q?.addEventListener('click',e=>{if(e.target===q)q.close()});</script>{% endif %}
 </body>
 </html>
+
+<style>
+.lp-client-photo__media{position:relative;display:block;overflow:hidden}
+.lp-client-photo__watermark{position:absolute;z-index:2;padding:.35rem .55rem;border-radius:.35rem;background:rgba(0,0,0,.45);color:#fff;font-size:.78rem;font-weight:700;letter-spacing:.02em;pointer-events:none;user-select:none}
+.is-watermark-center .lp-client-photo__watermark{left:50%;top:50%;transform:translate(-50%,-50%)}
+.is-watermark-top_left .lp-client-photo__watermark{left:.75rem;top:.75rem}
+.is-watermark-top_right .lp-client-photo__watermark{right:.75rem;top:.75rem}
+.is-watermark-bottom_left .lp-client-photo__watermark{left:.75rem;bottom:.75rem}
+.is-watermark-bottom_right .lp-client-photo__watermark{right:.75rem;bottom:.75rem}
+</style>
