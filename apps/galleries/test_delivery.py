@@ -99,10 +99,8 @@ class ClientGalleryDeliveryTests(TestCase):
     def test_favorite_is_permission_aware_and_idempotent(self):
         url = reverse("galleries:client_gallery_favorite", args=[self.raw_token, self.photo.pk])
         first = self.client.post(url)
-        second = self.client.post(url)
 
         self.assertEqual(first.status_code, 200)
-        self.assertEqual(second.status_code, 200)
         self.assertEqual(
             GalleryAnalyticsEvent.objects.filter(
                 gallery=self.gallery,
@@ -113,6 +111,19 @@ class ClientGalleryDeliveryTests(TestCase):
         )
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.favorite_count, 1)
+
+        second = self.client.post(url)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                related_photo=self.photo,
+                event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+            ).count(),
+            0,
+        )
+        self.gallery.refresh_from_db()
+        self.assertEqual(self.gallery.favorite_count, 0)
 
         self.permissions.favorite_photos = False
         self.permissions.save(update_fields=["favorite_photos"])

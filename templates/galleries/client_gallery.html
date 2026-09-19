@@ -19,7 +19,9 @@
   </header>
 
   <main class="lp-client-gallery__main">
-    {% if can_share_gallery %}<section class="lp-client-share-card"><div class="lp-client-share-card__copy"><span>Share gallery</span><h2>Let others scan to view</h2><p>This QR code opens the gallery’s permanent LumisPixel address. Anyone scanning it still follows the photographer’s gallery access rules.</p><div><input value="{{ stable_gallery_url }}" readonly onclick="this.select()" aria-label="Gallery link"><button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></div></div><button type="button" class="lp-client-share-card__qr" data-client-qr-open aria-label="Enlarge gallery QR code"><img src="{{ client_qr_png }}" alt="QR code for {{ gallery.name }}"><small>Tap to enlarge</small></button></section><dialog class="lp-client-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><p>Scan to open this gallery</p></dialog>{% endif %}
+    {% if can_download_gallery and access_token %}<div class="lp-client-gallery__delivery-actions"><a href="{% url 'galleries:client_gallery_download_all' access_token %}">Download Gallery</a></div>{% endif %}
+    {% if can_purchase_prints and access_token %}<div class="lp-client-gallery__store-actions"><a href="{% url 'galleries:client_gallery_print_store' access_token %}">Shop Prints</a></div>{% endif %}
+    {% if can_share_gallery %}<section class="lp-client-share-card"><div class="lp-client-share-card__copy"><span>Share gallery</span><h2>Let others scan to view</h2><p>This QR code opens the gallery’s permanent LumisPixel address. Anyone scanning it still follows the photographer’s gallery access rules.</p><div><input value="{{ stable_gallery_url }}" readonly onclick="this.select()" aria-label="Gallery link"><form method="post" action="{% url 'galleries:client_gallery_share' access_token %}" data-client-share-form>{% csrf_token %}<button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button></form><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></div></div><button type="button" class="lp-client-share-card__qr" data-client-qr-open aria-label="Enlarge gallery QR code"><img src="{{ client_qr_png }}" alt="QR code for {{ gallery.name }}"><small>Tap to enlarge</small></button></section><dialog class="lp-client-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><p>Scan to open this gallery</p></dialog>{% endif %}
     {% if albums %}
       <nav class="lp-client-gallery__albums" aria-label="Gallery albums">
         {% for album in albums %}<a href="#album-{{ album.pk }}">{{ album.name }}</a>{% endfor %}
@@ -35,21 +37,51 @@
           <div class="lp-client-photo__actions">
             {% if can_favorite %}
               <form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}">{% csrf_token %}
-                <button type="submit" {% if photo.is_client_favorite %}aria-pressed="true" disabled{% else %}aria-pressed="false"{% endif %}>
-                  {% if photo.is_client_favorite %}Favorited{% else %}Favorite{% endif %}
+                <button type="submit" aria-pressed="{% if photo.is_client_favorite %}true{% else %}false{% endif %}">
+                  {% if photo.is_client_favorite %}Remove Favorite{% else %}Favorite{% endif %}
                 </button>
               </form>
             {% endif %}
-            {% if can_download %}
+            {% if can_download and access_token %}
               <a href="{% url 'galleries:client_gallery_download' access_token photo.pk %}">Download</a>
+              {% if can_download_originals %}
+                <a href="{% url 'galleries:client_gallery_download_original' access_token photo.pk %}">Download Original</a>
+              {% endif %}
             {% endif %}
           </div>
+          {% if can_comment %}
+            <section class="lp-client-photo__comments" aria-label="Comments for {{ photo.original_name }}">
+              {% if photo.client_comment_list %}
+                <div class="lp-client-photo__comment-list">
+                  {% for comment in photo.client_comment_list %}
+                    <p><strong>{{ comment.invitation.client_name }}</strong> {{ comment.body }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <form method="post" action="{% url 'galleries:client_gallery_comment' access_token photo.pk %}">
+                {% csrf_token %}
+                <label for="comment-{{ photo.pk }}">Comment</label>
+                <textarea id="comment-{{ photo.pk }}" name="comment" maxlength="2000" required placeholder="Leave a comment about this photo"></textarea>
+                <button type="submit">Post Comment</button>
+              </form>
+            </section>
+          {% endif %}
         </article>
       {% empty %}
         <div class="lp-client-gallery__empty" role="status">This gallery does not have client-ready photos yet.</div>
       {% endfor %}
     </section>
   </main>
-{% if can_share_gallery %}<script>document.querySelector('[data-client-copy-link]')?.addEventListener('click',async function(){try{await navigator.clipboard.writeText(this.dataset.url);this.textContent='Copied';setTimeout(()=>this.textContent='Copy Link',1500)}catch(e){}});const q=document.querySelector('[data-client-qr-dialog]');document.querySelector('[data-client-qr-open]')?.addEventListener('click',()=>q.showModal());document.querySelector('[data-client-qr-close]')?.addEventListener('click',()=>q.close());q?.addEventListener('click',e=>{if(e.target===q)q.close()});</script>{% endif %}
+{% if can_share_gallery %}<script>document.querySelector('[data-client-copy-link]')?.addEventListener('click',async function(){try{await navigator.clipboard.writeText(this.dataset.url);this.closest('form')?.requestSubmit();this.textContent='Copied';setTimeout(()=>this.textContent='Copy Link',1500)}catch(e){}});const q=document.querySelector('[data-client-qr-dialog]');document.querySelector('[data-client-qr-open]')?.addEventListener('click',()=>q.showModal());document.querySelector('[data-client-qr-close]')?.addEventListener('click',()=>q.close());q?.addEventListener('click',e=>{if(e.target===q)q.close()});</script>{% endif %}
 </body>
 </html>
+
+<style>
+.lp-client-photo__media{position:relative;display:block;overflow:hidden}
+.lp-client-photo__watermark{position:absolute;z-index:2;padding:.35rem .55rem;border-radius:.35rem;background:rgba(0,0,0,.45);color:#fff;font-size:.78rem;font-weight:700;letter-spacing:.02em;pointer-events:none;user-select:none}
+.is-watermark-center .lp-client-photo__watermark{left:50%;top:50%;transform:translate(-50%,-50%)}
+.is-watermark-top_left .lp-client-photo__watermark{left:.75rem;top:.75rem}
+.is-watermark-top_right .lp-client-photo__watermark{right:.75rem;top:.75rem}
+.is-watermark-bottom_left .lp-client-photo__watermark{left:.75rem;bottom:.75rem}
+.is-watermark-bottom_right .lp-client-photo__watermark{right:.75rem;bottom:.75rem}
+</style>
