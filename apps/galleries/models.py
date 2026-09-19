@@ -307,6 +307,26 @@ class GalleryPhoto(models.Model):
         return signed_media_url(self.file.name)
 
 
+class GalleryMultipartUpload(models.Model):
+    """Server-owned state for a browser-to-B2 multipart upload."""
+
+    id = models.UUIDField(primary_key=True, default=__import__("uuid").uuid4, editable=False)
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="multipart_uploads")
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_multipart_uploads")
+    object_key = models.CharField(max_length=700, unique=True)
+    upload_id = models.TextField()
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    file_size = models.PositiveBigIntegerField()
+    completed_at = models.DateTimeField(blank=True, null=True)
+    aborted_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+
 class AlbumQuerySet(models.QuerySet):
     def for_photographer(self, photographer):
         return self.filter(gallery__photographer=photographer)
