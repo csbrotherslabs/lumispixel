@@ -537,3 +537,33 @@
     font-size:13px!important;
   }
 }
+
+
+/* Compact transfer manager: optimized for large photographer upload batches. */
+.lp-upload-page-modern .lp-transfer-manager{padding:18px 20px}
+.lp-upload-page-modern .lp-transfer-manager>header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:12px}
+.lp-upload-page-modern .lp-transfer-manager>header h2{margin:2px 0 3px;font-size:20px}
+.lp-upload-page-modern .lp-transfer-manager>header p{margin:0;color:#7d756f;font-size:12px}
+.lp-batch-progress{display:grid;gap:8px;margin:14px 0 8px;padding:12px 14px;border:1px solid #eee5df;border-radius:12px;background:#fbf8f6}
+.lp-batch-progress__copy,.lp-batch-progress__meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lp-batch-progress__copy{font-size:12px}.lp-batch-progress__copy>span{font-weight:800;font-variant-numeric:tabular-nums}
+.lp-batch-progress progress{width:100%;height:6px;accent-color:#d71920}
+.lp-batch-progress__meta{justify-content:flex-start;flex-wrap:wrap;color:#7d756f;font-size:11px}
+.lp-batch-progress__meta span+span::before{content:"•";margin-right:10px;color:#b8afa9}.lp-batch-progress__meta .is-failed b{color:#b42328}
+.lp-transfer-manager [data-upload-list]{display:grid}
+.lp-transfer-manager .lp-upload-row{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(130px,18%) 38px;align-items:center;gap:10px;min-height:52px;padding:7px 4px;border-bottom:1px solid #eee9e5}
+.lp-transfer-manager .lp-upload-row:last-child{border-bottom:0}
+.lp-transfer-manager .lp-file-icon{width:34px;height:34px;border-radius:7px;overflow:hidden}
+.lp-transfer-manager .lp-file-icon img{width:34px;height:34px;object-fit:cover}
+.lp-transfer-manager .lp-file-main{display:grid;grid-template-columns:minmax(120px,1fr) minmax(160px,35%);align-items:center;gap:12px;min-width:0}
+.lp-transfer-manager .lp-file-main>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600}
+.lp-transfer-manager .lp-file-main>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8a817b;font-size:10px}
+.lp-transfer-manager .lp-file-main [data-progress-slot]{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-width:0}
+.lp-transfer-manager .lp-progress-copy{display:flex;gap:8px;order:2;flex:none;color:#7d756f;font-size:9px;white-space:nowrap}
+.lp-transfer-manager .lp-file-main progress{order:1;width:100%;height:4px;accent-color:#d71920}
+.lp-transfer-manager .lp-file-state{min-width:0}.lp-transfer-manager .lp-file-state strong{display:block;font-size:11px;font-weight:600}.lp-transfer-manager .lp-file-state span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8a817b;font-size:9px}
+.lp-transfer-manager .lp-file-actions{display:flex;justify-content:flex-end}.lp-transfer-manager .lp-file-actions button{width:32px;height:32px;min-width:32px;padding:0;border-radius:8px}
+.lp-transfer-manager .lp-upload-row.is-completed{opacity:.68}
+.lp-transfer-manager .lp-upload-row.is-completed .lp-file-icon{display:grid;place-items:center;background:#f1f7f3}
+.lp-transfer-manager .lp-upload-row.is-failed{background:#fffafa}
+@media(max-width:760px){.lp-transfer-manager .lp-upload-row{grid-template-columns:34px minmax(0,1fr) 34px}.lp-transfer-manager .lp-file-state{grid-column:2/3}.lp-transfer-manager .lp-file-actions{grid-column:3;grid-row:1/3}.lp-transfer-manager .lp-file-main{grid-template-columns:1fr}.lp-transfer-manager .lp-file-main>span{display:none}.lp-batch-progress__copy,.lp-batch-progress__meta{align-items:flex-start}.lp-batch-progress__meta span+span::before{display:none}}
