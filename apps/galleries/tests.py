@@ -557,3 +557,63 @@ class ClientSharePermissionTests(TestCase):
         response = self.client.get(self.stable_path)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "galleries/stable_gallery_gate.html")
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientPurchasePrintsPermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="prints-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="prints-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Print Test", slug="print-test",
+            status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(gallery=self.gallery, purchase_prints=True)
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug)
+        self.store = GalleryStore.objects.create(
+            gallery=self.gallery, photographer=self.owner, enabled=True, name="Print Shop"
+        )
+        self.product = StoreProduct.objects.create(
+            store=self.store, photographer=self.owner, gallery=self.gallery,
+            name="8x10 Print", product_type=StoreProduct.ProductType.PRINT,
+            price="25.00", fulfillment=StoreProduct.Fulfillment.PHYSICAL, active=True,
+        )
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Print Client", email="print-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(invitation)
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.store_url = reverse("galleries:client_gallery_print_store", args=[self.raw_token])
+
+    def test_purchase_prints_on_exposes_active_store(self):
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, "Shop Prints")
+        self.assertContains(page, self.store_url)
+        store_page = self.client.get(self.store_url)
+        self.assertEqual(store_page.status_code, 200)
+        self.assertContains(store_page, "8x10 Print")
+
+    def test_purchase_prints_off_hides_store_and_blocks_direct_access(self):
+        self.permissions.purchase_prints = False
+        self.permissions.save(update_fields=["purchase_prints", "updated_at"])
+        self.assertNotContains(self.client.get(self.gallery_url), "Shop Prints")
+        self.assertEqual(self.client.get(self.store_url).status_code, 403)
+
+    def test_disabled_or_expired_store_is_not_exposed(self):
+        self.store.enabled = False
+        self.store.save(update_fields=["enabled", "updated_at"])
+        self.assertNotContains(self.client.get(self.gallery_url), "Shop Prints")
+        self.assertEqual(self.client.get(self.store_url).status_code, 404)
+
+        self.store.enabled = True
+        self.store.expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self.store.save(update_fields=["enabled", "expires_at", "updated_at"])
+        self.assertNotContains(self.client.get(self.gallery_url), "Shop Prints")
+        self.assertEqual(self.client.get(self.store_url).status_code, 404)
+
+    def test_non_print_products_do_not_enable_print_store(self):
+        self.product.product_type = StoreProduct.ProductType.DIGITAL
+        self.product.save(update_fields=["product_type", "updated_at"])
+        self.assertNotContains(self.client.get(self.gallery_url), "Shop Prints")
+        self.assertEqual(self.client.get(self.store_url).status_code, 404)
