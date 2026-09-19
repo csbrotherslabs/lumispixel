@@ -583,3 +583,12 @@
   background:#fff1f1!important;
   color:#a40005!important;
 }
+
+/* Transfer-manager secondary action sits on a dark button background. */
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm{
+  color:#fff!important;
+}
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:hover,
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:focus-visible{
+  color:#fff!important;
+}
