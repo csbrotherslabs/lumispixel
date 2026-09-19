@@ -254,13 +254,17 @@ def client_gallery_favorite(request, token, photo_id):
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
     )
-    already_favorited = GalleryAnalyticsEvent.objects.filter(
+    favorite_event = GalleryAnalyticsEvent.objects.filter(
         gallery=gallery,
         visitor_identifier=token_record.token_hash,
         event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
         related_photo=photo,
-    ).exists()
-    if not already_favorited:
+    ).order_by("-occurred_at", "-pk").first()
+    if favorite_event:
+        favorite_event.delete()
+        Gallery.objects.filter(pk=gallery.pk, favorite_count__gt=0).update(favorite_count=F("favorite_count") - 1)
+        favorited = False
+    else:
         track_gallery_event(
             gallery=gallery,
             event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
@@ -278,10 +282,11 @@ def client_gallery_favorite(request, token, photo_id):
             actor_type=GalleryActivity.ActorType.CLIENT,
             related_object=photo,
         )
+        favorited = True
     return render(
         request,
         "galleries/favorite_result.html",
-        {"gallery": gallery, "photo": photo, "access_token": token, "favorited": True},
+        {"gallery": gallery, "photo": photo, "access_token": token, "favorited": favorited},
     )
 
 
