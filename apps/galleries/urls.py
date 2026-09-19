@@ -14,6 +14,7 @@ urlpatterns = [
     path("access/<str:token>/photos/<int:photo_id>/download/", views.client_gallery_download, name="client_gallery_download"),
     path("access/<str:token>/photos/<int:photo_id>/download-original/", views.client_gallery_download_original, name="client_gallery_download_original"),
     path("access/<str:token>/download/", views.client_gallery_download_all, name="client_gallery_download_all"),
+    path("access/<str:token>/share/", views.client_gallery_share, name="client_gallery_share"),
     path("my/invitations/<int:invitation_id>/open/", account_views.client_account_gallery_access, name="client_account_gallery_access"),
     path("share-link/<int:gallery_id>/<int:invitation_id>/", views.issue_client_gallery_share_link, name="issue_client_gallery_share_link"),
     path("invite/<int:gallery_id>/", invitation_views.prepare_client_gallery_invitation, name="prepare_client_gallery_invitation"),
