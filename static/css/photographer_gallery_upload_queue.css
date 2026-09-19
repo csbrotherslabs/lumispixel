@@ -567,3 +567,8 @@
 .lp-transfer-manager .lp-upload-row.is-completed .lp-file-icon{display:grid;place-items:center;background:#f1f7f3}
 .lp-transfer-manager .lp-upload-row.is-failed{background:#fffafa}
 @media(max-width:760px){.lp-transfer-manager .lp-upload-row{grid-template-columns:34px minmax(0,1fr) 34px}.lp-transfer-manager .lp-file-state{grid-column:2/3}.lp-transfer-manager .lp-file-actions{grid-column:3;grid-row:1/3}.lp-transfer-manager .lp-file-main{grid-template-columns:1fr}.lp-transfer-manager .lp-file-main>span{display:none}.lp-batch-progress__copy,.lp-batch-progress__meta{align-items:flex-start}.lp-batch-progress__meta span+span::before{display:none}}
+
+.lp-transfer-manager .lp-upload-row[hidden]{display:none!important}
+.lp-queue-window-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px}
+.lp-queue-window-toggle{border:0;background:transparent;color:#d71920;padding:6px 2px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.lp-queue-window-toggle:hover,.lp-queue-window-toggle:focus-visible{color:#25211f;text-decoration:underline}
