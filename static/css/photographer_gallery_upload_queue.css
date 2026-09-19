@@ -583,3 +583,10 @@
   background:#fff1f1!important;
   color:#a40005!important;
 }
+
+/* Keep dark transfer-manager secondary actions readable. */
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm,
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:hover,
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:focus-visible{
+  color:#fff!important;
+}
