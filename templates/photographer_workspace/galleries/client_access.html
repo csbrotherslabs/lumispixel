@@ -1,4 +1,6 @@
-{% load static %}
+{% load static gallery_qr %}
+{% gallery_qr_png stable_gallery_url as stable_qr_png %}
+{% gallery_qr_svg stable_gallery_url as stable_qr_svg %}
 <link rel="stylesheet" href="{% static 'css/photographer_gallery_client_access_refresh.css' %}">
 <link rel="stylesheet" href="{% static 'css/photographer_gallery_client_access_actions.css' %}">
 <section class="lp-access lp-access-modern">
@@ -40,6 +42,11 @@
     </section>
   </form>
 
+
+  <section class="lp-access-panel lp-gallery-qr-card">
+    <div class="lp-gallery-qr-card__preview"><img src="{{ stable_qr_png }}" alt="QR code for {{ gallery.name }}" width="220" height="220"></div>
+    <div class="lp-gallery-qr-card__body"><span class="lp-contract-eyebrow">Gallery Link &amp; QR Code</span><h3>Share this gallery anywhere</h3><p>This QR code points to the gallery’s permanent LumisPixel address. Storage links and temporary image URLs are never embedded in the code.</p><div class="lp-gallery-qr-card__url"><input id="stable-gallery-url" value="{{ stable_gallery_url }}" readonly onclick="this.select()"><button type="button" data-copy-stable-gallery><i class="bi bi-copy"></i>Copy Link</button></div><div class="lp-gallery-qr-card__actions"><a href="{{ stable_qr_png }}" download="{{ gallery.slug }}-qr.png"><i class="bi bi-download"></i>Download PNG</a><a href="{{ stable_qr_svg }}" download="{{ gallery.slug }}-qr.svg"><i class="bi bi-filetype-svg"></i>Download SVG</a><button type="button" data-print-stable-qr><i class="bi bi-printer"></i>Print QR</button></div><small>Clients can see this QR inside their gallery only while <strong>Share Gallery</strong> is enabled.</small></div>
+  </section>
   <section class="lp-access-panel lp-invitations" id="invite-client">
     <header class="lp-invitations__head"><div><span class="lp-access-panel__icon"><i class="bi bi-envelope"></i></span><div><h3>Client Invitations</h3><p>Send secure gallery access and manage invited clients.</p></div></div></header>
     <form method="post" action="{% url 'galleries:prepare_client_gallery_invitation' gallery.pk %}" class="lp-invite-form">{% csrf_token %}<label>Client name<input name="client_name" placeholder="e.g. Avery Stone" required></label><label>Email address<input type="email" name="email" placeholder="avery@example.com" required></label><button class="lpw-btn lpw-btn-primary" type="submit"><i class="bi bi-send"></i>Prepare Invite</button><small>LumisPixel will create secure access and email the gallery invitation immediately.</small></form>
