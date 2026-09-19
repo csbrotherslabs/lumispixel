@@ -8,6 +8,7 @@ import hashlib
 import secrets
 
 from .storage import gallery_photo_storage
+from .media_delivery import signed_media_url
 
 
 class GalleryQuerySet(models.QuerySet):
@@ -297,6 +298,13 @@ class GalleryPhoto(models.Model):
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
             raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+    @property
+    def delivery_url(self):
+        """Return a short-lived Cloudflare URL for this private original."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name)
 
 
 class AlbumQuerySet(models.QuerySet):
