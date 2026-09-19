@@ -1,5 +1,5 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -17,6 +17,12 @@ from .models import (
 )
 
 
+@override_settings(
+    GALLERY_STORAGE_ENVIRONMENT="dev",
+    MEDIA_DELIVERY_BASE_URL="https://media-dev.lumispixel.com",
+    MEDIA_SIGNING_SECRET="test-media-secret",
+    MEDIA_SIGNED_URL_TTL=900,
+)
 class ClientGalleryDeliveryTests(TestCase):
     def setUp(self):
         self.owner_user = User.objects.create_user(
@@ -69,6 +75,8 @@ class ClientGalleryDeliveryTests(TestCase):
         self.assertTemplateUsed(response, "galleries/client_gallery.html")
         self.assertEqual(response.context["gallery"], self.gallery)
         self.assertEqual(list(response.context["photos"]), [self.photo])
+        self.assertContains(response, "https://media-dev.lumispixel.com/private/dev/")
+        self.assertContains(response, "signature=")
         self.invitation.refresh_from_db()
         self.token_record.refresh_from_db()
         self.assertEqual(self.invitation.status, GalleryInvitation.Status.ACTIVE)
