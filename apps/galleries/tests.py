@@ -3,12 +3,15 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
 from .analytics import gallery_analytics_report, track_gallery_event
-from .models import Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryOrder, GalleryPhoto, GalleryStore, StoreProduct
+from .models import AccessToken, Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, StoreProduct
 from .storage import PrivateGalleryB2Storage, gallery_photo_storage
 
 
@@ -166,3 +169,87 @@ class GalleryModelTests(TestCase):
         product = StoreProduct(store=store, gallery=gallery, photographer=owner, name="Download", product_type=StoreProduct.ProductType.DIGITAL, price="10.00", sale_price="10.00")
         with self.assertRaises(ValidationError):
             product.full_clean()
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientDownloadPermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="download-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="download-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner,
+            name="Download Test",
+            slug="download-test",
+            status=Gallery.Status.PUBLISHED,
+            visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(gallery=self.gallery, download_images=True)
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug, allow_downloads=False)
+        self.invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Client", email="client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(self.invitation)
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery,
+            photographer=self.owner,
+            file=SimpleUploadedFile("photo.jpg", b"client-download-test", content_type="image/jpeg"),
+            original_name="photo.jpg",
+            file_size=20,
+            status=GalleryPhoto.Status.COMPLETED,
+            is_visible=True,
+        )
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_download_permission_controls_client_ui_without_gallery_settings_duplicate(self):
+        response = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Download Gallery")
+        self.assertContains(response, reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk]))
+
+        self.permissions.download_images = False
+        self.permissions.save(update_fields=["download_images", "updated_at"])
+        response = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertNotContains(response, "Download Gallery")
+        self.assertNotContains(response, reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk]))
+
+    def test_disabled_download_permission_blocks_direct_photo_and_gallery_endpoints(self):
+        self.permissions.download_images = False
+        self.permissions.save(update_fields=["download_images", "updated_at"])
+        photo_response = self.client.get(reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk]))
+        gallery_response = self.client.get(reverse("galleries:client_gallery_download_all", args=[self.raw_token]))
+        self.assertEqual(photo_response.status_code, 403)
+        self.assertEqual(gallery_response.status_code, 403)
+
+    def test_expired_download_permission_hides_ui_and_blocks_endpoints(self):
+        self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self.permissions.save(update_fields=["download_expires_at", "updated_at"])
+        page = self.client.get(reverse("galleries:client_gallery_access", args=[self.raw_token]))
+        self.assertNotContains(page, "Download Gallery")
+        self.assertEqual(self.client.get(reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("galleries:client_gallery_download_all", args=[self.raw_token])).status_code, 403)
+
+    def test_gallery_download_returns_zip_and_records_downloads(self):
+        response = self.client.get(reverse("galleries:client_gallery_download_all", args=[self.raw_token]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertIn("attachment;", response["Content-Disposition"])
+        self.assertEqual(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                visitor_identifier=AccessToken.digest(self.raw_token),
+                event_type=GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD,
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                visitor_identifier=AccessToken.digest(self.raw_token),
+                event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            ).count(),
+            1,
+        )
