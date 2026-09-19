@@ -5,7 +5,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("galleries", "0009_gallerymultipartupload"),
+        ("galleries", "0015_gallery_public_id"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
