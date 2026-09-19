@@ -6,6 +6,8 @@ from django.db.models import Q
 from django.utils import timezone
 import hashlib
 import secrets
+import uuid
+from pathlib import PurePosixPath
 
 from .storage import gallery_photo_storage
 from .media_delivery import signed_media_url
@@ -256,9 +258,21 @@ class GalleryAnalyticsEvent(models.Model):
             raise ValidationError({"related_album": "Album must belong to this gallery."})
 
 
+GALLERY_PHOTO_EXTENSIONS = {
+    ".jpg": ".jpg",
+    ".jpeg": ".jpg",
+    ".png": ".png",
+    ".webp": ".webp",
+}
+
+
 def gallery_photo_path(instance, filename):
-    """Keep originals in an owner/gallery namespace (served only by authorized access)."""
-    return f"galleries/{instance.photographer_id}/{instance.gallery_id}/{filename}"
+    """Return an immutable object name; preserve the user-facing name separately."""
+    suffix = GALLERY_PHOTO_EXTENSIONS.get(PurePosixPath(filename).suffix.lower(), "")
+    return (
+        f"galleries/{instance.photographer_id}/{instance.gallery_id}/"
+        f"{uuid.uuid4().hex}{suffix}"
+    )
 
 
 class GalleryPhotoQuerySet(models.QuerySet):
