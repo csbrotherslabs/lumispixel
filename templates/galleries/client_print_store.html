@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ store.name|default:"Print Store" }} | {{ gallery.name }}</title><link rel="stylesheet" href="{% static 'css/client_gallery_delivery.css' %}"></head>
+<body class="lp-client-gallery">
+<main class="lp-client-gallery__main">
+  <a href="{% url 'galleries:client_gallery_access' access_token %}">← Back to gallery</a>
+  <header><span class="lp-client-gallery__eyebrow">Print store</span><h1>{{ store.name|default:"Shop Prints" }}</h1>{% if store.message %}<p>{{ store.message }}</p>{% endif %}</header>
+  <section class="lp-client-gallery__grid" aria-label="Print products">
+    {% for product in products %}
+      <article class="lp-client-photo">
+        {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% endif %}
+        <h2>{{ product.name }}</h2>
+        {% if product.description %}<p>{{ product.description }}</p>{% endif %}
+        <p>{% if product.sale_price %}<strong>{{ store.currency }} {{ product.sale_price }}</strong> <s>{{ store.currency }} {{ product.price }}</s>{% else %}<strong>{{ store.currency }} {{ product.price }}</strong>{% endif %}</p>
+        {% if product.variants.all %}<ul>{% for variant in product.variants.all %}{% if variant.active %}<li>{{ variant.name }}{% if variant.price_adjustment %} — {{ store.currency }} {{ variant.price_adjustment }} adjustment{% endif %}</li>{% endif %}{% endfor %}</ul>{% endif %}
+      </article>
+    {% endfor %}
+  </section>
+  <p>Checkout and payment will be enabled when the gallery commerce workflow is connected.</p>
+</main>
+</body></html>
