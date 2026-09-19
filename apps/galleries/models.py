@@ -425,7 +425,7 @@ class GalleryPhotoComment(models.Model):
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photo_comments")
     photo = models.ForeignKey("GalleryPhoto", on_delete=models.CASCADE, related_name="client_comments")
-    invitation = models.ForeignKey(GalleryInvitation, on_delete=models.CASCADE, related_name="photo_comments")
+    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
     body = models.TextField(max_length=2000)
     created_at = models.DateTimeField(auto_now_add=True)
