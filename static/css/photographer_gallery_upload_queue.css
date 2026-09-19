@@ -572,3 +572,14 @@
 .lp-queue-window-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px}
 .lp-queue-window-toggle{border:0;background:transparent;color:#d71920;padding:6px 2px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .lp-queue-window-toggle:hover,.lp-queue-window-toggle:focus-visible{color:#25211f;text-decoration:underline}
+
+/* Ensure transfer-manager text actions remain legible against inherited button themes. */
+.lp-upload-page-modern .lp-queue-window-toggle{
+  background:transparent!important;
+  color:#d71920!important;
+}
+.lp-upload-page-modern .lp-queue-window-toggle:hover,
+.lp-upload-page-modern .lp-queue-window-toggle:focus-visible{
+  background:#fff1f1!important;
+  color:#a40005!important;
+}
