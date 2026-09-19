@@ -1,0 +1,4 @@
+{% load static %}
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ gallery.name }} | LumisPixel</title><link rel="stylesheet" href="{% static 'css/client_gallery_delivery.css' %}"></head>
+<body class="lp-client-gallery"><main class="lp-gallery-gate"><div class="lp-gallery-gate__icon">🔒</div><span>LumisPixel Gallery</span><h1>{{ gallery.name }}</h1><p>This gallery is protected. Sign in with the email address invited by the photographer, or use the secure invitation you received.</p><a href="/login/?next={{ request.path|urlencode }}">Sign in to continue</a></main></body></html>
