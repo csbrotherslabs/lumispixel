@@ -67,18 +67,32 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
 
-USE_SPACES = env_bool("USE_SPACES", False)
-SPACES_ACCESS_KEY = os.getenv("SPACES_ACCESS_KEY", "")
-SPACES_SECRET_KEY = os.getenv("SPACES_SECRET_KEY", "")
-SPACES_BUCKET_NAME = os.getenv("SPACES_BUCKET_NAME", "")
-SPACES_REGION = os.getenv("SPACES_REGION", "nyc3")
-SPACES_ENDPOINT_URL = os.getenv("SPACES_ENDPOINT_URL", f"https://{SPACES_REGION}.digitaloceanspaces.com")
-SPACES_SIGNED_URL_TTL = int(os.getenv("SPACES_SIGNED_URL_TTL", "900"))
-SPACES_ENVIRONMENT = os.getenv("SPACES_ENVIRONMENT", "dev" if DEBUG else "prod").strip().lower()
-if SPACES_ENVIRONMENT not in {"dev", "prod"}:
-    raise RuntimeError("SPACES_ENVIRONMENT must be either 'dev' or 'prod'.")
-if USE_SPACES and not all([SPACES_ACCESS_KEY, SPACES_SECRET_KEY, SPACES_BUCKET_NAME]):
-    raise RuntimeError("Spaces credentials and bucket are required when USE_SPACES=1.")
+# Gallery originals use an explicit provider so the application is not coupled
+# to a single object-storage vendor. Local storage remains the safe default for
+# development and CI; production should set GALLERY_STORAGE_BACKEND=b2.
+GALLERY_STORAGE_BACKEND = os.getenv("GALLERY_STORAGE_BACKEND", "local").strip().lower()
+if GALLERY_STORAGE_BACKEND not in {"local", "b2"}:
+    raise RuntimeError("GALLERY_STORAGE_BACKEND must be one of: local, b2.")
+
+GALLERY_STORAGE_ENVIRONMENT = os.getenv(
+    "GALLERY_STORAGE_ENVIRONMENT", "dev" if DEBUG else "prod"
+).strip().lower()
+if GALLERY_STORAGE_ENVIRONMENT not in {"dev", "prod"}:
+    raise RuntimeError("GALLERY_STORAGE_ENVIRONMENT must be either 'dev' or 'prod'.")
+
+B2_ACCESS_KEY_ID = os.getenv("B2_ACCESS_KEY_ID", "")
+B2_SECRET_ACCESS_KEY = os.getenv("B2_SECRET_ACCESS_KEY", "")
+B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "")
+B2_REGION = os.getenv("B2_REGION", "")
+B2_ENDPOINT_URL = os.getenv("B2_ENDPOINT_URL", "").rstrip("/")
+B2_SIGNED_URL_TTL = int(os.getenv("B2_SIGNED_URL_TTL", "900"))
+if GALLERY_STORAGE_BACKEND == "b2" and not all(
+    [B2_ACCESS_KEY_ID, B2_SECRET_ACCESS_KEY, B2_BUCKET_NAME, B2_REGION, B2_ENDPOINT_URL]
+):
+    raise RuntimeError(
+        "B2_ACCESS_KEY_ID, B2_SECRET_ACCESS_KEY, B2_BUCKET_NAME, B2_REGION, "
+        "and B2_ENDPOINT_URL are required when GALLERY_STORAGE_BACKEND=b2."
+    )
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"

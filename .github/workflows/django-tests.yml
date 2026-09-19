@@ -25,7 +25,8 @@ jobs:
       DJANGO_SETTINGS_MODULE: "config.settings_test"
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "ci-only-secret-key"
-      USE_SPACES: "0"
+      GALLERY_STORAGE_BACKEND: "local"
+      GALLERY_STORAGE_ENVIRONMENT: "dev"
 
     steps:
       - name: Check out repository

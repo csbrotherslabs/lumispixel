@@ -1,13 +1,62 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.conf import settings
+from django.test import SimpleTestCase, TestCase, override_settings
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client
 
 from .analytics import gallery_analytics_report, track_gallery_event
 from .models import Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryOrder, GalleryPhoto, GalleryStore, StoreProduct
+from .storage import PrivateGalleryB2Storage, gallery_photo_storage
+
+
+class GalleryStorageTests(SimpleTestCase):
+    @override_settings(
+        GALLERY_STORAGE_BACKEND="b2",
+        GALLERY_STORAGE_ENVIRONMENT="prod",
+        B2_ACCESS_KEY_ID="test-key-id",
+        B2_SECRET_ACCESS_KEY="test-secret",
+        B2_BUCKET_NAME="lumispixel-production-media",
+        B2_REGION="us-west-004",
+        B2_ENDPOINT_URL="https://s3.us-west-004.backblazeb2.com",
+        B2_SIGNED_URL_TTL=900,
+    )
+    def test_b2_backend_is_private_and_bucket_scoped(self):
+        storage = gallery_photo_storage()
+
+        self.assertIsInstance(storage, PrivateGalleryB2Storage)
+        self.assertEqual(storage.bucket_name, "lumispixel-production-media")
+        self.assertEqual(storage.endpoint_url, "https://s3.us-west-004.backblazeb2.com")
+        self.assertEqual(storage.location, "private/prod")
+        self.assertTrue(storage.querystring_auth)
+        self.assertFalse(storage.file_overwrite)
+
+    @override_settings(
+        GALLERY_STORAGE_BACKEND="b2",
+        GALLERY_STORAGE_ENVIRONMENT="prod",
+        B2_ACCESS_KEY_ID="test-key-id",
+        B2_SECRET_ACCESS_KEY="test-secret",
+        B2_BUCKET_NAME="lumispixel-production-media",
+        B2_REGION="us-west-004",
+        B2_ENDPOINT_URL="https://s3.us-west-004.backblazeb2.com",
+        B2_SIGNED_URL_TTL=900,
+    )
+    def test_b2_backend_preserves_originals_namespace(self):
+        storage = gallery_photo_storage()
+
+        generated = storage.generate_filename("galleries/12/34/IMG_0001.jpg")
+
+        self.assertEqual(generated, "galleries/12/34/originals/IMG_0001.jpg")
+
+    @override_settings(GALLERY_STORAGE_BACKEND="local")
+    def test_local_backend_remains_available_for_development_and_ci(self):
+        storage = gallery_photo_storage()
+
+        self.assertEqual(storage.location, str(settings.PRIVATE_MEDIA_ROOT))
+
+
 
 
 class GalleryModelTests(TestCase):

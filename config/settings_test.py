@@ -13,4 +13,5 @@ STORAGES = {  # noqa: F405
 }
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-USE_SPACES = False
+GALLERY_STORAGE_BACKEND = "local"
+GALLERY_STORAGE_ENVIRONMENT = "dev"
