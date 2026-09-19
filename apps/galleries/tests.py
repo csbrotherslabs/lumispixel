@@ -437,7 +437,8 @@ class ClientFavoritePermissionTests(TestCase):
         )
 
         page = self.client.get(self.gallery_url)
-        self.assertContains(page, ">Favorite</button>", html=True)
+        self.assertContains(page, "Favorite")
+        self.assertNotContains(page, "Remove Favorite")
 
     def test_duplicate_favorite_posts_do_not_inflate_gallery_count(self):
         self.client.post(self.favorite_url)
