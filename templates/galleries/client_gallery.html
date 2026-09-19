@@ -19,6 +19,7 @@
   </header>
 
   <main class="lp-client-gallery__main">
+    {% if can_download and access_token %}<div class="lp-client-gallery__delivery-actions"><a href="{% url 'galleries:client_gallery_download_all' access_token %}">Download Gallery</a></div>{% endif %}
     {% if can_share_gallery %}<section class="lp-client-share-card"><div class="lp-client-share-card__copy"><span>Share gallery</span><h2>Let others scan to view</h2><p>This QR code opens the gallery’s permanent LumisPixel address. Anyone scanning it still follows the photographer’s gallery access rules.</p><div><input value="{{ stable_gallery_url }}" readonly onclick="this.select()" aria-label="Gallery link"><button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></div></div><button type="button" class="lp-client-share-card__qr" data-client-qr-open aria-label="Enlarge gallery QR code"><img src="{{ client_qr_png }}" alt="QR code for {{ gallery.name }}"><small>Tap to enlarge</small></button></section><dialog class="lp-client-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><p>Scan to open this gallery</p></dialog>{% endif %}
     {% if albums %}
       <nav class="lp-client-gallery__albums" aria-label="Gallery albums">
@@ -40,7 +41,7 @@
                 </button>
               </form>
             {% endif %}
-            {% if can_download %}
+            {% if can_download and access_token %}
               <a href="{% url 'galleries:client_gallery_download' access_token photo.pk %}">Download</a>
             {% endif %}
           </div>
