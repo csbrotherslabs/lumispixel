@@ -358,6 +358,8 @@
   function selectedPhotoIds(){return checks.filter(function(c){return c.checked&&c.isConnected;}).map(function(c){return Number(c.value);});}
   function update(){const live=checks.filter(function(c){return c.isConnected;}),n=live.filter(function(c){return c.checked;}).length;if(bulk){bulk.hidden=!n;bulk.querySelector('[data-photo-count]').textContent=n;}if(all){all.checked=Boolean(live.length)&&n===live.length;all.indeterminate=n>0&&n<live.length;}}
   if(all)all.onchange=function(){checks.forEach(function(c){if(c.isConnected)c.checked=all.checked;});update();};
+  bulk?.querySelector('[data-bulk-select-all]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=true;});update();});
+  bulk?.querySelector('[data-bulk-clear]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=false;});update();});
   checks.forEach(function(c){c.onchange=update;});document.querySelectorAll('[data-select-photo]').forEach(function(b){b.onclick=function(){const c=b.closest('article').querySelector('[data-photo-check]');c.checked=!c.checked;update();};});
   async function bulkJson(action, extra){
     const response=await fetch(bulk.dataset.bulkActionUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify(Object.assign({action:action,photo_ids:selectedPhotoIds()},extra||{}))});
