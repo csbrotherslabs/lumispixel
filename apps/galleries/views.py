@@ -24,6 +24,8 @@ from .models import (
     GalleryPhoto,
     GalleryPhotoComment,
     GallerySettings,
+    GalleryStore,
+    StoreProduct,
 )
 
 add("client_galleries", "Client Galleries", "Products", description="Present polished online galleries for delivering, sharing, favoriting, and selling photography.")
@@ -194,6 +196,32 @@ def client_gallery_access(request, token):
         photo.is_client_favorite = photo.pk in favorite_ids
         photo.client_comments = comments_by_photo.get(photo.pk, [])
 
+    store = GalleryStore.objects.filter(
+        gallery=gallery,
+        enabled=True,
+    ).filter(expires_at__isnull=True).first()
+    if not store:
+        store = GalleryStore.objects.filter(
+            gallery=gallery,
+            enabled=True,
+            expires_at__gt=timezone.now(),
+        ).first()
+    print_products = []
+    if permissions.purchase_prints and store:
+        print_products = list(
+            StoreProduct.objects.filter(
+                store=store,
+                gallery=gallery,
+                active=True,
+                product_type__in=[
+                    StoreProduct.ProductType.PRINT,
+                    StoreProduct.ProductType.CANVAS,
+                    StoreProduct.ProductType.FRAMED,
+                    StoreProduct.ProductType.ALBUM,
+                ],
+            ).prefetch_related("variants")
+        )
+
     downloads_active = permissions.download_images and (
         not permissions.download_expires_at or permissions.download_expires_at > timezone.now()
     )
@@ -223,7 +251,9 @@ def client_gallery_access(request, token):
             "remaining_downloads": remaining_downloads,
             "can_download_originals": can_download and permissions.download_originals,
             "can_comment": permissions.comment,
-            "can_purchase_prints": permissions.purchase_prints,
+            "can_purchase_prints": permissions.purchase_prints and bool(store) and bool(print_products),
+            "store": store,
+            "print_products": print_products,
             "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])),
             "can_share_gallery": permissions.share_gallery,
         },
@@ -506,6 +536,41 @@ def client_gallery_download_all(request, token):
     log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_DOWNLOADED,
                          actor=request.user, actor_type=GalleryActivity.ActorType.CLIENT)
     return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
+
+
+@require_GET
+def client_gallery_print_store(request, token):
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    if not permissions.purchase_prints:
+        return HttpResponseForbidden()
+    store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
+    if not store or (store.expires_at and store.expires_at <= timezone.now()):
+        raise Http404
+    products = list(
+        StoreProduct.objects.filter(
+            store=store,
+            gallery=gallery,
+            active=True,
+            product_type__in=[
+                StoreProduct.ProductType.PRINT,
+                StoreProduct.ProductType.CANVAS,
+                StoreProduct.ProductType.FRAMED,
+                StoreProduct.ProductType.ALBUM,
+            ],
+        ).prefetch_related("variants")
+    )
+    if not products:
+        raise Http404
+    return render(
+        request,
+        "galleries/client_print_store.html",
+        {
+            "gallery": gallery,
+            "store": store,
+            "products": products,
+            "access_token": token,
+        },
+    )
 
 
 @require_POST
