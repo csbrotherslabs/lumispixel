@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
-import io
+import tempfile
 import zipfile
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -324,11 +324,30 @@ def client_gallery_download_all(request, token):
         return HttpResponseForbidden()
     if permissions.download_expires_at and permissions.download_expires_at <= now:
         return HttpResponseForbidden()
-    photos = list(GalleryPhoto.objects.filter(gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED).order_by("created_at", "pk"))
-    archive = io.BytesIO()
+    photos = GalleryPhoto.objects.filter(
+        gallery=gallery,
+        is_visible=True,
+        status=GalleryPhoto.Status.COMPLETED,
+    ).order_by("created_at", "pk")
+    photo_count = photos.count()
+    if not photo_count:
+        raise Http404
+    settings = GallerySettings.objects.filter(gallery=gallery).first()
+    if settings and settings.download_limit is not None:
+        used = GalleryAnalyticsEvent.objects.filter(
+            gallery=gallery,
+            visitor_identifier=token_record.token_hash,
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+        ).count()
+        if used + photo_count > settings.download_limit:
+            return HttpResponseForbidden()
+
+    # Spool larger archives to a temporary file instead of holding an entire
+    # high-resolution gallery in application memory.
+    archive = tempfile.SpooledTemporaryFile(max_size=16 * 1024 * 1024, mode="w+b")
     used_names = set()
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-        for photo in photos:
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as bundle:
+        for photo in photos.iterator():
             base_name = photo.original_name or f"photo-{photo.pk}.jpg"
             name, suffix = base_name, 1
             while name in used_names:
@@ -336,13 +355,30 @@ def client_gallery_download_all(request, token):
                 name = f"{stem or base_name}-{suffix}{dot}{ext}" if dot else f"{base_name}-{suffix}"
                 suffix += 1
             used_names.add(name)
-            with photo.file.open("rb") as source:
-                bundle.writestr(name, source.read())
+            with photo.file.open("rb") as source, bundle.open(name, "w", force_zip64=True) as destination:
+                while True:
+                    chunk = source.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    destination.write(chunk)
     archive.seek(0)
     track_gallery_event(gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.GALLERY_DOWNLOAD,
                         visitor_identifier=token_record.token_hash, session_identifier=_session_identifier(request),
                         user=request.user, source="invite_link")
-    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
+    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + photo_count)
+    GalleryAnalyticsEvent.objects.bulk_create([
+        GalleryAnalyticsEvent(
+            photographer=gallery.photographer,
+            gallery=gallery,
+            visitor_identifier=token_record.token_hash,
+            authenticated_user=request.user if request.user.is_authenticated else None,
+            session_identifier=_session_identifier(request),
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            related_photo=photo,
+            source="gallery_zip",
+        )
+        for photo in photos
+    ])
     log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_DOWNLOADED,
                          actor=request.user, actor_type=GalleryActivity.ActorType.CLIENT)
     return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
