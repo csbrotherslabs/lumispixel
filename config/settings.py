@@ -86,6 +86,15 @@ B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "")
 B2_REGION = os.getenv("B2_REGION", "")
 B2_ENDPOINT_URL = os.getenv("B2_ENDPOINT_URL", "").rstrip("/")
 B2_SIGNED_URL_TTL = int(os.getenv("B2_SIGNED_URL_TTL", "900"))
+
+MEDIA_DELIVERY_BASE_URL = os.getenv(
+    "MEDIA_DELIVERY_BASE_URL",
+    "https://media-dev.lumispixel.com" if GALLERY_STORAGE_ENVIRONMENT == "dev" else "https://media.lumispixel.com",
+).rstrip("/")
+MEDIA_SIGNING_SECRET = os.getenv("MEDIA_SIGNING_SECRET", "")
+MEDIA_SIGNED_URL_TTL = int(os.getenv("MEDIA_SIGNED_URL_TTL", "900"))
+if MEDIA_SIGNED_URL_TTL <= 0 or MEDIA_SIGNED_URL_TTL > 3600:
+    raise RuntimeError("MEDIA_SIGNED_URL_TTL must be between 1 and 3600 seconds.")
 if GALLERY_STORAGE_BACKEND == "b2" and not all(
     [B2_ACCESS_KEY_ID, B2_SECRET_ACCESS_KEY, B2_BUCKET_NAME, B2_REGION, B2_ENDPOINT_URL]
 ):
