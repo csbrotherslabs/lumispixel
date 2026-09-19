@@ -732,3 +732,121 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.permissions.save(update_fields=["watermark", "updated_at"])
         page = self.client.get(self.gallery_url)
         self.assertNotContains(page, 'class="lp-client-photo__watermark"')
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientPermissionMatrixTests(TestCase):
+    """Cross-permission regression tests: UI hiding must match endpoint authorization."""
+
+    def setUp(self):
+        user = User.objects.create_user(email="matrix-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="matrix-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Permission Matrix", slug="permission-matrix",
+            status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(
+            gallery=self.gallery,
+            view_gallery=True, download_images=True, download_originals=True,
+            favorite_photos=True, comment=True, share_gallery=True, purchase_prints=True,
+        )
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug)
+        self.store = GalleryStore.objects.create(
+            gallery=self.gallery, photographer=self.owner, enabled=True, name="Matrix Store"
+        )
+        StoreProduct.objects.create(
+            store=self.store, photographer=self.owner, gallery=self.gallery,
+            name="Matrix Print", product_type=StoreProduct.ProductType.PRINT,
+            price="20.00", fulfillment=StoreProduct.Fulfillment.PHYSICAL, active=True,
+        )
+        self.invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Matrix Client", email="matrix-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(self.invitation)
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery, photographer=self.owner,
+            file=SimpleUploadedFile("matrix.jpg", b"matrix-file", content_type="image/jpeg"),
+            original_name="matrix.jpg", file_size=11,
+            status=GalleryPhoto.Status.COMPLETED, is_visible=True,
+        )
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.favorite_url = reverse("galleries:client_gallery_favorite", args=[self.raw_token, self.photo.pk])
+        self.comment_url = reverse("galleries:client_gallery_comment", args=[self.raw_token, self.photo.pk])
+        self.download_url = reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk])
+        self.original_url = reverse("galleries:client_gallery_download_original", args=[self.raw_token, self.photo.pk])
+        self.zip_url = reverse("galleries:client_gallery_download_all", args=[self.raw_token])
+        self.share_url = reverse("galleries:client_gallery_share", args=[self.raw_token])
+        self.print_url = reverse("galleries:client_gallery_print_store", args=[self.raw_token])
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_view_gallery_off_blocks_every_token_protected_capability(self):
+        self.permissions.view_gallery = False
+        self.permissions.save(update_fields=["view_gallery", "updated_at"])
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 404)
+        checks = (
+            ("get", self.download_url, None),
+            ("get", self.original_url, None),
+            ("get", self.zip_url, None),
+            ("post", self.favorite_url, {}),
+            ("post", self.comment_url, {"comment": "blocked"}),
+            ("post", self.share_url, {}),
+            ("get", self.print_url, None),
+        )
+        for method, url, data in checks:
+            response = getattr(self.client, method)(url, data or {})
+            self.assertEqual(response.status_code, 404, url)
+
+    def test_each_disabled_permission_blocks_its_direct_endpoint_without_disabling_others(self):
+        cases = (
+            ("download_images", "get", self.download_url),
+            ("favorite_photos", "post", self.favorite_url),
+            ("comment", "post", self.comment_url),
+            ("share_gallery", "post", self.share_url),
+            ("purchase_prints", "get", self.print_url),
+        )
+        for field, method, url in cases:
+            setattr(self.permissions, field, False)
+            self.permissions.save(update_fields=[field, "updated_at"])
+            response = getattr(self.client, method)(url, {"comment": "test"} if field == "comment" else {})
+            self.assertEqual(response.status_code, 403, field)
+            setattr(self.permissions, field, True)
+            self.permissions.save(update_fields=[field, "updated_at"])
+            self.assertEqual(self.client.get(self.gallery_url).status_code, 200, field)
+
+    def test_download_images_off_also_blocks_original_and_gallery_zip(self):
+        self.permissions.download_images = False
+        self.permissions.download_originals = True
+        self.permissions.save(update_fields=["download_images", "download_originals", "updated_at"])
+        self.assertEqual(self.client.get(self.download_url).status_code, 403)
+        self.assertEqual(self.client.get(self.original_url).status_code, 403)
+        self.assertEqual(self.client.get(self.zip_url).status_code, 403)
+
+    def test_expired_or_revoked_token_blocks_all_capabilities(self):
+        token_hash = AccessToken.digest(self.raw_token)
+        AccessToken.objects.filter(token_hash=token_hash).update(revoked_at=timezone.now())
+        for method, url in (
+            ("get", self.gallery_url), ("get", self.download_url), ("get", self.original_url),
+            ("get", self.zip_url), ("post", self.favorite_url), ("post", self.comment_url),
+            ("post", self.share_url), ("get", self.print_url),
+        ):
+            response = getattr(self.client, method)(url, {"comment": "blocked"} if url == self.comment_url else {})
+            self.assertEqual(response.status_code, 404, url)
+
+    def test_hidden_or_incomplete_photo_cannot_be_acted_on(self):
+        self.photo.is_visible = False
+        self.photo.save(update_fields=["is_visible"])
+        for method, url in (
+            ("get", self.download_url), ("get", self.original_url),
+            ("post", self.favorite_url), ("post", self.comment_url),
+        ):
+            response = getattr(self.client, method)(url, {"comment": "blocked"} if url == self.comment_url else {})
+            self.assertEqual(response.status_code, 404, url)
+
+    def test_all_permissions_on_exposes_expected_client_controls(self):
+        page = self.client.get(self.gallery_url)
+        for expected in ("Download Gallery", "Download Original", "Favorite", "Comment", "Copy Link", "Shop Prints"):
+            self.assertContains(page, expected)
