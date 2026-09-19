@@ -51,9 +51,9 @@
           </div>
           {% if can_comment %}
             <section class="lp-client-photo__comments" aria-label="Comments for {{ photo.original_name }}">
-              {% if photo.client_comments %}
+              {% if photo.client_comment_list %}
                 <div class="lp-client-photo__comment-list">
-                  {% for comment in photo.client_comments %}
+                  {% for comment in photo.client_comment_list %}
                     <p><strong>{{ comment.invitation.client_name }}</strong> {{ comment.body }}</p>
                   {% endfor %}
                 </div>
