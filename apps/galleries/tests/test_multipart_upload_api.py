@@ -52,6 +52,27 @@ class MultipartUploadApiTests(TestCase):
         self.assertNotIn("same-name", session.object_key)
         initiate.assert_called_once()
 
+
+    @patch("apps.dashboard.views.list_multipart_parts", return_value=[
+        {"part_number": 1, "etag": '"etag-1"', "size": 5 * 1024 * 1024}
+    ])
+    def test_resume_returns_existing_b2_parts(self, list_parts):
+        session = GalleryMultipartUpload.objects.create(
+            gallery=self.gallery, photographer=self.profile,
+            object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/id.jpg",
+            upload_id="upload-id", original_name="photo.jpg",
+            content_type="image/jpeg", file_size=6 * 1024 * 1024,
+        )
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_resume", args=[session.pk]),
+            data="{}", content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["upload"], str(session.pk))
+        self.assertEqual(response.json()["parts"][0]["part_number"], 1)
+        self.assertEqual(response.json()["parts"][0]["etag"], '"etag-1"')
+        list_parts.assert_called_once_with(key=session.object_key, upload_id=session.upload_id)
+
     @patch("apps.dashboard.views.sign_part", return_value="https://b2.example/presigned")
     def test_part_signing_returns_short_lived_provider_url(self, signer):
         session = GalleryMultipartUpload.objects.create(
