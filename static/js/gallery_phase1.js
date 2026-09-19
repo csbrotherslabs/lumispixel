@@ -379,6 +379,16 @@
     bulk.querySelector('[data-bulk-download]')?.addEventListener('click',function(){const ids=selectedPhotoIds();if(!ids.length)return;const form=document.createElement('form');form.method='POST';form.action=bulk.dataset.bulkDownloadUrl;form.hidden=true;const token=document.createElement('input');token.type='hidden';token.name='csrfmiddlewaretoken';token.value=csrf();form.append(token);ids.forEach(function(id){const input=document.createElement('input');input.type='hidden';input.name='photo_ids';input.value=id;form.append(input);});document.body.append(form);form.submit();form.remove();});
   }
   document.querySelectorAll('[data-photo-action],[data-server-action]').forEach(function(b){b.onclick=function(){if(b.dataset.photoAction==='delete'&&!confirm('Delete this photo permanently?'))return;fetch(b.dataset.actionUrl,{method:'POST',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/x-www-form-urlencoded'},body:'action='+(b.dataset.photoAction||b.dataset.serverAction)}).then(function(r){if(r.ok&&(b.dataset.photoAction==='delete'||b.dataset.serverAction==='remove'))b.closest('article').remove();});};});
+  const previewDialog=document.querySelector('[data-photo-preview-dialog]');
+  if(previewDialog){
+    const previewImage=previewDialog.querySelector('[data-photo-preview-image]'),previewTitle=previewDialog.querySelector('[data-photo-preview-title]');
+    function setPreviewSize(size){previewDialog.classList.remove('is-compact','is-large','is-fullscreen');previewDialog.classList.add('is-'+size);}
+    document.querySelectorAll('[data-photo-preview]').forEach(function(button){button.addEventListener('click',function(){previewImage.src=button.dataset.previewUrl;previewImage.alt=button.dataset.previewName||'Gallery photo';previewTitle.textContent=button.dataset.previewName||'';setPreviewSize('large');previewDialog.showModal();});});
+    previewDialog.querySelector('[data-preview-close]')?.addEventListener('click',function(){previewDialog.close();});
+    previewDialog.querySelectorAll('[data-preview-size]').forEach(function(button){button.addEventListener('click',function(){setPreviewSize(button.dataset.previewSize);});});
+    previewDialog.addEventListener('click',function(event){if(event.target===previewDialog)previewDialog.close();});
+    previewDialog.addEventListener('close',function(){previewImage.removeAttribute('src');});
+  }
 })();
 
 // Album curation controls and cross-album drag-and-drop.
