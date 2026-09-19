@@ -332,10 +332,28 @@
     ['dragleave', 'drop'].forEach(function (name) { drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.remove('is-dragging'); if (name === 'drop' && !input.disabled) queue(event.dataTransfer.files); }); });
     page.querySelector('[data-toggle-queued]')?.addEventListener('click', function () { showAllQueued = !showAllQueued; applyQueueVisibility(); });
     page.querySelector('[data-toggle-completed]')?.addEventListener('click', function () { showAllCompleted = !showAllCompleted; applyQueueVisibility(); });
-    page.querySelector('[data-clear-completed]')?.addEventListener('click', function () {
-      // Queue rows are presentation state only. Removing them never deletes GalleryPhoto/B2 objects.
-      list.querySelectorAll('[data-local-upload][data-status="completed"]').forEach(removeRow);
-      completion.hidden = true;
+    page.querySelector('[data-clear-completed]')?.addEventListener('click', async function (event) {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        const response = await fetch(button.dataset.clearCompletedUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'X-CSRFToken': csrf(), 'X-Requested-With': 'XMLHttpRequest'}
+        });
+        if (!response.ok) throw new Error('Completed uploads could not be cleared.');
+        // Dismiss both server-rendered history and current-session rows. This never deletes photos.
+        list.querySelectorAll('[data-status="completed"]').forEach(function (row) {
+          if (row.matches('[data-local-upload]')) removeRow(row);
+          else row.remove();
+        });
+        completion.hidden = true;
+        counts();
+      } catch (err) {
+        error.textContent = err.message || 'Completed uploads could not be cleared.';
+      } finally {
+        button.disabled = false;
+      }
     });
     page.querySelector('[data-upload-more]')?.addEventListener('click', function () { completion.hidden = true; drop.focus(); input.click(); });
     window.addEventListener('beforeunload', function (event) { if (active || pending.length) { event.preventDefault(); event.returnValue = ''; } });
