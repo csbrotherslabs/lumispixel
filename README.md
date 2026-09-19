@@ -46,3 +46,33 @@ python manage.py test --verbosity 2
 Pull requests targeting `dev` run `.github/workflows/django-tests.yml`. The
 `Django tests` job must pass before merge once that status check is configured as
 required in the `dev` branch ruleset/protection settings.
+
+
+## Gallery media storage
+
+Gallery originals use a provider-neutral storage boundary in `apps/galleries/storage.py`.
+Local development and CI use the private local filesystem. Production can use
+Backblaze B2 through its S3-compatible API without changing `GalleryPhoto`.
+
+For B2, configure deployment secrets/environment variables (never commit real
+credentials):
+
+```text
+GALLERY_STORAGE_BACKEND=b2
+GALLERY_STORAGE_ENVIRONMENT=prod
+B2_ACCESS_KEY_ID=<restricted application key id>
+B2_SECRET_ACCESS_KEY=<restricted application key>
+B2_BUCKET_NAME=lumispixel-production-media
+B2_REGION=<bucket region>
+B2_ENDPOINT_URL=<bucket S3 endpoint>
+B2_SIGNED_URL_TTL=900
+```
+
+The B2 application key should be restricted to the production media bucket.
+The bucket remains private; Django storage URLs are signed and expire according
+to `B2_SIGNED_URL_TTL`. The object namespace remains
+`private/<environment>/galleries/<photographer>/<gallery>/originals/`.
+
+DigitalOcean Spaces remains available temporarily with
+`GALLERY_STORAGE_BACKEND=spaces` for migration compatibility. New production
+deployments should use B2.
