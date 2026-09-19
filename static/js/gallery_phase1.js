@@ -140,6 +140,18 @@
       return page.dataset.multipartBaseUrl.replace(/initiate\/$/, uploadId + '/' + action + '/');
     }
     function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+    function resumeKey(job) {
+      return ['lumispixel-upload-v1', job.galleryId, job.file.name, job.file.size, job.file.lastModified].join(':');
+    }
+    function savedUpload(job) {
+      try { return JSON.parse(localStorage.getItem(resumeKey(job)) || 'null'); } catch (_) { return null; }
+    }
+    function saveUpload(job, value) {
+      try { localStorage.setItem(resumeKey(job), JSON.stringify(value)); } catch (_) {}
+    }
+    function forgetUpload(job) {
+      try { localStorage.removeItem(resumeKey(job)); } catch (_) {}
+    }
     async function uploadPartWithRetry(url, blob, signal, onProgress) {
       const maxAttempts = 4;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -170,27 +182,54 @@
     }
     async function directMultipartUpload(job, updateProgress, signal) {
       const file = job.file;
-      const init = await apiJson(page.dataset.multipartInitUrl, {
-        gallery: job.galleryId, name: file.name, content_type: file.type, size: file.size
-      }, signal);
+      let init = null;
+      const saved = savedUpload(job);
+      if (saved && saved.upload) {
+        try {
+          init = await apiJson(multipartUrl(saved.upload, 'resume'), {}, signal);
+          if (Number(init.gallery) !== Number(job.galleryId) || init.name !== file.name ||
+              Number(init.size) !== file.size || init.content_type !== file.type) {
+            init = null;
+            forgetUpload(job);
+          }
+        } catch (_) {
+          forgetUpload(job);
+          init = null;
+        }
+      }
+      if (!init) {
+        init = await apiJson(page.dataset.multipartInitUrl, {
+          gallery: job.galleryId, name: file.name, content_type: file.type, size: file.size
+        }, signal);
+        saveUpload(job, {upload: init.upload});
+      }
       job.multipartId = init.upload;
       const partSize = Math.max(Number(init.part_size) || 5 * 1024 * 1024, 5 * 1024 * 1024);
       const totalParts = Math.ceil(file.size / partSize);
       if (totalParts > Number(init.max_parts || 10000)) throw new Error('This file requires too many upload parts.');
       const loaded = new Array(totalParts).fill(0);
       const completed = new Array(totalParts);
-      let nextPart = 0;
+      (init.parts || []).forEach(function (part) {
+        const index = Number(part.part_number) - 1;
+        if (index >= 0 && index < totalParts) {
+          loaded[index] = Number(part.size) || Math.min(partSize, file.size - index * partSize);
+          completed[index] = {part_number: Number(part.part_number), etag: part.etag};
+        }
+      });
+      updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
+      const remaining = [];
+      for (let index = 0; index < totalParts; index += 1) if (!completed[index]) remaining.push(index);
+      let cursor = 0;
       function report(partIndex, bytes) {
         loaded[partIndex] = bytes;
         updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
       }
       async function worker() {
         while (true) {
-          const index = nextPart++;
-          if (index >= totalParts) return;
-          const partNumber = index + 1;
-          const start = index * partSize;
-          const end = Math.min(start + partSize, file.size);
+          const position = cursor++;
+          if (position >= remaining.length) return;
+          const index = remaining[position], partNumber = index + 1;
+          const start = index * partSize, end = Math.min(start + partSize, file.size);
           const signed = await apiJson(multipartUrl(init.upload, 'part'), {part_number: partNumber}, signal);
           const etag = await uploadPartWithRetry(signed.url, file.slice(start, end), signal, function (bytes) { report(index, bytes); });
           loaded[index] = end - start;
@@ -198,16 +237,11 @@
           updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
         }
       }
-      try {
-        const partConcurrency = Math.min(4, totalParts);
-        await Promise.all(Array.from({length: partConcurrency}, worker));
-        return await apiJson(multipartUrl(init.upload, 'complete'), {parts: completed}, signal);
-      } catch (err) {
-        if (job.multipartId) {
-          try { await apiJson(multipartUrl(job.multipartId, 'abort'), {}, undefined); } catch (_) {}
-        }
-        throw err;
-      }
+      const partConcurrency = Math.min(4, Math.max(remaining.length, 1));
+      await Promise.all(Array.from({length: partConcurrency}, worker));
+      const result = await apiJson(multipartUrl(init.upload, 'complete'), {parts: completed}, signal);
+      forgetUpload(job);
+      return result;
     }
     function upload(job) {
       const row = job.row, file = job.file;
@@ -230,10 +264,16 @@
       function failed(reason) {
         setStatus(row, 'failed'); state.querySelector('strong').textContent = 'Upload failed'; state.querySelector('span').textContent = reason || 'Network interrupted'; slot.replaceChildren();
         actions.innerHTML = '<button type="button" data-retry aria-label="Retry ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
-        actions.querySelector('[data-retry]').onclick = function () { job.multipartId = null; setStatus(row, 'queued'); state.querySelector('strong').textContent = 'Queued'; state.querySelector('span').textContent = 'Waiting to upload'; actions.innerHTML = '<button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button>'; pending.push(job); pump(); };
+        actions.querySelector('[data-retry]').onclick = function () { setStatus(row, 'queued'); state.querySelector('strong').textContent = 'Queued'; state.querySelector('span').textContent = 'Waiting to upload'; actions.innerHTML = '<button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button>'; pending.push(job); pump(); };
         actions.querySelector('[data-remove]').onclick = function () { removeRow(row); finishCheck(); };
       }
-      actions.querySelector('[data-cancel]').onclick = function () { controller.abort(); };
+      actions.querySelector('[data-cancel]').onclick = function () {
+        controller.abort();
+        if (job.multipartId) {
+          apiJson(multipartUrl(job.multipartId, 'abort'), {}, undefined).catch(function () {});
+          forgetUpload(job);
+        }
+      };
       directMultipartUpload(job, paint, controller.signal).then(function () {
         active -= 1; paint(file.size, file.size);
         setStatus(row, 'completed'); availableStorage -= file.size; state.querySelector('strong').textContent = 'Uploaded'; state.querySelector('span').textContent = 'Upload complete';
