@@ -184,6 +184,18 @@ def client_gallery_access(request, token):
     for photo in photos:
         photo.is_client_favorite = photo.pk in favorite_ids
 
+    downloads_active = permissions.download_images and (
+        not permissions.download_expires_at or permissions.download_expires_at > timezone.now()
+    )
+    used_downloads = GalleryAnalyticsEvent.objects.filter(
+        gallery=gallery,
+        visitor_identifier=token_record.token_hash,
+        event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+    ).count()
+    remaining_downloads = None if settings.download_limit is None else max(settings.download_limit - used_downloads, 0)
+    can_download = downloads_active and (remaining_downloads is None or remaining_downloads > 0)
+    can_download_gallery = can_download and (remaining_downloads is None or remaining_downloads >= len(photos))
+
     return render(
         request,
         "galleries/client_gallery.html",
@@ -196,7 +208,9 @@ def client_gallery_access(request, token):
             "gallery_settings": settings,
             "access_token": token,
             "can_favorite": permissions.favorite_photos,
-            "can_download": permissions.download_images and (not permissions.download_expires_at or permissions.download_expires_at > timezone.now()),
+            "can_download": can_download,
+            "can_download_gallery": can_download_gallery,
+            "remaining_downloads": remaining_downloads,
             "can_download_originals": permissions.download_originals and (not permissions.download_expires_at or permissions.download_expires_at > timezone.now()),
             "can_comment": permissions.comment,
             "can_purchase_prints": permissions.purchase_prints,
