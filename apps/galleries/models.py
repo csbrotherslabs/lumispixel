@@ -300,6 +300,7 @@ class GalleryPhoto(models.Model):
     is_cover = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=True)
     error_message = models.CharField(max_length=300, blank=True)
+    upload_queue_dismissed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
