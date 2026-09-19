@@ -211,7 +211,7 @@ def client_gallery_access(request, token):
             "can_download": can_download,
             "can_download_gallery": can_download_gallery,
             "remaining_downloads": remaining_downloads,
-            "can_download_originals": permissions.download_originals and (not permissions.download_expires_at or permissions.download_expires_at > timezone.now()),
+            "can_download_originals": can_download and permissions.download_originals,
             "can_comment": permissions.comment,
             "can_purchase_prints": permissions.purchase_prints,
             "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])),
@@ -326,6 +326,56 @@ def client_gallery_download(request, token, photo_id):
         actor=request.user,
         actor_type=GalleryActivity.ActorType.CLIENT,
         related_object=photo,
+    )
+    return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
+
+
+@require_GET
+def client_gallery_download_original(request, token, photo_id):
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    now = timezone.now()
+    # Originals are an elevated download capability: the photographer must
+    # allow downloads generally and explicitly allow original files.
+    if not (permissions.download_images and permissions.download_originals):
+        return HttpResponseForbidden()
+    if permissions.download_expires_at and permissions.download_expires_at <= now:
+        return HttpResponseForbidden()
+
+    photo = get_object_or_404(
+        GalleryPhoto,
+        pk=photo_id,
+        gallery=gallery,
+        is_visible=True,
+        status=GalleryPhoto.Status.COMPLETED,
+    )
+    settings = GallerySettings.objects.filter(gallery=gallery).first()
+    if settings and settings.download_limit is not None:
+        used = GalleryAnalyticsEvent.objects.filter(
+            gallery=gallery,
+            visitor_identifier=token_record.token_hash,
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+        ).count()
+        if used >= settings.download_limit:
+            return HttpResponseForbidden()
+
+    track_gallery_event(
+        gallery=gallery,
+        event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+        visitor_identifier=token_record.token_hash,
+        session_identifier=_session_identifier(request),
+        user=request.user,
+        photo=photo,
+        source="original_download",
+        metadata={"original": True},
+    )
+    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
+    log_gallery_activity(
+        gallery=gallery,
+        event_type=GalleryActivity.EventType.PHOTO_DOWNLOADED,
+        actor=request.user,
+        actor_type=GalleryActivity.ActorType.CLIENT,
+        related_object=photo,
+        metadata={"original": True},
     )
     return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
 
