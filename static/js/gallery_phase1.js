@@ -468,3 +468,19 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   gallerySelect?.addEventListener('change', () => { const option = gallerySelect.selectedOptions[0]; page.querySelector('[data-preview-photos]').textContent = option?.dataset.photos || '—'; page.querySelector('[data-preview-storage]').textContent = option?.dataset.storage || '—'; page.querySelector('[data-preview-access]').textContent = option?.dataset.access || '—'; });
   page.querySelectorAll('[data-delete-open]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = false); const modal = page.querySelector('[data-delete-modal]'); const id = modal.querySelector('[data-delete-id]'); id.disabled = false; id.value = b.dataset.id; modal.querySelector('[data-delete-name]').textContent = b.dataset.name; modal.querySelector('[name=gallery_name]').value = ''; modal.querySelector('[name=acknowledge_delete]').checked = false; modal.showModal(); }));
 })();
+
+
+(function(){
+  const grid=document.querySelector('[data-album-grid]');
+  if(!grid)return;
+  const search=document.querySelector('[data-album-search]'),visibility=document.querySelector('[data-album-visibility]'),sort=document.querySelector('[data-album-sort]'),empty=document.querySelector('[data-album-filter-empty]');
+  const cards=Array.from(grid.querySelectorAll('.lp-album-card--upgraded'));
+  function refreshAlbums(){
+    const q=(search?.value||'').trim().toLowerCase(),v=visibility?.value||'';
+    cards.forEach(card=>{card.hidden=!!((q&&!card.dataset.albumName.includes(q))||(v&&card.dataset.albumVisibility!==v));});
+    const visible=cards.filter(card=>!card.hidden);
+    visible.sort((a,b)=>{if(sort?.value==='name')return a.dataset.albumName.localeCompare(b.dataset.albumName);const av=Number(a.dataset.albumUpdated||0),bv=Number(b.dataset.albumUpdated||0);return sort?.value==='oldest'?av-bv:bv-av;}).forEach(card=>grid.appendChild(card));
+    if(empty)empty.hidden=visible.length!==0;
+  }
+  search?.addEventListener('input',refreshAlbums);visibility?.addEventListener('change',refreshAlbums);sort?.addEventListener('change',refreshAlbums);
+})();
