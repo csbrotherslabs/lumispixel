@@ -48,6 +48,23 @@
               {% endif %}
             {% endif %}
           </div>
+          {% if can_comment %}
+            <section class="lp-client-photo__comments" aria-label="Comments for {{ photo.original_name }}">
+              {% if photo.client_comments %}
+                <div class="lp-client-photo__comment-list">
+                  {% for comment in photo.client_comments %}
+                    <p><strong>{{ comment.invitation.client_name }}</strong> {{ comment.body }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <form method="post" action="{% url 'galleries:client_gallery_comment' access_token photo.pk %}">
+                {% csrf_token %}
+                <label for="comment-{{ photo.pk }}">Comment</label>
+                <textarea id="comment-{{ photo.pk }}" name="comment" maxlength="2000" required placeholder="Leave a comment about this photo"></textarea>
+                <button type="submit">Post Comment</button>
+              </form>
+            </section>
+          {% endif %}
         </article>
       {% empty %}
         <div class="lp-client-gallery__empty" role="status">This gallery does not have client-ready photos yet.</div>
