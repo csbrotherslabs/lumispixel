@@ -54,43 +54,12 @@ class PrivateGalleryB2Storage(PrivateGalleryObjectStorage):
         super().__init__(*args, **kwargs)
 
 
-class PrivateGallerySpacesStorage(PrivateGalleryObjectStorage):
-    """Compatibility backend for existing DigitalOcean Spaces deployments."""
-
-    def __init__(self, *args, **kwargs):
-        required = {
-            "SPACES_ACCESS_KEY": settings.SPACES_ACCESS_KEY,
-            "SPACES_SECRET_KEY": settings.SPACES_SECRET_KEY,
-            "SPACES_BUCKET_NAME": settings.SPACES_BUCKET_NAME,
-        }
-        missing = [name for name, value in required.items() if not value]
-        if missing:
-            raise ImproperlyConfigured(
-                "DigitalOcean Spaces gallery storage is enabled but missing: "
-                + ", ".join(missing)
-            )
-
-        kwargs.setdefault("access_key", settings.SPACES_ACCESS_KEY)
-        kwargs.setdefault("secret_key", settings.SPACES_SECRET_KEY)
-        kwargs.setdefault("bucket_name", settings.SPACES_BUCKET_NAME)
-        kwargs.setdefault("region_name", settings.SPACES_REGION)
-        kwargs.setdefault("endpoint_url", settings.SPACES_ENDPOINT_URL)
-        kwargs.setdefault("querystring_auth", True)
-        kwargs.setdefault("querystring_expire", settings.SPACES_SIGNED_URL_TTL)
-        kwargs.setdefault("default_acl", "private")
-        kwargs.setdefault("file_overwrite", False)
-        kwargs.setdefault("custom_domain", None)
-        kwargs.setdefault("location", f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}")
-        super().__init__(*args, **kwargs)
-
 
 def gallery_photo_storage():
     """Resolve gallery-original storage without coupling models to a provider."""
     backend = settings.GALLERY_STORAGE_BACKEND
     if backend == "b2":
         return PrivateGalleryB2Storage()
-    if backend == "spaces":
-        return PrivateGallerySpacesStorage()
     if backend == "local":
         return FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
     raise ImproperlyConfigured(f"Unsupported gallery storage backend: {backend}")
