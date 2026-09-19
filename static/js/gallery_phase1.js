@@ -119,6 +119,7 @@
       xhr.onerror = function () { active -= 1; failed('Network interrupted'); pump(); };
       xhr.onabort = function () { active -= 1; removeRow(row); pump(); };
       actions.querySelector('[data-cancel]').onclick = function () { xhr.abort(); };
+      xhr.send(data);
     }
     function queue(files) {
       error.replaceChildren(); completion.hidden = true;
