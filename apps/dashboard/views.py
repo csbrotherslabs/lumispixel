@@ -1472,6 +1472,16 @@ def gallery_upload_queue(request):
 
 
 @photographer_workspace_required
+@require_POST
+def gallery_upload_queue_clear_completed(request):
+    updated = GalleryPhoto.objects.for_photographer(request.studio).filter(
+        status=GalleryPhoto.Status.COMPLETED,
+        upload_queue_dismissed=False,
+    ).update(upload_queue_dismissed=True)
+    return JsonResponse({"ok": True, "dismissed": updated})
+
+
+@photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def gallery_workspace(request, pk):
     gallery = get_object_or_404(
