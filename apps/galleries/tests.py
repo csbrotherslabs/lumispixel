@@ -343,3 +343,96 @@ class ClientOriginalDownloadPermissionTests(TestCase):
         ).latest("occurred_at")
         self.assertEqual(event.source, "original_download")
         self.assertTrue(event.metadata.get("original"))
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientFavoritePermissionTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="favorite-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="favorite-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner,
+            name="Favorite Test",
+            slug="favorite-test",
+            status=Gallery.Status.PUBLISHED,
+            visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(gallery=self.gallery, favorite_photos=True)
+        # Deliberately false: Client Permissions is the authorization source of truth.
+        GallerySettings.objects.create(gallery=self.gallery, gallery_url=self.gallery.slug, enable_favorites=False)
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Client", email="favorite-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(invitation)
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery,
+            photographer=self.owner,
+            file=SimpleUploadedFile("favorite.jpg", b"favorite-file", content_type="image/jpeg"),
+            original_name="favorite.jpg",
+            file_size=13,
+            status=GalleryPhoto.Status.COMPLETED,
+            is_visible=True,
+        )
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.favorite_url = reverse("galleries:client_gallery_favorite", args=[self.raw_token, self.photo.pk])
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_client_permission_controls_favorite_ui_without_duplicate_gallery_setting(self):
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, self.favorite_url)
+        self.permissions.favorite_photos = False
+        self.permissions.save(update_fields=["favorite_photos", "updated_at"])
+        page = self.client.get(self.gallery_url)
+        self.assertNotContains(page, self.favorite_url)
+
+    def test_disabled_favorite_permission_blocks_direct_endpoint(self):
+        self.permissions.favorite_photos = False
+        self.permissions.save(update_fields=["favorite_photos", "updated_at"])
+        self.assertEqual(self.client.post(self.favorite_url).status_code, 403)
+
+    def test_favorite_can_be_added_and_removed_and_count_stays_consistent(self):
+        first = self.client.post(self.favorite_url)
+        self.assertEqual(first.status_code, 200)
+        self.assertContains(first, "Favorite saved")
+        self.gallery.refresh_from_db()
+        self.assertEqual(self.gallery.favorite_count, 1)
+        self.assertEqual(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                visitor_identifier=AccessToken.digest(self.raw_token),
+                event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+                related_photo=self.photo,
+            ).count(),
+            1,
+        )
+
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, "Remove Favorite")
+
+        second = self.client.post(self.favorite_url)
+        self.assertEqual(second.status_code, 200)
+        self.assertContains(second, "Favorite removed")
+        self.gallery.refresh_from_db()
+        self.assertEqual(self.gallery.favorite_count, 0)
+        self.assertFalse(
+            GalleryAnalyticsEvent.objects.filter(
+                gallery=self.gallery,
+                visitor_identifier=AccessToken.digest(self.raw_token),
+                event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+                related_photo=self.photo,
+            ).exists()
+        )
+
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, ">Favorite</button>", html=True)
+
+    def test_duplicate_favorite_posts_do_not_inflate_gallery_count(self):
+        self.client.post(self.favorite_url)
+        self.client.post(self.favorite_url)
+        self.client.post(self.favorite_url)
+        self.gallery.refresh_from_db()
+        self.assertEqual(self.gallery.favorite_count, 1)
