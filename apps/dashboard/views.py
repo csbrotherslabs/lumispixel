@@ -1891,6 +1891,99 @@ def gallery_photo_media(request, pk):
     return response
 
 
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_action(request, pk):
+    gallery = get_object_or_404(Gallery.objects.for_photographer(request.studio), pk=pk)
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request."}, status=400)
+
+    photo_ids = payload.get("photo_ids") or []
+    if not isinstance(photo_ids, list):
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+    try:
+        photo_ids = list(dict.fromkeys(int(photo_id) for photo_id in photo_ids))
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Invalid photo selection."}, status=400)
+    if not photo_ids:
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+
+    photos = list(GalleryPhoto.objects.for_photographer(request.studio).filter(gallery=gallery, pk__in=photo_ids))
+    if len(photos) != len(photo_ids):
+        return JsonResponse({"error": "One or more selected photos are unavailable."}, status=400)
+
+    action = payload.get("action")
+    if action == "delete":
+        total_size = sum(photo.file_size for photo in photos)
+        deleted_ids = [photo.pk for photo in photos]
+        # Remove database relationships first; delete storage objects only for the scoped photos.
+        with transaction.atomic():
+            GalleryPhoto.objects.filter(pk__in=deleted_ids).delete()
+            Gallery.objects.filter(pk=gallery.pk).update(
+                image_count=Coalesce(F("image_count"), Value(0)) - len(deleted_ids),
+                storage_used=Coalesce(F("storage_used"), Value(0), output_field=DecimalField()) - total_size,
+            )
+        for photo in photos:
+            if photo.file:
+                try:
+                    photo.file.storage.delete(photo.file.name)
+                except Exception:
+                    # The database deletion is authoritative; storage cleanup can be retried separately.
+                    pass
+        return JsonResponse({"ok": True, "deleted": deleted_ids})
+
+    if action == "visibility":
+        visible = payload.get("visible")
+        if not isinstance(visible, bool):
+            return JsonResponse({"error": "Choose visible or hidden."}, status=400)
+        GalleryPhoto.objects.filter(pk__in=photo_ids).update(is_visible=visible)
+        return JsonResponse({"ok": True, "updated": photo_ids, "visible": visible})
+
+    if action == "move":
+        album_id = payload.get("album_id")
+        album = get_object_or_404(Album.objects.filter(gallery=gallery), pk=album_id)
+        AlbumPhoto.objects.filter(photo_id__in=photo_ids).exclude(album=album).delete()
+        existing = set(AlbumPhoto.objects.filter(album=album, photo_id__in=photo_ids).values_list("photo_id", flat=True))
+        next_position = (AlbumPhoto.objects.filter(album=album).aggregate(value=Max("position"))["value"] or 0) + 1
+        AlbumPhoto.objects.bulk_create([
+            AlbumPhoto(album=album, photo=photo, position=next_position + index)
+            for index, photo in enumerate(photos) if photo.pk not in existing
+        ])
+        return JsonResponse({"ok": True, "moved": photo_ids, "album": album.pk})
+
+    return JsonResponse({"error": "Unsupported bulk action."}, status=400)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_download(request, pk):
+    gallery = get_object_or_404(Gallery.objects.for_photographer(request.studio), pk=pk)
+    photo_ids = request.POST.getlist("photo_ids")
+    photos = GalleryPhoto.objects.for_photographer(request.studio).filter(gallery=gallery, pk__in=photo_ids)
+    if not photos.exists():
+        return HttpResponseBadRequest("Select one or more photos.")
+    archive = io.BytesIO()
+    used_names = set()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+        for photo in photos:
+            base_name = photo.original_name or f"photo-{photo.pk}"
+            name, suffix = base_name.rsplit(".", 1) if "." in base_name else (base_name, "")
+            candidate, counter = base_name, 2
+            while candidate in used_names:
+                candidate = f"{name}-{counter}{'.' + suffix if suffix else ''}"
+                counter += 1
+            used_names.add(candidate)
+            with photo.file.open("rb") as source:
+                bundle.writestr(candidate, source.read())
+    archive.seek(0)
+    response = HttpResponse(archive.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-photos.zip"'
+    return response
+
+
 @photographer_workspace_required
 @require_POST
 def gallery_photo_action(request, pk):
