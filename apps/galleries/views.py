@@ -81,9 +81,12 @@ def client_galleries(request):
 def stable_gallery_access(request, public_id):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
     now = timezone.now()
-    if gallery.expires_at and gallery.expires_at <= now:
-        raise Http404
     permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    if gallery.expires_at and gallery.expires_at <= now:
+        # Automatic lock makes gallery expiration an access-control boundary.
+        # Without it, the date remains informational/scheduling metadata.
+        if permissions.automatic_gallery_lock:
+            raise Http404
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
@@ -119,10 +122,10 @@ def _client_gallery_access(raw_token):
         raise Http404
     if gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
         raise Http404
-    if gallery.expires_at and gallery.expires_at <= now:
+    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    if gallery.expires_at and gallery.expires_at <= now and permissions.automatic_gallery_lock:
         raise Http404
 
-    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
