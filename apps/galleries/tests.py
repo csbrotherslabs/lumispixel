@@ -714,8 +714,11 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.assertEqual(self.client.get(self.download_url).status_code, 403)
 
     def test_gallery_expiration_only_locks_access_when_automatic_lock_is_enabled(self):
-        self.gallery.expires_at = timezone.now() - timezone.timedelta(minutes=1)
-        self.gallery.save(update_fields=["expires_at", "updated_at"])
+        # Keep the database invariant expires_at > published_at while making
+        # the gallery expired relative to now.
+        self.gallery.published_at = timezone.now() - timezone.timedelta(days=2)
+        self.gallery.expires_at = timezone.now() - timezone.timedelta(days=1)
+        self.gallery.save(update_fields=["published_at", "expires_at", "updated_at"])
         self.assertEqual(self.client.get(self.gallery_url).status_code, 200)
         self.permissions.automatic_gallery_lock = True
         self.permissions.save(update_fields=["automatic_gallery_lock", "updated_at"])
