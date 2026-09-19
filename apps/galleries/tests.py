@@ -15,6 +15,14 @@ from .forms import GallerySettingsForm
 from .models import AccessToken, Album, AlbumPhoto, Gallery, GalleryAnalyticsEvent, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryPhotoComment, GallerySettings, GalleryStore, StoreProduct
 from .storage import PrivateGalleryB2Storage, gallery_photo_storage
 
+# Client gallery templates render signed Cloudflare media URLs. Keep unit tests
+# self-contained instead of depending on a CI/production signing secret.
+TEST_MEDIA_DELIVERY_SETTINGS = {
+    "MEDIA_DELIVERY_BASE_URL": "https://media-dev.lumispixel.test",
+    "MEDIA_SIGNING_SECRET": "test-media-signing-secret",
+    "MEDIA_SIGNED_URL_TTL": 900,
+}
+
 
 class GalleryStorageTests(SimpleTestCase):
     @override_settings(
@@ -172,7 +180,7 @@ class GalleryModelTests(TestCase):
             product.full_clean()
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientDownloadPermissionTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(email="download-owner@example.com", password="testpass")
@@ -256,7 +264,7 @@ class ClientDownloadPermissionTests(TestCase):
         )
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientOriginalDownloadPermissionTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(email="original-owner@example.com", password="testpass")
@@ -346,7 +354,7 @@ class ClientOriginalDownloadPermissionTests(TestCase):
         self.assertTrue(event.metadata.get("original"))
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientFavoritePermissionTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(email="favorite-owner@example.com", password="testpass")
@@ -439,7 +447,7 @@ class ClientFavoritePermissionTests(TestCase):
         self.assertEqual(self.gallery.favorite_count, 1)
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientCommentPermissionTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(email="comment-owner@example.com", password="testpass")
@@ -670,7 +678,7 @@ class GallerySettingsPermissionSeparationTests(TestCase):
         self.assertFalse(saved.enable_comments)
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientAdvancedAccessRuleTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(email="advanced-owner@example.com", password="testpass")
@@ -737,7 +745,7 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.assertNotContains(page, 'class="lp-client-photo__watermark"')
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
 class ClientPermissionMatrixTests(TestCase):
     """Cross-permission regression tests: UI hiding must match endpoint authorization."""
 
