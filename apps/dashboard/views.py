@@ -41,7 +41,7 @@ from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, Galle
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
-from apps.galleries.multipart_uploads import ALLOWED_CONTENT_TYPES, abort as abort_multipart, complete as complete_multipart, initiate as initiate_multipart, multipart_object_key, sign_part
+from apps.galleries.multipart_uploads import ALLOWED_CONTENT_TYPES, abort as abort_multipart, complete as complete_multipart, initiate as initiate_multipart, multipart_object_key, sign_part, list_parts as list_multipart_parts
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -1301,6 +1301,28 @@ def gallery_multipart_initiate(request):
         "upload": str(session.pk), "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
         "max_parts": settings.B2_MULTIPART_MAX_PARTS,
     }, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_resume(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at or session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    try:
+        parts = list_multipart_parts(key=session.object_key, upload_id=session.upload_id)
+    except Exception:
+        return JsonResponse({"error": "Could not inspect direct upload."}, status=502)
+    return JsonResponse({
+        "upload": str(session.pk),
+        "gallery": session.gallery_id,
+        "name": session.original_name,
+        "content_type": session.content_type,
+        "size": session.file_size,
+        "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
+        "max_parts": settings.B2_MULTIPART_MAX_PARTS,
+        "parts": parts,
+    })
 
 
 @photographer_workspace_required
