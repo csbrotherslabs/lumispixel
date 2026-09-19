@@ -4,7 +4,7 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-    dependencies = [("galleries", "0008_galleryactivity_actor_type_galleryactivity_description_and_more")]
+    dependencies = [("galleries", "0001_initial")]
 
     operations = [
         migrations.CreateModel(
