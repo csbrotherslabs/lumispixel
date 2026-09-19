@@ -508,6 +508,33 @@ def client_gallery_download_all(request, token):
     return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
 
 
+@require_POST
+def client_gallery_share(request, token):
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    if not permissions.share_gallery:
+        return HttpResponseForbidden()
+    stable_url = request.build_absolute_uri(
+        reverse("galleries:stable_gallery_access", args=[gallery.public_id])
+    )
+    track_gallery_event(
+        gallery=gallery,
+        event_type=GalleryAnalyticsEvent.EventType.SHARE,
+        visitor_identifier=token_record.token_hash,
+        session_identifier=_session_identifier(request),
+        user=request.user,
+        source="client_gallery",
+        metadata={"shared_url": stable_url},
+    )
+    log_gallery_activity(
+        gallery=gallery,
+        event_type=GalleryActivity.EventType.GALLERY_SHARED,
+        actor=request.user,
+        actor_type=GalleryActivity.ActorType.CLIENT,
+        metadata={"shared_url": stable_url},
+    )
+    return redirect("galleries:client_gallery_access", token=token)
+
+
 @login_required
 @require_POST
 def issue_client_gallery_share_link(request, gallery_id, invitation_id):
