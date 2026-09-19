@@ -668,3 +668,67 @@ class GallerySettingsPermissionSeparationTests(TestCase):
         self.assertFalse(saved.allow_original_downloads)
         self.assertFalse(saved.enable_favorites)
         self.assertFalse(saved.enable_comments)
+
+
+@override_settings(GALLERY_STORAGE_BACKEND="local")
+class ClientAdvancedAccessRuleTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(email="advanced-owner@example.com", password="testpass")
+        self.owner = PhotographerProfile.objects.create(user=user, slug="advanced-owner")
+        self.gallery = Gallery.objects.create(
+            photographer=self.owner, name="Advanced Rules", slug="advanced-rules",
+            status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
+            published_at=timezone.now(),
+        )
+        self.permissions = GalleryPermission.objects.create(
+            gallery=self.gallery, download_images=True,
+            automatic_gallery_lock=False, watermark=GalleryPermission.Watermark.PREVIEW,
+        )
+        self.settings = GallerySettings.objects.create(
+            gallery=self.gallery, gallery_url=self.gallery.slug,
+            watermark_position=GallerySettings.WatermarkPosition.BOTTOM_RIGHT,
+        )
+        invitation = GalleryInvitation.objects.create(
+            gallery=self.gallery, client_name="Advanced Client", email="advanced-client@example.com"
+        )
+        _, self.raw_token = AccessToken.issue(invitation)
+        self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
+        self.stable_url = reverse("galleries:stable_gallery_access", args=[self.gallery.public_id])
+        self.photo = GalleryPhoto.objects.create(
+            gallery=self.gallery, photographer=self.owner,
+            file=SimpleUploadedFile("advanced.jpg", b"advanced-file", content_type="image/jpeg"),
+            original_name="advanced.jpg", file_size=13,
+            status=GalleryPhoto.Status.COMPLETED, is_visible=True,
+        )
+        self.download_url = reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk])
+
+    def tearDown(self):
+        if self.photo.file:
+            self.photo.file.delete(save=False)
+
+    def test_download_expiration_hides_downloads_and_blocks_direct_endpoint(self):
+        self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self.permissions.save(update_fields=["download_expires_at", "updated_at"])
+        page = self.client.get(self.gallery_url)
+        self.assertNotContains(page, self.download_url)
+        self.assertEqual(self.client.get(self.download_url).status_code, 403)
+
+    def test_gallery_expiration_only_locks_access_when_automatic_lock_is_enabled(self):
+        self.gallery.expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self.gallery.save(update_fields=["expires_at", "updated_at"])
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 200)
+        self.permissions.automatic_gallery_lock = True
+        self.permissions.save(update_fields=["automatic_gallery_lock", "updated_at"])
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 404)
+        self.assertEqual(self.client.get(self.stable_url).status_code, 404)
+
+    def test_preview_watermark_is_rendered_at_configured_position(self):
+        page = self.client.get(self.gallery_url)
+        self.assertContains(page, "lp-client-photo__watermark")
+        self.assertContains(page, "is-watermark-bottom_right")
+
+    def test_none_watermark_removes_preview_overlay(self):
+        self.permissions.watermark = GalleryPermission.Watermark.NONE
+        self.permissions.save(update_fields=["watermark", "updated_at"])
+        page = self.client.get(self.gallery_url)
+        self.assertNotContains(page, 'class="lp-client-photo__watermark"')
