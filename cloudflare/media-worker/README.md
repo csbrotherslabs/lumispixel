@@ -9,7 +9,10 @@ Development Cloudflare Worker for retrieving private gallery objects from Backbl
 - Uses a dedicated read-only Backblaze B2 application key.
 - Requires every media request to carry an expiring LumisPixel signature.
 - Rejects missing, malformed, expired, overlong, or invalid signatures before requesting B2.
-- Responses remain `private, no-store`; edge caching is intentionally deferred until authorization is validated.
+- Authorization is validated before every cache lookup, including cache hits.
+- Successful full GET responses are cached at the Cloudflare edge by pathname only; signature query parameters are never part of the cache key.
+- Browser-facing responses remain private/non-cacheable while the Worker's internal edge cache can retain the object.
+- Range requests and HEAD requests bypass the edge cache so partial responses cannot poison a full-object cache entry.
 
 ### Cloudflare secrets
 
@@ -39,4 +42,19 @@ The Worker also enforces `MEDIA_MAX_SIGNED_URL_TTL` (default: 3600 seconds) so a
 
 Non-secret origin settings live in `wrangler.jsonc`. B2 credentials and the media-signing secret must be configured in the Cloudflare dashboard.
 
-Django signing support will be added separately so application code can mint these URLs without exposing the signing secret to browsers.
+Django generates signed URLs without exposing the signing secret to browsers.
+
+## Edge caching
+
+`MEDIA_EDGE_CACHE_TTL` controls the Worker's internal Cloudflare cache lifetime and defaults to 86400 seconds (24 hours in development).
+
+The Worker validates the HMAC and expiry before calling `cache.match()`. Therefore an unsigned, invalid, or expired URL cannot retrieve an object even when that object is already cached.
+
+The normalized cache key contains the media origin plus pathname and deliberately excludes `expires` and `signature`. This allows separate valid signed URLs for the same immutable gallery object to share a cached copy.
+
+Responses include `x-lumispixel-cache` during this phase:
+- `MISS`: authorized full GET fetched from B2.
+- `HIT`: authorized full GET served from Cloudflare cache.
+- `BYPASS`: Range request fetched directly from B2.
+
+Cache invalidation/purge should be added before object replacement under an existing key is supported. UUID/immutable object keys remain the preferred long-term design.
