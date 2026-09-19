@@ -1,1 +1,46 @@
-{% extends "photographer_workspace/base.html" %}{% block workspace_content %}<section class="lp-store lp-product-form-page"><header class="lp-store-head"><div><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store">← Back to store</a><h1 id="workspace-page-title">{% if product %}Edit Product{% else %}Add Product{% endif %}</h1><p>Create a polished offer for {{ gallery.name }}.</p></div></header><form method="post" enctype="multipart/form-data">{% csrf_token %}<div class="lp-product-form-grid"><article class="lp-store-card"><header><div><i class="bi bi-box"></i><span><h3>Product details</h3><p>Name, type, description, and catalog image.</p></span></div></header>{% for field in form %}{% if field.name in 'name,product_type,description,image' %}<div class="form-field"><label>{{ field.label }}</label>{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endif %}{% endfor %}</article><article class="lp-store-card"><header><div><i class="bi bi-cash"></i><span><h3>Pricing & variants</h3><p>Set prices, sizes, and catalog position.</p></span></div></header>{% for field in form %}{% if field.name in 'price,sale_price,variants,display_order' %}<div class="form-field"><label>{{ field.label }}</label>{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endif %}{% endfor %}</article><article class="lp-store-card"><header><div><i class="bi bi-truck"></i><span><h3>Fulfillment</h3><p>Keep delivery ready for future provider integrations.</p></span></div></header>{% for field in form %}{% if field.name in 'fulfillment,download_resolution,maximum_download_count,active' %}<div class="form-field"><label>{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</article></div><footer class="lp-form-actions"><a class="lpw-btn" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store">Cancel</a><button class="lpw-btn lpw-btn-primary">Save Product</button></footer></form></section>{% endblock %}
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_store_product_form_refresh.css' %}">{% endblock %}
+{% block workspace_content %}
+<div class="lp-product-editor">
+  <nav class="lpw-breadcrumb lp-product-editor__breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right"></i><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store">{{ gallery.name }}</a><i class="bi bi-chevron-right"></i><strong>{% if product %}Edit Product{% else %}Add Product{% endif %}</strong></nav>
+  <header class="lp-product-editor__hero">
+    <div class="lp-product-editor__hero-copy"><span class="lp-product-editor__hero-icon"><i class="bi bi-bag-plus"></i></span><div><span class="lp-product-editor__eyebrow">Gallery store</span><h1 id="workspace-page-title">{% if product %}Edit Product{% else %}Add Product{% endif %}</h1><p>Create a polished offer for <strong>{{ gallery.name }}</strong>. Configure the catalog details, pricing, and fulfillment in one place.</p></div></div>
+    <a class="lp-button lp-button--outline lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store"><i class="bi bi-arrow-left"></i>Back to Store</a>
+  </header>
+
+  <form class="lp-product-editor__form" method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if form.non_field_errors %}<div class="lp-product-editor__errors">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="lp-product-editor__grid">
+      <section class="lp-product-editor__card lp-product-editor__card--details">
+        <header><span><i class="bi bi-box-seam"></i></span><div><h2>Product details</h2><p>Define what clients will see in the gallery store.</p></div></header>
+        <div class="lp-product-editor__fields">
+          {% for field in form %}{% if field.name == 'name' or field.name == 'product_type' or field.name == 'description' or field.name == 'image' %}
+          <div class="lp-product-field{% if field.name == 'description' or field.name == 'image' %} lp-product-field--wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span>*</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<small class="lp-product-field__error">{{ error }}</small>{% endfor %}{% if field.help_text %}<small class="lp-product-field__help">{{ field.help_text }}</small>{% endif %}</div>
+          {% endif %}{% endfor %}
+        </div>
+      </section>
+
+      <section class="lp-product-editor__card">
+        <header><span><i class="bi bi-tags"></i></span><div><h2>Pricing & variants</h2><p>Set the standard price, optional sale price, sizes, and position.</p></div></header>
+        <div class="lp-product-editor__fields">
+          {% for field in form %}{% if field.name == 'price' or field.name == 'sale_price' or field.name == 'variants' or field.name == 'display_order' %}
+          <div class="lp-product-field{% if field.name == 'variants' %} lp-product-field--wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span>*</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<small class="lp-product-field__error">{{ error }}</small>{% endfor %}{% if field.help_text %}<small class="lp-product-field__help">{{ field.help_text }}</small>{% endif %}</div>
+          {% endif %}{% endfor %}
+        </div>
+      </section>
+
+      <section class="lp-product-editor__card">
+        <header><span><i class="bi bi-truck"></i></span><div><h2>Fulfillment</h2><p>Control delivery behavior and whether this product is available for purchase.</p></div></header>
+        <div class="lp-product-editor__fields">
+          {% for field in form %}{% if field.name == 'fulfillment' or field.name == 'download_resolution' or field.name == 'maximum_download_count' or field.name == 'active' %}
+          <div class="lp-product-field{% if field.name == 'active' %} lp-product-field--toggle{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span>*</span>{% endif %}</label>{{ field }}{% for error in field.errors %}<small class="lp-product-field__error">{{ error }}</small>{% endfor %}{% if field.help_text %}<small class="lp-product-field__help">{{ field.help_text }}</small>{% endif %}</div>
+          {% endif %}{% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <footer class="lp-product-editor__actions"><div><i class="bi bi-info-circle"></i><span>You can update product details and availability at any time.</span></div><div><a class="lp-button lp-button--outline lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit"><i class="bi bi-check2"></i>Save Product</button></div></footer>
+  </form>
+</div>
+{% endblock %}
