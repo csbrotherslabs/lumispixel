@@ -12,7 +12,7 @@
     <div class="sticky-form-actions"><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a><button class="lp-button lp-button--primary lp-button--md" type="submit" data-gallery-submit><i class="bi bi-check2" aria-hidden="true"></i><span>Create Gallery</span></button></div>
   </header>
 
-  <ol class="lp-gallery-create-progress" aria-label="Gallery setup steps"><li class="is-current"><span>1</span><div><strong>Gallery details</strong><small>Name and client</small></div></li><li><span>2</span><div><strong>Client experience</strong><small>Cover image</small></div></li><li><span>3</span><div><strong>Access</strong><small>Publishing defaults</small></div></li></ol>
+  <ol class="lp-gallery-create-progress" aria-label="Gallery setup steps"><li class="is-current"><span>1</span><div><strong>Gallery details</strong><small>Name and client</small></div></li><li><span>2</span><div><strong>Gallery design</strong><small>Client presentation</small></div></li><li><span>3</span><div><strong>Client experience</strong><small>Cover image</small></div></li><li><span>4</span><div><strong>Access</strong><small>Publishing defaults</small></div></li></ol>
 
   {% if form.non_field_errors %}<div class="form-alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i><div><strong>Please review the form.</strong>{{ form.non_field_errors }}</div></div>{% endif %}
   <div class="workspace-form-layout">
@@ -26,6 +26,22 @@
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
           {% include "photographer_workspace/components/form_field.html" with field=form.description wide=True %}
         </div>
+      </section>
+
+      <section class="form-section-card lp-gallery-design-step" aria-labelledby="gallery-design-title">
+        <header><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><div><small>Gallery design</small><h2 id="gallery-design-title">Choose a Gallery Design</h2><p>Select how your finished photographs will be presented to the client. The design can be changed later without affecting photos, albums, or client access.</p></div></header>
+        <div class="lp-gallery-design-grid" role="radiogroup" aria-label="Gallery design">
+          <label class="lp-gallery-design-card{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} is-selected{% endif %}">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_standard_filterable"{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} checked{% endif %}>
+            <span class="lp-gallery-design-card__preview" aria-hidden="true">
+              <span class="lp-gallery-design-card__hero"><span class="lp-gallery-design-card__qr"></span></span>
+              <span class="lp-gallery-design-card__filters"></span>
+              <span class="lp-gallery-design-card__grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            </span>
+            <span class="lp-gallery-design-card__copy"><span><strong>Standard Filterable</strong><small>Clean, editorial grid with album filtering and client controls.</small></span><span class="lp-gallery-design-card__selected"><i class="bi bi-check2" aria-hidden="true"></i> Selected</span></span>
+          </label>
+        </div>
+        {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
 
       <section class="form-section-card lp-gallery-client-experience" aria-labelledby="cover-image-title">
