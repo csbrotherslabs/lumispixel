@@ -72,6 +72,8 @@ class GalleryForm(forms.ModelForm):
         self.photographer = photographer
         self.instance.photographer = photographer
         self.fields["design_template"].label = "Gallery design"
+        self.fields["design_template"].required = False
+        self.fields["design_template"].initial = Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE
         self.fields["design_template"].help_text = "Choose how this gallery will be presented to clients. You can change the design later without affecting photos or access settings."
         self.fields["client"].queryset = Client.objects.for_photographer(photographer).order_by("first_name", "last_name")
         self.fields["client"].required = False
@@ -90,6 +92,9 @@ class GalleryForm(forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs.setdefault("class", "lpw-form-control")
             field.widget.attrs.setdefault("id", f"gallery-{name.replace('_', '-')}")
+
+    def clean_design_template(self):
+        return self.cleaned_data.get("design_template") or Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE
 
     def clean_expiration_date(self):
         expiration = self.cleaned_data.get("expiration_date")
