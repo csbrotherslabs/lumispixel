@@ -49,6 +49,7 @@ class Gallery(models.Model):
 
     class DesignTemplate(models.TextChoices):
         KIMONO_STANDARD_FILTERABLE = "kimono_standard_filterable", "Standard Filterable"
+        KIMONO_STORY = "kimono_story", "Story"
         KIMONO_MASONRY = "kimono_masonry", "Masonry"
 
     class ArchiveReason(models.TextChoices):
@@ -83,6 +84,9 @@ class Gallery(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     visibility = models.CharField(max_length=20, choices=Visibility.choices, default=Visibility.PRIVATE)
     design_template = models.CharField(max_length=48, choices=DesignTemplate.choices, default=DesignTemplate.KIMONO_STANDARD_FILTERABLE)
+    story_title = models.CharField(max_length=160, blank=True)
+    story_description = models.TextField(blank=True)
+    story_quote = models.TextField(blank=True)
     image_count = models.PositiveIntegerField(default=0)
     favorite_count = models.PositiveIntegerField(default=0)
     download_count = models.PositiveIntegerField(default=0)
