@@ -49,6 +49,7 @@ class Gallery(models.Model):
 
     class DesignTemplate(models.TextChoices):
         KIMONO_STANDARD_FILTERABLE = "kimono_standard_filterable", "Standard Filterable"
+        KIMONO_MASONRY = "kimono_masonry", "Masonry"
 
     class ArchiveReason(models.TextChoices):
         COMPLETED = "completed", "Project Completed"
