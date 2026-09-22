@@ -76,7 +76,7 @@
   </div>
 </form>
 {% else %}
-<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-gallery-edit-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form data-gallery-edit-form data-submit-pending-label="Saving…" novalidate>{% csrf_token %}
+<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-gallery-edit-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form data-gallery-edit-form data-submit-pending-label="Saving…" novalidate>{% csrf_token %}{{ form.design_template.as_hidden }}
   <header class="form-page-header lp-page-header lp-gallery-create-header">
     <div class="lp-gallery-create-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">{{ gallery.name }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Edit Gallery</strong></nav>
