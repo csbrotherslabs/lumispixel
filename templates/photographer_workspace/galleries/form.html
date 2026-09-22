@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
           </article>
           <article class="lp-gallery-design-card{% if form.design_template.value == 'kimono_story' %} is-selected{% endif %}" data-gallery-design-card data-template="kimono_story">
             <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_story"{% if form.design_template.value == 'kimono_story' %} checked{% endif %}>
-            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><div class="lp-story-card-art"><small>OUR STORY</small><strong>Moments That Matter</strong><span>Editorial storytelling + gallery</span></div></div>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-story-preview.webp' %}" alt="Story gallery design preview" loading="lazy"></div>
             <div class="lp-gallery-design-card__copy"><div><strong>Story</strong><small>Editorial storytelling experience with a featured narrative, client quote, and photo gallery.</small></div>{% if form.design_template.value == 'kimono_story' %}<span class="lp-gallery-design-card__selected"><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
             <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:story_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
           </article>
@@ -65,8 +65,11 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:masonry_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
           </article>
 
-          <article class="lp-gallery-design-card is-coming-soon" data-gallery-design-card>
-            <div class="lp-gallery-design-card__preview lp-gallery-design-card__placeholder" aria-hidden="true"><i class="bi bi-image"></i></div><div class="lp-gallery-design-card__copy"><div><strong>Gallery Design 4</strong><small>Reserved for the fourth LumisPixel gallery experience.</small></div><span class="lp-gallery-design-card__status">Coming next</span></div><div class="lp-gallery-design-card__actions"><button class="lp-button lp-button--secondary lp-button--sm" type="button" disabled>Preview</button><button class="lp-button lp-button--primary lp-button--sm" type="button" disabled>Select Design</button></div>
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'cinematic' %} is-selected{% endif %}" data-gallery-design-card data-template="cinematic">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="cinematic"{% if form.design_template.value == 'cinematic' %} checked{% endif %}>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-cinematic-preview.webp' %}" alt="Cinematic gallery design preview" loading="lazy"></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Cinematic</strong><small>Immersive full-screen delivery with album chapters and a theater-style photo experience.</small></div>{% if form.design_template.value == 'cinematic' %}<span class="lp-gallery-design-card__selected"><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+            <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:cinematic_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
           </article>
         </div>
         <div class="lp-story-fields" data-story-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>

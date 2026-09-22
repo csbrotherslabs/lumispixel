@@ -51,6 +51,7 @@ class Gallery(models.Model):
         KIMONO_STANDARD_FILTERABLE = "kimono_standard_filterable", "Standard Filterable"
         KIMONO_STORY = "kimono_story", "Story"
         KIMONO_MASONRY = "kimono_masonry", "Masonry"
+        CINEMATIC = "cinematic", "Cinematic"
 
     class ArchiveReason(models.TextChoices):
         COMPLETED = "completed", "Project Completed"

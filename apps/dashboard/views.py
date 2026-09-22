@@ -1729,6 +1729,13 @@ def masonry_design_preview(request):
 
 @photographer_workspace_required
 @require_GET
+def cinematic_design_preview(request):
+    """Preview the Cinematic client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/cinematic_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
 def gallery_preview(request, pk):
     gallery = get_object_or_404(
         Gallery.objects.for_photographer(request.studio).active().select_related("client"),
