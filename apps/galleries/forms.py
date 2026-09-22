@@ -60,10 +60,13 @@ class GalleryForm(forms.ModelForm):
 
     class Meta:
         model = Gallery
-        fields = ("name", "client", "booking", "event_date", "description", "design_template", "cover_image", "status", "visibility")
+        fields = ("name", "client", "booking", "event_date", "description", "design_template", "story_title", "story_description", "story_quote", "cover_image", "status", "visibility")
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Add a short note for your team or client…"}),
+            "story_title": forms.TextInput(attrs={"placeholder": "e.g. Moments That Matter"}),
+            "story_description": forms.Textarea(attrs={"rows": 4, "placeholder": "Tell the story behind this gallery…"}),
+            "story_quote": forms.Textarea(attrs={"rows": 3, "placeholder": "Add the client quote featured in the Story design…"}),
             "cover_image": forms.FileInput(attrs={"accept": "image/*", "data-cover-input": ""}),
         }
 
@@ -107,6 +110,10 @@ class GalleryForm(forms.ModelForm):
         cleaned_data = super().clean()
         expiration = cleaned_data.get("expiration_date")
         status = cleaned_data.get("status")
+        if cleaned_data.get("design_template") == Gallery.DesignTemplate.KIMONO_STORY:
+            for field_name, label in (("story_title", "Story title"), ("story_description", "Story description"), ("story_quote", "Story quote")):
+                if not (cleaned_data.get(field_name) or "").strip():
+                    self.add_error(field_name, f"{label} is required when using the Story gallery design.")
         client = cleaned_data.get("client")
         booking = cleaned_data.get("booking")
         if booking:
