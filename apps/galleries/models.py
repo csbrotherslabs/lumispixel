@@ -47,6 +47,9 @@ class Gallery(models.Model):
         PASSWORD = "password", "Password protected"
         PUBLIC = "public", "Public"
 
+    class DesignTemplate(models.TextChoices):
+        KIMONO_STANDARD_FILTERABLE = "kimono_standard_filterable", "Standard Filterable"
+
     class ArchiveReason(models.TextChoices):
         COMPLETED = "completed", "Project Completed"
         EXPIRED = "expired", "Gallery Expired"
@@ -78,6 +81,7 @@ class Gallery(models.Model):
     cover_image = models.ImageField(upload_to="galleries/covers/%Y/%m/", blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     visibility = models.CharField(max_length=20, choices=Visibility.choices, default=Visibility.PRIVATE)
+    design_template = models.CharField(max_length=48, choices=DesignTemplate.choices, default=DesignTemplate.KIMONO_STANDARD_FILTERABLE)
     image_count = models.PositiveIntegerField(default=0)
     favorite_count = models.PositiveIntegerField(default=0)
     download_count = models.PositiveIntegerField(default=0)
