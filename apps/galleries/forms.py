@@ -60,7 +60,7 @@ class GalleryForm(forms.ModelForm):
 
     class Meta:
         model = Gallery
-        fields = ("name", "client", "booking", "event_date", "description", "cover_image", "status", "visibility")
+        fields = ("name", "client", "booking", "event_date", "description", "design_template", "cover_image", "status", "visibility")
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Add a short note for your team or client…"}),
@@ -71,6 +71,8 @@ class GalleryForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.photographer = photographer
         self.instance.photographer = photographer
+        self.fields["design_template"].label = "Gallery design"
+        self.fields["design_template"].help_text = "Choose how this gallery will be presented to clients. You can change the design later without affecting photos or access settings."
         self.fields["client"].queryset = Client.objects.for_photographer(photographer).order_by("first_name", "last_name")
         self.fields["client"].required = False
         self.fields["client"].empty_label = "Search or choose a client"
