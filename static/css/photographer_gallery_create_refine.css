@@ -106,7 +106,7 @@
 
 
 /* Gallery design selection */
-.lp-gallery-create-progress{grid-template-columns:repeat(4,minmax(0,1fr))}
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress{grid-template-columns:repeat(4,minmax(0,1fr))}
 .lp-gallery-design-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .lp-gallery-design-card{display:block;overflow:hidden;border:1px solid #e7dfda;border-radius:16px;background:#fff;cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
 .lp-gallery-design-card:hover{border-color:#df9fa2;box-shadow:0 10px 28px rgba(47,37,30,.08);transform:translateY(-1px)}
