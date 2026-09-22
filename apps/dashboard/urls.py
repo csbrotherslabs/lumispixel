@@ -17,6 +17,7 @@ urlpatterns = [
     path("galleries/archive/actions/", views.gallery_archive_actions, name="gallery_archive_actions"),
     path("galleries/create/", views.create_gallery, name="create_gallery"),
     path("galleries/designs/standard-filterable/preview/", views.standard_filterable_design_preview, name="standard_filterable_design_preview"),
+    path("galleries/designs/masonry/preview/", views.masonry_design_preview, name="masonry_design_preview"),
     path("galleries/actions/", views.gallery_actions, name="gallery_actions"),
     path("galleries/upload-queue/", views.gallery_upload_queue, name="gallery_upload_queue"),
     path("galleries/upload-queue/clear-completed/", views.gallery_upload_queue_clear_completed, name="gallery_upload_queue_clear_completed"),
