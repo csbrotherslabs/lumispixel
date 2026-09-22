@@ -28,21 +28,41 @@
         </div>
       </section>
 
-      <section class="form-section-card lp-gallery-design-step" aria-labelledby="gallery-design-title">
-        <header><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><div><small>Gallery design</small><h2 id="gallery-design-title">Choose a Gallery Design</h2><p>Select how your finished photographs will be presented to the client. The design can be changed later without affecting photos, albums, or client access.</p></div></header>
+      <section class="form-section-card lp-gallery-design-step" aria-labelledby="gallery-design-title" data-gallery-design-picker>
+        <header><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><div><small>Gallery design</small><h2 id="gallery-design-title">Choose a Gallery Design</h2><p>Preview the client experience, then select the design you want to use. You can change it later without affecting photos, albums, or client access.</p></div></header>
         <div class="lp-gallery-design-grid" role="radiogroup" aria-label="Gallery design">
-          <label class="lp-gallery-design-card{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} is-selected{% endif %}">
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} is-selected{% endif %}" data-gallery-design-card data-template="kimono_standard_filterable">
             <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_standard_filterable"{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} checked{% endif %}>
-            <span class="lp-gallery-design-card__preview" aria-hidden="true">
-              <span class="lp-gallery-design-card__hero"><span class="lp-gallery-design-card__qr"></span></span>
-              <span class="lp-gallery-design-card__filters"></span>
-              <span class="lp-gallery-design-card__grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-            </span>
-            <span class="lp-gallery-design-card__copy"><span><strong>Standard Filterable</strong><small>Clean, editorial grid with album filtering and client controls.</small></span><span class="lp-gallery-design-card__selected"><i class="bi bi-check2" aria-hidden="true"></i> Selected</span></span>
-          </label>
+            <div class="lp-gallery-design-card__preview" aria-hidden="true"><span class="lp-gallery-design-card__hero"><span class="lp-gallery-design-card__qr"></span></span><span class="lp-gallery-design-card__filters"></span><span class="lp-gallery-design-card__grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Standard Filterable</strong><small>Clean editorial grid with album filtering and client controls.</small></div><span class="lp-gallery-design-card__selected"><i class="bi bi-check2"></i> Selected</span></div>
+            <div class="lp-gallery-design-card__actions"><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-gallery-design-preview data-template-name="Standard Filterable"><i class="bi bi-arrows-fullscreen"></i> Preview</button><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
+          </article>
+          <article class="lp-gallery-design-card is-coming-soon" data-gallery-design-card>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__placeholder" aria-hidden="true"><i class="bi bi-image"></i></div><div class="lp-gallery-design-card__copy"><div><strong>Gallery Design 2</strong><small>Reserved for the second LumisPixel gallery experience.</small></div><span class="lp-gallery-design-card__status">Coming next</span></div><div class="lp-gallery-design-card__actions"><button class="lp-button lp-button--secondary lp-button--sm" type="button" disabled>Preview</button><button class="lp-button lp-button--primary lp-button--sm" type="button" disabled>Select Design</button></div>
+          </article>
+          <article class="lp-gallery-design-card is-coming-soon" data-gallery-design-card>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__placeholder" aria-hidden="true"><i class="bi bi-image"></i></div><div class="lp-gallery-design-card__copy"><div><strong>Gallery Design 3</strong><small>Reserved for the third LumisPixel gallery experience.</small></div><span class="lp-gallery-design-card__status">Coming next</span></div><div class="lp-gallery-design-card__actions"><button class="lp-button lp-button--secondary lp-button--sm" type="button" disabled>Preview</button><button class="lp-button lp-button--primary lp-button--sm" type="button" disabled>Select Design</button></div>
+          </article>
+          <article class="lp-gallery-design-card is-coming-soon" data-gallery-design-card>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__placeholder" aria-hidden="true"><i class="bi bi-image"></i></div><div class="lp-gallery-design-card__copy"><div><strong>Gallery Design 4</strong><small>Reserved for the fourth LumisPixel gallery experience.</small></div><span class="lp-gallery-design-card__status">Coming next</span></div><div class="lp-gallery-design-card__actions"><button class="lp-button lp-button--secondary lp-button--sm" type="button" disabled>Preview</button><button class="lp-button lp-button--primary lp-button--sm" type="button" disabled>Select Design</button></div>
+          </article>
         </div>
-        {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
+        {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
+
+      <div class="lp-gallery-design-modal" data-gallery-design-modal hidden>
+        <div class="lp-gallery-design-modal__backdrop" data-gallery-design-close></div>
+        <section class="lp-gallery-design-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gallery-design-preview-title">
+          <header><div><small>Gallery template preview</small><h2 id="gallery-design-preview-title" data-gallery-design-preview-title>Standard Filterable</h2></div><button type="button" class="lp-gallery-design-modal__close" data-gallery-design-close aria-label="Close gallery design preview"><i class="bi bi-x-lg"></i></button></header>
+          <div class="lp-gallery-design-modal__devices" role="group" aria-label="Preview device"><button type="button" class="is-active" data-gallery-preview-device="desktop"><i class="bi bi-display"></i> Desktop</button><button type="button" data-gallery-preview-device="tablet"><i class="bi bi-tablet"></i> Tablet</button><button type="button" data-gallery-preview-device="mobile"><i class="bi bi-phone"></i> Mobile</button></div>
+          <div class="lp-gallery-design-modal__stage"><div class="lp-gallery-design-demo" data-gallery-design-demo data-device="desktop">
+            <div class="lp-gallery-design-demo__hero"><span class="lp-gallery-design-demo__brand">LUMISPIXEL STUDIO</span><div><small>THE WEDDING OF</small><h3>Maya &amp; Rowan</h3><p>September 21, 2026</p><span class="lp-gallery-design-demo__qr" aria-hidden="true"></span></div></div>
+            <div class="lp-gallery-design-demo__toolbar"><span>ALL</span><span>GETTING READY</span><span>CEREMONY</span><span>RECEPTION</span><span class="lp-gallery-design-demo__tools"><i class="bi bi-heart"></i><i class="bi bi-download"></i><i class="bi bi-share"></i></span></div>
+            <div class="lp-gallery-design-demo__photos"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div></div>
+          <footer><button type="button" class="lp-button lp-button--secondary lp-button--md" data-gallery-design-close>Close</button><button type="button" class="lp-button lp-button--primary lp-button--md" data-gallery-design-modal-select>Use This Design</button></footer>
+        </section>
+      </div>
 
       <section class="form-section-card lp-gallery-client-experience" aria-labelledby="cover-image-title">
         <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
