@@ -1707,6 +1707,16 @@ def standard_filterable_design_preview(request):
 
 @photographer_workspace_required
 @require_GET
+def story_design_preview(request):
+    """Preview the Story client experience with representative demo content."""
+    return render(
+        request,
+        "photographer_workspace/galleries/designs/story_preview.html",
+    )
+
+
+@photographer_workspace_required
+@require_GET
 def masonry_design_preview(request):
     """Preview the Masonry client experience with representative demo content."""
     return render(request, "photographer_workspace/galleries/designs/masonry_preview.html")
