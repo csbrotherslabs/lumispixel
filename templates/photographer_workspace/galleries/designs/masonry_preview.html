@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Masonry — Gallery Preview</title>
+  <link rel="stylesheet" href="{% static 'css/masonry_gallery_preview.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+<aside class="lp-preview-bar"><div><strong>Masonry</strong><span>Template preview</span></div><div class="lp-preview-actions"><a href="{% url 'photographer_workspace:create_gallery' %}#gallery-design-title">Back to gallery builder</a><a class="primary" href="{% url 'photographer_workspace:create_gallery' %}?design=kimono_masonry#gallery-design-title">Use This Design</a></div></aside>
+<main>
+<section class="ms-hero">
+  <img src="{% static 'img/photographers/gallery/lumispixel-gallery-masonry-preview.webp' %}" alt="" class="ms-hero-image">
+  <div class="ms-shade"></div><div class="ms-brand">LUMISPIXEL <small>CAPTURE LIFE BEAUTIFULLY</small></div>
+  <nav><span>GALLERY</span><span>FAVORITES</span><span>SHARE</span><span>DOWNLOAD</span></nav>
+  <div class="ms-title"><span>OUR WEDDING</span><h1>Sarah &amp; Michael</h1><p>June 14, 2025 &nbsp;|&nbsp; Lake Tahoe, CA</p><i></i><small>REAL MOMENTS. LASTING MEMORIES.</small></div>
+  <div class="ms-qr"><div></div><span>Scan to view<br>gallery</span></div>
+</section>
+<section class="ms-gallery">
+  <header class="ms-toolbar">
+    <div class="ms-filters"><button class="active" data-filter="all">All</button><button data-filter="ceremony">Ceremony</button><button data-filter="portraits">Portraits</button><button data-filter="reception">Reception</button><button data-filter="details">Details</button></div>
+    <div class="ms-tools"><button><i class="bi bi-heart"></i> Favorites</button><button><i class="bi bi-download"></i> Download</button><button><i class="bi bi-share"></i> Share</button><label>Grid: <input type="range" min="2" max="4" value="3" data-density><output data-density-output>3 columns</output></label></div>
+  </header>
+  <div class="ms-grid" data-grid style="--columns:3">
+    {% for n in "123456789012345" %}<article class="ms-photo ms-photo--{% cycle 'tall' 'wide' 'portrait' 'short' 'tall' %}" data-category="{% cycle 'details' 'ceremony' 'portraits' 'reception' 'details' %}"><div class="ms-photo-art art-{% cycle '1' '2' '3' '4' '5' '6' '7' %}"></div><div class="ms-photo-overlay"><button aria-label="Favorite"><i class="bi bi-heart"></i></button><button aria-label="Comment"><i class="bi bi-chat"></i></button><button aria-label="Download"><i class="bi bi-download"></i></button><button aria-label="Share"><i class="bi bi-share"></i></button></div></article>{% endfor %}
+  </div>
+</section>
+</main>
+<script src="{% static 'js/masonry_gallery_preview.js' %}" defer></script>
+</body></html>
