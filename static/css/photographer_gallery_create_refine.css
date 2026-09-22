@@ -170,3 +170,6 @@
 .lp-gallery-design-demo[data-device="mobile"] .lp-gallery-design-demo__photos{grid-template-columns:repeat(2,1fr)}
 body.lp-gallery-design-modal-open{overflow:hidden}
 @media(max-width:700px){.lp-gallery-design-grid{grid-template-columns:1fr}.lp-gallery-design-modal{padding:0}.lp-gallery-design-modal__dialog{width:100vw;height:100vh;border-radius:0}.lp-gallery-design-modal__stage{padding:12px}}
+
+.lp-gallery-design-card__preview--image{display:block;aspect-ratio:3/2;min-height:0;overflow:hidden;background:#f3efec}
+.lp-gallery-design-card__preview--image img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
