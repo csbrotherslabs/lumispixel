@@ -1154,7 +1154,12 @@ def gallery_archive_actions(request):
 @require_http_methods(["GET", "POST"])
 def create_gallery(request):
     profile = request.studio
-    form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile)
+    initial = {}
+    requested_design = request.GET.get("design")
+    valid_designs = {choice.value for choice in Gallery.DesignTemplate}
+    if request.method == "GET" and requested_design in valid_designs:
+        initial["design_template"] = requested_design
+    form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile, initial=initial)
     form.fields["description"].widget.attrs["rows"] = 3
     form.fields["cover_image"].widget.attrs["accept"] = "image/jpeg,image/png,image/webp"
     form.fields["name"].widget.attrs["placeholder"] = "e.g. Maya & Rowan"
