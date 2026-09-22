@@ -19,6 +19,7 @@ urlpatterns = [
     path("galleries/designs/standard-filterable/preview/", views.standard_filterable_design_preview, name="standard_filterable_design_preview"),
     path("galleries/designs/story/preview/", views.story_design_preview, name="story_design_preview"),
     path("galleries/designs/masonry/preview/", views.masonry_design_preview, name="masonry_design_preview"),
+    path("galleries/designs/cinematic/preview/", views.cinematic_design_preview, name="cinematic_design_preview"),
     path("galleries/actions/", views.gallery_actions, name="gallery_actions"),
     path("galleries/upload-queue/", views.gallery_upload_queue, name="gallery_upload_queue"),
     path("galleries/upload-queue/clear-completed/", views.gallery_upload_queue_clear_completed, name="gallery_upload_queue_clear_completed"),
