@@ -1700,6 +1700,13 @@ def gallery_workspace(request, pk):
 
 @photographer_workspace_required
 @require_GET
+def standard_filterable_design_preview(request):
+    """Preview the Standard Filterable client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/standard_filterable_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
 def gallery_preview(request, pk):
     gallery = get_object_or_404(
         Gallery.objects.for_photographer(request.studio).active().select_related("client"),
