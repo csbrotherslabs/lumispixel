@@ -1,0 +1,15 @@
+{% load static %}<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cinematic — Gallery Preview</title><link rel="stylesheet" href="{% static 'css/cinematic_gallery_preview.css' %}"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"></head><body>
+<div class="cp-preview"><div class="cp-topbar"><div><strong>Cinematic</strong><small>Template preview</small></div><div><a href="{% url 'photographer_workspace:create_gallery' %}#gallery-design-title">Back to builder</a><a class="cp-use" href="{% url 'photographer_workspace:create_gallery' %}?design=cinematic#gallery-design-title">Use This Design</a></div></div>
+<main class="cp-stage">
+<div class="cp-backdrop"></div><div class="cp-shade"></div>
+<header class="cp-nav"><div class="cp-brand"><span>YB</span><div><strong>YOUR BUSINESS NAME</strong><small>PHOTOGRAPHY</small></div></div><nav><button><i class="bi bi-heart"></i><span>Favorite</span></button><button><i class="bi bi-download"></i><span>Download</span></button><button><i class="bi bi-share"></i><span>Share</span></button><button data-qr-toggle><i class="bi bi-qr-code"></i><span>Show QR</span></button></nav></header>
+<section class="cp-copy"><small>THE WEDDING OF</small><h1>Jazlynn &amp; Ferlin</h1><p>A DAY FULL OF LOVE, BEAUTY AND<br>FOREVER MOMENTS</p><button class="cp-view"><i class="bi bi-play-fill"></i> VIEW GALLERY</button></section>
+<div class="cp-qr" data-qr hidden><div><span></span><span></span><span></span></div><small>SCAN TO VIEW GALLERY</small></div>
+<section class="cp-albums" aria-label="Gallery albums">
+<article class="is-active"><div class="cp-art cp-art-1"></div><strong>ALL PHOTOS</strong><small>184 PHOTOS</small></article>
+<article><div class="cp-art cp-art-2"></div><strong>GETTING READY</strong><small>32 PHOTOS</small></article>
+<article><div class="cp-art cp-art-3"></div><strong>CEREMONY</strong><small>48 PHOTOS</small></article>
+<article><div class="cp-art cp-art-4"></div><strong>PORTRAITS</strong><small>56 PHOTOS</small></article>
+<article><div class="cp-art cp-art-5"></div><strong>RECEPTION</strong><small>38 PHOTOS</small></article>
+<article><div class="cp-art cp-art-6"></div><strong>HIGHLIGHTS</strong><small>10 PHOTOS</small></article>
+</section><footer><span>CAPTURING TOMORROW'S MEMORIES TODAY</span><span>01 &nbsp;/&nbsp; 06</span></footer></main></div><script src="{% static 'js/cinematic_gallery_preview.js' %}" defer></script></body></html>
