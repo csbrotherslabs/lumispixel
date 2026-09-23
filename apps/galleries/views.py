@@ -244,9 +244,27 @@ def client_gallery_access(request, token):
         ).select_related("invitation"):
             comments_by_photo.setdefault(comment.photo_id, []).append(comment)
 
+    interaction_counts = {}
+    for row in (
+        GalleryAnalyticsEvent.objects.filter(
+            gallery=gallery,
+            related_photo__in=photos,
+            event_type__in=[
+                GalleryAnalyticsEvent.EventType.FAVORITE,
+                GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            ],
+        )
+        .values("related_photo_id", "event_type")
+        .annotate(total=Count("id"))
+    ):
+        interaction_counts.setdefault(row["related_photo_id"], {})[row["event_type"]] = row["total"]
+
     for photo in photos:
         photo.is_client_favorite = photo.pk in favorite_ids
         photo.client_comment_list = comments_by_photo.get(photo.pk, [])
+        counts = interaction_counts.get(photo.pk, {})
+        photo.client_favorite_count = counts.get(GalleryAnalyticsEvent.EventType.FAVORITE, 0)
+        photo.client_download_count = counts.get(GalleryAnalyticsEvent.EventType.DOWNLOAD, 0)
 
     store = GalleryStore.objects.filter(
         gallery=gallery,
