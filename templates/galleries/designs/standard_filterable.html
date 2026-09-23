@@ -1,0 +1,47 @@
+{% load static gallery_qr %}
+{% if can_share_gallery %}{% gallery_qr_png stable_gallery_url as client_qr_png %}{% gallery_qr_svg stable_gallery_url as client_qr_svg %}{% endif %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ gallery.name }} | {{ gallery_brand }}</title>
+  <link rel="stylesheet" href="{% static 'css/standard_filterable_gallery.css' %}">
+</head>
+<body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
+  <main class="sf-gallery">
+    <section class="sf-hero"{% if gallery.cover_image %} style="background-image:url('{{ gallery.cover_image.url }}')"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
+      <div class="sf-hero__shade"></div>
+      <div class="sf-hero__brand">{% if gallery_settings.studio_logo %}<img src="{{ gallery_settings.studio_logo.url }}" alt="{{ gallery_brand }}">{% else %}{{ gallery_brand }}{% endif %}</div>
+      <div class="sf-hero__copy"><span>PRIVATE GALLERY</span><h1>{{ gallery.name }}</h1>{% if gallery.event_date %}<p>{{ gallery.event_date|date:"F j, Y" }}</p>{% endif %}{% if gallery.description %}<small>{{ gallery.description }}</small>{% endif %}</div>
+      {% if can_share_gallery %}<button type="button" class="sf-hero__qr" data-client-qr-open><img src="{{ client_qr_png }}" alt="QR code for {{ gallery.name }}"><small>Scan to view<br>gallery</small></button>{% endif %}
+      <a href="#photographs" class="sf-hero__down" aria-label="View photographs">⌄</a>
+    </section>
+
+    <section class="sf-content" id="photographs">
+      <header class="sf-gallery-header">
+        <nav class="sf-filters" aria-label="Gallery albums"><button class="is-active" data-filter="all">All</button>{% for album in albums %}<button data-filter="album-{{ album.pk }}">{{ album.name }}</button>{% endfor %}</nav>
+        <div class="sf-actions" aria-label="Gallery actions">
+          {% if can_favorite %}<button type="button" data-show-favorites>♡ <span>Favorites</span></button>{% endif %}
+          {% if can_download_gallery and access_token %}<a href="{% url 'galleries:client_gallery_download_all' access_token %}">↓ <span>Download</span></a>{% endif %}
+          {% if can_purchase_prints and access_token %}<a href="{% url 'galleries:client_gallery_print_store' access_token %}">▣ <span>Prints</span></a>{% endif %}
+          {% if can_share_gallery %}<button type="button" data-client-qr-open>↗ <span>Share</span></button>{% endif %}
+          <label class="sf-density"><span>Grid</span><input type="range" min="2" max="6" value="4" data-grid-density><output data-grid-output>4 columns</output></label>
+        </div>
+      </header>
+      <div class="sf-photo-grid" data-photo-grid style="--columns:4">
+        {% for photo in photos %}<article class="sf-photo{% if photo.is_client_favorite %} is-favorite{% endif %}" data-category="{{ photo.client_filter_categories }}" data-favorite="{% if photo.is_client_favorite %}true{% else %}false{% endif %}" id="photo-{{ photo.pk }}">
+          <a class="sf-photo__media" href="{% if access_token %}{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}{% else %}{{ photo.delivery_url }}{% endif %}"><img src="{{ photo.delivery_url }}" alt="Gallery photograph" loading="lazy"></a>
+          <div class="sf-photo__actions">
+            {% if can_favorite and access_token %}<form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}">{% csrf_token %}<button type="submit" aria-label="{% if photo.is_client_favorite %}Remove favorite{% else %}Favorite photo{% endif %}">{% if photo.is_client_favorite %}♥{% else %}♡{% endif %}</button></form>{% endif %}
+            {% if can_comment and access_token %}<button type="button" data-comment-toggle aria-label="Comment on photo">◌</button>{% endif %}
+            {% if can_download and access_token %}<a href="{% url 'galleries:client_gallery_download' access_token photo.pk %}" aria-label="Download photo">↓</a>{% endif %}
+          </div>
+          {% if can_comment and access_token %}<div class="sf-photo__comments" hidden data-comment-panel>{% for comment in photo.client_comment_list %}<p><strong>{{ comment.invitation.client_name }}</strong> {{ comment.body }}</p>{% endfor %}<form method="post" action="{% url 'galleries:client_gallery_comment' access_token photo.pk %}">{% csrf_token %}<textarea name="comment" maxlength="2000" required placeholder="Leave a comment"></textarea><button type="submit">Post</button></form></div>{% endif %}
+        </article>{% empty %}<div class="sf-empty">This gallery does not have client-ready photos yet.</div>{% endfor %}
+      </div>
+    </section>
+  </main>
+  {% if can_share_gallery %}<dialog class="sf-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><input value="{{ stable_gallery_url }}" readonly onclick="this.select()"><button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy link</button></dialog>{% endif %}
+  <script src="{% static 'js/standard_filterable_gallery.js' %}" defer></script>
+</body></html>
