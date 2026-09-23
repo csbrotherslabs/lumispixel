@@ -84,6 +84,7 @@ def _client_gallery_template(gallery):
         Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE: "galleries/designs/standard_filterable.html",
         Gallery.DesignTemplate.KIMONO_STORY: "galleries/designs/story.html",
         Gallery.DesignTemplate.KIMONO_MASONRY: "galleries/designs/masonry.html",
+        Gallery.DesignTemplate.CINEMATIC: "galleries/designs/cinematic.html",
     }
     return templates.get(gallery.design_template, "galleries/client_gallery.html")
 
@@ -101,6 +102,20 @@ def _prepare_client_gallery_content(gallery, photos, albums):
         categories.setdefault(membership.photo_id, []).append(f"album-{membership.album_id}")
     for photo in photos:
         photo.client_filter_categories = " ".join(categories.get(photo.pk, []))
+    # Cinematic consumes the same prepared content, but needs lightweight
+    # chapter metadata so albums can become the horizontal film-strip rail.
+    album_photo_ids = {}
+    for membership in memberships:
+        album_photo_ids.setdefault(membership.album_id, []).append(membership.photo_id)
+    photos_by_id = {photo.pk: photo for photo in photos}
+    for album in albums:
+        chapter_photos = [photos_by_id[photo_id] for photo_id in album_photo_ids.get(album.pk, []) if photo_id in photos_by_id]
+        album.client_photo_count = len(chapter_photos)
+        album.client_cover_url = ""
+        if album.cover_photo_id and album.cover_photo_id in photos_by_id:
+            album.client_cover_url = photos_by_id[album.cover_photo_id].delivery_url
+        elif chapter_photos:
+            album.client_cover_url = chapter_photos[0].delivery_url
     return photos, albums
 
 

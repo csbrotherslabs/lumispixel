@@ -118,6 +118,21 @@ class ClientGalleryDeliveryTests(TestCase):
         self.assertContains(response, 'data-density')
         self.assertContains(response, 'value="4"')
 
+    def test_cinematic_design_uses_cinematic_production_template(self):
+        self.gallery.design_template = Gallery.DesignTemplate.CINEMATIC
+        self.gallery.save(update_fields=["design_template", "updated_at"])
+
+        response = self.client.get(self.access_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "galleries/designs/cinematic.html")
+        self.assertContains(response, "VIEW GALLERY")
+        self.assertContains(response, "ALL PHOTOS")
+        self.assertContains(response, "Download Gallery")
+        self.assertContains(response, "Copy Link")
+        self.assertContains(response, "Download QR")
+        self.assertNotContains(response, 'data-density')
+
     def test_revoked_expired_and_unpublished_access_is_rejected(self):
         self.token_record.revoked_at = timezone.now()
         self.token_record.save(update_fields=["revoked_at"])
