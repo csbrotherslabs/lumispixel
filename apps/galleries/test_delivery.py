@@ -85,6 +85,25 @@ class ClientGalleryDeliveryTests(TestCase):
         self.assertTrue(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery, event_type="view").exists())
         self.assertTrue(GalleryActivity.objects.filter(gallery=self.gallery, event_type="client_viewed").exists())
 
+
+    def test_story_design_uses_story_production_template(self):
+        self.gallery.design_template = Gallery.DesignTemplate.KIMONO_STORY
+        self.gallery.story_title = "Moments That Matter"
+        self.gallery.story_description = "A wedding day told as a story."
+        self.gallery.story_quote = "We will cherish these forever."
+        self.gallery.save(update_fields=["design_template", "story_title", "story_description", "story_quote", "updated_at"])
+
+        response = self.client.get(self.access_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "galleries/designs/story.html")
+        self.assertContains(response, "Moments That Matter")
+        self.assertContains(response, "A wedding day told as a story.")
+        self.assertContains(response, "We will cherish these forever.")
+        self.assertContains(response, "Download Gallery")
+        self.assertContains(response, "Copy Link")
+        self.assertContains(response, "Download QR")
+
     def test_revoked_expired_and_unpublished_access_is_rejected(self):
         self.token_record.revoked_at = timezone.now()
         self.token_record.save(update_fields=["revoked_at"])
