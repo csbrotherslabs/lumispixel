@@ -31,7 +31,7 @@
       </header>
       <div class="sf-photo-grid" data-photo-grid style="--columns:4">
         {% for photo in photos %}<article class="sf-photo{% if photo.is_client_favorite %} is-favorite{% endif %}" data-category="{{ photo.client_filter_categories }}" data-favorite="{% if photo.is_client_favorite %}true{% else %}false{% endif %}" id="photo-{{ photo.pk }}">
-          <a class="sf-photo__media" href="{% if access_token %}{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}{% else %}{{ photo.delivery_url }}{% endif %}"><img src="{{ photo.delivery_url }}" alt="Gallery photograph" loading="lazy"></a>
+          <a class="sf-photo__media{% if permissions.watermark != 'none' %} is-watermark-{{ gallery_settings.watermark_position }}{% endif %}" href="{% if access_token %}{% url 'galleries:client_gallery_photo_media' access_token photo.pk %}{% else %}{{ photo.delivery_url }}{% endif %}"><img src="{{ photo.delivery_url }}" alt="Gallery photograph" loading="lazy">{% if permissions.watermark != 'none' %}<span class="lp-client-photo__watermark">{{ gallery_brand }}</span>{% endif %}</a>
           <div class="sf-photo__actions">
             {% if can_favorite and access_token %}<form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}">{% csrf_token %}<button type="submit" aria-label="{% if photo.is_client_favorite %}Remove favorite{% else %}Favorite photo{% endif %}">{% if photo.is_client_favorite %}♥{% else %}♡{% endif %}</button></form>{% endif %}
             {% if can_comment and access_token %}<button type="button" data-comment-toggle aria-label="Comment on photo">◌</button>{% endif %}
@@ -42,6 +42,6 @@
       </div>
     </section>
   </main>
-  {% if can_share_gallery %}<dialog class="sf-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><input value="{{ stable_gallery_url }}" readonly onclick="this.select()"><button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy link</button></dialog>{% endif %}
+  {% if can_share_gallery %}<dialog class="sf-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><input value="{{ stable_gallery_url }}" readonly onclick="this.select()"><form method="post" action="{% if access_token %}{% url 'galleries:client_gallery_share' access_token %}{% endif %}" data-client-share-form>{% csrf_token %}<button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button></form><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></dialog>{% endif %}
   <script src="{% static 'js/standard_filterable_gallery.js' %}" defer></script>
 </body></html>
