@@ -225,3 +225,6 @@
   .lp-gallery-workspace-v2 .lp-gw-actions{grid-template-columns:1fr}
   .lp-gallery-workspace-v2 .lp-gw-overview-card{padding:18px}
 }
+
+.lp-photo-grid article footer{gap:10px;align-items:center}.lp-photo-card__meta{min-width:0;display:flex;flex-direction:column;gap:2px}.lp-photo-card__meta strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lp-photo-client-metrics{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}.lp-photo-client-metrics span{display:inline-flex;align-items:center;gap:3px;color:#6f7580;font-size:.7rem;font-weight:700}.lp-photo-client-metrics i{font-size:.72rem}.lp-photo-client-metrics span:first-child i{color:#d94a61}
+@media(max-width:600px){.lp-photo-client-metrics{gap:6px}.lp-photo-client-metrics span{font-size:.64rem}}
