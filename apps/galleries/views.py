@@ -82,6 +82,7 @@ def _client_gallery_template(gallery):
     """Resolve presentation independently from gallery content and permissions."""
     templates = {
         Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE: "galleries/designs/standard_filterable.html",
+        Gallery.DesignTemplate.KIMONO_STORY: "galleries/designs/story.html",
     }
     return templates.get(gallery.design_template, "galleries/client_gallery.html")
 
