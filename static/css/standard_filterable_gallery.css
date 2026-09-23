@@ -169,3 +169,8 @@
   .sf-actions>.sf-gallery-action svg{flex-basis:18px;width:18px;height:18px}
   .sf-actions>.sf-gallery-action span{font-size:.7rem}
 }
+
+.sf-photo__actions button,.sf-photo__actions a{position:relative}
+.sf-action-count{position:absolute;z-index:3;top:-4px;right:4px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border:2px solid rgba(30,25,22,.85);border-radius:999px;background:#fff;color:#20242d;font-size:.58rem;font-weight:800;line-height:1;box-sizing:border-box}
+.sf-action-count.is-empty{display:none}
+@media(max-width:600px){.sf-action-count{top:-3px;right:1px;min-width:15px;height:15px;padding:0 3px;font-size:.52rem}}
