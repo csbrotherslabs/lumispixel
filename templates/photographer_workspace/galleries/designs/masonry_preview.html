@@ -10,7 +10,7 @@
 <body>
 <aside class="lp-preview-bar"><div><strong>Masonry</strong><span>Template preview</span></div><div class="lp-preview-actions"><a href="{% url 'photographer_workspace:create_gallery' %}#gallery-design-title">Back to gallery builder</a><a class="primary" href="{% url 'photographer_workspace:create_gallery' %}?design=kimono_masonry#gallery-design-title">Use This Design</a></div></aside>
 <main>
-<section class="ms-hero">
+<section class="ms-hero" style="background-image:url('{% static 'img/photographers/gallery/wedding-sunset-lake-overlook.webp' %}')">
   <div class="ms-shade"></div><div class="ms-brand">YOUR BUSINESS NAME <small>YOUR PHOTOGRAPHY TAGLINE</small></div>
   <nav><span>GALLERY</span><span>FAVORITES</span><span>SHARE</span><span>DOWNLOAD</span></nav>
   <div class="ms-title"><span>OUR WEDDING</span><h1>Sarah &amp; Michael</h1><p>June 14, 2025 &nbsp;|&nbsp; Lake Tahoe, CA</p><i></i><small>REAL MOMENTS. LASTING MEMORIES.</small></div>
@@ -22,7 +22,7 @@
     <div class="ms-tools"><button><i class="bi bi-heart"></i> Favorites</button><button><i class="bi bi-download"></i> Download</button><button><i class="bi bi-share"></i> Share</button><label>Grid: <input type="range" min="2" max="6" value="4" data-density><output data-density-output>4 columns</output></label></div>
   </header>
   <div class="ms-grid" data-grid style="--columns:4">
-    {% for n in "123456789012345" %}<article class="ms-photo ms-photo--{% cycle 'tall' 'wide' 'portrait' 'short' 'tall' %}" data-category="{% cycle 'details' 'ceremony' 'portraits' 'reception' 'details' %}"><div class="ms-photo-art art-{% cycle '1' '2' '3' '4' '5' '6' '7' %}"></div><div class="ms-photo-overlay"><button aria-label="Favorite"><i class="bi bi-heart"></i></button><button aria-label="Comment"><i class="bi bi-chat"></i></button><button aria-label="Download"><i class="bi bi-download"></i></button><button aria-label="Share"><i class="bi bi-share"></i></button></div></article>{% endfor %}
+    {% for n in "123456789012345" %}<article class="ms-photo ms-photo--{% cycle 'tall' 'wide' 'portrait' 'short' 'tall' %}" data-category="{% cycle 'details' 'ceremony' 'portraits' 'reception' 'details' %}"><img class="ms-photo-art" src="{% static 'img/photographers/gallery/' %}{% cycle 'wedding-couple-black-and-white-portrait.webp' 'wedding-couple-sunset-walk.webp' 'wedding-cake-dessert-table.webp' 'bride-closeup-veil-portrait.webp' 'wedding-rings-floral-detail.webp' 'wedding-reception-sunset-table.webp' 'bride-back-veil-portrait.webp' 'bridal-bouquet-closeup.webp' 'wedding-couple-sunset-portrait.webp' 'wedding-sunset-lake-overlook.webp' 'wedding-couple-black-and-white-portrait.webp' 'wedding-cake-dessert-table.webp' 'bride-closeup-veil-portrait.webp' 'wedding-reception-sunset-table.webp' 'bridal-bouquet-closeup.webp' %}" alt="Wedding gallery preview photo" loading="lazy"><div class="ms-photo-overlay"><button aria-label="Favorite"><i class="bi bi-heart"></i></button><button aria-label="Comment"><i class="bi bi-chat"></i></button><button aria-label="Download"><i class="bi bi-download"></i></button><button aria-label="Share"><i class="bi bi-share"></i></button></div></article>{% endfor %}
   </div>
 </section>
 </main>
