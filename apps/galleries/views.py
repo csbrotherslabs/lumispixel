@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F
 import tempfile
 import zipfile
-from django.http import FileResponse, Http404, HttpResponseForbidden
+from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -377,6 +377,12 @@ def client_gallery_comment(request, token, photo_id):
         related_object=photo,
         metadata={"client_name": invitation.client_name},
     )
+    comment_count = GalleryPhotoComment.objects.filter(gallery=gallery, photo=photo).count()
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "comment_count": comment_count,
+            "comment": {"author": invitation.client_name, "body": body},
+        })
     return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
 
 
@@ -421,6 +427,13 @@ def client_gallery_favorite(request, token, photo_id):
             related_object=photo,
         )
         favorited = True
+    favorite_count = GalleryAnalyticsEvent.objects.filter(
+        gallery=gallery,
+        event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+        related_photo=photo,
+    ).count()
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"favorited": favorited, "favorite_count": favorite_count})
     return render(
         request,
         "galleries/favorite_result.html",
