@@ -18,7 +18,7 @@
   </aside>
 
   <main class="sf-gallery">
-    <section class="sf-hero">
+    <section class="sf-hero" style="background-image:url('{% static 'img/photographers/gallery/wedding-sunset-lake-overlook.webp' %}')">
       <div class="sf-hero__shade"></div>
       <div class="sf-hero__brand">YOUR BUSINESS NAME</div>
       <div class="sf-hero__copy"><span>OUR WEDDING</span><h1>Sarah &amp; Michael</h1><p>June 14, 2025 &nbsp;|&nbsp; Lake Tahoe, CA</p><i></i><small>REAL MOMENTS. LASTING MEMORIES.</small></div>
@@ -39,7 +39,7 @@
       <div class="sf-photo-grid" data-photo-grid style="--columns:4">
         {% for n in "123456789012" %}
         <article class="sf-photo" data-category="{% cycle 'ceremony' 'portraits' 'reception' %}">
-          <div class="sf-photo__image sf-photo__image--{% cycle '1' '2' '3' '4' '5' '6' %}"></div>
+          <img class="sf-photo__image" src="{% static 'img/photographers/gallery/' %}{% cycle 'wedding-couple-black-and-white-portrait.webp' 'wedding-couple-sunset-walk.webp' 'wedding-cake-dessert-table.webp' 'bride-closeup-veil-portrait.webp' 'wedding-rings-floral-detail.webp' 'wedding-reception-sunset-table.webp' 'bride-back-veil-portrait.webp' 'bridal-bouquet-closeup.webp' 'wedding-couple-sunset-portrait.webp' 'wedding-sunset-lake-overlook.webp' 'wedding-couple-sunset-walk.webp' 'wedding-cake-dessert-table.webp' %}" alt="Wedding gallery preview photo" loading="lazy">
           <div class="sf-photo__actions"><button aria-label="Favorite photo"><i class="bi bi-heart"></i></button><button aria-label="Comment on photo"><i class="bi bi-chat"></i></button><button aria-label="Download photo"><i class="bi bi-download"></i></button><button aria-label="Share photo"><i class="bi bi-share"></i></button></div>
         </article>
         {% endfor %}
