@@ -240,3 +240,12 @@ body.lp-gallery-design-modal-open{overflow:hidden}
     display:none;
   }
 }
+
+
+/* Required-field indicator for gallery create/edit forms. */
+.lp-gallery-create-modern .required-mark {
+  margin-left: 3px;
+  color: #d71920;
+  font-weight: 700;
+  line-height: 1;
+}

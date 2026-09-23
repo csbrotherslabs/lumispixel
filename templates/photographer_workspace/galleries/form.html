@@ -220,5 +220,39 @@ document.addEventListener("DOMContentLoaded", function () {
     </aside>
   </div>
 </form>
+<script>
+(function () {
+  'use strict';
+  const form = document.querySelector('[data-gallery-edit-form]');
+  if (!form) return;
+
+  function focusFirstInvalidField() {
+    const invalid = form.querySelector('[aria-invalid="true"], .has-error input, .has-error select, .has-error textarea, .field-error');
+    if (!invalid) return;
+    const field = invalid.matches('input, select, textarea, button') ? invalid : invalid.closest('.form-field, .lp-story-fields, .form-section-card')?.querySelector('input, select, textarea, button');
+    const target = field || invalid;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (typeof target.focus === 'function') {
+      window.setTimeout(function () { target.focus({ preventScroll: true }); }, 350);
+    }
+  }
+
+  if (form.querySelector('[aria-invalid="true"], .field-error')) {
+    window.requestAnimationFrame(focusFirstInvalidField);
+  }
+
+  form.addEventListener('submit', function () {
+    window.setTimeout(function () {
+      if (!form.checkValidity()) {
+        const invalid = form.querySelector(':invalid');
+        if (invalid) {
+          invalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          invalid.focus({ preventScroll: true });
+        }
+      }
+    }, 0);
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}
