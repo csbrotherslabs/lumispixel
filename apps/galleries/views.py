@@ -16,6 +16,7 @@ from .analytics import track_gallery_event
 from .models import (
     AccessToken,
     Album,
+    AlbumPhoto,
     Gallery,
     GalleryActivity,
     GalleryAnalyticsEvent,
@@ -77,6 +78,35 @@ def client_galleries(request):
 
 
 
+def _client_gallery_template(gallery):
+    """Resolve presentation independently from gallery content and permissions."""
+    templates = {
+        Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE: "galleries/designs/standard_filterable.html",
+    }
+    return templates.get(gallery.design_template, "galleries/client_gallery.html")
+
+
+def _prepare_client_gallery_content(gallery, photos, albums):
+    """Attach presentation-only metadata without changing persisted gallery data."""
+    photo_ids = {photo.pk for photo in photos}
+    categories = {photo_id: [] for photo_id in photo_ids}
+    memberships = (
+        AlbumPhoto.objects.filter(album__in=albums, photo_id__in=photo_ids)
+        .select_related("album")
+        .order_by("album__display_order", "position", "pk")
+    )
+    for membership in memberships:
+        categories.setdefault(membership.photo_id, []).append(f"album-{membership.album_id}")
+    for photo in photos:
+        photo.client_filter_categories = " ".join(categories.get(photo.pk, []))
+    return photos, albums
+
+
+def _client_gallery_brand(gallery):
+    photographer = gallery.photographer
+    return photographer.business_name or photographer.display_name or str(photographer)
+
+
 @require_GET
 def stable_gallery_access(request, public_id):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
@@ -99,7 +129,8 @@ def stable_gallery_access(request, public_id):
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
     photos = list(GalleryPhoto.objects.filter(gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED).order_by("created_at", "pk"))
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).order_by("display_order", "pk"))
-    return render(request, "galleries/client_gallery.html", {"gallery": gallery, "invitation": None, "photos": photos, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery})
+    photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
 
 def _client_gallery_access(raw_token):
     token_hash = AccessToken.digest(raw_token)
@@ -179,6 +210,7 @@ def client_gallery_access(request, token):
         .exclude(visibility=Album.Visibility.HIDDEN)
         .order_by("display_order", "pk")
     )
+    photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
     favorite_ids = set(
         GalleryAnalyticsEvent.objects.filter(
             gallery=gallery,
@@ -239,7 +271,7 @@ def client_gallery_access(request, token):
 
     return render(
         request,
-        "galleries/client_gallery.html",
+        _client_gallery_template(gallery),
         {
             "gallery": gallery,
             "invitation": invitation,
@@ -259,6 +291,7 @@ def client_gallery_access(request, token):
             "print_products": print_products,
             "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])),
             "can_share_gallery": permissions.share_gallery,
+            "gallery_brand": _client_gallery_brand(gallery),
         },
     )
 

@@ -539,6 +539,7 @@ class ClientSharePermissionTests(TestCase):
         self.assertContains(page, self.stable_path)
         self.assertContains(page, "Copy Link")
         self.assertContains(page, "Download QR")
+        self.assertTemplateUsed(page, "galleries/designs/standard_filterable.html")
 
         self.permissions.share_gallery = False
         self.permissions.save(update_fields=["share_gallery", "updated_at"])
