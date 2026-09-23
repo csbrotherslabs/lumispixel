@@ -75,9 +75,9 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="lp-story-fields" data-story-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>
           <div class="lp-story-fields__heading"><small>Story content</small><h3>Tell the story behind this gallery</h3><p>These fields appear in the Story design and are required when Story is selected.</p></div>
           <div class="form-grid">
-            {% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True %}
-            {% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True %}
-            {% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True %}
+            {% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True required=True %}
+            {% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True required=True %}
+            {% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True required=True %}
           </div>
         </div>
         {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
@@ -184,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
         <div class="lp-story-fields" data-story-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>
           <div class="lp-story-fields__head"><div><small>Story content</small><h3>Tell the story behind this gallery</h3><p>These fields appear in the Story design and are required when Story is selected.</p></div></div>
-          <div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True %}</div>
+          <div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True required=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True required=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True required=True %}</div>
         </div>
         {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
