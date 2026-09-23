@@ -24,3 +24,7 @@ body.lp-client-gallery{margin:0;background:#f7f7f5;color:#171717;font-family:Int
 .lp-client-photo__actions .lp-photo-action--view:hover{color:#6842d8;background:#f1edff}
 .lp-photo-action__label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(hover:none),(max-width:760px){.lp-client-photo__actions{opacity:1;transform:none}.lp-client-gallery__top-actions{margin-left:0;margin-right:0;width:auto;justify-content:flex-start}.lp-gallery-action{padding-inline:14px}.lp-gallery-action span:last-child{display:none}.lp-gallery-action__icon{display:grid!important}}
+
+.lp-gallery-action__icon svg{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lp-client-photo__actions .lp-photo-action>svg{width:21px;height:21px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lp-client-photo__actions .lp-photo-action--favorite.is-active>svg{fill:currentColor;stroke:currentColor}
