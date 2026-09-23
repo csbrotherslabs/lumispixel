@@ -119,3 +119,53 @@
   .sf-photo__actions .lp-photo-action__icon{width:clamp(27px,11cqi,39px);height:clamp(27px,11cqi,39px);padding:clamp(5px,2cqi,9px)}
   .sf-photo__actions .sf-action-label{font-size:clamp(.46rem,2.7cqi,.6rem)}
 }
+
+
+/* Mobile gallery header: keep actions compact and density control independent. */
+@media(max-width:600px){
+  .sf-gallery-header{gap:14px}
+  .sf-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    align-items:center;
+    border-radius:22px;
+    overflow:visible;
+    box-shadow:0 7px 22px rgba(27,32,42,.09);
+  }
+  .sf-actions>.sf-gallery-action{
+    width:100%;
+    min-height:48px;
+    padding:0 8px!important;
+    gap:7px;
+  }
+  .sf-actions>.sf-gallery-action:first-of-type{padding-left:10px!important;border-radius:22px 0 0 22px!important}
+  .sf-actions>.sf-gallery-action:last-of-type{padding-right:10px!important;border-radius:0 22px 22px 0!important}
+  .sf-actions>.sf-gallery-action svg{flex-basis:20px;width:20px;height:20px}
+  .sf-actions>.sf-gallery-action span{display:inline-flex!important;font-size:.78rem;white-space:nowrap}
+  .sf-actions>.sf-gallery-action:not(:last-of-type):after{height:24px}
+  .sf-density{
+    grid-column:1/-1;
+    width:100%;
+    box-sizing:border-box;
+    display:grid;
+    grid-template-columns:auto minmax(110px,1fr) auto;
+    align-items:center;
+    gap:8px;
+    margin:0;
+    padding:10px 14px 8px;
+    border-top:1px solid #ececef;
+    background:#fff;
+    border-radius:0 0 22px 22px;
+  }
+  .sf-density span{display:block!important;font-size:.68rem}
+  .sf-density input{width:100%;min-width:0}
+  .sf-density output{grid-column:3;grid-row:1;text-align:right;font-size:.62rem;white-space:nowrap}
+}
+@media(max-width:390px){
+  .sf-actions>.sf-gallery-action{gap:5px;padding-inline:5px!important}
+  .sf-actions>.sf-gallery-action:first-of-type{padding-left:7px!important}
+  .sf-actions>.sf-gallery-action:last-of-type{padding-right:7px!important}
+  .sf-actions>.sf-gallery-action svg{flex-basis:18px;width:18px;height:18px}
+  .sf-actions>.sf-gallery-action span{font-size:.7rem}
+}
