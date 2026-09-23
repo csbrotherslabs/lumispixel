@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import F
+from django.db.models import Count, F
 import tempfile
 import zipfile
 from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
