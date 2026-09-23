@@ -154,29 +154,39 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
       </section>
 
-      <section class="form-section-card lp-gallery-design-section" aria-labelledby="gallery-edit-design-title" data-gallery-design-picker>
-        <header><i class="bi bi-grid-1x2" aria-hidden="true"></i><div><small>Delivery experience</small><h2 id="gallery-edit-design-title">Gallery Design</h2><p>Change how this gallery is presented to clients. Photos, albums, permissions, favorites, comments, and access remain attached to the gallery.</p></div></header>
+      <section class="form-section-card lp-gallery-design-step" aria-labelledby="gallery-edit-design-title" data-gallery-design-picker>
+        <header><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><div><small>Gallery design</small><h2 id="gallery-edit-design-title">Choose a Gallery Design</h2><p>Preview the client experience, then select the design you want to use. Changing the design does not affect photos, albums, or client access.</p></div></header>
         <div class="lp-gallery-design-grid" role="radiogroup" aria-label="Gallery design">
-          {% for radio in form.design_template %}
-          <article class="lp-gallery-design-card{% if radio.data.selected %} is-selected{% endif %}" data-gallery-design-card role="radio" aria-checked="{% if radio.data.selected %}true{% else %}false{% endif %}">
-            <div class="lp-gallery-design-card__visual">
-              {% if radio.data.value == 'kimono_standard_filterable' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-standard-filterable-preview.webp' %}" alt="Standard Filterable gallery preview">
-              {% elif radio.data.value == 'kimono_story' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-story-preview.webp' %}" alt="Story gallery preview">
-              {% elif radio.data.value == 'kimono_masonry' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-masonry-preview.webp' %}" alt="Masonry gallery preview">
-              {% elif radio.data.value == 'cinematic' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-cinematic-preview.webp' %}" alt="Cinematic gallery preview">{% endif %}
-            </div>
-            <div class="lp-gallery-design-card__copy"><div><strong>{{ radio.choice_label }}</strong>{% if radio.data.selected %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
-              <p>{% if radio.data.value == 'kimono_standard_filterable' %}Clean, organized browsing with album filters and an adaptable photo grid.{% elif radio.data.value == 'kimono_story' %}Editorial storytelling with a featured image, narrative, quote, and gallery.{% elif radio.data.value == 'kimono_masonry' %}Mixed-aspect composition for a more visual, organic presentation.{% else %}Immersive full-screen delivery with album chapters and a theater-style experience.{% endif %}</p>
-            </div>
-            <div class="lp-gallery-design-card__actions">{{ radio.tag }}<button type="button" class="lp-button lp-button--primary lp-button--sm{% if radio.data.selected %} is-selected{% endif %}" data-gallery-design-select aria-pressed="{% if radio.data.selected %}true{% else %}false{% endif %}">{% if radio.data.selected %}Selected{% else %}Select Design{% endif %}</button></div>
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} is-selected{% endif %}" data-gallery-design-card data-template="kimono_standard_filterable">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_standard_filterable"{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %} checked{% endif %}>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-standard-filterable-preview.webp' %}" alt="Standard Filterable gallery design preview" loading="lazy"></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Standard Filterable</strong><small>Clean editorial grid with album filtering and client controls.</small></div>{% if form.design_template.value == 'kimono_standard_filterable' or not form.design_template.value %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+            <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:standard_filterable_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
           </article>
-          {% endfor %}
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'kimono_story' %} is-selected{% endif %}" data-gallery-design-card data-template="kimono_story">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_story"{% if form.design_template.value == 'kimono_story' %} checked{% endif %}>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-story-preview.webp' %}" alt="Story gallery design preview" loading="lazy"></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Story</strong><small>Editorial storytelling experience with a featured narrative, client quote, and photo gallery.</small></div>{% if form.design_template.value == 'kimono_story' %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+            <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:story_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
+          </article>
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'kimono_masonry' %} is-selected{% endif %}" data-gallery-design-card data-template="kimono_masonry">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="kimono_masonry"{% if form.design_template.value == 'kimono_masonry' %} checked{% endif %}>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-masonry-preview.webp' %}" alt="Masonry gallery design preview" loading="lazy"></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Masonry</strong><small>Editorial masonry layout that preserves each photograph's natural proportions.</small></div>{% if form.design_template.value == 'kimono_masonry' %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+            <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:masonry_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
+          </article>
+          <article class="lp-gallery-design-card{% if form.design_template.value == 'cinematic' %} is-selected{% endif %}" data-gallery-design-card data-template="cinematic">
+            <input type="radio" name="{{ form.design_template.html_name }}" value="cinematic"{% if form.design_template.value == 'cinematic' %} checked{% endif %}>
+            <div class="lp-gallery-design-card__preview lp-gallery-design-card__preview--image"><img src="{% static 'img/photographers/gallery/lumispixel-gallery-cinematic-preview.webp' %}" alt="Cinematic gallery design preview" loading="lazy"></div>
+            <div class="lp-gallery-design-card__copy"><div><strong>Cinematic</strong><small>Immersive full-screen delivery with album chapters and a theater-style photo experience.</small></div>{% if form.design_template.value == 'cinematic' %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+            <div class="lp-gallery-design-card__actions"><a class="lp-button lp-button--secondary lp-button--sm" href="{% url 'photographer_workspace:cinematic_design_preview' %}" target="_blank" rel="noopener"><i class="bi bi-arrows-fullscreen"></i> Preview</a><button class="lp-button lp-button--primary lp-button--sm" type="button" data-gallery-design-select>Select Design</button></div>
+          </article>
         </div>
-        <div class="lp-gallery-story-fields" data-story-design-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>
-          <div class="form-section-card__subhead"><div><small>Story content</small><h3>Tell the story behind this gallery</h3><p>These fields are required whenever Story is the selected delivery design.</p></div></div>
+        <div class="lp-story-fields" data-story-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>
+          <div class="lp-story-fields__head"><div><small>Story content</small><h3>Tell the story behind this gallery</h3><p>These fields appear in the Story design and are required when Story is selected.</p></div></div>
           <div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True %}</div>
         </div>
-        {% if form.design_template.errors %}<p class="field-error" role="alert">{{ form.design_template.errors|striptags }}</p>{% endif %}
+        {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
 
       <section class="form-section-card lp-gallery-client-experience" aria-labelledby="gallery-edit-cover-title">

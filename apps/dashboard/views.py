@@ -1759,7 +1759,7 @@ def gallery_preview(request, pk):
     gallery_settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(
         gallery=gallery, gallery_url=gallery.slug
     )
-    store = GalleryStore.objects.filter(gallery=gallery, active=True).first()
+    store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
     context = {
         "gallery": gallery,
         "invitation": None,
