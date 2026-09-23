@@ -1640,7 +1640,19 @@ def gallery_workspace(request, pk):
                 messages.success(request, "A fresh invitation is ready for future email delivery.")
         if action not in {"save_settings", "save_store", "add_discount"}:
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
-    photos = gallery.photos.all()
+    photos = gallery.photos.annotate(
+        client_favorite_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.FAVORITE),
+            distinct=True,
+        ),
+        client_download_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD),
+            distinct=True,
+        ),
+        client_comment_count=Count("client_comments", distinct=True),
+    )
     query = request.GET.get("q", "").strip()
     if query:
         photos = photos.filter(original_name__icontains=query)
