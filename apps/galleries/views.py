@@ -83,6 +83,7 @@ def _client_gallery_template(gallery):
     templates = {
         Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE: "galleries/designs/standard_filterable.html",
         Gallery.DesignTemplate.KIMONO_STORY: "galleries/designs/story.html",
+        Gallery.DesignTemplate.KIMONO_MASONRY: "galleries/designs/masonry.html",
     }
     return templates.get(gallery.design_template, "galleries/client_gallery.html")
 

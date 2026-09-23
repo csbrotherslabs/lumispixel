@@ -104,6 +104,20 @@ class ClientGalleryDeliveryTests(TestCase):
         self.assertContains(response, "Copy Link")
         self.assertContains(response, "Download QR")
 
+    def test_masonry_design_uses_masonry_production_template(self):
+        self.gallery.design_template = Gallery.DesignTemplate.KIMONO_MASONRY
+        self.gallery.save(update_fields=["design_template", "updated_at"])
+
+        response = self.client.get(self.access_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "galleries/designs/masonry.html")
+        self.assertContains(response, "Download Gallery")
+        self.assertContains(response, "Copy Link")
+        self.assertContains(response, "Download QR")
+        self.assertContains(response, 'data-density')
+        self.assertContains(response, 'value="4"')
+
     def test_revoked_expired_and_unpublished_access_is_rejected(self):
         self.token_record.revoked_at = timezone.now()
         self.token_record.save(update_fields=["revoked_at"])
