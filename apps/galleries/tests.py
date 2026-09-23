@@ -735,10 +735,11 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.assertEqual(self.client.get(self.gallery_url).status_code, 404)
         self.assertEqual(self.client.get(self.stable_url).status_code, 404)
 
-    def test_preview_watermark_is_rendered_at_configured_position(self):
+    def test_preview_watermark_is_rendered_centered_for_client_delivery(self):
         page = self.client.get(self.gallery_url)
         self.assertContains(page, "lp-client-photo__watermark")
-        self.assertContains(page, "is-watermark-bottom_right")
+        self.assertContains(page, "has-watermark")
+        self.assertNotContains(page, "is-watermark-bottom_right")
 
     def test_none_watermark_removes_preview_overlay(self):
         self.permissions.watermark = GalleryPermission.Watermark.NONE
