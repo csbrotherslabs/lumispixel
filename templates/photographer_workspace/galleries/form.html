@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 </form>
 {% else %}
-<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-gallery-edit-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form data-gallery-edit-form data-submit-pending-label="Saving…" novalidate>{% csrf_token %}{{ form.design_template.as_hidden }}
+<form class="workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-gallery-edit-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form data-gallery-edit-form data-submit-pending-label="Saving…" novalidate>{% csrf_token %}
   <header class="form-page-header lp-page-header lp-gallery-create-header">
     <div class="lp-gallery-create-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">{{ gallery.name }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Edit Gallery</strong></nav>
@@ -152,6 +152,31 @@ document.addEventListener("DOMContentLoaded", function () {
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
           {% include "photographer_workspace/components/form_field.html" with field=form.description wide=True %}
         </div>
+      </section>
+
+      <section class="form-section-card lp-gallery-design-section" aria-labelledby="gallery-edit-design-title" data-gallery-design-picker>
+        <header><i class="bi bi-grid-1x2" aria-hidden="true"></i><div><small>Delivery experience</small><h2 id="gallery-edit-design-title">Gallery Design</h2><p>Change how this gallery is presented to clients. Photos, albums, permissions, favorites, comments, and access remain attached to the gallery.</p></div></header>
+        <div class="lp-gallery-design-grid" role="radiogroup" aria-label="Gallery design">
+          {% for radio in form.design_template %}
+          <article class="lp-gallery-design-card{% if radio.data.selected %} is-selected{% endif %}" data-gallery-design-card role="radio" aria-checked="{% if radio.data.selected %}true{% else %}false{% endif %}">
+            <div class="lp-gallery-design-card__visual">
+              {% if radio.data.value == 'kimono_standard_filterable' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-standard-filterable-preview.webp' %}" alt="Standard Filterable gallery preview">
+              {% elif radio.data.value == 'kimono_story' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-story-preview.webp' %}" alt="Story gallery preview">
+              {% elif radio.data.value == 'kimono_masonry' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-masonry-preview.webp' %}" alt="Masonry gallery preview">
+              {% elif radio.data.value == 'cinematic' %}<img src="{% static 'img/photographers/gallery/lumispixel-gallery-cinematic-preview.webp' %}" alt="Cinematic gallery preview">{% endif %}
+            </div>
+            <div class="lp-gallery-design-card__copy"><div><strong>{{ radio.choice_label }}</strong>{% if radio.data.selected %}<span class="lp-gallery-design-card__selected" data-gallery-design-selected><i class="bi bi-check2"></i> Selected</span>{% endif %}</div>
+              <p>{% if radio.data.value == 'kimono_standard_filterable' %}Clean, organized browsing with album filters and an adaptable photo grid.{% elif radio.data.value == 'kimono_story' %}Editorial storytelling with a featured image, narrative, quote, and gallery.{% elif radio.data.value == 'kimono_masonry' %}Mixed-aspect composition for a more visual, organic presentation.{% else %}Immersive full-screen delivery with album chapters and a theater-style experience.{% endif %}</p>
+            </div>
+            <div class="lp-gallery-design-card__actions">{{ radio.tag }}<button type="button" class="lp-button lp-button--primary lp-button--sm{% if radio.data.selected %} is-selected{% endif %}" data-gallery-design-select aria-pressed="{% if radio.data.selected %}true{% else %}false{% endif %}">{% if radio.data.selected %}Selected{% else %}Select Design{% endif %}</button></div>
+          </article>
+          {% endfor %}
+        </div>
+        <div class="lp-gallery-story-fields" data-story-design-fields{% if form.design_template.value != 'kimono_story' %} hidden{% endif %}>
+          <div class="form-section-card__subhead"><div><small>Story content</small><h3>Tell the story behind this gallery</h3><p>These fields are required whenever Story is the selected delivery design.</p></div></div>
+          <div class="form-grid">{% include "photographer_workspace/components/form_field.html" with field=form.story_title wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_description wide=True %}{% include "photographer_workspace/components/form_field.html" with field=form.story_quote wide=True %}</div>
+        </div>
+        {% if form.design_template.errors %}<p class="field-error" role="alert">{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
 
       <section class="form-section-card lp-gallery-client-experience" aria-labelledby="gallery-edit-cover-title">

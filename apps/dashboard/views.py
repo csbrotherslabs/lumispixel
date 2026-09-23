@@ -1191,14 +1191,14 @@ def edit_gallery(request, pk):
     gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
     form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery, photographer=profile)
     if request.method == "POST" and form.is_valid():
-        previous = {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}
+        previous = {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility, "design_template": gallery.design_template}
         gallery = form.save(commit=False)
         gallery.slug = _unique_gallery_slug(profile, gallery.name, gallery.pk)
         gallery.full_clean()
         gallery.save()
         log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_UPDATED,
                              description="Gallery details were updated.", actor=request.user,
-                             metadata={"previous_value": previous, "new_value": {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}})
+                             metadata={"previous_value": previous, "new_value": {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility, "design_template": gallery.design_template}})
         messages.success(request, "Gallery updated.")
         return redirect("photographer_workspace:all_galleries")
     context = _dashboard_context(request, "all_galleries", "Edit Gallery")
@@ -1738,13 +1738,50 @@ def cinematic_design_preview(request):
 @require_GET
 def gallery_preview(request, pk):
     gallery = get_object_or_404(
-        Gallery.objects.for_photographer(request.studio).active().select_related("client"),
+        Gallery.objects.for_photographer(request.studio).active().select_related("client", "photographer"),
         pk=pk,
     )
-    photos = gallery.photos.all().order_by("created_at", "pk")
-    context = _dashboard_context(request, "all_galleries", f"Preview {gallery.name}")
-    context.update({"gallery": gallery, "photos": photos, "hide_topbar_heading": True})
-    return render(request, "photographer_workspace/galleries/preview.html", context)
+    # Photographer Preview must use the same presentation resolver and prepared
+    # content as client delivery. Access is intentionally simulated here; this
+    # route remains private and does not publish the gallery or issue a token.
+    from apps.galleries.views import _client_gallery_brand, _client_gallery_template, _prepare_client_gallery_content
+
+    photos = list(
+        gallery.photos.filter(is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+        .order_by("created_at", "pk")
+    )
+    albums = list(
+        gallery.albums.exclude(visibility=Album.Visibility.HIDDEN)
+        .order_by("display_order", "pk")
+    )
+    photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    gallery_settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(
+        gallery=gallery, gallery_url=gallery.slug
+    )
+    store = GalleryStore.objects.filter(gallery=gallery, active=True).first()
+    context = {
+        "gallery": gallery,
+        "invitation": None,
+        "photos": photos,
+        "albums": albums,
+        "permissions": permissions,
+        "gallery_settings": gallery_settings,
+        "access_token": None,
+        "can_favorite": permissions.favorite_photos,
+        "can_download": permissions.download_images,
+        "can_download_gallery": False,
+        "can_download_originals": False,
+        "can_comment": permissions.comment,
+        "can_purchase_prints": bool(permissions.purchase_prints and store),
+        "stable_gallery_url": request.build_absolute_uri(
+            reverse("galleries:stable_gallery_access", args=[gallery.public_id])
+        ),
+        "can_share_gallery": permissions.share_gallery,
+        "gallery_brand": _client_gallery_brand(gallery),
+        "is_photographer_preview": True,
+    }
+    return render(request, _client_gallery_template(gallery), context)
 
 
 @photographer_workspace_required
