@@ -72,7 +72,7 @@ class ClientGalleryDeliveryTests(TestCase):
         response = self.client.get(self.access_url())
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "galleries/client_gallery.html")
+        self.assertTemplateUsed(response, "galleries/designs/standard_filterable.html")
         self.assertEqual(response.context["gallery"], self.gallery)
         self.assertEqual(list(response.context["photos"]), [self.photo])
         self.assertContains(response, "https://media-dev.lumispixel.com/private/dev/")
