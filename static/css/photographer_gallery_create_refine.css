@@ -177,3 +177,66 @@ body.lp-gallery-design-modal-open{overflow:hidden}
 .lp-story-card-art{display:flex;min-height:184px;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,#f4efe9,#ddd0c4);color:#352f2b}.lp-story-card-art small{font-size:9px;letter-spacing:.24em}.lp-story-card-art strong{margin:8px 0;font:400 25px Georgia,serif}.lp-story-card-art span{font-size:9px;color:#756b64}.lp-story-fields{margin-top:18px;padding:20px;border:1px solid #e7dfda;border-radius:14px;background:#fcfaf8}.lp-story-fields[hidden]{display:none}.lp-story-fields__heading{margin-bottom:16px}.lp-story-fields__heading small{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#8b817b}.lp-story-fields__heading h3{margin:4px 0;font-size:16px}.lp-story-fields__heading p{margin:0;color:#756d68;font-size:11px}
 
 .lp-gallery-design-card [data-gallery-design-select].is-selected{background:#fff;color:#d71920;border-color:#d71920;box-shadow:inset 0 0 0 1px #d71920}
+
+/* Mobile-only create-gallery progress treatment. Desktop/tablet remain unchanged. */
+@media(max-width:620px){
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress{
+    position:relative;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    padding:10px 4px 6px;
+    overflow:visible;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress::before{
+    content:"";
+    position:absolute;
+    top:27px;
+    left:12.5%;
+    right:12.5%;
+    height:2px;
+    background:#eadfda;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li{
+    position:relative;
+    z-index:1;
+    display:grid;
+    justify-items:center;
+    align-content:start;
+    gap:7px;
+    min-width:0;
+    min-height:0;
+    padding:0 3px;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    text-align:center;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li.is-current{
+    border:0;
+    background:transparent;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li>span{
+    width:36px;
+    height:36px;
+    flex-basis:36px;
+    border:2px solid #e8ddd7;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 0 5px #fff;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li.is-current>span{
+    border-color:#d71920;
+    background:#d71920;
+    color:#fff;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li strong{
+    max-width:72px;
+    font-size:9px;
+    line-height:1.25;
+  }
+  .lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create-progress li small{
+    display:none;
+  }
+}
