@@ -43,7 +43,10 @@ from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, Galle
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
-from apps.galleries.multipart_uploads import ALLOWED_CONTENT_TYPES, abort as abort_multipart, complete as complete_multipart, initiate as initiate_multipart, multipart_object_key, sign_part, list_parts as list_multipart_parts
+from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
+    complete as complete_multipart, delete_object as delete_multipart_object,
+    get_object_bytes as get_multipart_object_bytes, initiate as initiate_multipart,
+    multipart_object_key, sign_part, list_parts as list_multipart_parts)
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -1310,6 +1313,22 @@ def gallery_actions(request):
 
 
 
+def _validate_image_bytes(content, expected_content_type):
+    """Verify decoded image bytes and require the detected format to match declared MIME."""
+    expected_formats = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
+    expected_format = expected_formats.get(expected_content_type)
+    if not expected_format:
+        return False
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            if image.format != expected_format:
+                return False
+            image.verify()
+        return True
+    except (UnidentifiedImageError, OSError, ValueError):
+        return False
+
+
 def _json_body(request):
     try:
         return json.loads(request.body.decode("utf-8"))
@@ -1432,6 +1451,24 @@ def gallery_multipart_complete(request, upload_uuid):
         complete_multipart(key=session.object_key, upload_id=session.upload_id, parts=normalized)
     except Exception:
         return JsonResponse({"error": "Could not complete direct upload."}, status=502)
+    try:
+        object_bytes = get_multipart_object_bytes(key=session.object_key)
+    except Exception:
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "Could not validate the uploaded image."}, status=502)
+    if len(object_bytes) != session.file_size or not _validate_image_bytes(object_bytes, session.content_type):
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "The uploaded file is not a valid image."}, status=400)
     prefix = f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"
     if not session.object_key.startswith(prefix):
         return JsonResponse({"error": "Invalid object key."}, status=500)
@@ -1482,8 +1519,8 @@ def gallery_upload_queue(request):
         if not files:
             return JsonResponse({"error": "Choose at least one image."}, status=400)
         created, errors = [], []
-        allowed = {"image/jpeg", "image/png", "image/webp"}
-        max_size = 25 * 1024 * 1024
+        allowed = set(ALLOWED_CONTENT_TYPES)
+        max_size = settings.MAX_GALLERY_UPLOAD_BYTES
         storage_used = galleries.aggregate(
             total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
         )["total"]
@@ -1492,16 +1529,17 @@ def gallery_upload_queue(request):
         storage_remaining = None if storage_limit is None else max(storage_limit - storage_used - reserved, 0)
         for upload in files:
             if upload.content_type not in allowed or upload.size > max_size:
-                errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
+                errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image within the configured upload limit."})
                 continue
             if storage_remaining is not None and upload.size > storage_remaining:
                 errors.append({"name": upload.name, "error": "Not enough storage to upload these files."})
                 continue
             try:
-                image = Image.open(upload)
-                image.verify()
+                content = upload.read()
                 upload.seek(0)
-            except (UnidentifiedImageError, OSError):
+            except OSError:
+                content = b""
+            if len(content) != upload.size or not _validate_image_bytes(content, upload.content_type):
                 errors.append({"name": upload.name, "error": "The file is not a valid image."})
                 continue
             photo = GalleryPhoto(gallery=gallery, photographer=profile, file=upload, original_name=upload.name[:255], file_size=upload.size, status=GalleryPhoto.Status.COMPLETED)

@@ -1,5 +1,8 @@
+import io
 import json
 from unittest.mock import patch
+
+from PIL import Image
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -35,6 +38,11 @@ class MultipartUploadApiTests(TestCase):
         )
         self.client.force_login(self.user)
 
+
+    def _image_bytes(self, image_format="JPEG"):
+        buffer = io.BytesIO()
+        Image.new("RGB", (2, 2)).save(buffer, format=image_format)
+        return buffer.getvalue()
 
     def _set_storage_allowance(self, bytes_allowed):
         allowance = PlanAllowance.objects.get(
@@ -163,14 +171,19 @@ class MultipartUploadApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["url"], "https://b2.example/presigned")
 
+    @patch("apps.dashboard.views.get_multipart_object_bytes")
     @patch("apps.dashboard.views.complete_multipart")
-    def test_complete_creates_gallery_photo_only_after_b2_completion(self, complete):
+    def test_complete_creates_gallery_photo_only_after_b2_completion(self, complete, get_object):
         session = GalleryMultipartUpload.objects.create(
             gallery=self.gallery, photographer=self.profile,
             object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/id.jpg",
             upload_id="upload-id", original_name="photo.jpg",
             content_type="image/jpeg", file_size=6 * 1024 * 1024,
         )
+        image_bytes = self._image_bytes()
+        session.file_size = len(image_bytes)
+        session.save(update_fields=["file_size"])
+        get_object.return_value = image_bytes
         response = self.client.post(
             reverse("photographer_workspace:gallery_multipart_complete", args=[session.pk]),
             data=json.dumps({"parts": [{"part_number": 1, "etag": '"etag-1"'}]}),
@@ -182,6 +195,75 @@ class MultipartUploadApiTests(TestCase):
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.image_count, 1)
         self.assertEqual(self.gallery.storage_used, session.file_size)
+
+
+    @patch("apps.dashboard.views.delete_multipart_object")
+    @patch("apps.dashboard.views.get_multipart_object_bytes", return_value=b"not-an-image")
+    @patch("apps.dashboard.views.complete_multipart")
+    def test_complete_rejects_non_image_bytes_and_deletes_object(self, complete, get_object, delete_object):
+        session = GalleryMultipartUpload.objects.create(
+            gallery=self.gallery, photographer=self.profile,
+            object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/id.jpg",
+            upload_id="upload-id", original_name="photo.jpg",
+            content_type="image/jpeg", file_size=len(b"not-an-image"),
+        )
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_complete", args=[session.pk]),
+            data=json.dumps({"parts": [{"part_number": 1, "etag": '"etag-1"'}]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(GalleryPhoto.objects.exists())
+        session.refresh_from_db()
+        self.assertIsNotNone(session.aborted_at)
+        delete_object.assert_called_once_with(key=session.object_key)
+
+    @patch("apps.dashboard.views.delete_multipart_object")
+    @patch("apps.dashboard.views.get_multipart_object_bytes")
+    @patch("apps.dashboard.views.complete_multipart")
+    def test_complete_rejects_mime_format_mismatch(self, complete, get_object, delete_object):
+        png_bytes = self._image_bytes("PNG")
+        get_object.return_value = png_bytes
+        session = GalleryMultipartUpload.objects.create(
+            gallery=self.gallery, photographer=self.profile,
+            object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/id.jpg",
+            upload_id="upload-id", original_name="photo.jpg",
+            content_type="image/jpeg", file_size=len(png_bytes),
+        )
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_complete", args=[session.pk]),
+            data=json.dumps({"parts": [{"part_number": 1, "etag": '"etag-1"'}]}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(GalleryPhoto.objects.exists())
+        delete_object.assert_called_once_with(key=session.object_key)
+
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=1024)
+    @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
+    def test_direct_upload_uses_configured_upload_limit(self, initiate):
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_initiate"),
+            data=json.dumps({
+                "gallery": self.gallery.pk, "name": "large.jpg",
+                "content_type": "image/jpeg", "size": 1025,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        initiate.assert_not_called()
+
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=100)
+    def test_fallback_upload_uses_same_configured_upload_limit(self):
+        image_bytes = self._image_bytes()
+        self.assertGreater(len(image_bytes), 100)
+        upload = SimpleUploadedFile("large.jpg", image_bytes, content_type="image/jpeg")
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_upload_queue"),
+            {"gallery": self.gallery.pk, "files": upload},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["errors"][0]["error"], "Use a JPG, PNG, or WebP image within the configured upload limit.")
 
     @patch("apps.dashboard.views.abort_multipart")
     def test_abort_marks_session_without_creating_photo(self, abort):

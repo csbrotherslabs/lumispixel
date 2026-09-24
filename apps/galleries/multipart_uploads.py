@@ -76,6 +76,19 @@ def list_parts(*, key, upload_id):
         marker = response.get("NextPartNumberMarker")
 
 
+def get_object_bytes(*, key):
+    """Read a completed object for server-side image validation."""
+    response = _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)
+    try:
+        return response["Body"].read()
+    finally:
+        response["Body"].close()
+
+
+def delete_object(*, key):
+    return _client().delete_object(Bucket=settings.B2_BUCKET_NAME, Key=key)
+
+
 def complete(*, key, upload_id, parts):
     return _client().complete_multipart_upload(
         Bucket=settings.B2_BUCKET_NAME,
