@@ -15,8 +15,8 @@ class PricingMarketingSynchronizationTests(TestCase):
         self.assertContains(response, "Enterprise")
         self.assertContains(response, "5 GB storage")
         self.assertContains(response, "100 AI image actions / month")
-        self.assertContains(response, "$29 / month")
-        self.assertContains(response, "$23 / month · billed annually at $276")
+        self.assertContains(response, "$20 / month")
+        self.assertContains(response, "$16 / month · billed annually at $192")
 
     def test_marketing_price_changes_when_plan_price_changes(self):
         pro = Plan.objects.get(code="pro")
@@ -27,7 +27,7 @@ class PricingMarketingSynchronizationTests(TestCase):
         response = self.client.get(reverse("core:pricing"))
 
         self.assertContains(response, "$31 / month")
-        self.assertNotContains(response, 'data-monthly-copy="$29 / month"')
+        self.assertNotContains(response, 'data-monthly-copy="$20 / month"')
 
     def test_marketing_allowance_changes_when_plan_allowance_changes(self):
         free = Plan.objects.get(code="free")
@@ -61,5 +61,5 @@ class PricingMarketingSynchronizationTests(TestCase):
         self.assertContains(response, 'id="marketing-pricing-data"')
         self.assertContains(response, '"code": "free"')
         self.assertContains(response, '"code": "pro"')
-        self.assertContains(response, '"monthly": "$29 / month"')
+        self.assertContains(response, '"monthly": "$20 / month"')
         self.assertContains(response, '"available": false')

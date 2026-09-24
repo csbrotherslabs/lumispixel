@@ -835,15 +835,15 @@
                     </div>
 
                     <div class="lumis-pricing-plans" aria-label="Pricing plan previews">
-                        {% include "components/pricing_card.html" with plan_name="Starter" audience="For photographers getting started." price="Free" monthly_price="Free" annual_price="Free" feature_1="Essential client galleries" feature_2="Basic photo delivery" feature_3="Limited storage" feature_4="Photographer profile" feature_5="Marketplace visibility" cta_label="Start Free" cta_url=homepage_get_started_url show_cta=request.user.is_anonymous %}
+                        {% include "components/pricing_card.html" with plan_name="Free" audience="For photographers getting started." price="$0" monthly_price="$0" annual_price="$0" feature_1="3 active galleries" feature_2="5 GB storage" feature_3="25 CRM contacts" feature_4="100 AI image actions / month" feature_5="Photographer profile & marketplace access" cta_label="Start Free" cta_url=homepage_get_started_url show_cta=request.user.is_anonymous %}
 
-                        {% include "components/pricing_card.html" with plan_name="Professional" audience="For active photographers managing regular clients." price="$29 / month" monthly_price="$29 / month" annual_price="$29 / month billed annually" feature_1="Everything in Starter" feature_2="AI-assisted culling" feature_3="Face-powered photo discovery" feature_4="Online photo sales" feature_5="Expanded storage" feature_6="Custom gallery branding" cta_label="View Professional" cta_url=homepage_pricing_url highlighted=True badge_text="Most Popular" %}
+                        {% include "components/pricing_card.html" with plan_name="Pro" audience="For active professional photographers." price="$20 / month" monthly_price="$20 / month" annual_price="$16 / month · billed annually at $192" feature_1="Everything in Free" feature_2="1 TB storage" feature_3="Unlimited galleries & CRM contacts" feature_4="AI culling, editing & photo search" feature_5="Bookings, contracts, invoices & payments" feature_6="Custom domain, branding & gallery sales" cta_label="View Pro" cta_url=homepage_pricing_url highlighted=True badge_text="Most Popular" %}
 
-                        {% include "components/pricing_card.html" with plan_name="Studio" audience="For teams and growing photography businesses." price="$79 / month" monthly_price="$79 / month" annual_price="$79 / month billed annually" feature_1="Everything in Professional" feature_2="Multiple team members" feature_3="Advanced gallery controls" feature_4="Higher storage limits" feature_5="Business performance dashboard" feature_6="Priority support" cta_label="View Studio" cta_url=homepage_pricing_url %}
+                        {% include "components/pricing_card.html" with plan_name="Studio" audience="For teams and growing photography businesses." price="$38 / month" monthly_price="$38 / month" annual_price="$30 / month · billed annually at $360" feature_1="Everything in Pro" feature_2="4 TB storage" feature_3="3 included team members" feature_4="Advanced workflow automation" feature_5="Advanced analytics & reporting" feature_6="Team roles, shared calendar & priority support" cta_label="View Studio" cta_url=homepage_pricing_url %}
                     </div>
 
                     <!-- Pricing must become database- or configuration-driven before launch. These provisional marketing examples must not be treated as live billing values. -->
-                    <p class="lumis-pricing-note">Introductory pricing shown for preview. Final plans may change before launch.</p>
+                    <p class="lumis-pricing-note">Pro and Studio pricing is published for launch planning. Paid upgrades are coming soon.</p>
                     <!-- Future named URL: pricing:compare -->
                     <a class="lumis-pricing-compare" href="{{ homepage_pricing_url }}">Compare All Features <span aria-hidden="true">→</span></a>
                 </div>
