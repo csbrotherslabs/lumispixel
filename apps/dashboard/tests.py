@@ -10,7 +10,8 @@ from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoicePayment, Lead
 from apps.dashboard.analytics_overview import _short_date
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
-from apps.galleries.models import Gallery, GalleryAnalyticsEvent
+from apps.dashboard.models import StudioMembership
+from apps.galleries.models import Album, Gallery, GalleryAnalyticsEvent, GalleryPhoto
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -226,6 +227,81 @@ class PhotographerWorkspaceBehaviorTests(TestCase):
         self.assertNotContains(dashboard, "Private gallery")
         self.assertEqual(workspace.status_code, 200)
         self.assertEqual(forbidden.status_code, 404)
+
+    def test_worker_sees_only_assigned_galleries_and_cannot_open_unassigned_gallery(self):
+        owner, studio = self.make_photographer("assignment-owner@example.com", "assignment-owner")
+        worker = make_user("assignment-worker@example.com")
+        membership = StudioMembership.objects.create(
+            studio=studio,
+            user=worker,
+            role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        assigned = Gallery.objects.create(
+            photographer=studio, name="Assigned gallery", slug="assigned-gallery", status=Gallery.Status.REVIEW
+        )
+        unassigned = Gallery.objects.create(
+            photographer=studio, name="Unassigned gallery", slug="unassigned-gallery", status=Gallery.Status.REVIEW
+        )
+        assigned.assigned_members.add(membership)
+        self.client.force_login(worker)
+
+        listing = self.client.get(reverse("photographer_workspace:all_galleries"))
+        assigned_response = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[assigned.pk]))
+        unassigned_response = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[unassigned.pk]))
+
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, "Assigned gallery")
+        self.assertNotContains(listing, "Unassigned gallery")
+        self.assertEqual(assigned_response.status_code, 200)
+        self.assertEqual(unassigned_response.status_code, 404)
+
+    def test_worker_cannot_access_unassigned_gallery_photo_media_or_album(self):
+        _, studio = self.make_photographer("child-scope-owner@example.com", "child-scope-owner")
+        worker = make_user("child-scope-worker@example.com")
+        membership = StudioMembership.objects.create(
+            studio=studio,
+            user=worker,
+            role=StudioMembership.Role.PHOTOGRAPHER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        assigned = Gallery.objects.create(photographer=studio, name="Assigned", slug="assigned-child")
+        unassigned = Gallery.objects.create(photographer=studio, name="Private", slug="private-child")
+        assigned.assigned_members.add(membership)
+        private_album = Album.objects.create(gallery=unassigned, name="Private album")
+        private_photo = GalleryPhoto.objects.create(
+            gallery=unassigned,
+            photographer=studio,
+            file="galleries/test/private.jpg",
+            original_name="private.jpg",
+            file_size=10,
+            status=GalleryPhoto.Status.COMPLETED,
+        )
+        self.client.force_login(worker)
+
+        album_response = self.client.get(reverse("photographer_workspace:album_workspace", args=[private_album.pk]))
+        photo_response = self.client.get(reverse("photographer_workspace:gallery_photo_media", args=[private_photo.pk]))
+
+        self.assertEqual(album_response.status_code, 404)
+        self.assertEqual(photo_response.status_code, 404)
+
+    def test_manager_retains_studio_wide_gallery_access(self):
+        _, studio = self.make_photographer("manager-owner@example.com", "manager-owner")
+        manager = make_user("manager-member@example.com")
+        StudioMembership.objects.create(
+            studio=studio,
+            user=manager,
+            role=StudioMembership.Role.MANAGER,
+            status=StudioMembership.Status.ACTIVE,
+        )
+        gallery = Gallery.objects.create(
+            photographer=studio, name="Manager visible", slug="manager-visible", status=Gallery.Status.REVIEW
+        )
+        self.client.force_login(manager)
+
+        response = self.client.get(reverse("photographer_workspace:gallery_workspace", args=[gallery.pk]))
+
+        self.assertEqual(response.status_code, 200)
 
     def test_gallery_workspace_exposes_semantic_action_routes(self):
         owner, studio = self.make_photographer("gallery-actions@example.com", "gallery-actions")
