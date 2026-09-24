@@ -81,12 +81,13 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
             share_gallery=True,
         )
         GallerySettings.objects.create(gallery=gallery, gallery_url=gallery.slug)
+        image_bytes = self._jpeg()
         photo = GalleryPhoto.objects.create(
             gallery=gallery,
             photographer=self.profile,
-            file=SimpleUploadedFile("mobile.jpg", self._jpeg(), content_type="image/jpeg"),
+            file=SimpleUploadedFile("mobile.jpg", image_bytes, content_type="image/jpeg"),
             original_name="mobile.jpg",
-            file_size=len(self._jpeg()),
+            file_size=len(image_bytes),
             status=GalleryPhoto.Status.COMPLETED,
             is_visible=True,
         )
