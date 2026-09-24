@@ -353,6 +353,35 @@ class GalleryMultipartUpload(models.Model):
             raise ValidationError({"gallery": "Gallery must belong to this photographer."})
 
 
+class GalleryStorageDeletion(models.Model):
+    """Durable cleanup record for gallery objects whose database owner was deleted."""
+
+    class Backend(models.TextChoices):
+        B2 = "b2", "Backblaze B2"
+        DEFAULT = "default", "Default storage"
+
+    storage_backend = models.CharField(max_length=20, choices=Backend.choices)
+    object_key = models.CharField(max_length=700)
+    photographer_id = models.PositiveBigIntegerField(blank=True, null=True)
+    gallery_id = models.PositiveBigIntegerField(blank=True, null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.CharField(max_length=1000, blank=True)
+    last_attempt_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["storage_backend", "object_key"],
+                name="gallery_storage_delete_object_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["completed_at", "created_at"], name="gallery_storage_delete_pending")
+        ]
+
+
 class AlbumQuerySet(models.QuerySet):
     def for_photographer(self, photographer):
         return self.filter(gallery__photographer=photographer)
