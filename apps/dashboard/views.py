@@ -1390,10 +1390,20 @@ def gallery_multipart_initiate(request):
         upload_id = initiate_multipart(key=key, content_type=content_type)
     except Exception:
         return JsonResponse({"error": "Could not start direct upload."}, status=502)
-    session = GalleryMultipartUpload.objects.create(
-        gallery=gallery, photographer=request.studio, object_key=key, upload_id=upload_id,
-        original_name=name, content_type=content_type, file_size=size,
-    )
+    try:
+        session = GalleryMultipartUpload.objects.create(
+            gallery=gallery, photographer=request.studio, object_key=key, upload_id=upload_id,
+            original_name=name, content_type=content_type, file_size=size,
+        )
+    except Exception:
+        # B2 accepted the multipart upload but Django could not persist its
+        # recovery record. Abort immediately so the provider cannot retain an
+        # untracked multipart upload.
+        try:
+            abort_multipart(key=key, upload_id=upload_id)
+        except Exception:
+            pass
+        return JsonResponse({"error": "Could not persist direct upload state."}, status=500)
     return JsonResponse({
         "upload": str(session.pk), "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
         "max_parts": settings.B2_MULTIPART_MAX_PARTS,
