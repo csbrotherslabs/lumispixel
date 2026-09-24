@@ -31,7 +31,7 @@
           button.querySelector('[data-favorite-icon]')?.classList.toggle('is-filled', data.favorited);
         }
         updateCount(count, data.favorite_count);
-        document.dispatchEvent(new CustomEvent('lumispixel:favorite-changed'));
+        document.dispatchEvent(new CustomEvent('lumispixel:favorite-changed', {detail: {photo: photo, favorited: data.favorited}}));
       } catch (error) {
         form.submit();
       }
