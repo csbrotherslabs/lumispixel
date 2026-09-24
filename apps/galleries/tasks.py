@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .models import GalleryMultipartUpload
 from .multipart_uploads import abort as abort_multipart
+from .storage_cleanup import process_storage_deletions
 
 logger = logging.getLogger(__name__)
 
@@ -48,3 +49,8 @@ def cleanup_stale_multipart_uploads(*, now=None):
 @shared_task
 def cleanup_stale_gallery_multipart_uploads():
     return cleanup_stale_multipart_uploads()
+
+
+@shared_task
+def cleanup_gallery_storage_objects():
+    return process_storage_deletions()
