@@ -43,7 +43,7 @@ from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, Galle
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.storage_cleanup import enqueue_storage_deletions, process_storage_deletions
 from apps.galleries.analytics import gallery_analytics_report
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryStorageDeletion, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
     complete as complete_multipart, delete_object as delete_multipart_object,
     get_object_bytes as get_multipart_object_bytes, initiate as initiate_multipart,
@@ -1290,8 +1290,27 @@ def gallery_actions(request):
     if not ids:
         messages.error(request, "Select at least one gallery.")
     elif action == "delete":
-        count = records.count()
-        records.delete()
+        galleries = list(records.prefetch_related("photos"))
+        count = len(galleries)
+        deletion_items = []
+        backend = (
+            GalleryStorageDeletion.Backend.B2
+            if settings.GALLERY_STORAGE_BACKEND == "b2"
+            else GalleryStorageDeletion.Backend.DEFAULT
+        )
+        for gallery in galleries:
+            for photo in gallery.photos.all():
+                if photo.file and photo.file.name:
+                    deletion_items.append({
+                        "storage_backend": backend,
+                        "object_key": photo.file.name,
+                        "photographer_id": profile.pk,
+                        "gallery_id": gallery.pk,
+                    })
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            Gallery.objects.filter(pk__in=[gallery.pk for gallery in galleries]).delete()
+        process_storage_deletions()
         messages.success(request, f"Deleted {count} {'gallery' if count == 1 else 'galleries'}.")
     elif action == "archive":
         now = timezone.now()
