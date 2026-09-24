@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("galleries", "0016_gallery_activity"),
+        ("galleries", "0032_add_cinematic_gallery_design"),
     ]
 
     operations = [
