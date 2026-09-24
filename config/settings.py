@@ -108,6 +108,17 @@ if GALLERY_STORAGE_BACKEND == "b2" and not all(
         "B2_ACCESS_KEY_ID, B2_SECRET_ACCESS_KEY, B2_BUCKET_NAME, B2_REGION, "
         "and B2_ENDPOINT_URL are required when GALLERY_STORAGE_BACKEND=b2."
     )
+if not DEBUG:
+    if GALLERY_STORAGE_BACKEND != "b2":
+        raise RuntimeError("Production requires GALLERY_STORAGE_BACKEND=b2.")
+    if GALLERY_STORAGE_ENVIRONMENT != "prod":
+        raise RuntimeError("Production requires GALLERY_STORAGE_ENVIRONMENT=prod.")
+    if not MEDIA_DELIVERY_BASE_URL.startswith("https://"):
+        raise RuntimeError("Production MEDIA_DELIVERY_BASE_URL must use HTTPS.")
+    if not MEDIA_SIGNING_SECRET:
+        raise RuntimeError("MEDIA_SIGNING_SECRET is required for production signed media delivery.")
+    if len(MEDIA_SIGNING_SECRET) < 32:
+        raise RuntimeError("MEDIA_SIGNING_SECRET must be at least 32 characters in production.")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
