@@ -45,19 +45,19 @@ class BillingCatalogTests(TestCase):
         studio = Plan.objects.get(code="studio")
         self.assertEqual(
             set(pro.prices.values_list("billing_interval", "amount_cents")),
-            {("monthly", 2900), ("annual", 27600)},
+            {("monthly", 2000), ("annual", 19200)},
         )
         self.assertEqual(
             set(studio.prices.values_list("billing_interval", "amount_cents")),
-            {("monthly", 5900), ("annual", 56400)},
+            {("monthly", 3800), ("annual", 36000)},
         )
         self.assertFalse(PlanPrice.objects.exclude(plan__code="free").filter(checkout_enabled=True).exists())
 
     def test_launch_allowances_match_pricing_architecture(self):
         expected = {
             "free": (5 * 1024**3, 100, 1),
-            "pro": (250 * 1024**3, 2000, 1),
-            "studio": (1024 * 1024**3, 7500, 3),
+            "pro": (1024 * 1024**3, 2000, 1),
+            "studio": (4 * 1024 * 1024**3, 7500, 3),
         }
         for plan_code, (storage_bytes, ai_actions, team_members) in expected.items():
             plan = Plan.objects.get(code=plan_code)

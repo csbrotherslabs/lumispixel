@@ -6,6 +6,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.billing.models import PlanAllowance
+from apps.billing.services import select_plan
 from apps.galleries.models import Gallery, GalleryMultipartUpload, GalleryPhoto
 
 
@@ -32,6 +34,79 @@ class MultipartUploadApiTests(TestCase):
             photographer=self.profile, name="Direct Upload", slug="direct-upload"
         )
         self.client.force_login(self.user)
+
+
+    def _set_storage_allowance(self, bytes_allowed):
+        allowance = PlanAllowance.objects.get(
+            plan=self.profile.billing_subscription.plan,
+            key="storage_bytes",
+        )
+        allowance.limit_type = PlanAllowance.LimitType.NUMERIC
+        allowance.value = bytes_allowed
+        allowance.save(update_fields=["limit_type", "value", "updated_at"])
+
+    @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
+    def test_initiate_enforces_active_plan_storage_allowance(self, initiate):
+        self._set_storage_allowance(5 * 1024 * 1024)
+
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_initiate"),
+            data=json.dumps({
+                "gallery": self.gallery.pk, "name": "too-large.jpg",
+                "content_type": "image/jpeg", "size": 6 * 1024 * 1024,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "Not enough storage to upload this file.")
+        initiate.assert_not_called()
+
+    @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
+    def test_initiate_uses_new_plan_allowance_after_plan_change(self, initiate):
+        self._set_storage_allowance(5 * 1024 * 1024)
+        pro = select_plan(self.profile, "pro", enforce_customer_selectable=False)
+        pro_allowance = PlanAllowance.objects.get(plan=pro.plan, key="storage_bytes")
+        pro_allowance.limit_type = PlanAllowance.LimitType.NUMERIC
+        pro_allowance.value = 10 * 1024 * 1024
+        pro_allowance.save(update_fields=["limit_type", "value", "updated_at"])
+
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_initiate"),
+            data=json.dumps({
+                "gallery": self.gallery.pk, "name": "allowed.jpg",
+                "content_type": "image/jpeg", "size": 6 * 1024 * 1024,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        initiate.assert_called_once()
+
+    @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
+    def test_initiate_counts_active_multipart_reservations_against_plan_storage(self, initiate):
+        self._set_storage_allowance(10 * 1024 * 1024)
+        GalleryMultipartUpload.objects.create(
+            gallery=self.gallery,
+            photographer=self.profile,
+            object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/reserved.jpg",
+            upload_id="reserved-upload",
+            original_name="reserved.jpg",
+            content_type="image/jpeg",
+            file_size=6 * 1024 * 1024,
+        )
+
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_initiate"),
+            data=json.dumps({
+                "gallery": self.gallery.pk, "name": "second.jpg",
+                "content_type": "image/jpeg", "size": 6 * 1024 * 1024,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        initiate.assert_not_called()
 
     @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
     def test_initiate_is_owner_scoped_and_uses_uuid_key(self, initiate):
