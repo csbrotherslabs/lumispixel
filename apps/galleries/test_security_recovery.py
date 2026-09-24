@@ -73,6 +73,18 @@ class MultipartSecurityRecoveryTests(TestCase):
             response = self.post_json(reverse(f"photographer_workspace:{name}", args=[foreign.pk]), payload)
             self.assertEqual(response.status_code, 404, name)
 
+
+    @patch("apps.dashboard.views.GalleryMultipartUpload.objects.create", side_effect=RuntimeError("database unavailable"))
+    @patch("apps.dashboard.views.abort_multipart")
+    @patch("apps.dashboard.views.initiate_multipart", return_value="provider-upload")
+    def test_initiate_aborts_b2_when_session_persistence_fails(self, initiate, abort, create):
+        response = self.post_json(reverse("photographer_workspace:gallery_multipart_initiate"), {
+            "gallery": self.gallery.pk, "name": "photo.jpg",
+            "content_type": "image/jpeg", "size": 100,
+        })
+        self.assertEqual(response.status_code, 500)
+        abort.assert_called_once()
+
     @patch("apps.dashboard.views.sign_part", return_value="https://example.invalid/part")
     def test_part_number_validation_rejects_out_of_range_values(self, sign):
         upload = self.session()
