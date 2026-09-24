@@ -11,8 +11,7 @@ from apps.clients.models import Client, ClientInvoice, ClientSession, InvoicePay
 from apps.dashboard.analytics_overview import _short_date
 from apps.dashboard.team_summary import authorized_studio, parse_team_filters, sessions_overlap
 from apps.dashboard.models import StudioMembership
-from apps.galleries.models import GalleryPhoto
-from apps.galleries.models import Gallery, GalleryAnalyticsEvent
+from apps.galleries.models import Album, Gallery, GalleryAnalyticsEvent, GalleryPhoto
 
 
 def make_user(email, role=User.PrimaryRole.PHOTOGRAPHER):
@@ -269,7 +268,6 @@ class PhotographerWorkspaceBehaviorTests(TestCase):
         assigned = Gallery.objects.create(photographer=studio, name="Assigned", slug="assigned-child")
         unassigned = Gallery.objects.create(photographer=studio, name="Private", slug="private-child")
         assigned.assigned_members.add(membership)
-        from apps.galleries.models import Album
         private_album = Album.objects.create(gallery=unassigned, name="Private album")
         private_photo = GalleryPhoto.objects.create(
             gallery=unassigned,
