@@ -239,6 +239,32 @@ class MultipartUploadApiTests(TestCase):
         self.assertFalse(GalleryPhoto.objects.exists())
         delete_object.assert_called_once_with(key=session.object_key)
 
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=1024)
+    @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
+    def test_direct_upload_uses_configured_upload_limit(self, initiate):
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_multipart_initiate"),
+            data=json.dumps({
+                "gallery": self.gallery.pk, "name": "large.jpg",
+                "content_type": "image/jpeg", "size": 1025,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        initiate.assert_not_called()
+
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=100)
+    def test_fallback_upload_uses_same_configured_upload_limit(self):
+        image_bytes = self._image_bytes()
+        self.assertGreater(len(image_bytes), 100)
+        upload = SimpleUploadedFile("large.jpg", image_bytes, content_type="image/jpeg")
+        response = self.client.post(
+            reverse("photographer_workspace:gallery_upload_queue"),
+            {"gallery": self.gallery.pk, "files": upload},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["errors"][0]["error"], "Use a JPG, PNG, or WebP image within the configured upload limit.")
+
     @patch("apps.dashboard.views.abort_multipart")
     def test_abort_marks_session_without_creating_photo(self, abort):
         session = GalleryMultipartUpload.objects.create(
