@@ -841,6 +841,16 @@ def _storage_state(photographer, storage_used):
     }
 
 
+def _multipart_reserved_bytes(photographer):
+    return GalleryMultipartUpload.objects.filter(
+        photographer=photographer,
+        completed_at__isnull=True,
+        aborted_at__isnull=True,
+    ).aggregate(
+        total=Coalesce(Sum("file_size"), Value(0), output_field=DecimalField())
+    )["total"]
+
+
 def _format_storage(byte_count):
     """Return a compact, presentation-ready storage value."""
     if byte_count >= 1024**3:
@@ -1316,9 +1326,7 @@ def gallery_multipart_initiate(request):
     storage_used = Gallery.objects.for_photographer(request.studio).aggregate(
         total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
     )["total"]
-    reserved = GalleryMultipartUpload.objects.filter(
-        photographer=request.studio, completed_at__isnull=True, aborted_at__isnull=True
-    ).aggregate(total=Coalesce(Sum("file_size"), Value(0), output_field=DecimalField()))["total"]
+    reserved = _multipart_reserved_bytes(request.studio)
     storage_limit = _storage_limit_bytes(request.studio)
     if storage_limit is not None and size > max(storage_limit - storage_used - reserved, 0):
         return JsonResponse({"error": "Not enough storage to upload this file."}, status=400)
@@ -1461,7 +1469,8 @@ def gallery_upload_queue(request):
             total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
         )["total"]
         storage_limit = _storage_limit_bytes(profile)
-        storage_remaining = None if storage_limit is None else max(storage_limit - storage_used, 0)
+        reserved = _multipart_reserved_bytes(profile)
+        storage_remaining = None if storage_limit is None else max(storage_limit - storage_used - reserved, 0)
         for upload in files:
             if upload.content_type not in allowed or upload.size > max_size:
                 errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
