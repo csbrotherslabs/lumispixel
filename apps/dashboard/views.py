@@ -34,6 +34,7 @@ from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNo
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
+from apps.billing.services import PlanConfigurationError, get_allowance
 from apps.clients.contracts import (DEFAULT_SIGNATURE_CONSENT, ContractDeliveryError, PhotographerSignatureForm,
                                    contract_preview_content, create_contract_from_template,
                                    send_contract_for_review, sign_contract_as_photographer,
@@ -809,7 +810,35 @@ def clients_workspace(request):
     return render(request, "photographer_workspace/clients.html", context)
 
 
-GALLERY_STORAGE_LIMIT = 100 * 1024**3
+def _storage_limit_bytes(photographer):
+    """Return the authoritative storage limit from the workspace billing plan."""
+    allowance = get_allowance(photographer, "storage_bytes")
+    if allowance.is_unlimited or allowance.is_custom:
+        return None
+    if allowance.value is None:
+        raise PlanConfigurationError("Numeric storage allowance is missing a value.")
+    return allowance.value
+
+
+def _storage_state(photographer, storage_used):
+    limit = _storage_limit_bytes(photographer)
+    if limit is None:
+        return {
+            "limit_bytes": None,
+            "available_bytes": None,
+            "percent": 0,
+            "limit_label": "Custom",
+            "available_label": "Custom",
+        }
+    available = max(limit - storage_used, 0)
+    percent = min(round(storage_used / limit * 100), 100) if limit else 100
+    return {
+        "limit_bytes": limit,
+        "available_bytes": available,
+        "percent": percent,
+        "limit_label": _format_storage(limit),
+        "available_label": _format_storage(available),
+    }
 
 
 def _format_storage(byte_count):
@@ -821,13 +850,13 @@ def _format_storage(byte_count):
     return f"{byte_count / 1024:.1f} KB" if byte_count else "0 GB"
 
 
-def _gallery_summary(galleries, storage_used):
-    storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
+def _gallery_summary(galleries, storage_used, storage_state):
+    storage_percent = storage_state["percent"]
     return [
         {"label": "Total Galleries", "value": galleries.count(), "icon": "bi-images", "note": "Across every workflow stage"},
         {"label": "Active Galleries", "value": galleries.exclude(status__in=[Gallery.Status.ARCHIVED, Gallery.Status.EXPIRED, Gallery.Status.DELIVERED]).count(), "icon": "bi-activity", "note": "Currently in your workflow"},
         {"label": "Ready to Deliver", "value": galleries.filter(status=Gallery.Status.READY).count(), "icon": "bi-send-check", "note": "Awaiting your delivery"},
-        {"label": "Storage Used", "value": _format_storage(storage_used), "icon": "bi-device-ssd", "note": f"{_format_storage(storage_used)} of 100 GB", "percent": storage_percent},
+        {"label": "Storage Used", "value": _format_storage(storage_used), "icon": "bi-device-ssd", "note": f"{_format_storage(storage_used)} of {storage_state['limit_label']}", "percent": storage_percent},
     ]
 
 
@@ -837,6 +866,7 @@ def galleries_dashboard(request):
     galleries = Gallery.objects.for_photographer(request.studio).select_related("client")
     now = timezone.now()
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
+    storage_state = _storage_state(request.studio, storage_used)
     pipeline_counts = {row["status"]: row["count"] for row in galleries.values("status").annotate(count=Count("id"))}
     pipeline = [
         {"key": key, "label": label, "count": pipeline_counts.get(key, 0), "percent": round(pipeline_counts.get(key, 0) / max(galleries.count(), 1) * 100)}
@@ -872,8 +902,8 @@ def galleries_dashboard(request):
     ready_count = galleries.filter(status=Gallery.Status.READY).count()
     if ready_count:
         attention.append({"icon": "bi-send-check", "title": f"{ready_count} {'galleries are' if ready_count != 1 else 'gallery is'} ready to deliver", "description": "Open the gallery to complete client delivery.", "url": reverse("photographer_workspace:all_galleries") + "?status=ready", "action": "View ready", "tone": "warning"})
-    if storage_used / GALLERY_STORAGE_LIMIT >= Decimal("0.8"):
-        attention.append({"icon": "bi-device-ssd", "title": "Storage is approaching its limit", "description": f"{_format_storage(storage_used)} of 100 GB is in use.", "url": reverse("photographer_workspace:gallery_upload_queue"), "action": "Manage storage", "tone": "warning"})
+    if storage_state["limit_bytes"] is not None and storage_state["percent"] >= 80:
+        attention.append({"icon": "bi-device-ssd", "title": "Storage is approaching its limit", "description": f"{_format_storage(storage_used)} of {storage_state['limit_label']} is in use.", "url": reverse("photographer_workspace:gallery_upload_queue"), "action": "Manage storage", "tone": "warning"})
     recent_galleries = list(galleries[:6])
     for gallery in recent_galleries:
         gallery.delivery_label = "Delivered" if gallery.status == Gallery.Status.DELIVERED else "Published" if gallery.status == Gallery.Status.PUBLISHED else "Not delivered"
@@ -881,9 +911,9 @@ def galleries_dashboard(request):
     context = _dashboard_context(request, "galleries", "Galleries")
     context.update({
         "has_galleries": galleries.exists(),
-        "gallery_summary": _gallery_summary(galleries, storage_used), "recent_galleries": recent_galleries,
+        "gallery_summary": _gallery_summary(galleries, storage_used, storage_state), "recent_galleries": recent_galleries,
         "delivery_pipeline": pipeline, "recent_client_activity": activity, "gallery_attention": attention[:5],
-        "storage": {"used": _format_storage(storage_used), "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100), "percent_display": f"{min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)}%"},
+        "storage": {"used": _format_storage(storage_used), "available": storage_state["available_label"], "available_bytes": storage_state["available_bytes"], "limit": storage_state["limit_label"], "percent": storage_state["percent"], "percent_display": f"{storage_state['percent']}%"},
         "gallery_deadlines": deadlines,
     })
     return render(request, "photographer_workspace/galleries/dashboard.html", context)
@@ -1289,7 +1319,8 @@ def gallery_multipart_initiate(request):
     reserved = GalleryMultipartUpload.objects.filter(
         photographer=request.studio, completed_at__isnull=True, aborted_at__isnull=True
     ).aggregate(total=Coalesce(Sum("file_size"), Value(0), output_field=DecimalField()))["total"]
-    if size > max(GALLERY_STORAGE_LIMIT - storage_used - reserved, 0):
+    storage_limit = _storage_limit_bytes(request.studio)
+    if storage_limit is not None and size > max(storage_limit - storage_used - reserved, 0):
         return JsonResponse({"error": "Not enough storage to upload this file."}, status=400)
     key = multipart_object_key(
         photographer_id=request.studio.pk, gallery_id=gallery.pk,
@@ -1429,12 +1460,13 @@ def gallery_upload_queue(request):
         storage_used = galleries.aggregate(
             total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
         )["total"]
-        storage_remaining = max(GALLERY_STORAGE_LIMIT - storage_used, 0)
+        storage_limit = _storage_limit_bytes(profile)
+        storage_remaining = None if storage_limit is None else max(storage_limit - storage_used, 0)
         for upload in files:
             if upload.content_type not in allowed or upload.size > max_size:
                 errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
                 continue
-            if upload.size > storage_remaining:
+            if storage_remaining is not None and upload.size > storage_remaining:
                 errors.append({"name": upload.name, "error": "Not enough storage to upload these files."})
                 continue
             try:
@@ -1452,7 +1484,8 @@ def gallery_upload_queue(request):
                 errors.append({"name": upload.name, "error": "The image could not be validated."})
                 continue
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
-            storage_remaining -= upload.size
+            if storage_remaining is not None:
+                storage_remaining -= upload.size
         if created:
             Gallery.objects.filter(pk=gallery.pk).update(image_count=F("image_count") + len(created), storage_used=F("storage_used") + sum(item["size"] for item in created))
             log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
@@ -1464,14 +1497,16 @@ def gallery_upload_queue(request):
     counts = {status: visible_upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
     uploads = visible_upload_records.select_related("gallery")[:100]
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
-    storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
+    storage_state = _storage_state(profile, storage_used)
+    storage_percent = storage_state["percent"]
     selected_gallery = galleries.filter(pk=request.GET.get("gallery")).first() if request.GET.get("gallery") else None
     context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
     context.update({"gallery_choices": galleries, "uploads": uploads, "upload_counts": counts,
                     "selected_gallery": selected_gallery,
                     "storage": {"used": _format_storage(storage_used),
-                                "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)),
-                                "available_bytes": max(GALLERY_STORAGE_LIMIT - storage_used, 0),
+                                "available": storage_state["available_label"],
+                                "available_bytes": storage_state["available_bytes"],
+                                "limit": storage_state["limit_label"],
                                 "percent": storage_percent}})
     return render(request, "photographer_workspace/galleries/upload_queue.html", context)
 
