@@ -136,9 +136,7 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         client_page.wait_for_load_state("networkidle")
         self.assertIn("Golden Delivery", client_page.content())
 
-        favorite = client_page.locator(f'[data-photo-id="{photo_id}"] [data-favorite], [data-photo-favorite][data-photo-id="{photo_id}"]').first
-        if favorite.count() == 0:
-            favorite = client_page.locator(f'form[action*="/photos/{photo_id}/favorite/"] button').first
+        favorite = client_page.locator(f'form[action*="/photos/{photo_id}/favorite/"] button').first
         favorite.click()
         client_page.wait_for_timeout(250)
 
