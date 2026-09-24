@@ -864,3 +864,34 @@ class ClientPermissionMatrixTests(TestCase):
         page = self.client.get(self.gallery_url)
         for expected in ("Download Gallery", "Download Original", "Favorite", "Comment", "Copy Link", "Shop Prints"):
             self.assertContains(page, expected)
+
+
+class ClientGalleryDesignInteractionContractTests(TestCase):
+    """Every client presentation must expose the same interactive delivery contract."""
+
+    def test_all_gallery_designs_use_shared_interaction_contract(self):
+        from pathlib import Path
+        from django.conf import settings
+
+        templates = [
+            "standard_filterable.html",
+            "story.html",
+            "masonry.html",
+            "cinematic.html",
+        ]
+        required = [
+            "data-client-photo",
+            "data-favorite-form",
+            "data-favorite-count",
+            "data-comment-form",
+            "data-comment-count",
+            "data-photo-download",
+            "data-download-count",
+            "client_gallery_interactions.js",
+        ]
+        design_dir = Path(settings.BASE_DIR) / "templates" / "galleries" / "designs"
+        for template_name in templates:
+            source = (design_dir / template_name).read_text(encoding="utf-8")
+            for marker in required:
+                with self.subTest(template=template_name, marker=marker):
+                    self.assertIn(marker, source)
