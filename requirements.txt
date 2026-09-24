@@ -10,3 +10,5 @@ celery[redis]
 redis
 gunicorn
 whitenoise
+
+playwright
