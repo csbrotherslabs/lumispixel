@@ -41,6 +41,7 @@ from apps.clients.contracts import (DEFAULT_SIGNATURE_CONSENT, ContractDeliveryE
                                    validate_contract_for_email)
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
+from apps.galleries.storage_cleanup import enqueue_storage_deletions, process_storage_deletions
 from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
@@ -1204,8 +1205,21 @@ def gallery_archive_actions(request):
             gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
             messages.warning(request, "Gallery access was removed, but required financial transaction history was retained.")
         else:
-            gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
-            gallery.delete()
+            deletion_items = [
+                {
+                    "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+                    "object_key": photo.file.name,
+                    "photographer_id": photo.photographer_id,
+                    "gallery_id": gallery.pk,
+                }
+                for photo in gallery.photos.all() if photo.file
+            ]
+            with transaction.atomic():
+                enqueue_storage_deletions(deletion_items)
+                gallery.deleted_at = now
+                gallery.save(update_fields=["deleted_at", "updated_at"])
+                gallery.delete()
+            process_storage_deletions()
             messages.success(request, "Gallery and associated non-financial records permanently deleted.")
     return redirect("photographer_workspace:gallery_archive")
 
@@ -2106,19 +2120,24 @@ def gallery_photo_bulk_action(request, pk):
     if action == "delete":
         total_size = sum(photo.file_size for photo in photos)
         deleted_ids = [photo.pk for photo in photos]
-        # Remove database relationships first; delete storage objects only for the scoped photos.
+        deletion_items = [
+            {
+                "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+                "object_key": photo.file.name,
+                "photographer_id": photo.photographer_id,
+                "gallery_id": photo.gallery_id,
+            }
+            for photo in photos if photo.file
+        ]
+        # Persist cleanup intent in the same transaction as record deletion. Storage
+        # cleanup can then fail/retry without orphaning an untracked object.
         with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
             GalleryPhoto.objects.filter(pk__in=deleted_ids).delete()
             gallery.image_count = max(gallery.image_count - len(deleted_ids), 0)
             gallery.storage_used = max(gallery.storage_used - total_size, 0)
             gallery.save(update_fields=["image_count", "storage_used", "updated_at"])
-        for photo in photos:
-            if photo.file:
-                try:
-                    photo.file.storage.delete(photo.file.name)
-                except Exception:
-                    # The database deletion is authoritative; storage cleanup can be retried separately.
-                    pass
+        process_storage_deletions()
         return JsonResponse({"ok": True, "deleted": deleted_ids})
 
     if action == "visibility":
@@ -2176,9 +2195,20 @@ def gallery_photo_action(request, pk):
     photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
     action = request.POST.get("action")
     if action == "delete":
-        Gallery.objects.filter(pk=photo.gallery_id).update(image_count=F("image_count") - 1, storage_used=F("storage_used") - photo.file_size)
-        photo.file.delete(save=False)
-        photo.delete()
+        deletion_items = [{
+            "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+            "object_key": photo.file.name,
+            "photographer_id": photo.photographer_id,
+            "gallery_id": photo.gallery_id,
+        }] if photo.file else []
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            Gallery.objects.filter(pk=photo.gallery_id).update(
+                image_count=F("image_count") - 1,
+                storage_used=F("storage_used") - photo.file_size,
+            )
+            photo.delete()
+        process_storage_deletions()
     elif action == "cover":
         GalleryPhoto.objects.filter(gallery=photo.gallery).update(is_cover=False)
         photo.is_cover = True

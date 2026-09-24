@@ -142,6 +142,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads",
         "schedule": 3600.0,
     },
+    "cleanup-gallery-storage-objects": {
+        "task": "apps.galleries.tasks.cleanup_gallery_storage_objects",
+        "schedule": 3600.0,
+    },
 }
 FREE_STORAGE_LIMIT_BYTES = int(os.getenv("FREE_STORAGE_LIMIT_BYTES", str(50 * 1024**3)))
 MAX_GALLERY_UPLOAD_BYTES = int(os.getenv("MAX_GALLERY_UPLOAD_BYTES", str(100 * 1024**2)))
