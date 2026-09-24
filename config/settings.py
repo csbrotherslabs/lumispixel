@@ -87,6 +87,9 @@ B2_REGION = os.getenv("B2_REGION", "")
 B2_ENDPOINT_URL = os.getenv("B2_ENDPOINT_URL", "").rstrip("/")
 B2_SIGNED_URL_TTL = int(os.getenv("B2_SIGNED_URL_TTL", "900"))
 B2_MULTIPART_SIGNED_URL_TTL = int(os.getenv("B2_MULTIPART_SIGNED_URL_TTL", "900"))
+# Browser resume remains available for this window before abandoned B2 multipart
+# uploads are aborted and their reserved photographer quota is released.
+B2_MULTIPART_STALE_AFTER_SECONDS = int(os.getenv("B2_MULTIPART_STALE_AFTER_SECONDS", str(24 * 60 * 60)))
 B2_MULTIPART_MIN_PART_BYTES = 5 * 1024**2
 B2_MULTIPART_MAX_PARTS = 10000
 
@@ -133,6 +136,10 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
     "scan-scheduled-workflow-automations": {
         "task": "apps.workflows.tasks.scan_scheduled_automations",
+        "schedule": 3600.0,
+    },
+    "cleanup-stale-gallery-multipart-uploads": {
+        "task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads",
         "schedule": 3600.0,
     },
 }
