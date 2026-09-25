@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.db.models import Count, F
 import tempfile
 import zipfile
@@ -416,35 +417,39 @@ def client_gallery_favorite(request, token, photo_id):
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
     )
-    favorite_event = GalleryAnalyticsEvent.objects.filter(
-        gallery=gallery,
-        visitor_identifier=token_record.token_hash,
-        event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
-        related_photo=photo,
-    ).order_by("-occurred_at", "-pk").first()
-    if favorite_event:
-        favorite_event.delete()
-        Gallery.objects.filter(pk=gallery.pk, favorite_count__gt=0).update(favorite_count=F("favorite_count") - 1)
-        favorited = False
-    else:
-        track_gallery_event(
+    with transaction.atomic():
+        # Serialize toggles for one gallery so simultaneous requests from the
+        # same client cannot both observe "not favorited" and create duplicates.
+        Gallery.objects.select_for_update().get(pk=gallery.pk)
+        favorite_event = GalleryAnalyticsEvent.objects.filter(
             gallery=gallery,
-            event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
             visitor_identifier=token_record.token_hash,
-            session_identifier=_session_identifier(request),
-            user=request.user,
-            photo=photo,
-            source="invite_link",
-        )
-        Gallery.objects.filter(pk=gallery.pk).update(favorite_count=F("favorite_count") + 1)
-        log_gallery_activity(
-            gallery=gallery,
-            event_type=GalleryActivity.EventType.CLIENT_FAVORITED,
-            actor=request.user,
-            actor_type=GalleryActivity.ActorType.CLIENT,
-            related_object=photo,
-        )
-        favorited = True
+            event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+            related_photo=photo,
+        ).order_by("-occurred_at", "-pk").first()
+        if favorite_event:
+            favorite_event.delete()
+            Gallery.objects.filter(pk=gallery.pk, favorite_count__gt=0).update(favorite_count=F("favorite_count") - 1)
+            favorited = False
+        else:
+            track_gallery_event(
+                gallery=gallery,
+                event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
+                visitor_identifier=token_record.token_hash,
+                session_identifier=_session_identifier(request),
+                user=request.user,
+                photo=photo,
+                source="invite_link",
+            )
+            Gallery.objects.filter(pk=gallery.pk).update(favorite_count=F("favorite_count") + 1)
+            log_gallery_activity(
+                gallery=gallery,
+                event_type=GalleryActivity.EventType.CLIENT_FAVORITED,
+                actor=request.user,
+                actor_type=GalleryActivity.ActorType.CLIENT,
+                related_object=photo,
+            )
+            favorited = True
     favorite_count = GalleryAnalyticsEvent.objects.filter(
         gallery=gallery,
         event_type=GalleryAnalyticsEvent.EventType.FAVORITE,

@@ -1541,20 +1541,26 @@ def gallery_multipart_complete(request, upload_uuid):
         return JsonResponse({"error": "Invalid object key."}, status=400)
     relative_name = session.object_key[len(f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"): ]
     with transaction.atomic():
+        # Re-read and lock the upload state after the provider completion call.
+        # A retry or concurrent completion must not create a second photo or
+        # increment gallery accounting twice.
+        locked_session = GalleryMultipartUpload.objects.select_for_update().get(pk=session.pk)
+        if locked_session.completed_at or locked_session.aborted_at:
+            return JsonResponse({"error": "Upload is no longer active."}, status=409)
         photo = GalleryPhoto.objects.create(
-            gallery=session.gallery, photographer=request.studio, file=relative_name,
-            original_name=session.original_name, file_size=session.file_size,
+            gallery=locked_session.gallery, photographer=request.studio, file=relative_name,
+            original_name=locked_session.original_name, file_size=locked_session.file_size,
             status=GalleryPhoto.Status.COMPLETED,
         )
-        Gallery.objects.filter(pk=session.gallery_id).update(
-            image_count=F("image_count") + 1, storage_used=F("storage_used") + session.file_size
+        Gallery.objects.filter(pk=locked_session.gallery_id).update(
+            image_count=F("image_count") + 1, storage_used=F("storage_used") + locked_session.file_size
         )
-        session.completed_at = timezone.now()
-        session.save(update_fields=["completed_at"])
+        locked_session.completed_at = timezone.now()
+        locked_session.save(update_fields=["completed_at"])
         log_gallery_activity(
-            gallery=session.gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
+            gallery=locked_session.gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
             description="1 photo uploaded successfully via direct multipart upload.",
-            actor=request.user, metadata={"count": 1, "files": [session.original_name]},
+            actor=request.user, metadata={"count": 1, "files": [locked_session.original_name]},
         )
     return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}}, status=201)
 
