@@ -1,20 +1,22 @@
-import inspect
+from pathlib import Path
 
 from django.test import SimpleTestCase
 
-from apps.dashboard import views as dashboard_views
-from apps.galleries import views as gallery_views
-
 
 class TransactionSafetyContractTests(SimpleTestCase):
+    def _source(self, relative_path):
+        return (Path(__file__).resolve().parents[2] / relative_path).read_text(encoding="utf-8")
+
     def test_multipart_completion_locks_upload_state(self):
+        source = self._source("apps/dashboard/views.py")
         self.assertIn(
             "GalleryMultipartUpload.objects.select_for_update().get(pk=session.pk)",
-            inspect.getsource(dashboard_views.gallery_multipart_complete.__closure__[0].cell_contents),
+            source,
         )
 
     def test_favorite_toggle_serializes_on_gallery(self):
+        source = self._source("apps/galleries/views.py")
         self.assertIn(
             "Gallery.objects.select_for_update().get(pk=gallery.pk)",
-            inspect.getsource(gallery_views.client_gallery_favorite),
+            source,
         )
