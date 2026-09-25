@@ -88,8 +88,19 @@ export default {
       return textResponse("Method not allowed", 405);
     }
 
-    if (!env.B2_ACCESS_KEY_ID || !env.B2_SECRET_ACCESS_KEY) {
-      return textResponse("Media origin credentials are not configured", 500);
+    if (
+      !env.B2_ACCESS_KEY_ID ||
+      !env.B2_SECRET_ACCESS_KEY ||
+      !env.B2_BUCKET_NAME ||
+      !env.B2_REGION ||
+      !env.B2_ENDPOINT_URL ||
+      !env.B2_ALLOWED_PREFIX
+    ) {
+      return textResponse("Media origin is not configured", 500);
+    }
+
+    if (!String(env.B2_ENDPOINT_URL).startsWith("https://")) {
+      return textResponse("Media origin configuration is invalid", 500);
     }
 
     const requestUrl = new URL(request.url);
@@ -153,7 +164,16 @@ export default {
         : {},
     });
 
-    const originResponse = await fetch(originRequest);
+    let originResponse;
+    try {
+      originResponse = await fetch(originRequest);
+    } catch (error) {
+      console.error("B2 media origin request failed", {
+        key: objectKey,
+        error: String(error),
+      });
+      return textResponse("Media origin unavailable", 502);
+    }
 
     if (originResponse.status === 404) {
       return textResponse("Not found", 404);

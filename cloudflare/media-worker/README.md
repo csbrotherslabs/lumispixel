@@ -1,6 +1,6 @@
 # LumisPixel media Worker
 
-Development Cloudflare Worker for retrieving private gallery objects from Backblaze B2.
+Cloudflare Worker for retrieving private gallery objects from Backblaze B2.
 
 ## Security model
 
@@ -58,3 +58,29 @@ Responses include `x-lumispixel-cache` during this phase:
 - `BYPASS`: Range request fetched directly from B2.
 
 Cache invalidation/purge should be added before object replacement under an existing key is supported. UUID/immutable object keys remain the preferred long-term design.
+
+
+## Production environment
+
+Production is a separate Wrangler environment named `production` and deploys as
+`lumispixel-media-prod`. It is restricted to `private/prod/`; development
+remains restricted to `private/dev/`.
+
+The three encrypted Worker secrets must be configured separately for the
+production environment:
+
+- `B2_ACCESS_KEY_ID`
+- `B2_SECRET_ACCESS_KEY`
+- `MEDIA_SIGNING_SECRET`
+
+Use a dedicated, read-only B2 application key whose bucket/prefix permissions
+are limited as narrowly as Backblaze permits. Never copy development secrets
+into production merely to make a deployment pass.
+
+Production deployment is manual through the GitHub production environment so
+repository environment approvals/protection can gate releases. The workflow
+deploys with `wrangler deploy --env production`.
+
+A B2 network exception is converted to a 502 response and is never cached.
+Only complete HTTP 200 GET responses enter the edge cache. Authorization still
+runs before every cache lookup.
