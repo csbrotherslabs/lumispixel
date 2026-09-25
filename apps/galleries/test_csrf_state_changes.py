@@ -1,7 +1,7 @@
 """CSRF regression matrix for state-changing HTML and AJAX endpoints."""
 import json
 
-from django.test import Client as TestClient, TestCase
+from django.test import Client as TestClient, TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import PhotographerProfile, User
@@ -9,6 +9,7 @@ from apps.dashboard.models import StudioMembership
 from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission, GalleryPhoto
 
 
+@override_settings(MEDIA_SIGNING_SECRET="csrf-state-change-test-signing-secret-32chars")
 class CsrfStateChangingEndpointTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
