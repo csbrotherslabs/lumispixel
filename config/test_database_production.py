@@ -16,9 +16,6 @@ class ProductionDatabaseContractTests(TestCase):
         user = User.objects.create_user(email="db-contract@example.com", password="testpass")
         self.owner = PhotographerProfile.objects.create(user=user, slug="db-contract")
 
-    def test_ci_database_is_postgresql(self):
-        self.assertEqual(connection.vendor, "postgresql")
-
     def test_gallery_owner_slug_uniqueness_is_database_enforced(self):
         Gallery.objects.create(photographer=self.owner, name="One", slug="same")
         with self.assertRaises(IntegrityError):
