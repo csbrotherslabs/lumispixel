@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("galleries", "0032_add_cinematic_gallery_design"),
+        ("galleries", "0033_hot_path_indexes"),
     ]
 
     operations = [
