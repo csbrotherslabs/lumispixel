@@ -1,6 +1,6 @@
 """Adversarial bearer-token isolation tests for delivered client galleries."""
 from django.core.files.base import ContentFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import PhotographerProfile, User
@@ -10,6 +10,7 @@ from apps.galleries.models import (
 )
 
 
+@override_settings(MEDIA_SIGNING_SECRET="test-client-token-isolation-signing-secret-32chars")
 class ClientGalleryTokenIsolationTests(TestCase):
     def setUp(self):
         owner = User.objects.create_user(
