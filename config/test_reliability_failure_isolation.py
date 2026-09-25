@@ -2,10 +2,9 @@ from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from django.urls import reverse
 
 from apps.accounts.models import User
-from apps.internal_ops.models import SupportTicket, SupportTicketAttachment, SupportTicketComment
+from apps.internal_ops.models import SupportTicket
 
 
 class SupportFailureIsolationTests(TestCase):
@@ -19,7 +18,7 @@ class SupportFailureIsolationTests(TestCase):
     @patch("apps.core.support_views.create_support_attachment", side_effect=RuntimeError("storage unavailable"))
     def test_ticket_and_attachment_write_roll_back_together(self, _create_attachment):
         response = self.client.post(
-            reverse("core:help_center") if False else "/resources/help-center/",
+            "/resources/help-center/",
             {
                 "subject": "Atomic support ticket",
                 "category": "technical",
