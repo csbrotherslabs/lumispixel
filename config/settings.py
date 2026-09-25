@@ -96,6 +96,13 @@ B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME", "")
 B2_REGION = os.getenv("B2_REGION", "")
 B2_ENDPOINT_URL = os.getenv("B2_ENDPOINT_URL", "").rstrip("/")
 B2_SIGNED_URL_TTL = int(os.getenv("B2_SIGNED_URL_TTL", "900"))
+B2_CONNECT_TIMEOUT_SECONDS = int(os.getenv("B2_CONNECT_TIMEOUT_SECONDS", "5"))
+B2_READ_TIMEOUT_SECONDS = int(os.getenv("B2_READ_TIMEOUT_SECONDS", "30"))
+B2_MAX_ATTEMPTS = int(os.getenv("B2_MAX_ATTEMPTS", "4"))
+if B2_CONNECT_TIMEOUT_SECONDS <= 0 or B2_READ_TIMEOUT_SECONDS <= 0:
+    raise RuntimeError("B2 network timeouts must be positive.")
+if B2_MAX_ATTEMPTS < 1 or B2_MAX_ATTEMPTS > 10:
+    raise RuntimeError("B2_MAX_ATTEMPTS must be between 1 and 10.")
 B2_MULTIPART_SIGNED_URL_TTL = int(os.getenv("B2_MULTIPART_SIGNED_URL_TTL", "900"))
 # Browser resume remains available for this window before abandoned B2 multipart
 # uploads are aborted and their reserved photographer quota is released.
@@ -190,7 +197,9 @@ if CELERY_TASK_SOFT_TIME_LIMIT <= 0 or CELERY_TASK_TIME_LIMIT <= CELERY_TASK_SOF
     raise RuntimeError("CELERY_TASK_TIME_LIMIT must be greater than CELERY_TASK_SOFT_TIME_LIMIT.")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_CONNECTION_RETRY = True
-CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+CELERY_BROKER_CONNECTION_MAX_RETRIES = int(os.getenv("CELERY_BROKER_CONNECTION_MAX_RETRIES", "20"))
+if CELERY_BROKER_CONNECTION_MAX_RETRIES < 0:
+    raise RuntimeError("CELERY_BROKER_CONNECTION_MAX_RETRIES must be non-negative.")
 CELERY_VISIBILITY_TIMEOUT = int(os.getenv("CELERY_VISIBILITY_TIMEOUT", "3600"))
 if CELERY_VISIBILITY_TIMEOUT <= CELERY_TASK_TIME_LIMIT:
     raise RuntimeError(
