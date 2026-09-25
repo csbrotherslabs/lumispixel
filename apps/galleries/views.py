@@ -160,7 +160,7 @@ def stable_gallery_access(request, public_id):
     if gallery.visibility != Gallery.Visibility.PUBLIC:
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
     photo_page, photos = _paginate_client_gallery_photos(request, gallery)
-    albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).order_by("display_order", "pk"))
+    albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
     return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
 
@@ -237,19 +237,20 @@ def client_gallery_access(request, token):
         .order_by("display_order", "pk")
     )
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    page_photo_ids = [photo.pk for photo in photos]
     favorite_ids = set(
         GalleryAnalyticsEvent.objects.filter(
             gallery=gallery,
             visitor_identifier=token_record.token_hash,
             event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
-            related_photo__isnull=False,
+            related_photo_id__in=page_photo_ids,
         ).values_list("related_photo_id", flat=True)
     )
     comments_by_photo = {}
     if permissions.comment:
         for comment in GalleryPhotoComment.objects.filter(
             gallery=gallery,
-            photo__in=photos,
+            photo_id__in=page_photo_ids,
         ).select_related("invitation"):
             comments_by_photo.setdefault(comment.photo_id, []).append(comment)
 
@@ -257,7 +258,7 @@ def client_gallery_access(request, token):
     for row in (
         GalleryAnalyticsEvent.objects.filter(
             gallery=gallery,
-            related_photo__in=photos,
+            related_photo_id__in=page_photo_ids,
             event_type__in=[
                 GalleryAnalyticsEvent.EventType.FAVORITE,
                 GalleryAnalyticsEvent.EventType.DOWNLOAD,
