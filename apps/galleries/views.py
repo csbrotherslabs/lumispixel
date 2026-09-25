@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import Count, F
 import tempfile
 import zipfile
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -90,6 +91,19 @@ def _client_gallery_template(gallery):
     return templates.get(gallery.design_template, "galleries/client_gallery.html")
 
 
+CLIENT_GALLERY_PAGE_SIZE = 60
+
+
+def _paginate_client_gallery_photos(request, gallery):
+    queryset = GalleryPhoto.objects.filter(
+        gallery=gallery,
+        is_visible=True,
+        status=GalleryPhoto.Status.COMPLETED,
+    ).order_by("created_at", "pk")
+    page = Paginator(queryset, CLIENT_GALLERY_PAGE_SIZE).get_page(request.GET.get("page"))
+    return page, list(page.object_list)
+
+
 def _prepare_client_gallery_content(gallery, photos, albums):
     """Attach presentation-only metadata without changing persisted gallery data."""
     photo_ids = {photo.pk for photo in photos}
@@ -145,10 +159,10 @@ def stable_gallery_access(request, public_id):
             return redirect("galleries:client_gallery_access", token=raw_token)
     if gallery.visibility != Gallery.Visibility.PUBLIC:
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
-    photos = list(GalleryPhoto.objects.filter(gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED).order_by("created_at", "pk"))
+    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
-    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
+    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
 
 def _client_gallery_access(raw_token):
     token_hash = AccessToken.digest(raw_token)
@@ -216,13 +230,7 @@ def client_gallery_access(request, token):
     token_record, invitation, gallery, permissions, settings = _client_gallery_access(token)
     _record_client_access(request, token_record, invitation, gallery)
 
-    photos = list(
-        GalleryPhoto.objects.filter(
-            gallery=gallery,
-            is_visible=True,
-            status=GalleryPhoto.Status.COMPLETED,
-        ).order_by("created_at", "pk")
-    )
+    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(
         Album.objects.filter(gallery=gallery)
         .exclude(visibility=Album.Visibility.HIDDEN)
@@ -303,7 +311,7 @@ def client_gallery_access(request, token):
     ).count()
     remaining_downloads = None if settings.download_limit is None else max(settings.download_limit - used_downloads, 0)
     can_download = downloads_active and (remaining_downloads is None or remaining_downloads > 0)
-    can_download_gallery = can_download and (remaining_downloads is None or remaining_downloads >= len(photos))
+    can_download_gallery = can_download and (remaining_downloads is None or remaining_downloads >= photo_page.paginator.count)
 
     return render(
         request,
@@ -312,6 +320,7 @@ def client_gallery_access(request, token):
             "gallery": gallery,
             "invitation": invitation,
             "photos": photos,
+            "photo_page": photo_page,
             "albums": albums,
             "permissions": permissions,
             "gallery_settings": settings,
