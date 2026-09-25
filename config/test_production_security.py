@@ -38,7 +38,7 @@ class RepositorySecretHygieneTests(SimpleTestCase):
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         tracked = {line.strip() for line in result.stdout.splitlines() if line.strip()}
-        self.assertEqual(tracked, {".env.example"})
+        self.assertEqual(tracked, {".env.example", ".env.production.example"})
 
 
 class ProductionConfigurationTests(SimpleTestCase):
