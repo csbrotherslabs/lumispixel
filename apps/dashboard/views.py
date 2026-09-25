@@ -48,7 +48,7 @@ from apps.galleries.analytics import gallery_analytics_report
 from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryStorageDeletion, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
     complete as complete_multipart, delete_object as delete_multipart_object,
-    get_object_bytes as get_multipart_object_bytes, initiate as initiate_multipart,
+    get_object_stream as get_multipart_object_stream, initiate as initiate_multipart,
     multipart_object_key, sign_part, list_parts as list_multipart_parts)
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
@@ -1370,6 +1370,30 @@ def _validate_image_bytes(content, expected_content_type):
         return False
 
 
+def _validate_image_file(file_obj, expected_content_type, *, expected_size=None):
+    """Validate an image from a seekable file/stream without copying it into a bytes object."""
+    expected_formats = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
+    expected_format = expected_formats.get(expected_content_type)
+    if not expected_format:
+        return False
+    try:
+        if expected_size is not None:
+            file_obj.seek(0, 2)
+            if file_obj.tell() != expected_size:
+                return False
+            file_obj.seek(0)
+        with Image.open(file_obj) as image:
+            if image.format != expected_format:
+                return False
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+                return False
+            image.verify()
+        return True
+    except (DecompressionBombError, UnidentifiedImageError, OSError, ValueError):
+        return False
+
+
 def _json_body(request):
     try:
         return json.loads(request.body.decode("utf-8"))
@@ -1513,7 +1537,11 @@ def gallery_multipart_complete(request, upload_uuid):
     except Exception:
         return JsonResponse({"error": "Could not complete direct upload."}, status=502)
     try:
-        object_bytes = get_multipart_object_bytes(key=session.object_key)
+        object_stream = get_multipart_object_stream(key=session.object_key)
+        try:
+            valid_image = _validate_image_file(object_stream, session.content_type, expected_size=session.file_size)
+        finally:
+            object_stream.close()
     except Exception:
         try:
             delete_multipart_object(key=session.object_key)
@@ -1522,7 +1550,7 @@ def gallery_multipart_complete(request, upload_uuid):
         session.aborted_at = timezone.now()
         session.save(update_fields=["aborted_at"])
         return JsonResponse({"error": "Could not validate the uploaded image."}, status=502)
-    if len(object_bytes) != session.file_size or not _validate_image_bytes(object_bytes, session.content_type):
+    if not valid_image:
         try:
             delete_multipart_object(key=session.object_key)
         except Exception:
@@ -1623,11 +1651,11 @@ def gallery_upload_queue(request):
                 errors.append({"name": upload.name, "error": "Not enough storage to upload these files."})
                 continue
             try:
-                content = upload.read()
+                valid_image = _validate_image_file(upload, upload.content_type, expected_size=upload.size)
                 upload.seek(0)
             except OSError:
-                content = b""
-            if len(content) != upload.size or not _validate_image_bytes(content, upload.content_type):
+                valid_image = False
+            if not valid_image:
                 errors.append({"name": upload.name, "error": "The file is not a valid image."})
                 continue
             photo = GalleryPhoto(gallery=gallery, photographer=profile, file=upload, original_name=upload.name[:255], file_size=upload.size, status=GalleryPhoto.Status.COMPLETED)
