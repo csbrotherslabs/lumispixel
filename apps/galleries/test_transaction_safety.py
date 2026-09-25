@@ -1,0 +1,18 @@
+from django.test import SimpleTestCase
+
+from apps.dashboard import views as dashboard_views
+from apps.galleries import views as gallery_views
+
+
+class TransactionSafetyContractTests(SimpleTestCase):
+    def test_multipart_completion_locks_upload_state(self):
+        self.assertIn(
+            "GalleryMultipartUpload.objects.select_for_update().get(pk=session.pk)",
+            __import__("inspect").getsource(dashboard_views.gallery_multipart_complete),
+        )
+
+    def test_favorite_toggle_serializes_on_gallery(self):
+        self.assertIn(
+            "Gallery.objects.select_for_update().get(pk=gallery.pk)",
+            __import__("inspect").getsource(gallery_views.client_gallery_favorite),
+        )
