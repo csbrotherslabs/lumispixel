@@ -62,7 +62,17 @@ STATICFILES_STORAGE_BACKEND = os.getenv(
     "DJANGO_STATICFILES_STORAGE",
     "whitenoise.storage.CompressedManifestStaticFilesStorage",
 )
+PRODUCTION_STATICFILES_STORAGE_BACKEND = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+if not DEBUG and STATICFILES_STORAGE_BACKEND != PRODUCTION_STATICFILES_STORAGE_BACKEND:
+    raise RuntimeError(
+        "Production requires WhiteNoise CompressedManifestStaticFilesStorage."
+    )
 STORAGES = {"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}, "staticfiles": {"BACKEND": STATICFILES_STORAGE_BACKEND}}
+# Hashed WhiteNoise assets are content-addressed and safe to cache indefinitely.
+# Non-hashed URLs retain WhiteNoise's conservative default caching behavior.
+WHITENOISE_MAX_AGE = int(os.getenv("WHITENOISE_MAX_AGE", "60"))
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
