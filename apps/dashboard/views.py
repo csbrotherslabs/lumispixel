@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
@@ -1346,6 +1347,9 @@ def gallery_actions(request):
 
 
 
+MAX_IMAGE_PIXELS = int(os.getenv("MAX_GALLERY_IMAGE_PIXELS", "100000000"))
+
+
 def _validate_image_bytes(content, expected_content_type):
     """Verify decoded image bytes and require the detected format to match declared MIME."""
     expected_formats = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
@@ -1356,9 +1360,12 @@ def _validate_image_bytes(content, expected_content_type):
         with Image.open(io.BytesIO(content)) as image:
             if image.format != expected_format:
                 return False
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+                return False
             image.verify()
         return True
-    except (UnidentifiedImageError, OSError, ValueError):
+    except (DecompressionBombError, UnidentifiedImageError, OSError, ValueError):
         return False
 
 
@@ -1512,10 +1519,26 @@ def gallery_multipart_complete(request, upload_uuid):
         session.aborted_at = timezone.now()
         session.save(update_fields=["aborted_at"])
         return JsonResponse({"error": "The uploaded file is not a valid image."}, status=400)
-    prefix = f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"
-    if not session.object_key.startswith(prefix):
-        return JsonResponse({"error": "Invalid object key."}, status=500)
-    relative_name = session.object_key[len(prefix):]
+    expected_prefix = (
+        f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/galleries/"
+        f"{request.studio.pk}/{session.gallery_id}/originals/"
+    )
+    object_name = session.object_key[len(expected_prefix):] if session.object_key.startswith(expected_prefix) else ""
+    if (
+        not object_name
+        or "/" in object_name
+        or "\\\\" in object_name
+        or object_name in {".", ".."}
+        or not object_name.endswith(ALLOWED_CONTENT_TYPES[session.content_type])
+    ):
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "Invalid object key."}, status=400)
+    relative_name = session.object_key[len(f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"): ]
     with transaction.atomic():
         photo = GalleryPhoto.objects.create(
             gallery=session.gallery, photographer=request.studio, file=relative_name,
