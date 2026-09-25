@@ -1,4 +1,4 @@
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 
@@ -33,6 +33,7 @@ class ClientGalleryQueryEfficiencyTests(TestCase):
         self.factory = RequestFactory()
 
     @override_settings(MEDIA_SIGNING_SECRET="query-efficiency-test-secret")
+    @override_settings(MEDIA_SIGNING_SECRET="test-query-efficiency-secret")
     def test_album_membership_preparation_has_constant_query_count(self):
         page, photos = _paginate_client_gallery_photos(self.factory.get("/gallery/"), self.gallery)
         albums = list(Album.objects.filter(gallery=self.gallery).select_related("cover_photo").order_by("display_order", "pk"))
