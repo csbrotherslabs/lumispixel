@@ -144,8 +144,31 @@ EMAIL_USE_SSL = env_bool("DJANGO_EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL", "LumisPixel <noreply@lumispixel.com>")
 SERVER_EMAIL = os.getenv("DJANGO_SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 
+if not DEBUG:
+    if not ALLOWED_HOSTS:
+        raise RuntimeError("DJANGO_ALLOWED_HOSTS must not be empty in production.")
+    if not CSRF_TRUSTED_ORIGINS or any(not origin.startswith("https://") for origin in CSRF_TRUSTED_ORIGINS):
+        raise RuntimeError("DJANGO_CSRF_TRUSTED_ORIGINS must contain HTTPS origins in production.")
+    if not PUBLIC_BASE_URL.startswith("https://"):
+        raise RuntimeError("DJANGO_PUBLIC_BASE_URL must use HTTPS in production.")
+    if not DATABASE_URL or not DATABASE_URL.lower().startswith(("postgresql://", "postgres://")):
+        raise RuntimeError("Production DATABASE_URL must use PostgreSQL.")
+    if not B2_ENDPOINT_URL.startswith("https://"):
+        raise RuntimeError("Production B2_ENDPOINT_URL must use HTTPS.")
+    if not EMAIL_HOST or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+        raise RuntimeError("Production SMTP host and credentials are required.")
+    if EMAIL_USE_TLS == EMAIL_USE_SSL:
+        raise RuntimeError("Production email must enable exactly one of TLS or SSL.")
+
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+if not DEBUG:
+    for setting_name, redis_url in {
+        "CELERY_BROKER_URL": CELERY_BROKER_URL,
+        "CELERY_RESULT_BACKEND": CELERY_RESULT_BACKEND,
+    }.items():
+        if not redis_url.startswith("rediss://"):
+            raise RuntimeError(f"{setting_name} must use rediss:// in production.")
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", "1800"))
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
