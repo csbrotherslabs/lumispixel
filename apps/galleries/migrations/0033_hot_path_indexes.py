@@ -2,7 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("galleries", "0032_add_cinematic_gallery_design")]
+    dependencies = [("galleries", "0017_gallery_storage_deletion")]
 
     operations = [
         migrations.AddIndex(model_name="gallery", index=models.Index(fields=["photographer", "deleted_at", "archived_at", "-created_at"], name="gallery_owner_active_date")),
