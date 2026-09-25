@@ -24,5 +24,4 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(model_name="invoicepayment", constraint=models.CheckConstraint(condition=Q(processor_fee__gte=0), name="payment_fee_nonnegative")),
         migrations.AddConstraint(model_name="paymentrefund", constraint=models.CheckConstraint(condition=Q(amount__gt=0), name="refund_amount_positive")),
         migrations.AddConstraint(model_name="invoicecredit", constraint=models.CheckConstraint(condition=Q(amount__gt=0), name="credit_amount_positive")),
-        migrations.AddConstraint(model_name="invoicecredit", constraint=models.CheckConstraint(condition=Q(original_amount__gt=0), name="credit_original_positive")),
     ]
