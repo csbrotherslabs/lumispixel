@@ -1,6 +1,7 @@
 import uuid
 
 import boto3
+from botocore.config import Config
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
@@ -21,6 +22,14 @@ def _client():
         aws_secret_access_key=settings.B2_SECRET_ACCESS_KEY,
         region_name=settings.B2_REGION,
         endpoint_url=settings.B2_ENDPOINT_URL,
+        config=Config(
+            connect_timeout=settings.B2_CONNECT_TIMEOUT_SECONDS,
+            read_timeout=settings.B2_READ_TIMEOUT_SECONDS,
+            retries={
+                "mode": "standard",
+                "max_attempts": settings.B2_MAX_ATTEMPTS,
+            },
+        ),
     )
 
 
