@@ -29,7 +29,7 @@ class GalleryStorageDeletionTests(TestCase):
         delete.assert_called_once_with(key="private/test/photo.jpg")
         self.assertIsNotNone(record.completed_at)
         self.assertEqual(record.attempts, 1)
-        self.assertEqual(result, {"completed": 1, "failed": 0})
+        self.assertEqual(result, {"completed": 1, "failed": 0, "exhausted": 0})
 
     @patch("apps.galleries.storage_cleanup.delete_b2_object", side_effect=RuntimeError("B2 unavailable"))
     def test_failed_cleanup_preserves_reference_for_retry(self, delete):
@@ -39,7 +39,7 @@ class GalleryStorageDeletionTests(TestCase):
         self.assertIsNone(record.completed_at)
         self.assertEqual(record.attempts, 1)
         self.assertEqual(record.last_error, "RuntimeError")
-        self.assertEqual(first, {"completed": 0, "failed": 1})
+        self.assertEqual(first, {"completed": 0, "failed": 1, "exhausted": 0})
 
         delete.side_effect = None
         second = process_storage_deletions()
