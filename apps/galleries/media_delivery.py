@@ -28,7 +28,9 @@ def sign_media_path(path, expires):
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
 
-def signed_media_url(file_name, *, ttl=None, now=None):
+def signed_media_url(file_name, *, ttl=None, now=None, variant="original"):
+    if variant not in {"original", "preview", "thumbnail"}:
+        raise ValueError("Unsupported media delivery variant.")
     base_url = settings.MEDIA_DELIVERY_BASE_URL
     if not base_url:
         raise ImproperlyConfigured("MEDIA_DELIVERY_BASE_URL is required for signed media delivery.")
@@ -41,5 +43,5 @@ def signed_media_url(file_name, *, ttl=None, now=None):
     expires = now + ttl
     path = _media_path(file_name)
     signature = sign_media_path(path, expires)
-    query = urlencode({"expires": expires, "signature": signature})
+    query = urlencode({"expires": expires, "signature": signature, "variant": variant})
     return f"{base_url}{path}?{query}"
