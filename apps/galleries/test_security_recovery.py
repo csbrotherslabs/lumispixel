@@ -107,9 +107,9 @@ class MultipartSecurityRecoveryTests(TestCase):
         complete.assert_not_called()
 
     @patch("apps.dashboard.views.delete_multipart_object")
-    @patch("apps.dashboard.views.get_multipart_object_bytes", return_value=b"not-an-image")
+    @patch("apps.dashboard.views.get_multipart_object_stream", return_value=io.BytesIO(b"not-an-image"))
     @patch("apps.dashboard.views.complete_multipart")
-    def test_invalid_completed_object_is_deleted_and_session_released(self, complete, get_bytes, delete):
+    def test_invalid_completed_object_is_deleted_and_session_released(self, complete, get_stream, delete):
         upload = self.session()
         response = self.post_json(
             reverse("photographer_workspace:gallery_multipart_complete", args=[upload.pk]),
