@@ -67,11 +67,12 @@ class CrossTenantIdorTests(TestCase):
         self.invoice_b = ClientInvoice.objects.create(
             photographer=self.studio_b, client=self.client_b, booking=self.booking_b,
             invoice_number="IDOR-B-001", issue_date=timezone.localdate(),
+            subtotal=0, discount_total=0, tax_total=0, total=0,
             due_date=timezone.localdate() + timedelta(days=7),
         )
         self.contract_b = Contract.objects.create(
             photographer=self.studio_b, client=self.client_b, booking=self.booking_b,
-            title="Private Contract",
+            title="Private Contract", content="Private contract terms.",
         )
         self.upload_b = GalleryMultipartUpload.objects.create(
             gallery=self.gallery_b, photographer=self.studio_b,
