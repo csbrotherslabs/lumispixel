@@ -308,6 +308,7 @@ class GalleryPhoto(models.Model):
     file = models.ImageField(storage=gallery_photo_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
     original_name = models.CharField(max_length=255)
     file_size = models.PositiveBigIntegerField(default=0)
+    multipart_upload = models.OneToOneField("GalleryMultipartUpload", on_delete=models.SET_NULL, blank=True, null=True, related_name="photo")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.QUEUED)
     is_cover = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=True)
