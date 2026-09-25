@@ -105,6 +105,14 @@ jobs:
       - name: Verify committed migrations
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Validate production static asset build
+        env:
+          DJANGO_SETTINGS_MODULE: "config.settings"
+          DJANGO_STATICFILES_STORAGE: "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        run: |
+          python manage.py collectstatic --noinput --clear
+          python manage.py test config.test_static_deployment --verbosity 2
+
       - name: Audit brittle test contracts
         run: python scripts/audit_test_contracts.py
 
