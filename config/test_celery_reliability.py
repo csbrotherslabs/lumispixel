@@ -14,6 +14,7 @@ class CeleryReliabilityContractTests(SimpleTestCase):
     def test_worker_loss_redelivers_unacknowledged_tasks(self):
         self.assertTrue(settings.CELERY_TASK_ACKS_LATE)
         self.assertTrue(settings.CELERY_TASK_REJECT_ON_WORKER_LOST)
+        self.assertFalse(settings.CELERY_TASK_ACKS_ON_FAILURE_OR_TIMEOUT)
         self.assertEqual(settings.CELERY_WORKER_PREFETCH_MULTIPLIER, 1)
 
     def test_broker_reconnect_and_visibility_are_bounded(self):

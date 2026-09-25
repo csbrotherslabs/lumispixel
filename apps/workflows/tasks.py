@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta
 
 from celery import shared_task
 from django.utils import timezone
+from django.db import transaction
 
 from apps.clients.models import ClientInvoice
 from apps.galleries.models import Gallery
@@ -10,25 +11,43 @@ from .models import AutomationExecution, AutomationRule
 from .services import dispatch_event, run_execution
 
 
-@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    max_retries=5,
+)
 def execute_automation(execution_id):
-    execution = AutomationExecution.objects.select_related("rule", "photographer").get(pk=execution_id)
-    if execution.status in {
-        AutomationExecution.Status.SUCCEEDED,
-        AutomationExecution.Status.SKIPPED,
-    }:
-        return execution.status
+    # Claim the execution under a row lock. This prevents two workers from
+    # concurrently performing the same side effect after Redis redelivery.
+    with transaction.atomic():
+        execution = (
+            AutomationExecution.objects.select_for_update()
+            .select_related("rule", "photographer")
+            .get(pk=execution_id)
+        )
+        if execution.status in {
+            AutomationExecution.Status.RUNNING,
+            AutomationExecution.Status.SUCCEEDED,
+            AutomationExecution.Status.SKIPPED,
+        }:
+            return execution.status
 
-    execution.status = AutomationExecution.Status.RUNNING
-    execution.started_at = timezone.now()
-    execution.error = ""
-    execution.save(update_fields=["status", "started_at", "error"])
+        execution.status = AutomationExecution.Status.RUNNING
+        execution.started_at = timezone.now()
+        execution.finished_at = None
+        execution.error = ""
+        execution.save(
+            update_fields=["status", "started_at", "finished_at", "error"]
+        )
 
     try:
         performed, message = run_execution(execution)
     except Exception as exc:
         execution.status = AutomationExecution.Status.FAILED
-        execution.error = str(exc)[:4000]
+        # Keep persisted diagnostics safe; detailed exceptions remain in worker logs.
+        execution.error = exc.__class__.__name__[:4000]
         execution.finished_at = timezone.now()
         execution.save(update_fields=["status", "error", "finished_at"])
         raise
