@@ -86,10 +86,16 @@ class TeamPerformanceMetricTests(TestCase):
         today = timezone.localdate()
         friday = today - timedelta(days=(today.weekday() - 4) % 7)
         sessions = []
-        for offset in (0, -1, 7, 6):
+        # Four deterministic Friday/Saturday completions inside the current
+        # reporting window. Avoid future dates when the test runs before Friday.
+        saturday = friday + timedelta(days=1)
+        if friday > today:
+            friday -= timedelta(days=7)
+            saturday -= timedelta(days=7)
+        for session_day in (friday, saturday, friday - timedelta(days=7), saturday - timedelta(days=7)):
             session = ClientSession.objects.create(
                 photographer=self.studio, client=self.client_record,
-                starts_at=timezone.make_aware(datetime.combine(friday - timedelta(days=offset), time(10))),
+                starts_at=timezone.make_aware(datetime.combine(session_day, time(10))),
                 status=ClientSession.Status.COMPLETED,
             )
             session.assigned_members.add(self.member)
