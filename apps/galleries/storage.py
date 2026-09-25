@@ -51,6 +51,17 @@ class PrivateGalleryB2Storage(PrivateGalleryObjectStorage):
         kwargs.setdefault("file_overwrite", False)
         kwargs.setdefault("custom_domain", None)
         kwargs.setdefault("location", f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}")
+        kwargs.setdefault(
+            "client_config",
+            {
+                "connect_timeout": settings.B2_CONNECT_TIMEOUT_SECONDS,
+                "read_timeout": settings.B2_READ_TIMEOUT_SECONDS,
+                "retries": {
+                    "mode": "standard",
+                    "max_attempts": settings.B2_MAX_ATTEMPTS,
+                },
+            },
+        )
         super().__init__(*args, **kwargs)
 
 
