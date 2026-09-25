@@ -100,8 +100,16 @@ class ClientGalleryTokenIsolationTests(TestCase):
     def test_token_a_gallery_page_does_not_leak_gallery_b_content(self):
         response = self.client.get(reverse("galleries:client_gallery_access", args=[self.token_a]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.photo_a.original_name)
-        self.assertNotContains(response, self.photo_b.original_name)
+        # The client template intentionally does not expose original filenames.
+        # Assert isolation using gallery-scoped photo DOM IDs and media routes.
+        self.assertContains(response, f'id="photo-{self.photo_a.pk}"')
+        self.assertContains(response, reverse(
+            "galleries:client_gallery_photo_media", args=[self.token_a, self.photo_a.pk]
+        ))
+        self.assertNotContains(response, f'id="photo-{self.photo_b.pk}"')
+        self.assertNotContains(response, reverse(
+            "galleries:client_gallery_photo_media", args=[self.token_a, self.photo_b.pk]
+        ))
 
     def test_favorites_are_isolated_per_bearer_token(self):
         self.client.post(reverse(
