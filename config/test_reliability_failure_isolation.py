@@ -17,16 +17,16 @@ class SupportFailureIsolationTests(TestCase):
 
     @patch("apps.core.support_views.create_support_attachment", side_effect=RuntimeError("storage unavailable"))
     def test_ticket_and_attachment_write_roll_back_together(self, _create_attachment):
-        response = self.client.post(
-            "/resources/help-center/",
-            {
-                "subject": "Atomic support ticket",
-                "category": "technical",
-                "description": "Attachment storage should not leave a partial ticket.",
-                "attachment": SimpleUploadedFile("evidence.txt", b"evidence"),
-            },
-        )
-        self.assertEqual(response.status_code, 500)
+        with self.assertRaises(RuntimeError):
+            self.client.post(
+                "/resources/help-center/",
+                {
+                    "subject": "Atomic support ticket",
+                    "category": "technical",
+                    "description": "Attachment storage should not leave a partial ticket.",
+                    "attachment": SimpleUploadedFile("evidence.txt", b"evidence"),
+                },
+            )
         self.assertFalse(SupportTicket.objects.filter(subject="Atomic support ticket").exists())
 
     @patch("apps.core.support_views.notify_ticket_created", side_effect=RuntimeError("mail unavailable"))
