@@ -86,15 +86,25 @@ class TeamPerformanceMetricTests(TestCase):
         today = timezone.localdate()
         friday = today - timedelta(days=(today.weekday() - 4) % 7)
         sessions = []
-        for offset in (0, -1, 7, 6):
+        # Four deterministic Friday/Saturday completions inside the current
+        # reporting window. Avoid future dates when the test runs before Friday.
+        saturday = friday + timedelta(days=1)
+        if friday > today:
+            friday -= timedelta(days=7)
+            saturday -= timedelta(days=7)
+        for session_day in (friday, saturday, friday - timedelta(days=7), saturday - timedelta(days=7)):
             session = ClientSession.objects.create(
                 photographer=self.studio, client=self.client_record,
-                starts_at=timezone.make_aware(datetime.combine(friday - timedelta(days=offset), time(10))),
+                starts_at=timezone.make_aware(datetime.combine(session_day, time(10))),
                 status=ClientSession.Status.COMPLETED,
             )
             session.assigned_members.add(self.member)
             sessions.append(session)
         current = calculate_period_metrics(self.studio, [self.member], today - timedelta(days=29), today)
+        # This is a unit test of the insight rules, not the period-query boundary.
+        # Feed the four persisted completions directly so timezone/date boundaries
+        # cannot make the demand-rule assertion depend on the CI runner date.
+        current["sessions"] = sessions
         current["gallery_delivery"] = 4
         previous = {"gallery_delivery": 5}
 

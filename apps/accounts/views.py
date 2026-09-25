@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import Resolver404, resolve, reverse
 from django.utils.encoding import force_str
@@ -24,6 +25,38 @@ SIGNUP_INTENT_SESSION_KEY = "signup_intent"
 AUTH_NEXT_SESSION_KEY = "auth_next_url"
 PENDING_USER_SESSION_KEY = "pending_verification_user_id"
 VERIFICATION_DELIVERY_SESSION_KEY = "verification_email_delivery_status"
+LOGIN_FAILURE_LIMIT = 10
+LOGIN_FAILURE_WINDOW_SECONDS = 15 * 60
+
+
+
+def _login_throttle_key(request, email):
+    # Hash the normalized identifier so raw email addresses never become cache keys.
+    import hashlib
+    normalized = User.objects.normalize_email(email or "").casefold()
+    identity = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    forwarded = (request.META.get("HTTP_X_FORWARDED_FOR") or "").split(",")[0].strip()
+    remote = forwarded or request.META.get("REMOTE_ADDR") or "unknown"
+    ip_hash = hashlib.sha256(remote.encode("utf-8")).hexdigest()[:24]
+    return f"auth-login-fail:{identity}:{ip_hash}"
+
+
+def _login_throttled(request, email):
+    return int(cache.get(_login_throttle_key(request, email), 0) or 0) >= LOGIN_FAILURE_LIMIT
+
+
+def _record_login_failure(request, email):
+    key = _login_throttle_key(request, email)
+    try:
+        cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, LOGIN_FAILURE_WINDOW_SECONDS)
+    else:
+        cache.touch(key, LOGIN_FAILURE_WINDOW_SECONDS)
+
+
+def _clear_login_failures(request, email):
+    cache.delete(_login_throttle_key(request, email))
 
 
 def _post_login_url(request, next_url=""):
@@ -149,9 +182,13 @@ def login_view(request):
     next_url = safe_next_url(request, raw_next)
     if request.user.is_authenticated:
         return redirect(_post_login_url(request, next_url))
+    submitted_email = request.POST.get("email", "") if request.method == "POST" else ""
+    if request.method == "POST" and _login_throttled(request, submitted_email):
+        return HttpResponse("Too many login attempts. Please try again later.", status=429)
     form = EmailAuthenticationForm(request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
+        _clear_login_failures(request, submitted_email)
         if not user.email_verified:
             _remember_pending_user(request, user)
             _store_auth_flow(request, next_url=next_url, intent=request.session.get(SIGNUP_INTENT_SESSION_KEY, "general"))
@@ -161,6 +198,8 @@ def login_view(request):
         if not form.cleaned_data.get("remember"):
             request.session.set_expiry(0)
         return redirect(_post_login_url(request, next_url))
+    if request.method == "POST" and submitted_email:
+        _record_login_failure(request, submitted_email)
     return render(request, "login.html", {"form": form, "next": next_url})
 
 
