@@ -23,6 +23,6 @@ class ExternalRetryContractTests(SimpleTestCase):
             multipart_uploads._client()
         config = client.call_args.kwargs["config"]
         self.assertEqual(config.retries["mode"], "standard")
-        self.assertEqual(config.retries["total_max_attempts"], settings.B2_MAX_ATTEMPTS)
+        self.assertEqual(config.retries["max_attempts"], settings.B2_MAX_ATTEMPTS)
         self.assertEqual(config.connect_timeout, settings.B2_CONNECT_TIMEOUT_SECONDS)
         self.assertEqual(config.read_timeout, settings.B2_READ_TIMEOUT_SECONDS)
