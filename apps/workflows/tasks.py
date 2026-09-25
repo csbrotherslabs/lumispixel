@@ -10,7 +10,7 @@ from .models import AutomationExecution, AutomationRule
 from .services import dispatch_event, run_execution
 
 
-@shared_task
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def execute_automation(execution_id):
     execution = AutomationExecution.objects.select_related("rule", "photographer").get(pk=execution_id)
     if execution.status in {
@@ -42,7 +42,7 @@ def execute_automation(execution_id):
     return execution.status
 
 
-@shared_task
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def scan_scheduled_automations():
     """Celery Beat entry point for date-driven launch automations."""
     today = timezone.localdate()

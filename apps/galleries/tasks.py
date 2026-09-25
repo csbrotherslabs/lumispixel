@@ -46,11 +46,11 @@ def cleanup_stale_multipart_uploads(*, now=None):
     return {"aborted": aborted, "failed": failed}
 
 
-@shared_task
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def cleanup_stale_gallery_multipart_uploads():
     return cleanup_stale_multipart_uploads()
 
 
-@shared_task
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def cleanup_gallery_storage_objects():
     return process_storage_deletions()
