@@ -480,25 +480,29 @@ def client_gallery_download(request, token, photo_id):
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
     )
-    if settings.download_limit is not None:
-        used = GalleryAnalyticsEvent.objects.filter(
-            gallery=gallery,
-            visitor_identifier=token_record.token_hash,
-            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
-        ).count()
-        if used >= settings.download_limit:
-            return HttpResponseForbidden()
+    with transaction.atomic():
+        # Lock the gallery while enforcing the per-client quota. Without this,
+        # simultaneous requests can both observe the same remaining slot.
+        Gallery.objects.select_for_update().get(pk=gallery.pk)
+        if settings.download_limit is not None:
+            used = GalleryAnalyticsEvent.objects.filter(
+                gallery=gallery,
+                visitor_identifier=token_record.token_hash,
+                event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            ).count()
+            if used >= settings.download_limit:
+                return HttpResponseForbidden()
 
-    track_gallery_event(
-        gallery=gallery,
-        event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
-        visitor_identifier=token_record.token_hash,
-        session_identifier=_session_identifier(request),
-        user=request.user,
-        photo=photo,
-        source="invite_link",
-    )
-    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
+        track_gallery_event(
+            gallery=gallery,
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            visitor_identifier=token_record.token_hash,
+            session_identifier=_session_identifier(request),
+            user=request.user,
+            photo=photo,
+            source="invite_link",
+        )
+        Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
     log_gallery_activity(
         gallery=gallery,
         event_type=GalleryActivity.EventType.PHOTO_DOWNLOADED,
