@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.utils import timezone
 
 from .models import GalleryStorageDeletion
@@ -28,8 +29,12 @@ def enqueue_storage_deletions(items):
     return rows
 
 
-def process_storage_deletions(*, limit=200):
-    pending = GalleryStorageDeletion.objects.filter(completed_at__isnull=True).order_by("created_at")[:limit]
+def process_storage_deletions(*, limit=200, max_attempts=None):
+    max_attempts = max_attempts or settings.GALLERY_STORAGE_DELETION_MAX_ATTEMPTS
+    pending = GalleryStorageDeletion.objects.filter(
+        completed_at__isnull=True,
+        attempts__lt=max_attempts,
+    ).order_by("created_at")[:limit]
     completed = failed = 0
     for deletion in pending:
         try:
@@ -53,4 +58,8 @@ def process_storage_deletions(*, limit=200):
         deletion.last_attempt_at = deletion.completed_at = timezone.now()
         deletion.save(update_fields=["attempts", "last_error", "last_attempt_at", "completed_at"])
         completed += 1
-    return {"completed": completed, "failed": failed}
+    exhausted = GalleryStorageDeletion.objects.filter(
+        completed_at__isnull=True,
+        attempts__gte=max_attempts,
+    ).count()
+    return {"completed": completed, "failed": failed, "exhausted": exhausted}
