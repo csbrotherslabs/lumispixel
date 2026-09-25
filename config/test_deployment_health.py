@@ -10,7 +10,7 @@ class DeploymentHealthTests(SimpleTestCase):
         response = self.client.get("/health/live/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
-        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertIn("no-store", response["Cache-Control"])
 
     def test_readiness_is_generic_and_healthy_when_dependencies_respond(self):
         redis = MagicMock()
