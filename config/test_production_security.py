@@ -7,7 +7,7 @@ from pathlib import Path
 from django.conf import settings
 from django.test import SimpleTestCase
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class RepositorySecretHygieneTests(SimpleTestCase):
