@@ -101,6 +101,10 @@ class TeamPerformanceMetricTests(TestCase):
             session.assigned_members.add(self.member)
             sessions.append(session)
         current = calculate_period_metrics(self.studio, [self.member], today - timedelta(days=29), today)
+        # This is a unit test of the insight rules, not the period-query boundary.
+        # Feed the four persisted completions directly so timezone/date boundaries
+        # cannot make the demand-rule assertion depend on the CI runner date.
+        current["sessions"] = sessions
         current["gallery_delivery"] = 4
         previous = {"gallery_delivery": 5}
 
