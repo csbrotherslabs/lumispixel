@@ -494,15 +494,15 @@ def client_gallery_download(request, token, photo_id):
                 return HttpResponseForbidden()
 
         track_gallery_event(
-        gallery=gallery,
-        event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
-        visitor_identifier=token_record.token_hash,
-        session_identifier=_session_identifier(request),
-        user=request.user,
-        photo=photo,
-        source="invite_link",
-    )
-    Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
+            gallery=gallery,
+            event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
+            visitor_identifier=token_record.token_hash,
+            session_identifier=_session_identifier(request),
+            user=request.user,
+            photo=photo,
+            source="invite_link",
+        )
+        Gallery.objects.filter(pk=gallery.pk).update(download_count=F("download_count") + 1)
     log_gallery_activity(
         gallery=gallery,
         event_type=GalleryActivity.EventType.PHOTO_DOWNLOADED,
