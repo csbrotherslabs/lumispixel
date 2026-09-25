@@ -3,11 +3,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.health import live, ready
 from apps.core.support_views import help_center, support_attachment_download, support_ticket_detail
 from apps.dashboard.client_contracts import client_contracts
 from apps.dashboard.workspace_settings import workspace_settings
 
 urlpatterns = [
+    path("health/live/", live, name="health_live"),
+    path("health/ready/", ready, name="health_ready"),
     path("admin/", admin.site.urls),
     path("resources/help-center/", help_center, name="support_help_center"),
     path("resources/help-center/tickets/<str:reference>/", support_ticket_detail, name="support_ticket_detail"),
