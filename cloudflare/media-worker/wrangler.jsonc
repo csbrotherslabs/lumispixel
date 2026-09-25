@@ -10,5 +10,18 @@
     "B2_ALLOWED_PREFIX": "private/dev/",
     "MEDIA_MAX_SIGNED_URL_TTL": "3600",
     "MEDIA_EDGE_CACHE_TTL": "86400"
+  },
+  "env": {
+    "production": {
+      "name": "lumispixel-media-prod",
+      "vars": {
+        "B2_BUCKET_NAME": "lumispixel-production-media",
+        "B2_REGION": "us-east-005",
+        "B2_ENDPOINT_URL": "https://s3.us-east-005.backblazeb2.com",
+        "B2_ALLOWED_PREFIX": "private/prod/",
+        "MEDIA_MAX_SIGNED_URL_TTL": "900",
+        "MEDIA_EDGE_CACHE_TTL": "86400"
+      }
+    }
   }
 }
