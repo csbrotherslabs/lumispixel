@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.http import FileResponse
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -45,13 +46,16 @@ def help_center(request):
                 form.add_error(None, exc.messages[0])
 
         if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.requester = request.user
-            ticket.requester_type = _requester_type(request.user)
-            ticket.queue = Department.objects.filter(code="customer-support", is_active=True).first()
-            ticket.save()
-            if upload:
-                create_support_attachment(ticket=ticket, upload=upload, user=request.user)
+            with transaction.atomic():
+                ticket = form.save(commit=False)
+                ticket.requester = request.user
+                ticket.requester_type = _requester_type(request.user)
+                ticket.queue = Department.objects.filter(code="customer-support", is_active=True).first()
+                ticket.save()
+                if upload:
+                    create_support_attachment(ticket=ticket, upload=upload, user=request.user)
+            # Notification delivery is deliberately outside the database
+            # transaction: a mail outage must not roll back a valid ticket.
             notify_ticket_created(ticket)
             request.session["support_ticket_reference"] = ticket.reference
             return redirect("support_ticket_detail", reference=ticket.reference)
@@ -90,17 +94,20 @@ def support_ticket_detail(request, reference):
             except ValidationError as exc:
                 messages.error(request, exc.messages[0])
             else:
-                comment = SupportTicketComment.objects.create(
-                    ticket=ticket,
-                    author_user=request.user,
-                    body=body,
-                    is_internal=False,
-                )
-                if upload:
-                    create_support_attachment(ticket=ticket, comment=comment, upload=upload, user=request.user)
-                if ticket.status == SupportTicket.Status.WAITING_CUSTOMER:
-                    ticket.status = SupportTicket.Status.OPEN
-                    ticket.save(update_fields=["status", "updated_at"])
+                with transaction.atomic():
+                    comment = SupportTicketComment.objects.create(
+                        ticket=ticket,
+                        author_user=request.user,
+                        body=body,
+                        is_internal=False,
+                    )
+                    if upload:
+                        create_support_attachment(ticket=ticket, comment=comment, upload=upload, user=request.user)
+                    if ticket.status == SupportTicket.Status.WAITING_CUSTOMER:
+                        ticket.status = SupportTicket.Status.OPEN
+                        ticket.save(update_fields=["status", "updated_at"])
+                # Persist the support conversation before attempting optional
+                # notification delivery so SMTP cannot create a partial write.
                 notify_customer_reply(ticket, comment)
                 messages.success(request, "Your reply was sent to LumisPixel Support.")
                 return redirect("support_ticket_detail", reference=ticket.reference)

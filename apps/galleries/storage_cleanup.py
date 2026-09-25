@@ -41,7 +41,9 @@ def process_storage_deletions(*, limit=200):
         except Exception as exc:
             failed += 1
             deletion.attempts += 1
-            deletion.last_error = str(exc)[:1000]
+            # Persist a safe diagnostic category, never provider exception text;
+            # SDK errors can contain bucket names, endpoints, request IDs, or credentials.
+            deletion.last_error = exc.__class__.__name__[:1000]
             deletion.last_attempt_at = timezone.now()
             deletion.save(update_fields=["attempts", "last_error", "last_attempt_at"])
             logger.exception("Storage deletion failed for %s", deletion.object_key)

@@ -59,4 +59,4 @@ class BulkGalleryDeletionStorageTests(TestCase):
         deletion = GalleryStorageDeletion.objects.get(object_key=object_key)
         self.assertIsNone(deletion.completed_at)
         self.assertEqual(deletion.attempts, 1)
-        self.assertIn("B2 unavailable", deletion.last_error)
+        self.assertEqual(deletion.last_error, "RuntimeError")
