@@ -57,6 +57,13 @@ class ProductionConfigurationTests(SimpleTestCase):
             "B2_ENDPOINT_URL": "https://s3.us-west-004.backblazeb2.com",
             "MEDIA_DELIVERY_BASE_URL": "https://media.example.test",
             "MEDIA_SIGNING_SECRET": "media-signing-test-secret-at-least-32-chars",
+            "DJANGO_EMAIL_HOST": "smtp.example.test",
+            "DJANGO_EMAIL_HOST_USER": "smtp-user",
+            "DJANGO_EMAIL_HOST_PASSWORD": "smtp-password",
+            "DJANGO_EMAIL_USE_TLS": "1",
+            "DJANGO_EMAIL_USE_SSL": "0",
+            "CELERY_BROKER_URL": "rediss://redis.example.test/0",
+            "CELERY_RESULT_BACKEND": "rediss://redis.example.test/0",
         })
         env.update(overrides)
         code = (
