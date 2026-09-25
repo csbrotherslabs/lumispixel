@@ -128,9 +128,9 @@ def _prepare_client_gallery_content(gallery, photos, albums):
         album.client_photo_count = len(chapter_photos)
         album.client_cover_url = ""
         if album.cover_photo_id and album.cover_photo_id in photos_by_id:
-            album.client_cover_url = photos_by_id[album.cover_photo_id].delivery_url
+            album.client_cover_url = photos_by_id[album.cover_photo_id].thumbnail_url
         elif chapter_photos:
-            album.client_cover_url = chapter_photos[0].delivery_url
+            album.client_cover_url = chapter_photos[0].thumbnail_url
     return photos, albums
 
 
