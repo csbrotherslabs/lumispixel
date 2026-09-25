@@ -332,10 +332,24 @@ class GalleryPhoto(models.Model):
 
     @property
     def delivery_url(self):
-        """Return a short-lived Cloudflare URL for this private original."""
+        """Return a short-lived Cloudflare URL for gallery preview delivery."""
         if not self.file:
             return ""
-        return signed_media_url(self.file.name)
+        return signed_media_url(self.file.name, variant="preview")
+
+    @property
+    def thumbnail_url(self):
+        """Return a short-lived Cloudflare URL for compact gallery thumbnails."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name, variant="thumbnail")
+
+    @property
+    def original_delivery_url(self):
+        """Return a short-lived Cloudflare URL for an explicitly requested original."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name, variant="original")
 
 
 class GalleryMultipartUpload(models.Model):
