@@ -118,6 +118,7 @@ class Gallery(models.Model):
         ]
         indexes = [
             models.Index(fields=["photographer", "status", "-created_at"], name="gallery_owner_status_created"),
+            models.Index(fields=["photographer", "deleted_at", "archived_at", "-created_at"], name="gallery_owner_active_date"),
         ]
 
     def clean(self):
@@ -319,7 +320,10 @@ class GalleryPhoto(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["photographer", "status", "-created_at"], name="photo_owner_status_created")]
+        indexes = [
+            models.Index(fields=["photographer", "status", "-created_at"], name="photo_owner_status_created"),
+            models.Index(fields=["gallery", "status", "is_visible", "-created_at"], name="photo_gallery_visible_date"),
+        ]
 
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
@@ -347,6 +351,12 @@ class GalleryMultipartUpload(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True)
     aborted_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["completed_at", "aborted_at", "created_at"], name="multipart_active_created"),
+            models.Index(fields=["photographer", "gallery", "completed_at", "aborted_at"], name="multipart_owner_gallery"),
+        ]
 
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
