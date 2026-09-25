@@ -85,13 +85,18 @@ def list_parts(*, key, upload_id):
         marker = response.get("NextPartNumberMarker")
 
 
+def get_object_stream(*, key):
+    """Return a completed object stream without materializing it in server memory."""
+    return _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)["Body"]
+
+
 def get_object_bytes(*, key):
-    """Read a completed object for server-side image validation."""
-    response = _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)
+    """Compatibility helper for callers that explicitly need object bytes."""
+    body = get_object_stream(key=key)
     try:
-        return response["Body"].read()
+        return body.read()
     finally:
-        response["Body"].close()
+        body.close()
 
 
 def delete_object(*, key):
