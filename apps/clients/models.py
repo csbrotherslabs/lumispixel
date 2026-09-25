@@ -1055,7 +1055,6 @@ class InvoiceCredit(PhotographerOwnedModel):
         indexes = [models.Index(fields=["photographer", "status", "applied_at"], name="credit_owner_status_date")]
         constraints = [
             models.CheckConstraint(condition=Q(amount__gt=0), name="credit_amount_positive"),
-            models.CheckConstraint(condition=Q(original_amount__gt=0), name="credit_original_positive"),
             models.CheckConstraint(condition=Q(remaining_amount__gte=0), name="credit_remaining_nonnegative"),
             models.CheckConstraint(condition=Q(remaining_amount__lte=F("original_amount")), name="credit_remaining_not_over_original"),
             models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="credit_owner_submission_unique"),
