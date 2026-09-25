@@ -38,7 +38,7 @@ class GalleryStorageDeletionTests(TestCase):
         record = GalleryStorageDeletion.objects.get()
         self.assertIsNone(record.completed_at)
         self.assertEqual(record.attempts, 1)
-        self.assertIn("B2 unavailable", record.last_error)
+        self.assertEqual(record.last_error, "RuntimeError")
         self.assertEqual(first, {"completed": 0, "failed": 1})
 
         delete.side_effect = None
