@@ -1463,7 +1463,12 @@ def gallery_multipart_resume(request, upload_uuid):
 @require_POST
 def gallery_multipart_sign_part(request, upload_uuid):
     session = _multipart_session(request, upload_uuid)
-    if session.completed_at or session.aborted_at:
+    if session.completed_at:
+        photo = GalleryPhoto.objects.filter(multipart_upload=session).first()
+        if photo:
+            return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+        return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+    if session.aborted_at:
         return JsonResponse({"error": "Upload is no longer active."}, status=409)
     data = _json_body(request)
     try:
@@ -1483,7 +1488,12 @@ def gallery_multipart_sign_part(request, upload_uuid):
 @require_POST
 def gallery_multipart_complete(request, upload_uuid):
     session = _multipart_session(request, upload_uuid)
-    if session.completed_at or session.aborted_at:
+    if session.completed_at:
+        photo = GalleryPhoto.objects.filter(multipart_upload=session).first()
+        if photo:
+            return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+        return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+    if session.aborted_at:
         return JsonResponse({"error": "Upload is no longer active."}, status=409)
     data = _json_body(request)
     parts = (data or {}).get("parts")
@@ -1545,10 +1555,15 @@ def gallery_multipart_complete(request, upload_uuid):
         # A retry or concurrent completion must not create a second photo or
         # increment gallery accounting twice.
         locked_session = GalleryMultipartUpload.objects.select_for_update().get(pk=session.pk)
-        if locked_session.completed_at or locked_session.aborted_at:
+        if locked_session.completed_at:
+            photo = GalleryPhoto.objects.filter(multipart_upload=locked_session).first()
+            if photo:
+                return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+            return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+        if locked_session.aborted_at:
             return JsonResponse({"error": "Upload is no longer active."}, status=409)
         photo = GalleryPhoto.objects.create(
-            gallery=locked_session.gallery, photographer=request.studio, file=relative_name,
+            gallery=locked_session.gallery, photographer=request.studio, multipart_upload=locked_session, file=relative_name,
             original_name=locked_session.original_name, file_size=locked_session.file_size,
             status=GalleryPhoto.Status.COMPLETED,
         )
