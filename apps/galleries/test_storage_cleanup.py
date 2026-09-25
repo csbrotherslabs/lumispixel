@@ -46,4 +46,4 @@ class GalleryStorageDeletionTests(TestCase):
         record.refresh_from_db()
         self.assertIsNotNone(record.completed_at)
         self.assertEqual(record.attempts, 2)
-        self.assertEqual(second, {"completed": 1, "failed": 0})
+        self.assertEqual(second, {"completed": 1, "failed": 0, "exhausted": 0})
