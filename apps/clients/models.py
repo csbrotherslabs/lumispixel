@@ -873,7 +873,15 @@ class ClientInvoice(PhotographerOwnedModel):
     class Meta:
         ordering = ["due_date", "-created_at"]
         indexes = [models.Index(fields=["photographer", "status", "due_date"], name="invoice_owner_status_due")]
-        constraints = [models.UniqueConstraint(fields=["photographer", "invoice_number"], name="invoice_owner_number_unique")]
+        constraints = [
+            models.UniqueConstraint(fields=["photographer", "invoice_number"], name="invoice_owner_number_unique"),
+            models.CheckConstraint(condition=Q(subtotal__gte=0), name="invoice_subtotal_nonnegative"),
+            models.CheckConstraint(condition=Q(discount_total__gte=0), name="invoice_discount_nonnegative"),
+            models.CheckConstraint(condition=Q(tax_total__gte=0), name="invoice_tax_nonnegative"),
+            models.CheckConstraint(condition=Q(total__gte=0), name="invoice_total_nonnegative"),
+            models.CheckConstraint(condition=Q(amount_paid__gte=0), name="invoice_paid_nonnegative"),
+            models.CheckConstraint(condition=Q(amount_paid__lte=F("total")), name="invoice_paid_not_over_total"),
+        ]
 
     def clean(self):
         errors = {}
@@ -920,6 +928,14 @@ class InvoiceLineItem(models.Model):
 
     class Meta:
         ordering = ["position", "pk"]
+        constraints = [
+            models.CheckConstraint(condition=Q(quantity__gt=0), name="invoice_line_quantity_positive"),
+            models.CheckConstraint(condition=Q(unit_price__gte=0), name="invoice_line_price_nonnegative"),
+            models.CheckConstraint(condition=Q(discount_percent__gte=0, discount_percent__lte=100), name="invoice_line_discount_percent_range"),
+            models.CheckConstraint(condition=Q(tax_percent__gte=0, tax_percent__lte=100), name="invoice_line_tax_percent_range"),
+            models.CheckConstraint(condition=Q(subtotal__gte=0), name="invoice_line_subtotal_nonnegative"),
+            models.CheckConstraint(condition=Q(total__gte=0), name="invoice_line_total_nonnegative"),
+        ]
 
 
 class InvoicePaymentSchedule(models.Model):
@@ -931,6 +947,7 @@ class InvoicePaymentSchedule(models.Model):
 
     class Meta:
         ordering = ["position", "due_date"]
+        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="invoice_schedule_amount_positive")]
 
 
 class InvoiceActivity(PhotographerOwnedModel):
@@ -973,7 +990,11 @@ class InvoicePayment(PhotographerOwnedModel):
 
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "paid_at"], name="payment_owner_status_date")]
-        constraints = [models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="payment_owner_submission_unique")]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="payment_amount_positive"),
+            models.CheckConstraint(condition=Q(processor_fee__gte=0), name="payment_fee_nonnegative"),
+            models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="payment_owner_submission_unique"),
+        ]
 
     def clean(self):
         if self.invoice_id and self.photographer_id != self.invoice.photographer_id:
@@ -1000,7 +1021,10 @@ class PaymentRefund(PhotographerOwnedModel):
 
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "refunded_at"], name="refund_owner_status_date")]
-        constraints = [models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="refund_owner_submission_unique")]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="refund_amount_positive"),
+            models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="refund_owner_submission_unique"),
+        ]
 
     def clean(self):
         if self.payment_id and self.photographer_id != self.payment.photographer_id:
@@ -1030,6 +1054,8 @@ class InvoiceCredit(PhotographerOwnedModel):
     class Meta:
         indexes = [models.Index(fields=["photographer", "status", "applied_at"], name="credit_owner_status_date")]
         constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="credit_amount_positive"),
+            models.CheckConstraint(condition=Q(original_amount__gt=0), name="credit_original_positive"),
             models.CheckConstraint(condition=Q(remaining_amount__gte=0), name="credit_remaining_nonnegative"),
             models.CheckConstraint(condition=Q(remaining_amount__lte=F("original_amount")), name="credit_remaining_not_over_original"),
             models.UniqueConstraint(fields=["photographer", "submission_key"], condition=~Q(submission_key=""), name="credit_owner_submission_unique"),
