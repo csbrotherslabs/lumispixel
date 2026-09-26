@@ -254,8 +254,18 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         ).first.click()
         client_page.wait_for_timeout(250)
 
-        comment_form = client_page.locator(f'form[action*="/photos/{photo_id}/comment/"]')
-        comment_form.locator('textarea[name="comment"], input[name="comment"]').fill(
+        # The Standard Filterable gallery keeps its comment composer hidden until
+        # the client opens it. Exercise the real UI interaction instead of forcing
+        # Playwright to interact with a hidden textarea.
+        photo = client_page.locator(f"#photo-{photo_id}")
+        comment_toggle = photo.locator("[data-comment-toggle]")
+        comment_panel = photo.locator("[data-comment-panel]")
+        expect(comment_panel).to_be_hidden()
+        comment_toggle.click()
+        expect(comment_panel).to_be_visible()
+
+        comment_form = comment_panel.locator("[data-comment-form]")
+        comment_form.locator('textarea[name="comment"]').fill(
             "This one is perfect."
         )
         comment_form.locator('button[type="submit"]').click()
