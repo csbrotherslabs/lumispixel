@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import Resolver404, resolve, reverse
@@ -297,20 +298,25 @@ def verification_pending(request):
 
 @require_GET
 def verify_email(request, uidb64, token):
-    user = None
     try:
-        user = User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)))
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-    if user and user.email_verified:
-        messages.info(request, "Your email address is already verified.")
-        return redirect(_post_verification_redirect(request, user))
-    if user and email_verification_token.check_token(user, token):
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+    except (TypeError, ValueError, OverflowError):
+        return render(request, "accounts/verification_result.html", {"success": False}, status=400)
+
+    with transaction.atomic():
+        user = User.objects.select_for_update().filter(pk=user_id).first()
+        if not user:
+            return render(request, "accounts/verification_result.html", {"success": False}, status=400)
+        if user.email_verified:
+            messages.info(request, "Your email address is already verified.")
+            return redirect(_post_verification_redirect(request, user))
+        if not email_verification_token.check_token(user, token):
+            return render(request, "accounts/verification_result.html", {"success": False}, status=400)
         user.mark_email_verified()
-        login(request, user)
-        messages.success(request, "Your email address has been verified.")
-        return redirect(_post_verification_redirect(request, user))
-    return render(request, "accounts/verification_result.html", {"success": False}, status=400)
+
+    login(request, user)
+    messages.success(request, "Your email address has been verified.")
+    return redirect(_post_verification_redirect(request, user))
 
 
 @require_POST
