@@ -34,8 +34,9 @@ def main():
         "apps.galleries.test_critical_workflows",
         "Run full Django suite on PostgreSQL",
         "P3 Playwright Chromium golden paths",
-        "test_delivery_golden_path.py",
-        "test_client_permission_browser_matrix.py",
+        "python manage.py test apps/galleries/tests --pattern=test_delivery_golden_path.py",
+        "python manage.py test apps/galleries/tests --pattern=test_client_mobile_designs.py",
+        "python manage.py test apps/galleries/tests --pattern=test_client_permission_browser_matrix.py",
     ], "Django CI")
 
     require(operations, [
