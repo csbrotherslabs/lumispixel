@@ -33,14 +33,16 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
+            // Checks API exposes job names as check_run.name. GitHub's branch
+            // protection UI may display these with their workflow prefix.
             const required = new Set([
-              'Django CI / Django tests (fast SQLite feedback)',
-              'Django CI / PostgreSQL 16 first-class test suite',
-              'Django CI / P3 Playwright Chromium golden paths',
-              'P2 Operations Reliability Gate / Health, recovery and production contracts',
-              'P2 Operations Reliability Gate / PostgreSQL migration and restore gate',
+              'Django tests (fast SQLite feedback)',
+              'PostgreSQL 16 first-class test suite',
+              'P3 Playwright Chromium golden paths',
+              'Health, recovery and production contracts',
+              'PostgreSQL migration and restore gate',
             ]);
-            const ownCheck = 'Production Readiness / Required CI Contract';
+            const ownCheck = 'Required CI Contract';
             const timeoutMs = 30 * 60 * 1000;
             const intervalMs = 15000;
             const started = Date.now();
@@ -61,7 +63,7 @@ jobs:
               const missing = [...required].filter(name => !states.has(name));
               const failed = [...required].filter(name => {
                 const state = states.get(name);
-                return state && state.status === 'completed' && !['success', 'neutral', 'skipped'].includes(state.conclusion);
+                return state && state.status === 'completed' && state.conclusion !== 'success';
               });
               if (failed.length) {
                 core.setFailed(`Mandatory CI gate(s) failed: ${failed.join(', ')}`);
