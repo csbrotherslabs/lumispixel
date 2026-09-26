@@ -48,3 +48,27 @@ class Notification(models.Model):
     @property
     def safe_action_url(self):
         return self.action_url if self.action_url.startswith("/") and not self.action_url.startswith("//") else ""
+
+
+class EmailDelivery(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
+    idempotency_key = models.CharField(max_length=64, unique=True)
+    event_key = models.CharField(max_length=255, db_index=True)
+    subject = models.CharField(max_length=255)
+    plain_body = models.TextField()
+    html_body = models.TextField(blank=True)
+    recipients = models.JSONField(default=list)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
+    attempt_count = models.PositiveSmallIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    last_attempt_at = models.DateTimeField(blank=True, null=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at", "pk")
+        indexes = [models.Index(fields=("status", "created_at"), name="email_delivery_queue")]
