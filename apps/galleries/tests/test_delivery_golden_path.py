@@ -1,6 +1,7 @@
 import io
 import re
 from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 
 from django.core import mail
 from django.db import close_old_connections
@@ -27,9 +28,24 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
     def setUp(self):
         self.user = User.objects.create_user(email="golden-photographer@example.com", password="GoldenPath!123", primary_role=User.PrimaryRole.PHOTOGRAPHER, email_verified=True, account_status=User.AccountStatus.ACTIVE)
         self.profile = PhotographerProfile.objects.create(user=self.user, slug="golden-photographer", onboarding_completed=True)
+        self.upload_bytes = self._jpeg()
+        # Keep the browser/direct-upload workflow real while replacing only the
+        # external object-storage provider boundary. The live Django server still
+        # executes initiate/sign/complete, validation, persistence and accounting.
+        self.storage_patchers = [
+            patch("apps.dashboard.views.initiate_multipart", return_value="e2e-provider-upload"),
+            patch("apps.dashboard.views.sign_part", return_value=self.live_server_url + "/__e2e-upload-part"),
+            patch("apps.dashboard.views.complete_multipart", return_value=None),
+            patch("apps.dashboard.views.get_multipart_object_stream", side_effect=lambda **_: io.BytesIO(self.upload_bytes)),
+        ]
+        for patcher in self.storage_patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
         self._playwright = sync_playwright().start()
         self.browser = self._playwright.chromium.launch(headless=True)
         self.context = self.browser.new_context(accept_downloads=True)
+        self.context.route("**/__e2e-upload-part", lambda route: route.fulfill(status=200, headers={"ETag": '"e2e-etag"'}, body=""))
         self.page = self.context.new_page()
 
     def tearDown(self):
@@ -65,16 +81,15 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         gallery_id = self._db(lambda: Gallery.objects.values_list("pk", flat=True).get(photographer_id=self.profile.pk, name="Golden Delivery"))
         self.assertIn(f"/galleries/{gallery_id}/", self.page.url)
 
-        # Exercise the real authenticated upload page. Passing ?gallery=<id>
-        # selects the destination server-side, matching the upload page's actual
-        # contract and enabling its file input without relying on stale selectors.
         upload_url = self.live_server_url + reverse("photographer_workspace:gallery_upload_queue") + f"?gallery={gallery_id}"
         self.page.goto(upload_url); self.page.wait_for_load_state("networkidle")
         upload_input = self.page.locator("[data-upload-input]")
         upload_input.wait_for(state="attached")
         self.assertTrue(upload_input.is_enabled())
-        upload_input.set_input_files({"name": "golden.jpg", "mimeType": "image/jpeg", "buffer": self._jpeg()})
-        self.page.locator("[data-upload-list] .lp-upload-status").filter(has_text=re.compile("complete", re.I)).wait_for(timeout=30000)
+        upload_input.set_input_files({"name": "golden.jpg", "mimeType": "image/jpeg", "buffer": self.upload_bytes})
+        completed_row = self.page.locator('[data-upload-list] [data-local-upload][data-status="completed"]')
+        completed_row.wait_for(state="visible", timeout=30000)
+        self.assertEqual(completed_row.locator(".lp-file-state strong").inner_text(), "Uploaded")
         photo_id = self._db(lambda: GalleryPhoto.objects.values_list("pk", flat=True).get(gallery_id=gallery_id, original_name="golden.jpg"))
 
         workspace_url = self.live_server_url + reverse("photographer_workspace:gallery_workspace", args=[gallery_id])
