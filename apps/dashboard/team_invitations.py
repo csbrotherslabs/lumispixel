@@ -50,14 +50,49 @@ def _digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def issue_token(membership):
+def prepare_token():
+    """Return an unsaved invitation credential and its validity window."""
     token = secrets.token_urlsafe(32)
-    membership.invitation_token_digest = _digest(token)
-    membership.invitation_sent_at = timezone.now()
-    membership.invitation_expires_at = timezone.now() + INVITATION_LIFETIME
+    now = timezone.now()
+    return token, _digest(token), now, now + INVITATION_LIFETIME
+
+
+def apply_token(membership, token_digest, sent_at, expires_at):
+    membership.invitation_token_digest = token_digest
+    membership.invitation_sent_at = sent_at
+    membership.invitation_expires_at = expires_at
     membership.status = StudioMembership.Status.INVITED
     membership.save(update_fields=["invitation_token_digest", "invitation_sent_at", "invitation_expires_at", "status", "updated_at"])
+
+
+def issue_token(membership):
+    # Keep the previous credential in memory until delivery succeeds. If the
+    # mail provider fails, send_invitation restores this state so a resend does
+    # not invalidate a link the invitee may already possess.
+    membership._invitation_previous_state = {
+        "invitation_token_digest": membership.invitation_token_digest,
+        "invitation_sent_at": membership.invitation_sent_at,
+        "invitation_expires_at": membership.invitation_expires_at,
+        "status": membership.status,
+    }
+    token, token_digest, sent_at, expires_at = prepare_token()
+    apply_token(membership, token_digest, sent_at, expires_at)
     return token
+
+
+def _restore_previous_token_after_delivery_failure(membership):
+    previous = getattr(membership, "_invitation_previous_state", None)
+    if previous is None:
+        return
+    StudioMembership.objects.filter(pk=membership.pk).update(**previous)
+    for field, value in previous.items():
+        setattr(membership, field, value)
+    # SENT/RESENT is recorded immediately before delivery by the current views.
+    # Remove only that newest delivery event so the audit trail does not claim
+    # a message was sent when the provider rejected it.
+    latest = membership.invitation_events.order_by("-occurred_at", "-pk").first()
+    if latest and latest.action in {StudioInvitationEvent.Action.SENT, StudioInvitationEvent.Action.RESENT}:
+        latest.delete()
 
 
 def send_invitation(request, membership, token):
@@ -74,7 +109,11 @@ def send_invitation(request, membership, token):
     try:
         message.send(fail_silently=False)
     except (OSError, SMTPException) as exc:
+        _restore_previous_token_after_delivery_failure(membership)
         raise RuntimeError("Invitation delivery failed") from exc
+    finally:
+        if hasattr(membership, "_invitation_previous_state"):
+            del membership._invitation_previous_state
 
 
 def find_valid_invitation(token, *, lock=False):
