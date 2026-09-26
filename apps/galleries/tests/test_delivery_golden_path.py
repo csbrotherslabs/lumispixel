@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.db import close_old_connections
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
@@ -117,6 +118,27 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         )
         return buffer.getvalue()
 
+    def _materialize_local_upload(self, photo_id):
+        """Mirror the mocked provider object into CI's local gallery storage.
+
+        Production B2 already owns the completed multipart object. In CI the B2
+        boundary is mocked, while the real download view deliberately opens the
+        GalleryPhoto file through Django storage. Persist the exact uploaded bytes
+        under the model's existing storage key so the rest of the browser flow can
+        exercise the real FileResponse and download analytics path.
+        """
+        photo = GalleryPhoto.objects.get(pk=photo_id)
+        storage = photo.file.storage
+        name = photo.file.name
+        if storage.exists(name):
+            storage.delete(name)
+        saved_name = storage.save(name, ContentFile(self.upload_bytes))
+        if saved_name != name:
+            storage.delete(saved_name)
+            raise AssertionError(
+                f"CI storage changed multipart object key from {name!r} to {saved_name!r}."
+            )
+
     def _login(self):
         self.page.goto(self.live_server_url + reverse("accounts:login"))
         login_email = self.page.locator("#id_email")
@@ -197,6 +219,7 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
                 original_name="golden.jpg",
             )
         )
+        self._db(lambda: self._materialize_local_upload(photo_id))
 
         workspace_url = self.live_server_url + reverse(
             "photographer_workspace:gallery_workspace", args=[gallery_id]
