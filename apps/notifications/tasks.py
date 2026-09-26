@@ -1,6 +1,7 @@
 import logging
 
 from celery import shared_task
+from django.utils import timezone
 
 from .email_delivery import deliver_email
 from .models import EmailDelivery
@@ -8,27 +9,39 @@ from .models import EmailDelivery
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_jitter=True, max_retries=5)
+@shared_task(bind=True, max_retries=5)
 def deliver_transactional_email(self, delivery_id):
     try:
         return deliver_email(delivery_id)
     except Exception as exc:
-        EmailDelivery.objects.filter(pk=delivery_id).update(last_error=str(exc)[:2000])
-        logger.warning("Transactional email delivery %s failed; Celery will retry", delivery_id)
-        raise
+        delivery = EmailDelivery.objects.filter(pk=delivery_id).first()
+        if not delivery or delivery.status == EmailDelivery.Status.DEAD:
+            logger.error("Transactional email %s moved to dead letter: %s", delivery_id, exc)
+            return False
+        countdown = max(1, int((delivery.next_attempt_at - timezone.now()).total_seconds())) if delivery.next_attempt_at else 60
+        logger.warning("Transactional email %s transiently failed; retry in %ss", delivery_id, countdown)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 @shared_task
 def reconcile_pending_transactional_emails(limit=100):
+    now = timezone.now()
     ids = list(
-        EmailDelivery.objects.filter(status=EmailDelivery.Status.PENDING)
+        EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
+        .filter(next_attempt_at__isnull=True)
         .order_by("created_at")
         .values_list("pk", flat=True)[:limit]
     )
-    for delivery_id in ids:
+    remaining = max(0, limit - len(ids))
+    if remaining:
+        ids += list(
+            EmailDelivery.objects.filter(status=EmailDelivery.Status.RETRY, next_attempt_at__lte=now)
+            .order_by("next_attempt_at", "created_at")
+            .values_list("pk", flat=True)[:remaining]
+        )
+    for delivery_id in dict.fromkeys(ids):
         try:
             deliver_transactional_email.delay(delivery_id)
         except Exception:
-            # Keep the durable row pending for the next reconciliation pass.
-            logger.exception("Could not enqueue pending transactional email %s", delivery_id)
-    return len(ids)
+            logger.exception("Could not enqueue recoverable transactional email %s", delivery_id)
+    return len(set(ids))
