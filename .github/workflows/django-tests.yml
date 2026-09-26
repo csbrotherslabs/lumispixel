@@ -147,50 +147,45 @@ jobs:
           python manage.py test \
             apps.photographers.tests.PhotographerOnboardingBehaviorTests \
             --verbosity 2
+      # apps/galleries has a legacy tests.py module alongside an intentionally
+      # non-package tests/ directory. Django supports directory labels but not
+      # individual file labels, so isolate each browser module with --pattern.
       - name: Run photographer-to-client golden path
-        run: python manage.py test apps/galleries/tests/test_delivery_golden_path.py --verbosity 2
+        run: python manage.py test apps/galleries/tests --pattern=test_delivery_golden_path.py --verbosity 2
       - name: Run mobile client gallery journeys
-        run: python manage.py test apps/galleries/tests/test_client_mobile_designs.py --verbosity 2
+        run: python manage.py test apps/galleries/tests --pattern=test_client_mobile_designs.py --verbosity 2
       - name: Run client access-control browser matrix
-        run: python manage.py test apps/galleries/tests/test_client_permission_browser_matrix.py --verbosity 2
+        run: python manage.py test apps/galleries/tests --pattern=test_client_permission_browser_matrix.py --verbosity 2
 
   django-tests:
     name: Django tests (fast SQLite feedback)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     env:
       DJANGO_SETTINGS_MODULE: "config.settings_test"
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "ci-only-secret-key"
       GALLERY_STORAGE_BACKEND: "local"
       GALLERY_STORAGE_ENVIRONMENT: "dev"
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements.txt
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Install browser for golden-path tests
         run: python -m playwright install --with-deps chromium
-
       - name: Run Django system checks
         run: python manage.py check
-
       - name: Verify committed migrations
         run: python manage.py makemigrations --check --dry-run
-
       - name: Validate production static asset build
         env:
           DJANGO_SETTINGS_MODULE: "config.settings"
@@ -198,9 +193,7 @@ jobs:
         run: |
           python manage.py collectstatic --noinput --clear
           python manage.py test config.test_static_deployment --verbosity 2
-
       - name: Audit brittle test contracts
         run: python scripts/audit_test_contracts.py
-
       - name: Run Django test suite
         run: python manage.py test --verbosity 2
