@@ -103,7 +103,14 @@ class CriticalGalleryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Critical Wedding")
         self.assertContains(response, "Ceremony")
-        self.assertContains(response, "critical.jpg")
+        self.assertContains(response, f'id="photo-{self.photo.pk}"', html=False)
+        self.assertContains(
+            response,
+            reverse(
+                "galleries:client_gallery_media",
+                args=[self.token, self.photo.pk],
+            ),
+        )
 
     def test_client_interactions_persist_and_are_visible_as_gallery_activity(self):
         favorite_url = reverse(
