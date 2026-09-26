@@ -58,9 +58,14 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
 
     def _login(self):
         self.page.goto(self.live_server_url + reverse("accounts:login"))
-        self.page.locator('input[name="email"]').fill(self.user.email)
-        self.page.locator('input[name="password"]').fill("GoldenPath!123")
-        self.page.get_by_role("button", name=re.compile("sign in|log in", re.I)).click()
+        # The login page also contains a marketing/newsletter email field. Scope
+        # selectors to the actual authentication form so unrelated page inputs
+        # cannot make this production golden-path test ambiguous.
+        login_email = self.page.locator("#id_email")
+        login_form = login_email.locator("xpath=ancestor::form[1]")
+        login_email.fill(self.user.email)
+        login_form.locator('input[name="password"]').fill("GoldenPath!123")
+        login_form.get_by_role("button", name=re.compile("sign in|log in", re.I)).click()
         self.page.wait_for_load_state("networkidle")
 
     def test_photographer_to_client_delivery_golden_path(self):
