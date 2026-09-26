@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -28,7 +29,6 @@ PENDING_USER_SESSION_KEY = "pending_verification_user_id"
 VERIFICATION_DELIVERY_SESSION_KEY = "verification_email_delivery_status"
 LOGIN_FAILURE_LIMIT = 10
 LOGIN_FAILURE_WINDOW_SECONDS = 15 * 60
-
 
 
 def _login_throttle_key(request, email):
@@ -304,7 +304,10 @@ def verify_email(request, uidb64, token):
         return render(request, "accounts/verification_result.html", {"success": False}, status=400)
 
     with transaction.atomic():
-        user = User.objects.select_for_update().filter(pk=user_id).first()
+        try:
+            user = User.objects.select_for_update().filter(pk=user_id).first()
+        except (TypeError, ValueError, ValidationError):
+            return render(request, "accounts/verification_result.html", {"success": False}, status=400)
         if not user:
             return render(request, "accounts/verification_result.html", {"success": False}, status=400)
         if user.email_verified:
