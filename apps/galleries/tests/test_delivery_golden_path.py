@@ -20,6 +20,10 @@ from apps.galleries.models import (
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     GALLERY_STORAGE_BACKEND="local",
     B2_MULTIPART_MIN_PART_BYTES=5 * 1024 * 1024,
+    # Client gallery rendering intentionally exercises GalleryPhoto.delivery_url.
+    # Give the CI-only test a deterministic signing key so it validates the real
+    # signed-delivery URL contract without depending on production secrets.
+    MEDIA_SIGNING_SECRET="p3-e2e-media-signing-secret-not-production",
 )
 class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
     """Browser-level smoke test for the revenue-critical gallery delivery lifecycle."""
