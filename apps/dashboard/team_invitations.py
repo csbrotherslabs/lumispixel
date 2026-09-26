@@ -50,13 +50,29 @@ def _digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def issue_token(membership):
+def prepare_token():
+    """Return an unsaved invitation credential and its validity window.
+
+    Callers that are replacing an existing invitation should deliver the raw
+    token first, then persist the digest only after delivery succeeds. This
+    keeps the previous invitation usable when the mail provider is unavailable.
+    """
     token = secrets.token_urlsafe(32)
-    membership.invitation_token_digest = _digest(token)
-    membership.invitation_sent_at = timezone.now()
-    membership.invitation_expires_at = timezone.now() + INVITATION_LIFETIME
+    now = timezone.now()
+    return token, _digest(token), now, now + INVITATION_LIFETIME
+
+
+def apply_token(membership, token_digest, sent_at, expires_at):
+    membership.invitation_token_digest = token_digest
+    membership.invitation_sent_at = sent_at
+    membership.invitation_expires_at = expires_at
     membership.status = StudioMembership.Status.INVITED
     membership.save(update_fields=["invitation_token_digest", "invitation_sent_at", "invitation_expires_at", "status", "updated_at"])
+
+
+def issue_token(membership):
+    token, token_digest, sent_at, expires_at = prepare_token()
+    apply_token(membership, token_digest, sent_at, expires_at)
     return token
 
 
