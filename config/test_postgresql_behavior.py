@@ -5,6 +5,7 @@ from django.db.transaction import TransactionManagementError
 from django.test import TransactionTestCase
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.billing.models import Plan
 from apps.galleries.models import Gallery
 
 
@@ -14,6 +15,19 @@ class PostgreSQLBehaviorTests(TransactionTestCase):
     def setUp(self):
         if connection.vendor != "postgresql":
             self.skipTest("This contract intentionally runs only against PostgreSQL.")
+
+        # PhotographerProfile creation provisions the default subscription through
+        # its post-save signal. TransactionTestCase flushes data between tests, so
+        # seed the production-required free plan explicitly instead of depending on
+        # data left behind by migrations or another test.
+        Plan.objects.create(
+            code="free",
+            name="Free",
+            is_active=True,
+            is_public=True,
+            customer_selectable=True,
+        )
+
         user = User.objects.create_user(
             email="postgres-contract@example.com", password="testpass"
         )
