@@ -19,6 +19,7 @@ from apps.galleries.models import (
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     GALLERY_STORAGE_BACKEND="local",
+    B2_MULTIPART_MIN_PART_BYTES=5 * 1024 * 1024,
 )
 class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
     """Browser-level smoke test for the revenue-critical gallery delivery lifecycle."""
@@ -77,6 +78,13 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
             ),
         )
         self.page = self.context.new_page()
+        self.browser_errors = []
+        self.page.on("pageerror", lambda exc: self.browser_errors.append(f"pageerror: {exc}"))
+        self.page.on(
+            "console",
+            lambda msg: self.browser_errors.append(f"console {msg.type}: {msg.text}")
+            if msg.type == "error" else None,
+        )
 
     def tearDown(self):
         self.context.close()
@@ -95,8 +103,14 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
             return executor.submit(execute).result()
 
     def _jpeg(self):
+        # The production browser uploader clamps every part to at least 5 MiB.
+        # Use an image whose encoded payload exceeds that boundary so this smoke
+        # test exercises a real multipart transfer instead of a tiny synthetic
+        # file that can mask part-size/settings regressions.
         buffer = io.BytesIO()
-        Image.new("RGB", (8, 8), (120, 80, 40)).save(buffer, format="JPEG")
+        Image.effect_noise((2600, 2600), 100).convert("RGB").save(
+            buffer, format="JPEG", quality=95
+        )
         return buffer.getvalue()
 
     def _login(self):
@@ -125,8 +139,6 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         )
         self.assertIn(f"/galleries/{gallery_id}/", self.page.url)
 
-        # Exercise the production browser/direct-multipart path end to end. The
-        # gallery is selected server-side exactly as the real Upload Photos link does.
         upload_url = (
             self.live_server_url
             + reverse("photographer_workspace:gallery_upload_queue")
@@ -137,25 +149,42 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         upload_input = self.page.locator("[data-upload-input]")
         upload_input.wait_for(state="attached")
         self.assertTrue(upload_input.is_enabled())
+
+        upload_responses = []
+        self.page.on(
+            "response",
+            lambda response: upload_responses.append(
+                f"{response.status} {response.url}"
+            ) if "/multipart/" in response.url or "__e2e-upload-part" in response.url else None,
+        )
         upload_input.set_input_files(
             {"name": "golden.jpg", "mimeType": "image/jpeg", "buffer": self.upload_bytes}
         )
 
-        # Do not burn 30 seconds waiting only for success. The application has an
-        # explicit terminal failed state, so wait for either terminal state and
-        # surface its real reason if the multipart contract regresses.
         terminal_row = self.page.locator(
             '[data-upload-list] [data-local-upload][data-status="completed"], '
             '[data-upload-list] [data-local-upload][data-status="failed"]'
         )
-        terminal_row.wait_for(state="visible", timeout=15000)
+        try:
+            terminal_row.wait_for(state="visible", timeout=15000)
+        except Exception as exc:
+            current_row = self.page.locator('[data-upload-list] [data-local-upload]').first
+            row_status = current_row.get_attribute("data-status") if current_row.count() else "missing"
+            row_text = current_row.inner_text() if current_row.count() else "no local upload row"
+            self.fail(
+                "Direct multipart upload never reached a terminal state. "
+                f"row_status={row_status!r}; row={row_text!r}; "
+                f"responses={upload_responses!r}; browser_errors={self.browser_errors!r}; "
+                f"playwright={exc}"
+            )
         status = terminal_row.get_attribute("data-status")
         state_title = terminal_row.locator(".lp-file-state strong").inner_text()
         state_detail = terminal_row.locator(".lp-file-state span").inner_text()
         self.assertEqual(
             status,
             "completed",
-            f"Direct multipart browser upload failed: {state_title}: {state_detail}",
+            f"Direct multipart browser upload failed: {state_title}: {state_detail}; "
+            f"responses={upload_responses!r}; browser_errors={self.browser_errors!r}",
         )
         self.assertEqual(state_title, "Uploaded")
         photo_id = self._db(
