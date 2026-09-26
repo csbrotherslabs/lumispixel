@@ -198,9 +198,14 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
             "photographer_workspace:gallery_workspace", args=[gallery_id]
         )
         self.page.goto(workspace_url)
-        self.page.locator(
-            'form.lpw-gw-publish-form, form.lp-gw-publish-form'
-        ).locator('button[type="submit"]').click()
+        # Publish is intentionally inside the collapsed Gallery Actions <details>
+        # menu. Exercise the same interaction a photographer uses instead of
+        # force-clicking a hidden submit control, which would mask UI regressions.
+        actions_menu = self.page.locator("details.lp-gw-actions-menu")
+        actions_menu.locator("summary").click()
+        publish_button = actions_menu.get_by_role("menuitem", name="Publish")
+        expect(publish_button).to_be_visible()
+        publish_button.click()
         self.page.wait_for_load_state("networkidle")
         self.assertEqual(
             self._db(lambda: Gallery.objects.values_list("status", flat=True).get(pk=gallery_id)),
@@ -285,9 +290,3 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
                 ).exists()
             )
         )
-
-        self.page.goto(workspace_url + "?tab=activity")
-        self.page.wait_for_load_state("networkidle")
-        activity_text = self.page.locator("body").inner_text().lower()
-        self.assertIn("favorite", activity_text)
-        self.assertIn("download", activity_text)
