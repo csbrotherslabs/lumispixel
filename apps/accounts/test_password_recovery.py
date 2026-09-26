@@ -61,7 +61,8 @@ class PasswordRecoverySecurityTests(TestCase):
         self.assertFalse(default_token_generator.check_token(self.user, token))
         replay = self.client.get(url)
         self.assertEqual(replay.status_code, 200)
-        self.assertContains(replay, "not valid")
+        self.assertContains(replay, "This password reset link is invalid or has expired.")
+        self.assertNotContains(replay, 'name="new_password1"')
 
     def test_password_reset_does_not_authenticate_an_anonymous_session(self):
         token = default_token_generator.make_token(self.user)
