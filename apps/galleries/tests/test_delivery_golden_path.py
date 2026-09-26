@@ -65,15 +65,17 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         gallery_id = self._db(lambda: Gallery.objects.values_list("pk", flat=True).get(photographer_id=self.profile.pk, name="Golden Delivery"))
         self.assertIn(f"/galleries/{gallery_id}/", self.page.url)
 
-        # Use the real authenticated upload page and its JavaScript multipart pipeline.
-        # page.request bypasses the browser's CSRF context and correctly receives 403.
-        upload_url = self.live_server_url + reverse("photographer_workspace:gallery_upload_queue")
+        # Exercise the real authenticated upload page. Passing ?gallery=<id>
+        # selects the destination server-side, matching the upload page's actual
+        # contract and enabling its file input without relying on stale selectors.
+        upload_url = self.live_server_url + reverse("photographer_workspace:gallery_upload_queue") + f"?gallery={gallery_id}"
         self.page.goto(upload_url); self.page.wait_for_load_state("networkidle")
-        self.page.locator("[data-gallery-select]").select_option(str(gallery_id))
-        self.page.locator("[data-upload-input]").set_input_files({"name": "golden.jpg", "mimeType": "image/jpeg", "buffer": self._jpeg()})
-        self.page.locator("[data-upload-start]").click()
+        upload_input = self.page.locator("[data-upload-input]")
+        upload_input.wait_for(state="attached")
+        self.assertTrue(upload_input.is_enabled())
+        upload_input.set_input_files({"name": "golden.jpg", "mimeType": "image/jpeg", "buffer": self._jpeg()})
         self.page.locator("[data-upload-list] .lp-upload-status").filter(has_text=re.compile("complete", re.I)).wait_for(timeout=30000)
-        photo_id = self._db(lambda: GalleryPhoto.objects.values_list("pk", flat=True).get(gallery_id=gallery_id, original_filename="golden.jpg"))
+        photo_id = self._db(lambda: GalleryPhoto.objects.values_list("pk", flat=True).get(gallery_id=gallery_id, original_name="golden.jpg"))
 
         workspace_url = self.live_server_url + reverse("photographer_workspace:gallery_workspace", args=[gallery_id])
         self.page.goto(workspace_url)
