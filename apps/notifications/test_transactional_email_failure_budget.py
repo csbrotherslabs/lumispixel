@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from apps.notifications.email_delivery import deliver_email
 from apps.notifications.models import EmailDelivery
@@ -21,4 +22,7 @@ class TransactionalEmailFailureBudgetTests(TransactionTestCase):
                 deliver_email(delivery.pk)
             delivery.refresh_from_db()
             self.assertEqual(delivery.attempt_count, expected)
-            self.assertEqual(delivery.status, EmailDelivery.Status.PENDING)
+            self.assertEqual(delivery.status, EmailDelivery.Status.RETRY)
+            self.assertIsNotNone(delivery.next_attempt_at)
+            # Simulate the scheduled retry becoming due without sleeping in the test.
+            EmailDelivery.objects.filter(pk=delivery.pk).update(next_attempt_at=timezone.now())
