@@ -53,8 +53,16 @@ class Notification(models.Model):
 class EmailDelivery(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
+        RETRY = "retry", "Retry scheduled"
         SENT = "sent", "Sent"
-        FAILED = "failed", "Failed"
+        DEAD = "dead", "Dead letter"
+        FAILED = "failed", "Failed"  # legacy terminal state
+
+    class FailureKind(models.TextChoices):
+        NONE = "", "None"
+        TRANSIENT = "transient", "Transient"
+        PERMANENT = "permanent", "Permanent"
+        UNKNOWN = "unknown", "Unknown"
 
     idempotency_key = models.CharField(max_length=64, unique=True)
     event_key = models.CharField(max_length=255, db_index=True)
@@ -64,11 +72,17 @@ class EmailDelivery(models.Model):
     recipients = models.JSONField(default=list)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
     attempt_count = models.PositiveSmallIntegerField(default=0)
+    failure_kind = models.CharField(max_length=12, choices=FailureKind.choices, blank=True, default="")
     last_error = models.TextField(blank=True)
     last_attempt_at = models.DateTimeField(blank=True, null=True)
+    next_attempt_at = models.DateTimeField(blank=True, null=True, db_index=True)
     sent_at = models.DateTimeField(blank=True, null=True)
+    dead_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ("created_at", "pk")
-        indexes = [models.Index(fields=("status", "created_at"), name="email_delivery_queue")]
+        indexes = [
+            models.Index(fields=("status", "created_at"), name="email_delivery_queue"),
+            models.Index(fields=("status", "next_attempt_at"), name="email_delivery_retry"),
+        ]
