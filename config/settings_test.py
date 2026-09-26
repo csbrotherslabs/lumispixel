@@ -12,16 +12,15 @@ STORAGES = {  # noqa: F405
     },
 }
 
-# Do not carry a persistent physical database connection across test/request
-# boundaries. The production settings intentionally use CONN_MAX_AGE, but a
-# long-running test process contains failure-injection tests and response
-# lifecycle hooks that may close the underlying psycopg connection. Reusing
-# that stale physical connection poisons every later TestCase with
-# "psycopg.OperationalError: the connection is closed". Keeping persistent
-# connections disabled in the test runner preserves PostgreSQL transaction,
-# locking, constraint, and migration semantics while giving each test/request
-# boundary a clean connection lifecycle.
-DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405
+# Keep the PostgreSQL connection alive across test-client request boundaries.
+# Django TestCase wraps each test in an outer transaction. request_finished
+# runs database connection cleanup after every self.client request; with
+# CONN_MAX_AGE=0 that cleanup closes the psycopg connection while the TestCase
+# transaction is still active, so the next ORM query fails with
+# "psycopg.OperationalError: the connection is closed". The normal application
+# configuration already uses persistent, health-checked connections, so retain
+# those semantics in tests instead of forcing a zero connection lifetime.
+DATABASES["default"]["CONN_MAX_AGE"] = None  # noqa: F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
