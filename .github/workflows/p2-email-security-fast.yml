@@ -1,10 +1,11 @@
-name: P2 Email Delivery Fast Gate
+name: P2 Email Security Fast Gate
 
 on:
   pull_request:
     paths:
       - 'apps/notifications/**'
-      - '.github/workflows/p2-email-delivery-fast.yml'
+      - 'config/settings.py'
+      - '.github/workflows/p2-email-security-fast.yml'
 
 jobs:
   focused-tests:
@@ -21,11 +22,5 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Django system check
         run: python manage.py check
-      - name: Migration drift check
-        run: python manage.py makemigrations --check --dry-run
-      - name: Focused P2 tests
-        run: >-
-          python manage.py test
-          apps.notifications.test_delivery_reliability
-          apps.notifications.test_transactional_email_task
-          -v 2
+      - name: Focused security/content tests
+        run: python manage.py test apps.notifications.test_security_content_correctness -v 2

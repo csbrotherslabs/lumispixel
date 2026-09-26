@@ -2,11 +2,15 @@ import hashlib
 import logging
 import smtplib
 from datetime import timedelta
+from urllib.parse import urljoin, urlparse
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
 from django.db import transaction
 from django.utils import timezone
+from django.utils.html import escape
 
 from .models import EmailDelivery
 
@@ -22,6 +26,41 @@ class TransientDeliveryError(Exception):
 
 class PermanentDeliveryError(Exception):
     pass
+
+
+def normalize_recipients(recipients):
+    """Validate and deduplicate envelope recipients without leaking recipients via CC/BCC."""
+    normalized = []
+    seen = set()
+    for raw in recipients:
+        email = (raw or "").strip()
+        if not email:
+            continue
+        # Reject header injection explicitly before Django constructs a message.
+        if "\r" in email or "\n" in email:
+            raise ValueError("Invalid email recipient")
+        validate_email(email)
+        key = email.casefold()
+        if key not in seen:
+            seen.add(key)
+            normalized.append(email)
+    return tuple(normalized)
+
+
+def public_url(path=""):
+    """Build links from the configured public origin, never from an untrusted Host header."""
+    base = getattr(settings, "PUBLIC_BASE_URL", "").rstrip("/")
+    parsed = urlparse(base)
+    if not base or parsed.scheme not in ({"https"} if not settings.DEBUG else {"http", "https"}) or not parsed.netloc:
+        raise ImproperlyConfigured("PUBLIC_BASE_URL must be an absolute trusted URL")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ImproperlyConfigured("PUBLIC_BASE_URL must be a clean origin")
+    return urljoin(base + "/", str(path).lstrip("/"))
+
+
+def safe_html_text(value):
+    """Escape user-controlled values before interpolating them into HTML email."""
+    return escape("" if value is None else str(value))
 
 
 def delivery_key(*, event_key, recipients):
@@ -47,9 +86,12 @@ def classify_delivery_exception(exc):
 
 
 def queue_transactional_email(*, event_key, subject, plain_body, html_body="", recipients=()):
-    recipients = tuple(dict.fromkeys(email.strip() for email in recipients if email and email.strip()))
+    recipients = normalize_recipients(recipients)
     if not recipients:
         return None
+    # Prevent newline/header injection in fields that become RFC email headers.
+    if "\r" in subject or "\n" in subject:
+        raise ValueError("Invalid email subject")
     key = delivery_key(event_key=event_key, recipients=recipients)
     delivery, _ = EmailDelivery.objects.get_or_create(
         idempotency_key=key,
@@ -100,7 +142,8 @@ def deliver_email(delivery_id):
         delivery.next_attempt_at = None
         delivery.save(update_fields=("attempt_count", "last_attempt_at", "next_attempt_at"))
 
-    message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=delivery.recipients)
+    recipients = normalize_recipients(delivery.recipients)
+    message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients))
     if delivery.html_body:
         message.attach_alternative(delivery.html_body, "text/html")
     try:

@@ -22,4 +22,6 @@ class TransactionalEmailTaskTests(TestCase):
             deliver_transactional_email.apply(args=[self.delivery.pk], throw=True)
         self.delivery.refresh_from_db()
         self.assertIn("smtp unavailable", self.delivery.last_error)
-        self.assertEqual(self.delivery.status, EmailDelivery.Status.PENDING)
+        self.assertEqual(self.delivery.status, EmailDelivery.Status.RETRY)
+        self.assertEqual(self.delivery.failure_kind, EmailDelivery.FailureKind.UNKNOWN)
+        self.assertIsNotNone(self.delivery.next_attempt_at)
