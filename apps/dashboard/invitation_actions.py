@@ -30,7 +30,7 @@ def revoke_pending_invitation(request, studio, membership_id):
         studio=studio,
         status=StudioMembership.Status.INVITED,
     )
-    membership.status = StudioMembership.Status.REVOKED
+    membership.status = StudioMembership.Status.INACTIVE
     membership.invitation_token_digest = ""
     membership.invitation_expires_at = timezone.now()
     membership.save(update_fields=["status", "invitation_token_digest", "invitation_expires_at", "updated_at"])
