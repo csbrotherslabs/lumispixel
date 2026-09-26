@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   postgres-tests:
-    name: PostgreSQL database checks
+    name: PostgreSQL 16 first-class test suite
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16
@@ -55,21 +55,35 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Verify PostgreSQL test connection
+      - name: Verify PostgreSQL 16 connection
         run: |
           python - <<'PY'
+          import django
+          django.setup()
           from django.db import connection
           assert connection.vendor == "postgresql", connection.vendor
+          with connection.cursor() as cursor:
+              cursor.execute("SHOW server_version_num")
+              version = int(cursor.fetchone()[0])
+          assert 160000 <= version < 170000, version
+          print(f"PostgreSQL server_version_num={version}")
           PY
-      - name: Apply migrations on PostgreSQL
-        run: python manage.py migrate --noinput
-      - name: Check migration consistency on PostgreSQL
+      - name: Prove clean database migration graph
+        run: |
+          python manage.py migrate --noinput
+          python manage.py migrate --plan
+          python manage.py showmigrations --plan
+      - name: Fail on model or migration drift
         run: python manage.py makemigrations --check --dry-run
-      - name: Run database integrity tests on PostgreSQL
+      - name: Run PostgreSQL database contracts
         run: python manage.py test config.test_database_production --verbosity 2
+      - name: Run critical customer workflows on PostgreSQL
+        run: python manage.py test apps.galleries.test_critical_workflows --verbosity 2
+      - name: Run full Django suite on PostgreSQL
+        run: python manage.py test --verbosity 2
 
   django-tests:
-    name: Django tests
+    name: Django tests (fast SQLite feedback)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
