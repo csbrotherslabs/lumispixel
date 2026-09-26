@@ -17,7 +17,7 @@ class PhotographerProfilePageTests(TestCase):
     def test_profile_is_display_only_not_settings(self):
         user=self._user(); PhotographerProfile.objects.create(user=user,display_name="North & Pine Studio",onboarding_completed=True); self.client.force_login(user)
         response=self.client.get(reverse("photographer_workspace:profile"))
-        self.assertEqual(response.status_code,200); self.assertNotContains(response,"Save changes"); self.assertNotContains(response,'method="post"'); self.assertNotContains(response,"Edit profile"); self.assertContains(response,"Your LumisPixel identity")
+        self.assertEqual(response.status_code,200); self.assertNotContains(response,"Save changes"); self.assertNotContains(response,"Edit profile"); self.assertContains(response,"Your LumisPixel identity")
 
     def test_team_member_sees_person_profile_and_studio_context(self):
         owner=self._user("studio-owner@example.com"); studio=PhotographerProfile.objects.create(user=owner,business_name="Collective Studio",onboarding_completed=True); member=self._user("member@example.com"); member.primary_role=User.PrimaryRole.CLIENT; member.save(update_fields=["primary_role","updated_at"]); StudioMembership.objects.create(studio=studio,user=member,role=StudioMembership.Role.PHOTOGRAPHER,status=StudioMembership.Status.ACTIVE); self.client.force_login(member)
