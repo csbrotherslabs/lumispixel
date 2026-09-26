@@ -87,20 +87,23 @@ jobs:
             apps.photographers.tests.PhotographerOnboardingBehaviorTests \
             --verbosity 2
 
+      # apps/galleries has a legacy tests.py module as well as a tests/ directory.
+      # Keep the browser suite outside broad discovery, and address these modules by
+      # filesystem path so Python never resolves apps.galleries.tests to tests.py.
       - name: Run photographer-to-client golden path
         run: |
           python manage.py test \
-            apps.galleries.tests.test_delivery_golden_path \
+            apps/galleries/tests/test_delivery_golden_path.py \
             --verbosity 2
 
       - name: Run mobile client gallery journeys
         run: |
           python manage.py test \
-            apps.galleries.tests.test_client_mobile_designs \
+            apps/galleries/tests/test_client_mobile_designs.py \
             --verbosity 2
 
       - name: Run client access-control browser matrix
         run: |
           python manage.py test \
-            apps.galleries.tests.test_client_permission_browser_matrix \
+            apps/galleries/tests/test_client_permission_browser_matrix.py \
             --verbosity 2
