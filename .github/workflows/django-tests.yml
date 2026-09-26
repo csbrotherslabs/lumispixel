@@ -142,6 +142,11 @@ jobs:
           PY
       - name: Apply production migration graph
         run: python manage.py migrate --noinput
+      # LiveServerTestCase does not serve static files by itself. Browser tests
+      # need the real JS/CSS bundle available so they exercise LumisPixel's
+      # client-side behavior instead of silently running an HTML-only page.
+      - name: Collect browser E2E static assets
+        run: python manage.py collectstatic --noinput --clear
       - name: Run onboarding persistence contracts
         run: |
           python manage.py test \
