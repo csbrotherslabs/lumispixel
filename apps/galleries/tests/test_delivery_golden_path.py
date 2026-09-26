@@ -1,7 +1,9 @@
 import io
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from django.core import mail
+from django.db import close_old_connections
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
 from PIL import Image
@@ -23,10 +25,6 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
     serialized_rollback = True
 
     def setUp(self):
-        # Complete all synchronous Django ORM setup before Playwright starts its
-        # sync driver. Playwright's sync API runs an asyncio loop in the current
-        # thread; starting it in setUpClass made Django 6.1 correctly reject ORM
-        # access in setUp/tearDown as SynchronousOnlyOperation.
         self.user = User.objects.create_user(
             email="golden-photographer@example.com",
             password="GoldenPath!123",
@@ -45,11 +43,21 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.page = self.context.new_page()
 
     def tearDown(self):
-        # Stop Playwright before LiveServerTestCase performs synchronous DB
-        # teardown/flush so Django is no longer inside Playwright's async loop.
         self.context.close()
         self.browser.close()
         self._playwright.stop()
+
+    def _db(self, operation):
+        """Run synchronous Django ORM work outside Playwright's asyncio context."""
+        def execute():
+            close_old_connections()
+            try:
+                return operation()
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(execute).result()
 
     def _jpeg(self):
         buffer = io.BytesIO()
@@ -58,9 +66,6 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
 
     def _login(self):
         self.page.goto(self.live_server_url + reverse("accounts:login"))
-        # The login page also contains a marketing/newsletter email field. Scope
-        # selectors to the actual authentication form so unrelated page inputs
-        # cannot make this production golden-path test ambiguous.
         login_email = self.page.locator("#id_email")
         login_form = login_email.locator("xpath=ancestor::form[1]")
         login_email.fill(self.user.email)
@@ -71,22 +76,22 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
     def test_photographer_to_client_delivery_golden_path(self):
         self._login()
 
-        # Photographer creates a gallery through the real rendered form.
         self.page.goto(self.live_server_url + reverse("photographer_workspace:create_gallery"))
         self.page.locator('input[name="name"]').fill("Golden Delivery")
         self.page.locator('select[name="status"]').select_option("draft")
         self.page.locator('select[name="visibility"]').select_option("private")
         self.page.get_by_role("button", name="Create Gallery").click()
         self.page.wait_for_load_state("networkidle")
-        gallery = Gallery.objects.get(photographer=self.profile, name="Golden Delivery")
-        self.assertIn(f"/galleries/{gallery.pk}/", self.page.url)
+        gallery_id = self._db(lambda: Gallery.objects.values_list("pk", flat=True).get(
+            photographer_id=self.profile.pk, name="Golden Delivery"
+        ))
+        self.assertIn(f"/galleries/{gallery_id}/", self.page.url)
 
-        # Upload a real JPEG through the fallback browser form/API surface.
         upload_url = self.live_server_url + reverse("photographer_workspace:gallery_upload_queue")
         response = self.page.request.post(
             upload_url,
             multipart={
-                "gallery": str(gallery.pk),
+                "gallery": str(gallery_id),
                 "files": {
                     "name": "golden.jpg",
                     "mimeType": "image/jpeg",
@@ -97,15 +102,14 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.assertEqual(response.status, 201)
         photo_id = response.json()["uploads"][0]["id"]
 
-        # Publish and enable the client interactions exercised below.
         workspace_url = self.live_server_url + reverse(
-            "photographer_workspace:gallery_workspace", args=[gallery.pk]
+            "photographer_workspace:gallery_workspace", args=[gallery_id]
         )
         self.page.goto(workspace_url)
         self.page.locator('form.lpw-gw-publish-form, form.lp-gw-publish-form').locator('button[type="submit"]').click()
         self.page.wait_for_load_state("networkidle")
-        gallery.refresh_from_db()
-        self.assertEqual(gallery.status, Gallery.Status.PUBLISHED)
+        gallery_status = self._db(lambda: Gallery.objects.values_list("status", flat=True).get(pk=gallery_id))
+        self.assertEqual(gallery_status, Gallery.Status.PUBLISHED)
 
         self.page.goto(workspace_url + "?tab=client-access")
         access_form = self.page.locator("#client-access-settings")
@@ -117,20 +121,20 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.page.get_by_role("button", name="Save Access").click()
         self.page.wait_for_load_state("networkidle")
 
-        # Send the invitation through the browser and extract the secure URL from locmem email.
         self.page.locator('#invite-client input[name="client_name"]').fill("Golden Client")
         self.page.locator('#invite-client input[name="email"]').fill("golden-client@example.com")
         self.page.locator('#invite-client button[type="submit"]').click()
         self.page.wait_for_load_state("networkidle")
         self.assertTrue(mail.outbox)
-        invitation = GalleryInvitation.objects.get(gallery=gallery, email="golden-client@example.com")
+        invitation_id = self._db(lambda: GalleryInvitation.objects.values_list("pk", flat=True).get(
+            gallery_id=gallery_id, email="golden-client@example.com"
+        ))
         match = re.search(r"https?://[^\s]+/access/[^\s]+/", mail.outbox[-1].body)
         self.assertIsNotNone(match)
         client_url = match.group(0).replace("http://testserver", self.live_server_url).replace(
             "https://testserver", self.live_server_url
         )
 
-        # Client opens the secure delivery, favorites, comments, and downloads without page refresh.
         client_context = self.browser.new_context(accept_downloads=True)
         client_page = client_context.new_page()
         client_page.goto(client_url)
@@ -152,24 +156,26 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.assertTrue(download_info.value.suggested_filename)
         client_context.close()
 
-        self.assertTrue(GalleryAnalyticsEvent.objects.filter(
-            gallery=gallery,
+        favorite_recorded = self._db(lambda: GalleryAnalyticsEvent.objects.filter(
+            gallery_id=gallery_id,
             related_photo_id=photo_id,
             event_type=GalleryAnalyticsEvent.EventType.FAVORITE,
         ).exists())
-        self.assertTrue(GalleryPhotoComment.objects.filter(
-            gallery=gallery,
+        comment_recorded = self._db(lambda: GalleryPhotoComment.objects.filter(
+            gallery_id=gallery_id,
             photo_id=photo_id,
-            invitation=invitation,
+            invitation_id=invitation_id,
             body="This one is perfect.",
         ).exists())
-        self.assertTrue(GalleryAnalyticsEvent.objects.filter(
-            gallery=gallery,
+        download_recorded = self._db(lambda: GalleryAnalyticsEvent.objects.filter(
+            gallery_id=gallery_id,
             related_photo_id=photo_id,
             event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD,
         ).exists())
+        self.assertTrue(favorite_recorded)
+        self.assertTrue(comment_recorded)
+        self.assertTrue(download_recorded)
 
-        # Photographer can see the resulting engagement back in the workspace.
         self.page.goto(workspace_url + "?tab=activity")
         self.page.wait_for_load_state("networkidle")
         activity_text = self.page.locator("body").inner_text().lower()
