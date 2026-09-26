@@ -16,16 +16,18 @@ class PostgreSQLBehaviorTests(TransactionTestCase):
         if connection.vendor != "postgresql":
             self.skipTest("This contract intentionally runs only against PostgreSQL.")
 
-        # PhotographerProfile creation provisions the default subscription through
-        # its post-save signal. TransactionTestCase flushes data between tests, so
-        # seed the production-required free plan explicitly instead of depending on
-        # data left behind by migrations or another test.
-        Plan.objects.create(
+        # The billing catalog is seeded by migrations. TransactionTestCase may
+        # preserve that migrated reference data between tests, so make this fixture
+        # idempotent: reuse the production free plan when present and recreate the
+        # minimum required row only if a flush removed it.
+        Plan.objects.get_or_create(
             code="free",
-            name="Free",
-            is_active=True,
-            is_public=True,
-            customer_selectable=True,
+            defaults={
+                "name": "Free",
+                "is_active": True,
+                "is_public": True,
+                "customer_selectable": True,
+            },
         )
 
         user = User.objects.create_user(
