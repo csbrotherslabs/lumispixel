@@ -3,7 +3,7 @@ import logging
 from celery import shared_task
 from django.utils import timezone
 
-from .email_delivery import deliver_email
+from .email_delivery import deliver_email, record_failure
 from .models import EmailDelivery
 
 logger = logging.getLogger(__name__)
@@ -15,6 +15,10 @@ def deliver_transactional_email(self, delivery_id):
         return deliver_email(delivery_id)
     except Exception as exc:
         delivery = EmailDelivery.objects.filter(pk=delivery_id).first()
+        if delivery and not delivery.last_error:
+            # Keep the task boundary durable even when deliver_email is mocked or an
+            # unexpected exception occurs before the delivery layer records failure.
+            delivery = record_failure(delivery_id, exc)
         if not delivery or delivery.status == EmailDelivery.Status.DEAD:
             logger.error("Transactional email %s moved to dead letter: %s", delivery_id, exc)
             return False
