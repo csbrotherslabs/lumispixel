@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -6,7 +6,6 @@ from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
@@ -75,7 +74,9 @@ class EmailVerificationLifecycleTests(TestCase):
 
     @override_settings(EMAIL_VERIFICATION_TIMEOUT_SECONDS=60)
     def test_expired_token_is_rejected(self):
-        issued = timezone.now() - timedelta(seconds=61)
+        # PasswordResetTokenGenerator deliberately uses a naive UTC-like clock.
+        # Patch it with the same datetime semantics rather than timezone.now().
+        issued = datetime.now() - timedelta(seconds=61)
         with patch.object(email_verification_token, "_now", return_value=issued):
             token = email_verification_token.make_token(self.user)
         response = self.client.get(self._url(token))
