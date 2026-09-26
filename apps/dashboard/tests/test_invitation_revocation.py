@@ -19,5 +19,5 @@ class InvitationRevocationTests(SimpleTestCase):
         lookup = get_mock.call_args.kwargs
         self.assertIs(lookup["studio"], studio)
         self.assertEqual(lookup["status"], StudioMembership.Status.INVITED)
-        self.assertEqual(membership.status, StudioMembership.Status.REVOKED)
+        self.assertEqual(membership.status, StudioMembership.Status.INACTIVE)
         self.assertEqual(membership.invitation_token_digest, "")
