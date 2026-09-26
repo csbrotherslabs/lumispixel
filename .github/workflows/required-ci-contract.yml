@@ -1,0 +1,81 @@
+name: Production Readiness
+
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: required-ci-contract-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  required-ci-contract:
+    name: Required CI Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Verify required CI definition
+        run: python scripts/verify_required_ci_contract.py
+
+      - name: Wait for mandatory PR gates
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const required = new Set([
+              'Django CI / Django tests (fast SQLite feedback)',
+              'Django CI / PostgreSQL 16 first-class test suite',
+              'Django CI / P3 Playwright Chromium golden paths',
+              'P2 Operations Reliability Gate / Health, recovery and production contracts',
+              'P2 Operations Reliability Gate / PostgreSQL migration and restore gate',
+            ]);
+            const ownCheck = 'Production Readiness / Required CI Contract';
+            const timeoutMs = 30 * 60 * 1000;
+            const intervalMs = 15000;
+            const started = Date.now();
+
+            while (Date.now() - started < timeoutMs) {
+              const { data } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: context.payload.pull_request.head.sha,
+                per_page: 100,
+              });
+              const states = new Map();
+              for (const run of data.check_runs) {
+                if (run.name === ownCheck) continue;
+                states.set(run.name, {status: run.status, conclusion: run.conclusion});
+              }
+
+              const missing = [...required].filter(name => !states.has(name));
+              const failed = [...required].filter(name => {
+                const state = states.get(name);
+                return state && state.status === 'completed' && !['success', 'neutral', 'skipped'].includes(state.conclusion);
+              });
+              if (failed.length) {
+                core.setFailed(`Mandatory CI gate(s) failed: ${failed.join(', ')}`);
+                return;
+              }
+              const pending = [...required].filter(name => {
+                const state = states.get(name);
+                return state && state.status !== 'completed';
+              });
+              if (!missing.length && !pending.length) {
+                core.info('All mandatory PR-to-dev gates passed.');
+                return;
+              }
+              core.info(`Waiting for mandatory gates. Missing: ${missing.join(', ') || 'none'}; pending: ${pending.join(', ') || 'none'}`);
+              await new Promise(resolve => setTimeout(resolve, intervalMs));
+            }
+            core.setFailed('Timed out waiting for mandatory CI gates.');
