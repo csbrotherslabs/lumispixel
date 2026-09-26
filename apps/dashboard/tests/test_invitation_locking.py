@@ -14,5 +14,8 @@ class InvitationLockingTests(SimpleTestCase):
 
         find_valid_invitation("token", lock=True)
 
-        objects.select_related.return_value.select_for_update.assert_called_once_with()
+        # Keep the PostgreSQL-safe locking contract explicit: invited_by is a
+        # nullable select_related() join, so acceptance must lock only the
+        # StudioMembership row rather than every joined table.
+        objects.select_related.return_value.select_for_update.assert_called_once_with(of=("self",))
         locked.filter.assert_called_once()
