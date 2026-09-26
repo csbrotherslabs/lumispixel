@@ -1,5 +1,6 @@
 """Security regression tests for studio invitation lifecycle."""
 
+from smtplib import SMTPException
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -46,7 +47,7 @@ class StudioInvitationSecurityTests(TestCase):
         )
         self.membership.refresh_from_db()
 
-    @patch("apps.dashboard.views.send_invitation", side_effect=RuntimeError("mail unavailable"))
+    @patch("apps.dashboard.team_invitations.EmailMultiAlternatives.send", side_effect=SMTPException("mail unavailable"))
     def test_failed_resend_preserves_previous_secure_link(self, _send):
         old_digest = self.membership.invitation_token_digest
         old_expiry = self.membership.invitation_expires_at
