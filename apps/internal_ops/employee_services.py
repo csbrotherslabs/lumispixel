@@ -89,7 +89,12 @@ def update_employee(*, employee, actor_user, actor_employee, first_name, last_na
     if not reason.strip():
         raise EmployeeManagementError("A reason for the employee change is required.")
     with transaction.atomic():
-        locked = EmployeeProfile.objects.select_for_update().select_related("user", "department", "role", "manager").get(pk=employee.pk)
+        # Lock only the EmployeeProfile row. PostgreSQL rejects FOR UPDATE when
+        # select_related() adds LEFT OUTER JOINs for nullable relations such as
+        # department, role, or manager. Related objects can be loaded after the
+        # row lock without attempting to lock the nullable side of those joins.
+        locked = EmployeeProfile.objects.select_for_update().get(pk=employee.pk)
+        locked = EmployeeProfile.objects.select_related("user", "department", "role", "manager").get(pk=locked.pk)
         before = _employee_snapshot(locked)
         user = locked.user; user.first_name = first_name; user.last_name = last_name; user.save(update_fields=["first_name", "last_name", "updated_at"])
         locked.title = title; locked.department = department; locked.role = role; locked.manager = manager; locked.status = status; locked.hire_date = hire_date
