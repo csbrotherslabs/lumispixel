@@ -32,6 +32,24 @@ class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
         return f"{user.pk}{user.password}{user.email_verified}{user.email_verified_at}{timestamp}"
 
+    def check_token(self, user, token):
+        """Validate verification tokens with their own bounded lifetime.
+
+        Django's PasswordResetTokenGenerator otherwise uses PASSWORD_RESET_TIMEOUT,
+        which couples two security flows that should be independently configurable.
+        """
+        if not (user and token):
+            return False
+        try:
+            ts_b36, _ = token.split("-")
+            timestamp = int(ts_b36, 36)
+        except (TypeError, ValueError):
+            return False
+        if not super().check_token(user, token):
+            return False
+        age = self._num_seconds(self._now()) - timestamp
+        return age <= settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS
+
 
 email_verification_token = EmailVerificationTokenGenerator()
 
