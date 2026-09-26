@@ -107,7 +107,7 @@ class CriticalGalleryWorkflowTests(TestCase):
         self.assertContains(
             response,
             reverse(
-                "galleries:client_gallery_media",
+                "galleries:client_gallery_photo_media",
                 args=[self.token, self.photo.pk],
             ),
         )
