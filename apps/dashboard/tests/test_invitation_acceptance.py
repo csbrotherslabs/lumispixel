@@ -2,12 +2,12 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.core.exceptions import PermissionDenied
-from django.test import SimpleTestCase
+from django.test import TestCase
 
 from apps.dashboard.invitation_acceptance import locked_invitation_for_acceptance
 
 
-class InvitationAcceptanceGuardTests(SimpleTestCase):
+class InvitationAcceptanceGuardTests(TestCase):
     @patch("apps.dashboard.invitation_acceptance.find_valid_invitation")
     def test_invalid_or_expired_token_returns_none(self, find_mock):
         find_mock.return_value = None
