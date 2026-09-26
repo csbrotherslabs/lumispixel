@@ -75,8 +75,12 @@ jobs:
           python manage.py showmigrations --plan
       - name: Fail on model or migration drift
         run: python manage.py makemigrations --check --dry-run
-      - name: Run PostgreSQL database contracts
-        run: python manage.py test config.test_database_production --verbosity 2
+      - name: Run PostgreSQL database and transaction contracts
+        run: |
+          python manage.py test \
+            config.test_database_production \
+            config.test_postgresql_behavior \
+            --verbosity 2
       - name: Run critical customer workflows on PostgreSQL
         run: python manage.py test apps.galleries.test_critical_workflows --verbosity 2
       - name: Run full Django suite on PostgreSQL
