@@ -60,9 +60,11 @@ class TransactionalEmailDeliveryTests(TransactionTestCase):
         self.assertEqual(send.call_count, 1)
 
     @patch("apps.notifications.email_delivery.EmailMultiAlternatives.send", side_effect=RuntimeError("smtp down"))
-    def test_smtp_failure_stays_pending_for_retry(self, send):
+    def test_smtp_failure_is_scheduled_for_retry(self, send):
         with self.assertRaises(RuntimeError):
             deliver_email(self.delivery.pk)
         self.delivery.refresh_from_db()
-        self.assertEqual(self.delivery.status, EmailDelivery.Status.PENDING)
+        self.assertEqual(self.delivery.status, EmailDelivery.Status.RETRY)
         self.assertEqual(self.delivery.attempt_count, 1)
+        self.assertIsNotNone(self.delivery.next_attempt_at)
+        self.assertIn("smtp down", self.delivery.last_error)
