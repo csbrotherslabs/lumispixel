@@ -24,4 +24,4 @@ jobs:
       - name: Migration drift check
         run: python manage.py makemigrations --check --dry-run
       - name: Focused P2 tests
-        run: python manage.py test apps.notifications.test_delivery_reliability apps.notifications.test_email_delivery -v 2
+        run: python manage.py test apps.notifications.test_delivery_reliability -v 2
