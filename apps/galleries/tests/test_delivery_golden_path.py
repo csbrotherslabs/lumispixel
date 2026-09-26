@@ -1,9 +1,7 @@
 import io
 import re
-import threading
 
 from django.core import mail
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
 from PIL import Image
@@ -24,19 +22,11 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
 
     serialized_rollback = True
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls._playwright = sync_playwright().start()
-        cls.browser = cls._playwright.chromium.launch(headless=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.browser.close()
-        cls._playwright.stop()
-        super().tearDownClass()
-
     def setUp(self):
+        # Complete all synchronous Django ORM setup before Playwright starts its
+        # sync driver. Playwright's sync API runs an asyncio loop in the current
+        # thread; starting it in setUpClass made Django 6.1 correctly reject ORM
+        # access in setUp/tearDown as SynchronousOnlyOperation.
         self.user = User.objects.create_user(
             email="golden-photographer@example.com",
             password="GoldenPath!123",
@@ -49,11 +39,17 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
             slug="golden-photographer",
             onboarding_completed=True,
         )
+        self._playwright = sync_playwright().start()
+        self.browser = self._playwright.chromium.launch(headless=True)
         self.context = self.browser.new_context(accept_downloads=True)
         self.page = self.context.new_page()
 
     def tearDown(self):
+        # Stop Playwright before LiveServerTestCase performs synchronous DB
+        # teardown/flush so Django is no longer inside Playwright's async loop.
         self.context.close()
+        self.browser.close()
+        self._playwright.stop()
 
     def _jpeg(self):
         buffer = io.BytesIO()
