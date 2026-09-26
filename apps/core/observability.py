@@ -22,13 +22,12 @@ class SensitiveDataFilter(logging.Filter):
 
     def filter(self, record):
         record.request_id = getattr(record, "request_id", None) or _request_id.get()
-        if isinstance(record.msg, str):
-            record.msg = redact(record.msg)
-        if record.args:
-            if isinstance(record.args, dict):
-                record.args = {key: redact(value) for key, value in record.args.items()}
-            else:
-                record.args = tuple(redact(value) for value in record.args)
+        try:
+            rendered = record.getMessage()
+        except Exception:
+            rendered = str(record.msg)
+        record.msg = redact(rendered)
+        record.args = ()
         return True
 
 
