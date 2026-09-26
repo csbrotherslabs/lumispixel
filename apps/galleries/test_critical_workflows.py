@@ -128,7 +128,9 @@ class CriticalGalleryWorkflowTests(TestCase):
             self.client.post(comment_url, {"comment": "Please keep this one."}).status_code,
             (200, 302),
         )
-        self.assertEqual(self.client.get(download_url).status_code, 200)
+        download_response = self.client.get(download_url)
+        self.assertEqual(download_response.status_code, 200)
+        download_response.close()
 
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.favorite_count, 1)
@@ -245,6 +247,7 @@ class CriticalGalleryWorkflowTests(TestCase):
             self.assertIn(favorite.status_code, (403, 404))
             self.assertIn(comment.status_code, (403, 404))
             self.assertIn(download.status_code, (403, 404))
+            download.close()
             self.assertFalse(
                 GalleryPhotoComment.objects.filter(
                     photo=other_photo, body="cross-tenant write"
