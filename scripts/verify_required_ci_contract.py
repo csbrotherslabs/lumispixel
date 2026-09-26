@@ -25,13 +25,10 @@ def main():
     contract = read(".github/workflows/required-ci-contract.yml")
 
     require(django, [
-        "pull_request:",
-        "- dev",
-        "Run Django system checks",
-        "python manage.py check",
+        "pull_request:", "- dev",
+        "Run Django system checks", "python manage.py check",
         "makemigrations --check --dry-run",
-        "Run Django test suite",
-        "python manage.py test --verbosity 2",
+        "Run Django test suite", "python manage.py test --verbosity 2",
         "postgres:16",
         "Run critical customer workflows on PostgreSQL",
         "apps.galleries.test_critical_workflows",
@@ -42,27 +39,24 @@ def main():
     ], "Django CI")
 
     require(operations, [
-        "pull_request:",
-        "branches: [dev]",
+        "pull_request:", "branches: [dev]",
         "Health, recovery and production contracts",
         "PostgreSQL migration and restore gate",
-        "postgres:16",
-        "deployment_preflight",
-        "verify_database_restore",
+        "postgres:16", "deployment_preflight", "verify_database_restore",
     ], "Operations reliability CI")
 
     require(contract, [
         "name: Production Readiness",
-        "pull_request:",
-        "branches: [dev]",
+        "pull_request:", "branches: [dev]",
         "name: Required CI Contract",
         "Verify required CI definition",
         "python scripts/verify_required_ci_contract.py",
-        "Django CI / Django tests (fast SQLite feedback)",
-        "Django CI / PostgreSQL 16 first-class test suite",
-        "Django CI / P3 Playwright Chromium golden paths",
-        "P2 Operations Reliability Gate / Health, recovery and production contracts",
-        "P2 Operations Reliability Gate / PostgreSQL migration and restore gate",
+        "Django tests (fast SQLite feedback)",
+        "PostgreSQL 16 first-class test suite",
+        "P3 Playwright Chromium golden paths",
+        "Health, recovery and production contracts",
+        "PostgreSQL migration and restore gate",
+        "state.conclusion !== 'success'",
     ], "Required CI contract")
 
     print("Required CI contract is intact.")
