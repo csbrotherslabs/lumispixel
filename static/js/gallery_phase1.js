@@ -92,9 +92,7 @@
       rows.sort(function (a, b) {
         const statusDiff = (rank[a.dataset.status] ?? 9) - (rank[b.dataset.status] ?? 9);
         if (statusDiff) return statusDiff;
-        if (a.dataset.status === 'completed') {
-          return Number(b.dataset.completedAt || 0) - Number(a.dataset.completedAt || 0);
-        }
+        if (a.dataset.status === 'completed') return Number(b.dataset.completedAt || 0) - Number(a.dataset.completedAt || 0);
         return Number(a.dataset.queueOrder || 0) - Number(b.dataset.queueOrder || 0);
       });
       rows.forEach(function (row) { list.append(row); });
@@ -104,17 +102,11 @@
       if (status === 'completed') row.dataset.completedAt = String(Date.now());
       sortQueueRows(); counts();
     }
-    function releasePreview(row) {
-      if (row.dataset.previewUrl) { URL.revokeObjectURL(row.dataset.previewUrl); delete row.dataset.previewUrl; }
-    }
+    function releasePreview(row) { if (row.dataset.previewUrl) { URL.revokeObjectURL(row.dataset.previewUrl); delete row.dataset.previewUrl; } }
     function removeRow(row) { releasePreview(row); row.remove(); counts(); }
-    function serverMessage(xhr) {
-      try { const body = JSON.parse(xhr.responseText); return body.error || body.errors?.[0]?.error; } catch (_) { return ''; }
-    }
     function finishCheck() {
       if (active || pending.length || !list.querySelector('[data-local-upload]')) return;
-      const failed = list.querySelector('[data-local-upload][data-status="failed"]');
-      if (failed) return;
+      if (list.querySelector('[data-local-upload][data-status="failed"]')) return;
       const completed = list.querySelectorAll('[data-local-upload][data-status="completed"]').length;
       if (!completed) return;
       const option = gallery.selectedOptions[0];
@@ -125,6 +117,9 @@
     function createRow(file, galleryName) {
       const row = document.createElement('article'); row.className = 'lp-upload-row is-queued';
       row.dataset.status = 'queued'; row.dataset.localUpload = 'true'; row.dataset.queueOrder = String(Date.now() + Math.random());
+      // Keep the browser File object on the row for in-page retry. File objects cannot
+      // be reconstructed from DOM metadata after an interrupted upload.
+      row._file = file;
       row.innerHTML = '<div class="lp-file-icon"><img alt=""></div><div class="lp-file-main"><strong></strong><span></span><div data-progress-slot></div></div><div class="lp-file-state"><strong>Queued</strong><span>Waiting to upload</span></div><div class="lp-file-actions"><button type="button" data-remove aria-label="Remove queued file"><i class="bi bi-x-lg" aria-hidden="true"></i></button></div>';
       row.querySelector('.lp-file-main strong').textContent = file.name;
       row.querySelector('.lp-file-main span').textContent = (file.size / 1048576).toFixed(1) + ' MB · ' + galleryName;
@@ -142,55 +137,30 @@
       finishCheck();
     }
     function apiJson(url, payload, signal) {
-      return fetch(url, {
-        method: 'POST',
-        credentials: 'same-origin',
-        signal: signal,
-        headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/json'},
-        body: JSON.stringify(payload || {})
-      }).then(async function (response) {
-        let body = {};
-        try { body = await response.json(); } catch (_) {}
+      return fetch(url, {method: 'POST', credentials: 'same-origin', signal: signal, headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/json'}, body: JSON.stringify(payload || {})}).then(async function (response) {
+        let body = {}; try { body = await response.json(); } catch (_) {}
         if (!response.ok) throw new Error(body.error || 'The upload request failed.');
         return body;
       });
     }
-    function multipartUrl(uploadId, action) {
-      return page.dataset.multipartBaseUrl.replace(/initiate\/$/, uploadId + '/' + action + '/');
-    }
+    function multipartUrl(uploadId, action) { return page.dataset.multipartBaseUrl.replace(/initiate\/$/, uploadId + '/' + action + '/'); }
     function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
-    function resumeKey(job) {
-      return ['lumispixel-upload-v1', job.galleryId, job.file.name, job.file.size, job.file.lastModified].join(':');
-    }
-    function savedUpload(job) {
-      try { return JSON.parse(localStorage.getItem(resumeKey(job)) || 'null'); } catch (_) { return null; }
-    }
-    function saveUpload(job, value) {
-      try { localStorage.setItem(resumeKey(job), JSON.stringify(value)); } catch (_) {}
-    }
-    function forgetUpload(job) {
-      try { localStorage.removeItem(resumeKey(job)); } catch (_) {}
-    }
+    function resumeKey(job) { return ['lumispixel-upload-v1', job.galleryId, job.file.name, job.file.size, job.file.lastModified].join(':'); }
+    function savedUpload(job) { try { return JSON.parse(localStorage.getItem(resumeKey(job)) || 'null'); } catch (_) { return null; } }
+    function saveUpload(job, value) { try { localStorage.setItem(resumeKey(job), JSON.stringify(value)); } catch (_) {} }
+    function forgetUpload(job) { try { localStorage.removeItem(resumeKey(job)); } catch (_) {} }
     async function uploadPartWithRetry(url, blob, signal, onProgress) {
       const maxAttempts = 4;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         try {
           return await new Promise(function (resolve, reject) {
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', url);
+            const xhr = new XMLHttpRequest(); xhr.open('PUT', url);
             xhr.upload.onprogress = function (event) { if (event.lengthComputable) onProgress(event.loaded); };
-            xhr.onload = function () {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                const etag = xhr.getResponseHeader('ETag');
-                if (!etag) reject(new Error('Storage did not return an ETag.'));
-                else resolve(etag);
-              } else reject(new Error('Storage rejected an upload part.'));
-            };
+            xhr.onload = function () { if (xhr.status >= 200 && xhr.status < 300) { const etag = xhr.getResponseHeader('ETag'); if (!etag) reject(new Error('Storage did not return an ETag.')); else resolve(etag); } else reject(new Error('Storage rejected an upload part.')); };
             xhr.onerror = function () { reject(new Error('Network interrupted.')); };
             xhr.onabort = function () { reject(new DOMException('Upload cancelled.', 'AbortError')); };
             if (signal.aborted) { xhr.abort(); return; }
-            signal.addEventListener('abort', function () { xhr.abort(); }, {once: true});
-            xhr.send(blob);
+            signal.addEventListener('abort', function () { xhr.abort(); }, {once: true}); xhr.send(blob);
           });
         } catch (err) {
           if (signal.aborted || err.name === 'AbortError') throw err;
@@ -201,84 +171,67 @@
     }
     async function directMultipartUpload(job, updateProgress, signal) {
       const file = job.file;
+      if (!file) throw new Error('The original file is no longer available. Please add it again.');
       let init = null;
       const saved = savedUpload(job);
       if (saved && saved.upload) {
         try {
           init = await apiJson(multipartUrl(saved.upload, 'resume'), {}, signal);
-          if (Number(init.gallery) !== Number(job.galleryId) || init.name !== file.name ||
-              Number(init.size) !== file.size || init.content_type !== file.type) {
-            init = null;
-            forgetUpload(job);
+          if (Number(init.gallery) !== Number(job.galleryId) || init.name !== file.name || Number(init.size) !== file.size || init.content_type !== file.type) {
+            init = null; forgetUpload(job);
           }
-        } catch (_) {
-          forgetUpload(job);
-          init = null;
-        }
+        } catch (_) { forgetUpload(job); init = null; }
       }
       if (!init) {
-        init = await apiJson(page.dataset.multipartInitUrl, {
-          gallery: job.galleryId, name: file.name, content_type: file.type, size: file.size
-        }, signal);
+        init = await apiJson(page.dataset.multipartInitUrl, {gallery: job.galleryId, name: file.name, content_type: file.type, size: file.size}, signal);
         saveUpload(job, {upload: init.upload});
       }
       job.multipartId = init.upload;
       const partSize = Math.max(Number(init.part_size) || 5 * 1024 * 1024, 5 * 1024 * 1024);
       const totalParts = Math.ceil(file.size / partSize);
       if (totalParts > Number(init.max_parts || 10000)) throw new Error('This file requires too many upload parts.');
-      const loaded = new Array(totalParts).fill(0);
-      const completed = new Array(totalParts);
+      const loaded = new Array(totalParts).fill(0), completed = new Array(totalParts);
       (init.parts || []).forEach(function (part) {
         const index = Number(part.part_number) - 1;
-        if (index >= 0 && index < totalParts) {
-          loaded[index] = Number(part.size) || Math.min(partSize, file.size - index * partSize);
-          completed[index] = {part_number: Number(part.part_number), etag: part.etag};
-        }
+        if (index >= 0 && index < totalParts) { loaded[index] = Number(part.size) || Math.min(partSize, file.size - index * partSize); completed[index] = {part_number: Number(part.part_number), etag: part.etag}; }
       });
       updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
-      const remaining = [];
-      for (let index = 0; index < totalParts; index += 1) if (!completed[index]) remaining.push(index);
+      const remaining = []; for (let index = 0; index < totalParts; index += 1) if (!completed[index]) remaining.push(index);
       let cursor = 0;
-      function report(partIndex, bytes) {
-        loaded[partIndex] = bytes;
-        updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
-      }
+      function report(partIndex, bytes) { loaded[partIndex] = bytes; updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size); }
       async function worker() {
         while (true) {
-          const position = cursor++;
-          if (position >= remaining.length) return;
-          const index = remaining[position], partNumber = index + 1;
-          const start = index * partSize, end = Math.min(start + partSize, file.size);
+          const position = cursor++; if (position >= remaining.length) return;
+          const index = remaining[position], partNumber = index + 1, start = index * partSize, end = Math.min(start + partSize, file.size);
           const signed = await apiJson(multipartUrl(init.upload, 'part'), {part_number: partNumber}, signal);
           const etag = await uploadPartWithRetry(signed.url, file.slice(start, end), signal, function (bytes) { report(index, bytes); });
-          loaded[index] = end - start;
-          completed[index] = {part_number: partNumber, etag: etag};
-          updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
+          loaded[index] = end - start; completed[index] = {part_number: partNumber, etag: etag}; updateProgress(loaded.reduce(function (sum, value) { return sum + value; }, 0), file.size);
         }
       }
-      const partConcurrency = Math.min(4, Math.max(remaining.length, 1));
-      await Promise.all(Array.from({length: partConcurrency}, worker));
-      const result = await apiJson(multipartUrl(init.upload, 'complete'), {parts: completed}, signal);
-      forgetUpload(job);
-      return result;
+      const partConcurrency = Math.min(4, Math.max(remaining.length, 1)); await Promise.all(Array.from({length: partConcurrency}, worker));
+      const result = await apiJson(multipartUrl(init.upload, 'complete'), {parts: completed}, signal); forgetUpload(job); return result;
     }
     function upload(job) {
       const row = job.row, file = job.file;
+      if (!file) {
+        setStatus(row, 'failed');
+        const missingState = row.querySelector('.lp-file-state');
+        missingState.querySelector('strong').textContent = 'Upload failed';
+        missingState.querySelector('span').textContent = 'The original file is no longer available. Please add it again.';
+        return;
+      }
       active += 1; setStatus(row, 'uploading');
       const state = row.querySelector('.lp-file-state'); state.querySelector('strong').textContent = 'Uploading'; state.querySelector('span').textContent = 'Starting…';
-      const slot = row.querySelector('[data-progress-slot]');
-      slot.innerHTML = '<div class="lp-progress-copy"><span data-percent>0%</span><span data-transfer></span></div><progress max="100" value="0"></progress>';
+      const slot = row.querySelector('[data-progress-slot]'); slot.innerHTML = '<div class="lp-progress-copy"><span data-percent>0%</span><span data-transfer></span></div><progress max="100" value="0"></progress>';
       const progress = slot.querySelector('progress'); progress.setAttribute('aria-label', file.name + ': Uploading, 0 percent');
       const actions = row.querySelector('.lp-file-actions'); actions.innerHTML = '<button type="button" data-cancel aria-label="Cancel ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
       const controller = new AbortController(), started = performance.now(); let lastPaint = 0;
       function paint(loaded, total) {
         const now = performance.now(); if (now - lastPaint < 100 && loaded < total) return; lastPaint = now;
-        const percent = Math.min(100, Math.round(loaded / total * 100));
-        const elapsed = Math.max((now - started) / 1000, .1), speed = loaded / elapsed;
+        const percent = Math.min(100, Math.round(loaded / total * 100)), elapsed = Math.max((now - started) / 1000, .1), speed = loaded / elapsed;
         progress.value = percent; progress.textContent = percent + '%'; progress.setAttribute('aria-label', file.name + ': Uploading, ' + percent + ' percent');
         slot.querySelector('[data-percent]').textContent = percent + '%';
-        const remaining = Math.ceil((total - loaded) / Math.max(speed, 1));
-        slot.querySelector('[data-transfer]').textContent = (speed / 1048576).toFixed(1) + ' MB/s · ' + remaining + ' sec remaining';
+        const remaining = Math.ceil((total - loaded) / Math.max(speed, 1)); slot.querySelector('[data-transfer]').textContent = (speed / 1048576).toFixed(1) + ' MB/s · ' + remaining + ' sec remaining';
       }
       function failed(reason) {
         setStatus(row, 'failed'); state.querySelector('strong').textContent = 'Upload failed'; state.querySelector('span').textContent = reason || 'Network interrupted'; slot.replaceChildren();
@@ -286,16 +239,9 @@
       }
       directMultipartUpload(job, paint, controller.signal).then(function (result) {
         setStatus(row, 'completed'); state.querySelector('strong').textContent = 'Uploaded'; state.querySelector('span').textContent = 'Upload complete'; progress.value = 100; progress.textContent = '100%'; slot.querySelector('[data-percent]').textContent = '100%'; slot.querySelector('[data-transfer]').textContent = 'Complete';
-        actions.innerHTML = '<button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>';
-        row.dataset.uploadId = result.photo || '';
-      }).catch(function (err) {
-        if (err.name === 'AbortError') { removeRow(row); return; }
-        failed(err.message);
-      }).finally(function () { active -= 1; pump(); });
-      actions.querySelector('[data-cancel]').addEventListener('click', function () {
-        controller.abort();
-        if (job.multipartId) apiJson(multipartUrl(job.multipartId, 'abort'), {}).catch(function () {});
-      });
+        actions.innerHTML = '<button type="button" data-remove aria-label="Remove ' + file.name.replace(/["<>]/g, '') + '"><i class="bi bi-x-lg" aria-hidden="true"></i></button>'; row.dataset.uploadId = result.photo || '';
+      }).catch(function (err) { if (err.name === 'AbortError') { removeRow(row); return; } failed(err.message); }).finally(function () { active -= 1; pump(); });
+      actions.querySelector('[data-cancel]').addEventListener('click', function () { controller.abort(); if (job.multipartId) apiJson(multipartUrl(job.multipartId, 'abort'), {}).catch(function () {}); });
     }
     function queueFiles(files) {
       error.textContent = '';
@@ -307,8 +253,7 @@
         if (file.size > 25 * 1024 * 1024) { error.textContent = file.name + ': File exceeds the 25 MB limit.'; return; }
         if (file.size > availableStorage) { error.textContent = file.name + ': Not enough storage remaining.'; return; }
         availableStorage -= file.size;
-        const row = createRow(file, option.dataset.name); list.querySelector('[data-queue-empty]')?.remove();
-        list.append(row); pending.push({file: file, row: row, galleryId: galleryId}); counts();
+        const row = createRow(file, option.dataset.name); list.querySelector('[data-queue-empty]')?.remove(); list.append(row); pending.push({file: file, row: row, galleryId: galleryId}); counts();
       });
       input.value = ''; pump();
     }
@@ -320,31 +265,33 @@
     drop.addEventListener('drop', function (event) { if (!input.disabled) queueFiles(event.dataTransfer.files); });
     gallery.addEventListener('change', setDestination); setDestination(); counts();
     page.querySelector('[data-change-gallery]')?.addEventListener('click', function () { gallery.value = ''; setDestination(); gallery.focus(); });
-    search?.addEventListener('input', function () {
-      const term = search.value.trim().toLowerCase();
-      Array.from(gallery.options).forEach(function (option, index) {
-        if (!index) return;
-        option.hidden = term && !option.textContent.toLowerCase().includes(term);
-      });
-    });
+    search?.addEventListener('input', function () { const term = search.value.trim().toLowerCase(); Array.from(gallery.options).forEach(function (option, index) { if (!index) return; option.hidden = term && !option.textContent.toLowerCase().includes(term); }); });
     page.querySelector('[data-clear-completed]')?.addEventListener('click', function (event) {
       const button = event.currentTarget;
-      fetch(button.dataset.clearCompletedUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}}).then(function (response) {
-        if (!response.ok) throw new Error('Could not clear completed uploads.');
-        list.querySelectorAll('[data-status="completed"]').forEach(function (row) { removeRow(row); });
-      }).catch(function (err) { error.textContent = err.message; });
+      fetch(button.dataset.clearCompletedUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}}).then(function (response) { if (!response.ok) throw new Error('Could not clear completed uploads.'); list.querySelectorAll('[data-status="completed"]').forEach(function (row) { removeRow(row); }); }).catch(function (err) { error.textContent = err.message; });
     });
     list.addEventListener('click', function (event) {
       const button = event.target.closest('button'); if (!button) return;
       const row = button.closest('.lp-upload-row'); if (!row) return;
       if (button.matches('[data-remove]') && row.dataset.localUpload) { removeRow(row); return; }
-      if (button.matches('[data-retry]')) { setStatus(row, 'queued'); pending.push({file: row._file, row: row, galleryId: gallery.value}); pump(); return; }
+      if (button.matches('[data-retry]')) {
+        if (row.dataset.status !== 'failed') return;
+        const file = row._file;
+        if (!file) {
+          row.querySelector('.lp-file-state strong').textContent = 'Upload failed';
+          row.querySelector('.lp-file-state span').textContent = 'The original file is no longer available. Please add it again.';
+          return;
+        }
+        // Disable immediately so double taps cannot enqueue the same retry twice.
+        button.disabled = true;
+        setStatus(row, 'queued');
+        pending.push({file: file, row: row, galleryId: gallery.value});
+        pump();
+        return;
+      }
       if (button.dataset.serverAction) {
         const form = new FormData(); form.append('action', button.dataset.serverAction);
-        fetch(button.dataset.actionUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}, body: form}).then(function (response) {
-          if (!response.ok) throw new Error('The queue action failed.');
-          if (button.dataset.serverAction === 'remove') removeRow(row); else window.location.reload();
-        }).catch(function (err) { error.textContent = err.message; });
+        fetch(button.dataset.actionUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}, body: form}).then(function (response) { if (!response.ok) throw new Error('The queue action failed.'); if (button.dataset.serverAction === 'remove') removeRow(row); else window.location.reload(); }).catch(function (err) { error.textContent = err.message; });
       }
     });
     page.querySelector('[data-toggle-queued]')?.addEventListener('click', function () { showAllQueued = !showAllQueued; applyQueueVisibility(); });
