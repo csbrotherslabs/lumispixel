@@ -1,7 +1,8 @@
 import io
 
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import LiveServerTestCase, override_settings
+from django.test import override_settings
 from django.urls import reverse
 from PIL import Image
 from playwright.sync_api import sync_playwright
@@ -23,7 +24,7 @@ from apps.galleries.models import (
     GALLERY_STORAGE_BACKEND="local",
     MEDIA_SIGNING_SECRET="lumispixel-mobile-browser-test-signing-secret",
 )
-class ClientGalleryMobileBrowserTests(LiveServerTestCase):
+class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
     """Exercise the real client delivery UI at a phone viewport for every design."""
 
     serialized_rollback = True
