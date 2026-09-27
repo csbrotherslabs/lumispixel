@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Gallery Unavailable | LumisPixel{% endblock %}
+{% block content %}
+<section class="lumis-error-page" aria-labelledby="gallery-access-title">
+  <div class="container">
+    <p class="lumis-error-page__eyebrow">GALLERY UNAVAILABLE</p>
+    <h1 id="gallery-access-title">This gallery link is no longer available.</h1>
+    <p>The link may have expired, been replaced, or the gallery may no longer be available.</p>
+    <p>Please contact your photographer for a new gallery link.</p>
+    <a class="btn" href="{% url 'core:index' %}">Back to LumisPixel</a>
+  </div>
+</section>
+{% endblock %}
