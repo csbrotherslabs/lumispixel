@@ -86,6 +86,7 @@
         textarea.value = '';
         updateCount(count, data.comment_count);
         updateCount(panel?.querySelector('[data-thread-count]'), data.comment_count);
+        document.dispatchEvent(new CustomEvent('lumispixel:comment-submitted', {detail: {photo: photo, panel: panel}}));
       } catch (error) {
         form.submit();
       }
