@@ -43,6 +43,34 @@
 
 .lp-gallery-crm-page .lp-gallery-lower{
   grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+  align-items:start;
+}
+
+/* Keep the lower dashboard cards compact even as client activity grows. */
+.lp-gallery-crm-page .lp-gallery-lower>.lp-gallery-storage,
+.lp-gallery-crm-page .lp-gallery-lower>.lp-gallery-activity{
+  height:360px;
+  min-height:0;
+  box-sizing:border-box;
+}
+
+.lp-gallery-crm-page .lp-gallery-activity{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.lp-gallery-crm-page .lp-gallery-activity>header{
+  flex:0 0 auto;
+}
+
+.lp-gallery-crm-page .lp-gallery-activity>.lp-activity-list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-gutter:stable;
 }
 
 .lp-gallery-crm-page>.lp-gallery-pipeline{
@@ -147,6 +175,19 @@
 
   .lp-gallery-crm-page .lp-gallery-lower{
     grid-template-columns:1fr;
+  }
+
+  .lp-gallery-crm-page .lp-gallery-lower>.lp-gallery-storage,
+  .lp-gallery-crm-page .lp-gallery-lower>.lp-gallery-activity{
+    height:auto;
+  }
+
+  .lp-gallery-crm-page .lp-gallery-activity{
+    overflow:visible;
+  }
+
+  .lp-gallery-crm-page .lp-gallery-activity>.lp-activity-list{
+    overflow-y:visible;
   }
 
   .lp-gallery-crm-page .lp-gallery-pipeline ol{
