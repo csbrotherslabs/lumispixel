@@ -116,7 +116,12 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         url = self.live_server_url + path
         if method == "get":
             return self.context.request.get(url).status
-        return self.context.request.post(url, form=data or {}).status
+        csrf_cookie = next(
+            (cookie for cookie in self.context.cookies() if cookie["name"] == "csrftoken"),
+            None,
+        )
+        headers = {"X-CSRFToken": csrf_cookie["value"]} if csrf_cookie else {}
+        return self.context.request.post(url, form=data or {}, headers=headers).status
 
     def test_all_enabled_permissions_expose_client_controls(self):
         self._open_gallery()
@@ -161,6 +166,10 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.assertEqual(self._api_status("get", self.download_path), 200)
 
     def test_view_gallery_off_blocks_page_and_every_client_capability(self):
+        # Seed the browser's CSRF cookie while access is valid. Otherwise direct
+        # POST probes can be rejected by CSRF middleware before the gallery
+        # authorization code runs, masking the 404 contract this test verifies.
+        self._open_gallery()
         self._save_permission("view_gallery", False)
         response = self._open_gallery()
         self.assertEqual(response.status, 404)
@@ -191,6 +200,10 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
     def test_revoked_token_blocks_page_and_direct_capabilities(self):
         from django.utils import timezone
 
+        # Establish a legitimate browser session/CSRF cookie before revoking the
+        # token so POST probes exercise token authorization rather than failing
+        # early in CSRF middleware.
+        self._open_gallery()
         AccessToken.objects.filter(token_hash=AccessToken.digest(self.raw_token)).update(revoked_at=timezone.now())
         response = self._open_gallery()
         self.assertEqual(response.status, 404)
