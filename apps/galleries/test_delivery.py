@@ -230,12 +230,15 @@ class ClientGalleryDeliveryTests(TestCase):
             "galleries:issue_client_gallery_share_link",
             args=[self.gallery.pk, self.invitation.pk],
         )
-        response = self.client.get(url)
+        response = self.client.post(url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "galleries/share_link.html")
-        self.assertContains(response, "Copy Link")
-        self.assertContains(response, "Download QR")
-        self.assertContains(response, "https://testserver/galleries/access/")
+        self.assertTemplateUsed(response, "galleries/share_link_ready.html")
+        share_url = response.context["share_url"]
+        self.assertIn("/galleries/access/", share_url)
         old_token.refresh_from_db()
         self.assertIsNotNone(old_token.revoked_at)
+        self.assertTrue(GalleryActivity.objects.filter(
+            gallery=self.gallery,
+            event_type=GalleryActivity.EventType.GALLERY_SHARED,
+        ).exists())
