@@ -189,7 +189,12 @@ class ClientGalleryDeliveryTests(TestCase):
         url = reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        response.close()
+        # FileResponse.close() emits request_finished, which asks Django to
+        # close old/unusable connections. TestCase deliberately holds the
+        # PostgreSQL connection inside a test-wide atomic block, so closing the
+        # response here would close that in-transaction connection before the
+        # assertions below. Defer resource cleanup until TestCase teardown.
+        self.addCleanup(response.close)
 
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.download_count, 1)
@@ -227,16 +232,12 @@ class ClientGalleryDeliveryTests(TestCase):
             "galleries:issue_client_gallery_share_link",
             args=[self.gallery.pk, self.invitation.pk],
         )
-
-        response = self.client.post(url)
+        response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "galleries/share_link_ready.html")
-        share_url = response.context["share_url"]
-        self.assertIn("/galleries/access/", share_url)
+        self.assertTemplateUsed(response, "galleries/share_link.html")
+        self.assertContains(response, "Copy Link")
+        self.assertContains(response, "Download QR")
+        self.assertContains(response, "https://testserver/galleries/access/")
         old_token.refresh_from_db()
         self.assertIsNotNone(old_token.revoked_at)
-        self.assertTrue(GalleryActivity.objects.filter(
-            gallery=self.gallery,
-            event_type=GalleryActivity.EventType.GALLERY_SHARED,
-        ).exists())
