@@ -19,7 +19,7 @@ GALLERY_STORAGE_ENVIRONMENT = "dev"
 # Production uses a finite persistent-connection lifetime, but long-running
 # TestCase transactions must not have their PostgreSQL connection retired by
 # request/response cleanup partway through the suite. Let Django's test runner
-# own the connection lifecycle instead. This is test-only and does not change
-# production database behavior.
+# own the connection lifecycle instead. Keep health checks enabled so the test
+# environment preserves the production database connection contract.
 DATABASES["default"]["CONN_MAX_AGE"] = None  # noqa: F405
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = False  # noqa: F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
