@@ -272,7 +272,12 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                         self.assertTrue(share_dialog.locator("[data-copy-link]").is_visible())
                         page.locator("[data-qr-close]").click()
                     else:
-                        page.locator("[data-open-share]").first.click()
+                        # Cinematic renders share launchers in both the stage QR panel
+                        # and the photo browser. The stage is intentionally hidden once
+                        # the browser opens, so exercise the control the client can see.
+                        share_button = page.locator("[data-open-share]:visible").first
+                        self.assertTrue(share_button.is_visible())
+                        share_button.click()
                         share_dialog = page.locator("[data-share-dialog]")
                         self.assertTrue(share_dialog.evaluate("node => node.open"))
                         self.assertTrue(share_dialog.locator("[data-copy-link]").is_visible())
