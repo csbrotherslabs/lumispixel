@@ -111,13 +111,16 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
         return lightbox.first
 
     def _diagnostic_summary(self, page, design, console_messages, page_errors, requests, responses):
+        script_sources = page.locator("script[src]").evaluate_all(
+            "els => els.map(e => e.src)"
+        )
         return (
             f"design={design}; url={page.url}; "
             f"readyState={page.evaluate('document.readyState')}; "
             f"lightboxes={page.locator('[data-photo-lightbox]').count()}; "
             f"full_view_controls={page.locator('[data-full-view]').count()}; "
             f"favorite_forms={page.locator('[data-favorite-form]').count()}; "
-            f"scripts={page.locator('script[src]').evaluate_all(\"els => els.map(e => e.src)\")}; "
+            f"scripts={script_sources}; "
             f"console={console_messages[-12:]}; page_errors={page_errors[-12:]}; "
             f"requests={requests[-20:]}; responses={responses[-20:]}"
         )
