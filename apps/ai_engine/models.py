@@ -91,7 +91,11 @@ class AIJob(models.Model):
 
         terminal_statuses = {self.Status.COMPLETED, self.Status.FAILED, self.Status.CANCELLED}
         with transaction.atomic():
-            previous = AIJob.objects.select_for_update().select_related("usage_reservation").get(pk=self.pk)
+            # Lock only the AIJob row. usage_reservation is nullable, so joining it
+            # in the SELECT ... FOR UPDATE query makes PostgreSQL reject the lock
+            # when the job does not yet have a reservation. The FK is loaded on
+            # demand below after the job row has been safely locked.
+            previous = AIJob.objects.select_for_update().get(pk=self.pk)
             entering_running = self.status == self.Status.RUNNING and previous.status != self.Status.RUNNING
             entering_terminal = self.status in terminal_statuses and previous.status not in terminal_statuses
 
@@ -151,19 +155,66 @@ class AIProcessingStatus(models.Model):
     completed_images = models.PositiveIntegerField(default=0)
     failed_images = models.PositiveIntegerField(default=0)
     current_stage = models.CharField(max_length=120, blank=True)
-    heartbeat_at = models.DateTimeField(blank=True, null=True, help_text="Future workers can use this to report liveness.")
+    progress_percent = models.PositiveSmallIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name_plural = "AI processing statuses"
-        constraints = [
-            models.CheckConstraint(condition=Q(completed_images__lte=F("total_images")), name="ai_completed_lte_total"),
-            models.CheckConstraint(condition=Q(failed_images__lte=F("total_images")), name="ai_failed_lte_total"),
-        ]
+        ordering = ["-updated_at"]
 
-    @property
-    def percent_complete(self):
-        return min(round(self.completed_images / self.total_images * 100), 100) if self.total_images else 0
+    def clean(self):
+        if self.progress_percent > 100:
+            raise ValidationError({"progress_percent": "Progress percent cannot exceed 100."})
+        if self.completed_images + self.failed_images > self.total_images:
+            raise ValidationError("Completed and failed image counts cannot exceed the total image count.")
+
+    def save(self, *args, **kwargs):
+        if self.total_images:
+            processed = self.completed_images + self.failed_images
+            self.progress_percent = min(100, int((processed / self.total_images) * 100))
+        else:
+            self.progress_percent = 0
+        return super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.job} ({self.percent_complete}%)"
+        return f"{self.job} — {self.progress_percent}%"
+
+
+class AIImageResult(models.Model):
+    """Normalized per-image AI output that can be queried independently of the worker."""
+
+    job = models.ForeignKey(AIJob, on_delete=models.CASCADE, related_name="image_results")
+    photo = models.ForeignKey("galleries.Photo", on_delete=models.CASCADE, related_name="ai_results")
+    result_type = models.CharField(max_length=40)
+    score = models.FloatField(blank=True, null=True)
+    label = models.CharField(max_length=255, blank=True)
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["photo_id", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["job", "photo", "result_type"], name="unique_ai_result_per_job_photo_type"),
+        ]
+
+    def __str__(self):
+        return f"{self.photo} — {self.result_type}"
+
+
+class AIGallerySummary(models.Model):
+    """A compact aggregate for photographer-facing gallery AI insights."""
+
+    gallery = models.OneToOneField("galleries.Gallery", on_delete=models.CASCADE, related_name="ai_summary")
+    blur_count = models.PositiveIntegerField(default=0)
+    duplicate_count = models.PositiveIntegerField(default=0)
+    closed_eyes_count = models.PositiveIntegerField(default=0)
+    face_count = models.PositiveIntegerField(default=0)
+    average_quality_score = models.FloatField(blank=True, null=True)
+    suggested_keep_count = models.PositiveIntegerField(default=0)
+    last_processed_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["gallery_id"]
+
+    def __str__(self):
+        return f"AI summary for {self.gallery}"
