@@ -1,6 +1,8 @@
 import io
+from concurrent.futures import ThreadPoolExecutor
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
 from PIL import Image
@@ -17,7 +19,10 @@ from apps.galleries.models import (
 )
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(
+    GALLERY_STORAGE_BACKEND="local",
+    MEDIA_SIGNING_SECRET="client-permission-browser-test-signing-secret",
+)
 class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
     """Browser-visible controls and direct authorization must agree for client permissions."""
 
@@ -79,12 +84,17 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.zip_path = reverse("galleries:client_gallery_download_all", args=[self.raw_token])
         self.share_path = reverse("galleries:client_gallery_share", args=[self.raw_token])
 
-        # Keep Playwright's sync runtime scoped to one test. Leaving it alive
-        # across Django test setup/flush calls can leave the current thread in
-        # an asyncio context, which makes Django reject synchronous ORM access.
         self._playwright = sync_playwright().start()
         self.browser = self._playwright.chromium.launch(headless=True)
         self.context = self.browser.new_context(accept_downloads=True)
+        self.context.route(
+            "https://media-dev.lumispixel.com/**",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="image/jpeg",
+                body=image_bytes,
+            ),
+        )
         self.page = self.context.new_page()
 
     def tearDown(self):
@@ -94,14 +104,27 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         if self.photo.file:
             self.photo.file.delete(save=False)
 
+    def _db(self, operation):
+        """Run synchronous Django ORM work outside Playwright's asyncio context."""
+        def execute():
+            close_old_connections()
+            try:
+                return operation()
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(execute).result()
+
     def _jpeg(self):
         buffer = io.BytesIO()
         Image.new("RGB", (16, 16), (90, 120, 150)).save(buffer, format="JPEG")
         return buffer.getvalue()
 
     def _save_permission(self, field, value):
+        permission_id = self.permissions.pk
+        self._db(lambda: GalleryPermission.objects.filter(pk=permission_id).update(**{field: value}))
         setattr(self.permissions, field, value)
-        self.permissions.save(update_fields=[field, "updated_at"])
 
     def _open_gallery(self):
         response = self.page.goto(self.live_server_url + self.gallery_path)
@@ -181,8 +204,13 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
     def test_download_expiration_hides_controls_and_blocks_direct_downloads(self):
         from django.utils import timezone
 
-        self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
-        self.permissions.save(update_fields=["download_expires_at", "updated_at"])
+        permission_id = self.permissions.pk
+        expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        self._db(
+            lambda: GalleryPermission.objects.filter(pk=permission_id).update(
+                download_expires_at=expires_at
+            )
+        )
         self._open_gallery()
         self.assertEqual(self.page.locator("[data-photo-download]").count(), 0)
         self.assertEqual(self.page.get_by_text("Download Gallery", exact=False).count(), 0)
@@ -194,7 +222,13 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         from django.utils import timezone
 
         self._open_gallery()
-        AccessToken.objects.filter(token_hash=AccessToken.digest(self.raw_token)).update(revoked_at=timezone.now())
+        token_hash = AccessToken.digest(self.raw_token)
+        revoked_at = timezone.now()
+        self._db(
+            lambda: AccessToken.objects.filter(token_hash=token_hash).update(
+                revoked_at=revoked_at
+            )
+        )
         response = self._open_gallery()
         self.assertEqual(response.status, 404)
         for method, path, data in (
