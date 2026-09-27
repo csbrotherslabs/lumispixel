@@ -1,13 +1,13 @@
 from django.urls import path
 
-from . import account_views, download_views, invitation_views, views
+from . import access_views, account_views, download_views, invitation_views, views
 
 app_name = "galleries"
 
 urlpatterns = [
-    path("g/<uuid:public_id>/", views.stable_gallery_access, name="stable_gallery_access"),
+    path("g/<uuid:public_id>/", access_views.stable_gallery_access, name="stable_gallery_access"),
     path("client-galleries/", views.client_galleries, name="client_galleries"),
-    path("access/<str:token>/", views.client_gallery_access, name="client_gallery_access"),
+    path("access/<str:token>/", access_views.client_gallery_access, name="client_gallery_access"),
     path("access/<str:token>/photos/<int:photo_id>/media/", views.client_gallery_photo_media, name="client_gallery_photo_media"),
     path("access/<str:token>/photos/<int:photo_id>/favorite/", views.client_gallery_favorite, name="client_gallery_favorite"),
     path("access/<str:token>/photos/<int:photo_id>/comment/", views.client_gallery_comment, name="client_gallery_comment"),
