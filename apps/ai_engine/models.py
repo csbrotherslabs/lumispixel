@@ -91,7 +91,7 @@ class AIJob(models.Model):
 
         terminal_statuses = {self.Status.COMPLETED, self.Status.FAILED, self.Status.CANCELLED}
         with transaction.atomic():
-            previous = AIJob.objects.select_for_update().select_related("usage_reservation").get(pk=self.pk)
+            previous = AIJob.objects.select_for_update().get(pk=self.pk)
             entering_running = self.status == self.Status.RUNNING and previous.status != self.Status.RUNNING
             entering_terminal = self.status in terminal_statuses and previous.status not in terminal_statuses
 

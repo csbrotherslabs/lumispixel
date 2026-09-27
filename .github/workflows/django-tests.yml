@@ -34,12 +34,23 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DJANGO_SETTINGS_MODULE: "config.settings_test"
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "ci-only-secret-key"
       DATABASE_URL: "postgresql://lumispixel:lumispixel_ci_password@127.0.0.1:5432/lumispixel_ci"
       DB_SSL_REQUIRE: "0"
+      CELERY_BROKER_URL: "redis://127.0.0.1:6379/0"
+      CELERY_RESULT_BACKEND: "redis://127.0.0.1:6379/0"
       GALLERY_STORAGE_BACKEND: "local"
       GALLERY_STORAGE_ENVIRONMENT: "dev"
     steps:
@@ -166,10 +177,22 @@ jobs:
     name: Django tests (fast SQLite feedback)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DJANGO_SETTINGS_MODULE: "config.settings_test"
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: "ci-only-secret-key"
+      CELERY_BROKER_URL: "redis://127.0.0.1:6379/0"
+      CELERY_RESULT_BACKEND: "redis://127.0.0.1:6379/0"
       GALLERY_STORAGE_BACKEND: "local"
       GALLERY_STORAGE_ENVIRONMENT: "dev"
     steps:

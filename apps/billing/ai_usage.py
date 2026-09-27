@@ -215,7 +215,10 @@ def settle_ai_usage(reservation, *, idempotency_key, actual_units=None, metadata
         if existing is not None:
             return existing
 
-        reservation = AIUsageTransaction.objects.select_for_update().select_related("account", "period").get(pk=reservation_id)
+        # Lock only the transaction row here. Joining nullable relations while
+        # applying FOR UPDATE is rejected by PostgreSQL. The account and period
+        # rows are fetched and locked explicitly below.
+        reservation = AIUsageTransaction.objects.select_for_update().get(pk=reservation_id)
         if reservation.kind != AIUsageTransaction.Kind.RESERVE or reservation.period_id is None:
             raise AIUsageReservationError("Only reservation transactions can be settled.")
 
@@ -298,7 +301,7 @@ def release_ai_usage(reservation, *, idempotency_key, metadata=None):
         if existing is not None:
             return existing
 
-        reservation = AIUsageTransaction.objects.select_for_update().select_related("period").get(pk=reservation_id)
+        reservation = AIUsageTransaction.objects.select_for_update().get(pk=reservation_id)
         if reservation.kind != AIUsageTransaction.Kind.RESERVE or reservation.period_id is None:
             raise AIUsageReservationError("Only reservation transactions can be released.")
         period = AIUsagePeriod.objects.select_for_update().get(pk=reservation.period_id)
@@ -336,7 +339,7 @@ def reverse_ai_usage(settlement, *, idempotency_key, metadata=None):
         if existing is not None:
             return existing
 
-        settlement = AIUsageTransaction.objects.select_for_update().select_related("account", "period").get(pk=settlement_id)
+        settlement = AIUsageTransaction.objects.select_for_update().get(pk=settlement_id)
         if settlement.kind != AIUsageTransaction.Kind.SETTLE or settlement.period_id is None:
             raise AIUsageReservationError("Only settled AI usage can be reversed.")
         if settlement.follow_up_transactions.filter(kind=AIUsageTransaction.Kind.REVERSE).exists():

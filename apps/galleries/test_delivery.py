@@ -85,7 +85,6 @@ class ClientGalleryDeliveryTests(TestCase):
         self.assertTrue(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery, event_type="view").exists())
         self.assertTrue(GalleryActivity.objects.filter(gallery=self.gallery, event_type="client_viewed").exists())
 
-
     def test_story_design_uses_story_production_template(self):
         self.gallery.design_template = Gallery.DesignTemplate.KIMONO_STORY
         self.gallery.story_title = "Moments That Matter"
@@ -189,7 +188,11 @@ class ClientGalleryDeliveryTests(TestCase):
         url = reverse("galleries:client_gallery_download", args=[self.raw_token, self.photo.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        response.close()
+        # Do not call FileResponse.close() here. It emits request_finished and
+        # can close TestCase's transaction-scoped PostgreSQL connection. Close
+        # only the underlying file stream used by this response.
+        if response.file_to_stream is not None:
+            response.file_to_stream.close()
 
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.download_count, 1)
@@ -227,7 +230,6 @@ class ClientGalleryDeliveryTests(TestCase):
             "galleries:issue_client_gallery_share_link",
             args=[self.gallery.pk, self.invitation.pk],
         )
-
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, 200)
