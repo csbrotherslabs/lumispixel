@@ -57,14 +57,31 @@
         const thread = panel?.querySelector('[data-comment-thread]');
         thread?.querySelector('[data-comments-empty]')?.remove();
         if (thread) {
+          const authorName = data.comment.author || 'Guest';
           const article = document.createElement('article');
-          article.className = 'lp-client-comment';
+          article.className = 'sf-comment';
+
+          const avatar = document.createElement('div');
+          avatar.className = 'sf-comment__avatar';
+          avatar.setAttribute('aria-hidden', 'true');
+          avatar.textContent = authorName.charAt(0).toUpperCase();
+
+          const content = document.createElement('div');
+          content.className = 'sf-comment__content';
+          const meta = document.createElement('div');
+          meta.className = 'sf-comment__meta';
           const author = document.createElement('strong');
-          author.textContent = data.comment.author || 'Guest';
+          author.textContent = authorName;
+          const time = document.createElement('time');
+          time.textContent = 'just now';
           const body = document.createElement('p');
           body.textContent = data.comment.body;
-          article.append(author, body);
+
+          meta.append(author, time);
+          content.append(meta, body);
+          article.append(avatar, content);
           thread.appendChild(article);
+          thread.scrollTop = thread.scrollHeight;
         }
         textarea.value = '';
         updateCount(count, data.comment_count);

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account_views, invitation_views, views
+from . import account_views, download_views, invitation_views, views
 
 app_name = "galleries"
 
@@ -13,7 +13,7 @@ urlpatterns = [
     path("access/<str:token>/photos/<int:photo_id>/comment/", views.client_gallery_comment, name="client_gallery_comment"),
     path("access/<str:token>/photos/<int:photo_id>/download/", views.client_gallery_download, name="client_gallery_download"),
     path("access/<str:token>/photos/<int:photo_id>/download-original/", views.client_gallery_download_original, name="client_gallery_download_original"),
-    path("access/<str:token>/download/", views.client_gallery_download_all, name="client_gallery_download_all"),
+    path("access/<str:token>/download/", download_views.client_gallery_download_all, name="client_gallery_download_all"),
     path("access/<str:token>/share/", views.client_gallery_share, name="client_gallery_share"),
     path("access/<str:token>/prints/", views.client_gallery_print_store, name="client_gallery_print_store"),
     path("my/invitations/<int:invitation_id>/open/", account_views.client_account_gallery_access, name="client_account_gallery_access"),
