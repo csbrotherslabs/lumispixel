@@ -3,12 +3,15 @@ from calendar import Calendar
 from datetime import date, datetime, timedelta
 import csv
 import io
+import os
 import mimetypes
 import zipfile
 import secrets
+import json
 from urllib.parse import urlencode
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
@@ -24,6 +27,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
@@ -32,14 +36,20 @@ from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNo
                                 MiniSession, MiniSessionSlot, MiniSessionSlotBooking, PaymentRefund)
 from apps.clients.forms import ClientTaskForm, CrmClientForm, LeadForm
 from apps.clients.services import DuplicateClientError, convert_lead_to_client, create_client_note
+from apps.billing.services import PlanConfigurationError, get_allowance
 from apps.clients.contracts import (DEFAULT_SIGNATURE_CONSENT, ContractDeliveryError, PhotographerSignatureForm,
                                    contract_preview_content, create_contract_from_template,
                                    send_contract_for_review, sign_contract_as_photographer,
                                    validate_contract_for_email)
 from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, GallerySettingsForm, StoreProductForm, StoreSettingsForm
 from apps.galleries.activity import log_gallery_activity
+from apps.galleries.storage_cleanup import enqueue_storage_deletions, process_storage_deletions
 from apps.galleries.analytics import gallery_analytics_report
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryOrder, GalleryPermission, GalleryPhoto, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryStorageDeletion, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
+    complete as complete_multipart, delete_object as delete_multipart_object,
+    get_object_stream as get_multipart_object_stream, initiate as initiate_multipart,
+    multipart_object_key, sign_part, list_parts as list_multipart_parts)
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -806,7 +816,45 @@ def clients_workspace(request):
     return render(request, "photographer_workspace/clients.html", context)
 
 
-GALLERY_STORAGE_LIMIT = 100 * 1024**3
+def _storage_limit_bytes(photographer):
+    """Return the authoritative storage limit from the workspace billing plan."""
+    allowance = get_allowance(photographer, "storage_bytes")
+    if allowance.is_unlimited or allowance.is_custom:
+        return None
+    if allowance.value is None:
+        raise PlanConfigurationError("Numeric storage allowance is missing a value.")
+    return allowance.value
+
+
+def _storage_state(photographer, storage_used):
+    limit = _storage_limit_bytes(photographer)
+    if limit is None:
+        return {
+            "limit_bytes": None,
+            "available_bytes": None,
+            "percent": 0,
+            "limit_label": "Custom",
+            "available_label": "Custom",
+        }
+    available = max(limit - storage_used, 0)
+    percent = min(round(storage_used / limit * 100), 100) if limit else 100
+    return {
+        "limit_bytes": limit,
+        "available_bytes": available,
+        "percent": percent,
+        "limit_label": _format_storage(limit),
+        "available_label": _format_storage(available),
+    }
+
+
+def _multipart_reserved_bytes(photographer):
+    return GalleryMultipartUpload.objects.filter(
+        photographer=photographer,
+        completed_at__isnull=True,
+        aborted_at__isnull=True,
+    ).aggregate(
+        total=Coalesce(Sum("file_size"), Value(0), output_field=DecimalField())
+    )["total"]
 
 
 def _format_storage(byte_count):
@@ -818,22 +866,23 @@ def _format_storage(byte_count):
     return f"{byte_count / 1024:.1f} KB" if byte_count else "0 GB"
 
 
-def _gallery_summary(galleries, storage_used):
-    storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
+def _gallery_summary(galleries, storage_used, storage_state):
+    storage_percent = storage_state["percent"]
     return [
         {"label": "Total Galleries", "value": galleries.count(), "icon": "bi-images", "note": "Across every workflow stage"},
         {"label": "Active Galleries", "value": galleries.exclude(status__in=[Gallery.Status.ARCHIVED, Gallery.Status.EXPIRED, Gallery.Status.DELIVERED]).count(), "icon": "bi-activity", "note": "Currently in your workflow"},
         {"label": "Ready to Deliver", "value": galleries.filter(status=Gallery.Status.READY).count(), "icon": "bi-send-check", "note": "Awaiting your delivery"},
-        {"label": "Storage Used", "value": _format_storage(storage_used), "icon": "bi-device-ssd", "note": f"{_format_storage(storage_used)} of 100 GB", "percent": storage_percent},
+        {"label": "Storage Used", "value": _format_storage(storage_used), "icon": "bi-device-ssd", "note": f"{_format_storage(storage_used)} of {storage_state['limit_label']}", "percent": storage_percent},
     ]
 
 
 @photographer_workspace_required
 @require_GET
 def galleries_dashboard(request):
-    galleries = Gallery.objects.for_photographer(request.studio).select_related("client")
+    galleries = _accessible_galleries(request).select_related("client")
     now = timezone.now()
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
+    storage_state = _storage_state(request.studio, storage_used)
     pipeline_counts = {row["status"]: row["count"] for row in galleries.values("status").annotate(count=Count("id"))}
     pipeline = [
         {"key": key, "label": label, "count": pipeline_counts.get(key, 0), "percent": round(pipeline_counts.get(key, 0) / max(galleries.count(), 1) * 100)}
@@ -847,7 +896,7 @@ def galleries_dashboard(request):
         GalleryActivity.EventType.GALLERY_DOWNLOADED: "bi-download",
         GalleryActivity.EventType.GALLERY_SHARED: "bi-share",
     }
-    client_activity = GalleryActivity.objects.for_photographer(request.studio).filter(
+    client_activity = _accessible_gallery_activity(request).filter(
         actor_type=GalleryActivity.ActorType.CLIENT,
         event_type__in=activity_icons,
     ).select_related("gallery")[:6]
@@ -869,8 +918,8 @@ def galleries_dashboard(request):
     ready_count = galleries.filter(status=Gallery.Status.READY).count()
     if ready_count:
         attention.append({"icon": "bi-send-check", "title": f"{ready_count} {'galleries are' if ready_count != 1 else 'gallery is'} ready to deliver", "description": "Open the gallery to complete client delivery.", "url": reverse("photographer_workspace:all_galleries") + "?status=ready", "action": "View ready", "tone": "warning"})
-    if storage_used / GALLERY_STORAGE_LIMIT >= Decimal("0.8"):
-        attention.append({"icon": "bi-device-ssd", "title": "Storage is approaching its limit", "description": f"{_format_storage(storage_used)} of 100 GB is in use.", "url": reverse("photographer_workspace:gallery_upload_queue"), "action": "Manage storage", "tone": "warning"})
+    if storage_state["limit_bytes"] is not None and storage_state["percent"] >= 80:
+        attention.append({"icon": "bi-device-ssd", "title": "Storage is approaching its limit", "description": f"{_format_storage(storage_used)} of {storage_state['limit_label']} is in use.", "url": reverse("photographer_workspace:gallery_upload_queue"), "action": "Manage storage", "tone": "warning"})
     recent_galleries = list(galleries[:6])
     for gallery in recent_galleries:
         gallery.delivery_label = "Delivered" if gallery.status == Gallery.Status.DELIVERED else "Published" if gallery.status == Gallery.Status.PUBLISHED else "Not delivered"
@@ -878,12 +927,29 @@ def galleries_dashboard(request):
     context = _dashboard_context(request, "galleries", "Galleries")
     context.update({
         "has_galleries": galleries.exists(),
-        "gallery_summary": _gallery_summary(galleries, storage_used), "recent_galleries": recent_galleries,
+        "gallery_summary": _gallery_summary(galleries, storage_used, storage_state), "recent_galleries": recent_galleries,
         "delivery_pipeline": pipeline, "recent_client_activity": activity, "gallery_attention": attention[:5],
-        "storage": {"used": _format_storage(storage_used), "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)), "percent": min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100), "percent_display": f"{min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)}%"},
+        "storage": {"used": _format_storage(storage_used), "available": storage_state["available_label"], "available_bytes": storage_state["available_bytes"], "limit": storage_state["limit_label"], "percent": storage_state["percent"], "percent_display": f"{storage_state['percent']}%"},
         "gallery_deadlines": deadlines,
     })
     return render(request, "photographer_workspace/galleries/dashboard.html", context)
+
+
+def _accessible_galleries(request):
+    """Return galleries visible to this workspace access context."""
+    return scope_assigned(Gallery.objects.all(), request.studio_access)
+
+
+def _accessible_photos(request):
+    return GalleryPhoto.objects.filter(gallery__in=_accessible_galleries(request)).distinct()
+
+
+def _accessible_albums(request):
+    return Album.objects.filter(gallery__in=_accessible_galleries(request)).distinct()
+
+
+def _accessible_gallery_activity(request):
+    return GalleryActivity.objects.filter(gallery__in=_accessible_galleries(request)).distinct()
 
 
 def _unique_gallery_slug(profile, name, exclude_pk=None):
@@ -912,7 +978,7 @@ AI_TASK_ICONS = {
 @require_http_methods(["GET", "POST"])
 def ai_processing_center(request):
     profile = request.studio
-    galleries = Gallery.objects.for_photographer(profile).order_by("name")
+    galleries = _accessible_galleries(request).order_by("name")
     if request.method == "POST":
         gallery_ids = request.POST.getlist("gallery_ids")
         task_types = request.POST.getlist("task_types")
@@ -933,7 +999,7 @@ def ai_processing_center(request):
             messages.warning(request, "Select at least one gallery and AI task, or choose work that is not already active.")
         return redirect("photographer_workspace:ai_processing")
 
-    jobs = AIJob.objects.for_photographer(profile).select_related("gallery", "gallery__client", "progress")
+    jobs = AIJob.objects.for_photographer(profile).filter(gallery__in=_accessible_galleries(request)).select_related("gallery", "gallery__client", "progress")
     active_jobs = list(jobs.active().order_by("queued_at"))
     completed_jobs = list(jobs.filter(status=AIJob.Status.COMPLETED)[:10])
     failed_jobs = list(jobs.filter(status=AIJob.Status.FAILED)[:8])
@@ -958,7 +1024,7 @@ def ai_processing_center(request):
 @photographer_workspace_required
 @require_POST
 def ai_job_action(request, pk):
-    job = get_object_or_404(AIJob.objects.for_photographer(request.studio), pk=pk)
+    job = get_object_or_404(AIJob.objects.for_photographer(request.studio).filter(gallery__in=_accessible_galleries(request)), pk=pk)
     action = request.POST.get("action")
     if action == "retry" and job.status == AIJob.Status.FAILED:
         job.status, job.error_summary, job.error_details = AIJob.Status.QUEUED, "", ""
@@ -977,10 +1043,10 @@ def ai_job_action(request, pk):
 @require_GET
 def all_galleries(request):
     profile = request.studio
-    card_photos = GalleryPhoto.objects.for_photographer(profile).filter(
+    card_photos = _accessible_photos(request).filter(
         is_visible=True, status=GalleryPhoto.Status.COMPLETED
     ).order_by("-is_cover", "-created_at")
-    all_records = Gallery.objects.for_photographer(profile).active().select_related("client").prefetch_related(
+    all_records = _accessible_galleries(request).active().select_related("client").prefetch_related(
         Prefetch("photos", queryset=card_photos, to_attr="card_photos")
     )
     galleries = all_records
@@ -1022,7 +1088,7 @@ def all_galleries(request):
 @require_GET
 def gallery_archive(request):
     profile = request.studio
-    records = Gallery.objects.for_photographer(profile).archived().select_related("client", "archived_by")
+    records = _accessible_galleries(request).archived().select_related("client", "archived_by")
     query = request.GET.get("q", "").strip()
     reason, retention = request.GET.get("reason", ""), request.GET.get("retention", "")
     date_from, date_to = request.GET.get("date_from", ""), request.GET.get("date_to", "")
@@ -1047,14 +1113,14 @@ def gallery_archive(request):
     records = records.order_by(ordering.get(sort, "-archived_at"))
     page = Paginator(records, 10).get_page(request.GET.get("page"))
     retained_query = request.GET.copy(); retained_query.pop("page", None)
-    all_archived = Gallery.objects.for_photographer(profile).archived()
+    all_archived = _accessible_galleries(request).archived()
     policy, _ = GalleryArchivePolicy.objects.get_or_create(photographer=profile)
     context = _dashboard_context(request, "gallery_archive", "Gallery Archive")
     context.update({
         "archive_page": page, "archive_query": query, "selected_reason": reason, "selected_retention": retention,
         "selected_date_from": date_from, "selected_date_to": date_to, "selected_storage": storage, "selected_sort": sort,
         "archive_reasons": Gallery.ArchiveReason.choices, "retention_choices": Gallery.RetentionType.choices,
-        "active_galleries": Gallery.objects.for_photographer(profile).active().order_by("name"), "policy": policy,
+        "active_galleries": _accessible_galleries(request).active().order_by("name"), "policy": policy,
         "retained_query": retained_query.urlencode(), "has_filters": any([query, reason, retention, date_from, date_to, storage]),
         "archive_metrics": [
             ("Archived Galleries", all_archived.count(), "bi-archive", "Available to restore"),
@@ -1071,7 +1137,7 @@ def gallery_archive(request):
 def gallery_archive_actions(request):
     profile = request.studio
     ids = request.POST.getlist("gallery_ids")
-    records = Gallery.objects.for_photographer(profile).filter(pk__in=ids, deleted_at__isnull=True)
+    records = _accessible_galleries(request).filter(pk__in=ids, deleted_at__isnull=True)
     action = request.POST.get("action")
     if action == "save_policy":
         policy, _ = GalleryArchivePolicy.objects.get_or_create(photographer=profile)
@@ -1141,8 +1207,21 @@ def gallery_archive_actions(request):
             gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
             messages.warning(request, "Gallery access was removed, but required financial transaction history was retained.")
         else:
-            gallery.deleted_at = now; gallery.save(update_fields=["deleted_at", "updated_at"])
-            gallery.delete()
+            deletion_items = [
+                {
+                    "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+                    "object_key": photo.file.name,
+                    "photographer_id": photo.photographer_id,
+                    "gallery_id": gallery.pk,
+                }
+                for photo in gallery.photos.all() if photo.file
+            ]
+            with transaction.atomic():
+                enqueue_storage_deletions(deletion_items)
+                gallery.deleted_at = now
+                gallery.save(update_fields=["deleted_at", "updated_at"])
+                gallery.delete()
+            process_storage_deletions()
             messages.success(request, "Gallery and associated non-financial records permanently deleted.")
     return redirect("photographer_workspace:gallery_archive")
 
@@ -1151,7 +1230,12 @@ def gallery_archive_actions(request):
 @require_http_methods(["GET", "POST"])
 def create_gallery(request):
     profile = request.studio
-    form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile)
+    initial = {}
+    requested_design = request.GET.get("design")
+    valid_designs = {choice.value for choice in Gallery.DesignTemplate}
+    if request.method == "GET" and requested_design in valid_designs:
+        initial["design_template"] = requested_design
+    form = GalleryForm(request.POST or None, request.FILES or None, photographer=profile, initial=initial)
     form.fields["description"].widget.attrs["rows"] = 3
     form.fields["cover_image"].widget.attrs["accept"] = "image/jpeg,image/png,image/webp"
     form.fields["name"].widget.attrs["placeholder"] = "e.g. Maya & Rowan"
@@ -1180,17 +1264,17 @@ def create_gallery(request):
 @require_http_methods(["GET", "POST"])
 def edit_gallery(request, pk):
     profile = request.studio
-    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
     form = GalleryForm(request.POST or None, request.FILES or None, instance=gallery, photographer=profile)
     if request.method == "POST" and form.is_valid():
-        previous = {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}
+        previous = {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility, "design_template": gallery.design_template}
         gallery = form.save(commit=False)
         gallery.slug = _unique_gallery_slug(profile, gallery.name, gallery.pk)
         gallery.full_clean()
         gallery.save()
         log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_UPDATED,
                              description="Gallery details were updated.", actor=request.user,
-                             metadata={"previous_value": previous, "new_value": {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility}})
+                             metadata={"previous_value": previous, "new_value": {"name": gallery.name, "status": gallery.status, "visibility": gallery.visibility, "design_template": gallery.design_template}})
         messages.success(request, "Gallery updated.")
         return redirect("photographer_workspace:all_galleries")
     context = _dashboard_context(request, "all_galleries", "Edit Gallery")
@@ -1203,13 +1287,32 @@ def edit_gallery(request, pk):
 def gallery_actions(request):
     profile = request.studio
     ids = request.POST.getlist("gallery_ids")
-    records = Gallery.objects.for_photographer(profile).filter(pk__in=ids)
+    records = _accessible_galleries(request).filter(pk__in=ids)
     action = request.POST.get("action")
     if not ids:
         messages.error(request, "Select at least one gallery.")
     elif action == "delete":
-        count = records.count()
-        records.delete()
+        galleries = list(records.prefetch_related("photos"))
+        count = len(galleries)
+        deletion_items = []
+        backend = (
+            GalleryStorageDeletion.Backend.B2
+            if settings.GALLERY_STORAGE_BACKEND == "b2"
+            else GalleryStorageDeletion.Backend.DEFAULT
+        )
+        for gallery in galleries:
+            for photo in gallery.photos.all():
+                if photo.file and photo.file.name:
+                    deletion_items.append({
+                        "storage_backend": backend,
+                        "object_key": photo.file.name,
+                        "photographer_id": profile.pk,
+                        "gallery_id": gallery.pk,
+                    })
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            Gallery.objects.filter(pk__in=[gallery.pk for gallery in galleries]).delete()
+        process_storage_deletions()
         messages.success(request, f"Deleted {count} {'gallery' if count == 1 else 'galleries'}.")
     elif action == "archive":
         now = timezone.now()
@@ -1244,35 +1347,315 @@ def gallery_actions(request):
     return redirect("photographer_workspace:all_galleries")
 
 
+
+MAX_IMAGE_PIXELS = int(os.getenv("MAX_GALLERY_IMAGE_PIXELS", "100000000"))
+
+
+def _validate_image_bytes(content, expected_content_type):
+    """Verify decoded image bytes and require the detected format to match declared MIME."""
+    expected_formats = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
+    expected_format = expected_formats.get(expected_content_type)
+    if not expected_format:
+        return False
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            if image.format != expected_format:
+                return False
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+                return False
+            image.verify()
+        return True
+    except (DecompressionBombError, UnidentifiedImageError, OSError, ValueError):
+        return False
+
+
+def _validate_image_file(file_obj, expected_content_type, *, expected_size=None):
+    """Validate an image from a seekable file/stream without copying it into a bytes object."""
+    expected_formats = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
+    expected_format = expected_formats.get(expected_content_type)
+    if not expected_format:
+        return False
+    try:
+        if expected_size is not None:
+            file_obj.seek(0, 2)
+            if file_obj.tell() != expected_size:
+                return False
+            file_obj.seek(0)
+        with Image.open(file_obj) as image:
+            if image.format != expected_format:
+                return False
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+                return False
+            image.verify()
+        return True
+    except (DecompressionBombError, UnidentifiedImageError, OSError, ValueError):
+        return False
+
+
+def _json_body(request):
+    try:
+        return json.loads(request.body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+
+
+def _multipart_session(request, upload_uuid):
+    return get_object_or_404(
+        GalleryMultipartUpload.objects.select_related("gallery").filter(
+            gallery__in=_accessible_galleries(request)
+        ),
+        pk=upload_uuid,
+        photographer=request.studio,
+    )
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_initiate(request):
+    data = _json_body(request)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+    gallery = get_object_or_404(_accessible_galleries(request), pk=data.get("gallery"))
+    name = str(data.get("name") or "")[:255]
+    content_type = str(data.get("content_type") or "")
+    try:
+        size = int(data.get("size"))
+    except (TypeError, ValueError):
+        size = 0
+    if not name or content_type not in ALLOWED_CONTENT_TYPES or size <= 0 or size > settings.MAX_GALLERY_UPLOAD_BYTES:
+        return JsonResponse({"error": "Use a JPG, PNG, or WebP image within the configured upload limit."}, status=400)
+    storage_used = Gallery.objects.for_photographer(request.studio).aggregate(
+        total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
+    )["total"]
+    reserved = _multipart_reserved_bytes(request.studio)
+    storage_limit = _storage_limit_bytes(request.studio)
+    if storage_limit is not None and size > max(storage_limit - storage_used - reserved, 0):
+        return JsonResponse({"error": "Not enough storage to upload this file."}, status=400)
+    key = multipart_object_key(
+        photographer_id=request.studio.pk, gallery_id=gallery.pk,
+        original_name=name, content_type=content_type,
+    )
+    try:
+        upload_id = initiate_multipart(key=key, content_type=content_type)
+    except Exception:
+        return JsonResponse({"error": "Could not start direct upload."}, status=502)
+    try:
+        session = GalleryMultipartUpload.objects.create(
+            gallery=gallery, photographer=request.studio, object_key=key, upload_id=upload_id,
+            original_name=name, content_type=content_type, file_size=size,
+        )
+    except Exception:
+        # B2 accepted the multipart upload but Django could not persist its
+        # recovery record. Abort immediately so the provider cannot retain an
+        # untracked multipart upload.
+        try:
+            abort_multipart(key=key, upload_id=upload_id)
+        except Exception:
+            pass
+        return JsonResponse({"error": "Could not persist direct upload state."}, status=500)
+    return JsonResponse({
+        "upload": str(session.pk), "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
+        "max_parts": settings.B2_MULTIPART_MAX_PARTS,
+    }, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_resume(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at or session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    try:
+        parts = list_multipart_parts(key=session.object_key, upload_id=session.upload_id)
+    except Exception:
+        return JsonResponse({"error": "Could not inspect direct upload."}, status=502)
+    return JsonResponse({
+        "upload": str(session.pk),
+        "gallery": session.gallery_id,
+        "name": session.original_name,
+        "content_type": session.content_type,
+        "size": session.file_size,
+        "part_size": settings.B2_MULTIPART_MIN_PART_BYTES,
+        "max_parts": settings.B2_MULTIPART_MAX_PARTS,
+        "parts": parts,
+    })
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_sign_part(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at:
+        photo = GalleryPhoto.objects.filter(multipart_upload=session).first()
+        if photo:
+            return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+        return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+    if session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    data = _json_body(request)
+    try:
+        part_number = int((data or {}).get("part_number"))
+    except (TypeError, ValueError):
+        part_number = 0
+    if not 1 <= part_number <= settings.B2_MULTIPART_MAX_PARTS:
+        return JsonResponse({"error": "Invalid part number."}, status=400)
+    try:
+        url = sign_part(key=session.object_key, upload_id=session.upload_id, part_number=part_number)
+    except Exception:
+        return JsonResponse({"error": "Could not authorize upload part."}, status=502)
+    return JsonResponse({"part_number": part_number, "url": url})
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_complete(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at:
+        photo = GalleryPhoto.objects.filter(multipart_upload=session).first()
+        if photo:
+            return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+        return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+    if session.aborted_at:
+        return JsonResponse({"error": "Upload is no longer active."}, status=409)
+    data = _json_body(request)
+    parts = (data or {}).get("parts")
+    if not isinstance(parts, list) or not parts:
+        return JsonResponse({"error": "Completed parts are required."}, status=400)
+    normalized = []
+    try:
+        for item in parts:
+            normalized.append({"PartNumber": int(item["part_number"]), "ETag": str(item["etag"])})
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({"error": "Invalid completed parts."}, status=400)
+    numbers = [item["PartNumber"] for item in normalized]
+    if numbers != sorted(set(numbers)) or numbers[0] != 1 or numbers[-1] > settings.B2_MULTIPART_MAX_PARTS:
+        return JsonResponse({"error": "Parts must be unique and ordered from part 1."}, status=400)
+    try:
+        complete_multipart(key=session.object_key, upload_id=session.upload_id, parts=normalized)
+    except Exception:
+        return JsonResponse({"error": "Could not complete direct upload."}, status=502)
+    try:
+        object_stream = get_multipart_object_stream(key=session.object_key)
+        try:
+            valid_image = _validate_image_file(object_stream, session.content_type, expected_size=session.file_size)
+        finally:
+            object_stream.close()
+    except Exception:
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "Could not validate the uploaded image."}, status=502)
+    if not valid_image:
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "The uploaded file is not a valid image."}, status=400)
+    expected_prefix = (
+        f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/galleries/"
+        f"{request.studio.pk}/{session.gallery_id}/originals/"
+    )
+    object_name = session.object_key[len(expected_prefix):] if session.object_key.startswith(expected_prefix) else ""
+    if (
+        not object_name
+        or "/" in object_name
+        or "\\\\" in object_name
+        or object_name in {".", ".."}
+        or not object_name.endswith(ALLOWED_CONTENT_TYPES[session.content_type])
+    ):
+        try:
+            delete_multipart_object(key=session.object_key)
+        except Exception:
+            pass
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+        return JsonResponse({"error": "Invalid object key."}, status=400)
+    relative_name = session.object_key[len(f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/"): ]
+    with transaction.atomic():
+        # Re-read and lock the upload state after the provider completion call.
+        # A retry or concurrent completion must not create a second photo or
+        # increment gallery accounting twice.
+        locked_session = GalleryMultipartUpload.objects.select_for_update().get(pk=session.pk)
+        if locked_session.completed_at:
+            photo = GalleryPhoto.objects.filter(multipart_upload=locked_session).first()
+            if photo:
+                return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}, "idempotent": True}, status=200)
+            return JsonResponse({"error": "Upload completion state is inconsistent."}, status=409)
+        if locked_session.aborted_at:
+            return JsonResponse({"error": "Upload is no longer active."}, status=409)
+        photo = GalleryPhoto.objects.create(
+            gallery=locked_session.gallery, photographer=request.studio, multipart_upload=locked_session, file=relative_name,
+            original_name=locked_session.original_name, file_size=locked_session.file_size,
+            status=GalleryPhoto.Status.COMPLETED,
+        )
+        Gallery.objects.filter(pk=locked_session.gallery_id).update(
+            image_count=F("image_count") + 1, storage_used=F("storage_used") + locked_session.file_size
+        )
+        locked_session.completed_at = timezone.now()
+        locked_session.save(update_fields=["completed_at"])
+        log_gallery_activity(
+            gallery=locked_session.gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
+            description="1 photo uploaded successfully via direct multipart upload.",
+            actor=request.user, metadata={"count": 1, "files": [locked_session.original_name]},
+        )
+    return JsonResponse({"photo": {"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status}}, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_multipart_abort(request, upload_uuid):
+    session = _multipart_session(request, upload_uuid)
+    if session.completed_at:
+        return JsonResponse({"error": "Completed uploads cannot be aborted."}, status=409)
+    if not session.aborted_at:
+        try:
+            abort_multipart(key=session.object_key, upload_id=session.upload_id)
+        except Exception:
+            return JsonResponse({"error": "Could not abort direct upload."}, status=502)
+        session.aborted_at = timezone.now()
+        session.save(update_fields=["aborted_at"])
+    return JsonResponse({"aborted": True})
+
+
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def gallery_upload_queue(request):
     profile = request.studio
-    galleries = Gallery.objects.for_photographer(profile).select_related("client")
+    galleries = _accessible_galleries(request).select_related("client")
     if request.method == "POST":
         gallery = get_object_or_404(galleries, pk=request.POST.get("gallery"))
         files = request.FILES.getlist("files")
         if not files:
             return JsonResponse({"error": "Choose at least one image."}, status=400)
         created, errors = [], []
-        allowed = {"image/jpeg", "image/png", "image/webp"}
-        max_size = 25 * 1024 * 1024
+        allowed = set(ALLOWED_CONTENT_TYPES)
+        max_size = settings.MAX_GALLERY_UPLOAD_BYTES
         storage_used = galleries.aggregate(
             total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField())
         )["total"]
-        storage_remaining = max(GALLERY_STORAGE_LIMIT - storage_used, 0)
+        storage_limit = _storage_limit_bytes(profile)
+        reserved = _multipart_reserved_bytes(profile)
+        storage_remaining = None if storage_limit is None else max(storage_limit - storage_used - reserved, 0)
         for upload in files:
             if upload.content_type not in allowed or upload.size > max_size:
-                errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image up to 25 MB."})
+                errors.append({"name": upload.name, "error": "Use a JPG, PNG, or WebP image within the configured upload limit."})
                 continue
-            if upload.size > storage_remaining:
+            if storage_remaining is not None and upload.size > storage_remaining:
                 errors.append({"name": upload.name, "error": "Not enough storage to upload these files."})
                 continue
             try:
-                image = Image.open(upload)
-                image.verify()
+                valid_image = _validate_image_file(upload, upload.content_type, expected_size=upload.size)
                 upload.seek(0)
-            except (UnidentifiedImageError, OSError):
+            except OSError:
+                valid_image = False
+            if not valid_image:
                 errors.append({"name": upload.name, "error": "The file is not a valid image."})
                 continue
             photo = GalleryPhoto(gallery=gallery, photographer=profile, file=upload, original_name=upload.name[:255], file_size=upload.size, status=GalleryPhoto.Status.COMPLETED)
@@ -1283,34 +1666,47 @@ def gallery_upload_queue(request):
                 errors.append({"name": upload.name, "error": "The image could not be validated."})
                 continue
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
-            storage_remaining -= upload.size
+            if storage_remaining is not None:
+                storage_remaining -= upload.size
         if created:
             Gallery.objects.filter(pk=gallery.pk).update(image_count=F("image_count") + len(created), storage_used=F("storage_used") + sum(item["size"] for item in created))
             log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PHOTOS_UPLOADED,
                                  description=f"{len(created)} photo{'s' if len(created) != 1 else ''} uploaded successfully.", actor=request.user,
                                  metadata={"count": len(created), "files": [item["name"] for item in created[:10]]})
         return JsonResponse({"uploads": created, "errors": errors}, status=201 if created else 400)
-    upload_records = GalleryPhoto.objects.for_photographer(profile)
-    counts = {status: upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
-    uploads = upload_records.select_related("gallery")[:100]
+    upload_records = _accessible_photos(request)
+    visible_upload_records = upload_records.filter(upload_queue_dismissed=False)
+    counts = {status: visible_upload_records.filter(status=status).count() for status in GalleryPhoto.Status.values}
+    uploads = visible_upload_records.select_related("gallery")[:100]
     storage_used = galleries.aggregate(total=Coalesce(Sum("storage_used"), Value(0), output_field=DecimalField()))["total"]
-    storage_percent = min(round(storage_used / GALLERY_STORAGE_LIMIT * 100), 100)
+    storage_state = _storage_state(profile, storage_used)
+    storage_percent = storage_state["percent"]
     selected_gallery = galleries.filter(pk=request.GET.get("gallery")).first() if request.GET.get("gallery") else None
     context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
     context.update({"gallery_choices": galleries, "uploads": uploads, "upload_counts": counts,
                     "selected_gallery": selected_gallery,
                     "storage": {"used": _format_storage(storage_used),
-                                "available": _format_storage(max(GALLERY_STORAGE_LIMIT - storage_used, 0)),
-                                "available_bytes": max(GALLERY_STORAGE_LIMIT - storage_used, 0),
+                                "available": storage_state["available_label"],
+                                "available_bytes": storage_state["available_bytes"],
+                                "limit": storage_state["limit_label"],
                                 "percent": storage_percent}})
     return render(request, "photographer_workspace/galleries/upload_queue.html", context)
 
 
 @photographer_workspace_required
+@require_POST
+def gallery_upload_queue_clear_completed(request):
+    updated = _accessible_photos(request).filter(
+        status=GalleryPhoto.Status.COMPLETED,
+        upload_queue_dismissed=False,
+    ).update(upload_queue_dismissed=True)
+    return JsonResponse({"ok": True, "dismissed": updated})
+
+@photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def gallery_workspace(request, pk):
     gallery = get_object_or_404(
-        Gallery.objects.for_photographer(request.studio).select_related("client"), pk=pk
+        _accessible_galleries(request).select_related("client"), pk=pk
     )
     context = _dashboard_context(request, "all_galleries", gallery.name)
     tab = request.GET.get("tab", "overview")
@@ -1461,7 +1857,19 @@ def gallery_workspace(request, pk):
                 messages.success(request, "A fresh invitation is ready for future email delivery.")
         if action not in {"save_settings", "save_store", "add_discount"}:
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
-    photos = gallery.photos.all()
+    photos = gallery.photos.annotate(
+        client_favorite_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.FAVORITE),
+            distinct=True,
+        ),
+        client_download_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD),
+            distinct=True,
+        ),
+        client_comment_count=Count("client_comments", distinct=True),
+    )
     query = request.GET.get("q", "").strip()
     if query:
         photos = photos.filter(original_name__icontains=query)
@@ -1472,7 +1880,7 @@ def gallery_workspace(request, pk):
     revenue = paid_orders.aggregate(value=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField(max_digits=10, decimal_places=2)))["value"]
     orders_page = Paginator(store.orders.prefetch_related("items"), 10).get_page(request.GET.get("orders_page"))
     products_page = Paginator(store.products.prefetch_related("variants"), 8).get_page(request.GET.get("products_page"))
-    all_activity = GalleryActivity.objects.for_photographer(request.studio).filter(gallery=gallery)
+    all_activity = _accessible_gallery_activity(request).filter(gallery=gallery)
     activity = all_activity.select_related("actor")
     activity_query, activity_type = request.GET.get("activity_q", "").strip(), request.GET.get("activity_type", "")
     activity_user, activity_source = request.GET.get("activity_user", ""), request.GET.get("activity_source", "")
@@ -1497,7 +1905,8 @@ def gallery_workspace(request, pk):
         label = "Today" if event_date == today else "Yesterday" if event_date == today - timezone.timedelta(days=1) else "Earlier this week" if (today - event_date).days < 7 else event_date.strftime("%B %d, %Y").replace(" 0", " ")
         if not grouped_activity or grouped_activity[-1][0] != label: grouped_activity.append([label, []])
         grouped_activity[-1][1].append(event)
-    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums,
+    stable_gallery_url = request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id]))
+    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums, "stable_gallery_url": stable_gallery_url,
                     "store": store, "store_form": store_form, "discount_form": discount_form, "products": products_page, "orders": orders_page,
                     "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
                     "general_form": general_form, "settings_form": settings_form,
@@ -1525,22 +1934,90 @@ def gallery_workspace(request, pk):
 
 @photographer_workspace_required
 @require_GET
+def standard_filterable_design_preview(request):
+    """Preview the Standard Filterable client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/standard_filterable_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
+def story_design_preview(request):
+    """Preview the Story client experience with representative demo content."""
+    return render(
+        request,
+        "photographer_workspace/galleries/designs/story_preview.html",
+    )
+
+
+@photographer_workspace_required
+@require_GET
+def masonry_design_preview(request):
+    """Preview the Masonry client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/masonry_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
+def cinematic_design_preview(request):
+    """Preview the Cinematic client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/cinematic_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
 def gallery_preview(request, pk):
     gallery = get_object_or_404(
-        Gallery.objects.for_photographer(request.studio).active().select_related("client"),
+        _accessible_galleries(request).active().select_related("client", "photographer"),
         pk=pk,
     )
-    photos = gallery.photos.all().order_by("created_at", "pk")
-    context = _dashboard_context(request, "all_galleries", f"Preview {gallery.name}")
-    context.update({"gallery": gallery, "photos": photos, "hide_topbar_heading": True})
-    return render(request, "photographer_workspace/galleries/preview.html", context)
+    # Photographer Preview must use the same presentation resolver and prepared
+    # content as client delivery. Access is intentionally simulated here; this
+    # route remains private and does not publish the gallery or issue a token.
+    from apps.galleries.views import _client_gallery_brand, _client_gallery_template, _prepare_client_gallery_content
+
+    photos = list(
+        gallery.photos.filter(is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+        .order_by("created_at", "pk")
+    )
+    albums = list(
+        gallery.albums.exclude(visibility=Album.Visibility.HIDDEN)
+        .order_by("display_order", "pk")
+    )
+    photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    gallery_settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(
+        gallery=gallery, gallery_url=gallery.slug
+    )
+    store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
+    context = {
+        "gallery": gallery,
+        "invitation": None,
+        "photos": photos,
+        "albums": albums,
+        "permissions": permissions,
+        "gallery_settings": gallery_settings,
+        "access_token": None,
+        "can_favorite": permissions.favorite_photos,
+        "can_download": permissions.download_images,
+        "can_download_gallery": False,
+        "can_download_originals": False,
+        "can_comment": permissions.comment,
+        "can_purchase_prints": bool(permissions.purchase_prints and store),
+        "stable_gallery_url": request.build_absolute_uri(
+            reverse("galleries:stable_gallery_access", args=[gallery.public_id])
+        ),
+        "can_share_gallery": permissions.share_gallery,
+        "gallery_brand": _client_gallery_brand(gallery),
+        "is_photographer_preview": True,
+    }
+    return render(request, _client_gallery_template(gallery), context)
 
 
 @photographer_workspace_required
 @require_GET
 def gallery_analytics(request, pk):
     profile = request.studio
-    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=pk)
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
     def parsed_date(name):
         try:
             return timezone.datetime.fromisoformat(request.GET.get(name, "")).date()
@@ -1569,7 +2046,7 @@ def gallery_analytics(request, pk):
 @require_http_methods(["GET", "POST"])
 def store_product_form(request, gallery_pk, pk=None):
     profile = request.studio
-    gallery = get_object_or_404(Gallery.objects.for_photographer(profile), pk=gallery_pk)
+    gallery = get_object_or_404(_accessible_galleries(request), pk=gallery_pk)
     store, _ = GalleryStore.objects.get_or_create(gallery=gallery, defaults={"photographer": profile, "name": f"{gallery.name} Store"})
     product = get_object_or_404(StoreProduct.objects.filter(photographer=profile, gallery=gallery), pk=pk) if pk else None
     form = StoreProductForm(request.POST or None, request.FILES or None, instance=product)
@@ -1588,7 +2065,7 @@ def store_product_form(request, gallery_pk, pk=None):
 @photographer_workspace_required
 @require_POST
 def store_product_action(request, pk):
-    product = get_object_or_404(StoreProduct.objects.filter(photographer=request.studio), pk=pk)
+    product = get_object_or_404(StoreProduct.objects.filter(photographer=request.studio, gallery__in=_accessible_galleries(request)), pk=pk)
     action = request.POST.get("action")
     if action == "delete": product.delete(); messages.success(request, "Product deleted.")
     elif action == "toggle": product.active=not product.active; product.save(update_fields=["active", "updated_at"])
@@ -1600,7 +2077,7 @@ def store_product_action(request, pk):
 
 @photographer_workspace_required
 def gallery_order_detail(request, pk):
-    order = get_object_or_404(GalleryOrder.objects.filter(photographer=request.studio).select_related("gallery").prefetch_related("items__selected_photos"), pk=pk)
+    order = get_object_or_404(GalleryOrder.objects.filter(photographer=request.studio, gallery__in=_accessible_galleries(request)).select_related("gallery").prefetch_related("items__selected_photos"), pk=pk)
     context=_dashboard_context(request,"all_galleries",order.order_number); context["order"]=order
     return render(request,"photographer_workspace/galleries/order_detail.html",context)
 
@@ -1608,7 +2085,7 @@ def gallery_order_detail(request, pk):
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def create_album(request, gallery_pk):
-    gallery = get_object_or_404(Gallery.objects.for_photographer(request.studio), pk=gallery_pk)
+    gallery = get_object_or_404(_accessible_galleries(request), pk=gallery_pk)
     form = AlbumForm(request.POST or None, request.FILES or None, gallery=gallery)
     if request.method == "POST" and form.is_valid():
         album = form.save(commit=False)
@@ -1627,7 +2104,7 @@ def create_album(request, gallery_pk):
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def edit_album(request, pk):
-    album = get_object_or_404(Album.objects.for_photographer(request.studio).select_related("gallery"), pk=pk)
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
     form = AlbumForm(request.POST or None, request.FILES or None, instance=album, gallery=album.gallery)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -1643,7 +2120,7 @@ def edit_album(request, pk):
 @photographer_workspace_required
 @require_GET
 def album_workspace(request, pk):
-    album = get_object_or_404(Album.objects.for_photographer(request.studio).select_related("gallery", "cover_photo"), pk=pk)
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery", "cover_photo"), pk=pk)
     memberships = album.album_photos.select_related("photo")
     query = request.GET.get("q", "").strip()
     if query:
@@ -1659,7 +2136,7 @@ def album_workspace(request, pk):
 @photographer_workspace_required
 @require_POST
 def album_action(request, pk):
-    album = get_object_or_404(Album.objects.for_photographer(request.studio).select_related("gallery"), pk=pk)
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
     action = request.POST.get("action")
     if action == "delete":
         gallery_pk = album.gallery_id
@@ -1682,7 +2159,7 @@ def album_action(request, pk):
 @photographer_workspace_required
 @require_POST
 def album_photo_action(request, pk):
-    album = get_object_or_404(Album.objects.for_photographer(request.studio).select_related("gallery"), pk=pk)
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
     photo_ids = request.POST.getlist("photo_ids")
     photos = GalleryPhoto.objects.filter(gallery=album.gallery, pk__in=photo_ids)
     action = request.POST.get("action")
@@ -1709,7 +2186,7 @@ def album_photo_action(request, pk):
 @photographer_workspace_required
 @require_GET
 def gallery_photo_media(request, pk):
-    photo = get_object_or_404(GalleryPhoto.objects.for_photographer(request.studio), pk=pk)
+    photo = get_object_or_404(_accessible_photos(request), pk=pk)
     content_type = mimetypes.guess_type(photo.original_name)[0] or "application/octet-stream"
     response = FileResponse(photo.file.open("rb"), content_type=content_type)
     response["Content-Disposition"] = f'inline; filename="{photo.original_name.replace(chr(34), "")}"'
@@ -1717,22 +2194,131 @@ def gallery_photo_media(request, pk):
     return response
 
 
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_action(request, pk):
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request."}, status=400)
+
+    photo_ids = payload.get("photo_ids") or []
+    if not isinstance(photo_ids, list):
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+    try:
+        photo_ids = list(dict.fromkeys(int(photo_id) for photo_id in photo_ids))
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Invalid photo selection."}, status=400)
+    if not photo_ids:
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+
+    photos = list(_accessible_photos(request).filter(gallery=gallery, pk__in=photo_ids))
+    if len(photos) != len(photo_ids):
+        return JsonResponse({"error": "One or more selected photos are unavailable."}, status=400)
+
+    action = payload.get("action")
+    if action == "delete":
+        total_size = sum(photo.file_size for photo in photos)
+        deleted_ids = [photo.pk for photo in photos]
+        deletion_items = [
+            {
+                "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+                "object_key": photo.file.name,
+                "photographer_id": photo.photographer_id,
+                "gallery_id": photo.gallery_id,
+            }
+            for photo in photos if photo.file
+        ]
+        # Persist cleanup intent in the same transaction as record deletion. Storage
+        # cleanup can then fail/retry without orphaning an untracked object.
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            GalleryPhoto.objects.filter(pk__in=deleted_ids).delete()
+            gallery.image_count = max(gallery.image_count - len(deleted_ids), 0)
+            gallery.storage_used = max(gallery.storage_used - total_size, 0)
+            gallery.save(update_fields=["image_count", "storage_used", "updated_at"])
+        process_storage_deletions()
+        return JsonResponse({"ok": True, "deleted": deleted_ids})
+
+    if action == "visibility":
+        visible = payload.get("visible")
+        if not isinstance(visible, bool):
+            return JsonResponse({"error": "Choose visible or hidden."}, status=400)
+        GalleryPhoto.objects.filter(pk__in=photo_ids).update(is_visible=visible)
+        return JsonResponse({"ok": True, "updated": photo_ids, "visible": visible})
+
+    if action == "move":
+        album_id = payload.get("album_id")
+        album = get_object_or_404(Album.objects.filter(gallery=gallery), pk=album_id)
+        AlbumPhoto.objects.filter(photo_id__in=photo_ids).exclude(album=album).delete()
+        existing = set(AlbumPhoto.objects.filter(album=album, photo_id__in=photo_ids).values_list("photo_id", flat=True))
+        next_position = (AlbumPhoto.objects.filter(album=album).aggregate(value=Max("position"))["value"] or 0) + 1
+        AlbumPhoto.objects.bulk_create([
+            AlbumPhoto(album=album, photo=photo, position=next_position + index)
+            for index, photo in enumerate(photos) if photo.pk not in existing
+        ])
+        return JsonResponse({"ok": True, "moved": photo_ids, "album": album.pk})
+
+    return JsonResponse({"error": "Unsupported bulk action."}, status=400)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_download(request, pk):
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    photo_ids = request.POST.getlist("photo_ids")
+    photos = _accessible_photos(request).filter(gallery=gallery, pk__in=photo_ids)
+    if not photos.exists():
+        return HttpResponseBadRequest("Select one or more photos.")
+    archive = io.BytesIO()
+    used_names = set()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+        for photo in photos:
+            base_name = photo.original_name or f"photo-{photo.pk}"
+            name, suffix = base_name.rsplit(".", 1) if "." in base_name else (base_name, "")
+            candidate, counter = base_name, 2
+            while candidate in used_names:
+                candidate = f"{name}-{counter}{'.' + suffix if suffix else ''}"
+                counter += 1
+            used_names.add(candidate)
+            with photo.file.open("rb") as source:
+                bundle.writestr(candidate, source.read())
+    archive.seek(0)
+    response = HttpResponse(archive.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-photos.zip"'
+    return response
+
+
 @photographer_workspace_required
 @require_POST
 def gallery_photo_action(request, pk):
-    photo = get_object_or_404(GalleryPhoto.objects.for_photographer(request.studio).select_related("gallery"), pk=pk)
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
     action = request.POST.get("action")
     if action == "delete":
-        Gallery.objects.filter(pk=photo.gallery_id).update(image_count=F("image_count") - 1, storage_used=F("storage_used") - photo.file_size)
-        photo.file.delete(save=False)
-        photo.delete()
+        deletion_items = [{
+            "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+            "object_key": photo.file.name,
+            "photographer_id": photo.photographer_id,
+            "gallery_id": photo.gallery_id,
+        }] if photo.file else []
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            Gallery.objects.filter(pk=photo.gallery_id).update(
+                image_count=F("image_count") - 1,
+                storage_used=F("storage_used") - photo.file_size,
+            )
+            photo.delete()
+        process_storage_deletions()
     elif action == "cover":
         GalleryPhoto.objects.filter(gallery=photo.gallery).update(is_cover=False)
         photo.is_cover = True
         photo.save(update_fields=["is_cover", "updated_at"])
     elif action == "remove":
-        # Queue dismissal is a presentation concern; it must never delete the gallery original.
-        pass
+        # Persist only transfer-manager dismissal; preserve GalleryPhoto and B2 original.
+        photo.upload_queue_dismissed = True
+        photo.save(update_fields=["upload_queue_dismissed", "updated_at"])
     elif action == "retry" and photo.status == GalleryPhoto.Status.FAILED:
         photo.status, photo.error_message = GalleryPhoto.Status.QUEUED, ""
         photo.save(update_fields=["status", "error_message", "updated_at"])

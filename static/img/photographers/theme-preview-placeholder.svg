@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title description">
+  <title id="title">Theme preview image placeholder</title>
+  <desc id="description">A neutral placeholder for a completed LumisPixel website theme screenshot.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0ece8"/>
+      <stop offset="1" stop-color="#d8d1cb"/>
+    </linearGradient>
+    <linearGradient id="image" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c8beb6"/>
+      <stop offset="1" stop-color="#aaa099"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#background)"/>
+  <rect x="44" y="44" width="1112" height="587" rx="28" fill="url(#image)" stroke="#b8aea7" stroke-width="3"/>
+  <circle cx="770" cy="228" r="48" fill="#e9e3de" opacity=".78"/>
+  <path d="M190 516 418 290l155 154 102-99 334 171Z" fill="#8f8680" opacity=".72"/>
+  <path d="M190 516 418 290l155 154 102-99 334 171" fill="none" stroke="#f3efeb" stroke-width="9" stroke-linejoin="round" opacity=".75"/>
+  <rect x="434" y="550" width="332" height="4" rx="2" fill="#f4f0ed" opacity=".8"/>
+  <text x="600" y="596" fill="#5f5751" font-family="Arial, sans-serif" font-size="23" font-weight="700" letter-spacing="4" text-anchor="middle">THEME PREVIEW IMAGE</text>
+</svg>

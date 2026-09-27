@@ -1,27 +1,52 @@
 {% extends "photographers/onboarding_base.html" %}
+{% load static theme_preview_media %}
 {% block title %}Choose Your Client Experience | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">Choose Your Client Experience</h1><p class="wptb-item--description mx-auto">Pick, preview, and customize your photographer homepage draft. Public publishing comes later.</p></div>
+<div class="lumis-onboarding__intro text-center"><h1 class="wptb-item--title" id="photographer-onboarding-theme-title">{% if builder_mode %}Build Your Photographer Website{% else %}Choose Your Website{% endif %}</h1><p class="wptb-item--description mx-auto">{% if builder_mode %}Change templates or add, remove, and rearrange sections without losing saved section content.{% else %}Start with a complete Kimono layout, then choose the sections your photography business needs.{% endif %}</p></div>
 <form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate data-theme-form>
   {% csrf_token %}
+  <input type="hidden" name="preview_context" value="{% if builder_mode %}builder{% else %}onboarding{% endif %}">
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
   <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
     {% for theme in theme_options %}
+      {% theme_media theme.slug "hero" 0 as theme_card_image %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
-        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" {% if form.website_theme.value == theme.value %}checked{% endif %} aria-controls="panel-{{ theme.value }}">
-        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Requires:</b> {{ theme.required_summary }}</small><a class="lumis-theme-preview-link" href="{% url theme.url_name %}" aria-label="Preview {{ theme.name }} theme">Preview</a><span class="lumis-theme-selected" aria-live="polite">Selected theme</span></span>
+        <input class="lumis-onboarding__theme-radio" id="theme-{{ theme.value }}" type="radio" name="website_theme" value="{{ theme.value }}" data-default-sections="{{ theme.sections|join:',' }}" {% if form.website_theme.value == theme.value %}checked{% endif %}>
+        <span class="lumis-onboarding-theme__preview {{ theme.preview_class }}"><img src="{% if theme_card_image %}{% static theme_card_image %}{% else %}{% static theme.preview_image %}{% endif %}" alt="{{ theme.name }} completed website preview showing {{ theme.included_sections|join:', ' }}" loading="lazy" width="1200" height="675"></span>
+        <span class="lumis-onboarding-theme__body"><strong>{{ theme.name }}</strong><small><b>Best for:</b> {{ theme.best_for }}</small><small>{{ theme.description }}</small><small><b>Includes:</b> {{ theme.included_sections|join:", " }}</small><a class="lumis-theme-preview-link" href="{% url 'photographers:theme-preview' theme.slug %}" aria-label="Open completed {{ theme.name }} website preview"><span>View completed preview</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><span class="lumis-theme-selected" aria-live="polite">Selected template</span></span>
       </label>
     {% endfor %}
   </fieldset>
-  <section class="lumis-theme-config" aria-live="polite"><h2>Customize This Theme</h2><p data-empty-theme>Choose a theme to see its configuration fields.</p>
-    <div class="lumis-theme-panel" id="panel-basic" data-theme-panel="basic"><p>This theme uses the information already provided in the previous setup steps. No additional information is required.</p></div>
-    {% include "photographers/theme_config_panels.html" %}
+  <section class="lumis-section-builder" aria-labelledby="section-builder-title">
+    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Availability remains private until you explicitly select it here.</p></div>
+    {{ form.section_order }}
+    {% if form.website_sections.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_sections.errors|striptags }}</div>{% endif %}
+    <div class="lumis-section-builder__list" data-section-list>
+      {% for section in section_options %}
+      <div class="lumis-section-builder__item" data-section-item="{{ section.key }}">
+        <label for="section-{{ section.key }}">
+          <span class="lumis-section-builder__media"><img src="{% static section.image %}" alt="{{ section.name }} section example" loading="lazy"></span>
+          <input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}>
+          <span class="lumis-section-builder__copy"><strong>{{ section.name }}</strong><small>{{ section.description }}</small></span>
+        </label>
+        <span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>
+      </div>
+      {% endfor %}
+    </div>
   </section>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered"><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a><button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button><button class="btn lumis-auth-primary" type="submit" name="action" value="finish_setup"><span class="btn-wrap"><span class="text-first">Finish Setup</span></span></button></div>
+  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">{% if builder_mode %}<a class="btn lumis-auth-secondary" href="{% url 'photographer_workspace:dashboard' %}"><span class="btn-wrap"><span class="text-first">Back to Workspace</span></span></a>{% else %}<a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-business' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a><a class="btn lumis-auth-secondary" href="{% url 'photographers:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>{% endif %}<button class="btn lumis-auth-secondary" type="submit" formaction="{% url 'photographers:selected-theme-preview' %}" formmethod="post" formnovalidate><span class="btn-wrap"><span class="text-first">Preview Structure</span></span></button>{% if not builder_mode %}<button class="btn lumis-auth-secondary" type="submit" name="action" value="save_structure_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button>{% endif %}<button class="btn lumis-auth-primary" type="submit" name="action" value="continue_to_content"><span class="btn-wrap"><span class="text-first">Continue to Customize</span></span></button></div>
 </form>
 <script>
-(function(){function sync(){var checked=document.querySelector('input[name="website_theme"]:checked');document.querySelectorAll('[data-theme-panel]').forEach(function(p){p.hidden=!checked||p.dataset.themePanel!==checked.value});var empty=document.querySelector('[data-empty-theme]'); if(empty) empty.hidden=!!checked;}document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',sync)});sync();})();
+(function(){
+  var list=document.querySelector('[data-section-list]');var orderInput=document.querySelector('[data-section-order-input]');
+  function applyInitialOrder(){var keys=(orderInput.value||'').split(',').filter(Boolean);keys.slice().reverse().forEach(function(key){var item=list.querySelector('[data-section-item="'+key+'"]');if(item)list.insertBefore(item,list.firstElementChild);});}
+  function writeOrder(){orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}
+  function sync(resetSections){var checked=document.querySelector('input[name="website_theme"]:checked');if(resetSections&&checked){var defaults=(checked.dataset.defaultSections||'').split(',').filter(Boolean);list.querySelectorAll('input[type="checkbox"]').forEach(function(box){box.checked=defaults.includes(box.value)||box.hasAttribute('data-required-section')});writeOrder();}}
+  document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',function(){sync(true)})});
+  list.addEventListener('change',function(event){if(event.target.hasAttribute('data-required-section'))event.target.checked=true;writeOrder()});
+  list.addEventListener('click',function(event){var button=event.target.closest('[data-move]');if(!button)return;var item=button.closest('[data-section-item]');var sibling=button.dataset.move==='up'?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;if(button.dataset.move==='up')list.insertBefore(item,sibling);else list.insertBefore(sibling,item);writeOrder()});
+  applyInitialOrder();sync(false);writeOrder();
+})();
 </script>
 {% endblock %}

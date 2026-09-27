@@ -1,9 +1,11 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_clients.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:add_client' as add_client_url %}
 {% url 'photographer_workspace:leads' as leads_url %}
 <div class="lp-crm-page lp-clients" id="main-content">
-  <header class="lp-page-header">
+  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-clients-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Clients</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Clients</h1>
@@ -17,42 +19,50 @@
   </header>
 
   <section class="lp-card-grid lp-clients-kpis" aria-label="Client summary">
-    {% for metric in client_summary %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endfor %}
+    {% for metric in client_summary %}{% if metric.label != "Outstanding Balance" %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endif %}{% endfor %}
   </section>
 
-  <section class="lp-clients-controls" aria-label="Search and filter clients">
-    <form method="get" class="lp-clients-filters" id="client-filter-drawer">
-      <label class="lp-clients-search"><span>Search clients</span><input type="search" name="q" value="{{ client_query }}" placeholder="Name, email, phone, or company"></label>
-      <label><span>Status</span><select name="status"><option value="">All statuses</option>{% for value,label in client_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-      <label><span>Client type</span><select name="client_type"><option value="">All client types</option>{% for value,label in client_type_choices %}<option value="{{ value }}"{% if selected_client_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-      <label><span>Tag</span><select name="tag"><option value="">All tags</option>{% for tag in client_tags %}<option value="{{ tag }}"{% if selected_tag == tag %} selected{% endif %}>{{ tag }}</option>{% endfor %}</select></label>
-      <label class="lp-clients-more"><span>Upcoming session</span><select name="upcoming"><option value="">Any schedule</option><option value="yes"{% if selected_upcoming == 'yes' %} selected{% endif %}>Has upcoming session</option><option value="no"{% if selected_upcoming == 'no' %} selected{% endif %}>No upcoming session</option></select></label>
-      <label class="lp-clients-more"><span>Balance</span><select name="balance"><option value="">Any balance</option><option value="yes"{% if selected_balance == 'yes' %} selected{% endif %}>Balance due</option><option value="no"{% if selected_balance == 'no' %} selected{% endif %}>Paid in full</option></select></label>
-      <div class="lp-clients-filter-actions"><button class="lp-button lp-button--primary lp-button--md" type="submit">Apply filters</button>{% if has_filters %}<a class="lp-text-action" href="{% url 'photographer_workspace:clients' %}">Clear all</a>{% endif %}</div>
+  <section class="lp-clients-controls" aria-label="Search, filter, and browse clients" data-clients-workspace>
+    <form method="get" class="lp-clients-filters" id="client-filter-form" data-client-filters>
+      <div class="lp-clients-filter-bar">
+        <label class="lp-clients-search"><span>Search clients</span><input type="search" name="q" value="{{ client_query }}" placeholder="Name, email, phone, or company"></label>
+        <label><span>Status</span><select name="status"><option value="">All statuses</option>{% for value,label in client_status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label><span>Client type</span><select name="client_type"><option value="">All client types</option>{% for value,label in client_type_choices %}<option value="{{ value }}"{% if selected_client_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label><span>Tag</span><select name="tag"><option value="">All tags</option>{% for tag in client_tags %}<option value="{{ tag }}"{% if selected_tag == tag %} selected{% endif %}>{{ tag }}</option>{% endfor %}</select></label>
+      </div>
+      <div class="lp-clients-filter-fields" id="client-filter-drawer">
+        <label><span>Upcoming session</span><select name="upcoming"><option value="">Any schedule</option><option value="yes"{% if selected_upcoming == 'yes' %} selected{% endif %}>Has upcoming session</option><option value="no"{% if selected_upcoming == 'no' %} selected{% endif %}>No upcoming session</option></select></label>
+        <label><span>Balance</span><select name="balance"><option value="">Any balance</option><option value="yes"{% if selected_balance == 'yes' %} selected{% endif %}>Balance due</option><option value="no"{% if selected_balance == 'no' %} selected{% endif %}>Paid in full</option></select></label>
+      </div>
     </form>
+
     <div class="lp-clients-view-bar">
       <p class="lp-clients-result" aria-live="polite"><strong>{{ result_count }}</strong> client{{ result_count|pluralize }}{% if has_filters %}<span class="lp-filter-dot" aria-label="Filters active"></span>{% endif %}</p>
-      <div class="lp-clients-view-actions"><button class="lp-button lp-button--secondary lp-button--md lp-client-filter-toggle" type="button" data-client-filter-open aria-expanded="false" aria-controls="client-filter-drawer"><i class="bi bi-funnel" aria-hidden="true"></i>Filters{% if has_filters %}<span class="lp-filter-dot" aria-label="Filters active"></span>{% endif %}</button><div class="lp-view-switcher" role="group" aria-label="Client display"><button class="is-active" type="button" data-client-view="list" aria-pressed="true"><i class="bi bi-list-ul" aria-hidden="true"></i>List</button><button type="button" data-client-view="grid" aria-pressed="false"><i class="bi bi-grid" aria-hidden="true"></i>Cards</button></div></div>
+      <div class="lp-clients-view-actions">
+        <button class="lp-button lp-button--secondary lp-button--md lp-client-filter-toggle" type="button" data-client-filter-open aria-expanded="false" aria-controls="client-filter-drawer"><i class="bi bi-funnel" aria-hidden="true"></i>Filters{% if has_filters %}<span class="lp-filter-dot" aria-label="Filters active"></span>{% endif %}</button>
+        <div class="lp-clients-filter-actions"><button class="lp-button lp-button--primary lp-button--md" type="submit" form="client-filter-form" data-apply-filters>Apply filters</button>{% if has_filters %}<a class="lp-text-action" href="{% url 'photographer_workspace:clients' %}" data-clear-filters>Clear all</a>{% endif %}</div>
+      </div>
     </div>
+
+    <div class="lp-clients-ajax-status" data-clients-ajax-status role="status" aria-live="polite"></div>
+
+    <section class="lp-clients-list" aria-label="Client directory" data-clients-table-region>
+      {% if client_page %}<div class="lp-clients-table-wrap"><table class="lp-clients-table"><thead><tr><th scope="col">Client</th><th scope="col">Contact</th><th scope="col">Type</th><th scope="col">Next session</th><th scope="col">Outstanding</th><th scope="col">Last activity</th><th scope="col">Status</th><th scope="col"><span class="lp-sr-only">Actions</span></th></tr></thead><tbody>
+        {% for client in client_page %}<tr>
+          <td data-label="Client"><div class="lp-client-identity">{% if client.profile_photo %}<img src="{{ client.profile_photo.url }}" alt="">{% else %}<span aria-hidden="true">{{ client.first_name|first|upper }}{{ client.last_name|first|upper }}</span>{% endif %}<div><a href="{% url 'photographer_workspace:client_detail' client.pk %}"><strong>{{ client }}</strong></a><small>{{ client.email|default:"No email recorded" }}</small></div></div></td>
+          <td data-label="Contact"><strong>{{ client.phone|default:"No phone recorded" }}</strong><small>{{ client.email|default:"No email recorded" }}</small></td>
+          <td data-label="Type"><span class="lp-client-type">{{ client.get_client_type_display|default:"Not set" }}</span></td>
+          <td data-label="Next session">{% if client.next_session_at %}<strong>{{ client.next_session_at|date:"M j, Y" }}</strong><small>{{ client.next_session_type|default:"Session" }} · {{ client.next_session_at|date:"g:i A" }}</small>{% else %}<span class="lp-client-muted">Not scheduled</span>{% endif %}</td>
+          <td data-label="Outstanding"><strong{% if client.outstanding_balance > 0 %} class="lp-client-balance"{% endif %}>{{ photographer_profile.default_currency }} {{ client.outstanding_balance|floatformat:2 }}</strong></td>
+          <td data-label="Last activity">{% if client.last_activity_at %}<strong>{{ client.last_activity_at|timesince }} ago</strong><small>{{ client.last_activity_label|default:"Client activity"|truncatechars:32 }}</small>{% else %}<span class="lp-client-muted">No activity yet</span>{% endif %}</td>
+          <td data-label="Status"><span class="lp-client-status lp-client-status--{{ client.status }}"><i aria-hidden="true"></i>{{ client.get_status_display }}</span></td>
+          <td class="lp-client-row-action"><details class="lp-client-menu"><summary aria-label="Actions for {{ client }}" data-tooltip="Client actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div><a href="{% url 'photographer_workspace:client_detail' client.pk %}"><i class="bi bi-person" aria-hidden="true"></i>View client</a><a href="{% url 'photographer_workspace:edit_client' client.pk %}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit client</a>{% if client.email %}<a href="mailto:{{ client.email }}"><i class="bi bi-envelope" aria-hidden="true"></i>Send email</a>{% endif %}<a href="{% url 'photographer_workspace:calendar' %}"><i class="bi bi-calendar-plus" aria-hidden="true"></i>Create booking</a></div></details></td>
+        </tr>{% endfor %}
+      </tbody></table></div>{% elif has_filters %}<div class="lp-clients-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-search" title="No clients match your filters" description="Try another search or clear the current filters." primary_url=request.path primary_label="Clear all filters" %}</div>{% else %}<div class="lp-clients-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-people" title="No clients yet" description="Add your first client or convert a lead to begin building your client workspace." primary_url=add_client_url primary_label="Add Client" secondary_url=leads_url secondary_label="View Leads" %}</div>{% endif %}
+
+      {% if client_page.paginator.num_pages > 1 %}<nav class="lp-client-pagination" aria-label="Client pages"><p>Showing {{ client_page.start_index }}–{{ client_page.end_index }} of {{ client_page.paginator.count }} clients</p><div>{% if client_page.has_previous %}<a class="lp-button lp-button--secondary lp-button--sm" data-clients-page href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ client_page.previous_page_number }}"><i class="bi bi-chevron-left" aria-hidden="true"></i>Previous</a>{% endif %}<span>Page {{ client_page.number }} of {{ client_page.paginator.num_pages }}</span>{% if client_page.has_next %}<a class="lp-button lp-button--secondary lp-button--sm" data-clients-page href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ client_page.next_page_number }}">Next<i class="bi bi-chevron-right" aria-hidden="true"></i></a>{% endif %}</div></nav>{% endif %}
+    </section>
   </section>
-
-  <section class="lp-clients-list" data-client-panel="list" aria-label="Client directory">
-    {% if client_page %}<div class="lp-clients-table-wrap"><table class="lp-clients-table"><thead><tr><th scope="col">Client</th><th scope="col">Contact</th><th scope="col">Type</th><th scope="col">Next session</th><th scope="col">Outstanding</th><th scope="col">Last activity</th><th scope="col">Status</th><th scope="col"><span class="lp-sr-only">Actions</span></th></tr></thead><tbody>
-      {% for client in client_page %}<tr>
-        <td data-label="Client"><div class="lp-client-identity">{% if client.profile_photo %}<img src="{{ client.profile_photo.url }}" alt="">{% else %}<span aria-hidden="true">{{ client.first_name|first|upper }}{{ client.last_name|first|upper }}</span>{% endif %}<div><a href="{% url 'photographer_workspace:client_detail' client.pk %}"><strong>{{ client }}</strong></a><small>{{ client.email|default:"No email recorded" }}</small></div></div></td>
-        <td data-label="Contact"><strong>{{ client.phone|default:"No phone recorded" }}</strong><small>{{ client.email|default:"No email recorded" }}</small></td>
-        <td data-label="Type">{{ client.get_client_type_display|default:"Not set" }}</td>
-        <td data-label="Next session">{% if client.next_session_at %}<strong>{{ client.next_session_at|date:"M j, Y" }}</strong><small>{{ client.next_session_type|default:"Session" }} · {{ client.next_session_at|date:"g:i A" }}</small>{% else %}<span class="lp-client-muted">Not scheduled</span>{% endif %}</td>
-        <td data-label="Outstanding"><strong{% if client.outstanding_balance > 0 %} class="lp-client-balance"{% endif %}>{{ photographer_profile.default_currency }} {{ client.outstanding_balance|floatformat:2 }}</strong></td>
-        <td data-label="Last activity">{% if client.last_activity_at %}<strong>{{ client.last_activity_at|timesince }} ago</strong><small>{{ client.last_activity_label|default:"Client activity"|truncatechars:32 }}</small>{% else %}<span class="lp-client-muted">No activity yet</span>{% endif %}</td>
-        <td data-label="Status"><span class="lp-client-status lp-client-status--{{ client.status }}"><i aria-hidden="true"></i>{{ client.get_status_display }}</span></td>
-        <td class="lp-client-row-action"><details class="lp-client-menu"><summary aria-label="Actions for {{ client }}" data-tooltip="Client actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary><div><a href="{% url 'photographer_workspace:client_detail' client.pk %}"><i class="bi bi-person" aria-hidden="true"></i>View client</a><a href="{% url 'photographer_workspace:edit_client' client.pk %}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit client</a>{% if client.email %}<a href="mailto:{{ client.email }}"><i class="bi bi-envelope" aria-hidden="true"></i>Send email</a>{% endif %}<a href="{% url 'photographer_workspace:calendar' %}"><i class="bi bi-calendar-plus" aria-hidden="true"></i>Create booking</a></div></details></td>
-      </tr>{% endfor %}
-    </tbody></table></div>{% elif has_filters %}<div class="lp-clients-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-search" title="No clients match your filters" description="Try another search or clear the current filters." primary_url=request.path primary_label="Clear all filters" %}</div>{% else %}<div class="lp-clients-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-people" title="No clients yet" description="Add your first client or convert a lead to begin building your client workspace." primary_url=add_client_url primary_label="Add Client" secondary_url=leads_url secondary_label="View Leads" %}</div>{% endif %}
-  </section>
-
-  <section class="lp-clients-grid" data-client-panel="grid" hidden aria-label="Client cards">{% for client in client_page %}<article class="lp-client-card"><header><div class="lp-client-identity">{% if client.profile_photo %}<img src="{{ client.profile_photo.url }}" alt="">{% else %}<span aria-hidden="true">{{ client.first_name|first|upper }}{{ client.last_name|first|upper }}</span>{% endif %}<div><a href="{% url 'photographer_workspace:client_detail' client.pk %}"><strong>{{ client }}</strong></a><small>{{ client.email|default:"No email recorded" }}</small></div></div><span class="lp-client-status lp-client-status--{{ client.status }}"><i aria-hidden="true"></i>{{ client.get_status_display }}</span></header><dl><div><dt>Phone</dt><dd>{{ client.phone|default:"Not recorded" }}</dd></div><div><dt>Type</dt><dd>{{ client.get_client_type_display|default:"Not set" }}</dd></div><div><dt>Next session</dt><dd>{{ client.next_session_at|date:"M j, Y"|default:"Not scheduled" }}</dd></div><div><dt>Outstanding</dt><dd>{{ photographer_profile.default_currency }} {{ client.outstanding_balance|floatformat:2 }}</dd></div></dl><footer><a href="{% url 'photographer_workspace:client_detail' client.pk %}">View client <i class="bi bi-arrow-right" aria-hidden="true"></i></a></footer></article>{% empty %}<div class="lp-clients-empty">{% include "photographer_workspace/components/empty_state.html" with compact=True icon="bi-people" title="No clients yet" description="Add your first client or convert a lead to begin building your client workspace." primary_url=add_client_url primary_label="Add Client" secondary_url=leads_url secondary_label="View Leads" %}</div>{% endfor %}</section>
-
-  {% if client_page.paginator.num_pages > 1 %}<nav class="lp-client-pagination" aria-label="Client pages"><p>Showing {{ client_page.start_index }}–{{ client_page.end_index }} of {{ client_page.paginator.count }} clients</p><div>{% if client_page.has_previous %}<a class="lp-button lp-button--secondary lp-button--sm" href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ client_page.previous_page_number }}"><i class="bi bi-chevron-left" aria-hidden="true"></i>Previous</a>{% endif %}<span>Page {{ client_page.number }} of {{ client_page.paginator.num_pages }}</span>{% if client_page.has_next %}<a class="lp-button lp-button--secondary lp-button--sm" href="?{% if retained_query %}{{ retained_query }}&amp;{% endif %}page={{ client_page.next_page_number }}">Next<i class="bi bi-chevron-right" aria-hidden="true"></i></a>{% endif %}</div></nav>{% endif %}
 </div>
+<script src="{% static 'js/photographer_clients.js' %}"></script>
 {% endblock %}

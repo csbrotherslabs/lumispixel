@@ -1,0 +1,592 @@
+/* CRM/Create Gallery-aligned visual refresh for the Upload Queue page. */
+.lp-upload-page-modern{
+  display:grid;
+  gap:22px;
+  width:100%!important;
+  max-width:none!important;
+  margin-inline:0!important;
+  padding-inline:0!important;
+}
+
+.lpw-main:has(.lp-upload-page-modern){
+  padding-top:14px;
+}
+
+.lp-upload-page-modern .lp-upload-page-header{
+  position:relative!important;
+  top:auto!important;
+  z-index:auto!important;
+  isolation:isolate;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  margin:0!important;
+  padding:30px 38px 34px;
+  border:1px solid #e8e1dc;
+  border-radius:24px;
+  background:linear-gradient(120deg,#f0e9e3 0%,#f8f4f0 48%,#eee5df 100%);
+  box-shadow:0 18px 48px rgba(47,37,30,.07);
+}
+
+.lp-upload-page-modern .lp-upload-page-header::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:280px;
+  height:280px;
+  top:-185px;
+  right:6%;
+  border:1px solid rgba(215,25,32,.16);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-upload-page-modern .lp-upload-page-header::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:150px;
+  height:150px;
+  right:18%;
+  bottom:-118px;
+  border:1px solid rgba(47,37,30,.08);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.lp-upload-page-modern .lp-upload-heading,
+.lp-upload-page-modern .lp-upload-page-header>.lp-button{
+  position:relative;
+  z-index:1;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb{
+  margin:0 0 18px;
+  padding:0;
+  background:transparent;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a,
+.lp-upload-page-modern .lpw-breadcrumb strong,
+.lp-upload-page-modern .lpw-breadcrumb i{
+  font-size:11px;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a{
+  color:#d71920;
+  transition:color .18s ease;
+}
+
+.lp-upload-page-modern .lpw-breadcrumb a:hover,
+.lp-upload-page-modern .lpw-breadcrumb a:focus-visible{
+  color:#25211f;
+}
+
+.lp-upload-page-modern .lp-upload-heading__title{
+  display:block;
+}
+
+.lp-upload-page-modern .lp-upload-heading__icon{
+  display:none!important;
+}
+
+.lp-upload-page-modern .lp-page-title{
+  margin-top:2px;
+}
+
+.lp-upload-page-modern .lp-page-description{
+  max-width:680px;
+}
+
+.lp-upload-page-modern .lp-upload-stats{
+  position:relative;
+  z-index:0;
+  gap:16px;
+  margin-top:0!important;
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card,
+.lp-upload-page-modern .lp-upload-create,
+.lp-upload-page-modern .lp-storage,
+.lp-upload-page-modern .lp-queue{
+  border:1px solid var(--lp-color-border);
+  border-radius:var(--lp-radius-md);
+  background:var(--lp-color-surface);
+  box-shadow:var(--lp-shadow-subtle);
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,#fff 0%,#fdfbf9 100%);
+}
+
+.lp-upload-page-modern .lp-upload-stats .lp-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:3px;
+  background:linear-gradient(90deg,#d71920 0%,rgba(215,25,32,.4) 45%,rgba(215,25,32,0) 100%);
+}
+
+.lp-upload-page-modern .lp-upload-create,
+.lp-upload-page-modern .lp-storage,
+.lp-upload-page-modern .lp-queue{
+  padding:22px;
+}
+
+.lp-upload-page-modern .lp-upload-create{
+  display:grid;
+  gap:20px;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  padding:22px;
+  overflow:hidden;
+  border-radius:20px;
+  background:linear-gradient(180deg,#fff 0%,#fdfbf9 100%);
+  box-shadow:0 14px 34px rgba(47,37,30,.06);
+}
+
+.lp-upload-page-modern .lp-upload-create>*{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-destination{
+  min-width:0;
+  margin:0;
+  padding:18px;
+  border:1px solid #eee5df;
+  border-radius:16px;
+  background:linear-gradient(145deg,#fff 0%,#fbf7f4 100%);
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head--files{
+  margin:0;
+  padding:2px 0 0;
+  border-bottom:0;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-drop{
+  width:100%;
+  max-width:100%;
+  margin:0;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-requirement,
+.lp-upload-page-modern .lp-upload-create .lp-upload-errors{
+  width:100%;
+  max-width:100%;
+  margin-left:0;
+  margin-right:0;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-errors{
+  margin-bottom:0;
+}
+
+.lp-upload-page-modern .lp-upload-step-head,
+.lp-upload-page-modern .lp-queue>header{
+  padding-bottom:14px;
+  border-bottom:1px solid var(--lp-color-border);
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  min-width:0;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head>div{
+  min-width:0;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head>span{
+  display:grid;
+  place-items:center;
+  flex:0 0 36px;
+  width:36px;
+  height:36px;
+  border:1px solid #efc8ca;
+  border-radius:11px;
+  background:linear-gradient(145deg,#fff8f8,#fff0f1);
+  color:#d71920;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head small,
+.lp-upload-page-modern .lp-upload-create .lp-gallery-picker>label{
+  color:#7f7772;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.35;
+  letter-spacing:.04em;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head h2{
+  margin:2px 0 4px;
+  color:#25211f;
+  font-size:18px;
+  font-weight:600;
+  line-height:1.25;
+}
+
+.lp-upload-page-modern .lp-upload-create .lp-upload-step-head p{
+  margin:0;
+  color:#7d756f;
+  font-size:13px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.lp-upload-page-modern .lp-gallery-picker{
+  display:grid;
+  gap:10px;
+  min-width:0;
+  width:100%;
+  margin-top:16px;
+}
+
+.lp-upload-page-modern .lp-gallery-picker__controls{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  min-width:0;
+  width:100%;
+  align-items:stretch;
+}
+
+.lp-upload-page-modern .lp-gallery-picker__controls>*{
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  margin:0!important;
+  box-sizing:border-box;
+}
+
+.lp-upload-page-modern .lp-gallery-search{
+  position:relative;
+  display:block;
+  min-width:0;
+  width:100%;
+  height:56px;
+  min-height:56px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible;
+}
+
+.lp-upload-page-modern .lp-gallery-search>i{
+  position:absolute;
+  top:50%;
+  left:16px;
+  z-index:2;
+  transform:translateY(-50%);
+  color:#8a817b;
+  font-size:16px;
+  line-height:1;
+  pointer-events:none;
+}
+
+.lp-upload-page-modern .lp-gallery-search input,
+.lp-upload-page-modern .lp-gallery-picker__controls select{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:56px!important;
+  min-height:56px!important;
+  margin:0!important;
+  border:1px solid #dcd4ce!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  color:#2e2926;
+  font-family:inherit;
+  font-size:14px!important;
+  font-weight:400;
+  line-height:1.35;
+  box-shadow:inset 0 1px 1px rgba(47,37,30,.02);
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+  box-sizing:border-box;
+}
+
+.lp-upload-page-modern .lp-gallery-search input{
+  padding:0 16px 0 46px!important;
+}
+
+.lp-upload-page-modern .lp-gallery-picker__controls select{
+  padding:0 42px 0 16px!important;
+  text-overflow:ellipsis;
+}
+
+.lp-upload-page-modern .lp-gallery-search input::placeholder{
+  color:#9a928d;
+  opacity:1;
+  font-size:14px!important;
+}
+
+.lp-upload-page-modern .lp-gallery-search input:focus,
+.lp-upload-page-modern .lp-gallery-picker__controls select:focus{
+  border-color:#df9fa2!important;
+  background:#fff!important;
+  box-shadow:0 0 0 3px rgba(215,25,32,.08)!important;
+  outline:none;
+}
+
+.lp-upload-page-modern .lp-selected-gallery{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  margin-top:16px;
+  padding:14px;
+  border:1px solid #e8e1dc;
+  border-radius:14px;
+  background:#fbf8f6;
+  box-sizing:border-box;
+}
+
+.lp-upload-page-modern .lp-selected-gallery>div{
+  min-width:0;
+}
+
+.lp-upload-page-modern .lp-selected-gallery strong,
+.lp-upload-page-modern .lp-selected-gallery span,
+.lp-upload-page-modern .lp-selected-gallery time{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.lp-upload-page-modern .lp-upload-drop{
+  min-height:260px;
+  padding:34px 24px;
+  border:1px dashed #d9c9c2;
+  border-radius:16px;
+  background:linear-gradient(145deg,#fdfbf9 0%,#faf5f2 100%);
+  text-align:center;
+  box-sizing:border-box;
+}
+
+.lp-upload-page-modern .lp-upload-drop:hover,
+.lp-upload-page-modern .lp-upload-drop:focus-visible{
+  border-color:#df9fa2;
+  background:#fffafa;
+  box-shadow:0 0 0 3px rgba(215,25,32,.055);
+}
+
+.lp-upload-page-modern .lp-upload-drop__icon{
+  display:grid;
+  place-items:center;
+  width:52px;
+  height:52px;
+  margin:0 auto 12px;
+  border:1px solid #efd8d9;
+  border-radius:14px;
+  background:#fff;
+  color:#d71920;
+  box-shadow:0 8px 20px rgba(47,37,30,.05);
+  font-size:20px;
+}
+
+.lp-upload-page-modern .lp-upload-drop h2{
+  margin:0 0 6px;
+  color:#2f2926;
+  font-size:18px;
+  font-weight:600;
+  line-height:1.3;
+}
+
+.lp-upload-page-modern .lp-upload-drop p{
+  margin:0 0 8px;
+  color:#726a65;
+  font-size:14px;
+  line-height:1.4;
+}
+
+.lp-upload-page-modern .lp-upload-drop p span{
+  color:#d71920;
+  font-weight:700;
+}
+
+.lp-upload-page-modern .lp-upload-drop small,
+.lp-upload-page-modern .lp-upload-requirement,
+.lp-upload-page-modern .lp-gallery-picker-empty{
+  color:#8d8580;
+  font-size:12px;
+  line-height:1.45;
+}
+
+@media(max-width:1180px){
+  .lp-upload-page-modern .lp-upload-layout{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .lp-upload-page-modern .lp-gallery-picker__controls{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+@media(max-width:860px){
+  .lpw-main:has(.lp-upload-page-modern){
+    padding-top:12px;
+  }
+
+  .lp-upload-page-modern .lp-upload-page-header{
+    align-items:flex-start;
+    flex-direction:column;
+    padding:26px 28px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create{
+    padding:18px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-destination{
+    padding:16px;
+  }
+}
+
+@media(max-width:620px){
+  .lp-upload-page-modern{
+    gap:16px;
+  }
+
+  .lp-upload-page-modern .lp-upload-page-header{
+    padding:22px;
+    border-radius:20px;
+  }
+
+  .lp-upload-page-modern .lp-storage,
+  .lp-upload-page-modern .lp-queue{
+    padding:17px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create{
+    gap:16px;
+    padding:14px;
+    border-radius:16px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-destination{
+    padding:14px;
+    border-radius:14px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-upload-step-head{
+    gap:10px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-upload-step-head>span{
+    flex-basis:32px;
+    width:32px;
+    height:32px;
+  }
+
+  .lp-upload-page-modern .lp-upload-drop{
+    min-height:220px;
+    padding:28px 16px;
+  }
+
+  .lp-upload-page-modern .lp-selected-gallery{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .lp-upload-page-modern .lp-selected-gallery>.lp-button{
+    grid-column:1/-1;
+    width:100%;
+  }
+}
+
+@media(max-width:420px){
+  .lp-upload-page-modern .lp-upload-create{
+    padding:12px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-destination{
+    padding:12px;
+  }
+
+  .lp-upload-page-modern .lp-upload-create .lp-upload-step-head h2,
+  .lp-upload-page-modern .lp-upload-drop h2{
+    font-size:16px;
+  }
+
+  .lp-upload-page-modern .lp-gallery-search input,
+  .lp-upload-page-modern .lp-gallery-picker__controls select{
+    font-size:13px!important;
+  }
+
+  .lp-upload-page-modern .lp-gallery-search input::placeholder{
+    font-size:13px!important;
+  }
+}
+
+
+/* Compact transfer manager: optimized for large photographer upload batches. */
+.lp-upload-page-modern .lp-transfer-manager{padding:18px 20px}
+.lp-upload-page-modern .lp-transfer-manager>header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:12px}
+.lp-upload-page-modern .lp-transfer-manager>header h2{margin:2px 0 3px;font-size:20px}
+.lp-upload-page-modern .lp-transfer-manager>header p{margin:0;color:#7d756f;font-size:12px}
+.lp-batch-progress{display:grid;gap:8px;margin:14px 0 8px;padding:12px 14px;border:1px solid #eee5df;border-radius:12px;background:#fbf8f6}
+.lp-batch-progress__copy,.lp-batch-progress__meta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lp-batch-progress__copy{font-size:12px}.lp-batch-progress__copy>span{font-weight:800;font-variant-numeric:tabular-nums}
+.lp-batch-progress progress{width:100%;height:6px;accent-color:#d71920}
+.lp-batch-progress__meta{justify-content:flex-start;flex-wrap:wrap;color:#7d756f;font-size:11px}
+.lp-batch-progress__meta span+span::before{content:"•";margin-right:10px;color:#b8afa9}.lp-batch-progress__meta .is-failed b{color:#b42328}
+.lp-transfer-manager [data-upload-list]{display:grid}
+.lp-transfer-manager .lp-upload-row{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(130px,18%) 38px;align-items:center;gap:10px;min-height:52px;padding:7px 4px;border-bottom:1px solid #eee9e5}
+.lp-transfer-manager .lp-upload-row:last-child{border-bottom:0}
+.lp-transfer-manager .lp-file-icon{width:34px;height:34px;border-radius:7px;overflow:hidden}
+.lp-transfer-manager .lp-file-icon img{width:34px;height:34px;object-fit:cover}
+.lp-transfer-manager .lp-file-main{display:grid;grid-template-columns:minmax(120px,1fr) minmax(160px,35%);align-items:center;gap:12px;min-width:0}
+.lp-transfer-manager .lp-file-main>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600}
+.lp-transfer-manager .lp-file-main>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8a817b;font-size:10px}
+.lp-transfer-manager .lp-file-main [data-progress-slot]{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-width:0}
+.lp-transfer-manager .lp-progress-copy{display:flex;gap:8px;order:2;flex:none;color:#7d756f;font-size:9px;white-space:nowrap}
+.lp-transfer-manager .lp-file-main progress{order:1;width:100%;height:4px;accent-color:#d71920}
+.lp-transfer-manager .lp-file-state{min-width:0}.lp-transfer-manager .lp-file-state strong{display:block;font-size:11px;font-weight:600}.lp-transfer-manager .lp-file-state span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8a817b;font-size:9px}
+.lp-transfer-manager .lp-file-actions{display:flex;justify-content:flex-end}.lp-transfer-manager .lp-file-actions button{width:32px;height:32px;min-width:32px;padding:0;border-radius:8px}
+.lp-transfer-manager .lp-upload-row.is-completed{opacity:.68}
+.lp-transfer-manager .lp-upload-row.is-completed .lp-file-icon{display:grid;place-items:center;background:#f1f7f3}
+.lp-transfer-manager .lp-upload-row.is-failed{background:#fffafa}
+@media(max-width:760px){.lp-transfer-manager .lp-upload-row{grid-template-columns:34px minmax(0,1fr) 34px}.lp-transfer-manager .lp-file-state{grid-column:2/3}.lp-transfer-manager .lp-file-actions{grid-column:3;grid-row:1/3}.lp-transfer-manager .lp-file-main{grid-template-columns:1fr}.lp-transfer-manager .lp-file-main>span{display:none}.lp-batch-progress__copy,.lp-batch-progress__meta{align-items:flex-start}.lp-batch-progress__meta span+span::before{display:none}}
+
+.lp-transfer-manager .lp-upload-row[hidden]{display:none!important}
+.lp-queue-window-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px}
+.lp-queue-window-toggle{border:0;background:transparent;color:#d71920;padding:6px 2px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.lp-queue-window-toggle:hover,.lp-queue-window-toggle:focus-visible{color:#25211f;text-decoration:underline}
+
+/* Keep queue expansion actions legible against inherited workspace button themes. */
+.lp-upload-page-modern .lp-queue-window-toggle{
+  background:transparent!important;
+  color:#d71920!important;
+}
+.lp-upload-page-modern .lp-queue-window-toggle:hover,
+.lp-upload-page-modern .lp-queue-window-toggle:focus-visible{
+  background:#fff1f1!important;
+  color:#a40005!important;
+}
+
+/* Keep dark transfer-manager secondary actions readable. */
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm,
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:hover,
+.lp-upload-page-modern .lp-transfer-manager .lp-button.lp-button--secondary.lp-button--sm:focus-visible{
+  color:#fff!important;
+}

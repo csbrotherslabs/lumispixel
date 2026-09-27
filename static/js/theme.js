@@ -19,24 +19,25 @@ Description: Kimono - Photography Agency
 
         // Add Menu Item Current Class Auto
         function dynamicCurrentMenuClass(selector) {
-            let FileName = window.location.href.split("/").reverse()[0];
-  
-            selector.find("li").each(function () {
-              let anchor = $(this).find("a");
-              if ($(anchor).attr("href") == FileName) {
-                $(this).addClass("active");
+            const normalizePath = function (path) {
+              const normalized = (path || "/").replace(/\/+$/, "");
+              return normalized || "/";
+            };
+            const currentPath = normalizePath(window.location.pathname);
+
+            selector.find("a").removeAttr("aria-current").each(function () {
+              const href = $(this).attr("href");
+              if (!href || href.charAt(0) === "#") return;
+
+              const linkPath = normalizePath(new URL(href, window.location.origin).pathname);
+              if (linkPath === currentPath) {
+                $(this).attr("aria-current", "page").parent("li").addClass("active current");
               }
             });
-            // if any li has .current elmnt add class
+
             selector.children("li").each(function () {
-              if ($(this).find(".active").length) {
-                $(this).addClass("active");
-              }
+              if ($(this).find("ul .active").length) $(this).addClass("active current");
             });
-            // if no file name return
-            if ("" == FileName) {
-              selector.find("li").eq(0).addClass("active");
-            }
         }
           
         if ($('.mainnav .main-menu').length) {
@@ -46,7 +47,9 @@ Description: Kimono - Photography Agency
         // Mobile Responsive Menu 
         var mobileLogoContent = $('header .logo').html();
         var mobileMenuContent = $('.mainnav').html();
-		$('.mr_menu .logo').append(mobileLogoContent);
+        if (!$('.mr_menu .logo').children().length) {
+			$('.mr_menu .logo').append(mobileLogoContent);
+		}
 		$('.mr_menu .mr_navmenu').append(mobileMenuContent);
         $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<button type='button' class='submenu_opener' aria-label='Toggle submenu' aria-expanded='false'><i class='bi bi-chevron-right'></i></button>" ) );
 
@@ -1189,10 +1192,34 @@ Description: Kimono - Photography Agency
             $('.wptb-image-box1.highlight, .wptb-image-box2.highlight, .wptb-blog-grid1.highlight, .wptb-packages1.highlight, .wptb-icon-box2.highlight, .wptb-icon-box5.highlight, .wptb-icon-box7.highlight, .wptb-award-list .wptb-item.highlight, .wptb-features .wptb-item.highlight').addClass('active');     
         });
 
-        // Keyboard parity for the LumisPixel workflow feature reveal
-        $('.lumis-how-it-works .wptb-features .wptb-item').on('focusin', function(){
-            $('.lumis-how-it-works .wptb-features .wptb-item').removeClass('active');
-            $(this).addClass('active');
+        // Keep the LumisPixel workflow reveal in sync for mouse, keyboard, and touch.
+        $('.lumis-how-it-works, .lumis-get-started-paths').each(function(){
+            var $workflow = $(this);
+            var $workflowItems = $workflow.find('.wptb-features .wptb-item');
+
+            function activateWorkflowItem($item) {
+                $workflowItems.removeClass('active');
+                $workflowItems.find('.wptb-item--features-holder a').removeAttr('aria-current');
+                $item.addClass('active');
+                $item.find('.wptb-item--features-holder a').attr('aria-current', 'step');
+            }
+
+            $workflowItems.on('mouseenter focusin', function(){
+                activateWorkflowItem($(this));
+            });
+
+            $workflowItems.find('.wptb-item--features-holder a').on('click', function(event){
+                event.preventDefault();
+                activateWorkflowItem($(this).closest('.wptb-item'));
+            });
+
+            $workflowItems.on('mouseleave', function(){
+                if (!$workflow.find(':focus').length) {
+                    activateWorkflowItem($workflowItems.filter('.highlight').first());
+                }
+            });
+
+            activateWorkflowItem($workflowItems.filter('.highlight').first());
         });
 
 

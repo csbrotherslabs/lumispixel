@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import views
 
@@ -7,9 +8,9 @@ app_name = "core"
 urlpatterns = [
     path("", views.index, name="index"),
     path("pricing/", views.pricing, name="pricing"),
-    path("products/", views.public_page, {"page_key": "products"}, name="products"),
+    path("products/", TemplateView.as_view(template_name="products.html"), name="products"),
     path("for-photographers/", views.for_photographers, name="for_photographers"),
-    path("solutions/", views.public_page, {"page_key": "solutions"}, name="solutions"),
+    path("solutions/", TemplateView.as_view(template_name="solutions.html"), name="solutions"),
     path(
         "solutions/wedding-photography/",
         views.public_page,
@@ -70,12 +71,7 @@ urlpatterns = [
         {"page_key": "destination_photography"},
         name="solution_destination_photography",
     ),
-    path(
-        "business-hub/",
-        views.public_page,
-        {"page_key": "business_hub"},
-        name="business_hub",
-    ),
+    path("business-hub/", TemplateView.as_view(template_name="business_hub.html"), name="business_hub"),
     path(
         "business-hub/dashboard/",
         views.public_page,
@@ -136,7 +132,7 @@ urlpatterns = [
         {"page_key": "business_hub_team_operations"},
         name="business_hub_team_operations",
     ),
-    path("resources/", views.public_page, {"page_key": "resources"}, name="resources"),
+    path("resources/", TemplateView.as_view(template_name="resources.html"), name="resources"),
     path(
         "resources/how-it-works/",
         views.public_page,

@@ -3,7 +3,7 @@
 .story-hero { background: radial-gradient(circle at 15% 20%, rgba(165,11,11,.07), transparent 26%), linear-gradient(180deg,#faf8f5 0%,#fff 100%); padding: 190px 0 110px; text-align: center; }
 .story-hero__inner { align-items: center; display: flex; flex-direction: column; }
 .story-kicker { color: #a50b0b; font-size: 13px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
-.story-hero h1 { font-size: clamp(54px,8vw,100px); letter-spacing: -.06em; line-height: .95; margin: 18px 0 28px; }
+.story-hero h1 { font-size: clamp(48px, 7.4vw, 55px); letter-spacing: -.06em; line-height: .95; margin: 18px 0 28px; }
 .story-hero p { color: #606060; font-size: clamp(18px,2vw,22px); line-height: 1.65; margin: 0; max-width: 900px; }
 .story-section { padding: 110px 0; }
 .story-heading { margin-bottom: 52px; max-width: 720px; }

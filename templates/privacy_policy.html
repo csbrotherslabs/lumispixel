@@ -4,10 +4,11 @@
 {% block title %}Privacy Policy | LumisPixel{% endblock %}
 {% block meta_description %}Learn how LumisPixel collects, uses, stores, and protects personal information and uploaded images.{% endblock %}
 {% block body_class %}marketing-page privacy-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/privacy-policy.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/privacy-policy.css' %}"><link rel="stylesheet" href="{% static 'css/company_detail_refine.css' %}"><link rel="stylesheet" href="{% static 'css/company_policy_concise.css' %}">{% endblock %}
 
 {% block content %}
 <section class="privacy-hero" aria-labelledby="privacy-title"><div class="container privacy-hero__inner">
+  <a class="company-back" href="{% url 'core:company' %}"><i class="bi bi-arrow-left"></i> All Company</a>
   <span class="privacy-eyebrow">Legal &amp; Privacy</span>
   <h1 id="privacy-title">Privacy Policy</h1>
   <p>Your privacy matters. This page explains how LumisPixel collects, uses, stores, and protects your information.</p>

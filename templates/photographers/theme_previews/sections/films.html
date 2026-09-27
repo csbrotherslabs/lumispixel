@@ -1,0 +1,21 @@
+{% load static %}
+<section class="showcase-films" id="films">
+  <div class="showcase-films__heading">
+    <div>
+      <span class="showcase-section-label">Wedding films</span>
+      <h2>Movement, voices,<br><em>and the moments between.</em></h2>
+    </div>
+    <p>Cinematic films preserve the sound, motion, and atmosphere of a celebration alongside the still photographs.</p>
+  </div>
+  <div class="showcase-films__media">
+    <video autoplay muted loop playsinline controls preload="metadata" poster="{% static 'img/photographers/theme-previews/Narrative/narrative-wedding-celebration.webp' %}" aria-label="North & Pine Studio wedding film preview">
+      <source src="{% static 'img/photographers/theme-previews/Narrative/narrative-film-poster.mp4' %}" type="video/mp4">
+      Your browser does not support the video element.
+    </video>
+    <div class="showcase-films__caption">
+      <span>Featured film</span>
+      <strong>A celebration in motion</strong>
+      <small>Wedding film / North & Pine Studio</small>
+    </div>
+  </div>
+</section>

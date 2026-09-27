@@ -1,0 +1,46 @@
+/* Team Members directory toolbar alignment refinement. */
+.lpm-crm-page .lpm-toolbar{
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:10px;
+  row-gap:10px;
+  padding:0;
+  border-top:0;
+  border-bottom:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.lpm-crm-page .lpm-search{
+  height:42px;
+  margin:0;
+}
+
+.lpm-crm-page .lpm-search input,
+.lpm-crm-page .lpm-filter-button{
+  height:42px;
+  min-height:42px;
+  margin:0;
+}
+
+.lpm-crm-page .lpm-search input{
+  display:block;
+  line-height:40px;
+}
+
+.lpm-crm-page .lpm-filter-button{
+  align-self:center;
+  line-height:1;
+  white-space:nowrap;
+}
+
+@media(max-width:760px){
+  .lpm-crm-page .lpm-toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .lpm-crm-page .lpm-filter-button{
+    width:100%;
+    justify-self:stretch;
+  }
+}

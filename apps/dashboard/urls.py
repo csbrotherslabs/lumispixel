@@ -1,6 +1,11 @@
 from django.urls import path
 
+from apps.workflows.views import automation_dashboard
+
 from . import views
+from .billing_views import billing_account
+from .help_views import workspace_help
+from .profile_views import photographer_profile
 
 app_name = "photographer_workspace"
 
@@ -11,12 +16,24 @@ urlpatterns = [
     path("galleries/archive/", views.gallery_archive, name="gallery_archive"),
     path("galleries/archive/actions/", views.gallery_archive_actions, name="gallery_archive_actions"),
     path("galleries/create/", views.create_gallery, name="create_gallery"),
+    path("galleries/designs/standard-filterable/preview/", views.standard_filterable_design_preview, name="standard_filterable_design_preview"),
+    path("galleries/designs/story/preview/", views.story_design_preview, name="story_design_preview"),
+    path("galleries/designs/masonry/preview/", views.masonry_design_preview, name="masonry_design_preview"),
+    path("galleries/designs/cinematic/preview/", views.cinematic_design_preview, name="cinematic_design_preview"),
     path("galleries/actions/", views.gallery_actions, name="gallery_actions"),
     path("galleries/upload-queue/", views.gallery_upload_queue, name="gallery_upload_queue"),
+    path("galleries/upload-queue/clear-completed/", views.gallery_upload_queue_clear_completed, name="gallery_upload_queue_clear_completed"),
+    path("galleries/uploads/multipart/initiate/", views.gallery_multipart_initiate, name="gallery_multipart_initiate"),
+    path("galleries/uploads/multipart/<uuid:upload_uuid>/resume/", views.gallery_multipart_resume, name="gallery_multipart_resume"),
+    path("galleries/uploads/multipart/<uuid:upload_uuid>/part/", views.gallery_multipart_sign_part, name="gallery_multipart_sign_part"),
+    path("galleries/uploads/multipart/<uuid:upload_uuid>/complete/", views.gallery_multipart_complete, name="gallery_multipart_complete"),
+    path("galleries/uploads/multipart/<uuid:upload_uuid>/abort/", views.gallery_multipart_abort, name="gallery_multipart_abort"),
     path("galleries/ai-processing/", views.ai_processing_center, name="ai_processing"),
     path("galleries/ai-processing/jobs/<int:pk>/action/", views.ai_job_action, name="ai_job_action"),
     path("galleries/photos/<int:pk>/media/", views.gallery_photo_media, name="gallery_photo_media"),
     path("galleries/photos/<int:pk>/action/", views.gallery_photo_action, name="gallery_photo_action"),
+    path("galleries/<int:pk>/photos/bulk/", views.gallery_photo_bulk_action, name="gallery_photo_bulk_action"),
+    path("galleries/<int:pk>/photos/bulk-download/", views.gallery_photo_bulk_download, name="gallery_photo_bulk_download"),
     path("galleries/<int:pk>/edit/", views.edit_gallery, name="edit_gallery"),
     path("galleries/<int:pk>/preview/", views.gallery_preview, name="gallery_preview"),
     path("galleries/<int:gallery_pk>/albums/create/", views.create_album, name="create_album"),
@@ -41,10 +58,10 @@ urlpatterns = [
     path("website/", views.module_placeholder, {"module_key": "website"}, name="website"),
     path("marketplace/", views.module_placeholder, {"module_key": "marketplace"}, name="marketplace"),
     path("orders/", views.module_placeholder, {"module_key": "orders"}, name="orders"),
-    path("billing/", views.module_placeholder, {"module_key": "billing"}, name="billing"),
+    path("billing/", billing_account, name="billing"),
     path("analytics/", views.analytics_overview, name="analytics"),
     path("marketing/", views.module_placeholder, {"module_key": "marketing"}, name="marketing"),
-    path("profile/", views.module_placeholder, {"module_key": "profile"}, name="profile"),
+    path("profile/", photographer_profile, name="profile"),
     path("settings/", views.module_placeholder, {"module_key": "settings"}, name="settings"),
     path("crm/", views.clients_crm, name="crm"),
     path("crm/leads/add/", views.add_lead, name="add_lead"),
@@ -72,10 +89,8 @@ urlpatterns = [
     path("contracts/<int:pk>/preview/", views.contract_preview, name="contract_preview"),
     path("contracts/<int:pk>/send/", views.contract_send, name="contract_send"),
     path("contracts/<int:pk>/signed-pdf/", views.signed_contract_pdf, name="signed_contract_pdf"),
-    path("contracts/<int:pk>/signed-pdf/download/", views.signed_contract_pdf,
-         {"disposition": "attachment"}, name="signed_contract_pdf_download"),
-    path("contracts/<int:pk>/signed-pdf/retry/", views.signed_contract_pdf_retry,
-         name="signed_contract_pdf_retry"),
+    path("contracts/<int:pk>/signed-pdf/download/", views.signed_contract_pdf, {"disposition": "attachment"}, name="signed_contract_pdf_download"),
+    path("contracts/<int:pk>/signed-pdf/retry/", views.signed_contract_pdf_retry, name="signed_contract_pdf_retry"),
     path("settings/contract-templates/", views.contract_templates, name="contract_templates"),
     path("settings/contract-templates/create/", views.contract_template_form, name="contract_template_create"),
     path("settings/contract-templates/<int:pk>/", views.contract_template_form, name="contract_template_edit"),
@@ -106,7 +121,7 @@ urlpatterns = [
     path("revenue/", views.module_placeholder, {"module_key": "revenue"}, name="revenue"),
     path("reviews/", views.module_placeholder, {"module_key": "reviews"}, name="reviews"),
     path("referrals/", views.module_placeholder, {"module_key": "referrals"}, name="referrals"),
-    path("workflows/", views.module_placeholder, {"module_key": "workflows"}, name="workflows"),
+    path("workflows/", automation_dashboard, name="workflows"),
     path("ai-assistant/", views.module_placeholder, {"module_key": "ai_assistant"}, name="ai_assistant"),
     path("team/", views.team_placeholder, {"page_key": "team_overview"}, name="team_overview"),
     path("team/members/", views.team_placeholder, {"page_key": "team_members"}, name="team_members"),
@@ -119,5 +134,5 @@ urlpatterns = [
     path("equipment/", views.module_placeholder, {"module_key": "equipment"}, name="equipment"),
     path("tasks/", views.module_placeholder, {"module_key": "tasks"}, name="tasks"),
     path("notifications/", views.module_placeholder, {"module_key": "notifications"}, name="notifications"),
-    path("help/", views.module_placeholder, {"module_key": "help"}, name="help"),
+    path("help/", workspace_help, name="help"),
 ]

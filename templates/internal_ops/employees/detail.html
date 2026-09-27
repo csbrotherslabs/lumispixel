@@ -1,0 +1,21 @@
+{% extends "internal_ops/base.html" %}
+{% load static %}
+{% block title %}{{ target_employee.user.display_name }} | LumisPixel Internal{% endblock %}
+{% block page_title %}Employee Profile{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_employees.css' %}">{% endblock %}
+{% block content %}
+<div class="emp-page">
+    {% if messages %}{% for message in messages %}<div class="emp-message">{{ message }}</div>{% endfor %}{% endif %}
+    <section class="emp-head"><div class="emp-profile-head"><span class="emp-avatar">{{ target_employee.user.first_name|default:target_employee.user.email|slice:":1"|upper }}</span><div><span class="li-kicker">{{ target_employee.employee_id }}</span><h1>{{ target_employee.user.display_name }}</h1><p>{{ target_employee.title|default:"LumisPixel employee" }} · {{ target_employee.department.name|default:"No department" }}</p></div></div><div class="emp-actions"><a class="emp-btn" href="{% url 'internal_ops:employees' %}"><i class="bi bi-arrow-left"></i> Directory</a>{% if can_manage_employees %}<form method="post" action="{% url 'internal_ops:employee_resend_invitation' target_employee.employee_id %}">{% csrf_token %}<button class="emp-btn" type="submit"><i class="bi bi-envelope"></i> Resend access email</button></form><a class="emp-btn is-primary" href="{% url 'internal_ops:employee_edit' target_employee.employee_id %}"><i class="bi bi-pencil"></i> Manage employee</a>{% endif %}</div></section>
+    <div class="emp-detail-grid">
+        <div class="emp-page">
+            <section class="emp-card"><div class="emp-section-title"><h2>Employee information</h2><span class="emp-chip is-{{ target_employee.status }}">{{ target_employee.get_status_display }}</span></div><dl class="emp-info"><div><dt>Email</dt><dd>{{ target_employee.user.email }}</dd></div><div><dt>Employee ID</dt><dd>{{ target_employee.employee_id }}</dd></div><div><dt>Department</dt><dd>{{ target_employee.department.name|default:"—" }}</dd></div><div><dt>Internal role</dt><dd>{{ target_employee.role.name|default:"—" }}</dd></div><div><dt>Manager</dt><dd>{% if target_employee.manager %}<a href="{% url 'internal_ops:employee_detail' target_employee.manager.employee_id %}">{{ target_employee.manager.user.display_name }}</a>{% else %}—{% endif %}</dd></div><div><dt>Hire date</dt><dd>{{ target_employee.hire_date|date:"M j, Y"|default:"—" }}</dd></div><div><dt>Last internal access</dt><dd>{{ target_employee.last_internal_access_at|date:"M j, Y g:i A"|default:"Never" }}</dd></div><div><dt>Internal access</dt><dd>{% if target_employee.can_access_internal %}Enabled{% else %}Disabled{% endif %}</dd></div></dl></section>
+            <section class="emp-card"><div class="emp-section-title"><h2>Direct reports</h2><small>{{ direct_reports|length }}</small></div><div class="emp-list">{% for report in direct_reports %}<a href="{% url 'internal_ops:employee_detail' report.employee_id %}"><span><strong>{{ report.user.display_name }}</strong><br><small>{{ report.title|default:report.department.name|default:"Employee" }}</small></span><i class="bi bi-arrow-right"></i></a>{% empty %}<div class="emp-empty">No direct reports.</div>{% endfor %}</div></section>
+        </div>
+        <aside class="emp-page">
+            <section class="emp-card"><div class="emp-section-title"><h2>Access policy</h2></div><p class="emp-notice">Internal access is available only while the employee status is <strong>Active</strong> and the underlying LumisPixel account can sign in. Suspending or terminating an employee immediately disables Internal access without deleting their audit history.</p></section>
+            {% if can_manage_employees %}<section class="emp-card"><div class="emp-section-title"><h2>Employee audit history</h2></div><div class="emp-audit">{% for event in audit_events %}<article><div><strong>{{ event.summary }}</strong><p>{{ event.action }}{% if event.actor %} · {{ event.actor.user.display_name }}{% endif %}{% if event.reason %}<br>{{ event.reason }}{% endif %}</p></div><time>{{ event.created_at|date:"M j, g:i A" }}</time></article>{% empty %}<div class="emp-empty">No employee changes recorded yet.</div>{% endfor %}</div></section>{% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}

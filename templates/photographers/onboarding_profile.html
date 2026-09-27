@@ -1,4 +1,5 @@
 {% extends "photographers/onboarding_base.html" %}
+{% load static %}
 {% block title %}Personal and Business Profile | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
 <div class="lumis-onboarding__intro text-center">
@@ -15,8 +16,8 @@
     {% include "photographers/_profile_form_field.html" with field=form.last_name %}
     {% include "photographers/_profile_form_field.html" with field=form.phone_number %}
     {% include "photographers/_profile_form_field.html" with field=form.website %}
-    {% include "photographers/_profile_form_field.html" with field=form.country %}
-    {% include "photographers/_profile_form_field.html" with field=form.state %}
+    {% include "photographers/_profile_form_field.html" with field=form.country_record %}
+    {% include "photographers/_profile_form_field.html" with field=form.administrative_region %}
     {% include "photographers/_profile_form_field.html" with field=form.city %}
     {% include "photographers/_profile_form_field.html" with field=form.timezone %}
     {% include "photographers/_profile_form_field.html" with field=form.business_logo full_width=True current_file=profile.business_logo current_label="Current business logo" %}
@@ -28,3 +29,4 @@
   </div>
 </form>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/location_selects.js' %}"></script>{% endblock %}

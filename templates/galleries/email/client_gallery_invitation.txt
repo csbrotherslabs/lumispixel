@@ -1,0 +1,14 @@
+Hi {{ invitation.client_name }},
+
+{{ studio_name }} has shared a private LumisPixel gallery with you:
+
+{{ gallery.name }}
+
+Open your gallery:
+{{ gallery_url }}
+
+{% if gallery.expires_at %}This gallery is available until {{ gallery.expires_at|date:"F j, Y" }}.
+
+{% endif %}This secure link is tied to your invitation. Please avoid forwarding it unless your photographer has asked you to share access.
+
+Delivered securely with LumisPixel.

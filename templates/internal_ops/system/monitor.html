@@ -1,0 +1,52 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}System Monitor | LumisPixel Internal{% endblock %}
+{% block page_title %}System Monitor{% endblock %}
+{% block content %}
+<section class="li-page-head">
+  <div><span class="li-kicker">Operations health</span><h1>System monitoring & alerts</h1><p>Track support operations, platform configuration, and actionable internal alerts from one place.</p></div>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="run_checks"><button class="li-primary-button" type="submit"><i class="bi bi-arrow-repeat"></i> Run checks</button></form>
+</section>
+
+<section class="li-metric-grid">
+  <article><span>Open alerts</span><strong>{{ open_count }}</strong></article>
+  <article><span>Critical</span><strong>{{ critical_count }}</strong></article>
+  <article><span>Warnings</span><strong>{{ warning_count }}</strong></article>
+  <article><span>Resolved</span><strong>{{ resolved_count }}</strong></article>
+</section>
+
+{% if checks %}
+<section class="li-panel" style="margin-top:22px;">
+  <div class="li-panel__head"><div><span class="li-kicker">Latest run</span><h2>Health checks</h2></div><small>{{ checks|length }} checks</small></div>
+  <div class="li-health-list">
+    {% for check in checks %}
+    <article class="li-health-item {% if check.healthy %}is-healthy{% else %}is-{{ check.severity }}{% endif %}">
+      <div class="li-health-icon"><i class="bi {% if check.healthy %}bi-check-circle{% elif check.severity == 'critical' %}bi-exclamation-octagon{% else %}bi-exclamation-triangle{% endif %}"></i></div>
+      <div><strong>{{ check.label }}</strong><span>{{ check.component }}</span><p>{{ check.detail }}</p></div>
+      <em>{% if check.healthy %}Healthy{% else %}{{ check.severity|title }}{% endif %}</em>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="li-panel" style="margin-top:22px;">
+  <div class="li-panel__head"><div><span class="li-kicker">Operational alerts</span><h2>Alert history</h2></div><small>Newest activity first</small></div>
+  <div class="li-alert-list">
+    {% for alert in alerts %}
+    <article class="li-alert-card is-{{ alert.severity }}">
+      <div class="li-alert-card__top"><div><span class="li-alert-severity">{{ alert.get_severity_display }}</span><strong>{{ alert.title }}</strong></div><span class="li-alert-status">{{ alert.get_status_display }}</span></div>
+      <p>{{ alert.message }}</p>
+      <div class="li-alert-meta"><span>{{ alert.component }}</span><span>First seen {{ alert.first_seen_at|date:"M j, Y g:i A" }}</span><span>Last seen {{ alert.last_seen_at|date:"M j, Y g:i A" }}</span></div>
+      <div class="li-alert-actions">
+        {% if alert.status == 'open' %}<form method="post" action="{% url 'internal_ops:system_alert_action' alert.pk %}">{% csrf_token %}<input type="hidden" name="action" value="acknowledge"><button type="submit">Acknowledge</button></form>{% endif %}
+        {% if alert.status != 'resolved' %}<form method="post" action="{% url 'internal_ops:system_alert_action' alert.pk %}">{% csrf_token %}<input type="hidden" name="action" value="resolve"><button type="submit">Resolve</button></form>{% else %}<form method="post" action="{% url 'internal_ops:system_alert_action' alert.pk %}">{% csrf_token %}<input type="hidden" name="action" value="reopen"><button type="submit">Reopen</button></form>{% endif %}
+      </div>
+    </article>
+    {% empty %}<div class="li-empty-state">No system alerts have been recorded yet. Run checks to establish the first health snapshot.</div>{% endfor %}
+  </div>
+</section>
+
+<style>
+.li-health-list,.li-alert-list{display:grid;gap:12px}.li-health-item{display:grid;grid-template-columns:42px 1fr auto;gap:14px;align-items:center;padding:16px;border:1px solid #e7e9ed;border-radius:14px;background:#fff}.li-health-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#f5f6f8}.li-health-item strong{display:block;font-size:13px}.li-health-item span,.li-health-item p{font-size:11px;color:#777e89}.li-health-item p{margin:4px 0 0}.li-health-item em{font-style:normal;font-size:10px;font-weight:800;text-transform:uppercase}.li-health-item.is-healthy em{color:#24834a}.li-health-item.is-warning em{color:#a46a00}.li-health-item.is-critical em{color:#c82539}.li-alert-card{padding:18px;border:1px solid #e6e8ec;border-left-width:4px;border-radius:14px;background:#fff}.li-alert-card.is-warning{border-left-color:#d99a17}.li-alert-card.is-critical{border-left-color:#d7193f}.li-alert-card.is-info{border-left-color:#64748b}.li-alert-card__top{display:flex;justify-content:space-between;gap:18px}.li-alert-card__top>div{display:grid;gap:5px}.li-alert-severity{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#d7193f}.li-alert-status{font-size:10px;font-weight:800;background:#f4f5f7;padding:6px 9px;border-radius:999px;height:max-content}.li-alert-card p{font-size:12px;line-height:1.6;color:#606773}.li-alert-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:10px;color:#8a9099}.li-alert-actions{display:flex;gap:8px;margin-top:14px}.li-alert-actions form{margin:0}.li-alert-actions button,.li-primary-button{border:0;border-radius:9px;background:#171b24;color:#fff;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer}.li-primary-button{padding:11px 15px}.li-empty-state{padding:24px;color:#7b818b;font-size:12px;border:1px dashed #dfe2e7;border-radius:12px}@media(max-width:720px){.li-health-item{grid-template-columns:42px 1fr}.li-health-item em{grid-column:2}.li-alert-card__top{flex-direction:column}.li-alert-meta{display:grid}}
+</style>
+{% endblock %}

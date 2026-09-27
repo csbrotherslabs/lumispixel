@@ -1,125 +1,30 @@
-{% load static %}
+{% load static notification_tags %}
 <!-- Main Header -->
 <header class="header color-fixed {% if request.resolver_match.view_name == 'core:index' %}navbar--transparent{% else %}navbar--sticky{% endif %}">
-    <div class="header-inner">
-        <div class="container-fluid pe-0">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="header_left_part d-flex align-items-center">
-                    <div class="logo">
-                        <a href="{% url 'core:index' %}" class="light_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a>
-                        <a href="{% url 'core:index' %}" class="dark_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a>
-                    </div>
-                </div>
-
-                <div class="header_center_part d-none d-xxl-block">
-                    <nav class="mainnav" aria-label="Primary navigation">
-                        <ul class="main-menu">
-                            <li class="menu-item"><a href="{% url 'core:index' %}">Home</a></li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:products' %}" aria-haspopup="true">Products</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:for_photographers' %}">For Photographers</a></li>
-                                    <li class="menu-item"><a href="{% url 'clients:for_clients' %}">For Clients</a></li>
-                                    <li class="menu-item"><a href="{% url 'ai_engine:photo_search' %}">AI Photo Search</a></li>
-                                    <li class="menu-item"><a href="{% url 'galleries:client_galleries' %}">Client Galleries</a></li>
-                                    <li class="menu-item"><a href="{% url 'ai_engine:editing_culling' %}">AI Editing &amp; Culling</a></li>
-                                    <li class="menu-item"><a href="{% url 'photographers:websites' %}">Photographer Websites</a></li>
-                                    <li class="menu-item"><a href="{% url 'marketplace:find_photographer' %}">Find a Photographer</a></li>
-                                </ul>
-                            </li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:solutions' %}" aria-haspopup="true">Solutions</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:solution_wedding_photography' %}">Wedding Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_portrait_photography' %}">Portrait Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_sports_photography' %}">Sports Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_school_photography' %}">School Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_corporate_photography' %}">Corporate Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_event_photography' %}">Event Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_real_estate_photography' %}">Real Estate Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_commercial_photography' %}">Commercial Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_studio_photography' %}">Studio Photography</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:solution_destination_photography' %}">Destination Photography</a></li>
-                                </ul>
-                            </li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:business_hub' %}" aria-haspopup="true">Business Hub</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_dashboard' %}">Business Dashboard</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_client_crm' %}">Client CRM</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_booking_calendar' %}">Booking &amp; Calendar</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_ai_business_assistant' %}">AI Business Assistant</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_contracts' %}">Contracts</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_invoices_payments' %}">Invoices &amp; Payments</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_workflow_automation' %}">Workflow Automation</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_analytics_reports' %}">Analytics &amp; Reports</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_marketing_growth' %}">Marketing &amp; Growth</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:business_hub_team_operations' %}">Team &amp; Operations</a></li>
-                                </ul>
-                            </li>
-                            <li class="menu-item"><a href="{% url 'core:pricing' %}">Pricing</a></li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:resources' %}" aria-haspopup="true">Resources</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:resources_blog' %}">Blog / Articles</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_photography_guides' %}">Photography Guides</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_business_guides' %}">Business Guides</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_ai_learning_center' %}">AI Learning Center</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_templates' %}">Templates</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_help_center' %}">Help Center / Documentation</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_video_tutorials' %}">Video Tutorials</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_webinars_events' %}">Webinars &amp; Events</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_success_stories' %}">Success Stories / Case Studies</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_free_downloads' %}">Free Downloads</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_release_notes' %}">Release Notes / Product Updates</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:resources_learning_hub' %}">Newsletter / Learning Hub</a></li>
-                                </ul>
-                            </li>
-                            <li class="menu-item menu-item-has-children"><a href="{% url 'core:company' %}" aria-haspopup="true">Company</a>
-                                <ul class="sub-menu nav-mega-menu" data-lenis-prevent>
-                                    <li class="menu-item"><a href="{% url 'core:about' %}">About</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:our_story' %}">Our Story</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:careers' %}">Careers</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:partners' %}">Partners</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:contact' %}">Contact</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:privacy_policy' %}">Privacy Policy</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:terms_of_service' %}">Terms of Service</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:cookie_policy' %}">Cookie Policy</a></li>
-                                    <li class="menu-item"><a href="{% url 'core:accessibility' %}">Accessibility</a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-
-                <div class="header_right_part d-flex align-items-center">
-                    <div class="nav-account d-none d-xxl-flex align-items-center">
-                        {% if request.user.is_authenticated %}
-                            <a class="nav-start-free" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a>
-                            <div class="nav-user-menu">
-                                <button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown">
-                                    <img src="{% static 'img/default-avatar.svg' %}" class="nav-avatar" alt="" aria-hidden="true">
-                                    <span class="nav-user-copy">
-                                        <span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span>
-                                        <span class="nav-user-role">{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span>
-                                    </span>
-                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                                </button>
-                                <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent>
-                                    <li><a href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">{% if request.user.is_client %}Dashboard{% else %}Workspace{% endif %}</a></li>
-                                    <li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>
-                                    <li><a href="{% url 'photographer_workspace:settings' %}">Account Settings</a></li>
-                                    <li><a href="{% url 'notifications:index' %}">Notifications</a></li>
-                                    <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
-                                    <li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li>
-                                </ul>
-                            </div>
-                        {% else %}
-                            <a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a>
-                            <a class="nav-start-free" href="{% url 'accounts:get-started' %}">Get Started</a>
-                        {% endif %}
-                    </div>
-                    <button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false"><span class="aside-open--inner" aria-hidden="true"><span></span><span></span><span></span></span></button>
-                    <button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation"><i class="bi bi-list"></i></button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="header-inner"><div class="container-fluid pe-0"><div class="d-flex align-items-center justify-content-between">
+        <div class="header_left_part d-flex align-items-center"><div class="logo"><a href="{% url 'core:index' %}" class="light_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a><a href="{% url 'core:index' %}" class="dark_logo"><img src="/static/img/lumis_logo_v1.png" alt="LumisPixel" class="lumis-company-logo"></a></div></div>
+        <div class="header_center_part d-none d-xxl-block"><nav class="mainnav" aria-label="Primary navigation"><ul class="main-menu">
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:index' %} active current{% endif %}"><a href="{% url 'core:index' %}"{% if request.resolver_match.view_name == 'core:index' %} aria-current="page"{% endif %}>Home</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:products' %} active current{% endif %}"><a href="{% url 'core:products' %}"{% if request.resolver_match.view_name == 'core:products' %} aria-current="page"{% endif %}>Products</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:solutions' %} active current{% endif %}"><a href="{% url 'core:solutions' %}"{% if request.resolver_match.view_name == 'core:solutions' %} aria-current="page"{% endif %}>Solutions</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:business_hub' %} active current{% endif %}"><a href="{% url 'core:business_hub' %}"{% if request.resolver_match.view_name == 'core:business_hub' %} aria-current="page"{% endif %}>Business Hub</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:pricing' %} active current{% endif %}"><a href="{% url 'core:pricing' %}"{% if request.resolver_match.view_name == 'core:pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:resources' or request.resolver_match.view_name == 'core:resources_blog' or request.resolver_match.view_name == 'core:resources_photography_guides' or request.resolver_match.view_name == 'core:resources_business_guides' or request.resolver_match.view_name == 'core:resources_ai_learning_center' or request.resolver_match.view_name == 'core:resources_learning_hub' or request.resolver_match.view_name == 'core:resources_templates' or request.resolver_match.view_name == 'core:resources_free_downloads' or request.resolver_match.view_name == 'core:resources_help_center' or request.resolver_match.view_name == 'support_help_center' or request.resolver_match.view_name == 'core:resources_newsletter' or request.resolver_match.view_name == 'core:resources_video_tutorials' or request.resolver_match.view_name == 'core:resources_webinars_events' or request.resolver_match.view_name == 'core:resources_success_stories' or request.resolver_match.view_name == 'core:resources_release_notes' %} active current{% endif %}"><a href="{% url 'core:resources' %}">Resources</a></li>
+          <li class="menu-item{% if request.resolver_match.view_name == 'core:company' or request.resolver_match.view_name == 'core:about' or request.resolver_match.view_name == 'core:our_story' or request.resolver_match.view_name == 'core:careers' or request.resolver_match.view_name == 'core:partners' or request.resolver_match.view_name == 'core:contact' or request.resolver_match.view_name == 'core:privacy_policy' or request.resolver_match.view_name == 'core:terms_of_service' or request.resolver_match.view_name == 'core:cookie_policy' or request.resolver_match.view_name == 'core:accessibility' %} active current{% endif %}"><a href="{% url 'core:company' %}">Company</a></li>
+        </ul></nav></div>
+        <div class="header_right_part d-flex align-items-center"><div class="nav-account d-none d-xxl-flex align-items-center">
+        {% if request.user.is_authenticated %}{% unread_notifications as nav_unread_count %}
+          {% if can_access_internal_workspace %}<a class="nav-workspace-link" href="{% url 'internal_ops:dashboard' %}"><i class="bi bi-shield-lock"></i>LumisPixel Internal</a>{% else %}<a class="nav-workspace-link" href="{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}{% url 'clients:dashboard' %}{% elif request.user.can_use_photographer_workspace %}{% url 'photographer_workspace:dashboard' %}{% else %}{% url 'clients:dashboard' %}{% endif %}"><i class="bi bi-grid"></i>{% if request.user.last_active_workspace == 'client' and request.user.has_client_profile %}Dashboard{% else %}Workspace{% endif %}</a>{% endif %}
+          <a class="nav-notification-link" href="{% url 'notifications:index' %}" aria-label="Notifications{% if nav_unread_count %}, {{ nav_unread_count }} unread{% endif %}"><i class="bi bi-bell"></i>{% if nav_unread_count %}<span>{% if nav_unread_count > 99 %}99+{% else %}{{ nav_unread_count }}{% endif %}</span>{% endif %}</a>
+          <div class="nav-user-menu"><button type="button" class="nav-user-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="nav-user-dropdown"><img src="{% if request.user.has_client_profile and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.has_photographer_profile and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="nav-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo"><span class="nav-user-copy"><span class="nav-user-name">{{ request.user.first_name|default:request.user.get_username }}</span></span><i class="bi bi-chevron-down"></i></button>
+          <ul class="nav-user-dropdown" id="nav-user-dropdown" data-lenis-prevent><li class="nav-user-dropdown__identity"><strong>{% if request.user.first_name %}{{ request.user.first_name }} {{ request.user.last_name }}{% else %}{{ request.user.get_username }}{% endif %}</strong><span>LumisPixel account</span></li>
+          {% if can_access_internal_workspace %}<li><a href="{% url 'internal_ops:dashboard' %}">LumisPixel Internal</a></li>{% endif %}
+          {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:profile' %}">My Profile</a></li>{% endif %}
+          <li><a href="{% url 'accounts:account-settings' %}">Account Settings</a></li>
+          {% if request.user.can_use_photographer_workspace %}<li><a href="{% url 'photographer_workspace:settings' %}">Workspace Settings</a></li>{% endif %}
+          <li><a href="{% url 'notifications:index' %}">Notifications{% if nav_unread_count %}<span class="nav-user-dropdown__count">{{ nav_unread_count }}</span>{% endif %}</a></li><li><a href="{% url 'core:help_center' %}">Help Center</a></li><li><form class="nav-logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="nav-logout-button">Sign Out</button></form></li></ul></div>
+        {% else %}<a class="nav-signin" href="{% url 'accounts:login' %}">Sign In</a><a class="nav-start-free" href="{% url 'accounts:get-started' %}">Get Started</a>{% endif %}
+        </div><button type="button" class="aside_open wptb-element" aria-label="Open navigation menu" aria-expanded="false"><span class="aside-open--inner"><span></span><span></span><span></span></span></button><button type="button" class="mr_menu_toggle wptb-element d-xxl-none" aria-label="Open mobile navigation"><i class="bi bi-list"></i></button></div>
+    </div></div></div>
 </header>
 <!-- End Main Header -->

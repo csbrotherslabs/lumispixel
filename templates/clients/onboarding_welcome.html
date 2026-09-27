@@ -1,12 +1,39 @@
 {% extends "clients/onboarding_base.html" %}
 {% block title %}Welcome to LumisPixel | Client Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="client-onboarding-welcome-title">Welcome to LumisPixel</h1>
-  <p class="wptb-item--description">LumisPixel helps you find photos from events using a selfie or an event code, then save favorites and purchase downloads when galleries are ready.</p>
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-    <a class="btn lumis-auth-primary" href="{% url 'clients:onboarding-profile' %}"><span class="btn-wrap"><span class="text-first">Get Started</span></span></a>
-    <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-skip' %}"><span class="btn-wrap"><span class="text-first">Skip for Now</span></span></a>
+<div class="client-onboarding-v2__welcome">
+  <div class="client-onboarding-v2__welcome-copy">
+    <span class="client-onboarding-v2__kicker">Welcome to LumisPixel</span>
+    <h1 id="client-onboarding-welcome-title">Your photos.<br><em>Finally easy to find.</em></h1>
+    <p>Discover event photos connected to you, keep your favorites organized, and access every purchase from one secure account.</p>
+
+    <div class="client-onboarding-v2__welcome-points">
+      <span><i class="bi bi-check2" aria-hidden="true"></i>No complicated searching</span>
+      <span><i class="bi bi-check2" aria-hidden="true"></i>No scattered gallery links</span>
+      <span><i class="bi bi-check2" aria-hidden="true"></i>No lost favorites</span>
+    </div>
+
+    <div class="client-onboarding-v2__actions">
+      <a class="client-onboarding-v2__primary" href="{% url 'clients:onboarding-profile' %}">Set Up My Account <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      <a class="client-onboarding-v2__quiet" href="{% url 'clients:onboarding-skip' %}">I’ll finish later</a>
+    </div>
+  </div>
+
+  <div class="client-onboarding-v2__experience" aria-label="Client photo experience preview">
+    <div class="client-onboarding-v2__experience-top">
+      <span>My photo space</span>
+      <i class="bi bi-stars" aria-hidden="true"></i>
+    </div>
+    <div class="client-onboarding-v2__photo-stack" aria-hidden="true">
+      <span class="client-onboarding-v2__photo-card client-onboarding-v2__photo-card--back"></span>
+      <span class="client-onboarding-v2__photo-card client-onboarding-v2__photo-card--middle"></span>
+      <span class="client-onboarding-v2__photo-card client-onboarding-v2__photo-card--front"><i class="bi bi-person-bounding-box"></i><b>Match found</b></span>
+    </div>
+    <div class="client-onboarding-v2__experience-stats">
+      <div><strong>Fast</strong><small>Photo discovery</small></div>
+      <div><strong>Private</strong><small>Account access</small></div>
+      <div><strong>Simple</strong><small>Saved moments</small></div>
+    </div>
   </div>
 </div>
 {% endblock %}

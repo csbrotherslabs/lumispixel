@@ -10,7 +10,7 @@
     <div><span>{{ gallery.event_date|date:"F j, Y"|default:"Client gallery" }}</span><h2 id="gallery-preview-title">{{ gallery.name }}</h2>{% if gallery.description %}<p>{{ gallery.description }}</p>{% endif %}<small>{{ photos|length }} photo{{ photos|length|pluralize }}</small></div>
   </section>
   <section class="lp-gallery-preview__photos" aria-label="Gallery photos">
-    {% for photo in photos %}<figure><img src="{% url 'photographer_workspace:gallery_photo_media' photo.pk %}" alt="{{ photo.original_name }}" loading="lazy"></figure>{% empty %}<div class="lp-gallery-preview__empty"><i class="bi bi-images" aria-hidden="true"></i><h2>No photos to preview yet</h2><p>Upload photos to see the client-facing collection take shape.</p><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}?gallery={{ gallery.pk }}">Upload Photos</a></div>{% endfor %}
+    {% for photo in photos %}<figure><img src="{{ photo.delivery_url }}" alt="{{ photo.original_name }}" loading="lazy"></figure>{% empty %}<div class="lp-gallery-preview__empty"><i class="bi bi-images" aria-hidden="true"></i><h2>No photos to preview yet</h2><p>Upload photos to see the client-facing collection take shape.</p><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:gallery_upload_queue' %}?gallery={{ gallery.pk }}">Upload Photos</a></div>{% endfor %}
   </section>
 </div>
 {% endblock %}

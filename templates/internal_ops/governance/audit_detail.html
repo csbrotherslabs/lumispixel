@@ -1,0 +1,11 @@
+{% extends "internal_ops/base.html" %}
+{% load static %}
+{% block title %}Audit Event | LumisPixel Internal{% endblock %}
+{% block page_title %}Audit Event{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/internal_governance.css' %}">{% endblock %}
+{% block content %}
+<div class="gov-page"><div class="gov-breadcrumb"><a href="{% url 'internal_ops:audit' %}">Audit trail</a> / Event {{ event.pk }}</div>
+<section class="gov-head"><div><span class="li-kicker">{{ event.get_category_display }}</span><h1>{{ event.summary }}</h1><p>{{ event.created_at|date:"F j, Y g:i:s A" }} · <code>{{ event.action }}</code></p></div></section>
+<div class="gov-detail-grid"><section class="gov-card"><div class="gov-info"><div><dt>Actor</dt><dd>{% if event.actor %}{{ event.actor.user.display_name }}<br>{{ event.actor.user.email }}{% else %}System / profile-less administrator{% endif %}</dd></div><div><dt>Category</dt><dd>{{ event.get_category_display }}</dd></div><div><dt>Target type</dt><dd>{{ event.target_type|default:"—" }}</dd></div><div><dt>Target ID</dt><dd>{{ event.target_id|default:"—" }}</dd></div></div>{% if event.reason %}<h3>Reason</h3><p>{{ event.reason|linebreaksbr }}</p>{% endif %}</section><aside class="gov-card"><span class="li-kicker">Metadata</span><h2>Event payload</h2><pre class="gov-code">{{ metadata_pretty }}</pre></aside></div>
+</div>
+{% endblock %}

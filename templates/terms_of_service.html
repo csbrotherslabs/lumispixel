@@ -4,10 +4,11 @@
 {% block title %}Terms of Service | LumisPixel{% endblock %}
 {% block meta_description %}Review the terms that govern your use of LumisPixel and the responsibilities of users and our platform.{% endblock %}
 {% block body_class %}marketing-page terms-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/terms-of-service.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/terms-of-service.css' %}"><link rel="stylesheet" href="{% static 'css/company_detail_refine.css' %}"><link rel="stylesheet" href="{% static 'css/company_policy_concise.css' %}">{% endblock %}
 
 {% block content %}
 <section class="terms-hero" aria-labelledby="terms-title"><div class="container terms-hero__inner">
+  <a class="company-back" href="{% url 'core:company' %}"><i class="bi bi-arrow-left"></i> All Company</a>
   <span class="terms-eyebrow">Legal</span>
   <h1 id="terms-title">Terms of Service</h1>
   <p>These terms govern your use of LumisPixel and outline the rights and responsibilities of both users and our platform.</p>

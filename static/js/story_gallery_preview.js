@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",()=>{const input=document.querySelector("[data-story-density]"),grid=document.querySelector("[data-story-grid]"),out=document.querySelector("[data-story-output]");if(!input||!grid)return;input.addEventListener("input",()=>{grid.style.setProperty("--columns",input.value);if(out)out.textContent=input.value})});

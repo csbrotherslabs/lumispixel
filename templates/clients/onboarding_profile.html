@@ -1,36 +1,107 @@
 {% extends "clients/onboarding_base.html" %}
+{% load static %}
 {% block title %}Complete Profile | Client Onboarding{% endblock %}
+{% block extra_css %}
+{{ block.super }}
+<style>
+  .client-profile-form__field #id_timezone,
+  .client-profile-form__field #id_timezone + .nice-select {
+    line-height: 42px;
+  }
+  .client-profile-form__field #id_timezone + .nice-select .current {
+    display: inline-flex;
+    align-items: center;
+    height: 42px;
+    line-height: normal;
+  }
+  .client-profile-form__field #id_timezone + .nice-select .list {
+    max-height: min(320px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+</style>
+{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <h1 class="wptb-item--title" id="client-onboarding-profile-title">Complete Profile</h1>
-  <p class="wptb-item--description">Tell us a little about you so LumisPixel can personalize your photo discovery experience.</p>
-</div>
-<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
-  {% csrf_token %}
-  {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
-  <div class="row">
-    {% for field in form %}
-      <div class="{% if field.name == 'marketing_emails' %}col-12{% else %}col-lg-6 col-md-6{% endif %} mb-4">
-        <div class="form-group{% if field.name == 'marketing_emails' %} lumis-onboarding__check-row{% endif %}">
-          {% if field.name == 'marketing_emails' %}
-            {{ field }}
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% else %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
-            {{ field }}
-          {% endif %}
-          {% if field.help_text %}<div class="lumis-onboarding__help">{{ field.help_text }}</div>{% endif %}
-          {% if field.errors %}<div class="lumis-onboarding__error" id="{{ field.id_for_label }}-error" role="alert">{{ field.errors|striptags }}</div>{% endif %}
-        </div>
-      </div>
-    {% endfor %}
+<div class="client-onboarding-v2__profile-heading">
+  <div>
+    <span class="client-onboarding-v2__kicker">Make it yours</span>
+    <h1 id="client-onboarding-profile-title">Build your client profile.</h1>
+    <p>Accurate details help LumisPixel personalize photo discovery, dates, and gallery access.</p>
   </div>
-  {% if profile.profile_photo %}
-    <p class="lumis-onboarding__help">Current photo: <a href="{{ profile.profile_photo.url }}">{{ profile.profile_photo.name }}</a></p>
-  {% endif %}
-  <div class="lumis-onboarding__actions lumis-auth-actions lumis-auth-actions--centered">
-    <a class="btn lumis-auth-secondary" href="{% url 'clients:onboarding-welcome' %}"><span class="btn-wrap"><span class="text-first">Back</span></span></a>
-    <button class="btn lumis-auth-primary" type="submit"><span class="btn-wrap"><span class="text-first">Continue</span></span></button>
+  <span class="client-onboarding-v2__required-note"><b>*</b> Required fields</span>
+</div>
+
+<form class="client-profile-form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="client-profile-form__alert" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.non_field_errors|striptags }}</div>{% endif %}
+
+  <div class="client-profile-form__section-heading">
+    <span>01</span><div><h2>Your identity</h2><p>How your name appears across your account.</p></div>
+  </div>
+  <div class="client-profile-form__grid">
+    <div class="client-profile-form__field">
+      <label for="{{ form.first_name.id_for_label }}">First name <b>*</b></label>{{ form.first_name }}
+      {% if form.first_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.first_name.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.last_name.id_for_label }}">Last name <b>*</b></label>{{ form.last_name }}
+      {% if form.last_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.last_name.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field client-profile-form__field--full">
+      <label for="{{ form.display_name.id_for_label }}">Display name <span>Optional</span></label>{{ form.display_name }}
+      <small>The name photographers and galleries may show for you.</small>
+      {% if form.display_name.errors %}<div class="client-profile-form__error" role="alert">{{ form.display_name.errors|striptags }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="client-profile-form__section-heading">
+    <span>02</span><div><h2>Location & time</h2><p>Used to keep events and gallery activity relevant.</p></div>
+  </div>
+  <div class="client-profile-form__grid client-profile-form__grid--location">
+    <div class="client-profile-form__field">
+      <label for="{{ form.country_record.id_for_label }}">Country <b>*</b></label>{{ form.country_record }}
+      {% if form.country_record.errors %}<div class="client-profile-form__error" role="alert">{{ form.country_record.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.administrative_region.id_for_label }}">State or region <b>*</b></label>{{ form.administrative_region }}
+      {% if form.administrative_region.errors %}<div class="client-profile-form__error" role="alert">{{ form.administrative_region.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.city.id_for_label }}">City <b>*</b></label>{{ form.city }}
+      {% if form.city.errors %}<div class="client-profile-form__error" role="alert">{{ form.city.errors|striptags }}</div>{% endif %}
+    </div>
+    <div class="client-profile-form__field">
+      <label for="{{ form.timezone.id_for_label }}">Time zone <b>*</b></label>{{ form.timezone }}
+      {% if form.timezone.errors %}<div class="client-profile-form__error" role="alert">{{ form.timezone.errors|striptags }}</div>{% endif %}
+    </div>
+  </div>
+
+  <label class="client-profile-form__preference" for="{{ form.marketing_emails.id_for_label }}">
+    {{ form.marketing_emails }}
+    <span><strong>Product news and helpful tips</strong><small>Send me occasional LumisPixel updates and offers. You can change this anytime.</small></span>
+  </label>
+  {% if form.marketing_emails.errors %}<div class="client-profile-form__error" role="alert">{{ form.marketing_emails.errors|striptags }}</div>{% endif %}
+
+  <section class="client-profile-form__photo" aria-labelledby="profile-photo-label">
+    <div class="client-profile-form__photo-icon{% if profile.profile_photo %} client-profile-form__photo-icon--has-image{% endif %}" aria-hidden="true">
+      {% if profile.profile_photo %}
+        <img src="{{ profile.profile_photo.url }}" alt="">
+      {% else %}
+        <i class="bi bi-person"></i>
+      {% endif %}
+    </div>
+    <div class="client-profile-form__photo-copy">
+      <label id="profile-photo-label" for="{{ form.profile_photo.id_for_label }}">Profile photo <span>Optional</span></label>
+      <p>Add a clear photo so your client account feels personal and recognizable.</p>
+      <div class="client-profile-form__photo-control">{{ form.profile_photo }}</div>
+      {% if form.profile_photo.errors %}<div class="client-profile-form__error" role="alert">{{ form.profile_photo.errors|striptags }}</div>{% endif %}
+    </div>
+  </section>
+
+  <div class="client-onboarding-v2__footer-actions">
+    <a class="client-onboarding-v2__back" href="{% url 'clients:onboarding-welcome' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back</a>
+    <button class="client-onboarding-v2__primary" type="submit">Save & Continue <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
   </div>
 </form>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/location_selects.js' %}"></script>{% endblock %}

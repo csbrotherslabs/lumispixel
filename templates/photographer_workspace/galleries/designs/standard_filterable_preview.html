@@ -1,0 +1,51 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Standard Filterable — Gallery Preview</title>
+  <link rel="stylesheet" href="{% static 'css/standard_filterable_preview.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+  <aside class="lp-template-preview-bar">
+    <div><strong>Standard Filterable</strong><span>Template preview</span></div>
+    <div class="lp-template-preview-bar__actions">
+      <a href="{% url 'photographer_workspace:create_gallery' %}#gallery-design-title">Back to gallery builder</a>
+      <button type="button" data-use-design data-builder-url="{% url 'photographer_workspace:create_gallery' %}#gallery-design-title">Use This Design</button>
+    </div>
+  </aside>
+
+  <main class="sf-gallery">
+    <section class="sf-hero" style="background-image:url('{% static 'img/photographers/gallery/wedding-sunset-lake-overlook.webp' %}')">
+      <div class="sf-hero__shade"></div>
+      <div class="sf-hero__brand">YOUR BUSINESS NAME</div>
+      <div class="sf-hero__copy"><span>OUR WEDDING</span><h1>Sarah &amp; Michael</h1><p>June 14, 2025 &nbsp;|&nbsp; Lake Tahoe, CA</p><i></i><small>REAL MOMENTS. LASTING MEMORIES.</small></div>
+      <div class="sf-hero__qr"><div class="sf-qr-code" aria-hidden="true"><span></span><span></span><span></span></div><small>Scan to view<br>gallery</small></div>
+      <a href="#photographs" class="sf-hero__down" aria-label="View photographs"><i class="bi bi-chevron-down"></i></a>
+    </section>
+
+    <section class="sf-content" id="photographs">
+      <header class="sf-gallery-header">
+        <nav class="sf-filters" aria-label="Gallery sections">
+          <button class="is-active" data-filter="all">All</button><button data-filter="ceremony">Ceremony</button><button data-filter="portraits">Portraits</button><button data-filter="reception">Reception</button>
+        </nav>
+        <div class="sf-actions" aria-label="Gallery actions">
+          <button><i class="bi bi-heart"></i><span>Favorites</span></button><button><i class="bi bi-download"></i><span>Download</span></button><button><i class="bi bi-share"></i><span>Share</span></button>
+          <label class="sf-density"><span>Grid</span><input type="range" min="2" max="6" value="4" data-grid-density><output data-grid-output>4 columns</output></label>
+        </div>
+      </header>
+      <div class="sf-photo-grid" data-photo-grid style="--columns:4">
+        {% for n in "123456789012" %}
+        <article class="sf-photo" data-category="{% cycle 'ceremony' 'portraits' 'reception' %}">
+          <img class="sf-photo__image" src="{% static 'img/photographers/gallery/' %}{% cycle 'wedding-couple-black-and-white-portrait.webp' 'wedding-couple-sunset-walk.webp' 'wedding-cake-dessert-table.webp' 'bride-closeup-veil-portrait.webp' 'wedding-rings-floral-detail.webp' 'wedding-reception-sunset-table.webp' 'bride-back-veil-portrait.webp' 'bridal-bouquet-closeup.webp' 'wedding-couple-sunset-portrait.webp' 'wedding-sunset-lake-overlook.webp' 'wedding-couple-sunset-walk.webp' 'wedding-cake-dessert-table.webp' %}" alt="Wedding gallery preview photo" loading="lazy">
+          <div class="sf-photo__actions"><button aria-label="Favorite photo"><i class="bi bi-heart"></i></button><button aria-label="Comment on photo"><i class="bi bi-chat"></i></button><button aria-label="Download photo"><i class="bi bi-download"></i></button><button aria-label="Share photo"><i class="bi bi-share"></i></button></div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+  <script src="{% static 'js/standard_filterable_preview.js' %}" defer></script>
+</body>
+</html>

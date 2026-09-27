@@ -1,0 +1,64 @@
+/* Keep Event type as a true section title above the selectable event cards. */
+.lpw-event-form-layer .lpw-event-types{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 18px;
+  padding:78px 0 0;
+  border:0;
+}
+
+.lpw-event-form-layer .lpw-event-types legend{
+  position:absolute;
+  top:0;
+  left:0;
+  display:block;
+  float:none;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:0;
+  color:#25211f;
+  font-size:18px;
+  font-weight:750;
+  line-height:1.25;
+  letter-spacing:-.015em;
+  text-transform:none;
+}
+
+.lpw-event-form-layer .lpw-event-types legend::after{
+  display:block;
+  margin-top:5px;
+  color:#716964;
+  content:"Choose the type of event you want to add.";
+  font-size:12px;
+  font-weight:500;
+  line-height:1.5;
+  letter-spacing:0;
+}
+
+.lpw-event-form-layer .lpw-event-types label{
+  display:block;
+  width:auto;
+  margin:0;
+}
+
+.lpw-event-form-layer .lpw-event-types label>span{
+  min-height:58px;
+  padding:13px 14px;
+  border-radius:12px;
+}
+
+@media(max-width:760px){
+  .lpw-event-form-layer .lpw-event-types{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding-top:76px;
+  }
+}
+
+@media(max-width:440px){
+  .lpw-event-form-layer .lpw-event-types{
+    grid-template-columns:1fr;
+  }
+}

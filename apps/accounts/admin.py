@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django import forms
 
-from .models import ClientProfile, PhotographerProfile, PhotographerSpecialty, User
+from .models import AdministrativeRegion, ClientProfile, Country, LocationDatasetImport, PhotographerProfile, PhotographerSpecialty, PhotographerWebsiteEquipment, PhotographerWebsiteSection, User
 
 
 class UserCreationForm(forms.ModelForm):
@@ -80,3 +80,37 @@ class PhotographerSpecialtyAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ("name", "iso2", "iso3", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "iso2", "iso3")
+
+
+@admin.register(AdministrativeRegion)
+class AdministrativeRegionAdmin(admin.ModelAdmin):
+    list_display = ("name", "country", "code", "region_type", "is_active")
+    list_filter = ("country", "region_type", "is_active")
+    search_fields = ("name", "code", "country__name")
+
+
+@admin.register(LocationDatasetImport)
+class LocationDatasetImportAdmin(admin.ModelAdmin):
+    list_display = ("source", "revision", "country_count", "region_count", "imported_at")
+    readonly_fields = ("source", "revision", "country_count", "region_count", "imported_at")
+
+
+@admin.register(PhotographerWebsiteSection)
+class PhotographerWebsiteSectionAdmin(admin.ModelAdmin):
+    list_display = ("photographer_website", "section_type", "layout_variant", "display_order", "is_enabled")
+    list_filter = ("section_type", "is_enabled")
+    search_fields = ("photographer_website__photographer_profile__business_name", "section_type", "layout_variant")
+
+
+@admin.register(PhotographerWebsiteEquipment)
+class PhotographerWebsiteEquipmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "photographer_website", "display_order", "is_featured")
+    list_filter = ("is_featured",)
+    search_fields = ("name", "description", "photographer_website__photographer_profile__business_name")

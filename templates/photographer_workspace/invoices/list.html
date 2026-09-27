@@ -1,13 +1,15 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_invoices_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-container lp-container--wide lpw-invoices-page">
-  <header class="lp-page-header lpw-invoices-header">
+<div class="lp-container lp-container--wide lpw-invoices-page" id="main-content">
+  <header class="lpw-command-header lpw-dashboard-header lp-page-header lpw-invoices-header">
     <div class="lp-page-heading">
-      <nav class="lpw-bookings-breadcrumb" aria-label="Breadcrumb"><span>Business Hub</span><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Financial</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong>Invoices</strong></nav>
+      <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:financial_overview' %}">Financial</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Invoices</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Invoices</h1>
-      <p class="lp-page-description">Create, send, and manage client invoices.</p>
+      <p class="lp-page-description">Create, send, and manage client invoices from one workspace.</p>
     </div>
-    <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a></div>
+    <div class="lp-header-actions"><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create Invoice</a><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:transactions' %}"><i class="bi bi-arrow-left-right" aria-hidden="true"></i>View Transactions</a></div>
   </header>
 
   <main class="lpw-invoices-content">
@@ -28,8 +30,8 @@
         <label><span>Client</span><select name="client"><option value="">All clients</option>{% for client in invoice_clients %}<option value="{{ client.pk }}"{% if invoice_filters.client == client.pk|stringformat:'s' %} selected{% endif %}>{{ client }}</option>{% endfor %}</select></label>
         <label><span>Due from</span><input type="date" name="due_from" value="{{ invoice_filters.due_from }}"></label>
         <label><span>Due to</span><input type="date" name="due_to" value="{{ invoice_filters.due_to }}"></label>
-        <button class="lp-button lp-button--secondary lp-button--md" type="submit">Apply</button>
-        {% if invoice_filters_active %}<a class="lpw-invoice-clear" href="{% url 'photographer_workspace:invoices' %}">Clear filters</a>{% endif %}
+        <button class="lp-button lp-button--primary lp-button--md" type="submit">Apply Filters</button>
+        {% if invoice_filters_active %}<a class="lpw-invoice-clear" href="{% url 'photographer_workspace:invoices' %}">Clear Filters</a>{% endif %}
       </form>
 
       {% if invoices %}
@@ -57,7 +59,7 @@
       {% else %}<section class="lpw-invoice-empty" aria-labelledby="invoice-filter-empty"><i class="bi bi-search" aria-hidden="true"></i><h2 id="invoice-filter-empty">No invoices match these filters.</h2><p>Try changing or clearing your filters to see more invoices.</p><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:invoices' %}">Clear Filters</a></section>{% endif %}
     </section>
     {% else %}
-    <section class="lpw-invoice-empty" aria-labelledby="invoice-empty-title"><i class="bi bi-receipt" aria-hidden="true"></i><h2 id="invoice-empty-title">No invoices yet</h2><p>Create your first invoice to start tracking client payments.</p><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a></section>
+    <section class="lpw-invoice-empty" aria-labelledby="invoice-empty-title"><i class="bi bi-receipt" aria-hidden="true"></i><h2 id="invoice-empty-title">No invoices yet</h2><p>Create your first invoice to start tracking client payments.</p><a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a></section>
     {% endif %}
   </main>
 </div>

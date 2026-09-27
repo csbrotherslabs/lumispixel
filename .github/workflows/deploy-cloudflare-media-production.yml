@@ -1,0 +1,48 @@
+name: Deploy Cloudflare Media Worker (Production)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-media-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy lumispixel-media-prod
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: cloudflare/media-worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Require dev branch
+        run: test "$GITHUB_REF_NAME" = "dev" || (echo "Production media deploys must use dev" && exit 1)
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate production deployment configuration
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is not configured" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is not configured" && exit 1)
+          grep -q '"name": "lumispixel-media-prod"' wrangler.jsonc
+          grep -q '"B2_ALLOWED_PREFIX": "private/prod/"' wrangler.jsonc
+
+      - name: Deploy production media Worker
+        run: npx wrangler deploy --env production

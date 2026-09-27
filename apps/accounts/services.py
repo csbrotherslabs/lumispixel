@@ -32,6 +32,24 @@ class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
         return f"{user.pk}{user.password}{user.email_verified}{user.email_verified_at}{timestamp}"
 
+    def check_token(self, user, token):
+        """Validate verification tokens with their own bounded lifetime.
+
+        Django's PasswordResetTokenGenerator otherwise uses PASSWORD_RESET_TIMEOUT,
+        which couples two security flows that should be independently configurable.
+        """
+        if not (user and token):
+            return False
+        try:
+            ts_b36, _ = token.split("-")
+            timestamp = int(ts_b36, 36)
+        except (TypeError, ValueError):
+            return False
+        if not super().check_token(user, token):
+            return False
+        age = self._num_seconds(self._now()) - timestamp
+        return age <= settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS
+
 
 email_verification_token = EmailVerificationTokenGenerator()
 
@@ -76,6 +94,19 @@ def create_client_account(payload):
         raise DuplicateEmailError from exc
 
 
+def create_client_profile(user):
+    """Add personal photo access without changing professional capabilities."""
+    with transaction.atomic():
+        profile, created = ClientProfile.objects.get_or_create(
+            user=user,
+            defaults={"display_name": user.display_name},
+        )
+        if user.last_active_workspace != User.Workspace.CLIENT:
+            user.last_active_workspace = User.Workspace.CLIENT
+            user.save(update_fields=["last_active_workspace", "updated_at"])
+        return profile, created
+
+
 def create_photographer_account(payload):
     try:
         with transaction.atomic():
@@ -95,11 +126,35 @@ def create_photographer_account(payload):
         raise DuplicateEmailError from exc
 
 
+def create_photographer_workspace(user):
+    """Add an owned photography workspace without replacing personal access."""
+    with transaction.atomic():
+        profile, created = PhotographerProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "display_name": user.display_name,
+                "verification_status": PhotographerProfile.VerificationStatus.NOT_STARTED,
+                "onboarding_step": PHOTOGRAPHER_FIRST_ONBOARDING_STEP,
+            },
+        )
+        if user.last_active_workspace != User.Workspace.PHOTOGRAPHER:
+            user.last_active_workspace = User.Workspace.PHOTOGRAPHER
+            user.save(update_fields=["last_active_workspace", "updated_at"])
+        return profile, created
+
+
+def build_public_url(request, path="/"):
+    normalized_path = path if path.startswith("/") else f"/{path}"
+    if settings.PUBLIC_BASE_URL:
+        return f"{settings.PUBLIC_BASE_URL}{normalized_path}"
+    return request.build_absolute_uri(normalized_path)
+
+
 def build_verification_url(request, user):
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
     token = email_verification_token.make_token(user)
     path = reverse("accounts:verify-email", kwargs={"uidb64": uidb64, "token": token})
-    return request.build_absolute_uri(path)
+    return build_public_url(request, path)
 
 
 def send_verification_email(request, user):
@@ -108,6 +163,7 @@ def send_verification_email(request, user):
         "user": user,
         "verification_url": verification_url,
         "brand_name": "LumisPixel",
+        "site_url": build_public_url(request),
     }
     subject = "Verify your LumisPixel email address"
     text_body = render_to_string("accounts/email/verify_email.txt", context)

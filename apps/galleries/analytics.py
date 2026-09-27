@@ -2,8 +2,9 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, TruncDate
 from django.utils import timezone
 
 from .models import GalleryAnalyticsEvent, GalleryOrder
@@ -49,7 +50,11 @@ def gallery_analytics_report(*, gallery, start=None, end=None, album_id=None, de
     event_counts = dict(events.values_list("event_type").annotate(total=Count("id")))
     unique_visitors = events.exclude(visitor_identifier="").values("visitor_identifier").distinct().count()
     sessions = events.exclude(session_identifier="").values("session_identifier").distinct().count()
-    revenue = events.filter(event_type=GalleryAnalyticsEvent.EventType.PURCHASE).aggregate(total=Sum("metadata__revenue"))["total"] or Decimal("0")
+    revenue_value = Cast(
+        KeyTextTransform("revenue", "metadata"),
+        output_field=DecimalField(max_digits=14, decimal_places=2),
+    )
+    revenue = events.filter(event_type=GalleryAnalyticsEvent.EventType.PURCHASE).aggregate(total=Sum(revenue_value))["total"] or Decimal("0")
     daily_rows = {row["day"]: row for row in events.annotate(day=TruncDate("occurred_at")).values("day").annotate(
         views=Count("id", filter=Q(event_type=GalleryAnalyticsEvent.EventType.VIEW)),
         visitors=Count("visitor_identifier", distinct=True),

@@ -4,12 +4,13 @@
 {% block title %}Accessibility | LumisPixel{% endblock %}
 {% block meta_description %}Learn about LumisPixel's commitment to an accessible and inclusive experience for photographers, clients, and visitors.{% endblock %}
 {% block body_class %}marketing-page accessibility-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/accessibility.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/accessibility.css' %}"><link rel="stylesheet" href="{% static 'css/company_detail_refine.css' %}"><link rel="stylesheet" href="{% static 'css/company_policy_concise.css' %}">{% endblock %}
 
 {% block content %}
 <section class="accessibility-hero" aria-labelledby="accessibility-title">
   <div class="container accessibility-hero__inner">
     <div class="accessibility-hero__copy">
+      <a class="company-back" href="{% url 'core:company' %}"><i class="bi bi-arrow-left"></i> All Company</a>
       <span class="accessibility-eyebrow">An experience for everyone</span>
       <h1 id="accessibility-title">Accessibility</h1>
       <p>LumisPixel is committed to building a platform that is accessible and easy to use for everyone.</p>

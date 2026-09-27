@@ -1,0 +1,8 @@
+.lumis-showcase--collective .showcase-reviews__slides,
+.lumis-showcase--collective .showcase-reviews__slides *,
+.lumis-showcase--collective .showcase-contact,
+.lumis-showcase--collective .showcase-contact *,
+.lumis-showcase--collective .action,
+.lumis-showcase--collective .action * {
+  color: #000 !important;
+}

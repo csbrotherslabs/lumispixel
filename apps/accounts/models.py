@@ -126,7 +126,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def can_use_photographer_workspace(self):
-        return self.can_login and self.has_photographer_profile
+        return self.can_login and (
+            self.has_photographer_profile
+            or self.studio_memberships.filter(status="active").exists()
+        )
 
     def mark_email_verified(self, commit=True):
         self.email_verified = True
@@ -135,6 +138,50 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.account_status = self.AccountStatus.ACTIVE
         if commit:
             self.save(update_fields=["email_verified", "email_verified_at", "account_status", "updated_at"])
+
+
+class Country(models.Model):
+    source_id = models.PositiveIntegerField(unique=True)
+    name = models.CharField(max_length=100)
+    iso2 = models.CharField(max_length=2, unique=True)
+    iso3 = models.CharField(max_length=3, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name_plural = "countries"
+
+    def __str__(self):
+        return self.name
+
+
+class AdministrativeRegion(models.Model):
+    source_id = models.PositiveIntegerField(unique=True)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="administrative_regions")
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=32, blank=True)
+    region_type = models.CharField(max_length=50, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        return f"{self.name}, {self.country.iso2}"
+
+
+class LocationDatasetImport(models.Model):
+    source = models.CharField(max_length=200)
+    revision = models.CharField(max_length=64)
+    country_count = models.PositiveIntegerField(default=0)
+    region_count = models.PositiveIntegerField(default=0)
+    imported_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-imported_at",)
+
+    def __str__(self):
+        return f"{self.source} @ {self.revision}"
 
 
 class ClientProfile(models.Model):
@@ -161,12 +208,12 @@ class PhotographerProfile(models.Model):
         STUDIO = "studio", "Studio"
 
     class WebsiteTheme(models.TextChoices):
-        BASIC = "basic", "Basic"
-        ELEGANT = "elegant", "Elegant"
-        MODERN_STUDIO = "modern_studio", "Modern Studio"
-        CINEMATIC = "cinematic", "Cinematic"
-        PORTFOLIO_EDITORIAL = "portfolio_editorial", "Portfolio Editorial"
-        SPORTS_EVENTS = "sports_events", "Sports & Events"
+        BASIC = "basic", "Frame"
+        ELEGANT = "elegant", "Narrative"
+        MODERN_STUDIO = "modern_studio", "Panorama"
+        CINEMATIC = "cinematic", "Monograph"
+        PORTFOLIO_EDITORIAL = "portfolio_editorial", "Collective"
+        SPORTS_EVENTS = "sports_events", "Atelier"
 
     class VerificationStatus(models.TextChoices):
         NOT_STARTED = "not_started", "Not started"
@@ -189,6 +236,8 @@ class PhotographerProfile(models.Model):
     website = models.URLField(blank=True)
     country = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
+    country_record = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, related_name="photographer_profiles")
+    administrative_region = models.ForeignKey(AdministrativeRegion, on_delete=models.SET_NULL, null=True, blank=True, related_name="photographer_profiles")
     city = models.CharField(max_length=100, blank=True)
     timezone = models.CharField(max_length=64, blank=True)
     business_type = models.CharField(max_length=20, choices=BusinessType.choices, default=BusinessType.INDIVIDUAL)
@@ -275,6 +324,10 @@ def photographer_website_project_upload_path(instance, filename):
     return f"photographer_websites/{instance.photographer_website.photographer_profile_id}/projects/{filename}"
 
 
+def photographer_website_equipment_upload_path(instance, filename):
+    return f"photographer_websites/{instance.photographer_website.photographer_profile_id}/equipment/{filename}"
+
+
 class PhotographerWebsiteProfile(models.Model):
     photographer_profile = models.OneToOneField(PhotographerProfile, on_delete=models.CASCADE, related_name="website_profile")
     hero_image = models.ImageField(upload_to=photographer_website_hero_upload_path, blank=True, null=True)
@@ -305,6 +358,43 @@ class PhotographerWebsiteProject(models.Model):
 
     def __str__(self):
         return self.title or f"Project {self.display_order + 1}"
+
+
+class PhotographerWebsiteEquipment(models.Model):
+    photographer_website = models.ForeignKey(PhotographerWebsiteProfile, on_delete=models.CASCADE, related_name="equipment_items")
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to=photographer_website_equipment_upload_path)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return self.name
+
+
+class PhotographerWebsiteSection(models.Model):
+    photographer_website = models.ForeignKey(PhotographerWebsiteProfile, on_delete=models.CASCADE, related_name="sections")
+    section_type = models.CharField(max_length=40)
+    layout_variant = models.CharField(max_length=80, blank=True)
+    content = models.JSONField(default=dict, blank=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    is_enabled = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("display_order", "id")
+        constraints = [
+            models.UniqueConstraint(fields=("photographer_website", "section_type"), name="unique_photographer_website_section_type"),
+        ]
+
+    def __str__(self):
+        return f"{self.photographer_website}: {self.section_type}"
 
 
 class PhotographerSpecialty(models.Model):

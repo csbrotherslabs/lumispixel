@@ -1,12 +1,16 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 import hashlib
 import secrets
+import uuid
+from pathlib import PurePosixPath
+
+from .storage import gallery_photo_storage
+from .media_delivery import signed_media_url
 
 
 class GalleryQuerySet(models.QuerySet):
@@ -43,6 +47,12 @@ class Gallery(models.Model):
         PASSWORD = "password", "Password protected"
         PUBLIC = "public", "Public"
 
+    class DesignTemplate(models.TextChoices):
+        KIMONO_STANDARD_FILTERABLE = "kimono_standard_filterable", "Standard Filterable"
+        KIMONO_STORY = "kimono_story", "Story"
+        KIMONO_MASONRY = "kimono_masonry", "Masonry"
+        CINEMATIC = "cinematic", "Cinematic"
+
     class ArchiveReason(models.TextChoices):
         COMPLETED = "completed", "Project Completed"
         EXPIRED = "expired", "Gallery Expired"
@@ -57,11 +67,15 @@ class Gallery(models.Model):
         SCHEDULED = "scheduled", "Scheduled for Deletion"
         DELETION_PENDING = "deletion_pending", "Deletion Pending"
 
+    public_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     photographer = models.ForeignKey(
         "accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="galleries"
     )
     client = models.ForeignKey(
         "clients.Client", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True
+    )
+    booking = models.ForeignKey(
+        "clients.ClientSession", on_delete=models.SET_NULL, related_name="galleries", blank=True, null=True
     )
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220)
@@ -70,6 +84,10 @@ class Gallery(models.Model):
     cover_image = models.ImageField(upload_to="galleries/covers/%Y/%m/", blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     visibility = models.CharField(max_length=20, choices=Visibility.choices, default=Visibility.PRIVATE)
+    design_template = models.CharField(max_length=48, choices=DesignTemplate.choices, default=DesignTemplate.KIMONO_STANDARD_FILTERABLE)
+    story_title = models.CharField(max_length=160, blank=True)
+    story_description = models.TextField(blank=True)
+    story_quote = models.TextField(blank=True)
     image_count = models.PositiveIntegerField(default=0)
     favorite_count = models.PositiveIntegerField(default=0)
     download_count = models.PositiveIntegerField(default=0)
@@ -100,11 +118,20 @@ class Gallery(models.Model):
         ]
         indexes = [
             models.Index(fields=["photographer", "status", "-created_at"], name="gallery_owner_status_created"),
+            models.Index(fields=["photographer", "deleted_at", "archived_at", "-created_at"], name="gallery_owner_active_date"),
         ]
 
     def clean(self):
+        errors = {}
         if self.client_id and self.photographer_id and self.client.photographer_id != self.photographer_id:
-            raise ValidationError({"client": "Choose a client belonging to this photographer."})
+            errors["client"] = "Choose a client belonging to this photographer."
+        if self.booking_id:
+            if self.photographer_id and self.booking.photographer_id != self.photographer_id:
+                errors["booking"] = "Choose a booking belonging to this photographer."
+            if self.client_id and self.booking.client_id != self.client_id:
+                errors["booking"] = "Choose a booking belonging to this gallery client."
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return self.name
@@ -243,12 +270,21 @@ class GalleryAnalyticsEvent(models.Model):
             raise ValidationError({"related_album": "Album must belong to this gallery."})
 
 
-private_gallery_storage = FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
+GALLERY_PHOTO_EXTENSIONS = {
+    ".jpg": ".jpg",
+    ".jpeg": ".jpg",
+    ".png": ".png",
+    ".webp": ".webp",
+}
 
 
 def gallery_photo_path(instance, filename):
-    """Keep originals in an owner/gallery namespace (served only by an authorized view)."""
-    return f"galleries/{instance.photographer_id}/{instance.gallery_id}/{filename}"
+    """Return an immutable object name; preserve the user-facing name separately."""
+    suffix = GALLERY_PHOTO_EXTENSIONS.get(PurePosixPath(filename).suffix.lower(), "")
+    return (
+        f"galleries/{instance.photographer_id}/{instance.gallery_id}/"
+        f"{uuid.uuid4().hex}{suffix}"
+    )
 
 
 class GalleryPhotoQuerySet(models.QuerySet):
@@ -257,7 +293,7 @@ class GalleryPhotoQuerySet(models.QuerySet):
 
 
 class GalleryPhoto(models.Model):
-    """Storage-agnostic upload record for a gallery original."""
+    """Private original stored in DigitalOcean Spaces when USE_SPACES is enabled."""
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
@@ -269,13 +305,15 @@ class GalleryPhoto(models.Model):
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photos")
     photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_photos")
-    file = models.ImageField(storage=private_gallery_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
+    file = models.ImageField(storage=gallery_photo_storage, upload_to=gallery_photo_path, validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])])
     original_name = models.CharField(max_length=255)
     file_size = models.PositiveBigIntegerField(default=0)
+    multipart_upload = models.OneToOneField("GalleryMultipartUpload", on_delete=models.SET_NULL, blank=True, null=True, related_name="photo")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.QUEUED)
     is_cover = models.BooleanField(default=False)
     is_visible = models.BooleanField(default=True)
     error_message = models.CharField(max_length=300, blank=True)
+    upload_queue_dismissed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -283,11 +321,90 @@ class GalleryPhoto(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["photographer", "status", "-created_at"], name="photo_owner_status_created")]
+        indexes = [
+            models.Index(fields=["photographer", "status", "-created_at"], name="photo_owner_status_created"),
+            models.Index(fields=["gallery", "status", "is_visible", "-created_at"], name="photo_gallery_visible_date"),
+        ]
 
     def clean(self):
         if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
             raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+    @property
+    def delivery_url(self):
+        """Return a short-lived Cloudflare URL for gallery preview delivery."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name, variant="preview")
+
+    @property
+    def thumbnail_url(self):
+        """Return a short-lived Cloudflare URL for compact gallery thumbnails."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name, variant="thumbnail")
+
+    @property
+    def original_delivery_url(self):
+        """Return a short-lived Cloudflare URL for an explicitly requested original."""
+        if not self.file:
+            return ""
+        return signed_media_url(self.file.name, variant="original")
+
+
+class GalleryMultipartUpload(models.Model):
+    """Server-owned state for a browser-to-B2 multipart upload."""
+
+    id = models.UUIDField(primary_key=True, default=__import__("uuid").uuid4, editable=False)
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="multipart_uploads")
+    photographer = models.ForeignKey("accounts.PhotographerProfile", on_delete=models.CASCADE, related_name="gallery_multipart_uploads")
+    object_key = models.CharField(max_length=700, unique=True)
+    upload_id = models.TextField()
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    file_size = models.PositiveBigIntegerField()
+    completed_at = models.DateTimeField(blank=True, null=True)
+    aborted_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["completed_at", "aborted_at", "created_at"], name="multipart_active_created"),
+            models.Index(fields=["photographer", "gallery", "completed_at", "aborted_at"], name="multipart_owner_gallery"),
+        ]
+
+    def clean(self):
+        if self.gallery_id and self.photographer_id and self.gallery.photographer_id != self.photographer_id:
+            raise ValidationError({"gallery": "Gallery must belong to this photographer."})
+
+
+class GalleryStorageDeletion(models.Model):
+    """Durable cleanup record for gallery objects whose database owner was deleted."""
+
+    class Backend(models.TextChoices):
+        B2 = "b2", "Backblaze B2"
+        DEFAULT = "default", "Default storage"
+
+    storage_backend = models.CharField(max_length=20, choices=Backend.choices)
+    object_key = models.CharField(max_length=700)
+    photographer_id = models.PositiveBigIntegerField(blank=True, null=True)
+    gallery_id = models.PositiveBigIntegerField(blank=True, null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.CharField(max_length=1000, blank=True)
+    last_attempt_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["storage_backend", "object_key"],
+                name="gallery_storage_delete_object_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["completed_at", "created_at"], name="gallery_storage_delete_pending")
+        ]
 
 
 class AlbumQuerySet(models.QuerySet):
@@ -365,6 +482,26 @@ class GalleryPermission(models.Model):
     download_expires_at = models.DateTimeField(blank=True, null=True)
     watermark = models.CharField(max_length=12, choices=Watermark.choices, default=Watermark.PREVIEW)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class GalleryPhotoComment(models.Model):
+    """A client comment attached to a delivered gallery photo."""
+
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photo_comments")
+    photo = models.ForeignKey("GalleryPhoto", on_delete=models.CASCADE, related_name="client_comments")
+    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+
+    def clean(self):
+        if self.photo_id and self.photo.gallery_id != self.gallery_id:
+            raise ValidationError({"photo": "Comment photo must belong to this gallery."})
+        if self.invitation_id and self.invitation.gallery_id != self.gallery_id:
+            raise ValidationError({"invitation": "Comment invitation must belong to this gallery."})
 
 
 class GallerySettings(models.Model):

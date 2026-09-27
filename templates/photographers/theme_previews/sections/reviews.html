@@ -1,0 +1,52 @@
+{% load static theme_preview_media %}
+{% review_background as reviews_background %}
+<section class="showcase-reviews wptb-testimonial-one testimonial-colored bg-image" id="reviews" style="background-image: url('{% static reviews_background %}');" data-review-carousel>
+  <div class="showcase-reviews__overlay"></div>
+  <div class="showcase-reviews__inner">
+    <div class="showcase-reviews__carousel" aria-roledescription="carousel" aria-label="Verified client reviews">
+      <div class="showcase-reviews__slides" aria-live="polite">
+        {% for review in demo.reviews %}
+        {% review_client_image forloop.counter0 as review_image %}
+        <article class="showcase-review-card{% if forloop.first %} is-active{% endif %}" data-review-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+          <div class="showcase-review-card__top">
+            <span class="showcase-review-card__stars" aria-label="Five out of five stars">
+              <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+            </span>
+            <span class="showcase-review-card__quote" aria-hidden="true">“</span>
+          </div>
+          <div class="showcase-review-card__excerpt">
+            <blockquote data-review-excerpt>{{ review.quote }}</blockquote>
+            <button class="showcase-review-card__more" type="button" data-review-more aria-label="Read the full review from {{ review.name }}" hidden>…</button>
+          </div>
+          <footer class="showcase-review-card__client">
+            <img src="{% if review_image %}{% static review_image %}{% else %}{% static review.image %}{% endif %}" alt="Portrait of {{ review.name }}">
+            <div><strong>{{ review.name }}</strong><span>{{ review.location }} · Verified client</span></div>
+          </footer>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="showcase-reviews__controls">
+        <button type="button" data-review-previous aria-label="Previous review"><i class="bi bi-arrow-left"></i></button>
+        <span><b data-review-current>01</b> / {{ demo.reviews|length|stringformat:"02d" }}</span>
+        <button type="button" data-review-next aria-label="Next review"><i class="bi bi-arrow-right"></i></button>
+      </div>
+    </div>
+    <aside class="showcase-rating" aria-label="Overall client rating">
+      <span class="showcase-rating__label">Client experience</span>
+      <strong>{{ demo.rating }}</strong>
+      <span class="showcase-rating__stars" aria-label="{{ demo.rating }} out of five stars">★★★★★</span>
+      <small>Based on {{ demo.review_count }} verified reviews</small>
+    </aside>
+  </div>
+</section>
+<div class="showcase-review-modal" data-review-modal role="dialog" aria-modal="true" aria-labelledby="showcase-review-modal-title" aria-describedby="showcase-review-modal-copy" aria-hidden="true" hidden>
+  <button class="showcase-review-modal__backdrop" type="button" data-review-modal-close aria-label="Close full review"></button>
+  <div class="showcase-review-modal__panel" role="document">
+    <button class="showcase-review-modal__close" type="button" data-review-modal-close aria-label="Close full review"><i class="bi bi-x-lg"></i></button>
+    <span class="showcase-review-modal__eyebrow">Verified client review</span>
+    <div class="showcase-review-modal__stars" aria-label="Five out of five stars">★★★★★</div>
+    <h2 id="showcase-review-modal-title">Client story</h2>
+    <blockquote id="showcase-review-modal-copy" data-review-modal-copy></blockquote>
+    <p data-review-modal-client></p>
+  </div>
+</div>

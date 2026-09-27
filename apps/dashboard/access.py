@@ -67,16 +67,21 @@ def access_for(user, *, studio=None, require=None):
 
 
 def scope_assigned(queryset: QuerySet, access: StudioAccess):
-    """Studio-scope records and restrict photographers to explicit assignments."""
+    """Studio-scope records and restrict photographers to explicit assignments.
+
+    The assignment relation is unique per membership/record pair, so this scope
+    does not need DISTINCT. Keeping the queryset non-distinct is important for
+    callers that add select_for_update(): PostgreSQL rejects FOR UPDATE on a
+    DISTINCT query even though SQLite accepts it.
+    """
     queryset = queryset.filter(photographer=access.studio)
     if access.role == StudioMembership.Role.PHOTOGRAPHER:
         if access.membership is None:
             raise PermissionDenied
         queryset = queryset.filter(assigned_members=access.membership)
-    return queryset.distinct()
+    return queryset
 
 
 def validate_assignment(membership, record):
     if membership.studio_id != record.photographer_id:
         raise ValidationError("The member and assigned record must belong to the same studio.")
-

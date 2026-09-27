@@ -2,6 +2,8 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
 
 from . import views
+from .account_settings import account_settings
+from .recovery import RateLimitedPasswordResetView
 
 app_name = "accounts"
 
@@ -11,10 +13,11 @@ urlpatterns = [
     path("signup/photographer/", views.photographer_signup, name="photographer-signup"),
     path("accounts/login/", views.login_view, name="login"),
     path("accounts/logout/", views.logout_view, name="logout"),
+    path("account/settings/", account_settings, name="account-settings"),
 
     path(
         "accounts/password-reset/",
-        auth_views.PasswordResetView.as_view(
+        RateLimitedPasswordResetView.as_view(
             template_name="accounts/password_reset_form.html",
             email_template_name="accounts/email/password_reset_email.txt",
             html_email_template_name="accounts/email/password_reset_email.html",
@@ -48,7 +51,8 @@ urlpatterns = [
     path("accounts/password-reset-required/", views.placeholder_view, {"title": "Password reset required"}, name="password-reset-required"),
     path("accounts/email-verification-required/", views.verification_pending, name="email-verification-required"),
     path("accounts/onboarding/photographer/", views.photographer_onboarding_entry, name="photographer-onboarding"),
-    path("accounts/enable-photographer-workspace/", views.placeholder_view, {"title": "Enable Photographer Workspace"}, name="enable-photographer-workspace"),
+    path("accounts/enable-photographer-workspace/", views.enable_photographer_workspace, name="enable-photographer-workspace"),
+    path("accounts/enable-client-profile/", views.enable_client_profile, name="enable-client-profile"),
     path("accounts/find-photos/", views.placeholder_view, {"title": "Find My Photos"}, name="find-photos-placeholder"),
     path("accounts/marketplace-request/", views.placeholder_view, {"title": "Marketplace Request"}, name="marketplace-request-placeholder"),
     path("accounts/dashboard/client/", views.client_dashboard, name="client-dashboard"),

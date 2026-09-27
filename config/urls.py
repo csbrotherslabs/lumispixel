@@ -3,8 +3,18 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.health import live, ready
+from apps.core.support_views import help_center, support_attachment_download, support_ticket_detail
+from apps.dashboard.client_contracts import client_contracts
+from apps.dashboard.workspace_settings import workspace_settings
+
 urlpatterns = [
+    path("health/live/", live, name="health_live"),
+    path("health/ready/", ready, name="health_ready"),
     path("admin/", admin.site.urls),
+    path("resources/help-center/", help_center, name="support_help_center"),
+    path("resources/help-center/tickets/<str:reference>/", support_ticket_detail, name="support_ticket_detail"),
+    path("resources/help-center/tickets/<str:reference>/attachments/<uuid:attachment_id>/download/", support_attachment_download, name="support_attachment_download"),
     path("", include("apps.core.urls")),
     path("", include("apps.accounts.urls")),
     path("photographer/", include("apps.photographers.urls")),
@@ -15,7 +25,10 @@ urlpatterns = [
     path("marketplace/", include("apps.marketplace.urls")),
     path("billing/", include("apps.billing.urls")),
     path("notifications/", include("apps.notifications.urls")),
+    path("photographer/workspace/settings/", workspace_settings),
+    path("photographer/workspace/clients/<int:pk>/contracts/", client_contracts, name="client_contracts"),
     path("photographer/workspace/", include("apps.dashboard.urls")),
+    path("internal/", include("apps.internal_ops.urls")),
     path("api/", include("apps.api.urls")),
 ]
 

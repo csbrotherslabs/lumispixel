@@ -1,0 +1,55 @@
+name: P2 Email Notification CI Gate
+
+on:
+  pull_request:
+    paths:
+      - 'apps/notifications/**'
+      - 'apps/internal_ops/**'
+      - 'config/settings.py'
+      - '.github/workflows/p2-email-notification-ci.yml'
+
+jobs:
+  email-notification-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Django system check
+        run: python manage.py check
+      - name: Migration drift check
+        run: python manage.py makemigrations --check --dry-run
+      - name: Failure injection, outage, duplicate delivery, and transactional tests
+        run: >-
+          python manage.py test
+          apps.notifications.test_delivery_reliability
+          apps.notifications.test_transactional_email_task
+          apps.notifications.test_transactional_email_broker
+          apps.notifications.test_transactional_email_commit
+          apps.notifications.test_transactional_email_delivery
+          apps.notifications.test_transactional_email_failure_budget
+          apps.notifications.test_transactional_email_recovery
+          apps.notifications.test_transactional_email_rollback
+          apps.notifications.test_transactional_email_sent_recovery
+          apps.notifications.test_transactional_email_status
+          -v 2
+      - name: Token lifecycle and notification security tests
+        run: >-
+          python manage.py test
+          apps.notifications.test_security_content_correctness
+          apps.notifications.test_transactional_email_attempt_timestamp
+          apps.notifications.test_transactional_email_event_keys
+          apps.notifications.test_transactional_email_no_recipient
+          apps.notifications.test_transactional_email_normalization
+          apps.notifications.test_transactional_email_order
+          apps.notifications.test_transactional_email_payload
+          apps.notifications.test_transactional_email_recipients
+          apps.notifications.test_transactional_email_sent_timestamp
+          apps.notifications.test_transactional_email_subject
+          -v 2

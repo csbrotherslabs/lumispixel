@@ -140,6 +140,7 @@ class TeamInvitationTests(TestCase):
         self.assertEqual(invitation.user, invitee)
         self.assertEqual(invitation.status, StudioMembership.Status.ACTIVE)
         self.assertEqual(invitation.invitation_token_digest, "")
+        self.assertFalse(PhotographerProfile.objects.filter(user=invitee).exists())
         self.assertEqual(self.client.get(accept_url).status_code, 410)
 
     def test_active_member_is_not_invited_again_without_disclosing_external_accounts(self):

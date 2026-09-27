@@ -1,0 +1,25 @@
+/* Homepage hero rendering fix.
+   Theme style3 makes .wptb-slider--image position: relative while the
+   responsive homepage sets the parent hero item to height:auto + min-height.
+   The empty background div therefore has no resolved percentage height and
+   collapses, even though its background-image is correctly assigned. */
+.page-home .wptb-slider.style3 .wptb-slider--item {
+    position: relative;
+}
+
+.page-home .wptb-slider.style3 .wptb-slider--image {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    z-index: 0;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.page-home .wptb-slider.style3 .wptb-slider--inner {
+    position: relative;
+    z-index: 1;
+}
