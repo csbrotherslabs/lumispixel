@@ -256,7 +256,7 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
     if not raw_token:
         raise ValidationError("This contract review link is invalid.")
     with transaction.atomic():
-        contract = Contract.objects.select_for_update().select_related(
+        contract = Contract.objects.select_for_update(of=("self",)).select_related(
             "client", "booking", "photographer", "photographer__user", "photographer_signature"
         ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
         now = timezone.now()
