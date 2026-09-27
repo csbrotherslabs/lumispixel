@@ -19,7 +19,10 @@ from apps.galleries.models import (
 )
 
 
-@override_settings(GALLERY_STORAGE_BACKEND="local")
+@override_settings(
+    GALLERY_STORAGE_BACKEND="local",
+    MEDIA_SIGNING_SECRET="lumispixel-mobile-browser-test-signing-secret",
+)
 class ClientGalleryMobileBrowserTests(LiveServerTestCase):
     """Exercise the real client delivery UI at a phone viewport for every design."""
 
@@ -116,7 +119,11 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
                 )
                 try:
                     page = context.new_page()
-                    page.goto(self.live_server_url + reverse("galleries:client_gallery_access", args=[token]))
+                    response = page.goto(
+                        self.live_server_url + reverse("galleries:client_gallery_access", args=[token])
+                    )
+                    self.assertIsNotNone(response)
+                    self.assertEqual(response.status, 200, f"{design} client gallery did not render successfully")
                     page.wait_for_load_state("networkidle")
 
                     expected_name = f"Mobile {design}"
