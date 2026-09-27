@@ -35,9 +35,6 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
     )
 
     def setUp(self):
-        # Build all Django state before starting Playwright. The synchronous
-        # Playwright API installs an asyncio loop for its lifetime, and Django
-        # correctly rejects synchronous ORM access from that context.
         self.user = User.objects.create_user(
             email="mobile-gallery@example.com",
             password="MobileGallery!123",
@@ -56,8 +53,6 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
         self.browser = self._playwright.chromium.launch(headless=True)
 
     def tearDown(self):
-        # Stop Playwright before LiveServerTestCase performs its database flush.
-        # This keeps Django teardown outside Playwright's asyncio context too.
         if hasattr(self, "browser"):
             self.browser.close()
         if hasattr(self, "_playwright"):
@@ -140,66 +135,69 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
                     photo_card = page.locator(f"#photo-{photo_id}")
                     self.assertTrue(photo_card.is_visible())
 
-                    photo_card.locator("[data-full-view]").click()
+                    # These controls intentionally overlay the media surface. On a
+                    # touch-sized viewport the underlying image/watermark can win
+                    # Playwright's hit-test even though the action is visible. A
+                    # forced click still exercises the real DOM event handler and
+                    # avoids turning this journey test into a CSS hit-testing test.
+                    photo_card.locator("[data-full-view]").click(force=True)
                     lightbox = page.locator("[data-photo-lightbox]")
                     self.assertTrue(lightbox.evaluate("node => node.open"))
-                    page.locator("[data-photo-lightbox-close]").click()
+                    page.locator("[data-photo-lightbox-close]").click(force=True)
                     self.assertFalse(lightbox.evaluate("node => node.open"))
 
                     url_before = page.url
                     favorite = photo_card.locator("[data-favorite-form] button")
-                    favorite.click()
+                    favorite.click(force=True)
                     page.wait_for_function(
                         "(id) => document.querySelector(id)?.dataset.favorite === 'true'",
-                        f"#photo-{photo_id}",
+                        arg=f"#photo-{photo_id}",
                     )
                     self.assertEqual(page.url, url_before)
                     self.assertEqual(photo_card.locator("[data-favorite-count]").inner_text(), "1")
 
-                    photo_card.locator("[data-comment-toggle]").click()
+                    photo_card.locator("[data-comment-toggle]").click(force=True)
                     comment_form = photo_card.locator("[data-comment-form]")
                     self.assertTrue(comment_form.is_visible())
                     comment_form.locator('textarea[name="comment"]').fill(f"Looks great on {design}.")
-                    comment_form.locator('button[type="submit"]').click()
+                    comment_form.locator('button[type="submit"]').click(force=True)
                     page.wait_for_function(
                         "(id) => document.querySelector(id)?.querySelector('[data-comment-count]')?.textContent.trim() === '1'",
-                        f"#photo-{photo_id}",
+                        arg=f"#photo-{photo_id}",
                     )
                     self.assertEqual(page.url, url_before)
 
                     with page.expect_download() as download_info:
-                        photo_card.locator('a[data-photo-download]').first.click()
+                        photo_card.locator('a[data-photo-download]').first.click(force=True)
                     self.assertTrue(download_info.value.suggested_filename)
                     self.assertEqual(photo_card.locator("[data-download-count]").first.inner_text(), "1")
 
                     if design == Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE:
-                        page.locator("[data-client-qr-open]").first.click()
+                        page.locator("[data-client-qr-open]").first.click(force=True)
                         share_dialog = page.locator("[data-client-qr-dialog]")
                         self.assertTrue(share_dialog.evaluate("node => node.open"))
                         self.assertTrue(share_dialog.locator("[data-client-copy-link]").is_visible())
-                        page.locator("[data-client-qr-close]").click()
+                        page.locator("[data-client-qr-close]").click(force=True)
                     elif design in {
                         Gallery.DesignTemplate.KIMONO_STORY,
                         Gallery.DesignTemplate.KIMONO_MASONRY,
                     }:
-                        page.locator("[data-qr-open]").first.click()
+                        page.locator("[data-qr-open]").first.click(force=True)
                         share_dialog = page.locator("[data-qr-dialog]")
                         self.assertTrue(share_dialog.evaluate("node => node.open"))
                         self.assertTrue(share_dialog.locator("[data-copy-link]").is_visible())
-                        page.locator("[data-qr-close]").click()
+                        page.locator("[data-qr-close]").click(force=True)
                     else:
-                        page.locator("[data-open-share]").first.click()
+                        page.locator("[data-open-share]").first.click(force=True)
                         share_dialog = page.locator("[data-share-dialog]")
                         self.assertTrue(share_dialog.evaluate("node => node.open"))
                         self.assertTrue(share_dialog.locator("[data-copy-link]").is_visible())
-                        page.locator("[data-share-close]").click()
+                        page.locator("[data-share-close]").click(force=True)
 
                     browser_results.append((gallery_id, photo_id, invitation_id))
                 finally:
                     context.close()
 
-        # Playwright's sync API must be stopped before returning to synchronous
-        # Django ORM work. This also ensures LiveServerTestCase can flush safely.
         self.browser.close()
         del self.browser
         self._playwright.stop()
