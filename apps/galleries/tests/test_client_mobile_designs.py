@@ -110,6 +110,18 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
         )
         return lightbox.first
 
+    def _diagnostic_summary(self, page, design, console_messages, page_errors, requests, responses):
+        return (
+            f"design={design}; url={page.url}; "
+            f"readyState={page.evaluate('document.readyState')}; "
+            f"lightboxes={page.locator('[data-photo-lightbox]').count()}; "
+            f"full_view_controls={page.locator('[data-full-view]').count()}; "
+            f"favorite_forms={page.locator('[data-favorite-form]').count()}; "
+            f"scripts={page.locator('script[src]').evaluate_all(\"els => els.map(e => e.src)\")}; "
+            f"console={console_messages[-12:]}; page_errors={page_errors[-12:]}; "
+            f"requests={requests[-20:]}; responses={responses[-20:]}"
+        )
+
     def test_mobile_client_journey_across_all_gallery_designs(self):
         browser_results = []
         for design, gallery_id, photo_id, invitation_id, token in self.gallery_cases:
@@ -124,6 +136,14 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                 try:
                     page = context.new_page()
                     response_failures = []
+                    console_messages = []
+                    page_errors = []
+                    requests = []
+                    responses = []
+                    page.on("console", lambda msg: console_messages.append(f"{msg.type}: {msg.text}"))
+                    page.on("pageerror", lambda error: page_errors.append(str(error)))
+                    page.on("request", lambda request: requests.append(f"{request.method} {request.url}"))
+                    page.on("response", lambda response: responses.append(f"{response.status} {response.url}"))
                     page.on(
                         "response",
                         lambda response: response_failures.append(
@@ -152,30 +172,54 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                     self.assertTrue(photo_card.is_visible())
 
                     lightbox = self._assert_lightbox_contract(page, design)
+                    url_before_full_view = page.url
                     photo_card.locator("[data-full-view]").click(force=True)
-                    self.assertTrue(lightbox.evaluate("node => node.open"))
+                    page.wait_for_timeout(150)
+                    full_view_diag = self._diagnostic_summary(
+                        page, design, console_messages, page_errors, requests, responses
+                    )
+                    self.assertEqual(
+                        page.url,
+                        url_before_full_view,
+                        f"{design} full-view click unexpectedly navigated; {full_view_diag}",
+                    )
+                    self.assertGreater(
+                        page.locator("[data-photo-lightbox]").count(),
+                        0,
+                        f"{design} lightbox disappeared after full-view click; {full_view_diag}",
+                    )
+                    self.assertTrue(
+                        page.locator("[data-photo-lightbox]").first.evaluate("node => node.open"),
+                        f"{design} full-view click did not open lightbox; {full_view_diag}",
+                    )
                     page.locator("[data-photo-lightbox-close]").click(force=True)
-                    self.assertFalse(lightbox.evaluate("node => node.open"))
+                    self.assertFalse(page.locator("[data-photo-lightbox]").first.evaluate("node => node.open"))
 
                     url_before = page.url
                     favorite = photo_card.locator("[data-favorite-form] button")
                     favorite_url = photo_card.locator("[data-favorite-form]").get_attribute("action")
-                    with page.expect_response(
-                        lambda r: favorite_url and favorite_url in r.url,
-                        timeout=10000,
-                    ) as favorite_response_info:
-                        favorite.click(force=True)
-                    favorite_response = favorite_response_info.value
-                    self.assertEqual(
-                        favorite_response.status,
-                        200,
-                        f"{design} favorite request failed: {favorite_response.status} {favorite_response.url}; failures={response_failures}",
-                    )
-                    page.wait_for_function(
-                        "(id) => document.querySelector(id)?.dataset.favorite === 'true'",
-                        arg=f"#photo-{photo_id}",
-                        timeout=5000,
-                    )
+                    request_count_before = len(requests)
+                    response_count_before = len(responses)
+                    favorite.click(force=True)
+                    try:
+                        page.wait_for_function(
+                            "(id) => document.querySelector(id)?.dataset.favorite === 'true'",
+                            arg=f"#photo-{photo_id}",
+                            timeout=3000,
+                        )
+                    except Exception as exc:
+                        favorite_diag = self._diagnostic_summary(
+                            page,
+                            design,
+                            console_messages,
+                            page_errors,
+                            requests[request_count_before:],
+                            responses[response_count_before:],
+                        )
+                        self.fail(
+                            f"{design} favorite did not transition after click; action={favorite_url}; "
+                            f"error={exc}; {favorite_diag}"
+                        )
                     self.assertEqual(page.url, url_before)
                     self.assertEqual(photo_card.locator("[data-favorite-count]").inner_text(), "1")
 
