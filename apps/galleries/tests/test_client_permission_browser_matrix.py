@@ -23,18 +23,6 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
 
     serialized_rollback = True
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls._playwright = sync_playwright().start()
-        cls.browser = cls._playwright.chromium.launch(headless=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.browser.close()
-        cls._playwright.stop()
-        super().tearDownClass()
-
     def setUp(self):
         user = User.objects.create_user(
             email="browser-matrix-owner@example.com",
@@ -90,11 +78,19 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.original_path = reverse("galleries:client_gallery_download_original", args=[self.raw_token, self.photo.pk])
         self.zip_path = reverse("galleries:client_gallery_download_all", args=[self.raw_token])
         self.share_path = reverse("galleries:client_gallery_share", args=[self.raw_token])
+
+        # Keep Playwright's sync runtime scoped to one test. Leaving it alive
+        # across Django test setup/flush calls can leave the current thread in
+        # an asyncio context, which makes Django reject synchronous ORM access.
+        self._playwright = sync_playwright().start()
+        self.browser = self._playwright.chromium.launch(headless=True)
         self.context = self.browser.new_context(accept_downloads=True)
         self.page = self.context.new_page()
 
     def tearDown(self):
         self.context.close()
+        self.browser.close()
+        self._playwright.stop()
         if self.photo.file:
             self.photo.file.delete(save=False)
 
@@ -166,9 +162,6 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.assertEqual(self._api_status("get", self.download_path), 200)
 
     def test_view_gallery_off_blocks_page_and_every_client_capability(self):
-        # Seed the browser's CSRF cookie while access is valid. Otherwise direct
-        # POST probes can be rejected by CSRF middleware before the gallery
-        # authorization code runs, masking the 404 contract this test verifies.
         self._open_gallery()
         self._save_permission("view_gallery", False)
         response = self._open_gallery()
@@ -200,9 +193,6 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
     def test_revoked_token_blocks_page_and_direct_capabilities(self):
         from django.utils import timezone
 
-        # Establish a legitimate browser session/CSRF cookie before revoking the
-        # token so POST probes exercise token authorization rather than failing
-        # early in CSRF middleware.
         self._open_gallery()
         AccessToken.objects.filter(token_hash=AccessToken.digest(self.raw_token)).update(revoked_at=timezone.now())
         response = self._open_gallery()
