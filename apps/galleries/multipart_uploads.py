@@ -1,3 +1,4 @@
+import tempfile
 import uuid
 
 import boto3
@@ -86,8 +87,29 @@ def list_parts(*, key, upload_id):
 
 
 def get_object_stream(*, key):
-    """Return a completed object stream without materializing it in server memory."""
-    return _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)["Body"]
+    """Return a seekable stream for validation of a completed B2 object.
+
+    botocore's StreamingBody is intentionally forward-only. Pillow validation
+    and the exact-size guard both require seek/tell, so copy the completed
+    object into a SpooledTemporaryFile. Small images remain in memory while
+    larger uploads spill to disk instead of materializing the whole object in
+    process memory.
+    """
+    body = _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)["Body"]
+    stream = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+    try:
+        while True:
+            chunk = body.read(1024 * 1024)
+            if not chunk:
+                break
+            stream.write(chunk)
+        stream.seek(0)
+        return stream
+    except Exception:
+        stream.close()
+        raise
+    finally:
+        body.close()
 
 
 def get_object_bytes(*, key):
