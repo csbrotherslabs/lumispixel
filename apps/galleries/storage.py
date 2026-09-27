@@ -1,5 +1,6 @@
 from pathlib import PurePosixPath
 
+from botocore.config import Config
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import FileSystemStorage
@@ -51,16 +52,20 @@ class PrivateGalleryB2Storage(PrivateGalleryObjectStorage):
         kwargs.setdefault("file_overwrite", False)
         kwargs.setdefault("custom_domain", None)
         kwargs.setdefault("location", f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}")
+        # django-storages passes client_config directly to boto3/botocore and
+        # expects a botocore Config object. A plain dict reaches S3Storage but
+        # fails when the client is initialized (for example on download) with
+        # AttributeError: 'dict' object has no attribute 'user_agent_extra'.
         kwargs.setdefault(
             "client_config",
-            {
-                "connect_timeout": settings.B2_CONNECT_TIMEOUT_SECONDS,
-                "read_timeout": settings.B2_READ_TIMEOUT_SECONDS,
-                "retries": {
+            Config(
+                connect_timeout=settings.B2_CONNECT_TIMEOUT_SECONDS,
+                read_timeout=settings.B2_READ_TIMEOUT_SECONDS,
+                retries={
                     "mode": "standard",
                     "max_attempts": settings.B2_MAX_ATTEMPTS,
                 },
-            },
+            ),
         )
         super().__init__(*args, **kwargs)
 
