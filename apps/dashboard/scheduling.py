@@ -23,19 +23,29 @@ def resource_query(member_ids):
     return Q(assigned_members__in=member_ids) if member_ids else Q(assigned_members__isnull=True)
 
 
+def _distinct_pks(queryset):
+    """Materialize de-duplicated PKs before applying PostgreSQL row locks.
+
+    PostgreSQL rejects SELECT DISTINCT ... FOR UPDATE. Relationship filters in
+    scheduling can multiply rows, so discover the unique target rows first and
+    then lock the base-table rows in a second query.
+    """
+    return list(queryset.values_list("pk", flat=True).distinct())
+
+
 def conflicting_sessions(*, studio, starts_at, duration_minutes, member_ids=(), exclude_pk=None,
                          lock=False):
     """Return active same-resource bookings whose actual half-open intervals overlap."""
     ends_at = starts_at + timedelta(minutes=duration_minutes)
     queryset = ClientSession.objects.for_photographer(studio).exclude(
         status=ClientSession.Status.CANCELLED
-    ).filter(resource_query(member_ids), starts_at__lt=ends_at).distinct()
+    ).filter(resource_query(member_ids), starts_at__lt=ends_at)
     if exclude_pk:
         queryset = queryset.exclude(pk=exclude_pk)
     if lock:
-        queryset = queryset.select_for_update()
-    # Duration is stored per booking, so the second half of the interval test is
-    # evaluated against each persisted record rather than comparing start times.
+        queryset = ClientSession.objects.filter(pk__in=_distinct_pks(queryset)).select_for_update()
+    else:
+        queryset = queryset.distinct()
     return [row for row in queryset if row.starts_at + timedelta(minutes=row.duration_minutes) > starts_at]
 
 
@@ -50,8 +60,10 @@ def conflicting_constraints(*, studio, starts_at, duration_minutes, member_ids=(
         resource |= Q(entire_team=False, assigned_members__isnull=True)
     queryset = ScheduleConstraint.objects.filter(
         studio=studio, blocks_booking=True, starts_at__lt=ends_at, ends_at__gt=starts_at,
-    ).filter(resource).distinct()
-    return queryset.select_for_update() if lock else queryset
+    ).filter(resource)
+    if lock:
+        return ScheduleConstraint.objects.filter(pk__in=_distinct_pks(queryset)).select_for_update()
+    return queryset.distinct()
 
 
 def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), exclude_pk=None,
@@ -92,9 +104,11 @@ def availability_for(*, studio, starts_at, duration_minutes, member_ids=(), excl
         minis = minis.filter(assigned_members__isnull=True)
     if exclude_mini_pk:
         minis = minis.exclude(pk=exclude_mini_pk)
-    minis = minis.filter(starts_at__lt=ends_at).distinct()
+    minis = minis.filter(starts_at__lt=ends_at)
     if lock:
-        minis = minis.select_for_update()
+        minis = MiniSession.objects.filter(pk__in=_distinct_pks(minis)).select_for_update()
+    else:
+        minis = minis.distinct()
     mini_conflicts = [row for row in minis if row.starts_at + timedelta(minutes=row.duration_minutes) > starts_at]
     return {"available": working_hours_ok and not conflicts and not constraints and not mini_conflicts,
             "working_hours_ok": working_hours_ok, "conflicts": conflicts,

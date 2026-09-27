@@ -66,9 +66,6 @@ def apply_token(membership, token_digest, sent_at, expires_at):
 
 
 def issue_token(membership):
-    # Keep the previous credential in memory until delivery succeeds. If the
-    # mail provider fails, send_invitation restores this state so a resend does
-    # not invalidate a link the invitee may already possess.
     membership._invitation_previous_state = {
         "invitation_token_digest": membership.invitation_token_digest,
         "invitation_sent_at": membership.invitation_sent_at,
@@ -87,9 +84,6 @@ def _restore_previous_token_after_delivery_failure(membership):
     StudioMembership.objects.filter(pk=membership.pk).update(**previous)
     for field, value in previous.items():
         setattr(membership, field, value)
-    # SENT/RESENT is recorded immediately before delivery by the current views.
-    # Remove only that newest delivery event so the audit trail does not claim
-    # a message was sent when the provider rejected it.
     latest = membership.invitation_events.order_by("-occurred_at", "-pk").first()
     if latest and latest.action in {StudioInvitationEvent.Action.SENT, StudioInvitationEvent.Action.RESENT}:
         latest.delete()
@@ -119,7 +113,11 @@ def send_invitation(request, membership, token):
 def find_valid_invitation(token, *, lock=False):
     queryset = StudioMembership.objects.select_related("studio", "studio__user", "invited_by")
     if lock:
-        queryset = queryset.select_for_update()
+        # Lock only StudioMembership. invited_by is nullable, so an unrestricted
+        # FOR UPDATE across select_related() produces a PostgreSQL outer-join
+        # locking error. Django/PostgreSQL's OF clause preserves eager loading
+        # while protecting the invitation row that acceptance mutates.
+        queryset = queryset.select_for_update(of=("self",))
     membership = queryset.filter(invitation_token_digest=_digest(token), status=StudioMembership.Status.INVITED).first()
     if not membership or not membership.invitation_expires_at or membership.invitation_expires_at <= timezone.now():
         if membership:

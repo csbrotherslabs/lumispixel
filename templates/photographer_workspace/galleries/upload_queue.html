@@ -2,6 +2,8 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_upload_queue.css' %}">{% endblock %}
 {% block workspace_content %}
+{# The direct multipart uploader reads Django's csrftoken cookie and sends it in X-CSRFToken. Rendering csrf_token here ensures CsrfViewMiddleware issues a real cookie even though the upload queue itself has no traditional POST form. #}
+<div hidden aria-hidden="true">{% csrf_token %}</div>
 <main class="workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-multipart-init-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-multipart-base-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
   <header class="form-page-header lp-page-header lp-upload-page-header">
     <div class="lp-upload-heading">
