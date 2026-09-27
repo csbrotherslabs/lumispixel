@@ -48,7 +48,6 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
             onboarding_completed=True,
         )
         self.gallery_cases = [self._build_gallery(design) for design in self.DESIGNS]
-
         self._playwright = sync_playwright().start()
         self.browser = self._playwright.chromium.launch(headless=True)
 
@@ -101,6 +100,15 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
         _, raw_token = AccessToken.issue(invitation)
         return design, gallery.pk, photo.pk, invitation.pk, raw_token
 
+    def _assert_lightbox_contract(self, page, design):
+        lightbox = page.locator("[data-photo-lightbox]")
+        self.assertGreater(
+            lightbox.count(),
+            0,
+            f"{design} rendered without the required [data-photo-lightbox] contract; url={page.url}",
+        )
+        return lightbox.first
+
     def test_mobile_client_journey_across_all_gallery_designs(self):
         browser_results = []
         for design, gallery_id, photo_id, invitation_id, token in self.gallery_cases:
@@ -114,6 +122,13 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
                 )
                 try:
                     page = context.new_page()
+                    response_failures = []
+                    page.on(
+                        "response",
+                        lambda response: response_failures.append(
+                            f"{response.status} {response.url}"
+                        ) if response.status >= 400 else None,
+                    )
                     response = page.goto(
                         self.live_server_url + reverse("galleries:client_gallery_access", args=[token])
                     )
@@ -135,23 +150,30 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
                     photo_card = page.locator(f"#photo-{photo_id}")
                     self.assertTrue(photo_card.is_visible())
 
-                    # These controls intentionally overlay the media surface. On a
-                    # touch-sized viewport the underlying image/watermark can win
-                    # Playwright's hit-test even though the action is visible. A
-                    # forced click still exercises the real DOM event handler and
-                    # avoids turning this journey test into a CSS hit-testing test.
+                    lightbox = self._assert_lightbox_contract(page, design)
                     photo_card.locator("[data-full-view]").click(force=True)
-                    lightbox = page.locator("[data-photo-lightbox]")
                     self.assertTrue(lightbox.evaluate("node => node.open"))
                     page.locator("[data-photo-lightbox-close]").click(force=True)
                     self.assertFalse(lightbox.evaluate("node => node.open"))
 
                     url_before = page.url
                     favorite = photo_card.locator("[data-favorite-form] button")
-                    favorite.click(force=True)
+                    favorite_url = photo_card.locator("[data-favorite-form]").get_attribute("action")
+                    with page.expect_response(
+                        lambda r: favorite_url and favorite_url in r.url,
+                        timeout=10000,
+                    ) as favorite_response_info:
+                        favorite.click(force=True)
+                    favorite_response = favorite_response_info.value
+                    self.assertEqual(
+                        favorite_response.status,
+                        200,
+                        f"{design} favorite request failed: {favorite_response.status} {favorite_response.url}; failures={response_failures}",
+                    )
                     page.wait_for_function(
                         "(id) => document.querySelector(id)?.dataset.favorite === 'true'",
                         arg=f"#photo-{photo_id}",
+                        timeout=5000,
                     )
                     self.assertEqual(page.url, url_before)
                     self.assertEqual(photo_card.locator("[data-favorite-count]").inner_text(), "1")
@@ -164,6 +186,7 @@ class ClientGalleryMobileBrowserTests(LiveServerTestCase):
                     page.wait_for_function(
                         "(id) => document.querySelector(id)?.querySelector('[data-comment-count]')?.textContent.trim() === '1'",
                         arg=f"#photo-{photo_id}",
+                        timeout=5000,
                     )
                     self.assertEqual(page.url, url_before)
 
