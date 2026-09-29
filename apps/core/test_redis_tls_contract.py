@@ -3,6 +3,8 @@ from urllib.parse import parse_qs, urlparse
 
 from django.test import SimpleTestCase
 
+from config.celery import validate_production_redis_tls
+
 
 class ProductionRedisTLSContractTests(SimpleTestCase):
     def _production_env(self):
@@ -30,6 +32,7 @@ class ProductionRedisTLSContractTests(SimpleTestCase):
                     query.get("ssl_ca_certs"),
                     ["/etc/lumispixel/certs/redis_ca.pem"],
                 )
+                validate_production_redis_tls(env[key], key)
 
     def test_production_contract_does_not_point_at_local_redis(self):
         env = self._production_env()
@@ -37,3 +40,24 @@ class ProductionRedisTLSContractTests(SimpleTestCase):
             with self.subTest(key=key):
                 hostname = urlparse(env[key]).hostname
                 self.assertNotIn(hostname, {"127.0.0.1", "localhost"})
+
+    def test_validation_rejects_unencrypted_redis(self):
+        with self.assertRaisesRegex(RuntimeError, "rediss"):
+            validate_production_redis_tls(
+                "redis://localhost:6379/0",
+                "CELERY_BROKER_URL",
+            )
+
+    def test_validation_rejects_disabled_certificate_verification(self):
+        with self.assertRaisesRegex(RuntimeError, "ssl_cert_reqs=required"):
+            validate_production_redis_tls(
+                "rediss://default:secret@example.invalid:6380/0?ssl_cert_reqs=none&ssl_ca_certs=%2Ftmp%2Fca.pem",
+                "CELERY_BROKER_URL",
+            )
+
+    def test_validation_requires_ca_certificate(self):
+        with self.assertRaisesRegex(RuntimeError, "ssl_ca_certs"):
+            validate_production_redis_tls(
+                "rediss://default:secret@example.invalid:6380/0?ssl_cert_reqs=required",
+                "CELERY_RESULT_BACKEND",
+            )
