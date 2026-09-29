@@ -3,11 +3,18 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 from django.conf import settings
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[1]
+REDIS_CA_PATH = "/etc/lumispixel/certs/redis_ca.pem"
+REDIS_TLS_QUERY = (
+    "ssl_cert_reqs=required"
+    f"&ssl_ca_certs={quote(REDIS_CA_PATH, safe='')}"
+)
+REDIS_TLS_URL = f"rediss://redis.example.test/0?{REDIS_TLS_QUERY}"
 
 
 class RepositorySecretHygieneTests(SimpleTestCase):
@@ -62,8 +69,8 @@ class ProductionConfigurationTests(SimpleTestCase):
             "DJANGO_EMAIL_HOST_PASSWORD": "smtp-password",
             "DJANGO_EMAIL_USE_TLS": "1",
             "DJANGO_EMAIL_USE_SSL": "0",
-            "CELERY_BROKER_URL": "rediss://redis.example.test/0",
-            "CELERY_RESULT_BACKEND": "rediss://redis.example.test/0",
+            "CELERY_BROKER_URL": REDIS_TLS_URL,
+            "CELERY_RESULT_BACKEND": REDIS_TLS_URL,
         })
         env.update(overrides)
         code = (
