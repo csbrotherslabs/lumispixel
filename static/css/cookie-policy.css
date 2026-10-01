@@ -4,13 +4,13 @@ html { scroll-behavior: smooth; scroll-padding-top: 190px; }
 .cookie-hero { background: radial-gradient(circle at 82% 10%, rgba(165,11,11,.08), transparent 30%), linear-gradient(180deg,#faf8f5,#fff); padding: 185px 0 84px; text-align: center; }
 .cookie-hero__inner { align-items: center; display: flex; flex-direction: column; }
 .cookie-eyebrow { color: #a50b0b; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-.cookie-hero h1 { font-size: clamp(52px,7vw,88px); letter-spacing: -.055em; line-height: 1; margin: 18px 0 24px; }
+.cookie-hero h1 { font-size: clamp(48px, 7.4vw, 55px); letter-spacing: -.055em; line-height: 1; margin: 18px 0 24px; }
 .cookie-hero p { color: #606060; font-size: clamp(18px,2vw,22px); line-height: 1.65; margin: 0; max-width: 810px; }
 .cookie-notice { background: #fff; padding: 0 0 68px; }
 .cookie-notice .container { max-width: 900px; }
 .cookie-notice__card { align-items: flex-start; background: #f7edeb; border: 1px solid #ead6d2; border-radius: 22px; display: flex; gap: 20px; padding: 29px 32px; }
 .cookie-notice__card>span { align-items: center; background: #fff; border-radius: 12px; color: #a50b0b; display: flex; flex: 0 0 46px; font-size: 22px; height: 46px; justify-content: center; }
-.cookie-notice h2 { font-size: 23px; margin: 0 0 7px; }.cookie-notice p { color: #635b59; line-height: 1.65; margin: 0; }
+.cookie-notice h2 { font-size: clamp(36px, 5vw, 45px); margin: 0 0 7px; }.cookie-notice p { color: #635b59; line-height: 1.65; margin: 0; }
 .cookie-toc { background: rgba(255,255,255,.96); border-bottom: 1px solid #e8e4de; border-top: 1px solid #eeeae5; position: sticky; top: 0; z-index: 20; }
 .cookie-toc .container { align-items: flex-start; display: flex; gap: 28px; padding-bottom: 17px; padding-top: 17px; }
 .cookie-toc strong { flex: 0 0 auto; font-size: 13px; padding-top: 7px; text-transform: uppercase; }
@@ -20,7 +20,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 190px; }
 .cookie-content { padding: 82px 0 105px; }.cookie-layout { max-width: 900px !important; }
 .cookie-sections section { border-top: 1px solid #e8e4de; padding: 55px 0 50px; }.cookie-sections section:first-child { border-top: 0; padding-top: 0; }
 .cookie-sections section>span { color: #a50b0b; font-size: 12px; font-weight: 700; letter-spacing: .12em; }
-.cookie-sections h2 { font-size: clamp(28px,4vw,39px); letter-spacing: -.035em; margin: 10px 0 23px; }
+.cookie-sections h2 { font-size: clamp(36px, 5vw, 45px); letter-spacing: -.035em; margin: 10px 0 23px; }
 .cookie-sections p { color: #5f5f5f; font-size: 17px; line-height: 1.78; margin: 0 0 14px; max-width: 760px; }.cookie-sections p:last-child { margin-bottom: 0; }
 .cookie-type-grid { display: grid; gap: 16px; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 30px 0; }
 .cookie-type-grid article { background: #faf8f5; border: 1px solid #ebe6df; border-radius: 18px; padding: 27px; }
@@ -28,7 +28,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 190px; }
 .cookie-type-grid h3 { font-size: 20px; margin: 0 0 9px; }.cookie-type-grid p { font-size: 15px; line-height: 1.6; margin: 0; }
 .cookie-cta { background: #faf8f5; padding: 90px 0 110px; }.cookie-cta__card { align-items: center; background: #a50b0b; border-radius: 28px; display: flex; justify-content: space-between; padding: 58px 64px; }
 .cookie-cta__card>div>span { color: rgba(255,255,255,.72); display: block; font-size: 12px; font-weight: 700; letter-spacing: .13em; margin-bottom: 9px; text-transform: uppercase; }
-.cookie-cta h2 { color: #fff; font-size: clamp(34px,4.5vw,56px); letter-spacing: -.04em; margin: 0; }
+.cookie-cta h2 { color: #fff; font-size: clamp(36px, 5vw, 45px); letter-spacing: -.04em; margin: 0; }
 .cookie-button { align-items: center; background: #fff; border-radius: 999px; color: #191919; display: inline-flex; flex: 0 0 auto; font-weight: 700; gap: 10px; min-height: 54px; padding: 0 26px; }.cookie-button:hover { color: #a50b0b; transform: translateY(-2px); }
 @media (max-width: 767px) { .cookie-hero { padding: 145px 0 65px; }.cookie-notice { padding-bottom: 50px; }.cookie-notice__card { padding: 24px; }.cookie-toc .container { display: block; }.cookie-toc strong { display: block; padding: 0 0 10px; }.cookie-content { padding: 60px 0 75px; }.cookie-type-grid { grid-template-columns: 1fr; }.cookie-cta__card { align-items: flex-start; flex-direction: column; gap: 28px; padding: 48px 26px; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

@@ -129,7 +129,7 @@
 }
 .slider-content h2 {
     font-family: 'saol_displayregular';
-    font-size: var(--fs-48);
+    font-size: clamp(36px, 5vw, 45px);
     line-height: var(--fs-52);
     font-weight: var(--fw-normal);
     letter-spacing: -1px;
@@ -523,7 +523,7 @@
 }
 
 .call-to-action-content h1 {
-    font-size: var(--fs-30);
+    font-size: clamp(48px, 7.4vw, 55px);
     font-weight: var(--fw-semibold);
     line-height: var(--fs-38);
     color: var(--color-white);
@@ -579,7 +579,7 @@
 /* Multiple Styles */
 .multiple_pages  .multiple_pages_inner h1 {
     font-family: var(--font-family-base);
-    font-size: var(--fs-48);
+    font-size: clamp(48px, 7.4vw, 55px);
     font-weight: var(--fw-normal);
     line-height: 80px;
     letter-spacing: var(--fs-2);
@@ -712,7 +712,7 @@
     }
     .multiple_pages .multiple_pages_inner h1,
     .shop-section .wptb-heading .wptb-item--title {
-        font-size: 40px;
+        font-size: clamp(48px, 7.4vw, 55px);
         line-height: 48px;
     }
 }

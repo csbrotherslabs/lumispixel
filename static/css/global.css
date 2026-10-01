@@ -498,11 +498,11 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .h1, h1{
-    font-size: var(--fs-50);
+    font-size: clamp(48px, 7.4vw, 55px);
     line-height: var(--fs-60); /* set "line-height" based on "font-family" */
 }
 .h2, h2{
-    font-size: var(--fs-36);
+    font-size: clamp(36px, 5vw, 45px);
     line-height: var(--fs-50); /* set "line-height" based on "font-family" */
 }
 .h3, h3{
