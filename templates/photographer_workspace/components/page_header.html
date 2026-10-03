@@ -5,5 +5,8 @@
     {% if description %}<p class="lpw-dashboard-summary lp-page-description">{{ description }}</p>{% endif %}
     {% if date %}<time datetime="{{ date|date:'Y-m-d' }}">{{ date|date:"l, F j, Y" }}</time>{% endif %}
   </div>
+  <div class="lp-hero-tools">
   {% if primary_url or secondary_url %}{% include "photographer_workspace/components/action_group.html" with primary_url=primary_url primary_label=primary_label primary_icon=primary_icon secondary_url=secondary_url secondary_label=secondary_label secondary_icon=secondary_icon only %}{% endif %}
+  {% if storage %}{% include "photographer_workspace/components/storage_summary.html" with storage=storage only %}{% endif %}
+  </div>
 </header>

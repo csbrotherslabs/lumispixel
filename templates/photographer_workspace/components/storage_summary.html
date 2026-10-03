@@ -1,0 +1,8 @@
+<section class="lp-hero-storage" aria-label="Gallery storage">
+  {% if storage.unavailable %}<p>Storage allowance temporarily unavailable.</p>
+  {% else %}
+  <div class="lp-hero-storage-row"><strong><i class="bi bi-device-hdd" aria-hidden="true"></i>{{ storage.plan }} plan</strong><span>{{ storage.used }}{% if storage.limit %} of {{ storage.limit }}{% endif %} used</span></div>
+  {% if storage.limit %}<progress max="100" value="{{ storage.percent }}" aria-label="Gallery storage used">{{ storage.percent }}%</progress>{% endif %}
+  <div class="lp-hero-storage-row"><span>{% if storage.limit_description %}{{ storage.limit_description }}{% elif storage.full %}Storage limit reached{% else %}{{ storage.remaining }} remaining{% endif %}</span><a href="{{ storage.url }}">Manage storage <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+  {% endif %}
+</section>
