@@ -30,6 +30,7 @@ from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.dashboard.identity import personal_photo_url
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
                                 Contract, ContractEvent, ContractTemplate, SignedContractDocument,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
@@ -210,7 +211,7 @@ def photographer_workspace_required(view_func):
 def _identity(profile, user):
     name = user.full_name or profile.display_name or user.email
     initials = "".join(part[:1] for part in name.split()[:2]).upper() or "LP"
-    photo = profile.profile_photo.url if profile.profile_photo else ""
+    photo = personal_photo_url(user)
     return {"name": name, "initials": initials, "image_url": photo, "image_alt": f"{name} profile photo" if photo else ""}
 
 
