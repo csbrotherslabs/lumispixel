@@ -1,9 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_dashboard_header.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_ai_wallet.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/workspace_onboarding.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_dashboard_header.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_ai_wallet.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:gallery_upload_queue' as upload_url %}{% url 'photographer_workspace:bookings' as booking_url %}
-{% include "photographer_workspace/components/page_header.html" with greeting=greeting|add:", "|add:welcome_name|add:"." title="Dashboard" visually_hidden_title=True description=day_summary date=today primary_url=upload_url primary_label="Upload Photos" primary_icon="bi-cloud-arrow-up" secondary_url=booking_url secondary_label="Create Booking" secondary_icon="bi-calendar-plus" only %}
+{% include "photographer_workspace/components/page_header.html" with greeting=greeting|add:", "|add:welcome_name|add:"." title="Dashboard" visually_hidden_title=True description=day_summary date=today primary_url=upload_url primary_label="Upload Photos" primary_icon="bi-cloud-arrow-up" secondary_url=booking_url secondary_label="Create Booking" secondary_icon="bi-calendar-plus" storage=hero_storage only %}
 
 {% if dashboard_error %}{% url 'photographer_workspace:dashboard' as retry_url %}{% include "photographer_workspace/components/error_state.html" with state_id="dashboard-error" icon="bi-cloud-slash" title="Dashboard data could not be loaded" description="Your records are safe. Try refreshing this page in a moment." retry_url=retry_url only %}{% endif %}
 {% if not dashboard_error %}
@@ -12,7 +12,7 @@
 
 {% if kpis %}<section class="lpw-kpi-grid" aria-label="Business key performance indicators">{% for card in kpis %}{% if card.label != "Outstanding payments" %}{% include "photographer_workspace/components/dashboard_kpi_card.html" with card=card only %}{% else %}<span class="visually-hidden" data-dashboard-outstanding-payments>{{ card.value }}</span>{% endif %}{% endfor %}</section>{% endif %}
 
-{% if not has_business_data and not dashboard_error %}<section class="lpw-onboarding"><div><span>Start here</span><h2>Build your workspace in a few focused steps</h2><p>Add your first client, then create a booking. Uploads and gallery delivery will follow naturally.</p></div><a class="lpw-btn lpw-btn-primary" href="{% url 'photographer_workspace:add_client' %}"><i class="bi bi-person-plus"></i>Add your first client</a></section>{% endif %}
+{% if onboarding %}{% include "photographer_workspace/components/onboarding.html" with onboarding=onboarding only %}{% endif %}
 
 <div class="lpw-operations-grid"><main>
   <section class="lpw-command-card lpw-performance" aria-labelledby="performance-title"><div class="lpw-command-card__head"><div><span>Last 6 months</span><h2 id="performance-title">Revenue and booking performance</h2></div><a href="{% url 'photographer_workspace:analytics' %}">View analytics <i class="bi bi-arrow-right"></i></a></div>
@@ -29,3 +29,5 @@
 {% if insight %}<section class="lpw-insight"><i class="bi bi-lightbulb"></i><div><span>{{ insight.label }}</span><h2>{{ insight.title }}</h2><p>{{ insight.body }}</p></div></section>{% endif %}
 {% endif %}
 {% endblock %}
+
+{% block extra_js %}{{ block.super }}<script src="{% static 'js/workspace_onboarding.js' %}" defer></script>{% endblock %}

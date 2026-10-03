@@ -1,0 +1,19 @@
+<section class="lpw-onboarding lp-onboarding" aria-labelledby="onboarding-title" data-onboarding-key="{{ onboarding.storage_key }}">
+  {% if onboarding.complete %}
+  <div class="lp-onboarding-complete"><i class="bi bi-check-circle" aria-hidden="true"></i><h2 id="onboarding-title">Setup complete</h2><p>Your workspace is ready for gallery delivery.</p></div>
+  {% else %}
+  <header class="lp-onboarding-header">
+    <div><span class="lp-onboarding-eyebrow">Start here</span><h2 id="onboarding-title">Get your workspace ready</h2><p>A few small steps to your first gallery delivery.</p></div>
+    <div class="lp-onboarding-progress"><label for="onboarding-progress">{{ onboarding.completed }} of 4 complete</label><progress id="onboarding-progress" value="{{ onboarding.completed }}" max="4">{{ onboarding.completed }} of 4 complete</progress></div>
+  </header>
+  <ol class="lp-onboarding-steps">
+    {% for step in onboarding.steps %}
+    <li><a class="lp-onboarding-step{% if step.current %} is-current{% endif %}{% if step.complete %} is-complete{% endif %}" href="{{ step.url }}"{% if step.current %} aria-current="step"{% endif %}>
+      <span class="lp-onboarding-number" aria-hidden="true">{% if step.complete %}<i class="bi bi-check-lg"></i>{% else %}{{ forloop.counter }}{% endif %}</span>
+      <span class="lp-onboarding-copy"><i class="bi {{ step.icon }}" aria-hidden="true"></i><strong>{{ step.title }}</strong><span>{{ step.description }}</span><small>{% if step.complete %}Complete{% elif step.current %}Next step{% else %}Not started{% endif %}</small></span>
+    </a></li>
+    {% endfor %}
+  </ol>
+  <footer class="lp-onboarding-footer"><p>Start with any step. You can finish later.</p><div><a class="lp-button lp-button--primary" href="{{ onboarding.next_step.url }}">{{ onboarding.next_step.title }}<i class="bi bi-arrow-right" aria-hidden="true"></i></a><button class="lp-button lp-button--secondary" type="button" data-onboarding-dismiss hidden>Dismiss for now</button></div></footer>
+  {% endif %}
+</section>

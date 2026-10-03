@@ -29,3 +29,20 @@
 @media(max-width:1180px){.lpw-kpi-grid{gap:14px}}
 @media(max-width:860px){.lpw-dashboard-header{padding:30px 28px}.lpw-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lpw-kpi-grid .lpw-kpi-card{min-height:146px;padding:20px}}
 @media(max-width:620px){.lpw-dashboard-header{padding:26px 22px;border-radius:20px}.lpw-kpi-grid{grid-template-columns:1fr;gap:12px}.lpw-kpi-grid .lpw-kpi-card{min-height:138px;padding:18px}.lpw-kpi-grid .lpw-kpi-card>strong{font-size:24px}}
+
+/* Actual plan storage below the dashboard actions. */
+.lpw-dashboard-header .lp-hero-tools{display:grid;gap:var(--lp-space-3);min-width:0;width:min(100%,26rem);flex-shrink:0}
+.lpw-dashboard-header .lp-hero-tools .lp-header-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;width:100%}
+.lp-hero-storage{padding:var(--lp-space-4);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);background:var(--lp-color-surface);color:var(--lp-text-primary);font-size:var(--lp-type-caption)}
+.lp-hero-storage-row{display:flex;justify-content:space-between;align-items:center;gap:var(--lp-space-3);flex-wrap:wrap}
+.lp-hero-storage-row strong{display:flex;align-items:center;gap:var(--lp-space-2);font-weight:650}
+.lp-hero-storage-row>span{color:var(--lp-text-secondary)}
+.lp-hero-storage-row a{display:inline-flex;align-items:center;gap:var(--lp-space-2);min-height:2.75rem;color:var(--lp-text-primary);font-weight:650}
+.lp-hero-storage-row a:focus-visible{outline:var(--lp-focus-ring);outline-offset:3px}
+.lp-hero-storage progress{display:block;width:100%;height:.5rem;margin:var(--lp-space-3) 0;border:0;overflow:hidden;border-radius:var(--lp-radius-pill);appearance:none;background:var(--lp-color-page);accent-color:var(--lp-color-brand)}
+.lp-hero-storage progress::-webkit-progress-bar{background:var(--lp-color-page)}
+.lp-hero-storage progress::-webkit-progress-value{background:var(--lp-color-brand)}
+.lp-hero-storage progress::-moz-progress-bar{background:var(--lp-color-brand)}
+@media(max-width:1100px){.lpw-dashboard-header:has(.lp-hero-storage){flex-direction:column;align-items:stretch}.lpw-dashboard-header:has(.lp-hero-storage) .lp-hero-tools{width:100%}.lpw-dashboard-header:has(.lp-hero-storage) .lp-header-actions{justify-content:flex-start}}
+@media(max-width:620px){.lpw-dashboard-header .lp-hero-tools .lp-header-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--lp-space-2)}.lpw-dashboard-header .lp-hero-tools .lpw-btn{min-width:0;justify-content:center;padding-inline:var(--lp-space-2);font-size:var(--lp-type-caption)}.lp-hero-storage{padding:var(--lp-space-3)}}
+@media(max-width:360px){.lpw-dashboard-header .lp-hero-tools .lp-header-actions{grid-template-columns:1fr}}
