@@ -1,0 +1,9 @@
+<section class="lp-hero-storage" aria-label="Gallery storage">
+  <div class="lp-hero-storage-heading"><span class="lp-hero-storage-label"><i class="bi bi-device-hdd" aria-hidden="true"></i> Gallery storage</span>{% if not storage.unavailable %}{% include "photographer_workspace/components/badge.html" with label=storage.plan variant="neutral" %}{% endif %}</div>
+  {% if storage.unavailable %}<p class="lp-hero-storage-message">Storage allowance temporarily unavailable.</p>
+  {% else %}
+  <div class="lp-hero-storage-usage"><strong>{{ storage.used }}</strong><span>{% if storage.limit %}used of {{ storage.limit }}{% else %}used{% endif %}</span></div>
+  {% if storage.limit %}<progress max="100" value="{{ storage.percent }}" aria-label="Gallery storage used">{{ storage.percent }}%</progress>{% endif %}
+  <div class="lp-hero-storage-footer"><span>{% if storage.limit_description %}{{ storage.limit_description }}{% elif storage.full %}<i class="bi bi-exclamation-circle" aria-hidden="true"></i> Storage limit reached{% else %}<strong>{{ storage.remaining }}</strong> available{% endif %}</span><a href="{{ storage.url }}">Manage storage <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+  {% endif %}
+</section>

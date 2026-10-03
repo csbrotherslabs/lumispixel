@@ -30,6 +30,7 @@ from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.dashboard.identity import personal_photo_url
 from apps.clients.models import (Client, ClientActivity, ClientInvoice, ClientNote, ClientSession, ClientTask,
                                 Contract, ContractEvent, ContractTemplate, SignedContractDocument,
                                 InvoiceActivity, InvoiceCredit, InvoiceLineItem, InvoicePayment, Lead,
@@ -71,6 +72,8 @@ from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
 from apps.dashboard.dashboard_data import build_dashboard
+from apps.dashboard.onboarding import build_onboarding
+from apps.dashboard.storage_summary import build_storage_summary
 from apps.dashboard.crm_overview import build_crm_overview
 from apps.dashboard.models import (GrowthCampaign, ReferralLink, ReviewRequest, StudioInvitationEvent,
                                    ScheduleConstraint, StudioMembership, StudioMembershipEvent)
@@ -210,7 +213,7 @@ def photographer_workspace_required(view_func):
 def _identity(profile, user):
     name = user.full_name or profile.display_name or user.email
     initials = "".join(part[:1] for part in name.split()[:2]).upper() or "LP"
-    photo = profile.profile_photo.url if profile.profile_photo else ""
+    photo = personal_photo_url(user)
     return {"name": name, "initials": initials, "image_url": photo, "image_alt": f"{name} profile photo" if photo else ""}
 
 
@@ -317,6 +320,8 @@ def photographer_dashboard(request):
     context = _dashboard_context(request)
     try:
         context.update(build_dashboard(request.studio_access))
+        context["onboarding"] = build_onboarding(request.studio_access)
+        context["hero_storage"] = build_storage_summary(request.studio_access)
     except DatabaseError:
         # Contain aggregation outages and never expose exception details or
         # synthetic business values in the response.
