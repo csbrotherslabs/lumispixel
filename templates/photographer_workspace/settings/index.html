@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
-{% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_workspace_settings.css' %}">{% endblock %}
+{% load static theme_preview_media %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_workspace_settings.css' %}?v=design-images-1">{% endblock %}
 {% block workspace_content %}
 <div class="lps-page lp-clients-main-width">
   <header class="lps-header lpw-command-header lpw-dashboard-header">
@@ -83,7 +83,32 @@
       {% if current_theme %}<div class="lps-current-theme"><span class="lps-current-icon"><i class="bi bi-window" aria-hidden="true"></i></span><div><small>Current design</small><strong>{{ current_theme.name }}</strong><p>{{ current_theme.description }}</p></div><div class="lps-current-actions"><a class="lp-button lp-button--outline lp-button--sm" href="{{ current_theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview current website</a><a class="lp-text-action" href="{{ website_builder_url }}">Open full website builder <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>{% endif %}
       <div class="lps-theme-heading"><div><h3>Available designs</h3><p>Compare the six LumisPixel website systems using the completed previews.</p></div></div>
       <div class="lps-theme-grid">
-        {% for theme in themes %}<article class="lps-theme-card{% if theme.active %} is-active{% endif %}"><div class="lps-theme-card__top"><div><span>{{ theme.best_for }}</span><h3>{{ theme.name }}</h3></div>{% if theme.active %}<span class="lps-active-badge"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Current</span>{% endif %}</div><p>{{ theme.description }}</p><div class="lps-includes"><small>Includes</small><span>{{ theme.included_sections|join:", " }}</span></div><footer><a class="lp-button lp-button--outline lp-button--sm" href="{{ theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview</a>{% if not theme.active %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="activate_theme"><input type="hidden" name="theme_value" value="{{ theme.value }}"><button class="lp-button lp-button--secondary lp-button--sm" type="submit">Use design</button></form>{% endif %}</footer></article>{% endfor %}
+        {% for theme in themes %}
+          {% theme_media theme.slug "hero" 0 as theme_card_image %}
+          <article class="lps-theme-card{% if theme.active %} is-active{% endif %}">
+            <a class="lps-theme-card__preview" href="{{ theme.preview_url }}" target="_blank" rel="noopener" aria-label="Preview {{ theme.name }} website design (opens in a new tab)">
+              <img src="{% if theme_card_image %}{% static theme_card_image %}{% else %}{% static theme.preview_image %}{% endif %}" alt="{{ theme.name }} website design preview" loading="lazy" width="1200" height="675">
+            </a>
+            <div class="lps-theme-card__body">
+              <div class="lps-theme-card__top">
+                <div><h3>{{ theme.name }}</h3><span>{{ theme.best_for }}</span></div>
+                {% if theme.active %}<span class="lps-active-badge"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Current</span>{% endif %}
+              </div>
+              <p>{{ theme.description }}</p>
+            </div>
+            <footer>
+              <a class="lp-button lp-button--outline lp-button--sm" href="{{ theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview</a>
+              {% if not theme.active %}
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="activate_theme">
+                  <input type="hidden" name="theme_value" value="{{ theme.value }}">
+                  <button class="lp-button lp-button--primary lp-button--sm" type="submit">Use design</button>
+                </form>
+              {% endif %}
+            </footer>
+          </article>
+        {% endfor %}
       </div>
     </section>
 

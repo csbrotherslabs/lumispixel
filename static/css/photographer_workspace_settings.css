@@ -20,3 +20,13 @@
 @media(max-width:1000px){.lps-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lps-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lps-wide{grid-column:1/-1}.lps-current-theme{grid-template-columns:auto 1fr}.lps-current-actions{grid-column:1/-1;justify-content:flex-start}.lps-brand-row{grid-template-columns:1fr 1fr}.lps-brand-copy{grid-column:1/-1}.lps-current-logo-card__frame{min-height:160px}.lps-dropzone{min-height:220px}}
 @media(max-width:700px){.lpw-main:has(> .lps-page){padding:22px 16px 40px}.lps-header{padding:24px 22px;border-radius:20px}.lps-panel{padding:17px}.lps-panel-head{align-items:stretch;flex-direction:column}.lps-panel-head>.lp-button{width:100%}.lps-form-grid,.lps-preference-grid,.lps-theme-grid,.lps-destination-grid{grid-template-columns:1fr}.lps-wide{grid-column:auto}.lps-subsection{grid-template-columns:1fr;gap:14px}.lps-brand-row{grid-template-columns:1fr;padding:16px}.lps-brand-copy{grid-column:auto}.lps-current-logo-card,.lps-logo-upload-card{padding:15px}.lps-current-logo-card__frame{min-height:140px}.lps-dropzone{min-height:210px;padding:20px}.lps-current-theme{grid-template-columns:1fr}.lps-current-icon{display:none}.lps-current-actions{grid-column:auto;align-items:stretch;flex-direction:column}.lps-current-actions .lp-button{width:100%}.lps-theme-card footer{align-items:stretch;flex-direction:column}.lps-theme-card footer form,.lps-theme-card footer .lp-button{width:100%}}
 @media(prefers-reduced-motion:reduce){.lps-page *{transition-duration:.01ms!important}}
+
+/* Image-led website design cards, using the website builder's static previews. */
+.lps-theme-card{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;border-radius:var(--lp-radius-md);background:var(--lp-color-surface)}
+.lps-theme-card__preview{display:block;flex:none;aspect-ratio:16/9;background:var(--lp-color-page)}
+.lps-theme-card__preview img{display:block;width:100%;height:100%;object-fit:cover}
+.lps-theme-card__preview:focus-visible{outline:var(--lp-focus-ring);outline-offset:calc(-1 * var(--lp-space-1))}
+.lps-theme-card__body{display:grid;gap:var(--lp-space-2);padding:var(--lp-space-4);flex:1}
+.lps-theme-card__body p{margin:0;color:var(--lp-text-secondary);font-size:var(--lp-type-body-small);line-height:var(--lp-leading-body)}
+.lps-theme-card footer{flex-wrap:wrap;padding:var(--lp-space-3) var(--lp-space-4) var(--lp-space-4);border-top:1px solid var(--lp-color-border)}
+.lps-theme-card footer .lp-button{min-height:44px}
