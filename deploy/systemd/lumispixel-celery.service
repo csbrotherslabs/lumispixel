@@ -1,0 +1,17 @@
+[Unit]
+Description=LumisPixel Celery Worker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=lumispixel
+Group=www-data
+WorkingDirectory=/srv/lumispixel/app
+EnvironmentFile=/srv/lumispixel/.env
+ExecStart=/srv/lumispixel/venv/bin/celery -A config worker --loglevel=INFO --concurrency=1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
