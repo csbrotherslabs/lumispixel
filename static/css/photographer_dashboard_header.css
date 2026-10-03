@@ -36,3 +36,8 @@
 @media(max-width:1100px){.lpw-dashboard-header:has(.lp-hero-storage){flex-direction:column;align-items:stretch}.lpw-dashboard-header:has(.lp-hero-storage) .lp-hero-tools{width:100%}.lpw-dashboard-header:has(.lp-hero-storage) .lp-header-actions{justify-content:flex-start}}
 @media(max-width:620px){.lpw-dashboard-header .lp-hero-tools .lp-header-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--lp-space-2)}.lpw-dashboard-header .lp-hero-tools .lpw-btn{min-width:0;justify-content:center;padding-inline:var(--lp-space-2);font-size:var(--lp-type-caption)}}
 @media(max-width:360px){.lpw-dashboard-header .lp-hero-tools .lp-header-actions{grid-template-columns:1fr}}
+
+/* Keep hero usage and action labels at the same size. */
+.lpw-dashboard-header{--lp-hero-action-size:.875rem}
+.lpw-dashboard-header .lpw-command-header__actions .lpw-btn{font-size:var(--lp-hero-action-size)}
+@media(max-width:620px){.lpw-dashboard-header{--lp-hero-action-size:var(--lp-type-caption)}}
