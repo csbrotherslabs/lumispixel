@@ -13,7 +13,7 @@
         {% if request.user.is_authenticated %}
             {% unread_notifications as mobile_unread_count %}
             <div class="mobile-user-summary">
-                <img src="{% if request.user.is_client and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif request.user.is_photographer and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="mobile-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo">
+                <img src="{% if request.user.has_client_profile and request.user.client_profile.profile_photo %}{{ request.user.client_profile.profile_photo.url }}{% elif not request.user.has_client_profile and request.user.has_photographer_profile and request.user.photographer_profile.profile_photo %}{{ request.user.photographer_profile.profile_photo.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" class="mobile-avatar" alt="{{ request.user.first_name|default:request.user.get_username }} profile photo">
                 <div>
                     <strong>{{ request.user.first_name|default:request.user.get_username }}</strong>
                     <span>{% if request.user.is_staff %}Admin{% elif request.user.is_photographer %}Photographer{% elif request.user.is_client %}Client{% endif %}</span>
