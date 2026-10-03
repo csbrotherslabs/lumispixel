@@ -5,6 +5,7 @@ from django.views.decorators.http import require_GET
 
 from apps.accounts.models import User
 from apps.dashboard.access import access_for
+from apps.dashboard.identity import personal_photo_url
 
 
 def _initials(name):
@@ -18,7 +19,6 @@ def photographer_profile(request):
     if not request.user.can_login or not request.user.can_use_photographer_workspace:
         return redirect("accounts:post-login-redirect")
     access = access_for(request.user)
-    membership = access.membership
     name = request.user.full_name or request.user.email
     owned_studio = getattr(request.user, "photographer_profile", None)
     memberships = request.user.studio_memberships.select_related("studio").filter(status="active").order_by("studio__business_name", "studio__display_name")
@@ -29,11 +29,7 @@ def photographer_profile(request):
         contexts.append({"label": owned_studio.business_name or owned_studio.display_name or "My photography business", "kind": "Owner", "icon": "bi-building"})
     for item in memberships:
         contexts.append({"label": item.studio.business_name or item.studio.display_name or "Photography studio", "kind": item.get_role_display(), "icon": "bi-people"})
-    image_url = ""
-    if owned_studio and owned_studio.profile_photo:
-        image_url = owned_studio.profile_photo.url
-    elif membership and membership.studio.profile_photo:
-        image_url = membership.studio.profile_photo.url
+    image_url = personal_photo_url(request.user)
     return render(request, "photographer_workspace/profile.html", {
         "page_title": "My Profile",
         "hide_topbar_heading": True,
