@@ -109,6 +109,33 @@ if not DEBUG:
     if not MEDIA_SIGNING_SECRET: raise RuntimeError("MEDIA_SIGNING_SECRET is required for production signed media delivery.")
     if len(MEDIA_SIGNING_SECRET) < 32: raise RuntimeError("MEDIA_SIGNING_SECRET must be at least 32 characters in production.")
 
+# Rollout switch: copy existing uploads before enabling B2 on each environment.
+USER_UPLOAD_STORAGE_BACKEND = os.getenv("USER_UPLOAD_STORAGE_BACKEND", "local").lower()
+if USER_UPLOAD_STORAGE_BACKEND not in {"local", "b2"}:
+    raise RuntimeError("USER_UPLOAD_STORAGE_BACKEND must be local or b2.")
+B2_SITE_BUCKET_NAME = os.getenv("B2_SITE_BUCKET_NAME", "")
+B2_PRIVATE_UPLOAD_BUCKET_NAME = os.getenv("B2_PRIVATE_UPLOAD_BUCKET_NAME", "")
+B2_SITE_ACCESS_KEY_ID = os.getenv("B2_SITE_ACCESS_KEY_ID", "")
+B2_SITE_SECRET_ACCESS_KEY = os.getenv("B2_SITE_SECRET_ACCESS_KEY", "")
+B2_PRIVATE_UPLOAD_ACCESS_KEY_ID = os.getenv("B2_PRIVATE_UPLOAD_ACCESS_KEY_ID", "")
+B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY = os.getenv("B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY", "")
+SITE_MEDIA_DELIVERY_BASE_URL = os.getenv("SITE_MEDIA_DELIVERY_BASE_URL", "").rstrip("/")
+if USER_UPLOAD_STORAGE_BACKEND == "b2":
+    if not all([B2_SITE_BUCKET_NAME, B2_PRIVATE_UPLOAD_BUCKET_NAME,
+                B2_SITE_ACCESS_KEY_ID, B2_SITE_SECRET_ACCESS_KEY,
+                B2_PRIVATE_UPLOAD_ACCESS_KEY_ID, B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY,
+                B2_REGION, B2_ENDPOINT_URL, SITE_MEDIA_DELIVERY_BASE_URL]):
+        raise RuntimeError("B2 user upload buckets, credentials, endpoint and site delivery URL are required.")
+    if not B2_ENDPOINT_URL.startswith("https://") or not SITE_MEDIA_DELIVERY_BASE_URL.startswith("https://"):
+        raise RuntimeError("B2 user upload endpoints must use HTTPS.")
+    if B2_SITE_BUCKET_NAME in {B2_PRIVATE_UPLOAD_BUCKET_NAME, B2_BUCKET_NAME}:
+        raise RuntimeError("Site media must use a separate bucket from restricted uploads and galleries.")
+    if not all(name.startswith(f"lumispixel-{GALLERY_STORAGE_ENVIRONMENT}-")
+               for name in (B2_SITE_BUCKET_NAME, B2_PRIVATE_UPLOAD_BUCKET_NAME)):
+        raise RuntimeError("User upload bucket names must match the dev/prod environment.")
+    STORAGES["default"] = {"BACKEND": "apps.core.upload_storage.UserUploadStorage"}
+    STORAGES["contract_documents"] = {"BACKEND": "apps.core.upload_storage.UploadB2Storage"}
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
