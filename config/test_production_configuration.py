@@ -74,3 +74,31 @@ class ProductionConfigurationContractTests(SimpleTestCase):
         result = self._check({"B2_ENDPOINT_URL": "http://b2.example.com"})
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("B2_ENDPOINT_URL must use HTTPS", result.stderr)
+
+    def test_b2_user_uploads_require_complete_configuration(self):
+        result = self._check({"USER_UPLOAD_STORAGE_BACKEND": "b2", "B2_SITE_BUCKET_NAME": ""})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("user upload buckets", result.stderr)
+
+    def test_b2_user_uploads_reject_dev_buckets_in_production(self):
+        result = self._check({
+            "USER_UPLOAD_STORAGE_BACKEND": "b2",
+            "B2_SITE_BUCKET_NAME": "lumispixel-dev-site-media",
+            "B2_PRIVATE_UPLOAD_BUCKET_NAME": "lumispixel-prod-private-media",
+            "B2_SITE_ACCESS_KEY_ID": "site-key", "B2_SITE_SECRET_ACCESS_KEY": "site-secret",
+            "B2_PRIVATE_UPLOAD_ACCESS_KEY_ID": "private-key", "B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY": "private-secret",
+            "SITE_MEDIA_DELIVERY_BASE_URL": "https://site-media.lumispixel.com",
+        })
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must match the dev/prod environment", result.stderr)
+
+    def test_b2_user_uploads_valid_configuration_loads(self):
+        result = self._check({
+            "USER_UPLOAD_STORAGE_BACKEND": "b2",
+            "B2_SITE_BUCKET_NAME": "lumispixel-prod-site-media",
+            "B2_PRIVATE_UPLOAD_BUCKET_NAME": "lumispixel-prod-private-media",
+            "B2_SITE_ACCESS_KEY_ID": "site-key", "B2_SITE_SECRET_ACCESS_KEY": "site-secret",
+            "B2_PRIVATE_UPLOAD_ACCESS_KEY_ID": "private-key", "B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY": "private-secret",
+            "SITE_MEDIA_DELIVERY_BASE_URL": "https://site-media.lumispixel.com",
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)

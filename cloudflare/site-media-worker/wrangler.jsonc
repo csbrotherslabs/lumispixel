@@ -1,0 +1,24 @@
+{
+  "name": "lumispixel-site-media-dev",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-19",
+  "vars": {
+    "B2_BUCKET_NAME": "lumispixel-dev-site-media",
+    "B2_REGION": "us-east-005",
+    "B2_ENDPOINT_URL": "https://s3.us-east-005.backblazeb2.com",
+    "B2_ALLOWED_PREFIX": "site/dev/",
+    "MEDIA_EDGE_CACHE_TTL": "3600"
+  },
+  "env": {
+    "production": {
+      "name": "lumispixel-site-media-prod",
+      "vars": {
+        "B2_BUCKET_NAME": "lumispixel-prod-site-media",
+        "B2_REGION": "us-east-005",
+        "B2_ENDPOINT_URL": "https://s3.us-east-005.backblazeb2.com",
+        "B2_ALLOWED_PREFIX": "site/prod/",
+        "MEDIA_EDGE_CACHE_TTL": "3600"
+      }
+    }
+  }
+}
