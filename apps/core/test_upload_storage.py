@@ -13,7 +13,8 @@ from apps.accounts.models import ClientProfile, User
 from apps.core.upload_storage import UploadB2Storage, UserUploadStorage
 
 B2_CONFIG = dict(
-    UPLOAD_B2_ACCESS_KEY_ID="test-key", UPLOAD_B2_SECRET_ACCESS_KEY="test-secret",
+    B2_SITE_ACCESS_KEY_ID="site-key", B2_SITE_SECRET_ACCESS_KEY="site-secret",
+    B2_PRIVATE_UPLOAD_ACCESS_KEY_ID="private-key", B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY="private-secret",
     B2_SITE_BUCKET_NAME="lumispixel-dev-site-media",
     B2_PRIVATE_UPLOAD_BUCKET_NAME="lumispixel-dev-private-media",
     B2_REGION="us-east-005", B2_ENDPOINT_URL="https://s3.us-east-005.backblazeb2.com",
@@ -31,6 +32,10 @@ class UserUploadStorageTests(SimpleTestCase):
         self.assertEqual(storage.url(name), "https://site-media-dev.lumispixel.com/site/dev/client-profiles/avatar.png")
         self.assertEqual(storage.site.bucket_name, "lumispixel-dev-site-media")
         self.assertIsNone(storage.site.default_acl)
+        self.assertEqual(storage.site.access_key, "site-key")
+        self.assertEqual(storage.site.secret_key, "site-secret")
+        self.assertEqual(storage.private.access_key, "private-key")
+        self.assertEqual(storage.private.secret_key, "private-secret")
 
     def test_unknown_paths_and_gallery_covers_remain_restricted(self):
         storage = UserUploadStorage()

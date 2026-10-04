@@ -31,7 +31,7 @@ not prevent a development upload from changing a shared production profile row.
 ## Configure delivery before enabling storage
 
 1. Create private B2 buckets in the same region as the current B2 endpoint. Scope the
-   Django upload key to the required buckets with read/write/list/delete privileges.
+   two Django upload keys, each restricted to one bucket with Read and Write access.
    Use separate credentials for dev/prod. Give the site-media Worker a read-only key
    restricted to its site bucket, never a key for private galleries.
 2. In `cloudflare/site-media-worker/wrangler.jsonc`, set the actual region and endpoint.
@@ -46,8 +46,10 @@ not prevent a development upload from changing a shared production profile row.
 USER_UPLOAD_STORAGE_BACKEND=local
 B2_SITE_BUCKET_NAME=lumispixel-prod-site-media
 B2_PRIVATE_UPLOAD_BUCKET_NAME=lumispixel-prod-private-media
-UPLOAD_B2_ACCESS_KEY_ID=YOUR_UPLOAD_KEY_ID
-UPLOAD_B2_SECRET_ACCESS_KEY=YOUR_UPLOAD_KEY
+B2_SITE_ACCESS_KEY_ID=YOUR_SITE_UPLOAD_KEY_ID
+B2_SITE_SECRET_ACCESS_KEY=YOUR_SITE_UPLOAD_KEY
+B2_PRIVATE_UPLOAD_ACCESS_KEY_ID=YOUR_PRIVATE_UPLOAD_KEY_ID
+B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY=YOUR_PRIVATE_UPLOAD_KEY
 SITE_MEDIA_DELIVERY_BASE_URL=https://site-media.lumispixel.com
 ```
 

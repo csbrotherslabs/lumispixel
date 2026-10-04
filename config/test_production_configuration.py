@@ -85,7 +85,8 @@ class ProductionConfigurationContractTests(SimpleTestCase):
             "USER_UPLOAD_STORAGE_BACKEND": "b2",
             "B2_SITE_BUCKET_NAME": "lumispixel-dev-site-media",
             "B2_PRIVATE_UPLOAD_BUCKET_NAME": "lumispixel-prod-private-media",
-            "UPLOAD_B2_ACCESS_KEY_ID": "key", "UPLOAD_B2_SECRET_ACCESS_KEY": "secret",
+            "B2_SITE_ACCESS_KEY_ID": "site-key", "B2_SITE_SECRET_ACCESS_KEY": "site-secret",
+            "B2_PRIVATE_UPLOAD_ACCESS_KEY_ID": "private-key", "B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY": "private-secret",
             "SITE_MEDIA_DELIVERY_BASE_URL": "https://site-media.lumispixel.com",
         })
         self.assertNotEqual(result.returncode, 0)
@@ -96,7 +97,8 @@ class ProductionConfigurationContractTests(SimpleTestCase):
             "USER_UPLOAD_STORAGE_BACKEND": "b2",
             "B2_SITE_BUCKET_NAME": "lumispixel-prod-site-media",
             "B2_PRIVATE_UPLOAD_BUCKET_NAME": "lumispixel-prod-private-media",
-            "UPLOAD_B2_ACCESS_KEY_ID": "key", "UPLOAD_B2_SECRET_ACCESS_KEY": "secret",
+            "B2_SITE_ACCESS_KEY_ID": "site-key", "B2_SITE_SECRET_ACCESS_KEY": "site-secret",
+            "B2_PRIVATE_UPLOAD_ACCESS_KEY_ID": "private-key", "B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY": "private-secret",
             "SITE_MEDIA_DELIVERY_BASE_URL": "https://site-media.lumispixel.com",
         })
         self.assertEqual(result.returncode, 0, result.stderr)

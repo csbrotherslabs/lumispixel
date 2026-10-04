@@ -35,8 +35,8 @@ class UploadB2Storage(S3Storage):
         self.site = site
         prefix = "site" if site else "uploads"
         kwargs.update(
-            access_key=settings.UPLOAD_B2_ACCESS_KEY_ID,
-            secret_key=settings.UPLOAD_B2_SECRET_ACCESS_KEY,
+            access_key=settings.B2_SITE_ACCESS_KEY_ID if site else settings.B2_PRIVATE_UPLOAD_ACCESS_KEY_ID,
+            secret_key=settings.B2_SITE_SECRET_ACCESS_KEY if site else settings.B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY,
             bucket_name=settings.B2_SITE_BUCKET_NAME if site else settings.B2_PRIVATE_UPLOAD_BUCKET_NAME,
             region_name=settings.B2_REGION,
             endpoint_url=settings.B2_ENDPOINT_URL,
