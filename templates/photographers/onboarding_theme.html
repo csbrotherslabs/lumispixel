@@ -8,8 +8,8 @@
   <input type="hidden" name="preview_context" value="{% if builder_mode %}builder{% else %}onboarding{% endif %}">
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
-  <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
-    <legend>Website template {% include "photographers/_required_marker.html" %}</legend>
+  <h2 class="lumis-onboarding__theme-subtitle" id="website-template-label">Website template {% include "photographers/_required_marker.html" %}</h2>
+  <fieldset class="lumis-onboarding__theme-grid" aria-labelledby="website-template-label">
     {% for theme in theme_options %}
       {% theme_media theme.slug "hero" 0 as theme_card_image %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
