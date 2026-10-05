@@ -6,7 +6,7 @@
       <span class="lumis-onboarding-choice__label">{{ field.label }}</span>
     </label>
   {% else %}
-    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} {% include "photographers/_required_marker.html" %}{% endif %}</label>
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.name == "travel_radius" %} <span data-travel-required hidden>{% include "photographers/_required_marker.html" %}</span>{% elif field.field.required %} {% include "photographers/_required_marker.html" %}{% endif %}</label>
     {{ field }}
   {% endif %}
   {% if field.help_text %}<div class="lumis-onboarding__help" id="{{ field.id_for_label }}-help">{{ field.help_text }}</div>{% endif %}
