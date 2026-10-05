@@ -1084,7 +1084,7 @@
   }
   function toast(message) {
     const node = document.createElement('div'); node.className = 'lpw-event-form-saved'; node.setAttribute('role', 'status'); node.textContent = message;
-    document.body.appendChild(node); window.setTimeout(function () { node.remove(); }, 2800);
+    document.body.appendChild(node); window.setTimeout(function () { node.remove(); }, 10000);
   }
 
   document.querySelectorAll('[data-event-form-open]').forEach(function (button) { button.addEventListener('click', function () {
@@ -1315,7 +1315,7 @@
     const node = document.createElement('div'); node.className = 'lpw-event-form-saved lpw-undo-toast'; node.setAttribute('role', 'status');
     node.innerHTML = '<span>Schedule updated.</span><button type="button">Undo</button>';
     document.body.appendChild(node);
-    const timer = window.setTimeout(function () { node.remove(); }, 7000);
+    const timer = window.setTimeout(function () { node.remove(); }, 10000);
     node.querySelector('button').addEventListener('click', function () {
       clearTimeout(timer); request(pending.url, {starts_at: previous.starts_at, duration_minutes: previous.duration_minutes, preview: false}).then(function () { window.location.reload(); }).catch(function () { node.querySelector('span').textContent = 'Undo failed. Refresh and try again.'; });
     });
@@ -1343,7 +1343,7 @@
   layer.querySelectorAll('[data-move-close]').forEach(function (button) { button.addEventListener('click', close); });
   save.addEventListener('click', function () {
     save.disabled = true; error.hidden = true;
-    request(pending.url, {starts_at: pending.starts_at, duration_minutes: pending.duration_minutes, preview: false}).then(function () { const previous = pending.previous; close(); toast(previous); window.setTimeout(function () { window.location.reload(); }, 7200); }).catch(function (problem) { save.disabled = false; error.textContent = problem.error || 'This change could not be saved.'; error.hidden = false; if (problem.checks) render(problem); });
+    request(pending.url, {starts_at: pending.starts_at, duration_minutes: pending.duration_minutes, preview: false}).then(function () { const previous = pending.previous; close(); toast(previous); window.setTimeout(function () { window.location.reload(); }, 10200); }).catch(function (problem) { save.disabled = false; error.textContent = problem.error || 'This change could not be saved.'; error.hidden = false; if (problem.checks) render(problem); });
   });
   layer.querySelector('.lpw-move-dialog').addEventListener('keydown', function (event) { if (event.key === 'Escape') close(); });
 }());
