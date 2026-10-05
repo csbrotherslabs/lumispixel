@@ -1,5 +1,5 @@
 <div class="form-group lumis-onboarding__profile-field{% if full_width %} lumis-onboarding__profile-field--full{% endif %}">
-  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <label for="{{ field.id_for_label }}">{{ field.label }} <span class="lumis-onboarding__required" data-required-marker{% if not field.field.required %} hidden{% endif %}><span aria-hidden="true">*</span><span class="visually-hidden"> required</span></span></label>
   {{ field }}
   {% if current_file %}<div class="lumis-onboarding__help">{{ current_label }}: <a href="{{ current_file.url }}">{{ current_file.name }}</a></div>{% endif %}
   {% if field.help_text %}<div class="lumis-onboarding__help">{{ field.help_text }}</div>{% endif %}

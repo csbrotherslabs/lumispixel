@@ -50,6 +50,17 @@ class Notification(models.Model):
         return self.action_url if self.action_url.startswith("/") and not self.action_url.startswith("//") else ""
 
 
+class NotificationEventReceipt(models.Model):
+    """A delivery receipt survives dismissal so retries cannot recreate a notice."""
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    event_key = models.CharField(max_length=64)
+    notification = models.ForeignKey(Notification, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("recipient", "event_key"), name="notification_recipient_event")]
+
+
 class EmailDelivery(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

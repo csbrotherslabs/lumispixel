@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from django.conf import settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
@@ -36,6 +39,22 @@ class LocationImportTests(TestCase):
         self.assertEqual(LocationDatasetImport.objects.count(), 2)
         self.assertEqual(LocationDatasetImport.objects.first().revision, "abc123")
 
+    def test_reimport_updates_records_without_changing_primary_keys(self):
+        with TemporaryDirectory() as directory:
+            dataset = self._dataset(directory)
+            call_command("import_locations", file=dataset)
+            country_pk = Country.objects.get().pk
+            region_pk = AdministrativeRegion.objects.get().pk
+            payload = json.loads(dataset.read_text())
+            payload["countries"][0]["name"] = "Updated country"
+            payload["countries"][0]["regions"][0]["name"] = "Updated region"
+            dataset.write_text(json.dumps(payload), encoding="utf-8")
+            call_command("import_locations", file=dataset)
+        self.assertEqual(Country.objects.get().pk, country_pk)
+        self.assertEqual(Country.objects.get().name, "Updated country")
+        self.assertEqual(AdministrativeRegion.objects.get().pk, region_pk)
+        self.assertEqual(AdministrativeRegion.objects.get().name, "Updated region")
+
     def test_dry_run_rolls_back_changes(self):
         with TemporaryDirectory() as directory:
             call_command("import_locations", file=self._dataset(directory), dry_run=True)
@@ -52,6 +71,18 @@ class LocationImportTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.country_record.iso2, "US")
         self.assertEqual(profile.administrative_region.code, "US-CA")
+
+    def test_full_dataset_uses_bounded_database_requests(self):
+        dataset = Path(settings.BASE_DIR) / "data/locations/countries_regions.json"
+        payload = json.loads(dataset.read_text(encoding="utf-8"))
+        with CaptureQueriesContext(connection) as queries:
+            call_command("import_locations", file=dataset)
+        self.assertEqual(Country.objects.count(), len(payload["countries"]))
+        self.assertEqual(
+            AdministrativeRegion.objects.count(),
+            sum(len(item["regions"]) for item in payload["countries"]),
+        )
+        self.assertLess(len(queries), 80)
 
     def test_invalid_dataset_is_rejected(self):
         with TemporaryDirectory() as directory:

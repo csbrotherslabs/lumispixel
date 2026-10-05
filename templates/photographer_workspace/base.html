@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="{% static 'css/photographer_client_detail_organized.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_financial_header_actions.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_growth_refresh.css' %}">
+<link rel="stylesheet" href="{% static 'css/notification_drawer.css' %}">
 </head>
 <body class="lumis-workspace-body{% if hide_workspace_sidebar %} lpw-account-page{% endif %}">
 <a class="skip-link" href="#workspace-main">Skip to main content</a>
@@ -32,7 +33,7 @@
   <div class="lpw-main-wrap">
     {% include "photographer_workspace/components/topbar.html" %}
     <main id="workspace-main" class="lpw-main{% if hide_workspace_sidebar %} lpw-main--account{% endif %}" tabindex="-1" aria-labelledby="workspace-page-title">
-      {% if messages %}<div aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}
+      {% if messages %}<div aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}" role="status" data-app-alert>{{ message }}</div>{% endfor %}</div>{% endif %}
       {% block workspace_content %}{% endblock %}
     </main>
   </div>
@@ -43,5 +44,8 @@
 <script src="{% static 'js/gallery_booking_filter.js' %}"></script>
 <script src="{% static 'js/client_gallery_context.js' %}"></script>
 {% block extra_js %}{% endblock %}
+<script src="{% static 'js/app_alerts.js' %}"></script>
+{% include "notifications/_drawer.html" %}
+<script src="{% static 'js/notification_drawer.js' %}"></script>
 </body>
 </html>

@@ -1,0 +1,19 @@
+.lp-notification-drawer { inset: 0 0 0 auto; margin: 0; width: min(440px, 100%); height: 100dvh; max-height: 100dvh; max-width: 100%; padding: 0; border: 0; background: var(--lp-color-surface, #fff); color: var(--lp-text-primary, #25211f); }
+.lp-notification-drawer[open] { display: flex; flex-direction: column; }
+.lp-notification-drawer::backdrop { background: rgba(0,0,0,.4); }
+.lp-notification-drawer header, .lp-notification-drawer footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid var(--lp-color-border, #e5e1dd); }
+.lp-notification-drawer h2 { margin: 0; font-size: 20px; color: inherit; }
+.lp-notification-drawer button { background: transparent; color: inherit; border: 0; font-size: 28px; cursor: pointer; }
+.lp-notification-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.lp-notification-item { padding: 18px 20px; border-bottom: 1px solid var(--lp-color-border, #e5e1dd); }
+.lp-notification-item h3 { margin: 0 0 6px; font-size: 15px; color: inherit; }
+.lp-notification-item p { margin: 6px 0; font-size: 14px; color: inherit; }
+.lp-notification-item time { font-size: 12px; color: var(--lp-text-muted, #6b625e); }
+.lp-notification-item a { display: block; margin-top: 8px; color: var(--lp-text-brand, #b90e15); }
+.lp-notification-unread { font-size: 12px; color: var(--lp-text-brand, #b90e15); }
+.lp-notification-empty { padding: 20px; color: inherit; }
+.lp-notification-drawer footer { border-top: 1px solid var(--lp-color-border, #e5e1dd); border-bottom: 0; }
+.lp-notification-drawer footer a { width: 100%; padding: 12px; text-align: center; border-radius: var(--lp-radius-md, 10px); background: var(--lp-color-brand, #b90e15); color: #fff; }
+.lp-notification-drawer :focus-visible { outline: 2px solid var(--lp-text-brand, #b90e15); outline-offset: 3px; }
+
+.lpw-icon-btn .lp-notification-count { position: absolute; top: -4px; right: -5px; display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; background: var(--lp-color-brand, #b90e15); color: #fff; font-size: 10px; font-weight: 700; line-height: 1; }

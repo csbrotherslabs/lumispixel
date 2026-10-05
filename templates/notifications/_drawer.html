@@ -1,0 +1,7 @@
+{% if request.user.is_authenticated %}
+<dialog class="lp-notification-drawer" id="notification-drawer" aria-labelledby="notification-drawer-title" data-notification-drawer data-preview-url="{% url 'notifications:preview' %}">
+  <header><h2 id="notification-drawer-title">Notifications</h2><button type="button" data-notification-close aria-label="Close notifications">×</button></header>
+  <div class="lp-notification-list" data-notification-list aria-live="polite" data-lenis-prevent></div>
+  <footer><a class="lp-button lp-button--primary" href="{% url 'notifications:index' %}">See all notifications</a></footer>
+</dialog>
+{% endif %}
