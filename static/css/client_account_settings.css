@@ -30,3 +30,6 @@
 .client-settings__errors p{margin:6px 0;color:var(--cs-ink);font-size:12px}
 .client-settings__errors ul{margin:8px 0 0;padding-left:20px}
 .client-settings__errors a{color:var(--cs-red);text-decoration:underline}
+
+.client-settings .client-profile-form__field .nice-select{display:flex;align-items:center}
+.client-settings .client-profile-form__field .nice-select .current{line-height:1.5}
