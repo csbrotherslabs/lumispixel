@@ -79,6 +79,11 @@ class UserUploadStorage(Storage):
         name = validate_name(name)
         return self.site if is_site_image(name) else self.private
 
+    def generate_filename(self, filename):
+        # Object keys use POSIX separators even when Django runs on Windows.
+        path = PurePosixPath(validate_name(str(filename)))
+        return str(path.with_name(self.get_valid_name(path.name)))
+
     def get_available_name(self, name, max_length=None):
         path = PurePosixPath(validate_name(name))
         opaque = str(path.with_name(uuid4().hex + path.suffix.lower()))

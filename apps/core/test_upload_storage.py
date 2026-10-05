@@ -54,6 +54,19 @@ class UserUploadStorageTests(SimpleTestCase):
             with self.assertRaises(SuspiciousFileOperation):
                 storage.url(name)
 
+    def test_generated_keys_do_not_use_host_filesystem_normalization(self):
+        storage = UserUploadStorage()
+        with patch("django.core.files.storage.base.os.path.normpath", return_value="windows\\path"):
+            name = storage.generate_filename("photographer_websites/2/hero/my photo.JPG")
+        self.assertEqual(name, "photographer_websites/2/hero/my_photo.JPG")
+        self.assertTrue(storage.get_available_name(name).startswith("photographer_websites/2/hero/"))
+
+    def test_filename_generation_rejects_unsafe_paths(self):
+        storage = UserUploadStorage()
+        for name in ("../avatar.png", "/avatar.png", "folder/../avatar.png", "folder\\avatar.png"):
+            with self.subTest(name=name), self.assertRaises(SuspiciousFileOperation):
+                storage.generate_filename(name)
+
     def test_new_keys_are_unique_without_overwriting_original(self):
         storage = UserUploadStorage()
         first = storage.get_available_name("photographer_websites/2/hero/photo.JPG", 100)
