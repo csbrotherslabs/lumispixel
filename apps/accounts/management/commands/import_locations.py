@@ -35,31 +35,44 @@ class Command(BaseCommand):
 
         self._validate(countries)
         with transaction.atomic():
-            country_count = 0
-            region_count = 0
-            for country_data in countries:
-                country, _ = Country.objects.update_or_create(
-                    iso2=country_data["iso2"],
-                    defaults={
-                        "source_id": country_data["source_id"],
-                        "name": country_data["name"],
-                        "iso3": country_data["iso3"],
-                        "is_active": True,
-                    },
+            country_count = len(countries)
+            country_objects = [
+                Country(
+                    source_id=item["source_id"], name=item["name"],
+                    iso2=item["iso2"].upper(), iso3=item["iso3"].upper(),
+                    is_active=True,
                 )
-                country_count += 1
-                for region_data in country_data["regions"]:
-                    AdministrativeRegion.objects.update_or_create(
-                        source_id=region_data["source_id"],
-                        defaults={
-                            "country": country,
-                            "name": region_data["name"],
-                            "code": region_data.get("code", ""),
-                            "region_type": region_data.get("type", ""),
-                            "is_active": True,
-                        },
-                    )
-                    region_count += 1
+                for item in countries
+            ]
+            self.stdout.write(f"Importing {country_count} countries in batches…")
+            self.stdout.flush()
+            Country.objects.bulk_create(
+                country_objects, batch_size=250, update_conflicts=True,
+                unique_fields=["iso2"],
+                update_fields=["source_id", "name", "iso3", "is_active"],
+            )
+            country_ids = dict(Country.objects.values_list("iso2", "pk"))
+            region_objects = [
+                AdministrativeRegion(
+                    source_id=region["source_id"],
+                    country_id=country_ids[item["iso2"].upper()],
+                    name=region["name"], code=region.get("code", ""),
+                    region_type=region.get("type", ""), is_active=True,
+                )
+                for item in countries
+                for region in item["regions"]
+            ]
+            region_count = len(region_objects)
+            for start in range(0, region_count, 500):
+                AdministrativeRegion.objects.bulk_create(
+                    region_objects[start:start + 500], batch_size=500,
+                    update_conflicts=True, unique_fields=["source_id"],
+                    update_fields=["country", "name", "code", "region_type", "is_active"],
+                )
+                self.stdout.write(
+                    f"Processed {min(start + 500, region_count)}/{region_count} regions (awaiting commit)…",
+                )
+                self.stdout.flush()
 
             LocationDatasetImport.objects.create(
                 source=metadata["source"],
