@@ -151,3 +151,6 @@
   .photographer-onboarding-v2__preview{padding:16px}
   .photographer-onboarding-v2 .lumis-onboarding__location-summary{align-items:flex-start;flex-direction:column}
 }
+
+.photographer-onboarding-v2 .lumis-onboarding__required { color: var(--lp-text-danger, var(--co-red, #b90e15)); }
+.photographer-onboarding-v2 .lumis-onboarding__required[hidden] { display: none; }
