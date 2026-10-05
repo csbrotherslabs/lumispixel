@@ -35,6 +35,12 @@
   const dependents = document.querySelectorAll('[data-travel-dependent="true"]');
   if (!toggle || !dependents.length) return;
   function syncTravelControls() {
+    const national = document.querySelector('#id_available_nationally');
+    const international = document.querySelector('#id_available_internationally');
+    const destination = document.querySelector('#id_destination_photographer');
+    const radiusRequired = (toggle.checked || destination?.checked) && !national?.checked && !international?.checked;
+    const marker = document.querySelector('[data-travel-required]');
+    if (marker) marker.hidden = !radiusRequired;
     dependents.forEach((control) => {
       control.setAttribute('aria-disabled', String(!toggle.checked));
       const field = control.closest('.lumis-onboarding__business-field');
@@ -42,6 +48,7 @@
     });
   }
   toggle.addEventListener('change', syncTravelControls);
+  dependents.forEach((control) => control.addEventListener('change', syncTravelControls));
   syncTravelControls();
 }());
 </script>
