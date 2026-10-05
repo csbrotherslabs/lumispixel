@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.cache import never_cache
 
 from .models import Notification
 
@@ -72,3 +73,12 @@ def dismiss(request, pk):
     notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
     notification.delete()
     return redirect(_inbox_url(request))
+
+
+@login_required
+@require_GET
+@never_cache
+def preview(request):
+    return render(request, "notifications/_preview.html", {
+        "notifications": Notification.objects.filter(recipient=request.user)[:15],
+    })
