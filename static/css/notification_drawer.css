@@ -15,3 +15,5 @@
 .lp-notification-drawer footer { border-top: 1px solid var(--lp-color-border, #e5e1dd); border-bottom: 0; }
 .lp-notification-drawer footer a { width: 100%; padding: 12px; text-align: center; border-radius: var(--lp-radius-md, 10px); background: var(--lp-color-brand, #b90e15); color: #fff; }
 .lp-notification-drawer :focus-visible { outline: 2px solid var(--lp-text-brand, #b90e15); outline-offset: 3px; }
+
+.lpw-icon-btn .lp-notification-count { position: absolute; top: -4px; right: -5px; display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; background: var(--lp-color-brand, #b90e15); color: #fff; font-size: 10px; font-weight: 700; line-height: 1; }
