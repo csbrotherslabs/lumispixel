@@ -1,0 +1,9 @@
+{% for notification in notifications %}
+<article class="lp-notification-item{% if not notification.is_read %} lp-notification-item--unread{% endif %}">
+  <h3>{{ notification.title }}</h3>
+  {% if not notification.is_read %}<span class="lp-notification-unread">Unread</span>{% endif %}
+  <p>{{ notification.message }}</p>
+  <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|timesince }} ago</time>
+  {% if notification.safe_action_url %}<a href="{{ notification.safe_action_url }}">{{ notification.action_label|default:'View details' }}</a>{% endif %}
+</article>
+{% empty %}<p class="lp-notification-empty">You have no notifications yet.</p>{% endfor %}
