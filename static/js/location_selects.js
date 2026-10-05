@@ -18,6 +18,8 @@
       region.replaceChildren(new Option(message, ""));
       regions.forEach(({ id, name }) => region.add(new Option(name, id)));
       region.required = regions.length > 0;
+      const marker = region.closest(".form-group")?.querySelector("[data-required-marker]");
+      if (marker) marker.hidden = !region.required;
       region.disabled = regions.length === 0;
     };
 
