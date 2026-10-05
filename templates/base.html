@@ -34,6 +34,7 @@
     <link rel="stylesheet" href="{% static 'css/homepage_hero_heading_contrast.css' %}">
     <link rel="stylesheet" href="{% static 'css/homepage_workflow_controls.css' %}">
     <link rel="stylesheet" href="{% static 'css/homepage_pricing_scroll.css' %}">
+<link rel="stylesheet" href="{% static 'css/notification_drawer.css' %}">
 </head>
 <body class="theme-style--light {% block body_class %}page-inner{% endblock %}">
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -78,5 +79,7 @@
     <script src="{% static 'js/homepage_pricing.js' %}"></script>
     {% block extra_js %}{% endblock %}
 <script src="{% static 'js/app_alerts.js' %}"></script>
+{% include "notifications/_drawer.html" %}
+<script src="{% static 'js/notification_drawer.js' %}"></script>
 </body>
 </html>
