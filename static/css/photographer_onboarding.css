@@ -155,4 +155,4 @@
 .photographer-onboarding-v2 .lumis-onboarding__required { color: var(--lp-text-danger, var(--co-red, #b90e15)); }
 .photographer-onboarding-v2 .lumis-onboarding__required[hidden] { display: none; }
 
-.photographer-onboarding-v2 #id_timezone + .nice-select { display: flex; align-items: center; }
+.photographer-onboarding-v2 .nice-select { display: flex; align-items: center; }

@@ -9,6 +9,7 @@
   {% if form.non_field_errors %}<div class="lumis-onboarding__error" role="alert">{{ form.non_field_errors|striptags }}</div>{% endif %}
   {% if form.website_theme.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_theme.errors|striptags }}</div>{% endif %}
   <fieldset class="lumis-onboarding__theme-grid" aria-label="Theme choices">
+    <legend>Website template {% include "photographers/_required_marker.html" %}</legend>
     {% for theme in theme_options %}
       {% theme_media theme.slug "hero" 0 as theme_card_image %}
       <label class="lumis-onboarding-theme" for="theme-{{ theme.value }}" tabindex="0">
@@ -28,7 +29,7 @@
         <label for="section-{{ section.key }}">
           <span class="lumis-section-builder__media"><img src="{% static section.image %}" alt="{{ section.name }} section example" loading="lazy"></span>
           <input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}>
-          <span class="lumis-section-builder__copy"><strong>{{ section.name }}</strong><small>{{ section.description }}</small></span>
+          <span class="lumis-section-builder__copy"><strong>{{ section.name }}{% if section.key == "hero" or section.key == "contact" %} {% include "photographers/_required_marker.html" %}{% endif %}</strong><small>{{ section.description }}</small></span>
         </label>
         <span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>
       </div>

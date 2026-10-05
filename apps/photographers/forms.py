@@ -265,6 +265,10 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         self.draft = draft
         self.content_only = content_only
         super().__init__(*args, **kwargs)
+        theme = self.data.get("website_theme") if self.is_bound else self.instance.website_theme
+        required_content = THEME_FIELD_CONFIG.get(theme, {}).get("required", [])
+        for name in required_content:
+            self.fields[name].required_for_completion = True
         content = (website_profile.theme_content if website_profile else {}) or {}
         if not self.is_bound:
             for name in ("availability_window_months", "availability_call_to_action"):
