@@ -9,5 +9,13 @@
 @media(max-width:800px){.client-settings__layout{grid-template-columns:1fr}.client-settings__nav{position:static;grid-template-columns:repeat(3,1fr)}.client-settings__nav a{grid-template-columns:1fr;justify-items:center;text-align:center}.client-settings__nav a>i{font-size:17px}}
 @media(max-width:600px){.client-settings{padding:96px 0 48px}.client-settings__header{align-items:flex-start;flex-direction:column;gap:12px}.client-settings__nav{grid-template-columns:1fr;padding:7px}.client-settings__nav a{grid-template-columns:26px 1fr;justify-items:start;text-align:left}.client-settings__panel{padding:19px}.client-settings__security-row{align-items:flex-start;flex-direction:column;gap:9px}.client-settings__actions{align-items:stretch;flex-direction:column-reverse}.client-settings__actions a{text-align:center}.client-settings__actions button{justify-content:center;width:100%}}
 
-.client-settings .client-settings__required{color:var(--cs-red)}
+.client-settings .client-settings__required,
+.client-settings .client-settings__required span{color:var(--cs-red)}
+.client-settings .client-settings__required span{margin-left:0}
 .client-settings .client-settings__required[hidden]{display:none}
+
+.client-settings .client-settings__nav{background:#fff5f5;border-color:#ebc7c9}
+.client-settings .client-settings__nav a{color:var(--cs-red)}
+.client-settings .client-settings__nav a:hover{background:#fbe5e6;color:#920b11}
+.client-settings .client-settings__header>a{padding:9px 14px;border:1px solid #ebc7c9;border-radius:10px;background:#fff5f5;color:var(--cs-red)}
+.client-settings .client-settings__header>a:hover{background:#fbe5e6;color:#920b11}
