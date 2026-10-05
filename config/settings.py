@@ -194,6 +194,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
+    "scan-inbox-notification-reminders": {"task": "apps.notifications.tasks.scan_notification_reminders", "schedule": 3600.0},
     "scan-scheduled-workflow-automations": {"task": "apps.workflows.tasks.scan_scheduled_automations", "schedule": 3600.0},
     "cleanup-stale-gallery-multipart-uploads": {"task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads", "schedule": 3600.0},
     "cleanup-gallery-storage-objects": {"task": "apps.galleries.tasks.cleanup_gallery_storage_objects", "schedule": 3600.0},
