@@ -25,3 +25,8 @@
 .client-settings .client-settings__nav a:hover>i,.client-settings .client-settings__nav a:focus-visible>i{background:#fff;color:var(--cs-red)}
 @media(max-width:800px) and (min-width:601px){.client-settings .client-settings__nav a{grid-template-columns:1fr;gap:8px}}
 @media(max-width:600px){.client-settings .client-settings__nav{padding:9px}.client-settings .client-settings__nav a{padding:10px}}
+
+.client-settings__errors{padding:16px 20px;border:1px solid #ebc7c9;border-radius:12px;background:#fff5f5;color:var(--cs-red);font-size:13px}
+.client-settings__errors p{margin:6px 0;color:var(--cs-ink);font-size:12px}
+.client-settings__errors ul{margin:8px 0 0;padding-left:20px}
+.client-settings__errors a{color:var(--cs-red);text-decoration:underline}
