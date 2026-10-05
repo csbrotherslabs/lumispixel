@@ -49,3 +49,9 @@ def reconcile_pending_transactional_emails(limit=100):
         except Exception:
             logger.exception("Could not enqueue recoverable transactional email %s", delivery_id)
     return len(set(ids))
+
+
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, max_retries=3)
+def scan_notification_reminders():
+    from .reminders import scan_reminders
+    scan_reminders()
