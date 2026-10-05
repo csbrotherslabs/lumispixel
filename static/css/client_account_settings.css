@@ -8,3 +8,6 @@
 .client-settings a:focus-visible,.client-settings button:focus-visible,.client-settings input:focus-visible,.client-settings select:focus-visible{outline:3px solid rgba(185,14,21,.2);outline-offset:2px}
 @media(max-width:800px){.client-settings__layout{grid-template-columns:1fr}.client-settings__nav{position:static;grid-template-columns:repeat(3,1fr)}.client-settings__nav a{grid-template-columns:1fr;justify-items:center;text-align:center}.client-settings__nav a>i{font-size:17px}}
 @media(max-width:600px){.client-settings{padding:96px 0 48px}.client-settings__header{align-items:flex-start;flex-direction:column;gap:12px}.client-settings__nav{grid-template-columns:1fr;padding:7px}.client-settings__nav a{grid-template-columns:26px 1fr;justify-items:start;text-align:left}.client-settings__panel{padding:19px}.client-settings__security-row{align-items:flex-start;flex-direction:column;gap:9px}.client-settings__actions{align-items:stretch;flex-direction:column-reverse}.client-settings__actions a{text-align:center}.client-settings__actions button{justify-content:center;width:100%}}
+
+.client-settings .client-settings__required{color:var(--cs-red)}
+.client-settings .client-settings__required[hidden]{display:none}
