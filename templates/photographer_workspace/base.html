@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="{% static 'css/photographer_client_detail_organized.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_financial_header_actions.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_growth_refresh.css' %}">
+<link rel="stylesheet" href="{% static 'css/notification_drawer.css' %}">
 </head>
 <body class="lumis-workspace-body{% if hide_workspace_sidebar %} lpw-account-page{% endif %}">
 <a class="skip-link" href="#workspace-main">Skip to main content</a>
@@ -44,5 +45,7 @@
 <script src="{% static 'js/client_gallery_context.js' %}"></script>
 {% block extra_js %}{% endblock %}
 <script src="{% static 'js/app_alerts.js' %}"></script>
+{% include "notifications/_drawer.html" %}
+<script src="{% static 'js/notification_drawer.js' %}"></script>
 </body>
 </html>
