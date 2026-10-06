@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpf-page lpd-page">
-  <header class="lpf-header lpd-header">
+<div class="lp-workspace-page lpf-page lpd-page">
+  <header class="lp-workspace-hero lpf-header lpd-header">
     <div><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:team_performance' %}">Team Performance</a><i class="bi bi-chevron-right"></i><strong aria-current="page">{{ member_name }}</strong></nav><div class="lpd-identity"><span class="lpf-avatar">{{ member_initials }}</span><div><h1 id="workspace-page-title">{{ member_name }}</h1><p>{{ membership.get_role_display }} · {{ membership.primary_location|default:'Location not set' }} · {{ membership.get_status_display }}</p></div></div></div>
     <a class="lpf-export" href="{% url 'photographer_workspace:team_performance' %}"><i class="bi bi-arrow-left"></i> Team performance</a>
   </header>

@@ -4,7 +4,7 @@
     const STATIC_ROOT = '/static/img/landing/gallery/';
 
     const heroMap = {
-        'AI Photography Platform': {
+        'FOR PHOTOGRAPHERS & THEIR CLIENTS': {
             desktop: 'hero-ai-photography-platform.webp',
             mobile: 'hero-ai-photography-platform-mobile.webp',
         },

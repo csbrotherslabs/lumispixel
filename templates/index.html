@@ -4,6 +4,7 @@
 {% block body_class %}page-home{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_create_deliver_grow.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -23,6 +24,7 @@
     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
     {% url 'ai_engine:editing_culling' as homepage_ai_tools_url %}
     {% url 'core:pricing' as homepage_pricing_url %}
+    {% url 'core:business_hub' as homepage_workspace_url %}
     <!-- Slider Section -->
     <section class="wptb-slider style3">
         <div class="swiper-container wptb-swiper-slider-three">    
@@ -30,9 +32,9 @@
             <div class="swiper-wrapper">
                 <!-- Each slide supports separate desktop and portrait mobile sources. Replace only --mobile-image when the portrait asset is ready. -->
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/7.jpg" %}"); --mobile-image: url("{% static "img/slider/24.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-ai-photography-platform.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-ai-photography-platform-mobile.webp" %}");'></div>
 
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -40,25 +42,21 @@
                                     <div class="row">
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
-                                                <h6 class="wptb-item--subtitle">AI Photography Platform</h6>
-                                                <h1 class="wptb-item--title">Photography, Powered by AI.</h1>
-                                                <h2 class="wptb-item--description wptb-hero-subheadline">One platform for photographers to manage, deliver, and grow their business—and for clients to instantly find and enjoy their photos.</h2>
+                                                <h6 class="wptb-item--subtitle">FOR PHOTOGRAPHERS &amp; THEIR CLIENTS</h6>
+                                                <h1 class="wptb-item--title">Create. Deliver.<br>Grow.</h1>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Deliver beautiful galleries, manage clients and bookings, and grow your photography business—from first inquiry to final delivery.</p>
                                                 <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>AI Face Search</span>
-                                                    <span>Smart Galleries</span>
-                                                    <span>AI Editing</span>
-                                                    <span>Hire Photographers</span>
+                                                    <span><i class="bi bi-images" aria-hidden="true"></i> Gallery delivery</span>
+                                                    <span><i class="bi bi-people" aria-hidden="true"></i> Client management</span>
+                                                    <span><i class="bi bi-bar-chart" aria-hidden="true"></i> Business tools</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
-                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--primary" href="{{ homepage_get_started_url }}">Start Free <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
+                                                    <a class="home-platform-button home-platform-button--secondary" href="{{ find_photos_url }}">Find My Photos <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
                                                 </div>
-                                                {% include "components/text_link.html" with label="Hire a Photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="Find a photographer →" href=find_photographer_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-platform-roadmap"><span class="home-platform-roadmap__badge">Coming next</span><p>AI photo editing <span aria-hidden="true">•</span> Selfie search <span aria-hidden="true">•</span> Semantic search</p></div>
                                             </div>
                                         </div>
                                     </div>
@@ -80,9 +78,9 @@
                 <!-- End Slide Item -->
 
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide home-client-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/8.jpg" %}"); --mobile-image: url("{% static "img/slider/25.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-client-photo-discovery.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-client-photo-discovery-mobile.webp" %}");'></div>
                         
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -91,24 +89,20 @@
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">FOR CLIENTS</h6>
-                                                <h2 class="wptb-item--title">Find Your Photos in Seconds.</h2>
-                                                <p class="wptb-item--description wptb-hero-subheadline">Use a selfie or event code to discover the professional photos that matter to you—without searching through an entire gallery.</p>
-                                                <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>Selfie Search</span>
-                                                    <span>Event Codes</span>
-                                                    <span>Private Galleries</span>
-                                                    <span>Saved Photos</span>
+                                                <h2 class="wptb-item--title">Your moments.<br>Found.</h2>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Open your gallery, save your favorites, and relive the moments that matter.</p>
+                                                <div class="wptb-hero-feature-pills home-client-features" aria-label="Client gallery features">
+                                                    <span><i class="bi bi-image" aria-hidden="true"></i> Gallery access</span>
+                                                    <span><i class="bi bi-heart" aria-hidden="true"></i> Favorites</span>
+                                                    <span><i class="bi bi-box-arrow-up" aria-hidden="true"></i> Private sharing</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Create Free Account" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% url 'accounts:find-photos-placeholder' as find_photos_url %}
-                                                    {% include "components/button.html" with label="Find My Photos" href=find_photos_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    <a class="home-platform-button home-platform-button--primary" href="{{ find_photos_url }}">Find My Photos <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--secondary" href="{{ homepage_get_started_url }}">Create Free Account <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="See How Photo Search Works →" href=find_photos_url class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="How it works →" href=find_photos_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-platform-roadmap"><span class="home-platform-roadmap__badge">Coming next</span><p>Find your photos with a selfie.</p></div>
                                             </div>
                                         </div>
                                     </div>
@@ -130,9 +124,9 @@
                 <!-- End Slide Item -->
 
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide home-photographer-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/9.jpg" %}"); --mobile-image: url("{% static "img/slider/26.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-photographer-workspace.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-photographer-workspace-mobile.webp" %}");'></div>
                         
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -141,23 +135,20 @@
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">FOR PHOTOGRAPHERS</h6>
-                                                <h2 class="wptb-item--title">One Workspace. Your Entire Business.</h2>
-                                                <p class="wptb-item--description wptb-hero-subheadline">Manage clients, bookings, contracts, galleries, payments, and intelligent post-production from one connected workspace.</p>
-                                                <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>Client CRM</span>
-                                                    <span>Booking &amp; Contracts</span>
-                                                    <span>Smart Galleries</span>
-                                                    <span>AI Workflow</span>
+                                                <h2 class="wptb-item--title">Focus on<br>your craft.</h2>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Keep clients, bookings, contracts, galleries, and invoices connected—so you can spend more time behind the camera.</p>
+                                                <div class="wptb-hero-feature-pills home-client-features" aria-label="Photographer workspace features">
+                                                    <span><i class="bi bi-people" aria-hidden="true"></i> Clients &amp; leads</span>
+                                                    <span><i class="bi bi-calendar3" aria-hidden="true"></i> Bookings &amp; contracts</span>
+                                                    <span><i class="bi bi-images" aria-hidden="true"></i> Galleries &amp; invoices</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% include "components/button.html" with label="Explore the Business Hub" href=homepage_ai_tools_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--primary" href="{{ homepage_get_started_url }}">Start Free <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
+                                                    <a class="home-platform-button home-platform-button--secondary" href="{{ homepage_workspace_url }}">Explore Workspace <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
                                                 </div>
-                                                {% include "components/text_link.html" with label="See the Photographer Workflow →" href=homepage_ai_tools_url class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="See the photographer workflow →" href=homepage_workspace_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-platform-roadmap"><span class="home-platform-roadmap__badge">Coming next</span><p>AI photo editing and culling.</p></div>
                                             </div>
                                         </div>
                                     </div>
@@ -179,9 +170,9 @@
                 <!-- End Slide Item -->
 
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide home-marketplace-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/8.jpg" %}"); --mobile-image: url("{% static "img/slider/27.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-photographer-marketplace.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-photographer-marketplace-mobile.webp" %}");'></div>
                         
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -190,23 +181,20 @@
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">PHOTOGRAPHER MARKETPLACE</h6>
-                                                <h2 class="wptb-item--title">The Right Photographer, Easier to Find.</h2>
-                                                <p class="wptb-item--description wptb-hero-subheadline">Discover professionals by specialty and location, compare their work, and connect with the photographer who fits your event.</p>
-                                                <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>Wedding</span>
-                                                    <span>Portrait</span>
-                                                    <span>Event</span>
-                                                    <span>Commercial</span>
+                                                <h2 class="wptb-item--title">Find your<br>photographer.</h2>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Explore photographers by specialty and location. Find a style you love and connect for your next shoot.</p>
+                                                <div class="wptb-hero-feature-pills home-marketplace-categories" aria-label="Photography specialties">
+                                                    <span><i class="bi bi-hearts" aria-hidden="true"></i> Weddings</span>
+                                                    <span><i class="bi bi-person" aria-hidden="true"></i> Portraits</span>
+                                                    <span><i class="bi bi-calendar3" aria-hidden="true"></i> Events</span>
+                                                    <span><i class="bi bi-briefcase" aria-hidden="true"></i> Commercial</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Join LumisPixel" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    <a class="home-platform-button home-platform-button--primary" href="{{ find_photographer_url }}">Find a Photographer <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--secondary" href="{{ homepage_get_started_url }}">Join LumisPixel <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Photographers: Create Your Profile →" href=homepage_get_started_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-marketplace-footer">{% include "components/text_link.html" with label="Photographers: Create your profile →" href=homepage_get_started_url class_name="wptb-hero-text-link" %}</div>
                                             </div>
                                         </div>
                                     </div>

@@ -640,7 +640,9 @@ def leads_workspace(request):
         leads = leads.filter(lead_source=source)
     if event_type:
         leads = leads.filter(event_type=event_type)
-    if follow_up == "overdue":
+    if follow_up == "due":
+        leads = leads.filter(next_follow_up__lte=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
+    elif follow_up == "overdue":
         leads = leads.filter(next_follow_up__lt=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])
     elif follow_up == "today":
         leads = leads.filter(next_follow_up=today).exclude(status__in=[Lead.Status.BOOKED, Lead.Status.LOST])

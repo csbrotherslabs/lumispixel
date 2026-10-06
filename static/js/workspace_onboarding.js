@@ -1,6 +1,18 @@
 (() => {
   const section = document.querySelector('[data-onboarding-key]');
   if (!section) return;
+  const steps = section.querySelector('.lp-onboarding-steps');
+  const current = steps?.querySelector('.is-current');
+  if (steps && current) {
+    const mobile = window.matchMedia('(max-width: 620px)');
+    const revealCurrent = () => {
+      if (!mobile.matches || section.hidden) return;
+      // Scroll only the checklist, never the page or its header.
+      steps.scrollLeft += current.getBoundingClientRect().left - steps.getBoundingClientRect().left - 4;
+    };
+    requestAnimationFrame(revealCurrent);
+    mobile.addEventListener('change', revealCurrent);
+  }
   const button = section.querySelector('[data-onboarding-dismiss]');
   if (!button) return;
   const key = section.dataset.onboardingKey;

@@ -2,8 +2,8 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_team_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_team_header_refine.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-container lpt-page">
-  <header class="lp-page-header lpt-header lpw-command-header">
+<div class="lp-workspace-page lp-container lpt-page">
+  <header class="lp-workspace-hero lp-page-header lpt-header lpw-command-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Overview</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Team Overview</h1>
@@ -25,12 +25,9 @@
     <p class="lpt-updated"><i class="bi bi-clock-history" aria-hidden="true"></i> Updated <time datetime="{{ last_updated|date:'c' }}">{{ last_updated|date:'M j, g:i A' }}</time> from current saved records.</p>
 
     <section class="lpt-status-section">
-      <div class="lpt-summary-grid">
-        {% for kpi in kpis %}<article class="lp-card lpt-kpi">
-          <span class="lpt-kpi-icon lpt-tone-{{ kpi.tone }}"><i class="bi {{ kpi.icon }}" aria-hidden="true"></i></span>
-          <div><span>{{ kpi.label }}</span><strong>{{ kpi.value }}</strong><small>{{ kpi.status }}</small></div>
-          <button class="lpt-help" type="button" data-tooltip="{{ kpi.definition }}" aria-label="{{ kpi.label }} definition">?</button>
-        </article>{% endfor %}
+      {% url 'photographer_workspace:team_members' as summary_members_url %}{% url 'photographer_workspace:schedule' as summary_schedule_url %}
+      <div class="lp-card-grid lp-summary-grid lpt-summary-grid">
+        {% for kpi in kpis %}{% if kpi.label == 'Active Team Members' or kpi.label == 'Available Today' %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" label=kpi.label value=kpi.value icon=kpi.icon context=kpi.status definition=kpi.definition footer_url=summary_members_url footer_label="View members" only %}{% else %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" label=kpi.label value=kpi.value icon=kpi.icon context=kpi.status definition=kpi.definition footer_url=summary_schedule_url footer_label="View schedule" only %}{% endif %}{% endfor %}
       </div>
     </section>
 

@@ -37,9 +37,11 @@
     scrim.addEventListener('click', function () { closeDrawer(true); });
   }
 
-  if (sidebar && collapseButton) {
+  if (sidebar) {
     const collapsed = window.localStorage.getItem('lpw-sidebar-collapsed') === 'true';
     setCollapsed(collapsed);
+  }
+  if (sidebar && collapseButton) {
     collapseButton.addEventListener('click', function () {
       const next = !sidebar.classList.contains('is-collapsed');
       setCollapsed(next);

@@ -772,3 +772,13 @@
     transition-duration:.01ms;
   }
 }
+
+/* Campaign data-entry shares the CRM cards and collapses its guidance on tablet. */
+.lp-growth-campaign .workspace-form-main { min-width: 0; }
+@media (max-width: 980px) {
+  .lumis-workspace-body .lp-growth-campaign .workspace-form-layout { grid-template-columns: minmax(0, 1fr); }
+  .lumis-workspace-body .lp-growth-campaign .contextual-panel { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .lumis-workspace-body .lp-growth-campaign .contextual-panel { grid-template-columns: minmax(0, 1fr); }
+}

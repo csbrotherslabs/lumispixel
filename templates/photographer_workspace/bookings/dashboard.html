@@ -3,8 +3,8 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_bookings.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:bookings' as bookings_url %}{% url 'photographer_workspace:calendar' as schedule_url %}{% url 'photographer_workspace:add_lead' as add_lead_url %}
-<div class="lp-bookings-overview">
-  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-bookings-header">
+<div class="lp-workspace-page lp-bookings-overview">
+  <header class="lp-workspace-hero lpw-command-header lpw-dashboard-header lp-page-header lp-bookings-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Bookings</strong></nav>
       <h1 id="workspace-page-title" class="lp-page-title">Overview</h1>
@@ -20,7 +20,7 @@
   {% if booking_state == 'loading' %}{% include "photographer_workspace/components/skeleton.html" with variant="card" %}
   {% elif booking_state == 'error' %}<section class="lp-booking-panel" role="alert">{% include "photographer_workspace/components/empty_state.html" with variant="compact" icon="bi-exclamation-circle" title="Bookings could not be loaded" description="Refresh the page to try again. Your booking data has not been changed." primary_url=bookings_url primary_label="Try again" %}</section>
   {% else %}
-  <section class="lp-card-grid lp-booking-kpis" aria-label="Booking summary">{% for metric in booking_metrics %}{% if metric.label != "Booking Revenue" %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon context=metric.context only %}{% endif %}{% endfor %}</section>
+  <section class="lp-card-grid lp-summary-grid lp-booking-kpis" aria-label="Booking summary">{% url 'photographer_workspace:schedule' as summary_schedule_url %}{% for metric in booking_metrics %}{% if metric.label != "Booking Revenue" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" footer_url=summary_schedule_url footer_label="View schedule" label=metric.label value=metric.value icon=metric.icon context=metric.context only %}{% endif %}{% endfor %}</section>
 
   <section class="lpw-command-card lpw-quick-panel lp-booking-command-panel lp-booking-upcoming" aria-labelledby="upcoming-title">
     {% include "photographer_workspace/components/dashboard_section_header.html" with eyebrow="Next on the calendar" title="Upcoming Bookings" section_id="upcoming-title" action_url=schedule_url action_label="View All Bookings" only %}

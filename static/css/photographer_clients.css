@@ -46,7 +46,7 @@
 .lp-clients .lp-clients-header .lpw-breadcrumb a:focus-visible{color:#25211f}
 
 /* Force the three remaining summary cards into one row. */
-.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{
+.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis:not(.lp-summary-grid){
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
   grid-auto-flow:column!important;
@@ -55,7 +55,7 @@
   gap:16px;
 }
 
-.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis>.lp-kpi-card{
+.lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis:not(.lp-summary-grid)>.lp-kpi-card{
   grid-column:auto!important;
   grid-row:auto!important;
   width:auto!important;
@@ -300,7 +300,7 @@
 }
 @media(max-width:620px){
   .lp-clients .lp-clients-header{padding:24px 22px;border-radius:20px}
-  .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis{
+  .lp-clients.lp-crm-page .lp-card-grid.lp-clients-kpis:not(.lp-summary-grid){
     grid-template-columns:1fr!important;
     grid-auto-flow:row!important;
     grid-auto-columns:auto!important;

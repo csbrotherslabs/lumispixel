@@ -159,3 +159,15 @@ Good incremental migration candidates are the legacy dashboard metric, workspace
 ## Canonical page reference
 
 The normative page anatomy, complete component contracts, visual-governance rules, and page-migration checklist live in [`workspace-page-standard.md`](workspace-page-standard.md). The authenticated dashboard is the reference implementation; compatibility includes named `dashboard_*` preserve its stable visual presentation while exposing repeatable boundaries for later tokenized migration.
+
+## Photographer workspace shell refresh
+
+`photographer_workspace_shell.css` loads after feature CSS and owns navigation, page heroes and outer spacing. `.lp-workspace-main` is the only outer padding owner; `.lp-workspace-page` opts a feature wrapper out of duplicate padding and width limits. Mark each page-level header with `.lp-workspace-hero`, retaining its existing actions and behavior. Feature cards and dialogs must not use that class.
+
+The dark hero gradient intentionally matches the internal workspace reference requested for this refresh. It is confined to headers and uses `--lp-shell-*` tokens with inverse text; form controls and menus retain light-surface colors. Hero primary actions use brand red; secondary actions use translucent dark surfaces with inverse text. The storage summary uses a dark surface, inverse usage text and muted supporting text. Other sections remain on semantic light surfaces. All photographer modules use the same responsive main gutters, including detail and edit pages. The independent account profile keeps its existing cover design.
+
+The page hero owns the single h1; the topbar provides a compact navigation label. The shared header renders the greeting as the dashboard h1. `visually_hidden_title` is retained as a compatibility argument but no longer suppresses the page heading.
+
+### Actionable summary card rows
+
+CRM, leads, clients, bookings, growth, team overview, and team members use the shared `kpi_card.html` with `variant="summary"` inside `.lp-summary-grid`. The compact white cards keep icons at the top right, display existing metrics, and place supporting copy and a real destination link beneath a quiet divider. They omit decorative stripes and curves. Use three columns for three metrics and four for four metrics, two columns on tablet, and an 86% width horizontal snap row below 768px. Keyboard focus remains visible and mobile links have 44px targets. Loading, unavailable data, comparisons, and definition controls remain supported. Other KPI card variants retain their existing presentation.

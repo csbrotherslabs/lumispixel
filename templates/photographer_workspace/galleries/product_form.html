@@ -2,9 +2,9 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_store_product_form_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-product-editor">
+<div class="lp-workspace-page lp-product-editor">
   <nav class="lpw-breadcrumb lp-product-editor__breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right"></i><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store">{{ gallery.name }}</a><i class="bi bi-chevron-right"></i><strong>{% if product %}Edit Product{% else %}Add Product{% endif %}</strong></nav>
-  <header class="lp-product-editor__hero">
+  <header class="lp-workspace-hero lp-product-editor__hero">
     <div class="lp-product-editor__hero-copy"><span class="lp-product-editor__hero-icon"><i class="bi bi-bag-plus"></i></span><div><span class="lp-product-editor__eyebrow">Gallery store</span><h1 id="workspace-page-title">{% if product %}Edit Product{% else %}Add Product{% endif %}</h1><p>Create a polished offer for <strong>{{ gallery.name }}</strong>. Configure the catalog details, pricing, and fulfillment in one place.</p></div></div>
     <a class="lp-button lp-button--outline lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}?tab=store"><i class="bi bi-arrow-left"></i>Back to Store</a>
   </header>

@@ -1,19 +1,24 @@
 <section class="lpw-onboarding lp-onboarding" aria-labelledby="onboarding-title" data-onboarding-key="{{ onboarding.storage_key }}">
   {% if onboarding.complete %}
-  <div class="lp-onboarding-complete lpw-command-card__head"><i class="bi bi-check-circle" aria-hidden="true"></i><h2 id="onboarding-title">Setup complete</h2><p>Your workspace is ready for gallery delivery.</p></div>
+  <div class="lp-onboarding-complete"><i class="bi bi-check-circle" aria-hidden="true"></i><h2 id="onboarding-title">Setup complete</h2><p>Your workspace is ready for gallery delivery.</p></div>
   {% else %}
   <header class="lp-onboarding-header">
-    <div class="lpw-command-card__head"><h2 id="onboarding-title">Get your workspace ready</h2></div>
+    <div class="lp-onboarding-heading"><span class="lp-onboarding-kicker">Get your workspace ready</span><h2 id="onboarding-title">Four simple steps to start delivering beautiful galleries.</h2></div>
     <div class="lp-onboarding-progress"><label for="onboarding-progress">{{ onboarding.completed }} of 4 complete</label><progress id="onboarding-progress" value="{{ onboarding.completed }}" max="4">{{ onboarding.completed }} of 4 complete</progress></div>
   </header>
-  <ol class="lp-onboarding-steps">
+  <p class="lp-onboarding-swipe" id="onboarding-swipe">Swipe to explore all four steps <i class="bi bi-arrow-right" aria-hidden="true"></i></p>
+  <ol class="lp-onboarding-steps" tabindex="0" aria-label="Workspace setup steps" aria-describedby="onboarding-swipe">
     {% for step in onboarding.steps %}
-    <li><a class="lp-onboarding-step{% if step.current %} is-current{% endif %}{% if step.complete %} is-complete{% endif %}" href="{{ step.url }}"{% if step.current %} aria-current="step"{% endif %}>
-      <span class="lp-onboarding-number" aria-hidden="true">{% if step.complete %}<i class="bi bi-check-lg"></i>{% else %}{{ forloop.counter }}{% endif %}</span>
-      <span class="lp-onboarding-copy"><strong>{{ step.title }}</strong>{% if step.complete %}<small>Complete</small>{% elif step.current %}<small>Next step</small>{% endif %}</span>
-    </a></li>
+    <li class="lp-onboarding-step{% if step.current %} is-current{% endif %}{% if step.complete %} is-complete{% endif %}"{% if step.current %} aria-current="step"{% endif %}>
+      <div class="lp-onboarding-step-top"><span class="lp-onboarding-eyebrow">Step {{ forloop.counter|stringformat:"02d" }}</span>
+      <span class="lp-onboarding-icon" aria-hidden="true"><i class="bi {% if step.complete %}bi-check-lg{% else %}{{ step.icon }}{% endif %}"></i></span></div>
+      <h3>{{ step.title }}</h3>
+      <p>{{ step.description }}</p>
+      <div class="lp-onboarding-status">{% if step.complete %}{% include "photographer_workspace/components/badge.html" with variant="success" label="Complete" icon="bi-check-lg" %}{% elif step.current %}{% include "photographer_workspace/components/badge.html" with variant="brand" label="Recommended next" %}{% endif %}</div>
+      {% if step.current %}{% include "photographer_workspace/components/button.html" with href=step.url label=step.title variant="primary" full_width=True trailing_icon="bi-arrow-right" %}{% else %}{% include "photographer_workspace/components/button.html" with href=step.url label=step.title variant="outline" full_width=True trailing_icon="bi-arrow-right" %}{% endif %}
+    </li>
     {% endfor %}
   </ol>
-  <footer class="lp-onboarding-footer"><button class="lp-button lp-button--secondary" type="button" data-onboarding-dismiss hidden>Dismiss for now</button></footer>
+  <footer class="lp-onboarding-footer"><p>Your progress updates as you use your workspace.</p><button class="lp-button lp-button--ghost" type="button" data-onboarding-dismiss hidden>Dismiss for now</button></footer>
   {% endif %}
 </section>

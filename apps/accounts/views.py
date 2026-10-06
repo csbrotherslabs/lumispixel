@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -196,8 +197,9 @@ def login_view(request):
             messages.info(request, "Please verify your email address before continuing.")
             return redirect("accounts:verification-pending")
         login(request, user)
-        if not form.cleaned_data.get("remember"):
-            request.session.set_expiry(0)
+        request.session.set_expiry(
+            settings.SESSION_COOKIE_AGE if form.cleaned_data.get("remember") else 0
+        )
         return redirect(_post_login_url(request, next_url))
     if request.method == "POST" and submitted_email:
         _record_login_failure(request, submitted_email)

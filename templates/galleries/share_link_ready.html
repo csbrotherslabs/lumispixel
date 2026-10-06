@@ -11,7 +11,7 @@
 {% block workspace_content %}
 {% gallery_qr_png share_url as qr_png_data_uri %}
 {% gallery_qr_svg share_url as qr_svg_data_uri %}
-<section class="lp-share-ready" aria-labelledby="workspace-page-title">
+<section class="lp-workspace-page lp-share-ready" aria-labelledby="workspace-page-title">
   <nav class="lp-share-ready__breadcrumbs" aria-label="Breadcrumb">
     <a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a>
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
@@ -20,7 +20,7 @@
     <span>Share Link</span>
   </nav>
 
-  <section class="lp-share-ready__hero">
+  <section class="lp-workspace-hero lp-share-ready__hero">
     <div class="lp-share-ready__hero-copy">
       <span class="lp-share-ready__success" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
       <div>

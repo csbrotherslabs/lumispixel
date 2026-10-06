@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-ai-page">
-  <header class="lp-ai-head">
+<div class="lp-workspace-page lp-ai-page">
+  <header class="lp-workspace-hero lp-ai-head">
     <div><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right"></i><span>Galleries</span><i class="bi bi-chevron-right"></i><strong>AI Processing</strong></nav><h1 id="workspace-page-title">AI Processing</h1><p>Monitor and manage AI tasks for every gallery.</p></div>
     <details class="lp-ai-launch"><summary class="lpw-btn lpw-btn-primary"><i class="bi bi-stars"></i>Process Selected Galleries</summary><form method="post">{% csrf_token %}<header><div><strong>Start AI processing</strong><span>Choose galleries and capabilities to add to the queue.</span></div></header><div class="lp-ai-picker"><fieldset><legend>Galleries</legend>{% for gallery in galleries %}<label><input type="checkbox" name="gallery_ids" value="{{ gallery.pk }}"><span>{{ gallery.name }}<small>{{ gallery.image_count }} images</small></span></label>{% empty %}<p>Create a gallery before starting AI processing.</p>{% endfor %}</fieldset><fieldset><legend>AI tasks</legend>{% for value,label in task_choices %}<label><input type="checkbox" name="task_types" value="{{ value }}"><span>{{ label }}</span></label>{% endfor %}</fieldset></div><footer><button class="lpw-btn lpw-btn-primary" type="submit">Add to processing queue</button></footer></form></details>
   </header>
