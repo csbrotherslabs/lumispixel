@@ -1,0 +1,52 @@
+/* Approved first-slide hero; other carousel slides retain their layouts. */
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-heading {
+  max-width: 790px;
+  padding: clamp(24px,3.2vw,44px);
+  border: 1px solid rgba(255,255,255,.32);
+  border-radius: 24px;
+  background: rgba(8,8,8,.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  text-align: left;
+}
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-item--subtitle { color:#ef1722; font-size:13px; letter-spacing:.18em; margin:0 0 20px; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-item--title { font-size:clamp(38px,5vw,72px); font-weight:650; line-height:1.04; letter-spacing:-.045em; color:#fff; margin:0 0 22px; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-subheadline { display:block; max-width:680px; margin:0; color:#d0d0d0; font-size:clamp(15px,1.4vw,20px); line-height:1.5; font-weight:400; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-feature-pills { display:flex; gap:12px; margin-top:24px; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-feature-pills span { display:inline-flex; align-items:center; gap:10px; padding:12px 16px; border:1px solid rgba(255,255,255,.4); border-radius:12px; background:transparent; color:#fff; font-size:14px; font-weight:500; }
+.home-platform-slide .wptb-hero-feature-pills i { font-size:20px; }
+.page-home .wptb-slider.style3 .home-platform-slide .home-platform-actions { display:flex; flex-wrap:wrap; gap:14px; margin-top:24px; }
+.home-platform-button { display:inline-flex; align-items:center; justify-content:center; gap:20px; min-height:56px; padding:14px 28px; border:1px solid transparent; border-radius:12px; font-size:17px; font-weight:650; text-decoration:none; transition:background .2s ease; }
+.home-platform-button--primary { background:#dc000b; color:#fff; }
+.home-platform-button--primary:hover { background:#b90009; color:#fff; }
+.home-platform-button--secondary { background:#fff; color:#171717; }
+.home-platform-button--secondary:hover { background:#ffe8e9; color:#171717; }
+.home-platform-button:focus-visible,.home-platform-slide .wptb-hero-text-link:focus-visible { outline:3px solid #fff; outline-offset:4px; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-text-link { display:inline-flex; align-items:center; min-height:44px; margin-top:8px; color:#fff; font-size:14px; }
+.home-platform-roadmap { display:flex; align-items:center; flex-wrap:wrap; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,.3); color:#fff; }
+.home-platform-roadmap__badge { padding:7px 12px; border:1px solid #ef1722; border-radius:10px; color:#ff4852; text-transform:uppercase; font-size:12px; letter-spacing:.04em; white-space:nowrap; }
+.home-platform-roadmap p { margin:0; color:#fff; font-size:14px; line-height:1.6; }
+.home-platform-roadmap p span { margin-inline:8px; }
+@media(max-width:767px) {
+  .page-home .wptb-slider.style3 .home-platform-slide .wptb-heading { padding:24px 20px; border-radius:20px; }
+  .page-home .wptb-slider.style3 .home-platform-slide .wptb-item--subtitle { font-size:10px; line-height:1.6; margin-bottom:16px; }
+  .page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-feature-pills { gap:8px; margin-top:18px; }
+  .page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-feature-pills span { padding:8px 10px; font-size:11px; gap:6px; border-radius:8px; }
+  .home-platform-slide .wptb-hero-feature-pills i { font-size:15px; }
+  .home-platform-button { flex:1 1 160px; min-height:48px; padding:12px 14px; font-size:14px; gap:12px; }
+  .home-platform-roadmap { gap:10px; margin-top:14px; padding-top:16px; }
+  .home-platform-roadmap p { font-size:12px; }
+}
+@media(prefers-reduced-motion:reduce) { .home-platform-button { transition:none; } }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-item--title { white-space:normal; overflow-wrap:normal; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-feature-pills { flex-wrap:wrap; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-item--subtitle { white-space:normal; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-heading { width:min(790px,100%); }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-heading > :is(.wptb-item--subtitle,.wptb-item--title,.wptb-item--description,.wptb-item--button) { position:relative; left:0; right:auto; opacity:1; visibility:visible; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-hero-text-link { text-transform:none; }
+.page-home .wptb-slider.style3 .home-platform-slide .wptb-heading > :is(.wptb-item--subtitle,.wptb-item--title,.wptb-item--description,.wptb-item--button) { transform:none; transition:none; animation:none; }
+.page-home .wptb-slider.style3 .home-platform-slide .container { width:100%; max-width:none; padding-inline:clamp(16px,3vw,48px); }
+.page-home .wptb-slider.style3 .home-platform-slide .row { margin-inline:0; }
+.page-home .wptb-slider.style3 .home-platform-slide .col-lg-9 { width:100%; max-width:100%; padding-inline:0; }
+.page-home .home-platform-slide .home-platform-button--primary:is(:link,:visited,:hover,:focus,:active) { color:#fff; }
+.page-home .home-platform-slide .home-platform-button--secondary:is(:link,:visited,:hover,:focus,:active) { color:#171717; }
