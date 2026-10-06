@@ -115,3 +115,48 @@ class CookieSecurityContractTests(TestCase):
         self.assertIn("CSRF_COOKIE_SECURE = True", settings_text)
         self.assertIn("SECURE_SSL_REDIRECT", settings_text)
         self.assertIn("SECURE_HSTS_SECONDS", settings_text)
+
+
+@override_settings(SESSION_COOKIE_AGE=86400)
+class RememberMeSessionTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = get_user_model().objects.create_user(
+            email="remember@example.com", password="Strong-test-password-941!",
+            email_verified=True,
+        )
+
+    def sign_in(self, remember=False):
+        data = {"email": self.user.email, "password": "Strong-test-password-941!"}
+        if remember:
+            data["remember"] = "on"
+        response = self.client.post(reverse("accounts:login"), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(str(self.user.pk), self.client.session["_auth_user_id"])
+        return response
+
+    def test_unchecked_uses_browser_session_cookie(self):
+        response = self.sign_in()
+        self.assertTrue(self.client.session.get_expire_at_browser_close())
+        self.assertEqual(response.cookies["sessionid"]["max-age"], "")
+
+    def test_checked_uses_configured_duration(self):
+        response = self.sign_in(remember=True)
+        self.assertFalse(self.client.session.get_expire_at_browser_close())
+        self.assertEqual(self.client.session.get_expiry_age(), 86400)
+        self.assertEqual(int(response.cookies["sessionid"]["max-age"]), 86400)
+
+    def test_checked_replaces_prior_browser_only_expiry(self):
+        session = self.client.session
+        session.set_expiry(0)
+        session.save()
+        self.sign_in(remember=True)
+        self.assertFalse(self.client.session.get_expire_at_browser_close())
+        self.assertEqual(self.client.session.get_expiry_age(), 86400)
+
+    def test_unchecked_replaces_prior_persistent_expiry(self):
+        session = self.client.session
+        session.set_expiry(86400)
+        session.save()
+        self.sign_in()
+        self.assertTrue(self.client.session.get_expire_at_browser_close())

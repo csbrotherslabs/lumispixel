@@ -1,8 +1,8 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-container lp-client-record">
+<div class="lp-workspace-page lp-container lp-client-record">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:clients' %}">Clients</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:client_detail' client_record.pk %}">{{ client_record }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Contracts</strong></nav>
-  <header class="lp-client-record-hero">
+  <header class="lp-workspace-hero lp-client-record-hero">
     <div class="lp-client-record-identity">
       {% if client_record.profile_photo %}<img src="{{ client_record.profile_photo.url }}" alt="">{% else %}<span class="lp-client-record-avatar" aria-hidden="true">{{ client_record.first_name|first|upper }}{{ client_record.last_name|first|upper }}</span>{% endif %}
       <div class="lp-client-record-heading"><div><span class="lp-client-record-eyebrow">Client record</span>{% include "photographer_workspace/components/badge.html" with label=client_record.get_status_display variant=client_status_variant dot=True %}</div><h1 id="workspace-page-title">{{ client_record }}</h1><p>{% if client_record.company %}{{ client_record.company }} · {% endif %}Client since {{ client_record.created_at|date:"F Y" }}</p><ul aria-label="Client contact summary">{% if client_record.email %}<li><i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:{{ client_record.email }}">{{ client_record.email }}</a></li>{% endif %}{% if client_record.phone %}<li><i class="bi bi-telephone" aria-hidden="true"></i><a href="tel:{{ client_record.phone }}">{{ client_record.phone }}</a></li>{% endif %}</ul></div>

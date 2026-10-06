@@ -1,8 +1,8 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% if is_client_form %}
-<form class="workspace-form-page{% if is_add_client %} lp-container lp-add-lead lp-clients-main-width{% elif editing_client %} lp-container lp-edit-client lp-clients-main-width{% endif %}" method="post" enctype="multipart/form-data" data-crm-form novalidate>{% csrf_token %}
-  <header class="form-page-header{% if is_add_client or editing_client %} lp-page-header{% endif %}">
+<form class="lp-workspace-page workspace-form-page{% if is_add_client %} lp-container lp-add-lead lp-clients-main-width{% elif editing_client %} lp-container lp-edit-client lp-clients-main-width{% endif %}" method="post" enctype="multipart/form-data" data-crm-form novalidate>{% csrf_token %}
+  <header class="lp-workspace-hero form-page-header{% if is_add_client or editing_client %} lp-page-header{% endif %}">
     {% if is_add_client %}<div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Add Client</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Add Client</h1><p class="lp-page-description">Create a complete client profile so every conversation and project starts with the right context.</p></div>{% elif editing_client %}<div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:clients' %}">Clients</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{{ client_detail_url }}">{{ client_record }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Edit</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Edit client</h1><p class="lp-page-description">Update {{ client_record }}’s profile, contact preferences, and workspace details.</p></div>{% else %}<p>Create a complete client profile so every conversation and project starts with the right context.</p>{% endif %}
     <div class="sticky-form-actions"><a class="{% if is_add_client or editing_client %}lp-button lp-button--secondary lp-button--md{% else %}lpw-btn{% endif %}" href="{% if editing_client %}{{ client_detail_url }}{% else %}{% url 'photographer_workspace:crm' %}{% endif %}">Cancel</a><button class="{% if is_add_client or editing_client %}lp-button lp-button--primary lp-button--md{% else %}lpw-btn lpw-btn-primary{% endif %}" type="submit" data-submit-button><i class="bi bi-check2" aria-hidden="true"></i><span>{% if editing_client %}Save changes{% else %}Save Client{% endif %}</span></button></div>
   </header>
@@ -19,8 +19,8 @@
   </aside></div>
 </form>
 {% elif is_lead_form %}
-<form class="workspace-form-page{% if is_add_lead %} lp-container lp-add-lead lp-clients-main-width{% endif %}" method="post" data-crm-form novalidate>{% csrf_token %}{% if form_next %}<input type="hidden" name="next" value="{{ form_next }}">{% endif %}
-  <header class="form-page-header{% if is_add_lead %} lp-page-header{% endif %}">
+<form class="lp-workspace-page workspace-form-page{% if is_add_lead %} lp-container lp-add-lead lp-clients-main-width{% endif %}" method="post" data-crm-form novalidate>{% csrf_token %}{% if form_next %}<input type="hidden" name="next" value="{{ form_next }}">{% endif %}
+  <header class="lp-workspace-hero form-page-header{% if is_add_lead %} lp-page-header{% endif %}">
     {% if is_add_lead %}<div class="lp-page-heading"><nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Add Lead</strong></nav><h1 class="lp-page-title" id="workspace-page-title">Add Lead</h1><p class="lp-page-description">Capture a new inquiry and the details needed for follow-up.</p></div>{% else %}<p>Capture a new inquiry and the details needed for follow-up.</p>{% endif %}
     <div class="sticky-form-actions"><a class="{% if is_add_lead %}lp-button lp-button--secondary lp-button--md{% else %}lpw-btn{% endif %}" href="{% url 'photographer_workspace:leads' %}">Cancel</a><button class="{% if is_add_lead %}lp-button lp-button--primary lp-button--md{% else %}lpw-btn lpw-btn-primary{% endif %}" type="submit" data-submit-button><i class="bi bi-check2" aria-hidden="true"></i><span>{% if editing_lead %}Update{% else %}Save{% endif %} Lead</span></button></div>
   </header>
@@ -39,7 +39,7 @@
   </aside></div>
 </form>
 {% else %}
-<header class="lpw-command-header"><div><p class="lpw-command-header__greeting">CRM</p><h1>{{ form_title }}</h1></div></header>
+<header class="lp-workspace-hero lpw-command-header"><div><p class="lpw-command-header__greeting">CRM</p><h1 id="workspace-page-title">{{ form_title }}</h1></div></header>
 <section class="lpw-command-section"><div class="lpw-data-card" style="padding:1.5rem;max-width:700px"><form method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<div class="mb-3"><label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>{{ field }}{% if field.errors %}<div class="text-danger" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endfor %}<button class="lpw-btn lpw-btn-primary" type="submit">Save</button> <a class="lpw-btn" href="{% url 'photographer_workspace:crm' %}">Cancel</a></form></div></section>
 {% endif %}
 {% endblock %}

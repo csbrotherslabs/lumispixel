@@ -10,8 +10,8 @@
 .nav-account{gap:8px;margin-right:18px}
 .nav-signin{color:rgba(255,255,255,.82)!important}
 .nav-signin:hover,.nav-signin:focus-visible{color:#fff!important}
-.header .nav-start-free{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 22px;border:1px solid rgba(255,255,255,.92);border-radius:999px;background:#fff;color:#171717!important;font-size:11px;font-weight:800;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;box-shadow:0 5px 18px rgba(0,0,0,.16);transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
-.header .nav-start-free:hover,.header .nav-start-free:focus-visible{border-color:#fff;background:#f1f1f1;color:#b90e15!important;transform:translateY(-1px)}
+.header .nav-start-free{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 22px;border:1px solid #d70006;border-radius:999px;background:#d70006;color:#fff!important;font-size:11px;font-weight:800;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;box-shadow:0 5px 18px rgba(0,0,0,.16);transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
+.header .nav-start-free:hover,.header .nav-start-free:focus-visible{border-color:#b90808;background:#b90808;color:#fff!important;transform:translateY(-1px)}
 .header .nav-start-free:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .nav-workspace-link{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 13px;border:1px solid rgba(255,255,255,.17);border-radius:10px;background:rgba(255,255,255,.055);color:#fff;font-size:10px;font-weight:750;letter-spacing:.045em;text-decoration:none;text-transform:uppercase;transition:background-color .2s ease,border-color .2s ease,color .2s ease}
 .nav-workspace-link i{color:#e36060;font-size:12px}.nav-workspace-link:hover,.nav-workspace-link:focus-visible{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff}
@@ -33,3 +33,8 @@
 .mobile-account-panel,.mobile-main-panel{margin:18px 0;padding:16px;border:1px solid rgba(var(--color-white-rgb),.12);border-radius:14px;background:rgba(var(--color-white-rgb),.035)}
 .mobile-main-panel{padding:8px 16px 4px}.mobile-main-panel h6{margin:8px 0 4px}.mobile-main-panel .mr_navmenu,.mobile-main-panel ul.main-menu{width:100%}.mobile-main-panel ul.main-menu{border-top:0}
 .mobile-account-links{margin:15px 0 0;padding:5px 0 0;border-top:1px solid rgba(var(--color-white-rgb),.09);list-style:none}.mobile-account-links a,.mobile-account-links button{display:flex;align-items:center;gap:11px;min-height:42px;padding:10px 2px;border-bottom:1px solid rgba(var(--color-white-rgb),.07);color:rgba(var(--color-white-rgb),.72);font-size:11px;letter-spacing:1px;text-transform:uppercase}.mobile-account-links li:last-child a,.mobile-account-links li:last-child button{border-bottom:0}.mobile-account-links i{width:18px;color:var(--color-one);font-size:14px}.mobile-account-links span{flex:1;text-align:left}
+
+/* Consistent signup action across transparent, sticky, and mobile navigation. */
+.header.header .nav-start-free, .mobile-auth-actions a.nav-start-free, .sidebar-auth-actions a.nav-start-free {background:#d70006;border-color:#d70006;color:#fff!important}
+.header.header .nav-start-free:is(:hover,:focus), .mobile-auth-actions a.nav-start-free:is(:hover,:focus), .sidebar-auth-actions a.nav-start-free:is(:hover,:focus) {background:#b90808;border-color:#b90808;color:#fff!important}
+.header.header .nav-start-free:active, .mobile-auth-actions a.nav-start-free:active, .sidebar-auth-actions a.nav-start-free:active {background:#930606;border-color:#930606;color:#fff!important}

@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-container lp-gallery-preview">
-  <header class="lp-gallery-preview__toolbar">
+<div class="lp-workspace-page lp-container lp-gallery-preview">
+  <header class="lp-workspace-hero lp-gallery-preview__toolbar">
     <div><span class="lp-contract-eyebrow">Photographer preview</span><h1 id="workspace-page-title">{{ gallery.name }}</h1><p>This private preview shows how the gallery content is taking shape. It does not publish or grant client access.</p></div>
     <a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}"><i class="bi bi-arrow-left" aria-hidden="true"></i>Back to Workspace</a>
   </header>

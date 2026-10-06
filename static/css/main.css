@@ -4404,3 +4404,54 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width:991px){ .video-tutorials-hero__grid,.video-featured{grid-template-columns:1fr;}.video-product-grid,.video-series-grid,.video-role-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:767px){ .video-tutorials-breadcrumbs{padding-top:96px}.video-tutorials-section{padding:52px 0}.start-path,.video-product-grid,.video-card-grid,.video-series-grid,.video-role-grid,.video-short-grid,.video-business-list,.video-upcoming-grid,.video-newsletter-form{grid-template-columns:1fr}.video-tutorials-actions .btn-one,.video-tutorials-actions .btn-two,.video-card-actions .btn-one,.video-card-actions .btn-two{width:100%;justify-content:center}.video-filter-list{flex-wrap:wrap}.video-business-list article{grid-template-columns:1fr}.video-newsletter-form label,.video-newsletter-form input,.video-newsletter-form button{grid-row:auto} }
 @media (prefers-reduced-motion:reduce){ .video-tutorials-page *{scroll-behavior:auto!important;transition:none!important;} }
+
+/* Keep authentication submit labels readable while hovered, focused, or pressed. */
+.login-auth-submit .btn.lumis-auth-primary:is(:hover, :focus, :focus-visible, :active):not(:disabled) {
+  background: #ffe5e7;
+  border-color: #e8a2a8;
+  color: #9b1621;
+}
+.login-auth-submit .btn.lumis-auth-primary:is(:hover, :focus, :focus-visible, :active):not(:disabled) :is(.btn-wrap, .text-first) {
+  color: inherit;
+}
+
+/* Password recovery confirmation. */
+.password-reset-confirmation{padding:144px 0 80px}
+.password-reset-confirmation .password-reset-confirmation__card{max-width:580px;margin:0 auto;padding:36px;background:#fff;border:1px solid #e8e0da;border-radius:20px;color:#252323;text-align:center;box-shadow:0 12px 36px rgba(31,23,18,.05)}
+.password-reset-confirmation__icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 20px;border-radius:18px;background:#fff0f1;color:#c61b29;font-size:28px}
+.password-reset-confirmation h1{margin:10px 0 14px;color:#252323;font-size:clamp(28px,4vw,36px);line-height:1.2;font-weight:650;letter-spacing:-.03em}
+.password-reset-confirmation__intro{margin:0;color:#625b56;font-size:15px;line-height:1.7}
+.password-reset-confirmation__next{margin:24px 0;padding:20px;border:1px solid #e8e0da;border-radius:12px;background:#faf8f6;text-align:left}
+.password-reset-confirmation__next h2{margin:0 0 12px;font-size:16px;font-weight:650;color:#252323}
+.password-reset-confirmation__next ol{margin:0;padding-left:20px;color:#625b56;font-size:14px;line-height:1.7}
+.password-reset-confirmation__next li+li{margin-top:8px}
+.password-reset-confirmation__note{display:flex;align-items:flex-start;gap:10px;margin:0 0 24px;text-align:left;color:#625b56;font-size:13px;line-height:1.6}
+.password-reset-confirmation__note i{color:#b81b27;flex:none}
+.password-reset-confirmation .btn.password-reset-confirmation__signin{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:48px;padding:12px 18px;border:1px solid #d70006;border-radius:10px;background:#d70006;color:#fff;font-size:14px;font-weight:600;text-transform:none;letter-spacing:normal;text-decoration:none}
+.password-reset-confirmation .btn.password-reset-confirmation__signin:is(:hover,:focus-visible){background:#ffe5e7;border-color:#e8a2a8;color:#9b1621}
+.password-reset-confirmation__signin i{color:inherit}
+.password-reset-confirmation__retry{display:inline-flex;align-items:center;min-height:44px;margin-top:8px;color:#625b56;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.password-reset-confirmation__retry:hover{color:#9b1621}
+.password-reset-confirmation a:focus-visible{outline:3px solid #d70006;outline-offset:3px}
+@media(max-width:620px){.password-reset-confirmation{padding:112px 0 48px}.password-reset-confirmation .password-reset-confirmation__card{padding:24px 20px}.password-reset-confirmation__next{padding:16px}}
+
+.password-reset-editor__form{display:grid;gap:20px;margin-top:28px;text-align:left}
+.password-reset-editor__field{display:grid;gap:8px}
+.password-reset-editor__field label{margin:0;color:#252323;font-size:14px;font-weight:600}
+.password-reset-editor__required{color:#c61b29}
+.password-reset-editor .form-control{min-height:48px;padding:12px 14px;border:1px solid #ded4ce;border-radius:10px;background:#faf8f6;color:#252323;font-size:15px}
+.password-reset-editor .form-control:focus{border-color:#c61b29;outline:2px solid #ffe5e7;outline-offset:2px;box-shadow:none}
+.password-reset-editor .form-control[aria-invalid="true"]{border-color:#c61b29}
+.password-reset-editor__help{color:#625b56;font-size:13px;line-height:1.6}
+.password-reset-editor__help ul{margin:4px 0 0;padding-left:20px}
+.password-reset-editor__help li+li{margin-top:4px}
+.password-reset-editor__error{color:#9b1621;background:#fff0f1;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6}
+.password-reset-confirmation button:focus-visible{outline:3px solid #d70006;outline-offset:3px}
+
+/* Shared, progressively enhanced password visibility control. */
+.lumis-password-control{position:relative;min-width:0}
+.lumis-password-control input.form-control{padding-right:56px}
+.lumis-password-control .lumis-password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:#625b56;cursor:pointer;font-size:18px}
+.lumis-password-control .lumis-password-toggle:hover{background:#ffe5e7;color:#9b1621}
+.lumis-password-control .lumis-password-toggle:focus-visible{outline:2px solid #d70006;outline-offset:1px}
+.lumis-password-toggle i{color:inherit;pointer-events:none}

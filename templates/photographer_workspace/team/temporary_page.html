@@ -1,13 +1,13 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpw-team-page">
-  <header class="lpw-team-header">
+<div class="lp-workspace-page lpw-team-page">
+  <header class="lp-workspace-hero lpw-team-header">
     <nav class="lpw-breadcrumb" aria-label="Breadcrumb">
       <a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a>
       <i class="bi bi-chevron-right" aria-hidden="true"></i><span>Team</span>
       <i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{{ team_page.title }}</strong>
     </nav>
-    <h2 id="workspace-page-title">{{ team_page.title }}</h2>
+    <h1 id="workspace-page-title">{{ team_page.title }}</h1>
     <p>{{ team_page.subtitle }}</p>
   </header>
   <section class="lpw-team-empty" aria-labelledby="team-empty-title">

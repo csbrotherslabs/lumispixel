@@ -18,7 +18,7 @@
         <div class="row">
           <div class="col-12 login-auth-column client-signup-column">
             <div class="login-auth-card client-signup-card">
-            <form class="wptb-form" method="post">
+            <form data-password-visibility class="wptb-form" method="post">
               {% csrf_token %}
               <input type="hidden" name="intent" value="{{ intent }}">
               <input type="hidden" name="next" value="{{ next }}">

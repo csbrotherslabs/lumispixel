@@ -58,7 +58,7 @@ class ClientEditTests(TestCase):
     def test_successful_update_persists_fields_preserves_protected_data_and_audits(self):
         self.client.force_login(self.owner)
         edit_page = self.client.get(self.url)
-        self.assertContains(edit_page, 'class="workspace-form-page lp-container lp-edit-client lp-clients-main-width"')
+        self.assertContains(edit_page, 'class="lp-workspace-page workspace-form-page lp-container lp-edit-client lp-clients-main-width"')
         self.assertContains(edit_page, "Edit client")
         self.assertContains(edit_page, str(self.record))
         self.assertContains(edit_page, reverse("photographer_workspace:client_detail", args=[self.record.pk]))

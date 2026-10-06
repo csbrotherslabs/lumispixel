@@ -4,8 +4,8 @@
 {% block workspace_content %}
 {% url 'photographer_workspace:add_client' as add_client_url %}
 {% url 'photographer_workspace:leads' as leads_url %}
-<div class="lp-crm-page lp-clients" id="main-content">
-  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-clients-header">
+<div class="lp-workspace-page lp-crm-page lp-clients" id="main-content">
+  <header class="lp-workspace-hero lpw-command-header lpw-dashboard-header lp-page-header lp-clients-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Clients</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Clients</h1>

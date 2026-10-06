@@ -1,8 +1,8 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-booking-detail">
+<div class="lp-workspace-page lp-booking-detail">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Booking #LP-{{ booking.pk|stringformat:'04d' }}</strong></nav>
-  <header class="lp-page-header lp-booking-detail-header">
+  <header class="lp-workspace-hero lp-page-header lp-booking-detail-header">
     <div class="lp-page-heading">
       <div class="lp-booking-title-row"><h1 class="lp-page-title" id="workspace-page-title">{{ booking.session_type|default:"Photography session" }}</h1>{% include "photographer_workspace/components/badge.html" with label=booking.get_status_display variant=booking_status_variant dot=True %}</div>
       <p class="lp-page-description">Booking for {{ booking.client }} · LP-{{ booking.pk|stringformat:'04d' }}</p>

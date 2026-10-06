@@ -2,11 +2,11 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_leads.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-crm-page lp-leads" id="main-content">
-  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-leads-header">
+<div class="lp-workspace-page lp-crm-page lp-leads" id="main-content">
+  <header class="lp-workspace-hero lpw-command-header lpw-dashboard-header lp-page-header lp-leads-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:crm' %}">CRM</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Leads</strong></nav>
-      <h1 class="lp-page-title">Leads</h1><p class="lp-page-description">Track inquiries, manage follow-ups, and move opportunities toward booking.</p>
+      <h1 id="workspace-page-title" class="lp-page-title">Leads</h1><p class="lp-page-description">Track inquiries, manage follow-ups, and move opportunities toward booking.</p>
     </div>
     <div class="lp-header-actions" role="group" aria-label="Lead actions">
       {% include "photographer_workspace/components/button.html" with variant="primary" label="Add Lead" leading_icon="bi-plus-lg" href=add_lead_url %}

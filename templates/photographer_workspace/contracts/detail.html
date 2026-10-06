@@ -1,8 +1,8 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-contract-workspace lp-contract-editor">
+<div class="lp-workspace-page lp-contract-workspace lp-contract-editor">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:booking_detail' contract.booking.pk %}?tab=contract#contract">Booking LP-{{ contract.booking.pk|stringformat:'04d' }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Contract</strong></nav>
-  <header class="lp-page-header lp-contract-workspace-header">
+  <header class="lp-workspace-hero lp-page-header lp-contract-workspace-header">
     <div class="lp-contract-heading"><span class="lp-contract-heading__icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span><div class="lp-page-heading"><span class="lp-contract-eyebrow">Contract workspace</span><div class="lp-contract-title-row"><h1 class="lp-page-title" id="workspace-page-title">{{ contract.title }}</h1>{% include "photographer_workspace/components/badge.html" with label=contract.get_status_display variant=contract_status_variant dot=True %}</div><p class="lp-page-description">Agreement for {{ contract.client }} · Version {{ contract.version }}{% if contract.template %} · {{ contract.template.name }}{% endif %}</p></div></div>
     <div class="lp-header-actions"><a class="lp-button lp-button--secondary lp-contract-preview-action" href="{% url 'photographer_workspace:contract_preview' contract.pk %}"><i class="bi bi-eye" aria-hidden="true"></i>Preview Contract</a></div>
   </header>

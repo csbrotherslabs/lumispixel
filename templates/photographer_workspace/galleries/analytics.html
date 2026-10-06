@@ -2,8 +2,8 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_v2.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_actions.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_analytics_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
-<div class="lp-gallery-workspace lp-gallery-workspace-modern lp-gallery-workspace-v2">
-  <header class="lp-gw-head">
+<div class="lp-workspace-page lp-gallery-workspace lp-gallery-workspace-modern lp-gallery-workspace-v2">
+  <header class="lp-workspace-hero lp-gw-head">
     <div class="lp-gw-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{{ gallery.name }}</strong></nav>
       <div class="lp-gw-title"><div><span class="lp-contract-eyebrow">Gallery workspace</span><div><h1 id="workspace-page-title">{{ gallery.name }}</h1><span class="lp-client-status lpw-gallery-status--{{ gallery.status }}"><i></i>{{ gallery.get_status_display }}</span></div><p>{{ gallery.description|default:"Manage photos, delivery, client access, commerce, and gallery settings."|truncatechars:120 }}</p></div></div>

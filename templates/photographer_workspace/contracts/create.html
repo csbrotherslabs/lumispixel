@@ -1,9 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lp-contract-create">
+<div class="lp-workspace-page lp-contract-create">
   {% url 'photographer_workspace:booking_detail' booking.pk as booking_url %}
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:bookings' %}">Bookings</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{{ booking_url }}">Booking #{{ booking.pk }}</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Create Contract</strong></nav>
-  <header class="lp-page-header">
+  <header class="lp-workspace-hero lp-page-header">
     <div class="lp-page-heading"><h1 class="lp-page-title" id="workspace-page-title">Create Contract</h1><p class="lp-page-description">Create a contract for {{ booking.client }} using one of your active templates.</p></div>
     <div class="lp-header-actions">{% include "photographer_workspace/components/button.html" with href=booking_url|add:"?tab=contract#contract" variant="secondary" label="Back to Booking" leading_icon="bi-arrow-left" %}</div>
   </header>
