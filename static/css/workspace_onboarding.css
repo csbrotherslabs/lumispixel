@@ -60,3 +60,20 @@
 .lp-onboarding .lp-onboarding-heading h2{margin:0;font-size:var(--lp-type-card-title);line-height:var(--lp-leading-tight)}
 .lp-onboarding-step-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--lp-space-3);width:100%}
 .lp-onboarding-step-top .lp-onboarding-icon{flex:none;width:var(--lp-space-10);height:var(--lp-space-10)}
+
+.lp-onboarding .lp-onboarding-step .lp-button--outline{
+  background:var(--lp-color-page);
+  border-color:var(--lp-color-border);
+  box-shadow:none;
+  transition:transform var(--lp-transition-duration),border-color var(--lp-transition-duration),background var(--lp-transition-duration);
+}
+.lp-onboarding .lp-onboarding-step .lp-button--outline:is(:hover,:focus-visible){
+  background:var(--lp-color-surface);
+  border-color:var(--lp-color-brand-border);
+  color:var(--lp-text-primary);
+  transform:translateY(-2px);
+}
+@media(prefers-reduced-motion:reduce){
+  .lp-onboarding .lp-onboarding-step .lp-button--outline{transition:none}
+  .lp-onboarding .lp-onboarding-step .lp-button--outline:is(:hover,:focus-visible){transform:none}
+}
