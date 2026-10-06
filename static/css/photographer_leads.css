@@ -65,7 +65,7 @@
 .lp-leads .lp-leads-header .lp-page-title{margin-top:0}
 
 /* Lead summary: force one row / three columns on non-mobile layouts. */
-.lp-leads.lp-crm-page .lp-card-grid.lp-leads-kpis{
+.lp-leads.lp-crm-page .lp-card-grid.lp-leads-kpis:not(.lp-summary-grid){
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
   grid-auto-flow:column;
@@ -399,7 +399,7 @@
 @media(max-width:620px){
   .lp-leads .lp-leads-header{padding:24px 22px;border-radius:20px}
   .lp-leads .lp-leads-header .lpw-breadcrumb{margin-bottom:14px}
-  .lp-leads.lp-crm-page .lp-card-grid.lp-leads-kpis{grid-template-columns:1fr!important;grid-auto-flow:row;gap:12px}
+  .lp-leads.lp-crm-page .lp-card-grid.lp-leads-kpis:not(.lp-summary-grid){grid-template-columns:1fr!important;grid-auto-flow:row;gap:12px}
   .lp-leads .lp-leads-kpis .lp-kpi-card{min-height:138px;padding:18px}
   .lp-leads .lp-leads-filters{padding:16px}
   .lp-leads .lp-leads-view-bar{padding:12px 16px}

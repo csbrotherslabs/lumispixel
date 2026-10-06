@@ -15,8 +15,8 @@
     </div>
   </header>
 
-  <section class="lp-card-grid lp-leads-kpis" aria-label="Lead pipeline health">
-    {% for metric in lead_summary %}{% if metric.label != "Active Pipeline Value" %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endif %}{% endfor %}
+  <section class="lp-card-grid lp-summary-grid lp-leads-kpis" aria-label="Lead pipeline health">
+    {% url 'photographer_workspace:leads' as summary_leads_url %}{% for metric in lead_summary %}{% if metric.label != "Active Pipeline Value" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" footer_url=summary_leads_url footer_label="View leads" label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endif %}{% endfor %}
   </section>
 
   {% if not lead_summary.0.value and not has_filters %}<section class="lp-leads-onboarding" aria-labelledby="lead-start-title"><div><h2 id="lead-start-title">Build your first pipeline</h2><p>Keep each inquiry and its next step in one operational view.</p></div><ol><li><b>1</b>Add or import a lead</li><li><b>2</b>Record the source</li><li><b>3</b>Schedule a follow-up</li><li><b>4</b>Move toward booking</li></ol></section>{% endif %}
@@ -31,7 +31,7 @@
       </div>
       <div class="lp-leads-filter-fields" id="lead-filter-drawer">
         <label><span>Service</span><select name="event_type"><option value="">All services</option>{% for event in event_types %}<option value="{{ event }}"{% if selected_event_type == event %} selected{% endif %}>{{ event }}</option>{% endfor %}</select></label>
-        <label><span>Follow-up</span><select name="follow_up"><option value="">Any status</option><option value="overdue"{% if selected_follow_up == 'overdue' %} selected{% endif %}>Overdue</option><option value="today"{% if selected_follow_up == 'today' %} selected{% endif %}>Due today</option><option value="upcoming"{% if selected_follow_up == 'upcoming' %} selected{% endif %}>Upcoming</option><option value="unscheduled"{% if selected_follow_up == 'unscheduled' %} selected{% endif %}>Not scheduled</option></select></label>
+        <label><span>Follow-up</span><select name="follow_up"><option value="">Any status</option><option value="due"{% if selected_follow_up == 'due' %} selected{% endif %}>Due today or overdue</option><option value="overdue"{% if selected_follow_up == 'overdue' %} selected{% endif %}>Overdue</option><option value="today"{% if selected_follow_up == 'today' %} selected{% endif %}>Due today</option><option value="upcoming"{% if selected_follow_up == 'upcoming' %} selected{% endif %}>Upcoming</option><option value="unscheduled"{% if selected_follow_up == 'unscheduled' %} selected{% endif %}>Not scheduled</option></select></label>
         <label class="lp-leads-date"><span>Created from</span><input type="date" name="created_from" value="{{ created_from }}"></label>
         <label class="lp-leads-date"><span>Created to</span><input type="date" name="created_to" value="{{ created_to }}"></label>
         <input type="hidden" name="terminal" value="{{ terminal }}">

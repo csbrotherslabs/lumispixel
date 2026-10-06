@@ -18,8 +18,8 @@
     </div>
   </header>
 
-  <section class="lp-card-grid lp-clients-kpis" aria-label="Client summary">
-    {% for metric in client_summary %}{% if metric.label != "Outstanding Balance" %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endif %}{% endfor %}
+  <section class="lp-card-grid lp-summary-grid lp-clients-kpis" aria-label="Client summary">
+    {% url 'photographer_workspace:clients' as summary_clients_url %}{% for metric in client_summary %}{% if metric.label != "Outstanding Balance" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" footer_url=summary_clients_url footer_label="View clients" label=metric.label value=metric.value icon=metric.icon supporting_text=metric.note %}{% endif %}{% endfor %}
   </section>
 
   <section class="lp-clients-controls" aria-label="Search, filter, and browse clients" data-clients-workspace>
