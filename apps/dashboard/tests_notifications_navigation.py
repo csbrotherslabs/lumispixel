@@ -29,7 +29,8 @@ class PhotographerWorkspaceNotificationsNavigationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         notifications_url = reverse("notifications:index")
         placeholder_url = reverse("photographer_workspace:notifications")
-        self.assertContains(response, f'href="{notifications_url}"', count=2)
+        self.assertContains(response, f'href="{notifications_url}"', count=3)
+        self.assertContains(response, f'class="lpw-icon-btn" href="{notifications_url}" data-notification-open')
         self.assertNotContains(response, f'href="{placeholder_url}"')
 
     def test_workspace_search_is_labeled_as_navigation_search(self):

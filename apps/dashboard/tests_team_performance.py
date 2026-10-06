@@ -202,10 +202,10 @@ class TeamPerformanceMetricTests(TestCase):
 
         response = self.client.get(reverse("photographer_workspace:team_performance"))
 
-        self.assertContains(response, 'class="lp-container lpt-page lpf-page"', html=False)
+        self.assertContains(response, 'class="lp-workspace-page lp-container lpt-page lpf-page"', html=False)
         self.assertContains(
             response,
-            'class="lp-page-header lpt-header lpf-header"',
+            'class="lp-workspace-hero lp-page-header lpt-header lpf-header"',
             html=False,
         )
         self.assertContains(
