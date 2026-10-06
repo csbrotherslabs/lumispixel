@@ -172,9 +172,9 @@
                 <!-- End Slide Item -->
 
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide home-marketplace-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/8.jpg" %}"); --mobile-image: url("{% static "img/slider/27.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-photographer-marketplace.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-photographer-marketplace-mobile.webp" %}");'></div>
                         
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -183,23 +183,21 @@
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">PHOTOGRAPHER MARKETPLACE</h6>
-                                                <h2 class="wptb-item--title">The Right Photographer, Easier to Find.</h2>
-                                                <p class="wptb-item--description wptb-hero-subheadline">Discover professionals by specialty and location, compare their work, and connect with the photographer who fits your event.</p>
-                                                <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>Wedding</span>
-                                                    <span>Portrait</span>
-                                                    <span>Event</span>
-                                                    <span>Commercial</span>
+                                                <h2 class="wptb-item--title">Find your<br>photographer.</h2>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Explore photographers by specialty and location. Find a style you love and connect for your next shoot.</p>
+                                                <div class="wptb-hero-feature-pills home-marketplace-categories" aria-label="Photography specialties">
+                                                    <span><i class="bi bi-hearts" aria-hidden="true"></i> Weddings</span>
+                                                    <span><i class="bi bi-person" aria-hidden="true"></i> Portraits</span>
+                                                    <span><i class="bi bi-calendar3" aria-hidden="true"></i> Events</span>
+                                                    <span><i class="bi bi-briefcase" aria-hidden="true"></i> Commercial</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Join LumisPixel" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    <a class="home-platform-button home-platform-button--primary" href="{{ find_photographer_url }}">Find a Photographer <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--secondary" href="{{ homepage_get_started_url }}">Join LumisPixel <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
                                                 </div>
-                                                {% include "components/text_link.html" with label="Photographers: Create Your Profile →" href=homepage_get_started_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-marketplace-footer">{% include "components/text_link.html" with label="Photographers: Create your profile →" href=homepage_get_started_url class_name="wptb-hero-text-link" %}</div>
+                                                <div class="home-client-previews" aria-hidden="true"><img src="{% static 'img/photographers/gallery/wedding-couple-sunset-portrait.webp' %}" alt="" width="180" height="220"><img src="{% static 'img/photographers/theme-previews/Narrative/narrative-editorial-portrait.webp' %}" alt="" width="160" height="180"></div>
                                             </div>
                                         </div>
                                     </div>

@@ -78,3 +78,12 @@
 @media(max-width:1100px) { .home-workspace-preview { right:-50px; top:-35px; width:150px; padding:14px; } .home-workspace-preview strong { font-size:12px; } .home-workspace-preview span { font-size:10px; padding:8px 0; } }
 @media(max-width:767px) { .page-home .wptb-slider.style3 .home-photographer-slide .wptb-heading { margin-top:90px; width:calc(100vw - 64px); max-width:calc(100vw - 64px); } .home-workspace-preview { right:8px; top:-90px; width:125px; padding:10px; } .home-workspace-preview span { padding:5px 0; } .home-photographer-slide .home-platform-button { flex:0 0 auto; min-width:0; width:100%; min-height:48px; } .page-home .wptb-slider.style3 .home-photographer-slide .wptb-item--subtitle { padding-right:105px; } }
 @media(max-width:767px) { .page-home .wptb-slider.style3 .home-photographer-slide .wptb-heading { margin-top:160px; } .home-workspace-preview { top:-145px; width:145px; } .home-workspace-preview strong { margin-bottom:6px; white-space:nowrap; } .page-home .wptb-slider.style3 .home-photographer-slide .wptb-item--subtitle { padding-right:0; } }
+
+/* Marketplace hero shares the approved panel, actions and portfolio previews. */
+.page-home .wptb-slider.style3 .home-marketplace-slide .home-marketplace-categories { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.page-home .wptb-slider.style3 .home-marketplace-slide .home-marketplace-categories span { display:flex; min-width:0; min-height:70px; gap:14px; padding:14px 18px; font-size:16px; }
+.home-marketplace-categories i { font-size:26px; }
+.home-marketplace-footer { border-top:1px solid rgba(255,255,255,.3); margin-top:24px; padding-top:12px; }
+.page-home .wptb-slider.style3 .home-marketplace-slide .wptb-item--title br { display:block; }
+.page-home .wptb-slider.style3 .home-marketplace-slide .wptb-item--title { overflow-wrap:anywhere; }
+@media(max-width:767px) { .page-home .wptb-slider.style3 .home-marketplace-slide .wptb-heading { margin-top:80px; width:calc(100vw - 64px); max-width:calc(100vw - 64px); } .home-marketplace-slide .home-platform-button { flex:0 0 auto; width:100%; min-width:0; min-height:48px; } .page-home .wptb-slider.style3 .home-marketplace-slide .home-marketplace-categories span { font-size:12px; padding:10px; min-height:62px; gap:8px; } .home-marketplace-categories i { font-size:20px; } .home-marketplace-slide .home-client-previews { top:-75px; } }
