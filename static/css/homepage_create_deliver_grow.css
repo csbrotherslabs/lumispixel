@@ -144,3 +144,20 @@
  .page-home .wptb-slider.style3 .home-client-slide .home-platform-roadmap p { white-space:nowrap; font-size:clamp(8px,2.5vw,11px); }
  .page-home .wptb-slider.style3 .wptb-bottom-pane { bottom:20px; }
 }
+
+/* Connected Platform: swipe through audience cards on mobile. */
+@media(max-width:767px) {
+ .page-home .lumis-audiences__grid {
+  display:flex; flex-wrap:nowrap; gap:14px; margin:0;
+  overflow-x:auto; scroll-snap-type:x mandatory;
+  scroll-padding-inline:2px; padding:2px 2px 14px;
+  overscroll-behavior-x:contain;
+ }
+ .page-home .lumis-audiences__grid > div {
+  flex:0 0 86%; width:86%; max-width:340px;
+  margin:0 !important; padding:0; scroll-snap-align:start;
+ }
+ .page-home .lumis-audiences__grid .lumis-audience-card {
+  visibility:visible !important; animation:none !important;
+ }
+}
