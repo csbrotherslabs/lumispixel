@@ -4404,3 +4404,13 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width:991px){ .video-tutorials-hero__grid,.video-featured{grid-template-columns:1fr;}.video-product-grid,.video-series-grid,.video-role-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:767px){ .video-tutorials-breadcrumbs{padding-top:96px}.video-tutorials-section{padding:52px 0}.start-path,.video-product-grid,.video-card-grid,.video-series-grid,.video-role-grid,.video-short-grid,.video-business-list,.video-upcoming-grid,.video-newsletter-form{grid-template-columns:1fr}.video-tutorials-actions .btn-one,.video-tutorials-actions .btn-two,.video-card-actions .btn-one,.video-card-actions .btn-two{width:100%;justify-content:center}.video-filter-list{flex-wrap:wrap}.video-business-list article{grid-template-columns:1fr}.video-newsletter-form label,.video-newsletter-form input,.video-newsletter-form button{grid-row:auto} }
 @media (prefers-reduced-motion:reduce){ .video-tutorials-page *{scroll-behavior:auto!important;transition:none!important;} }
+
+/* Keep the login submit label readable against its soft-red hover surface. */
+.login-auth-submit .btn.lumis-auth-primary:is(:hover, :focus-visible):not(:disabled) {
+  background: #ffe5e7;
+  border-color: #e8a2a8;
+  color: #9b1621;
+}
+.login-auth-submit .btn.lumis-auth-primary:is(:hover, :focus-visible):not(:disabled) :is(.btn-wrap, .text-first) {
+  color: inherit;
+}
