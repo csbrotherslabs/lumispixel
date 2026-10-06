@@ -22,8 +22,8 @@ Use these regions in this order, omitting only those marked optional.
 All inputs are display values; includes never query models or decide authorization. The caller must scope data to the active studio and omit unauthorized actions/values before rendering.
 
 ### Page header — `page_header.html`
-- **Purpose/inputs:** identifies context with `title`; supports `greeting`, `description`, `date`, a primary and secondary URL/label/icon, and transitional `visually_hidden_title` when the workspace shell already supplies the single page `h1`.
-- **Variants/responsive:** standard or visually quiet dashboard title; actions wrap and stack through `.lp-page-header`/`.lp-header-actions`.
+- **Purpose/inputs:** identifies context with `title`; supports `greeting`, `description`, `date`, a primary and secondary URL/label/icon, and a compatibility `visually_hidden_title` argument. The shared hero always renders the single page `h1`; the topbar is a navigation label.
+- **Variants/responsive:** shared dark hero with a dashboard greeting or page title; actions wrap and stack through `.lp-page-header`/`.lp-header-actions`.
 - **States/permissions:** no loading or empty visual; use stable copy while regions load. Omit actions the user cannot perform.
 - **Accessibility/usage:** exactly one page `h1`; semantic `time`; concise description. Never use a card title as the page title or add a second `h1`.
 

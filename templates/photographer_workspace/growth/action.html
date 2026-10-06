@@ -1,9 +1,9 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 {% if growth_action == 'reviews' %}
-<form class="workspace-form-page lp-container lp-add-lead lp-growth-review-request lp-clients-main-width" method="post" novalidate>{% csrf_token %}
+<form class="lp-workspace-page workspace-form-page lp-container lp-add-lead lp-growth-review-request lp-clients-main-width" method="post" novalidate>{% csrf_token %}
   <input type="hidden" name="action" value="reviews"><input type="hidden" name="range" value="{{ range_key }}">
-  <header class="form-page-header lp-page-header">
+  <header class="lp-workspace-hero form-page-header lp-page-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:growth' %}?range={{ range_key }}">Growth</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Request Reviews</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">Request Reviews</h1>

@@ -1,7 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
-<div class="lpa" data-archive-page>
-  <header class="lpa-head">
+<div class="lp-workspace-page lpa" data-archive-page>
+  <header class="lp-workspace-hero lpa-head">
     <div><nav class="lpw-breadcrumb"><span>Photographer Workspace</span><i class="bi bi-chevron-right"></i><span>Galleries</span><i class="bi bi-chevron-right"></i><strong>Archive</strong></nav><span class="lpa-eyebrow">GALLERY MANAGEMENT</span><h1 id="workspace-page-title">Gallery Archive</h1><p>Manage inactive galleries and recover archived work.</p></div>
     <div><a class="lpw-btn" href="{% url 'photographer_workspace:dashboard' %}"><i class="bi bi-arrow-left"></i>Back to Dashboard</a><a class="lpw-btn" href="#archive-storage"><i class="bi bi-device-ssd"></i>Review Storage</a><button class="lpw-btn lpw-btn-primary" type="button" data-archive-open><i class="bi bi-archive"></i>Archive Galleries</button></div>
   </header>

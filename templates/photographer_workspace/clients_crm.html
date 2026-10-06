@@ -3,8 +3,8 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_crm.css' %}">{% endblock %}
 {% block workspace_content %}
 {% url 'photographer_workspace:add_lead' as add_lead_url %}{% url 'photographer_workspace:add_client' as add_client_url %}{% url 'photographer_workspace:create_task' as create_task_url %}{% url 'photographer_workspace:schedule' as schedule_url %}{% url 'photographer_workspace:leads' as leads_url %}{% url 'photographer_workspace:bookings' as bookings_url %}{% url 'photographer_workspace:tasks' as tasks_url %}
-<div class="lp-crm-page lp-clients-main-width">
-  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-crm-header">
+<div class="lp-workspace-page lp-crm-page lp-clients-main-width">
+  <header class="lp-workspace-hero lpw-command-header lpw-dashboard-header lp-page-header lp-crm-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Clients</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">CRM</strong></nav>
       <h1 id="workspace-page-title" class="lp-page-title">Client CRM</h1>

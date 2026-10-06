@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="{% static 'css/photographer_financial_header_actions.css' %}">
   <link rel="stylesheet" href="{% static 'css/photographer_growth_refresh.css' %}">
 <link rel="stylesheet" href="{% static 'css/notification_drawer.css' %}">
+  <link rel="stylesheet" href="{% static 'css/photographer_workspace_shell.css' %}">
 </head>
 <body class="lumis-workspace-body{% if hide_workspace_sidebar %} lpw-account-page{% endif %}">
 <a class="skip-link" href="#workspace-main">Skip to main content</a>
@@ -32,7 +33,7 @@
   {% if not hide_workspace_sidebar %}{% include "photographer_workspace/components/sidebar.html" %}{% endif %}
   <div class="lpw-main-wrap">
     {% include "photographer_workspace/components/topbar.html" %}
-    <main id="workspace-main" class="lpw-main{% if hide_workspace_sidebar %} lpw-main--account{% endif %}" tabindex="-1" aria-labelledby="workspace-page-title">
+    <main id="workspace-main" class="lpw-main lp-workspace-main{% if hide_workspace_sidebar %} lpw-main--account{% endif %}" tabindex="-1" {% if hide_workspace_sidebar %}aria-label="{{ page_title }}"{% else %}aria-labelledby="workspace-page-title"{% endif %}>
       {% if messages %}<div aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}" role="status" data-app-alert>{{ message }}</div>{% endfor %}</div>{% endif %}
       {% block workspace_content %}{% endblock %}
     </main>

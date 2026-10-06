@@ -1,8 +1,8 @@
 {% extends "photographer_workspace/base.html" %}{% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_invoice_builder_refresh.css' %}">{% endblock %}
 {% block workspace_content %}
-<form class="lpw-invoice lp-invoice-builder workspace-form-page lp-container lp-clients-main-width{% if not invoice %} lp-add-lead lp-add-invoice{% endif %}" method="post" data-invoice-form novalidate>{% csrf_token %}
-  <header class="lpw-command-header lpw-dashboard-header lp-page-header lp-invoice-builder-header">
+<form class="lp-workspace-page lpw-invoice lp-invoice-builder workspace-form-page lp-container lp-clients-main-width{% if not invoice %} lp-add-lead lp-add-invoice{% endif %}" method="post" data-invoice-form novalidate>{% csrf_token %}
+  <header class="lp-workspace-hero lpw-command-header lpw-dashboard-header lp-page-header lp-invoice-builder-header">
     <div class="lp-page-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Business Hub</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:financial_overview' %}">Financial</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">{% if invoice %}Edit Invoice{% else %}Create Invoice{% endif %}</strong></nav>
       <h1 class="lp-page-title" id="workspace-page-title">{% if invoice %}Edit Invoice{% else %}Create Invoice{% endif %}</h1>

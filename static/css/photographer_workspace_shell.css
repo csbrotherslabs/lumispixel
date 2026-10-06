@@ -1,0 +1,147 @@
+/* Shared shell, loaded after feature styles. Page headers opt in explicitly;
+   feature panels, dialogs, public galleries and account profile keep their styling. */
+.lumis-workspace-body {
+  --lp-shell-dark: #11151d;
+  --lp-shell-dark-raised: #1b202b;
+  --lp-shell-inverse: #fff;
+  --lp-shell-muted: #bac0cc;
+  --lp-shell-accent: #ff8da5;
+  --lp-shell-line: rgb(255 255 255 / 12%);
+  --lp-shell-highlight: rgb(255 255 255 / 7%);
+  --lp-shell-gutter: clamp(1rem, 2.5vw, 2.125rem);
+  --lp-shell-hero: radial-gradient(circle at 85% 15%, rgb(215 25 63 / 28%), transparent 38%), linear-gradient(135deg, var(--lp-shell-dark-raised), var(--lp-shell-dark));
+}
+.lumis-workspace-body .lpw-main.lp-workspace-main {
+  width: 100%;
+  max-width: 1550px;
+  margin-inline: auto;
+  padding: var(--lp-shell-gutter) var(--lp-shell-gutter) var(--lp-space-12);
+  background: var(--lp-color-page);
+  overflow-x: clip;
+}
+.lumis-workspace-body .lpw-main .lp-workspace-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.lumis-workspace-body .lpw-main .lp-workspace-page > .lp-container:not(.lp-workspace-hero) {
+  width: 100%;
+  max-width: none;
+  padding-inline: 0;
+}
+.lumis-workspace-body .lpw-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 268px;
+  padding: var(--lp-space-6) var(--lp-space-4);
+  background: linear-gradient(180deg, var(--lp-shell-dark-raised), var(--lp-shell-dark));
+  color: var(--lp-shell-inverse);
+  overflow: hidden;
+}
+.lumis-workspace-body .lpw-brand { flex-shrink: 0; margin-bottom: var(--lp-space-5); }
+.lumis-workspace-body .lpw-brand img { width: 150px; filter: brightness(0) invert(1); }
+.lp-workspace-label {
+  display: grid;
+  gap: var(--lp-space-1);
+  padding: var(--lp-space-3);
+  margin-bottom: var(--lp-space-4);
+  border: 1px solid var(--lp-shell-line);
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-shell-highlight);
+}
+.lp-workspace-label small, .lp-workspace-sidebar-footer > span {
+  color: var(--lp-shell-muted);
+  font-size: var(--lp-type-micro);
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.lp-workspace-label strong { color: var(--lp-shell-inverse); font-size: var(--lp-type-body-small); }
+.lumis-workspace-body .lpw-nav { flex: 1; min-height: 0; overflow-y: auto; align-content: start; scrollbar-width: thin; scrollbar-color: #545b68 transparent; }
+.lumis-workspace-body .lpw-nav a, .lumis-workspace-body .lpw-nav-group__toggle {
+  min-height: 44px;
+  border-radius: var(--lp-radius-md);
+  color: var(--lp-shell-muted);
+  font-size: var(--lp-type-body-small);
+}
+.lumis-workspace-body .lpw-nav-group__toggle { margin-top: var(--lp-space-3); font-size: var(--lp-type-caption); }
+.lumis-workspace-body .lpw-nav a:is(:hover, :focus-visible, .is-active),
+.lumis-workspace-body .lpw-nav-group__toggle:is(:hover, :focus-visible),
+.lumis-workspace-body .lpw-nav-group.is-active .lpw-nav-group__toggle {
+  background: var(--lp-shell-highlight);
+  color: var(--lp-shell-inverse);
+}
+.lumis-workspace-body .lpw-nav a.is-active { box-shadow: inset 3px 0 0 var(--lp-color-brand); }
+.lumis-workspace-body .lpw-nav a:focus-visible, .lumis-workspace-body .lpw-nav-group__toggle:focus-visible,
+.lp-workspace-sidebar-footer a:focus-visible { outline: 2px solid var(--lp-shell-accent); outline-offset: -2px; }
+.lp-workspace-sidebar-footer { display: grid; gap: var(--lp-space-2); padding: var(--lp-space-4) var(--lp-space-3) 0; margin-top: var(--lp-space-4); border-top: 1px solid var(--lp-shell-line); }
+.lp-workspace-sidebar-footer strong { color: var(--lp-shell-inverse); font-size: var(--lp-type-body-small); overflow-wrap: anywhere; }
+.lp-workspace-sidebar-footer a { color: var(--lp-shell-muted); font-size: var(--lp-type-caption); text-decoration: none; min-height: 44px; display: flex; align-items: center; gap: var(--lp-space-2); }
+.lumis-workspace-body .lpw-sidebar.is-collapsed { width: 84px; }
+.lpw-sidebar.is-collapsed :is(.lp-workspace-label, .lp-workspace-sidebar-footer) { display: none; }
+.lumis-workspace-body .lp-workspace-topbar-title { margin: 0; color: var(--lp-text-primary); font-size: var(--lp-type-body); font-weight: 700; }
+.lumis-workspace-body .lpw-main .lp-workspace-hero {
+  position: relative;
+  top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lp-space-6);
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0 0 var(--lp-space-6);
+  padding: var(--lp-space-8);
+  border: 1px solid var(--lp-shell-line);
+  border-radius: var(--lp-radius-lg);
+  background: var(--lp-shell-hero);
+  color: var(--lp-shell-inverse);
+  box-shadow: var(--lp-shadow-standard);
+  overflow: visible;
+  backdrop-filter: none;
+  isolation: isolate;
+}
+.lumis-workspace-body .lpw-main .lp-workspace-hero::before,
+.lumis-workspace-body .lpw-main .lp-workspace-hero::after { content: none; }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(h1, h2, .lp-page-title, .lpw-command-header__greeting) {
+  margin-block: var(--lp-space-2);
+  color: var(--lp-shell-inverse);
+  font-size: clamp(1.625rem, 2.6vw, 2.75rem);
+  font-weight: 600;
+  line-height: var(--lp-leading-tight);
+  letter-spacing: -.035em;
+}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(p, time, .lp-page-description) { color: var(--lp-shell-muted); line-height: var(--lp-leading-body); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-breadcrumb, .lpa-header-breadcrumb, .lpw-bookings-breadcrumb, .lp-album-work-breadcrumb) { color: var(--lp-shell-muted); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-breadcrumb, .lpa-header-breadcrumb, .lpw-bookings-breadcrumb, .lp-album-work-breadcrumb) :is(a, strong, span, i),
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lp-contract-eyebrow, .lp-product-editor__eyebrow, .lpa-eyebrow, .lp-workspace-hero__eyebrow) { color: var(--lp-shell-accent); }
+.lp-workspace-hero__eyebrow { font-size: var(--lp-type-micro); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.lumis-workspace-body .lpw-main .lp-workspace-hero > div { min-width: 0; max-width: 100%; }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lp-header-actions, .lpw-command-header__actions) { flex-wrap: wrap; }
+/* Controls and storage remain light surfaces, with semantic light-surface text. */
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn, .lp-button):not(.lp-button--primary):not(.lpw-btn-primary) { background: var(--lp-color-surface); color: var(--lp-text-primary); border-color: var(--lp-color-border); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn-primary, .lp-button--primary) { background: var(--lp-color-brand); border-color: var(--lp-color-brand); color: var(--lp-shell-inverse); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-hero-storage :is(p, span, strong, small) { color: var(--lp-text-primary); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-hero-storage a { color: var(--lp-text-brand); }
+@media (max-width: 860px) {
+  .lumis-workspace-body .lpw-sidebar { position: fixed; z-index: 40; width: min(300px, 88vw); height: 100dvh; }
+  .lumis-workspace-body .lpw-sidebar.is-collapsed { width: min(300px, 88vw); }
+  .lpw-sidebar.is-collapsed :is(.lp-workspace-label, .lp-workspace-sidebar-footer) { display: grid; }
+  .lumis-workspace-body .lpw-main .lp-workspace-hero { flex-direction: column; align-items: stretch; padding: var(--lp-space-6); }
+}
+@media (max-width: 620px) {
+  .lumis-workspace-body .lpw-main .lp-workspace-hero { padding: var(--lp-space-5); gap: var(--lp-space-4); }
+  .lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lp-header-actions, .lpw-command-header__actions) { justify-content: flex-start; }
+}
+/* Hidden groups must leave both the visual layout and keyboard tab order. */
+.lumis-workspace-body .lpw-nav-group__items[hidden] { display: none; }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpb-eyebrow, .lp-share-ready__eyebrow) { color: var(--lp-shell-accent); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpb-action, .lp-share-action--secondary) { background: var(--lp-color-surface); color: var(--lp-text-primary); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-page-description { font-size: var(--lp-type-body); }
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(details > div, [role="menu"]) :is(p, small, span, strong, button) { color: var(--lp-text-primary); }
+@media (prefers-reduced-motion: reduce) {
+  .lumis-workspace-body .lpw-sidebar, .lumis-workspace-body .lpw-nav a { transition: none; }
+}
