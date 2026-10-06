@@ -4416,7 +4416,7 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 
 /* Password recovery confirmation. */
-.password-reset-confirmation{padding:64px 0 80px}
+.password-reset-confirmation{padding:144px 0 80px}
 .password-reset-confirmation .password-reset-confirmation__card{max-width:580px;margin:0 auto;padding:36px;background:#fff;border:1px solid #e8e0da;border-radius:20px;color:#252323;text-align:center;box-shadow:0 12px 36px rgba(31,23,18,.05)}
 .password-reset-confirmation__icon{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 20px;border-radius:18px;background:#fff0f1;color:#c61b29;font-size:28px}
 .password-reset-confirmation h1{margin:10px 0 14px;color:#252323;font-size:clamp(28px,4vw,36px);line-height:1.2;font-weight:650;letter-spacing:-.03em}
@@ -4433,4 +4433,4 @@ img, svg, video { max-width: 100%; height: auto; }
 .password-reset-confirmation__retry{display:inline-flex;align-items:center;min-height:44px;margin-top:8px;color:#625b56;font-size:13px;text-decoration:underline;text-underline-offset:3px}
 .password-reset-confirmation__retry:hover{color:#9b1621}
 .password-reset-confirmation a:focus-visible{outline:3px solid #d70006;outline-offset:3px}
-@media(max-width:620px){.password-reset-confirmation{padding:32px 0 48px}.password-reset-confirmation .password-reset-confirmation__card{padding:24px 20px}.password-reset-confirmation__next{padding:16px}}
+@media(max-width:620px){.password-reset-confirmation{padding:112px 0 48px}.password-reset-confirmation .password-reset-confirmation__card{padding:24px 20px}.password-reset-confirmation__next{padding:16px}}
