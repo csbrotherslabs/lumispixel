@@ -41,9 +41,7 @@
 @media(prefers-reduced-motion:reduce){.lp-onboarding-steps{scroll-behavior:auto}}
 
 /* Keep setup typography independent of the public-site and dashboard cascade. */
-.lp-onboarding .lp-onboarding-heading{display:flex;align-items:center;gap:var(--lp-space-4);min-width:0}
-.lp-onboarding .lp-onboarding-brand{display:grid;place-items:center;flex:none;width:3rem;height:3rem;border-radius:var(--lp-radius-md);background:var(--lp-color-brand-subtle);color:var(--lp-text-brand)}
-.lp-onboarding .lp-onboarding-brand img{width:var(--lp-space-8);height:var(--lp-space-8);object-fit:contain}
+.lp-onboarding .lp-onboarding-heading{display:grid;gap:var(--lp-space-1);min-width:0}
 .lp-onboarding h2{font-size:var(--lp-type-section-title);font-weight:700;line-height:var(--lp-leading-tight);margin:0 0 var(--lp-space-2);text-transform:none;letter-spacing:normal}
 .lp-onboarding .lp-onboarding-header{padding-bottom:var(--lp-space-4);border-bottom:1px solid var(--lp-color-border)}
 .lp-onboarding .lp-onboarding-progress{padding:var(--lp-space-3) var(--lp-space-4);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-pill);background:var(--lp-color-surface)}
@@ -56,4 +54,9 @@
 .lp-onboarding .lp-onboarding-step .lp-button--primary{color:var(--lp-text-inverse)}
 .lp-onboarding .lp-onboarding-step .lp-button :is(span,i){color:inherit;font-size:inherit;font-weight:inherit;text-transform:none;letter-spacing:normal}
 .lp-onboarding .lp-onboarding-footer .lp-button{font-size:var(--lp-type-body-small);font-weight:500;text-transform:none;letter-spacing:normal;color:var(--lp-text-secondary);text-decoration:underline}
-@media(max-width:620px){.lp-onboarding .lp-onboarding-brand{display:none}.lp-onboarding .lp-onboarding-progress{max-width:100%;box-sizing:border-box}.lp-onboarding .lp-onboarding-progress progress{width:6rem}}
+@media(max-width:620px){.lp-onboarding .lp-onboarding-progress{max-width:100%;box-sizing:border-box}.lp-onboarding .lp-onboarding-progress progress{width:6rem}}
+
+.lp-onboarding .lp-onboarding-kicker{display:block;color:var(--lp-text-brand);font-size:var(--lp-type-micro);font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.lp-onboarding .lp-onboarding-heading h2{margin:0;font-size:var(--lp-type-card-title);line-height:var(--lp-leading-tight)}
+.lp-onboarding-step-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--lp-space-3);width:100%}
+.lp-onboarding-step-top .lp-onboarding-icon{flex:none;width:var(--lp-space-10);height:var(--lp-space-10)}
