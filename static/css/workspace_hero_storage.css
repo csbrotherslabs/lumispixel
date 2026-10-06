@@ -4,7 +4,7 @@
 .lp-hero-storage-label{display:inline-flex;align-items:center;gap:var(--lp-space-2);color:var(--lp-text-secondary);font-weight:600}
 .lp-hero-storage-label i{color:var(--lp-text-brand)}
 .lp-hero-storage-usage{display:flex;align-items:baseline;flex-wrap:wrap;gap:var(--lp-space-2)}
-.lp-hero-storage-usage>strong{color:var(--lp-text-primary);font-size:var(--lp-hero-action-size);font-weight:650;line-height:var(--lp-leading-tight);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.lp-hero-storage-usage>strong{color:var(--lp-text-primary);font-size:var(--lp-type-section-title);font-weight:650;line-height:var(--lp-leading-tight);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .lp-hero-storage-usage>span,.lp-hero-storage-footer>span{color:var(--lp-text-secondary)}
 .lp-hero-storage-footer strong{color:var(--lp-text-primary);font-weight:650}
 .lp-hero-storage progress{display:block;width:100%;height:var(--lp-space-1);margin:0;border:0;border-radius:var(--lp-radius-pill);overflow:hidden;appearance:none;background:var(--lp-color-page);accent-color:var(--lp-color-brand)}
@@ -13,6 +13,16 @@
 .lp-hero-storage progress::-moz-progress-bar{background:var(--lp-color-brand);border-radius:var(--lp-radius-pill)}
 .lp-hero-storage-footer a{display:inline-flex;align-items:center;gap:var(--lp-space-2);min-height:2.75rem;color:var(--lp-text-brand);font-weight:650;text-decoration:none}
 .lp-hero-storage-footer a:hover{text-decoration:underline}
-.lp-hero-storage-footer a:focus-visible{outline:var(--lp-focus-ring);outline-offset:3px;border-radius:var(--lp-radius-sm)}
+.lp-hero-storage-footer a:focus-visible{outline:2px solid var(--lp-shell-accent);outline-offset:3px;border-radius:var(--lp-radius-sm)}
 .lp-hero-storage-message{margin:0;color:var(--lp-text-secondary)}
 @media(max-width:620px){.lpw-dashboard-header .lp-hero-storage{padding:var(--lp-space-3)}}
+
+.lp-hero-storage-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--lp-space-2);color:var(--lp-text-secondary)}
+.lp-hero-storage-meta strong{color:var(--lp-text-primary)}
+.lp-hero-storage-footer{justify-content:flex-end;padding-top:var(--lp-space-2);border-top:1px solid var(--lp-color-border)}
+.lp-hero-storage-footer a{color:var(--lp-text-primary)}
+.lp-hero-storage-footer a i{color:var(--lp-text-brand)}
+.lp-hero-storage-label{color:var(--lp-text-primary)}
+.lp-hero-storage-label i{display:grid;place-items:center;width:var(--lp-space-8);height:var(--lp-space-8);border-radius:var(--lp-radius-sm);background:var(--lp-shell-highlight);font-size:var(--lp-type-body)}
+.lp-hero-storage .lp-badge--neutral{background:var(--lp-shell-highlight);border:1px solid var(--lp-color-border);color:var(--lp-text-secondary)}
+.lp-hero-storage .lp-badge--neutral span{color:inherit}

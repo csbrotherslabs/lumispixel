@@ -131,11 +131,25 @@
 .lp-workspace-hero__eyebrow { font-size: var(--lp-type-micro); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .lumis-workspace-body .lpw-main .lp-workspace-hero > div { min-width: 0; max-width: 100%; }
 .lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lp-header-actions, .lpw-command-header__actions) { flex-wrap: wrap; }
-/* Controls and storage remain light surfaces, with semantic light-surface text. */
-.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn, .lp-button):not(.lp-button--primary):not(.lpw-btn-primary) { background: var(--lp-color-surface); color: var(--lp-text-primary); border-color: var(--lp-color-border); }
-.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn-primary, .lp-button--primary) { background: var(--lp-color-brand); border-color: var(--lp-color-brand); color: var(--lp-shell-inverse); }
-.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-hero-storage :is(p, span, strong, small) { color: var(--lp-text-primary); }
-.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-hero-storage a { color: var(--lp-text-brand); }
+/* Shared hero actions: red primary, translucent secondary. */
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button){
+  transition:background var(--lp-transition-duration),border-color var(--lp-transition-duration),box-shadow var(--lp-transition-duration);
+}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button):not(.lp-button--primary):not(.lpw-btn-primary):not(.lp-button--destructive){background:var(--lp-shell-highlight);color:var(--lp-shell-inverse);border-color:var(--lp-shell-line)}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button):not(.lp-button--primary):not(.lpw-btn-primary):not(.lp-button--destructive):is(:hover,:focus-visible){background:rgb(255 255 255 / 14%);border-color:rgb(255 255 255 / 30%);color:var(--lp-shell-inverse)}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn-primary,.lp-button--primary){background:var(--lp-color-brand);border-color:var(--lp-color-brand);color:var(--lp-shell-inverse)}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn-primary,.lp-button--primary):is(:hover,:focus-visible){background:var(--lp-color-brand-hover);border-color:var(--lp-color-brand-hover)}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button) :is(span,i){color:inherit}
+.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button):focus-visible{outline:2px solid var(--lp-shell-accent);outline-offset:3px}
+.lumis-workspace-body .lpw-main .lp-workspace-hero .lp-hero-storage{
+  --lp-color-surface:var(--lp-shell-dark-raised);
+  --lp-color-page:rgb(255 255 255 / 10%);
+  --lp-color-border:var(--lp-shell-line);
+  --lp-text-primary:var(--lp-shell-inverse);
+  --lp-text-secondary:var(--lp-shell-muted);
+  --lp-text-brand:var(--lp-shell-accent);
+}
+@media(prefers-reduced-motion:reduce){.lumis-workspace-body .lpw-main .lp-workspace-hero :is(.lpw-btn,.lp-button){transition:none}}
 @media (max-width: 860px) {
   .lumis-workspace-body .lpw-sidebar { position: fixed; z-index: 40; width: min(300px, 88vw); height: 100dvh; }
   .lumis-workspace-body .lpw-sidebar.is-collapsed { width: min(300px, 88vw); }
