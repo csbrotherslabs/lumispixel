@@ -19,7 +19,7 @@
         <div class="row">
           <div class="col-12 login-auth-column">
             <div class="login-auth-card">
-            <form class="wptb-form" action="{% url 'accounts:login' %}" method="post">
+            <form data-password-visibility class="wptb-form" action="{% url 'accounts:login' %}" method="post">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ next }}">
               <div class="wptb-form--inner">

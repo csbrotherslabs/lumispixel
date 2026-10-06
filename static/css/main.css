@@ -4447,3 +4447,11 @@ img, svg, video { max-width: 100%; height: auto; }
 .password-reset-editor__help li+li{margin-top:4px}
 .password-reset-editor__error{color:#9b1621;background:#fff0f1;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6}
 .password-reset-confirmation button:focus-visible{outline:3px solid #d70006;outline-offset:3px}
+
+/* Shared, progressively enhanced password visibility control. */
+.lumis-password-control{position:relative;min-width:0}
+.lumis-password-control input.form-control{padding-right:56px}
+.lumis-password-control .lumis-password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:#625b56;cursor:pointer;font-size:18px}
+.lumis-password-control .lumis-password-toggle:hover{background:#ffe5e7;color:#9b1621}
+.lumis-password-control .lumis-password-toggle:focus-visible{outline:2px solid #d70006;outline-offset:1px}
+.lumis-password-toggle i{color:inherit;pointer-events:none}
