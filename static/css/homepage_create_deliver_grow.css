@@ -66,3 +66,5 @@
 .page-home .wptb-slider.style3 .home-client-slide :is(.container,.row,.col-lg-9,.wptb-heading) { min-width:0; box-sizing:border-box; }
 @media(max-width:767px) { .page-home .wptb-slider.style3 .home-client-slide .wptb-heading { width:100%; max-width:100%; } .home-client-slide .home-platform-button { min-width:0; } }
 @media(max-width:767px) { .page-home .wptb-slider.style3 .home-client-slide .wptb-heading { width:calc(100vw - 64px); max-width:calc(100vw - 64px); } }
+.page-home .wptb-slider.style3 .home-client-slide .wptb-item--title br { display:block; }
+@media(max-width:767px) { .home-client-slide .home-platform-button { flex:0 0 auto; width:100%; min-height:48px; } }
