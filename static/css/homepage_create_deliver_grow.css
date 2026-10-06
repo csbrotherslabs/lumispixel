@@ -161,3 +161,19 @@
   visibility:visible !important; animation:none !important;
  }
 }
+
+/* White workflow section with contrasting copy and red carousel arrows. */
+.page-home .lumis-photographer-workflow { background:#fff !important; color:#111; }
+.page-home .lumis-photographer-workflow::after { display:none; }
+.page-home .lumis-photographer-workflow .wptb-heading :is(.wptb-item--title,.wptb-item--title span,.wptb-item--description) { color:#111 !important; }
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-prev,
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-next { color:#dc000b !important; border-color:#dc000b !important; background:#fff; }
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-prev::after,
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .wptb-swiper-arrow.swiper-button-next::after,
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--link i { color:#dc000b !important; }
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .wptb-swiper-arrow:is(:hover,:focus-visible) { background:#ffe8e9; color:#dc000b !important; }
+
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet,
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before,
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::after { border-color:#dc000b !important; }
+.page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before { background:#dc000b !important; }
