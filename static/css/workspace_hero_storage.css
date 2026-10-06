@@ -26,3 +26,27 @@
 .lp-hero-storage-label i{display:grid;place-items:center;width:var(--lp-space-8);height:var(--lp-space-8);border-radius:var(--lp-radius-sm);background:var(--lp-shell-highlight);font-size:var(--lp-type-body)}
 .lp-hero-storage .lp-badge--neutral{background:var(--lp-shell-highlight);border:1px solid var(--lp-color-border);color:var(--lp-text-secondary)}
 .lp-hero-storage .lp-badge--neutral span{color:inherit}
+
+/* Match the approved hero mockup rather than the former compact summary. */
+.lpw-dashboard-header .lp-hero-tools{width:27rem}
+.lpw-dashboard-header .lp-hero-storage{
+  gap:var(--lp-space-3);
+  padding:var(--lp-space-5);
+  background:linear-gradient(135deg,var(--lp-shell-dark-raised),var(--lp-shell-dark));
+  font-family:var(--lp-font-sans);
+  font-size:var(--lp-type-body-small);
+  box-shadow:var(--lp-shadow-subtle);
+}
+.lp-hero-storage .lp-hero-storage-label{gap:var(--lp-space-3);font-size:var(--lp-type-body);font-weight:700;color:var(--lp-text-primary)}
+.lp-hero-storage .lp-hero-storage-label i{width:var(--lp-space-10);height:var(--lp-space-10);font-size:var(--lp-type-section-title);background:rgb(255 141 165 / 10%);color:var(--lp-shell-accent);border:1px solid rgb(255 141 165 / 12%);border-radius:var(--lp-radius-md)}
+.lp-hero-storage .lp-badge--neutral{padding:var(--lp-space-2) var(--lp-space-3);border-radius:var(--lp-radius-pill);font-size:var(--lp-type-body-small);font-weight:500;letter-spacing:normal;text-transform:none}
+.lp-hero-storage .lp-hero-storage-usage{gap:var(--lp-space-3);margin-top:var(--lp-space-1)}
+.lp-hero-storage .lp-hero-storage-usage>strong{font-size:var(--lp-type-kpi);font-weight:700}
+.lp-hero-storage .lp-hero-storage-usage>span{font-size:var(--lp-type-body-small);color:var(--lp-text-secondary)}
+.lp-hero-storage progress{height:var(--lp-space-2);box-shadow:inset 0 0 0 1px var(--lp-shell-line)}
+.lp-hero-storage .lp-hero-storage-meta{font-size:var(--lp-type-body-small);color:var(--lp-text-secondary)}
+.lp-hero-storage .lp-hero-storage-meta strong{color:inherit;font-weight:500}
+.lp-hero-storage .lp-hero-storage-footer{margin-top:var(--lp-space-1);padding-top:var(--lp-space-3)}
+.lp-hero-storage .lp-hero-storage-footer a{font-size:var(--lp-type-body-small);font-weight:500;color:var(--lp-text-primary)}
+.lp-hero-storage .lp-hero-storage-footer a i{color:var(--lp-color-brand);font-size:var(--lp-type-body)}
+@media(max-width:620px){.lpw-dashboard-header .lp-hero-storage{padding:var(--lp-space-4)}.lp-hero-storage .lp-hero-storage-label{font-size:var(--lp-type-body-small)}}

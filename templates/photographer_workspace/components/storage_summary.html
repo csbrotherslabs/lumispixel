@@ -1,5 +1,5 @@
 <section class="lp-hero-storage" aria-label="Gallery storage">
-  <div class="lp-hero-storage-heading"><span class="lp-hero-storage-label"><i class="bi bi-device-hdd" aria-hidden="true"></i> Gallery Storage</span>{% if not storage.unavailable %}{% include "photographer_workspace/components/badge.html" with label=storage.plan variant="neutral" %}{% endif %}</div>
+  <div class="lp-hero-storage-heading"><span class="lp-hero-storage-label"><i class="bi bi-database" aria-hidden="true"></i> Gallery Storage</span>{% if not storage.unavailable %}<span class="lp-badge lp-badge--neutral"><span>{{ storage.plan }} plan</span></span>{% endif %}</div>
   {% if storage.unavailable %}<p class="lp-hero-storage-message">Storage allowance temporarily unavailable.</p>
   {% else %}
   <div class="lp-hero-storage-usage"><strong>{{ storage.used }}</strong><span>{% if storage.limit %}of {{ storage.limit }} used{% else %}used{% endif %}</span></div>
