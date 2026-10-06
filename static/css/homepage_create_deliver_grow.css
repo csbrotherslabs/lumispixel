@@ -50,3 +50,5 @@
 .page-home .wptb-slider.style3 .home-platform-slide .col-lg-9 { width:100%; max-width:100%; padding-inline:0; }
 .page-home .home-platform-slide .home-platform-button--primary:is(:link,:visited,:hover,:focus,:active) { color:#fff; }
 .page-home .home-platform-slide .home-platform-button--secondary:is(:link,:visited,:hover,:focus,:active) { color:#171717; }
+.page-home .wptb-slider.style3 .home-platform-slide a.home-platform-button--secondary { color:#171717 !important; }
+.page-home .wptb-slider.style3 .home-platform-slide a.home-platform-button--primary { color:#fff !important; }
