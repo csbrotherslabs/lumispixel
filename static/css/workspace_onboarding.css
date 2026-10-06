@@ -11,7 +11,7 @@
 .lp-onboarding-progress progress::-moz-progress-bar{background:var(--lp-color-brand)}
 .lp-onboarding-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--lp-space-3);list-style:none;padding:0;margin:var(--lp-space-6) 0}
 .lp-onboarding-steps>li{min-width:0;box-sizing:border-box}
-.lp-onboarding-step{display:flex;flex-direction:column;align-items:flex-start;gap:var(--lp-space-3);padding:var(--lp-space-5);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);color:var(--lp-text-primary)}
+.lp-onboarding-step{display:flex;flex-direction:column;align-items:flex-start;gap:var(--lp-space-2);padding:var(--lp-space-4);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);color:var(--lp-text-primary)}
 .lp-onboarding-step.is-current{background:var(--lp-color-brand-subtle);border-color:var(--lp-color-brand)}
 .lp-onboarding-icon{display:grid;place-items:center;width:3rem;height:3rem;border-radius:var(--lp-radius-md);background:var(--lp-color-page);font-size:var(--lp-type-section-title)}
 .lp-onboarding-step.is-current .lp-onboarding-icon{background:var(--lp-color-brand-subtle);color:var(--lp-text-brand)}
@@ -20,7 +20,7 @@
 .lp-onboarding-step h3{margin:0;font-family:var(--lp-font-sans);font-size:var(--lp-type-card-title);color:var(--lp-text-primary);text-transform:none;letter-spacing:normal}
 .lp-onboarding-step .lp-button{box-sizing:border-box;white-space:normal;text-align:center}
 .lp-onboarding-step p{line-height:var(--lp-leading-body)}
-.lp-onboarding-status{margin-top:auto;min-height:var(--lp-space-8);padding-top:var(--lp-space-2)}
+.lp-onboarding-status{margin-top:auto;min-height:var(--lp-space-6);padding-top:0}
 .lp-onboarding-swipe{display:none}
 .lp-onboarding-footer{display:flex;justify-content:space-between;align-items:center;gap:var(--lp-space-4);padding-top:var(--lp-space-4);border-top:1px solid var(--lp-color-border)}
 .lp-onboarding-footer>div{display:flex;gap:var(--lp-space-3);flex-wrap:wrap}
@@ -39,3 +39,21 @@
   .lp-onboarding-footer .lp-button{padding-inline:0;color:var(--lp-text-secondary);text-decoration:underline}
 }
 @media(prefers-reduced-motion:reduce){.lp-onboarding-steps{scroll-behavior:auto}}
+
+/* Keep setup typography independent of the public-site and dashboard cascade. */
+.lp-onboarding .lp-onboarding-heading{display:flex;align-items:center;gap:var(--lp-space-4);min-width:0}
+.lp-onboarding .lp-onboarding-brand{display:grid;place-items:center;flex:none;width:3rem;height:3rem;border-radius:var(--lp-radius-md);background:var(--lp-color-brand-subtle);color:var(--lp-text-brand)}
+.lp-onboarding .lp-onboarding-brand img{width:var(--lp-space-8);height:var(--lp-space-8);object-fit:contain}
+.lp-onboarding h2{font-size:var(--lp-type-section-title);font-weight:700;line-height:var(--lp-leading-tight);margin:0 0 var(--lp-space-2);text-transform:none;letter-spacing:normal}
+.lp-onboarding .lp-onboarding-header{padding-bottom:var(--lp-space-4);border-bottom:1px solid var(--lp-color-border)}
+.lp-onboarding .lp-onboarding-progress{padding:var(--lp-space-3) var(--lp-space-4);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-pill);background:var(--lp-color-surface)}
+.lp-onboarding .lp-onboarding-progress label{margin:0;color:var(--lp-text-primary);font-size:var(--lp-type-caption);font-weight:600;line-height:var(--lp-leading-caption);text-transform:none;letter-spacing:normal}
+.lp-onboarding .lp-onboarding-progress progress{width:8rem;flex:none}
+.lp-onboarding .lp-onboarding-step{min-height:0;height:auto}
+.lp-onboarding .lp-onboarding-step h3{font-weight:700;line-height:var(--lp-leading-tight)}
+.lp-onboarding .lp-onboarding-icon i{font-size:var(--lp-type-section-title);line-height:1;color:inherit}
+.lp-onboarding .lp-onboarding-step .lp-button{min-height:var(--lp-control-height);padding:var(--lp-space-2) var(--lp-space-3);font-size:var(--lp-type-body-small);font-weight:600;line-height:var(--lp-leading-caption);text-transform:none;letter-spacing:normal;color:var(--lp-text-primary)}
+.lp-onboarding .lp-onboarding-step .lp-button--primary{color:var(--lp-text-inverse)}
+.lp-onboarding .lp-onboarding-step .lp-button :is(span,i){color:inherit;font-size:inherit;font-weight:inherit;text-transform:none;letter-spacing:normal}
+.lp-onboarding .lp-onboarding-footer .lp-button{font-size:var(--lp-type-body-small);font-weight:500;text-transform:none;letter-spacing:normal;color:var(--lp-text-secondary);text-decoration:underline}
+@media(max-width:620px){.lp-onboarding .lp-onboarding-brand{display:none}.lp-onboarding .lp-onboarding-progress{max-width:100%;box-sizing:border-box}.lp-onboarding .lp-onboarding-progress progress{width:6rem}}
