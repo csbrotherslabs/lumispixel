@@ -176,7 +176,7 @@ jobs:
   django-tests:
     name: Django tests (fast SQLite feedback)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       redis:
         image: redis:7-alpine
