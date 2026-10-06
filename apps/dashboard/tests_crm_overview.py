@@ -92,3 +92,22 @@ class CrmOverviewTests(TestCase):
         self.assertIn(
             ".lumis-workspace-body :where(input, textarea)::placeholder", css
         )
+
+    def test_due_followup_destination_includes_today_and_overdue_only(self):
+        from django.urls import reverse
+
+        user, studio = self.studio("due-owner@example.com", "due-owner")
+        _, other = self.studio("due-other@example.com", "due-other")
+        today = timezone.localdate()
+        overdue = Lead.objects.create(photographer=studio, first_name="Overdue", next_follow_up=today - timezone.timedelta(days=1))
+        due_today = Lead.objects.create(photographer=studio, first_name="Today", next_follow_up=today)
+        Lead.objects.create(photographer=studio, first_name="Future", next_follow_up=today + timezone.timedelta(days=1))
+        Lead.objects.create(photographer=studio, first_name="Booked", status=Lead.Status.BOOKED, next_follow_up=today)
+        Lead.objects.create(photographer=other, first_name="Private", next_follow_up=today)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("photographer_workspace:leads"), {"follow_up": "due"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({lead.pk for lead in response.context["lead_page"]}, {overdue.pk, due_today.pk})
+        self.assertContains(response, 'value="due" selected')

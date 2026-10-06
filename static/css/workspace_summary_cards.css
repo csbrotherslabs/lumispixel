@@ -1,0 +1,23 @@
+/* Compact, actionable summary cards. Opt in on the selected workspace rows. */
+.lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--lp-space-4);min-width:0}
+.lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid:has(>article:nth-child(4)){grid-template-columns:repeat(4,minmax(0,1fr))}
+.lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary{grid-column:auto;display:flex;flex-direction:column;position:relative;isolation:auto;overflow:visible;min-width:0;min-height:148px;padding:var(--lp-space-5);gap:var(--lp-space-2);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-lg);background:var(--lp-color-surface);box-shadow:var(--lp-shadow-subtle);transform:none;transition:border-color var(--lp-transition-duration) var(--lp-transition-easing)}
+.lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary::before,.lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary::after{content:none}
+.lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary:hover{transform:none;background:var(--lp-color-surface);box-shadow:var(--lp-shadow-subtle);border-color:var(--lp-color-border-strong)}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary header{display:flex;align-items:center;justify-content:space-between;gap:var(--lp-space-2);margin:0;padding:0;border:0;min-height:32px}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-kpi-card__label{font-size:var(--lp-type-body-small);font-weight:500;line-height:var(--lp-leading-caption);text-transform:none;letter-spacing:0;color:var(--lp-text-secondary)}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-kpi-card__icon{position:static;flex:0 0 32px;width:32px;height:32px;border:1px solid var(--lp-color-brand-border);border-radius:var(--lp-radius-sm);background:var(--lp-color-brand-subtle);color:var(--lp-text-brand);font-size:16px;margin:0}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-kpi-card__value{display:block;font-size:var(--lp-type-kpi);font-weight:650;letter-spacing:-.03em;line-height:var(--lp-leading-tight);color:var(--lp-text-primary);margin:0;overflow-wrap:anywhere}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-kpi-card__summary-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--lp-space-2) var(--lp-space-3);border-top:1px solid var(--lp-color-border);padding-top:var(--lp-space-2);margin-top:auto}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-kpi-card__comparison{margin:0;color:var(--lp-text-muted);font-size:var(--lp-type-caption);line-height:var(--lp-leading-caption);flex:1 1 130px}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-text-action{display:inline-flex;align-items:center;gap:var(--lp-space-2);min-height:32px;color:var(--lp-text-brand);font-size:var(--lp-type-caption);font-weight:600;text-decoration:none;white-space:nowrap}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-text-action:hover{text-decoration:underline;text-underline-offset:3px}
+.lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-text-action:focus-visible,.lpw-main .lp-summary-grid .lp-kpi-card__help:focus-visible{outline:2px solid var(--lp-color-brand);box-shadow:var(--lp-focus-ring);outline-offset:3px;border-radius:var(--lp-radius-sm)}
+.lpw-main .lp-summary-grid .lp-kpi-card__help{position:static;flex-shrink:0;margin-left:auto}
+@media(min-width:768px) and (max-width:1100px){.lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid,.lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid:has(>article:nth-child(4)){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){
+ .lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid,.lpw-main .lp-workspace-page .lp-summary-grid.lp-card-grid:has(>article:nth-child(4)){display:flex;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:4px;padding:4px 4px 12px;gap:var(--lp-space-3);max-width:100%;scrollbar-width:thin}
+ .lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary{flex:0 0 86%;scroll-snap-align:start;padding:var(--lp-space-4);min-height:148px}
+ .lpw-main .lp-summary-grid .lp-kpi-card--summary .lp-text-action{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){.lpw-main .lp-summary-grid .lp-kpi-card.lp-kpi-card--summary{transition:none}.lpw-main .lp-summary-grid{scroll-behavior:auto}}

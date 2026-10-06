@@ -13,8 +13,9 @@
     {% include "photographer_workspace/components/action_group.html" with primary_url=add_lead_url primary_label="Add Lead" primary_icon="bi-person-plus" secondary_url=add_client_url secondary_label="Add Client" secondary_icon="bi-person-check" only %}
   </header>
 
-  <section aria-label="CRM summary" class="lp-card-grid lp-crm-kpis">
-    {% for metric in crm_metrics %}{% if metric.label != "Lead-to-Booking Conversion" and metric.label != "New Leads This Month" %}{% include "photographer_workspace/components/kpi_card.html" with label=metric.label value=metric.value icon=metric.icon context=metric.context unavailable=metric.unavailable unavailable_text=metric.unavailable_text only %}{% endif %}{% endfor %}
+  <section aria-label="CRM summary" class="lp-card-grid lp-summary-grid lp-crm-kpis">
+    {% url 'photographer_workspace:leads' as summary_leads_url %}{% url 'photographer_workspace:clients' as summary_clients_url %}
+    {% for metric in crm_metrics %}{% if metric.label == "Active Leads" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" label=metric.label value=metric.value icon=metric.icon context=metric.context footer_url=summary_leads_url footer_label="View leads" only %}{% elif metric.label == "Follow-ups Due" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" label=metric.label value=metric.value icon=metric.icon context=metric.context footer_url=summary_leads_url|add:"?follow_up=due" footer_label="Review follow-ups" only %}{% elif metric.label == "Active Clients" %}{% include "photographer_workspace/components/kpi_card.html" with variant="summary" label=metric.label value=metric.value icon=metric.icon context=metric.context footer_url=summary_clients_url|add:"?status=active" footer_label="View clients" only %}{% endif %}{% endfor %}
   </section>
 
   <section class="lpw-command-card lpw-quick-panel lp-crm-section" aria-labelledby="pipeline-title">
