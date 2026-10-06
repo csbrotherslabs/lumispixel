@@ -24,6 +24,7 @@
     {% url 'accounts:find-photos-placeholder' as find_photos_url %}
     {% url 'ai_engine:editing_culling' as homepage_ai_tools_url %}
     {% url 'core:pricing' as homepage_pricing_url %}
+    {% url 'core:business_hub' as homepage_workspace_url %}
     <!-- Slider Section -->
     <section class="wptb-slider style3">
         <div class="swiper-container wptb-swiper-slider-three">    
@@ -124,9 +125,9 @@
                 <!-- End Slide Item -->
 
                 <!-- Slide Item -->
-                <div class="swiper-slide">
+                <div class="swiper-slide home-platform-slide home-photographer-slide">
                     <div class="wptb-slider--item">
-                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/slider/9.jpg" %}"); --mobile-image: url("{% static "img/slider/26.jpg" %}");'></div>
+                        <div class="wptb-slider--image" style='--desktop-image: url("{% static "img/landing/gallery/hero-photographer-workspace.webp" %}"); --mobile-image: url("{% static "img/landing/gallery/hero-photographer-workspace-mobile.webp" %}");'></div>
                         
                         <div class="wptb-slider--inner">
                             <div class="wptb-item--inner">
@@ -135,23 +136,21 @@
                                         <div class="col-lg-9">
                                             <div class="wptb-heading">
                                                 <h6 class="wptb-item--subtitle">FOR PHOTOGRAPHERS</h6>
-                                                <h2 class="wptb-item--title">One Workspace. Your Entire Business.</h2>
-                                                <p class="wptb-item--description wptb-hero-subheadline">Manage clients, bookings, contracts, galleries, payments, and intelligent post-production from one connected workspace.</p>
-                                                <div class="wptb-hero-feature-pills" aria-label="LumisPixel feature highlights">
-                                                    <span>Client CRM</span>
-                                                    <span>Booking &amp; Contracts</span>
-                                                    <span>Smart Galleries</span>
-                                                    <span>AI Workflow</span>
+                                                <h2 class="wptb-item--title">Focus on<br>your craft.</h2>
+                                                <p class="wptb-item--description wptb-hero-subheadline">Keep clients, bookings, contracts, galleries, and invoices connected—so you can spend more time behind the camera.</p>
+                                                <div class="wptb-hero-feature-pills home-client-features" aria-label="Photographer workspace features">
+                                                    <span><i class="bi bi-people" aria-hidden="true"></i> Clients &amp; leads</span>
+                                                    <span><i class="bi bi-calendar3" aria-hidden="true"></i> Bookings &amp; contracts</span>
+                                                    <span><i class="bi bi-images" aria-hidden="true"></i> Galleries &amp; invoices</span>
                                                 </div>
                                                 
-                                                <div class="wptb-item--button">
-                                                    {% if not request.user.is_authenticated %}
-                                                        {% include "components/button.html" with label="Start Free" href=homepage_get_started_url variant="primary" show_second=True extra_class="home-start-free-cta" %}
-                                                    {% endif %}
-    
-                                                    {% include "components/button.html" with label="Explore the Business Hub" href=homepage_ai_tools_url variant="secondary" show_second=True %}
+                                                <div class="wptb-item--button home-platform-actions">
+                                                    {% if not request.user.is_authenticated %}<a class="home-platform-button home-platform-button--primary" href="{{ homepage_get_started_url }}">Start Free <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{% endif %}
+                                                    <a class="home-platform-button home-platform-button--secondary" href="{{ homepage_workspace_url }}">Explore Workspace <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
                                                 </div>
-                                                {% include "components/text_link.html" with label="See the Photographer Workflow →" href=homepage_ai_tools_url class_name="wptb-hero-text-link" %}
+                                                {% include "components/text_link.html" with label="See the photographer workflow →" href=homepage_workspace_url class_name="wptb-hero-text-link" %}
+                                                <div class="home-platform-roadmap"><span class="home-platform-roadmap__badge">Coming next</span><p>AI photo editing and culling.</p></div>
+                                                <div class="home-workspace-preview" aria-hidden="true"><strong>Your workspace</strong><span><i class="bi bi-people"></i> Clients <i class="bi bi-chevron-right"></i></span><span><i class="bi bi-calendar3"></i> Bookings <i class="bi bi-chevron-right"></i></span><span><i class="bi bi-images"></i> Galleries <i class="bi bi-chevron-right"></i></span></div>
                                             </div>
                                         </div>
                                     </div>
