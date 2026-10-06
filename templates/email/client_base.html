@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block email_title %}A message from your photographer{% endblock %}</title></head>
+<body style="margin:0;padding:0;background-color:#f6f4f2;color:#242323;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">{% block preheader %}{% endblock %}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f6f4f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;table-layout:fixed;background-color:#fff;border:1px solid #e7e0da;border-radius:16px;">
+        <tr><td style="padding:26px 24px;background-color:#1b202b;border-radius:16px 16px 0 0;">
+          <p style="margin:0;color:#fff;font-size:24px;font-weight:700;letter-spacing:-.5px;">Lumis<span style="color:#ff8da5;">Pixel</span></p>
+          <p style="margin:8px 0 0;color:#bac0cc;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;">{% block category %}Client delivery{% endblock %}</p>
+        </td></tr>
+        {% block content %}{% endblock %}
+        <tr><td style="padding:20px 24px;border-top:1px solid #e7e0da;">
+          <p style="margin:0;color:#756d67;font-size:12px;line-height:1.7;">{% block footer %}Delivered securely with LumisPixel.{% endblock %}</p>
+        </td></tr>
+      </table>
+      <p style="margin:20px 0 0;color:#756d67;font-size:11px;line-height:1.7;">LumisPixel · Your moments, beautifully delivered</p>
+    </td></tr>
+  </table>
+</body>
+</html>
