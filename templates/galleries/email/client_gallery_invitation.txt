@@ -1,4 +1,6 @@
-Hi {{ invitation.client_name }},
+Your gallery is ready
+
+Hi {{ invitation.client_name|default:"there" }},
 
 {{ studio_name }} has shared a private LumisPixel gallery with you:
 

@@ -1,6 +1,10 @@
 Your signed contract is ready
 
-{{ contract.title }} was signed successfully. Download your private copy using this secure link:
+Hello {{ contract.client.first_name|default:"there" }},
+
+{{ contract.title }} was signed successfully. Download your private copy and keep it for your records:
 {{ signed_pdf_url }}
 
-This link is intended only for the recipient and expires with the contract review link.
+This secure link is intended only for the recipient and expires with the contract review link.
+
+Delivered securely with LumisPixel.

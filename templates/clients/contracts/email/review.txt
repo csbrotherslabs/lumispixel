@@ -1,5 +1,12 @@
-{{ studio.business_name|default:studio.display_name }} has sent you “{{ contract.title }}” to review.
+Your contract is ready to review
 
-Review your contract securely: {{ review_url }}
+Hello {{ contract.client.first_name|default:"there" }},
 
-This link expires in 30 days. If you did not expect this email, contact the studio.
+{{ studio.business_name|default:studio.display_name }} has sent you “{{ contract.title }}”. Review the details and sign securely when you’re ready.
+
+Review your contract securely:
+{{ review_url }}
+
+This link expires in 30 days. Please keep it private. If you did not expect this email or have questions, contact the studio.
+
+Delivered securely with LumisPixel.
