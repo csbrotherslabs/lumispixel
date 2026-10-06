@@ -1,0 +1,93 @@
+/* Growth hero controls: one surface per control, native keyboard behavior. */
+.lpw-main .lp-growth-header .lp-growth-select {
+  position: relative;
+  height: 46px;
+  padding: 0;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: var(--lp-radius-md);
+  background: var(--lp-color-surface);
+  box-shadow: var(--lp-shadow-subtle);
+  color: var(--lp-text-brand);
+}
+.lpw-main .lp-growth-header .lp-growth-select > .bi-calendar3 {
+  position: absolute;
+  left: var(--lp-space-3);
+  pointer-events: none;
+}
+.lpw-main .lp-growth-header .lp-growth-select select {
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 38px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  color: var(--lp-text-primary);
+  font: 600 var(--lp-type-body-small)/1 var(--lp-font-sans);
+  cursor: pointer;
+}
+.lp-growth-select__chevron {
+  position: absolute;
+  right: var(--lp-space-3);
+  pointer-events: none;
+  font-size: var(--lp-type-caption);
+}
+.lpw-main .lp-growth-header .lp-growth-compare {
+  min-height: 46px;
+  gap: var(--lp-space-2);
+  padding: 0 var(--lp-space-3);
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: var(--lp-radius-md);
+  background: rgba(255,255,255,.08);
+  box-shadow: none;
+  color: #fff;
+  font: 500 var(--lp-type-body-small)/1.4 var(--lp-font-sans);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+.lpw-main .lp-growth-header .lp-growth-compare input {
+  appearance: none;
+  flex: none;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: var(--lp-radius-pill);
+  background: rgba(255,255,255,.18);
+  box-shadow: none;
+  cursor: pointer;
+}
+.lp-growth-compare input::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+}
+.lpw-main .lp-growth-header .lp-growth-compare input:checked {
+  border-color: var(--lp-color-brand);
+  background: var(--lp-color-brand);
+}
+.lp-growth-compare input:checked::before { transform: translateX(14px); }
+.lpw-main .lp-growth-header .lp-growth-compare:hover { background: rgba(255,255,255,.16); }
+.lpw-main .lp-growth-header .lp-header-actions > .lp-button {
+  min-height: 46px;
+  border-radius: var(--lp-radius-md);
+  padding-inline: var(--lp-space-4);
+}
+.lpw-main .lp-growth-header :is(select,input,.lp-button):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  box-shadow: var(--lp-focus-ring);
+}
+.lpw-main .lp-growth-header select:focus-visible { outline-color: var(--lp-color-brand); }
+@media (max-width:700px) {
+  .lpw-main .lp-growth-header .lp-growth-compare { justify-content: flex-start; white-space: normal; }
+}
