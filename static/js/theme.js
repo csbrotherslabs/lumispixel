@@ -292,9 +292,10 @@ Description: Kimono - Photography Agency
         if (homepageHero && SwiperSliderThree.autoplay) {
             var heroRegion = homepageHero.closest('.wptb-slider');
             var heroHovered = false;
+            var heroCanHover = window.matchMedia('(hover: hover) and (pointer: fine)');
             var heroTouched = false;
             var updateHeroAutoplay = function () {
-                var focused = heroRegion.contains(document.activeElement);
+                var focused = heroRegion.querySelector(':focus-visible') !== null;
                 if (heroMotion.matches || document.hidden || heroHovered || heroTouched || focused) {
                     SwiperSliderThree.autoplay.stop();
                 } else {
@@ -302,7 +303,7 @@ Description: Kimono - Photography Agency
                     SwiperSliderThree.autoplay.start();
                 }
             };
-            heroRegion.addEventListener('mouseenter', function () { heroHovered = true; updateHeroAutoplay(); });
+            heroRegion.addEventListener('mouseenter', function () { heroHovered = heroCanHover.matches; updateHeroAutoplay(); });
             heroRegion.addEventListener('mouseleave', function () { heroHovered = false; updateHeroAutoplay(); });
             heroRegion.addEventListener('focusin', updateHeroAutoplay);
             heroRegion.addEventListener('focusout', function () { setTimeout(updateHeroAutoplay, 0); });

@@ -83,12 +83,14 @@
 /* Swipe between the three paths on mobile; keep desktop and tablet layouts. */
 @media(max-width:767px){
   .get-started-page .lumis-get-started__cards{
-    display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+    display:flex;flex-wrap:nowrap;gap:16px;width:100%;max-width:100%;
+    overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+    touch-action:pan-x pan-y;
     padding:4px 4px 18px;scroll-padding-inline:4px;
     overscroll-behavior-x:contain;
   }
   .get-started-page .lumis-get-started__cards>li{
-    display:flex;flex:0 0 90%;min-width:0;scroll-snap-align:start;
+    display:flex;flex:0 0 90%;width:90%;max-width:90%;min-width:0;scroll-snap-align:start;
   }
   .get-started-page .lumis-path-card:hover{transform:none}
 }
