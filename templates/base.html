@@ -1,21 +1,24 @@
-{% load static %}
+{% load static social_preview %}
+{% social_preview as social %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <meta name="description" content="{% block meta_description %}LumisPixel helps photographers deliver smart galleries, AI photo discovery, editing tools, and marketplace experiences for clients.{% endblock %}">
+    <meta name="description" content="{% block meta_description %}{{ social.description }}{% endblock %}">
     <meta name="author" content="LumisPixel">
+    <meta property="og:url" content="{{ social.url }}">
+    <meta property="og:image:alt" content="{{ social.image_alt }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="LumisPixel">
-    <meta property="og:title" content="{% block og_title %}LumisPixel | Photography Made Discoverable{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ social.title }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.{% endblock %}">
-    <meta property="og:image" content="{% static 'img/slider/7.jpg' %}">
+    <meta property="og:image" content="{% block og_image %}{{ social.image }}{% endblock %}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}LumisPixel | Photography Made Discoverable{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ social.title }}{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}AI-powered galleries, face search, editing workflows, and marketplace tools for photographers and clients.{% endblock %}">
-    <meta name="twitter:image" content="{% static 'img/slider/7.jpg' %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ social.image }}{% endblock %}">
 
     <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
 
