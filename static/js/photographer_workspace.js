@@ -1148,7 +1148,10 @@
     toast(editing ? 'Schedule event updated.' : 'Event saved to your schedule.');
     dirty = false;
     if (another && !editing) { const type = currentType(); open(type, opener); }
-    else window.location.assign(result.booking_url || result.schedule_url);
+    else {
+      close(false);
+      window.location.reload();
+    }
   });
   layer.querySelectorAll('[data-event-form-close]').forEach(function (button) { button.addEventListener('click', function () { close(false); }); });
   drawer.addEventListener('keydown', function (event) {
