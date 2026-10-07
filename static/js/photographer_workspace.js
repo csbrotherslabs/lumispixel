@@ -387,15 +387,20 @@
 
   const clientForm = document.querySelector('[data-crm-form]');
   if (clientForm) {
-    const submitButton = clientForm.querySelector('[data-submit-button]');
-    clientForm.addEventListener('submit', function () {
-      if (submitButton.disabled) return;
-      submitButton.disabled = true;
-      if (clientForm.classList.contains('lp-add-lead')) {
-        submitButton.setAttribute('aria-busy', 'true');
-        submitButton.querySelector('i').className = 'lp-spinner';
+    const submitButtons = clientForm.querySelectorAll('[data-submit-button]');
+    clientForm.addEventListener('submit', function (event) {
+      if (Array.from(submitButtons).some(function (button) { return button.disabled; })) {
+        event.preventDefault();
+        return;
       }
-      submitButton.querySelector('span').textContent = 'Saving…';
+      submitButtons.forEach(function (button) {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        if (clientForm.classList.contains('lp-add-lead')) {
+          button.querySelector('i').className = 'lp-spinner';
+        }
+        button.querySelector('span').textContent = 'Saving…';
+      });
     });
     const firstError = clientForm.classList.contains('lp-add-lead') && clientForm.querySelector('[aria-invalid="true"]');
     if (firstError) {

@@ -17,6 +17,11 @@
     <section><header><i class="bi bi-tags"></i><h2>Stay organized</h2></header><p>Use short, consistent tags such as <strong>Wedding</strong>, <strong>VIP</strong>, or <strong>2026 inquiry</strong> to find clients quickly.</p></section>
     <section><header><i class="bi bi-lightbulb"></i><h2>Quick tips</h2></header><ul><li>Add either an email or phone number.</li><li>Record contact preferences before reaching out.</li><li>Use notes for details your whole team needs.</li></ul></section>
   </aside></div>
+  {% if is_add_client %}
+  <footer class="d-flex justify-content-end mt-4">
+    <button class="lp-button lp-button--primary lp-button--md" type="submit" data-submit-button><i class="bi bi-check2" aria-hidden="true"></i><span>Save Client</span></button>
+  </footer>
+  {% endif %}
 </form>
 {% elif is_lead_form %}
 <form class="lp-workspace-page workspace-form-page{% if is_add_lead %} lp-container lp-add-lead lp-clients-main-width{% endif %}" method="post" data-crm-form novalidate>{% csrf_token %}{% if form_next %}<input type="hidden" name="next" value="{{ form_next }}">{% endif %}
