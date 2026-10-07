@@ -17,12 +17,25 @@ HOMEPAGE_IMAGES = (
 @register.simple_tag(takes_context=True)
 def social_preview(context, gallery=None):
     """Expose only the selected cover, never gallery photos or invitation tokens."""
-    request = context["request"]
+    request = context.get("request")
+    if request is None:
+        # Django's default 500 handler renders without request context.
+        return {
+            "title": "LumisPixel — Create. Deliver. Grow.",
+            "description": "Galleries, clients, bookings—one workspace.",
+            "image": "",
+            "image_alt": "LumisPixel photography platform",
+            "url": "",
+        }
     image_name = HOMEPAGE_IMAGES[0]
     if gallery is None and request.path == reverse("core:index"):
         variant = request.GET.get("preview", "")
         image_name = HOMEPAGE_IMAGES[int(variant) - 1] if variant in ("1", "2", "3", "4") else random.choice(HOMEPAGE_IMAGES)
-    image = static(f"img/social/{image_name}-share-v1.jpg")
+    try:
+        image = static(f"img/social/{image_name}-share-v1.jpg")
+    except ValueError:
+        # A missing manifest entry must not take down an otherwise valid page.
+        image = ""
     url = request.build_absolute_uri(request.path)
     title = "LumisPixel — Create. Deliver. Grow."
     description = "Galleries, clients, bookings—one workspace."
@@ -39,7 +52,7 @@ def social_preview(context, gallery=None):
     return {
         "title": title,
         "description": description,
-        "image": request.build_absolute_uri(image),
+        "image": request.build_absolute_uri(image) if image else "",
         "image_alt": image_alt,
         "url": url,
     }
