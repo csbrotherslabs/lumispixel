@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ gallery.name }} | {{ gallery_brand }}</title><link rel="icon" type="image/png" href="{% static 'img/lumis_favicon_v1.png' %}"><link rel="apple-touch-icon" href="{% static 'img/lumis_favicon_v1.png' %}">
   <link rel="stylesheet" href="{% static 'css/standard_filterable_gallery.css' %}">
-</head>
+{% include "partials/gallery_social_preview.html" %}</head>
 <body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
   <main class="sf-gallery">
     <section class="sf-hero"{% if gallery.cover_image %} style="background-image:url('{{ gallery.cover_image.url }}')"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>

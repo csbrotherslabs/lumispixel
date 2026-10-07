@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" href="{% static 'img/lumis_favicon_v1.png' %}">
   <link rel="apple-touch-icon" href="{% static 'img/lumis_favicon_v1.png' %}">
   <link rel="stylesheet" href="{% static 'css/client_gallery_delivery.css' %}">
-</head>
+{% include "partials/gallery_social_preview.html" %}</head>
 <body class="lp-client-gallery" style="--gallery-accent: {{ gallery_settings.accent_color }};">
   <header class="lp-client-gallery__hero">
     <div>
