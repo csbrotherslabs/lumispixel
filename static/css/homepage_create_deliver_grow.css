@@ -177,3 +177,13 @@
 .page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before,
 .page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::after { border-color:#dc000b !important; }
 .page-home .lumis-photographer-workflow .lumis-photographer-workflow__carousel .swiper-pagination-bullet::before { background:#dc000b !important; }
+
+/* Swap homepage hero navigation backgrounds at every viewport width. */
+.page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .swiper-button-prev {
+ background:rgba(17,16,15,.84); border-color:rgba(17,16,15,.22);
+ box-shadow:0 10px 24px rgba(17,16,15,.16);
+}
+.page-home .wptb-slider.style3 .wptb-swiper-navigation.style3 .swiper-button-next {
+ background:#d70006; border-color:#d70006;
+ box-shadow:0 10px 24px rgba(215,0,6,.24);
+}
