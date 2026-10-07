@@ -263,12 +263,16 @@ Description: Kimono - Photography Agency
             },
         });
 
-        // Slider Three
+        // Homepage hero: seven-second autoplay with interaction pauses.
+        var homepageHero = document.querySelector('.page-home .wptb-swiper-slider-three');
+        var heroMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         var SwiperSliderThree = new Swiper('.wptb-swiper-slider-three', {
             loop: true,
-            // autoplay: {
-            //     delay: 3000,
-            // },
+            autoplay: homepageHero ? {
+                enabled: !heroMotion.matches,
+                delay: 7000,
+                disableOnInteraction: false,
+            } : false,
             effect: 'fade',
             autoHeight: true,
             speed: 2500,
@@ -284,6 +288,36 @@ Description: Kimono - Photography Agency
                 clickable: true,
             },
         });
+
+        if (homepageHero && SwiperSliderThree.autoplay) {
+            var heroRegion = homepageHero.closest('.wptb-slider');
+            var heroHovered = false;
+            var heroTouched = false;
+            var updateHeroAutoplay = function () {
+                var focused = heroRegion.contains(document.activeElement);
+                if (heroMotion.matches || document.hidden || heroHovered || heroTouched || focused) {
+                    SwiperSliderThree.autoplay.stop();
+                } else {
+                    SwiperSliderThree.params.autoplay.delay = 7000;
+                    SwiperSliderThree.autoplay.start();
+                }
+            };
+            heroRegion.addEventListener('mouseenter', function () { heroHovered = true; updateHeroAutoplay(); });
+            heroRegion.addEventListener('mouseleave', function () { heroHovered = false; updateHeroAutoplay(); });
+            heroRegion.addEventListener('focusin', updateHeroAutoplay);
+            heroRegion.addEventListener('focusout', function () { setTimeout(updateHeroAutoplay, 0); });
+            heroRegion.addEventListener('touchstart', function () { heroTouched = true; updateHeroAutoplay(); }, { passive: true });
+            var releaseHeroTouch = function () { heroTouched = false; updateHeroAutoplay(); };
+            heroRegion.addEventListener('touchend', releaseHeroTouch, { passive: true });
+            heroRegion.addEventListener('touchcancel', releaseHeroTouch, { passive: true });
+            document.addEventListener('visibilitychange', updateHeroAutoplay);
+            if (heroMotion.addEventListener) {
+                heroMotion.addEventListener('change', updateHeroAutoplay);
+            } else {
+                heroMotion.addListener(updateHeroAutoplay);
+            }
+            updateHeroAutoplay();
+        }
 
         // Slider Four
         var SwiperSliderFour = new Swiper('.wptb-swiper-slider-four', {
