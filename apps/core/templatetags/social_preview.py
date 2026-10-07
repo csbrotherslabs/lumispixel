@@ -22,7 +22,7 @@ def social_preview(context, gallery=None):
     if gallery is None and request.path == reverse("core:index"):
         variant = request.GET.get("preview", "")
         image_name = HOMEPAGE_IMAGES[int(variant) - 1] if variant in ("1", "2", "3", "4") else random.choice(HOMEPAGE_IMAGES)
-    image = static(f"img/landing/gallery/{image_name}.webp")
+    image = static(f"img/social/{image_name}-share-v1.jpg")
     url = request.build_absolute_uri(request.path)
     title = "LumisPixel — Create. Deliver. Grow."
     description = "Galleries, clients, bookings—one workspace."
