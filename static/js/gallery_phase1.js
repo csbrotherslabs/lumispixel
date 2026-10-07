@@ -17,6 +17,8 @@
     const requirement = page.querySelector('[data-upload-requirement]');
     const search = page.querySelector('[data-gallery-search]');
     const completion = page.querySelector('[data-queue-complete]');
+    const retryAll = page.querySelector('[data-retry-all-failed]');
+    let retryingAll = false;
     const pending = [];
     const visibleQueuedLimit = 40;
     const visibleCompletedLimit = 20;
@@ -84,6 +86,10 @@
       });
       const clear = page.querySelector('[data-clear-completed]');
       if (clear) clear.hidden = !list.querySelector('[data-status="completed"]');
+      if (retryAll) {
+        retryAll.hidden = !list.querySelector('[data-status="failed"]');
+        retryAll.disabled = retryingAll;
+      }
       applyQueueVisibility();
     }
     function sortQueueRows() {
@@ -253,7 +259,7 @@
         if (file.size > 25 * 1024 * 1024) { error.textContent = file.name + ': File exceeds the 25 MB limit.'; return; }
         if (file.size > availableStorage) { error.textContent = file.name + ': Not enough storage remaining.'; return; }
         availableStorage -= file.size;
-        const row = createRow(file, option.dataset.name); list.querySelector('[data-queue-empty]')?.remove(); list.append(row); pending.push({file: file, row: row, galleryId: galleryId}); counts();
+        const row = createRow(file, option.dataset.name); row.dataset.galleryId = galleryId; list.querySelector('[data-queue-empty]')?.remove(); list.append(row); pending.push({file: file, row: row, galleryId: galleryId}); counts();
       });
       input.value = ''; pump();
     }
@@ -270,26 +276,85 @@
       const button = event.currentTarget;
       fetch(button.dataset.clearCompletedUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}}).then(function (response) { if (!response.ok) throw new Error('Could not clear completed uploads.'); list.querySelectorAll('[data-status="completed"]').forEach(function (row) { removeRow(row); }); }).catch(function (err) { error.textContent = err.message; });
     });
+    function queueRetry(row) {
+      if (row.dataset.status !== 'failed') return false;
+      if (!row._file) {
+        row.querySelector('.lp-file-state strong').textContent = 'Upload failed';
+        row.querySelector('.lp-file-state span').textContent = 'The original file is no longer available. Please add it again.';
+        return false;
+      }
+      row.querySelector('[data-retry]').disabled = true;
+      setStatus(row, 'queued');
+      row.querySelector('.lp-file-state strong').textContent = 'Queued';
+      row.querySelector('.lp-file-state span').textContent = 'Waiting to retry';
+      pending.push({file: row._file, row: row, galleryId: row.dataset.galleryId || gallery.value});
+      return true;
+    }
+    async function retryServerRow(row, button) {
+      if (button.disabled || row.dataset.status !== 'failed') return false;
+      button.disabled = true;
+      try {
+        const form = new FormData(); form.append('action', 'retry');
+        const response = await fetch(button.dataset.actionUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}, body: form});
+        if (!response.ok) throw new Error('The queue action failed.');
+        setStatus(row, 'queued');
+        row.querySelector('.lp-file-state strong').textContent = 'Queued';
+        row.querySelector('.lp-file-state span').textContent = 'Waiting to retry';
+        return true;
+      } catch (err) {
+        error.textContent = err.message;
+        button.disabled = false;
+        return false;
+      }
+    }
+    retryAll?.addEventListener('click', async function () {
+      if (retryingAll) return;
+      retryingAll = true; retryAll.disabled = true; retryAll.setAttribute('aria-busy', 'true');
+      error.textContent = '';
+      const failedRows = Array.from(list.querySelectorAll('[data-status="failed"]'));
+      const serverRows = [];
+      let retried = 0, skipped = 0;
+      failedRows.forEach(function (row) {
+        if (row.dataset.localUpload) {
+          if (queueRetry(row)) retried += 1; else skipped += 1;
+        } else {
+          const button = row.querySelector('[data-server-action="retry"]');
+          if (button) serverRows.push({row: row, button: button}); else skipped += 1;
+        }
+      });
+      pump();
+      let cursor = 0;
+      async function worker() {
+        while (cursor < serverRows.length) {
+          const item = serverRows[cursor++];
+          if (await retryServerRow(item.row, item.button)) retried += 1; else skipped += 1;
+        }
+      }
+      try {
+        await Promise.all(Array.from({length: Math.min(concurrency, serverRows.length)}, worker));
+        if (skipped) error.textContent = skipped + ' upload(s) could not be retried. Re-add any original files that are no longer available.';
+        const announcer = page.querySelector('[data-queue-announcer]');
+        if (announcer) announcer.textContent = 'Retrying ' + retried + ' failed upload(s).';
+      } finally {
+        retryingAll = false; retryAll.removeAttribute('aria-busy'); counts();
+      }
+    });
     list.addEventListener('click', function (event) {
       const button = event.target.closest('button'); if (!button) return;
       const row = button.closest('.lp-upload-row'); if (!row) return;
       if (button.matches('[data-remove]') && row.dataset.localUpload) { removeRow(row); return; }
       if (button.matches('[data-retry]')) {
-        if (row.dataset.status !== 'failed') return;
-        const file = row._file;
-        if (!file) {
-          row.querySelector('.lp-file-state strong').textContent = 'Upload failed';
-          row.querySelector('.lp-file-state span').textContent = 'The original file is no longer available. Please add it again.';
-          return;
-        }
-        // Disable immediately so double taps cannot enqueue the same retry twice.
-        button.disabled = true;
-        setStatus(row, 'queued');
-        pending.push({file: file, row: row, galleryId: gallery.value});
-        pump();
+        if (queueRetry(row)) pump();
         return;
       }
       if (button.dataset.serverAction) {
+        if (button.disabled) return;
+        if (button.dataset.serverAction === 'retry') {
+          retryServerRow(row, button).then(function (saved) {
+            if (saved && !active && !pending.length) window.location.reload();
+          });
+          return;
+        }
         const form = new FormData(); form.append('action', button.dataset.serverAction);
         fetch(button.dataset.actionUrl, {method: 'POST', credentials: 'same-origin', headers: {'X-CSRFToken': csrf()}, body: form}).then(function (response) { if (!response.ok) throw new Error('The queue action failed.'); if (button.dataset.serverAction === 'remove') removeRow(row); else window.location.reload(); }).catch(function (err) { error.textContent = err.message; });
       }
