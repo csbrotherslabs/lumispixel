@@ -3,7 +3,6 @@
     <img src="{{ photo.delivery_url }}" alt="{{ photo.original_name }}" loading="lazy">
     <input class="lp-photo-card__check" type="checkbox" data-photo-check value="{{ photo.pk }}" aria-label="Select {{ photo.original_name }}">
     {% if photo.is_cover %}<span class="lp-photo-card__cover"><i class="bi bi-star-fill" aria-hidden="true"></i>Cover</span>{% endif %}
-    <button type="button" class="lp-photo-card__more" data-photo-tools-toggle aria-expanded="false" aria-controls="photo-tools-{{ photo.pk }}" aria-label="Actions for {{ photo.original_name }}" title="Photo actions"><i class="bi bi-three-dots" aria-hidden="true"></i></button>
     <div class="lp-photo-hover lp-photo-card__tools" id="photo-tools-{{ photo.pk }}" role="group" aria-label="Photo actions">
       <button type="button" data-photo-preview data-preview-url="{{ photo.delivery_url }}" data-preview-name="{{ photo.original_name }}" aria-label="Preview {{ photo.original_name }}" title="Preview"><i class="bi bi-eye" aria-hidden="true"></i></button>
       <button type="button" data-photo-action="cover" data-action-url="{% url 'photographer_workspace:gallery_photo_action' photo.pk %}" aria-label="Set {{ photo.original_name }} as cover" title="Set as cover"><i class="bi bi-star" aria-hidden="true"></i></button>

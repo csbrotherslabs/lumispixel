@@ -614,14 +614,8 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
   position: absolute; inset: 12px auto auto 12px; z-index: 3;
   width: 16px; height: 16px; margin: 0; accent-color: var(--lp-color-brand); cursor: pointer;
 }
-.lp-gallery-workspace-v2 .lp-photo-card__more {
-  position: absolute; top: 8px; right: 8px; z-index: 3;
-  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
-  border: 1px solid var(--lp-color-border); border-radius: 50%;
-  background: var(--lp-color-surface); color: var(--lp-text-secondary); cursor: pointer;
-}
 .lp-gallery-workspace-v2 .lp-photo-card__cover {
-  position: absolute; top: 14px; right: 58px; z-index: 3;
+  position: absolute; top: 14px; right: 12px; z-index: 3;
   display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px;
   border: 1px solid var(--lp-color-warning); border-radius: var(--lp-radius-pill);
   background: var(--lp-color-surface); color: var(--lp-text-secondary); font-size: 11px; font-weight: 650;
@@ -642,24 +636,24 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
   color: var(--lp-text-secondary); font-size: 15px; cursor: pointer;
 }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools button.is-danger { color: var(--lp-color-danger); }
-.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools button:hover,
-.lp-gallery-workspace-v2 .lp-photo-card__more:hover { background: var(--lp-color-brand-subtle); color: var(--lp-color-brand); }
+.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools button:hover { background: var(--lp-color-brand-subtle); color: var(--lp-color-brand); }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools button:disabled { opacity: .5; cursor: wait; }
 .lp-gallery-workspace-v2 .lp-photo-card:focus-within .lp-photo-card__tools,
 .lp-gallery-workspace-v2 .lp-photo-card.is-tools-open .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
 .lp-gallery-workspace-v2 .lp-photo-card :is(button,input):focus-visible { outline: 2px solid var(--lp-color-brand); outline-offset: 3px; }
 .lp-gallery-workspace-v2 .lp-photo-card footer {
-  display: grid; gap: 10px; padding: 12px 14px; margin: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch;
+  width: 100%; box-sizing: border-box; gap: 10px; padding: 12px 14px; margin: 0;
   background: var(--lp-color-surface); color: var(--lp-text-primary);
 }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__meta { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.lp-gallery-workspace-v2 .lp-photo-card__meta strong { min-width: 0; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.lp-gallery-workspace-v2 .lp-photo-card__meta strong { flex: 1; min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; line-height: 1.4; }
 .lp-gallery-workspace-v2 .lp-photo-card__meta > span { flex: none; color: var(--lp-text-secondary); font-size: 11px; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics {
-  display: flex; justify-content: space-around; gap: 12px; width: 100%; margin: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0;
   padding-top: 9px; border-top: 1px solid var(--lp-color-border);
 }
-.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics span { gap: 7px; color: var(--lp-text-secondary); font-size: 11px; font-weight: 500; }
+.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics span { display: inline-flex; align-items: center; justify-content: center; min-width: 0; gap: 7px; color: var(--lp-text-secondary); font-size: 11px; font-weight: 500; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics i { color: var(--lp-text-secondary); font-size: 16px; }
 @media (hover: hover) and (pointer: fine) {
   .lp-gallery-workspace-v2 .lp-photo-card:hover .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
@@ -675,4 +669,9 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
   .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools button {
     width: 44px; height: 44px; min-height: 44px;
   }
+}
+
+/* Touch devices have no hover: expose the photo action strip directly. */
+@media (hover: none), (pointer: coarse) {
+  .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
 }
