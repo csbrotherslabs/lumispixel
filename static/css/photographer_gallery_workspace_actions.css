@@ -663,6 +663,8 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics span { display: inline-flex; align-items: center; justify-content: center; min-width: 0; gap: 7px; color: var(--lp-text-secondary); font-size: 11px; font-weight: 500; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics i { color: var(--lp-text-secondary); font-size: 16px; }
 @media (hover: hover) and (pointer: fine) {
+  .lp-gallery-workspace-v2 .lp-photo-card__more { display: none; }
+  .lp-gallery-workspace-v2 .lp-photo-card__cover { right: 12px; }
   .lp-gallery-workspace-v2 .lp-photo-card:hover .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
