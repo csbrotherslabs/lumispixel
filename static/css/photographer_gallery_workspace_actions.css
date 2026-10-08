@@ -649,17 +649,18 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-gallery-workspace-v2 .lp-photo-card.is-tools-open .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
 .lp-gallery-workspace-v2 .lp-photo-card :is(button,input):focus-visible { outline: 2px solid var(--lp-color-brand); outline-offset: 3px; }
 .lp-gallery-workspace-v2 .lp-photo-card footer {
-  display: grid; gap: 10px; padding: 12px 14px; margin: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: stretch;
+  width: 100%; box-sizing: border-box; gap: 10px; padding: 12px 14px; margin: 0;
   background: var(--lp-color-surface); color: var(--lp-text-primary);
 }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__meta { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.lp-gallery-workspace-v2 .lp-photo-card__meta strong { min-width: 0; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.lp-gallery-workspace-v2 .lp-photo-card__meta strong { flex: 1; min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; line-height: 1.4; }
 .lp-gallery-workspace-v2 .lp-photo-card__meta > span { flex: none; color: var(--lp-text-secondary); font-size: 11px; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics {
-  display: flex; justify-content: space-around; gap: 12px; width: 100%; margin: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0;
   padding-top: 9px; border-top: 1px solid var(--lp-color-border);
 }
-.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics span { gap: 7px; color: var(--lp-text-secondary); font-size: 11px; font-weight: 500; }
+.lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics span { display: inline-flex; align-items: center; justify-content: center; min-width: 0; gap: 7px; color: var(--lp-text-secondary); font-size: 11px; font-weight: 500; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics i { color: var(--lp-text-secondary); font-size: 16px; }
 @media (hover: hover) and (pointer: fine) {
   .lp-gallery-workspace-v2 .lp-photo-card:hover .lp-photo-card__tools { opacity: 1; pointer-events: auto; }
