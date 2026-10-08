@@ -363,4 +363,137 @@
     page.querySelector('[data-toggle-completed]')?.addEventListener('click', function () { showAllCompleted = !showAllCompleted; applyQueueVisibility(); });
     page.querySelector('[data-upload-more]')?.addEventListener('click', function () { completion.hidden = true; input.click(); });
   }
+  const size=document.querySelector('[data-grid-size]'),grid=document.querySelector('[data-photo-grid]');if(size&&grid)size.oninput=function(){grid.style.setProperty('--photo-size',size.value+'px');};
+  const checks=Array.from(document.querySelectorAll('[data-photo-check]')),all=document.querySelector('[data-photo-select-all]'),bulk=document.querySelector('[data-photo-bulk]');
+  function selectedPhotoIds(){return checks.filter(function(c){return c.checked&&c.isConnected;}).map(function(c){return Number(c.value);});}
+  function update(){const live=checks.filter(function(c){return c.isConnected;}),n=live.filter(function(c){return c.checked;}).length;if(bulk){bulk.hidden=!n;bulk.querySelector('[data-photo-count]').textContent=n;}if(all){all.checked=Boolean(live.length)&&n===live.length;all.indeterminate=n>0&&n<live.length;}}
+  if(all)all.onchange=function(){checks.forEach(function(c){if(c.isConnected)c.checked=all.checked;});update();};
+  bulk?.querySelector('[data-bulk-select-all]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=true;});update();});
+  bulk?.querySelector('[data-bulk-clear]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=false;});update();});
+  checks.forEach(function(c){c.onchange=update;});document.querySelectorAll('[data-select-photo]').forEach(function(b){b.onclick=function(){const c=b.closest('article').querySelector('[data-photo-check]');c.checked=!c.checked;update();};});
+  async function bulkJson(action, extra){
+    const response=await fetch(bulk.dataset.bulkActionUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify(Object.assign({action:action,photo_ids:selectedPhotoIds()},extra||{}))});
+    let body={};try{body=await response.json();}catch(_){}
+    if(!response.ok)throw new Error(body.error||'The bulk action could not be completed.');return body;
+  }
+  function removeSelectedCards(){checks.forEach(function(c){if(c.checked&&c.isConnected)c.closest('article')?.remove();});update();}
+  if(bulk){
+    const deleteDialog=document.querySelector('[data-bulk-delete-dialog]'),moveDialog=document.querySelector('[data-bulk-move-dialog]'),visibilityDialog=document.querySelector('[data-bulk-visibility-dialog]');
+    bulk.querySelector('[data-bulk-delete]')?.addEventListener('click',function(){deleteDialog.querySelector('[data-bulk-delete-count]').textContent=selectedPhotoIds().length;deleteDialog.showModal();});
+    document.querySelectorAll('[data-bulk-dialog-cancel]').forEach(function(button){button.addEventListener('click',function(){button.closest('dialog').close();});});
+    deleteDialog?.querySelector('[data-bulk-delete-confirm]')?.addEventListener('click',async function(event){const button=event.currentTarget;button.disabled=true;try{await bulkJson('delete');removeSelectedCards();deleteDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});
+    function openMoveDialog(ids){moveDialog.dataset.photoIds=ids.join(',');const count=ids.length;moveDialog.querySelector('[data-bulk-move-count]').textContent=count;moveDialog.querySelector('[data-bulk-move-plural]').textContent=count===1?'':'s';moveDialog.querySelector('[data-bulk-album]').value='';moveDialog.showModal();}
+    bulk.querySelector('[data-bulk-move]')?.addEventListener('click',function(){openMoveDialog(selectedPhotoIds());});
+    document.querySelectorAll('[data-photo-move]').forEach(function(button){button.addEventListener('click',function(){openMoveDialog([Number(button.dataset.photoId)]);});});
+    moveDialog?.querySelector('[data-bulk-move-confirm]')?.addEventListener('click',async function(event){const album=moveDialog.querySelector('[data-bulk-album]').value;if(!album){alert('Choose an album.');return;}const button=event.currentTarget;button.disabled=true;try{const moveIds=(moveDialog.dataset.photoIds||'').split(',').filter(Boolean).map(Number);const response=await fetch(bulk.dataset.bulkActionUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({action:'move',photo_ids:moveIds,album_id:Number(album)})});let body={};try{body=await response.json();}catch(_){}if(!response.ok)throw new Error(body.error||'The photos could not be moved.');checks.forEach(function(c){if(moveIds.includes(Number(c.value)))c.checked=false;});update();moveDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});
+    bulk.querySelector('[data-bulk-visibility]')?.addEventListener('click',function(){visibilityDialog.showModal();});
+    visibilityDialog?.querySelectorAll('[data-bulk-visible]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;try{await bulkJson('visibility',{visible:button.dataset.bulkVisible==='true'});checks.forEach(function(c){c.checked=false;});update();visibilityDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});});
+    bulk.querySelector('[data-bulk-download]')?.addEventListener('click',function(){const ids=selectedPhotoIds();if(!ids.length)return;const form=document.createElement('form');form.method='POST';form.action=bulk.dataset.bulkDownloadUrl;form.hidden=true;const token=document.createElement('input');token.type='hidden';token.name='csrfmiddlewaretoken';token.value=csrf();form.append(token);ids.forEach(function(id){const input=document.createElement('input');input.type='hidden';input.name='photo_ids';input.value=id;form.append(input);});document.body.append(form);form.submit();form.remove();});
+  }
+  document.querySelectorAll('[data-photo-action]').forEach(function (button) {
+    button.addEventListener('click', async function () {
+      if (button.disabled) return;
+      const action = button.dataset.photoAction;
+      if (action === 'delete' && !confirm('Delete this photo permanently?')) return;
+      button.disabled = true;
+      try {
+        const response = await fetch(button.dataset.actionUrl, {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({action: action}).toString()
+        });
+        let body = {}; try { body = await response.json(); } catch (_) {}
+        if (!response.ok) throw new Error(body.error || 'The photo action could not be completed.');
+        if (action === 'delete') { button.closest('article').remove(); update(); }
+        if (action === 'cover') window.location.reload();
+      } catch (err) { alert(err.message); }
+      finally { button.disabled = false; }
+    });
+  });
+  const previewDialog=document.querySelector('[data-photo-preview-dialog]');
+  if(previewDialog){
+    const previewImage=previewDialog.querySelector('[data-photo-preview-image]'),previewTitle=previewDialog.querySelector('[data-photo-preview-title]');
+    function setPreviewSize(size){previewDialog.classList.remove('is-compact','is-large','is-fullscreen');previewDialog.classList.add('is-'+size);}
+    document.querySelectorAll('[data-photo-preview]').forEach(function(button){button.addEventListener('click',function(){previewImage.src=button.dataset.previewUrl;previewImage.alt=button.dataset.previewName||'Gallery photo';previewTitle.textContent=button.dataset.previewName||'';setPreviewSize('large');previewDialog.showModal();});});
+    previewDialog.querySelector('[data-preview-close]')?.addEventListener('click',function(){previewDialog.close();});
+    previewDialog.querySelectorAll('[data-preview-size]').forEach(function(button){button.addEventListener('click',function(){setPreviewSize(button.dataset.previewSize);});});
+    previewDialog.addEventListener('click',function(event){if(event.target===previewDialog)previewDialog.close();});
+    previewDialog.addEventListener('close',function(){previewImage.removeAttribute('src');});
+  }
+})();
+
+// Album curation controls and cross-album drag-and-drop.
+(() => {
+  const form = document.querySelector('[data-album-photos]');
+  if (form) {
+    const checks = [...form.querySelectorAll('[data-album-photo-check]')];
+    const bulk = form.querySelector('[data-album-bulk]');
+    const count = bulk?.querySelector('strong span');
+    const refresh = () => {
+      const selected = checks.filter((item) => item.checked).length;
+      if (bulk) bulk.hidden = !selected;
+      if (count) count.textContent = selected;
+    };
+    checks.forEach((item) => item.addEventListener('change', refresh));
+    document.querySelector('[data-album-select-all]')?.addEventListener('change', (event) => {
+      checks.forEach((item) => { item.checked = event.target.checked; });
+      refresh();
+    });
+    form.querySelectorAll('[data-album-photo]').forEach((card) => {
+      card.addEventListener('dragstart', (event) => {
+        const checked = card.querySelector('[data-album-photo-check]');
+        if (checked && !checked.checked) checked.checked = true;
+        refresh();
+        event.dataTransfer.setData('application/x-lumispixel-photos', JSON.stringify(checks.filter((item) => item.checked).map((item) => item.value)));
+        event.dataTransfer.effectAllowed = 'move';
+      });
+    });
+  }
+  document.querySelectorAll('[data-album-drop-url]').forEach((card) => {
+    card.addEventListener('dragover', (event) => { event.preventDefault(); card.classList.add('is-drop-target'); });
+    card.addEventListener('dragleave', () => card.classList.remove('is-drop-target'));
+    card.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      card.classList.remove('is-drop-target');
+      let photoIds = [];
+      try { photoIds = JSON.parse(event.dataTransfer.getData('application/x-lumispixel-photos')); } catch (_) { return; }
+      const sourceForm = document.querySelector('[data-album-photos]');
+      if (!sourceForm || !photoIds.length) return;
+      const data = new FormData(sourceForm);
+      data.set('action', 'move');
+      data.set('target_album', card.dataset.albumDropUrl.match(/albums\/(\d+)/)?.[1] || '');
+      data.delete('photo_ids');
+      photoIds.forEach((id) => data.append('photo_ids', id));
+      const response = await fetch(sourceForm.action, {method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'}});
+      if (response.ok) window.location.reload();
+    });
+  });
+  document.querySelectorAll('[data-album-delete]').forEach((button) => button.addEventListener('click', () => button.closest('form').querySelector('dialog').showModal()));
+  document.querySelectorAll('[data-album-cancel]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+})();
+
+// Contextual activity details drawer.
+document.querySelectorAll('[data-activity-open]').forEach((button) => button.addEventListener('click', () => document.getElementById(button.dataset.activityOpen)?.showModal()));
+document.querySelectorAll('[data-activity-close]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEventListener('click', (event) => { if (event.target === panel) panel.close(); }));
+
+// Gallery archive selection and high-friction workflows.
+(() => {
+  const page = document.querySelector('[data-archive-page]');
+  if (!page) return;
+  const form = page.querySelector('[data-archive-form]');
+  const checks = [...form.querySelectorAll('[data-archive-check]')];
+  const bulk = form.querySelector('[data-archive-bulk]');
+  const sync = () => { const n = checks.filter(c => c.checked).length; bulk.hidden = !n; bulk.querySelector('span').textContent = n; };
+  checks.forEach(c => c.addEventListener('change', sync));
+  page.querySelector('[data-archive-all]')?.addEventListener('change', e => { checks.forEach(c => c.checked = e.target.checked); sync(); });
+  const open = selector => page.querySelector(selector)?.showModal();
+  page.querySelectorAll('[data-archive-open]').forEach(b => b.addEventListener('click', () => open('[data-archive-modal]')));
+  page.querySelectorAll('[data-retention-open]').forEach(b => b.addEventListener('click', () => open('[data-retention-modal]')));
+  page.querySelectorAll('[data-single-retention]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = c.value === b.dataset.singleRetention); sync(); open('[data-retention-modal]'); }));
+  page.querySelectorAll('[data-single]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = c.value === b.dataset.single); }));
+  page.querySelectorAll('[data-dialog-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+  const gallerySelect = page.querySelector('[data-archive-gallery]');
+  gallerySelect?.addEventListener('change', () => { const option = gallerySelect.selectedOptions[0]; page.querySelector('[data-preview-photos]').textContent = option?.dataset.photos || '—'; page.querySelector('[data-preview-storage]').textContent = option?.dataset.storage || '—'; page.querySelector('[data-preview-access]').textContent = option?.dataset.access || '—'; });
+  page.querySelectorAll('[data-delete-open]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = false); const modal = page.querySelector('[data-delete-modal]'); const id = modal.querySelector('[data-delete-id]'); id.disabled = false; id.value = b.dataset.id; modal.querySelector('[data-delete-name]').textContent = b.dataset.name; modal.querySelector('[name=gallery_name]').value = ''; modal.querySelector('[name=acknowledge_delete]').checked = false; modal.showModal(); }));
 })();
