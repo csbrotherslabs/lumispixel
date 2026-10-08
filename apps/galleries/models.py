@@ -133,6 +133,14 @@ class Gallery(models.Model):
         if errors:
             raise ValidationError(errors)
 
+    @property
+    def cover_delivery_url(self):
+        """Prefer the selected gallery photo, using its signed delivery URL."""
+        photo = self.photos.filter(is_cover=True).exclude(file="").first()
+        if photo:
+            return photo.delivery_url
+        return self.cover_image.url if self.cover_image else ""
+
     def __str__(self):
         return self.name
 

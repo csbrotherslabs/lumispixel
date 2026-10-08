@@ -23,7 +23,7 @@
     <header><h2>Gallery summary</h2><a href="{% url 'photographer_workspace:edit_gallery' gallery.pk %}">Edit details</a></header>
     <div class="lp-gw-overview-summary__body">
       <div class="lp-gw-overview-summary__copy"><p>{{ gallery.description|default:"Add a description to help your team understand this collection." }}</p><dl class="lp-gw-overview-meta"><div><dt>Event date</dt><dd>{{ gallery.event_date|date:"M j, Y"|default:"Not set" }}</dd></div><div><dt>Photos</dt><dd>{{ gallery.image_count }}</dd></div><div><dt>Storage</dt><dd>{{ storage_display }}</dd></div></dl></div>
-      <div class="lp-cover">{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="Cover for {{ gallery.name }}">{% else %}<i class="bi bi-image"></i><span>No cover selected</span>{% endif %}</div>
+      <div class="lp-cover">{% with cover_url=gallery.cover_delivery_url %}{% if cover_url %}<img src="{{ cover_url }}" alt="Cover for {{ gallery.name }}">{% else %}<i class="bi bi-image" aria-hidden="true"></i><span>No cover selected</span>{% endif %}{% endwith %}</div>
     </div>
   </section>
 
