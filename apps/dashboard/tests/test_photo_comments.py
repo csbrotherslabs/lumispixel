@@ -91,3 +91,31 @@ class PhotoPreviewCommentTests(TestCase):
         self.assertLess(newest.content.index(b"Newest comment"), newest.content.index(b"Lovely photo!"))
         self.assertLess(oldest.content.index(b"Lovely photo!"), oldest.content.index(b"Newest comment"))
         self.assertEqual(self.client.get(url, {"sort": "invalid"}).status_code, 400)
+
+    def test_photographer_can_start_a_comment_without_an_invitation(self):
+        self.invitation.delete()
+        response = self.client.post(reverse("photographer_workspace:gallery_photo_comment_create", args=[self.photo.pk]), {"body": "Please review this edit."})
+        self.assertEqual(response.status_code, 200)
+        comment = self.photo.client_comments.get()
+        self.assertEqual(comment.author, self.owner)
+        self.assertIsNone(comment.parent)
+        self.assertIsNone(comment.invitation)
+        self.assertTrue(comment.is_studio_comment)
+        self.assertEqual(comment.display_author, "Photographer")
+        self.assertEqual(self.action("reply", comment=comment, body="Followup").status_code, 200)
+        self.assertEqual(comment.replies.get().body, "Followup")
+
+    def test_photographer_comment_validation_and_scope(self):
+        url = reverse("photographer_workspace:gallery_photo_comment_create", args=[self.photo.pk])
+        for body in ("", "   ", "a" * 2001):
+            self.assertEqual(self.client.post(url, {"body": body}).status_code, 400)
+        other = self.user("comment-new-other@example.com")
+        PhotographerProfile.objects.create(user=other, slug="comment-new-other", onboarding_completed=True)
+        self.client.force_login(other)
+        self.assertEqual(self.client.post(url, {"body": "Unauthorized"}).status_code, 404)
+        self.assertEqual(self.photo.client_comments.count(), 1)
+
+    def test_new_comment_requires_csrf(self):
+        client = TestClient(enforce_csrf_checks=True)
+        client.force_login(self.owner)
+        self.assertEqual(client.post(reverse("photographer_workspace:gallery_photo_comment_create", args=[self.photo.pk]), {"body": "No token"}).status_code, 403)

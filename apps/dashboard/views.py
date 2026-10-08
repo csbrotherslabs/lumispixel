@@ -2221,6 +2221,17 @@ def gallery_photo_comments(request, pk):
 
 @photographer_workspace_required
 @require_POST
+def gallery_photo_comment_create(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    body = (request.POST.get("body") or "").strip()
+    if not body or len(body) > 2000:
+        return JsonResponse({"error": "Enter a comment between 1 and 2,000 characters."}, status=400)
+    GalleryPhotoComment.objects.create(gallery=photo.gallery, photo=photo, author=request.user, body=body)
+    return _photo_comments_response(request, photo)
+
+
+@photographer_workspace_required
+@require_POST
 def gallery_photo_comment_action(request, pk, comment_pk):
     photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
     with transaction.atomic():

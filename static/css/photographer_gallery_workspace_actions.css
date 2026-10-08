@@ -755,3 +755,18 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-preview-comments-empty.is-error>button{padding:8px 14px;border:1px solid #f2c3c6;border-radius:9px;background:#fff0f1;color:#b42328;font-size:12px}
 @media(max-width:900px){.lp-preview-comments{flex-basis:330px}}
 @media(max-width:600px){.lp-preview-comments{width:min(100%,370px)}.lp-preview-composer-footer>button{min-height:42px}.lp-preview-composer{padding:12px 16px}.lp-preview-comments-context{padding-left:16px;padding-right:16px}.lp-preview-comments-context select{font-size:12px}.lp-preview-composer-context button{min-height:32px}}
+
+
+/* Keep the comment composer visible, including when the thread is empty. */
+.lp-photo-preview-modal .lp-preview-comments{min-height:0}
+.lp-photo-preview-modal .lp-preview-comments>header{flex-shrink:0;padding:18px 20px}
+.lp-photo-preview-modal .lp-preview-comments-context{min-height:44px;box-sizing:border-box;padding:8px 20px}
+.lp-photo-preview-modal .lp-preview-comments-context select{height:30px;padding:0 2px;margin:0;border:0;border-radius:6px;background:#fff;color:#746b65;line-height:1.3}
+.lp-photo-preview-modal .lp-preview-comments-list{min-height:0}
+.lp-photo-preview-modal .lp-preview-composer{display:grid;flex-shrink:0;box-sizing:border-box;width:100%;gap:10px;padding:14px 20px 18px;margin:0;background:#fff;border-top:1px solid #e8e2de}
+.lp-photo-preview-modal .lp-preview-composer textarea{display:block;box-sizing:border-box;width:100%;min-height:84px;max-height:120px;margin:0;padding:11px 12px;border:1px solid #e4ddd8;border-radius:10px;background:#faf9f8;font-size:12px;line-height:1.5}
+.lp-photo-preview-modal .lp-preview-composer-context{min-height:20px}
+.lp-photo-preview-modal .lp-preview-composer-footer{min-height:36px}
+.lp-photo-preview-modal .lp-preview-composer-footer button{width:auto;margin:0;font-size:11px}
+.lp-photo-preview-modal .lp-preview-comments-empty{padding:32px 10px}
+@media(max-width:600px){.lp-photo-preview-modal .lp-preview-composer{padding:12px 16px max(14px,env(safe-area-inset-bottom))}.lp-photo-preview-modal .lp-preview-comments-context{padding-left:16px;padding-right:16px}}
