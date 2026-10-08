@@ -46,7 +46,7 @@ from apps.galleries.forms import AlbumForm, DiscountCodeForm, GalleryForm, Galle
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.storage_cleanup import enqueue_storage_deletions, process_storage_deletions
 from apps.galleries.analytics import gallery_analytics_report
-from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryStorageDeletion, GallerySettings, GalleryStore, ProductVariant, StoreProduct
+from apps.galleries.models import AccessToken, Album, AlbumPhoto, DiscountCode, Gallery, GalleryActivity, GalleryAnalyticsEvent, GalleryArchivePolicy, GalleryInvitation, GalleryMultipartUpload, GalleryOrder, GalleryPermission, GalleryPhoto, GalleryPhotoComment, GalleryPhotoCommentReaction, GalleryStorageDeletion, GallerySettings, GalleryStore, ProductVariant, StoreProduct
 from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as abort_multipart,
     complete as complete_multipart, delete_object as delete_multipart_object,
     get_object_stream as get_multipart_object_stream, initiate as initiate_multipart,
@@ -2188,6 +2188,79 @@ def album_photo_action(request, pk):
         return JsonResponse({"ok": True})
     messages.success(request, "Album photos updated.")
     return redirect("photographer_workspace:album_workspace", pk=album.pk)
+
+
+
+def _photo_comments_response(request, photo):
+    comments = GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).select_related("invitation", "author").annotate(
+        like_count=Count("reactions", filter=Q(reactions__value=1)),
+        dislike_count=Count("reactions", filter=Q(reactions__value=-1)),
+    ).prefetch_related(Prefetch("reactions", queryset=GalleryPhotoCommentReaction.objects.filter(user=request.user), to_attr="viewer_reactions"))
+    sort = request.GET.get("sort", "newest")
+    if sort not in {"newest", "oldest"}:
+        return JsonResponse({"error": "Choose newest or oldest first."}, status=400)
+    ordering = ("created_at", "pk") if sort == "oldest" else ("-created_at", "-pk")
+    roots = comments.filter(parent__isnull=True).order_by(*ordering).prefetch_related(
+        Prefetch("replies", queryset=comments.filter(parent__isnull=False).order_by("created_at", "pk"))
+    )
+    page = Paginator(roots, 20).get_page(request.GET.get("page"))
+    return render(request, "photographer_workspace/galleries/components/photo_comments.html", {
+        "photo": photo, "comment_page": page, "comment_sort": sort, "viewer_id": request.user.pk,
+        "comment_count": GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).count(),
+    })
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_photo_comments(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    response = _photo_comments_response(request, photo)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_comment_create(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    body = (request.POST.get("body") or "").strip()
+    if not body or len(body) > 2000:
+        return JsonResponse({"error": "Enter a comment between 1 and 2,000 characters."}, status=400)
+    GalleryPhotoComment.objects.create(gallery=photo.gallery, photo=photo, author=request.user, body=body)
+    return _photo_comments_response(request, photo)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_comment_action(request, pk, comment_pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    with transaction.atomic():
+        # Serialize toggles for this comment; one reaction per user is also enforced in the database.
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), pk=comment_pk, photo=photo, gallery=photo.gallery)
+        action = request.POST.get("action")
+        if action == "reply":
+            body = (request.POST.get("body") or "").strip()
+            if not body or len(body) > 2000:
+                return JsonResponse({"error": "Enter a reply between 1 and 2,000 characters."}, status=400)
+            parent = comment.parent or comment
+            GalleryPhotoComment.objects.create(
+                gallery=photo.gallery, photo=photo, invitation=parent.invitation,
+                author=request.user, parent=parent, body=body,
+            )
+        elif action == "delete":
+            if comment.author_id != request.user.pk:
+                return JsonResponse({"error": "You can only delete your own comments."}, status=403)
+            comment.delete()
+        elif action in {"like", "dislike"}:
+            value = 1 if action == "like" else -1
+            reaction = GalleryPhotoCommentReaction.objects.filter(comment=comment, user=request.user).first()
+            if reaction and reaction.value == value:
+                reaction.delete()
+            else:
+                GalleryPhotoCommentReaction.objects.update_or_create(comment=comment, user=request.user, defaults={"value": value})
+        else:
+            return JsonResponse({"error": "Unsupported comment action."}, status=400)
+    return _photo_comments_response(request, photo)
 
 
 @photographer_workspace_required

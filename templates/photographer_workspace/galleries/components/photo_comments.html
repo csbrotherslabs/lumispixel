@@ -1,0 +1,9 @@
+<div data-comment-page data-page-number="{{ comment_page.number }}" data-comment-count="{{ comment_count }}">
+{% for comment in comment_page %}
+<article class="lp-preview-comment" id="preview-comment-{{ comment.pk }}">
+  {% include "photographer_workspace/galleries/components/photo_comment_entry.html" with entry=comment %}
+  <div class="lp-preview-replies">{% for reply in comment.replies.all %}{% include "photographer_workspace/galleries/components/photo_comment_entry.html" with entry=reply %}{% endfor %}</div>
+</article>
+{% empty %}<div class="lp-preview-comments-empty"><i class="bi bi-chat-square-text" aria-hidden="true"></i><strong>No comments yet</strong><p>Add a note or ask your client a question below.</p></div>{% endfor %}
+{% if comment_page.has_other_pages %}<nav class="lp-preview-comment-pages" aria-label="Comment pages">{% if comment_page.has_previous %}<button type="button" data-comments-page="{{ comment_page.previous_page_number }}">Previous</button>{% endif %}<span>{{ comment_page.number }} / {{ comment_page.paginator.num_pages }}</span>{% if comment_page.has_next %}<button type="button" data-comments-page="{{ comment_page.next_page_number }}">Next</button>{% endif %}</nav>{% endif %}
+</div>

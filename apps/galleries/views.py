@@ -251,7 +251,8 @@ def client_gallery_access(request, token):
         for comment in GalleryPhotoComment.objects.filter(
             gallery=gallery,
             photo_id__in=page_photo_ids,
-        ).select_related("invitation"):
+        ).select_related("invitation", "author"):
+            comment.can_delete_for_viewer = _owns_photo_comment(request, comment, invitation)
             comments_by_photo.setdefault(comment.photo_id, []).append(comment)
 
     interaction_counts = {}
@@ -382,7 +383,7 @@ def client_gallery_comment(request, token, photo_id):
     if len(body) > 2000:
         return HttpResponseForbidden("Comment is too long.")
 
-    GalleryPhotoComment.objects.create(
+    comment = GalleryPhotoComment.objects.create(
         gallery=gallery,
         photo=photo,
         invitation=invitation,
@@ -410,8 +411,33 @@ def client_gallery_comment(request, token, photo_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
             "comment_count": comment_count,
-            "comment": {"author": invitation.client_name, "body": body},
+            "comment": {"id": comment.pk, "author": invitation.client_name, "body": body, "delete_url": reverse("galleries:client_gallery_comment_delete", args=[token, photo.pk, comment.pk])},
         })
+    return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
+
+
+
+def _owns_photo_comment(request, comment, invitation):
+    if comment.author_id:
+        return request.user.is_authenticated and comment.author_id == request.user.pk
+    return comment.invitation_id == invitation.pk
+
+
+@require_POST
+def client_gallery_comment_delete(request, token, photo_id, comment_id):
+    _, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    if not permissions.comment:
+        return HttpResponseForbidden()
+    photo = get_object_or_404(GalleryPhoto, pk=photo_id, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+    with transaction.atomic():
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), pk=comment_id, photo=photo, gallery=gallery)
+        if not _owns_photo_comment(request, comment, invitation):
+            return HttpResponseForbidden("You can only delete your own comments.")
+        deleted_ids = [comment.pk] + list(comment.replies.values_list("pk", flat=True))
+        comment.delete()
+    count = GalleryPhotoComment.objects.filter(photo=photo, gallery=gallery).count()
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"comment_count": count, "deleted_ids": deleted_ids})
     return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
 
 

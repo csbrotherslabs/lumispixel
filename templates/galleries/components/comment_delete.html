@@ -1,0 +1,3 @@
+{% if comment.can_delete_for_viewer %}
+<form class="lp-client-comment-delete" method="post" action="{% url 'galleries:client_gallery_comment_delete' access_token photo.pk comment.pk %}" data-client-comment-delete data-photo-id="{{ photo.pk }}">{% csrf_token %}<button type="submit" aria-label="Delete your comment">Delete</button><span role="status" data-comment-delete-status></span></form>
+{% endif %}

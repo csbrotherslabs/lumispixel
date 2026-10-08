@@ -1,7 +1,12 @@
 {% if request.user.is_authenticated %}
 <dialog class="lp-notification-drawer" id="notification-drawer" aria-labelledby="notification-drawer-title" data-notification-drawer data-preview-url="{% url 'notifications:preview' %}">
-  <header><h2 id="notification-drawer-title">Notifications</h2><button type="button" data-notification-close aria-label="Close notifications">×</button></header>
+  <header><div><div class="lp-notification-heading"><h2 id="notification-drawer-title">Notifications</h2><span data-notification-count hidden></span></div><p>Stay up to date with your workspace.</p></div><button type="button" data-notification-close aria-label="Close notifications">×</button></header>
+  <div class="lp-notification-toolbar">
+    <div role="group" aria-label="Filter notifications"><button type="button" data-notification-filter="all" aria-pressed="true">All</button><button type="button" data-notification-filter="unread" aria-pressed="false">Unread</button></div>
+    <form action="{% url 'notifications:mark-all-read' %}" method="post" data-notification-read-all>{% csrf_token %}<button type="submit" disabled><i class="bi bi-check2-all" aria-hidden="true"></i> Mark all read</button></form>
+  </div>
+  <p class="lp-notification-feedback" data-notification-feedback role="status"></p>
   <div class="lp-notification-list" data-notification-list aria-live="polite" data-lenis-prevent></div>
-  <footer><a class="lp-button lp-button--primary" href="{% url 'notifications:index' %}">See all notifications</a></footer>
+  <footer><a class="lp-button lp-button--primary" href="{% url 'notifications:index' %}">See all notifications <i class="bi bi-chevron-right" aria-hidden="true"></i></a></footer>
 </dialog>
 {% endif %}

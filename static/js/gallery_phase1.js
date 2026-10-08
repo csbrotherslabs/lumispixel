@@ -363,4 +363,328 @@
     page.querySelector('[data-toggle-completed]')?.addEventListener('click', function () { showAllCompleted = !showAllCompleted; applyQueueVisibility(); });
     page.querySelector('[data-upload-more]')?.addEventListener('click', function () { completion.hidden = true; input.click(); });
   }
+  const size=document.querySelector('[data-grid-size]'),grid=document.querySelector('[data-photo-grid]');if(size&&grid)size.oninput=function(){grid.style.setProperty('--photo-size',size.value+'px');};
+  const checks=Array.from(document.querySelectorAll('[data-photo-check]')),all=document.querySelector('[data-photo-select-all]'),bulk=document.querySelector('[data-photo-bulk]');
+  function selectedPhotoIds(){return checks.filter(function(c){return c.checked&&c.isConnected;}).map(function(c){return Number(c.value);});}
+  function update(){const live=checks.filter(function(c){return c.isConnected;}),n=live.filter(function(c){return c.checked;}).length;if(bulk){bulk.hidden=!n;bulk.querySelector('[data-photo-count]').textContent=n;}if(all){all.checked=Boolean(live.length)&&n===live.length;all.indeterminate=n>0&&n<live.length;}}
+  if(all)all.onchange=function(){checks.forEach(function(c){if(c.isConnected)c.checked=all.checked;});update();};
+  bulk?.querySelector('[data-bulk-select-all]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=true;});update();});
+  bulk?.querySelector('[data-bulk-clear]')?.addEventListener('click',function(){checks.forEach(function(c){if(c.isConnected)c.checked=false;});update();});
+  checks.forEach(function(c){c.onchange=update;});document.querySelectorAll('[data-select-photo]').forEach(function(b){b.onclick=function(){const c=b.closest('article').querySelector('[data-photo-check]');c.checked=!c.checked;update();};});
+  async function bulkJson(action, extra){
+    const response=await fetch(bulk.dataset.bulkActionUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify(Object.assign({action:action,photo_ids:selectedPhotoIds()},extra||{}))});
+    let body={};try{body=await response.json();}catch(_){}
+    if(!response.ok)throw new Error(body.error||'The bulk action could not be completed.');return body;
+  }
+  function removeSelectedCards(){checks.forEach(function(c){if(c.checked&&c.isConnected)c.closest('article')?.remove();});update();}
+  if(bulk){
+    const deleteDialog=document.querySelector('[data-bulk-delete-dialog]'),moveDialog=document.querySelector('[data-bulk-move-dialog]'),visibilityDialog=document.querySelector('[data-bulk-visibility-dialog]');
+    bulk.querySelector('[data-bulk-delete]')?.addEventListener('click',function(){deleteDialog.querySelector('[data-bulk-delete-count]').textContent=selectedPhotoIds().length;deleteDialog.showModal();});
+    document.querySelectorAll('[data-bulk-dialog-cancel]').forEach(function(button){button.addEventListener('click',function(){button.closest('dialog').close();});});
+    deleteDialog?.querySelector('[data-bulk-delete-confirm]')?.addEventListener('click',async function(event){const button=event.currentTarget;button.disabled=true;try{await bulkJson('delete');removeSelectedCards();deleteDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});
+    function openMoveDialog(ids){moveDialog.dataset.photoIds=ids.join(',');const count=ids.length;moveDialog.querySelector('[data-bulk-move-count]').textContent=count;moveDialog.querySelector('[data-bulk-move-plural]').textContent=count===1?'':'s';moveDialog.querySelector('[data-bulk-album]').value='';moveDialog.showModal();}
+    bulk.querySelector('[data-bulk-move]')?.addEventListener('click',function(){openMoveDialog(selectedPhotoIds());});
+    document.querySelectorAll('[data-photo-move]').forEach(function(button){button.addEventListener('click',function(){openMoveDialog([Number(button.dataset.photoId)]);});});
+    moveDialog?.querySelector('[data-bulk-move-confirm]')?.addEventListener('click',async function(event){const album=moveDialog.querySelector('[data-bulk-album]').value;if(!album){alert('Choose an album.');return;}const button=event.currentTarget;button.disabled=true;try{const moveIds=(moveDialog.dataset.photoIds||'').split(',').filter(Boolean).map(Number);const response=await fetch(bulk.dataset.bulkActionUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':csrf(),'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({action:'move',photo_ids:moveIds,album_id:Number(album)})});let body={};try{body=await response.json();}catch(_){}if(!response.ok)throw new Error(body.error||'The photos could not be moved.');checks.forEach(function(c){if(moveIds.includes(Number(c.value)))c.checked=false;});update();moveDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});
+    bulk.querySelector('[data-bulk-visibility]')?.addEventListener('click',function(){visibilityDialog.showModal();});
+    visibilityDialog?.querySelectorAll('[data-bulk-visible]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;try{await bulkJson('visibility',{visible:button.dataset.bulkVisible==='true'});checks.forEach(function(c){c.checked=false;});update();visibilityDialog.close();}catch(err){alert(err.message);}finally{button.disabled=false;}});});
+    bulk.querySelector('[data-bulk-download]')?.addEventListener('click',function(){const ids=selectedPhotoIds();if(!ids.length)return;const form=document.createElement('form');form.method='POST';form.action=bulk.dataset.bulkDownloadUrl;form.hidden=true;const token=document.createElement('input');token.type='hidden';token.name='csrfmiddlewaretoken';token.value=csrf();form.append(token);ids.forEach(function(id){const input=document.createElement('input');input.type='hidden';input.name='photo_ids';input.value=id;form.append(input);});document.body.append(form);form.submit();form.remove();});
+  }
+  document.querySelectorAll('[data-photo-action]').forEach(function (button) {
+    button.addEventListener('click', async function () {
+      if (button.disabled) return;
+      const action = button.dataset.photoAction;
+      if (action === 'delete' && !confirm('Delete this photo permanently?')) return;
+      button.disabled = true;
+      try {
+        const response = await fetch(button.dataset.actionUrl, {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({action: action}).toString()
+        });
+        let body = {}; try { body = await response.json(); } catch (_) {}
+        if (!response.ok) throw new Error(body.error || 'The photo action could not be completed.');
+        if (action === 'delete') { button.closest('article').remove(); update(); }
+        if (action === 'cover') window.location.reload();
+      } catch (err) { alert(err.message); }
+      finally { button.disabled = false; }
+    });
+  });
+  const previewDialog=document.querySelector('[data-photo-preview-dialog]');
+  if(previewDialog){
+    const previewImage=previewDialog.querySelector('[data-photo-preview-image]'),previewTitle=previewDialog.querySelector('[data-photo-preview-title]');
+    function setPreviewSize(size){previewDialog.classList.remove('is-compact','is-large','is-fullscreen');previewDialog.classList.add('is-'+size);}
+    document.querySelectorAll('[data-photo-preview]').forEach(function(button){button.addEventListener('click',function(){previewImage.src=button.dataset.previewUrl;previewImage.alt=button.dataset.previewName||'Gallery photo';previewTitle.textContent=button.dataset.previewName||'';setPreviewSize('large');previewDialog.showModal();});});
+    previewDialog.querySelector('[data-preview-close]')?.addEventListener('click',function(){previewDialog.close();});
+    previewDialog.querySelectorAll('[data-preview-size]').forEach(function(button){button.addEventListener('click',function(){setPreviewSize(button.dataset.previewSize);});});
+    previewDialog.addEventListener('click',function(event){if(event.target===previewDialog)previewDialog.close();});
+    previewDialog.addEventListener('close',function(){previewImage.removeAttribute('src');});
+  }
+})();
+
+// Album curation controls and cross-album drag-and-drop.
+(() => {
+  const form = document.querySelector('[data-album-photos]');
+  if (form) {
+    const checks = [...form.querySelectorAll('[data-album-photo-check]')];
+    const bulk = form.querySelector('[data-album-bulk]');
+    const count = bulk?.querySelector('strong span');
+    const refresh = () => {
+      const selected = checks.filter((item) => item.checked).length;
+      if (bulk) bulk.hidden = !selected;
+      if (count) count.textContent = selected;
+    };
+    checks.forEach((item) => item.addEventListener('change', refresh));
+    document.querySelector('[data-album-select-all]')?.addEventListener('change', (event) => {
+      checks.forEach((item) => { item.checked = event.target.checked; });
+      refresh();
+    });
+    form.querySelectorAll('[data-album-photo]').forEach((card) => {
+      card.addEventListener('dragstart', (event) => {
+        const checked = card.querySelector('[data-album-photo-check]');
+        if (checked && !checked.checked) checked.checked = true;
+        refresh();
+        event.dataTransfer.setData('application/x-lumispixel-photos', JSON.stringify(checks.filter((item) => item.checked).map((item) => item.value)));
+        event.dataTransfer.effectAllowed = 'move';
+      });
+    });
+  }
+  document.querySelectorAll('[data-album-drop-url]').forEach((card) => {
+    card.addEventListener('dragover', (event) => { event.preventDefault(); card.classList.add('is-drop-target'); });
+    card.addEventListener('dragleave', () => card.classList.remove('is-drop-target'));
+    card.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      card.classList.remove('is-drop-target');
+      let photoIds = [];
+      try { photoIds = JSON.parse(event.dataTransfer.getData('application/x-lumispixel-photos')); } catch (_) { return; }
+      const sourceForm = document.querySelector('[data-album-photos]');
+      if (!sourceForm || !photoIds.length) return;
+      const data = new FormData(sourceForm);
+      data.set('action', 'move');
+      data.set('target_album', card.dataset.albumDropUrl.match(/albums\/(\d+)/)?.[1] || '');
+      data.delete('photo_ids');
+      photoIds.forEach((id) => data.append('photo_ids', id));
+      const response = await fetch(sourceForm.action, {method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'}});
+      if (response.ok) window.location.reload();
+    });
+  });
+  document.querySelectorAll('[data-album-delete]').forEach((button) => button.addEventListener('click', () => button.closest('form').querySelector('dialog').showModal()));
+  document.querySelectorAll('[data-album-cancel]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+})();
+
+// Contextual activity details drawer.
+document.querySelectorAll('[data-activity-open]').forEach((button) => button.addEventListener('click', () => document.getElementById(button.dataset.activityOpen)?.showModal()));
+document.querySelectorAll('[data-activity-close]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEventListener('click', (event) => { if (event.target === panel) panel.close(); }));
+
+// Gallery archive selection and high-friction workflows.
+(() => {
+  const page = document.querySelector('[data-archive-page]');
+  if (!page) return;
+  const form = page.querySelector('[data-archive-form]');
+  const checks = [...form.querySelectorAll('[data-archive-check]')];
+  const bulk = form.querySelector('[data-archive-bulk]');
+  const sync = () => { const n = checks.filter(c => c.checked).length; bulk.hidden = !n; bulk.querySelector('span').textContent = n; };
+  checks.forEach(c => c.addEventListener('change', sync));
+  page.querySelector('[data-archive-all]')?.addEventListener('change', e => { checks.forEach(c => c.checked = e.target.checked); sync(); });
+  const open = selector => page.querySelector(selector)?.showModal();
+  page.querySelectorAll('[data-archive-open]').forEach(b => b.addEventListener('click', () => open('[data-archive-modal]')));
+  page.querySelectorAll('[data-retention-open]').forEach(b => b.addEventListener('click', () => open('[data-retention-modal]')));
+  page.querySelectorAll('[data-single-retention]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = c.value === b.dataset.singleRetention); sync(); open('[data-retention-modal]'); }));
+  page.querySelectorAll('[data-single]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = c.value === b.dataset.single); }));
+  page.querySelectorAll('[data-dialog-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+  const gallerySelect = page.querySelector('[data-archive-gallery]');
+  gallerySelect?.addEventListener('change', () => { const option = gallerySelect.selectedOptions[0]; page.querySelector('[data-preview-photos]').textContent = option?.dataset.photos || '—'; page.querySelector('[data-preview-storage]').textContent = option?.dataset.storage || '—'; page.querySelector('[data-preview-access]').textContent = option?.dataset.access || '—'; });
+  page.querySelectorAll('[data-delete-open]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = false); const modal = page.querySelector('[data-delete-modal]'); const id = modal.querySelector('[data-delete-id]'); id.disabled = false; id.value = b.dataset.id; modal.querySelector('[data-delete-name]').textContent = b.dataset.name; modal.querySelector('[name=gallery_name]').value = ''; modal.querySelector('[name=acknowledge_delete]').checked = false; modal.showModal(); }));
+})();
+
+/* Touch and keyboard access to the photo card action strip. */
+(function () {
+  const grid = document.querySelector('.lp-photo-cards');
+  if (!grid) return;
+  function closeTools(card) {
+    card.classList.remove('is-tools-open');
+    card.querySelector('[data-photo-tools-toggle]').setAttribute('aria-expanded', 'false');
+  }
+  grid.querySelectorAll('[data-photo-tools-toggle]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const card = button.closest('.lp-photo-card');
+      const opening = !card.classList.contains('is-tools-open');
+      grid.querySelectorAll('.is-tools-open').forEach(closeTools);
+      if (opening) { card.classList.add('is-tools-open'); button.setAttribute('aria-expanded', 'true'); }
+    });
+  });
+  grid.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    const card = event.target.closest('.lp-photo-card');
+    if (card && card.classList.contains('is-tools-open')) {
+      closeTools(card);
+      card.querySelector('[data-photo-tools-toggle]').focus();
+    }
+  });
+  document.addEventListener('click', function (event) {
+    grid.querySelectorAll('.is-tools-open').forEach(function (card) {
+      if (!card.contains(event.target)) closeTools(card);
+    });
+  });
+})();
+
+
+// Threaded feedback within the photographer photo preview.
+(() => {
+  const dialog = document.querySelector('[data-photo-preview-dialog]');
+  if (!dialog) return;
+  const panel = dialog.querySelector('.lp-preview-comments');
+  const list = dialog.querySelector('[data-preview-comments-list]');
+  const toggle = dialog.querySelector('[data-preview-comments-toggle]');
+  const status = dialog.querySelector('[data-preview-comments-status]');
+  const sort = dialog.querySelector('[data-comments-sort]');
+  const composer = dialog.querySelector('[data-comment-reply-form]');
+  const textarea = composer.querySelector('textarea');
+  const send = composer.querySelector('[type=submit]');
+  let url = '', createUrl = '', source, controller, version = 0, busy = false, page = '1', replyUrl = '';
+  function showPanel(open) {
+    panel.hidden = !open;
+    dialog.classList.toggle('has-comments', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+  function composerState() {
+    send.disabled = busy || !createUrl || !textarea.value.trim();
+    textarea.disabled = busy;
+    composer.querySelector('[data-reply-cancel]').disabled = busy;
+    dialog.querySelector('[data-reply-length]').textContent = textarea.value.length.toLocaleString() + ' / 2,000';
+  }
+  function cancelReply() {
+    composer.hidden = false; replyUrl = ''; textarea.value = '';
+    composer.querySelector('[name=action]').value = 'comment';
+    dialog.querySelector('[data-composer-label]').textContent = 'Comment on this photo';
+    dialog.querySelector('[data-reply-recipient]').hidden = true;
+    dialog.querySelector('[data-reply-cancel]').hidden = true;
+    dialog.querySelector('[data-composer-input-label]').textContent = 'Write a comment';
+    textarea.placeholder = 'Write a comment…';
+    dialog.querySelector('[data-composer-submit-label]').textContent = 'Post comment';
+    composerState();
+  }
+  function syncCount(value) {
+    const count = value ?? list.querySelector('[data-comment-page]')?.dataset.commentCount;
+    if (count === undefined) return;
+    dialog.querySelector('[data-preview-comment-count]').textContent = count;
+    dialog.querySelector('[data-panel-comment-count]').textContent = count;
+    if (source) {
+      source.dataset.commentCount = count;
+      const metric = source.closest('article')?.querySelector('[data-photo-comment-metric]');
+      if (metric) { metric.setAttribute('aria-label', count + ' comments'); metric.lastChild.textContent = count; }
+    }
+    page = list.querySelector('[data-comment-page]')?.dataset.pageNumber || page;
+  }
+  function targetUrl(target = url) {
+    const targetURL = new URL(target, window.location.href);
+    if (targetURL.origin !== window.location.origin) throw new Error('This comment link is unavailable. Refresh the page and try again.');
+    targetURL.searchParams.set('sort', sort.value);
+    targetURL.searchParams.set('page', page);
+    return targetURL;
+  }
+  function errorState(message) {
+    if (list.querySelector('[data-comment-page]')) { status.textContent = message; return; }
+    list.replaceChildren();
+    const box = document.createElement('div'); box.className = 'lp-preview-comments-empty is-error';
+    const title = document.createElement('strong'); title.textContent = 'Comments could not be loaded';
+    const text = document.createElement('p'); text.textContent = message;
+    const retry = document.createElement('button'); retry.type = 'button'; retry.dataset.commentsRetry = ''; retry.textContent = 'Retry';
+    box.append(title, text, retry); list.append(box);
+  }
+  async function request(target, options = {}) {
+    controller?.abort();
+    const current = ++version;
+    controller = new AbortController();
+    list.setAttribute('aria-busy', 'true');
+    status.textContent = '';
+    if (!options.method && !list.querySelector('[data-comment-page]')) list.textContent = 'Loading comments…';
+    try {
+      const response = await fetch(targetUrl(target), {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}, signal: controller.signal, ...options});
+      if (!response.ok || response.redirected) {
+        let message = response.status === 403 ? 'Your session may have expired. Refresh the page and sign in again.' : response.status === 404 ? 'This photo is no longer available to your workspace.' : 'Please try again. If this continues, refresh the page.';
+        if (response.headers.get('content-type')?.includes('application/json')) message = (await response.json()).error || message;
+        throw new Error(message);
+      }
+      const html = await response.text();
+      if (current !== version) return false;
+      list.innerHTML = html; syncCount();
+      status.textContent = options.method === 'POST' ? 'Saved.' : '';
+      return true;
+    } catch (error) {
+      if (error.name !== 'AbortError' && current === version) {
+        const message = error instanceof TypeError ? 'Check your connection and try again.' : error.message;
+        if (options.method) status.textContent = message + (['reply', 'comment'].includes(options.body?.get('action')) ? ' Your text has been kept.' : ' The change could not be confirmed.');
+        else errorState(message);
+      }
+      return false;
+    } finally {
+      if (current === version) { list.removeAttribute('aria-busy'); busy = false; sort.disabled = false; list.querySelectorAll('button').forEach(b => { b.disabled = false; }); composerState(); }
+    }
+  }
+  document.querySelectorAll('[data-photo-preview]').forEach(button => button.addEventListener('click', () => {
+    controller?.abort(); ++version; busy = false; page = '1'; sort.value = 'newest'; sort.disabled = false;
+    source = button; url = button.dataset.commentsUrl || ''; createUrl = button.dataset.commentCreateUrl || '';
+    list.replaceChildren(); status.textContent = ''; cancelReply();
+    syncCount(button.dataset.commentCount || '0');
+    showPanel(false); toggle.disabled = !url;
+  }));
+  toggle.addEventListener('click', () => {
+    showPanel(panel.hidden);
+    if (!panel.hidden && !list.querySelector('[data-comment-page]')) request(url);
+  });
+  dialog.querySelector('[data-preview-comments-close]').addEventListener('click', () => { showPanel(false); toggle.focus(); });
+  textarea.addEventListener('input', composerState);
+  dialog.querySelector('[data-reply-cancel]').addEventListener('click', () => { cancelReply(); textarea.focus(); });
+  sort.addEventListener('change', () => { if (!busy) { page = '1'; list.scrollTop = 0; request(url); } });
+  list.addEventListener('click', event => {
+    if (busy) return;
+    const reply = event.target.closest('[data-comment-reply]');
+    if (reply) {
+      replyUrl = reply.dataset.replyUrl;
+      dialog.querySelector('[data-reply-recipient]').textContent = reply.dataset.replyAuthor;
+      dialog.querySelector('[data-reply-recipient]').hidden = false;
+      dialog.querySelector('[data-reply-cancel]').hidden = false;
+      dialog.querySelector('[data-composer-label]').textContent = 'Replying to ';
+      dialog.querySelector('[data-composer-input-label]').textContent = 'Write your reply';
+      dialog.querySelector('[data-composer-submit-label]').textContent = 'Send reply';
+      composer.querySelector('[name=action]').value = 'reply';
+      textarea.placeholder = 'Write your reply…';
+      composer.hidden = false; composerState(); textarea.focus(); return;
+    }
+    if (event.target.closest('[data-comments-retry]')) { request(url); return; }
+    const paging = event.target.closest('[data-comments-page]');
+    if (paging) { page = paging.dataset.commentsPage; list.scrollTop = 0; request(url); }
+  });
+  list.addEventListener('submit', async event => {
+    const form = event.target.closest('[data-comment-reaction-form]');
+    if (!form) return;
+    event.preventDefault();
+    if (busy || !event.submitter) return;
+    if (event.submitter.value === 'delete' && !confirm('Delete your comment? Replies to this comment will also be deleted.')) return;
+    const data = new FormData(form);
+    data.set(event.submitter.name, event.submitter.value);
+    const entryId = form.closest('.lp-preview-comment-entry')?.parentElement.id;
+    const reaction = event.submitter.value;
+    busy = true; sort.disabled = true; composerState();
+    list.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    const saved = await request(form.getAttribute('action'), {method: 'POST', body: data});
+    if (saved && reaction === 'delete') { const draft = textarea.value; cancelReply(); textarea.value = draft; composerState(); textarea.focus(); }
+    if (entryId) document.getElementById(entryId)?.querySelector('button[value="' + reaction + '"]')?.focus();
+  });
+  composer.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy || !createUrl || !textarea.value.trim()) return;
+    const draft = textarea.value;
+    const data = new FormData(composer);
+    busy = true; sort.disabled = true; composerState();
+    list.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    if (!replyUrl) { page = '1'; sort.value = 'newest'; }
+    const current = version + 1;
+    const saved = await request(replyUrl || createUrl, {method: 'POST', body: data});
+    if (saved && current === version) { cancelReply(); textarea.focus(); }
+    else if (current === version) { textarea.value = draft; composerState(); }
+  });
+  dialog.addEventListener('close', () => { controller?.abort(); ++version; busy = false; list.replaceChildren(); cancelReply(); showPanel(false); });
 })();

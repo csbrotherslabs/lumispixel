@@ -133,6 +133,14 @@ class Gallery(models.Model):
         if errors:
             raise ValidationError(errors)
 
+    @property
+    def cover_delivery_url(self):
+        """Prefer the selected gallery photo, using its signed delivery URL."""
+        photo = self.photos.filter(is_cover=True).exclude(file="").first()
+        if photo:
+            return photo.delivery_url
+        return self.cover_image.url if self.cover_image else ""
+
     def __str__(self):
         return self.name
 
@@ -485,23 +493,53 @@ class GalleryPermission(models.Model):
 
 
 class GalleryPhotoComment(models.Model):
-    """A client comment attached to a delivered gallery photo."""
+    """A client or studio comment attached to a gallery photo."""
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photo_comments")
     photo = models.ForeignKey("GalleryPhoto", on_delete=models.CASCADE, related_name="client_comments")
-    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments")
+    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments", blank=True, null=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
     body = models.TextField(max_length=2000)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_studio_comment(self):
+        return not self.invitation_id or bool(self.parent_id)
+
+    @property
+    def display_author(self):
+        if self.is_studio_comment:
+            return (self.author.full_name or "Photographer") if self.author else "Photographer"
+        return self.invitation.client_name or "Guest"
+
+    @property
+    def display_initials(self):
+        parts = self.display_author.split()
+        return "".join(part[0] for part in (parts[:1] + parts[-1:] if len(parts) > 1 else parts))[:2].upper() or "G"
 
     class Meta:
         ordering = ["created_at", "pk"]
 
     def clean(self):
+        if self.parent_id and (self.parent.photo_id != self.photo_id or self.parent.gallery_id != self.gallery_id or self.parent.parent_id):
+            raise ValidationError({"parent": "Replies must reference a top-level comment on the same photo."})
         if self.photo_id and self.photo.gallery_id != self.gallery_id:
             raise ValidationError({"photo": "Comment photo must belong to this gallery."})
         if self.invitation_id and self.invitation.gallery_id != self.gallery_id:
             raise ValidationError({"invitation": "Comment invitation must belong to this gallery."})
+
+
+class GalleryPhotoCommentReaction(models.Model):
+    comment = models.ForeignKey(GalleryPhotoComment, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="photo_comment_reactions")
+    value = models.SmallIntegerField(choices=[(1, "Like"), (-1, "Dislike")])
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["comment", "user"], name="photo_comment_user_reaction"),
+            models.CheckConstraint(condition=models.Q(value__in=[-1, 1]), name="photo_comment_reaction_value"),
+        ]
 
 
 class GallerySettings(models.Model):
