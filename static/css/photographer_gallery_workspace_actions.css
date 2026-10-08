@@ -723,3 +723,35 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-photo-preview-modal__stage::-webkit-scrollbar-thumb:hover,.lp-preview-comments-list::-webkit-scrollbar-thumb:hover{background:#d71920}
 @media(max-width:900px){.lp-preview-comments{flex-basis:300px}.lp-photo-preview-modal__tools button span{display:none}}
 @media(max-width:600px){.lp-photo-preview-modal__body{position:relative}.lp-preview-comments{position:absolute;inset:0 0 0 auto;width:min(100%,340px);z-index:4;box-shadow:-10px 0 30px #0003}.lp-photo-preview-modal__topbar{gap:7px;padding-left:10px}.lp-photo-preview-modal__topbar strong{max-width:120px}.lp-photo-preview-modal__tools button{padding:0 7px}.lp-preview-comment-copy button{min-height:40px}.lp-preview-reply>button{min-height:40px}}
+
+
+/* Conversation panel: compact threads and one anchored reply composer. */
+.lp-preview-comments{flex-basis:370px}
+.lp-preview-comments-heading{display:flex;align-items:center;gap:9px}
+.lp-preview-comments-heading>span{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:#fff0f1;color:#b42328;font-size:11px;font-weight:700}
+.lp-preview-comments>header{padding:18px 20px}
+.lp-preview-comments>header button{border-radius:50%;background:#f5f4f3}
+.lp-preview-comments-context{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;padding:12px 20px;border-bottom:1px solid #eee9e6}
+.lp-preview-comments-context>span{display:flex;align-items:center;gap:7px;min-width:0;color:#655d57}
+.lp-preview-comments-context strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:500}
+.lp-preview-comments-context select{max-width:115px;min-width:0;flex-shrink:0;border:0;background:#fff;color:#746b65;font:inherit;font-size:10px;cursor:pointer}
+.lp-preview-comments-list{padding:0 20px;scrollbar-gutter:stable}
+.lp-preview-comment{padding:20px 0}
+.lp-preview-comment-avatar{width:32px;height:32px;background:#efe6dc;color:#755a3e}
+.lp-preview-comment-entry.is-reply .lp-preview-comment-avatar{background:#fce7e9;color:#b42328}
+.lp-preview-comment-meta time{font-size:10px}
+.lp-preview-comment-copy p{margin:8px 0 10px;font-size:12px;line-height:1.6}
+.lp-preview-comment-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lp-preview-comment-copy .lp-preview-reply-trigger{color:#d71920;font-weight:650}
+.lp-preview-replies{padding-left:14px;margin-left:15px;margin-top:16px;gap:16px}
+.lp-preview-composer{flex-shrink:0;display:grid;gap:10px;margin:0;padding:14px 20px 18px;border-top:1px solid #e8e2de;background:#fff}
+.lp-preview-composer-context,.lp-preview-composer-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10px;color:#827b76}
+.lp-preview-composer-context strong{color:#d71920}
+.lp-preview-composer-context button{padding:4px 0;border:0;background:transparent;color:#827b76;font-size:10px}
+.lp-preview-composer textarea{box-sizing:border-box;width:100%;min-height:80px;max-height:140px;resize:vertical;padding:10px 12px;border:1px solid #e4ddd8;border-radius:10px;background:#faf9f8;color:#25211f;font:inherit;font-size:12px;line-height:1.5}
+.lp-preview-composer-footer>button{display:flex;align-items:center;gap:6px;min-height:36px;padding:8px 12px;border:0;border-radius:9px;background:#d71920;color:#fff;font-size:11px;font-weight:650}
+.lp-preview-composer-footer>button:hover{background:#b91319}
+.lp-preview-composer button:disabled{opacity:.45;cursor:default}
+.lp-preview-comments-empty.is-error>button{padding:8px 14px;border:1px solid #f2c3c6;border-radius:9px;background:#fff0f1;color:#b42328;font-size:12px}
+@media(max-width:900px){.lp-preview-comments{flex-basis:330px}}
+@media(max-width:600px){.lp-preview-comments{width:min(100%,370px)}.lp-preview-composer-footer>button{min-height:42px}.lp-preview-composer{padding:12px 16px}.lp-preview-comments-context{padding-left:16px;padding-right:16px}.lp-preview-comments-context select{font-size:12px}.lp-preview-composer-context button{min-height:32px}}

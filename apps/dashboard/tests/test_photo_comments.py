@@ -82,3 +82,12 @@ class PhotoPreviewCommentTests(TestCase):
         client = TestClient(enforce_csrf_checks=True)
         client.force_login(self.owner)
         self.assertEqual(client.post(reverse("photographer_workspace:gallery_photo_comment_action", args=[self.photo.pk, self.comment.pk]), {"action": "like"}).status_code, 403)
+
+    def test_sort_comments_in_both_directions(self):
+        later = GalleryPhotoComment.objects.create(gallery=self.gallery, photo=self.photo, invitation=self.invitation, body="Newest comment")
+        url = reverse("photographer_workspace:gallery_photo_comments", args=[self.photo.pk])
+        newest = self.client.get(url, {"sort": "newest"})
+        oldest = self.client.get(url, {"sort": "oldest"})
+        self.assertLess(newest.content.index(b"Newest comment"), newest.content.index(b"Lovely photo!"))
+        self.assertLess(oldest.content.index(b"Lovely photo!"), oldest.content.index(b"Newest comment"))
+        self.assertEqual(self.client.get(url, {"sort": "invalid"}).status_code, 400)

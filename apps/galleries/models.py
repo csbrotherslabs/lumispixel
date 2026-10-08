@@ -509,6 +509,11 @@ class GalleryPhotoComment(models.Model):
             return (self.author.full_name or "Photographer") if self.author else "Photographer"
         return self.invitation.client_name or "Guest"
 
+    @property
+    def display_initials(self):
+        parts = self.display_author.split()
+        return "".join(part[0] for part in (parts[:1] + parts[-1:] if len(parts) > 1 else parts))[:2].upper() or "G"
+
     class Meta:
         ordering = ["created_at", "pk"]
 

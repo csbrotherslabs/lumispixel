@@ -2196,12 +2196,16 @@ def _photo_comments_response(request, photo):
         like_count=Count("reactions", filter=Q(reactions__value=1)),
         dislike_count=Count("reactions", filter=Q(reactions__value=-1)),
     ).prefetch_related(Prefetch("reactions", queryset=GalleryPhotoCommentReaction.objects.filter(user=request.user), to_attr="viewer_reactions"))
-    roots = comments.filter(parent__isnull=True).order_by("-created_at", "-pk").prefetch_related(
+    sort = request.GET.get("sort", "newest")
+    if sort not in {"newest", "oldest"}:
+        return JsonResponse({"error": "Choose newest or oldest first."}, status=400)
+    ordering = ("created_at", "pk") if sort == "oldest" else ("-created_at", "-pk")
+    roots = comments.filter(parent__isnull=True).order_by(*ordering).prefetch_related(
         Prefetch("replies", queryset=comments.filter(parent__isnull=False).order_by("created_at", "pk"))
     )
     page = Paginator(roots, 20).get_page(request.GET.get("page"))
     return render(request, "photographer_workspace/galleries/components/photo_comments.html", {
-        "photo": photo, "comment_page": page,
+        "photo": photo, "comment_page": page, "comment_sort": sort,
         "comment_count": GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).count(),
     })
 

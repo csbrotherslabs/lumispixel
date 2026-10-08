@@ -538,49 +538,89 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   const list = dialog.querySelector('[data-preview-comments-list]');
   const toggle = dialog.querySelector('[data-preview-comments-toggle]');
   const status = dialog.querySelector('[data-preview-comments-status]');
-  let url = '', source, controller, version = 0, busy = false;
+  const sort = dialog.querySelector('[data-comments-sort]');
+  const composer = dialog.querySelector('[data-comment-reply-form]');
+  const textarea = composer.querySelector('textarea');
+  const send = composer.querySelector('[type=submit]');
+  let url = '', source, controller, version = 0, busy = false, page = '1', replyUrl = '';
   function showPanel(open) {
     panel.hidden = !open;
     dialog.classList.toggle('has-comments', open);
     toggle.setAttribute('aria-expanded', String(open));
   }
-  function syncCount() {
-    const count = list.querySelector('[data-comment-page]')?.dataset.commentCount;
+  function composerState() {
+    send.disabled = busy || !textarea.value.trim();
+    textarea.disabled = busy;
+    composer.querySelector('[data-reply-cancel]').disabled = busy;
+    dialog.querySelector('[data-reply-length]').textContent = textarea.value.length.toLocaleString() + ' / 2,000';
+  }
+  function cancelReply() {
+    composer.hidden = true; replyUrl = ''; textarea.value = ''; composerState();
+  }
+  function syncCount(value) {
+    const count = value ?? list.querySelector('[data-comment-page]')?.dataset.commentCount;
     if (count === undefined) return;
     dialog.querySelector('[data-preview-comment-count]').textContent = count;
+    dialog.querySelector('[data-panel-comment-count]').textContent = count;
     if (source) {
       source.dataset.commentCount = count;
       const metric = source.closest('article')?.querySelector('[data-photo-comment-metric]');
       if (metric) { metric.setAttribute('aria-label', count + ' comments'); metric.lastChild.textContent = count; }
     }
+    page = list.querySelector('[data-comment-page]')?.dataset.pageNumber || page;
+  }
+  function targetUrl(target = url) {
+    const targetURL = new URL(target, window.location.href);
+    if (targetURL.origin !== window.location.origin) throw new Error('This comment link is unavailable. Refresh the page and try again.');
+    targetURL.searchParams.set('sort', sort.value);
+    targetURL.searchParams.set('page', page);
+    return targetURL;
+  }
+  function errorState(message) {
+    if (list.querySelector('[data-comment-page]')) { status.textContent = message; return; }
+    list.replaceChildren();
+    const box = document.createElement('div'); box.className = 'lp-preview-comments-empty is-error';
+    const title = document.createElement('strong'); title.textContent = 'Comments could not be loaded';
+    const text = document.createElement('p'); text.textContent = message;
+    const retry = document.createElement('button'); retry.type = 'button'; retry.dataset.commentsRetry = ''; retry.textContent = 'Retry';
+    box.append(title, text, retry); list.append(box);
   }
   async function request(target, options = {}) {
     controller?.abort();
     const current = ++version;
     controller = new AbortController();
     list.setAttribute('aria-busy', 'true');
+    status.textContent = '';
+    if (!options.method && !list.querySelector('[data-comment-page]')) list.textContent = 'Loading comments…';
     try {
-      const response = await fetch(target, {credentials: 'same-origin', signal: controller.signal, ...options});
+      const response = await fetch(targetUrl(target), {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}, signal: controller.signal, ...options});
       if (!response.ok || response.redirected) {
-        let error = 'Comments could not be loaded. Please try again.';
-        if (response.headers.get('content-type')?.includes('application/json')) error = (await response.json()).error || error;
-        throw new Error(error);
+        let message = response.status === 403 ? 'Your session may have expired. Refresh the page and sign in again.' : response.status === 404 ? 'This photo is no longer available to your workspace.' : 'Please try again. If this continues, refresh the page.';
+        if (response.headers.get('content-type')?.includes('application/json')) message = (await response.json()).error || message;
+        throw new Error(message);
       }
       const html = await response.text();
-      if (current !== version) return;
+      if (current !== version) return false;
       list.innerHTML = html; syncCount();
       status.textContent = options.method === 'POST' ? 'Saved.' : '';
+      return true;
     } catch (error) {
-      if (error.name !== 'AbortError' && current === version) status.textContent = error.message;
+      if (error.name !== 'AbortError' && current === version) {
+        const message = error instanceof TypeError ? 'Check your connection and try again.' : error.message;
+        if (options.method) status.textContent = message + (options.body?.get('action') === 'reply' ? ' Your reply has been kept.' : ' The reaction could not be confirmed.');
+        else errorState(message);
+      }
+      return false;
     } finally {
-      if (current === version) { list.removeAttribute('aria-busy'); busy = false; list.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
+      if (current === version) { list.removeAttribute('aria-busy'); busy = false; sort.disabled = false; list.querySelectorAll('button').forEach(b => { b.disabled = false; }); composerState(); }
     }
   }
   document.querySelectorAll('[data-photo-preview]').forEach(button => button.addEventListener('click', () => {
-    controller?.abort(); ++version; busy = false;
+    controller?.abort(); ++version; busy = false; page = '1'; sort.value = 'newest'; sort.disabled = false;
     source = button; url = button.dataset.commentsUrl || '';
-    list.replaceChildren(); status.textContent = '';
-    dialog.querySelector('[data-preview-comment-count]').textContent = button.dataset.commentCount || '0';
+    list.replaceChildren(); status.textContent = ''; cancelReply();
+    dialog.querySelector('[data-comments-photo-name]').textContent = button.dataset.previewName || 'Gallery photo';
+    syncCount(button.dataset.commentCount || '0');
     showPanel(false); toggle.disabled = !url;
   }));
   toggle.addEventListener('click', () => {
@@ -588,22 +628,46 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     if (!panel.hidden && !list.querySelector('[data-comment-page]')) request(url);
   });
   dialog.querySelector('[data-preview-comments-close]').addEventListener('click', () => { showPanel(false); toggle.focus(); });
+  textarea.addEventListener('input', composerState);
+  dialog.querySelector('[data-reply-cancel]').addEventListener('click', () => { cancelReply(); toggle.focus(); });
+  sort.addEventListener('change', () => { if (!busy) { page = '1'; list.scrollTop = 0; request(url); } });
   list.addEventListener('click', event => {
-    const button = event.target.closest('[data-comments-page]');
-    if (!button || busy) return;
-    const target = new URL(url, window.location.origin); target.searchParams.set('page', button.dataset.commentsPage);
-    list.scrollTop = 0; request(target);
+    if (busy) return;
+    const reply = event.target.closest('[data-comment-reply]');
+    if (reply) {
+      replyUrl = reply.dataset.replyUrl;
+      dialog.querySelector('[data-reply-recipient]').textContent = reply.dataset.replyAuthor;
+      composer.hidden = false; composerState(); textarea.focus(); return;
+    }
+    if (event.target.closest('[data-comments-retry]')) { request(url); return; }
+    const paging = event.target.closest('[data-comments-page]');
+    if (paging) { page = paging.dataset.commentsPage; list.scrollTop = 0; request(url); }
   });
-  list.addEventListener('submit', event => {
-    const form = event.target.closest('form');
+  list.addEventListener('submit', async event => {
+    const form = event.target.closest('[data-comment-reaction-form]');
     if (!form) return;
     event.preventDefault();
-    if (busy) return;
+    if (busy || !event.submitter) return;
     const data = new FormData(form);
-    if (event.submitter?.name) data.set(event.submitter.name, event.submitter.value);
-    busy = true;
+    data.set(event.submitter.name, event.submitter.value);
+    const entryId = form.closest('.lp-preview-comment-entry')?.parentElement.id;
+    const reaction = event.submitter.value;
+    busy = true; sort.disabled = true; composerState();
     list.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    request(form.action, {method: 'POST', body: data});
+    await request(form.action, {method: 'POST', body: data});
+    if (entryId) document.getElementById(entryId)?.querySelector('button[value="' + reaction + '"]')?.focus();
   });
-  dialog.addEventListener('close', () => { controller?.abort(); ++version; busy = false; list.replaceChildren(); showPanel(false); });
+  composer.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy || !replyUrl || !textarea.value.trim()) return;
+    const draft = textarea.value;
+    const data = new FormData(composer);
+    busy = true; sort.disabled = true; composerState();
+    list.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    const current = version + 1;
+    const saved = await request(replyUrl, {method: 'POST', body: data});
+    if (saved && current === version) { cancelReply(); toggle.focus(); }
+    else if (current === version) { textarea.value = draft; composerState(); }
+  });
+  dialog.addEventListener('close', () => { controller?.abort(); ++version; busy = false; list.replaceChildren(); cancelReply(); showPanel(false); });
 })();
