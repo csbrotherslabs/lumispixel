@@ -770,3 +770,6 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-photo-preview-modal .lp-preview-composer-footer button{width:auto;margin:0;font-size:11px}
 .lp-photo-preview-modal .lp-preview-comments-empty{padding:32px 10px}
 @media(max-width:600px){.lp-photo-preview-modal .lp-preview-composer{padding:12px 16px max(14px,env(safe-area-inset-bottom))}.lp-photo-preview-modal .lp-preview-comments-context{padding-left:16px;padding-right:16px}}
+
+.lp-photo-preview-modal .lp-preview-comment-copy button[data-comment-delete]{color:#b42328}
+.lp-photo-preview-modal .lp-preview-comment-copy button[data-comment-delete]:hover{background:#fff0f1;border-color:#f4d4d6}

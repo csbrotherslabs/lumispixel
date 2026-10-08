@@ -615,7 +615,7 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     } catch (error) {
       if (error.name !== 'AbortError' && current === version) {
         const message = error instanceof TypeError ? 'Check your connection and try again.' : error.message;
-        if (options.method) status.textContent = message + (['reply', 'comment'].includes(options.body?.get('action')) ? ' Your text has been kept.' : ' The reaction could not be confirmed.');
+        if (options.method) status.textContent = message + (['reply', 'comment'].includes(options.body?.get('action')) ? ' Your text has been kept.' : ' The change could not be confirmed.');
         else errorState(message);
       }
       return false;
@@ -663,13 +663,15 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     if (!form) return;
     event.preventDefault();
     if (busy || !event.submitter) return;
+    if (event.submitter.value === 'delete' && !confirm('Delete your comment? Replies to this comment will also be deleted.')) return;
     const data = new FormData(form);
     data.set(event.submitter.name, event.submitter.value);
     const entryId = form.closest('.lp-preview-comment-entry')?.parentElement.id;
     const reaction = event.submitter.value;
     busy = true; sort.disabled = true; composerState();
     list.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    await request(form.action, {method: 'POST', body: data});
+    const saved = await request(form.getAttribute('action'), {method: 'POST', body: data});
+    if (saved && reaction === 'delete') { const draft = textarea.value; cancelReply(); textarea.value = draft; composerState(); textarea.focus(); }
     if (entryId) document.getElementById(entryId)?.querySelector('button[value="' + reaction + '"]')?.focus();
   });
   composer.addEventListener('submit', async event => {

@@ -119,3 +119,20 @@ class PhotoPreviewCommentTests(TestCase):
         client = TestClient(enforce_csrf_checks=True)
         client.force_login(self.owner)
         self.assertEqual(client.post(reverse("photographer_workspace:gallery_photo_comment_create", args=[self.photo.pk]), {"body": "No token"}).status_code, 403)
+
+    def test_author_can_delete_comment_and_replies(self):
+        comment = GalleryPhotoComment.objects.create(gallery=self.gallery, photo=self.photo, author=self.owner, body="My note")
+        self.action("reply", comment=comment, body="My reply")
+        self.action("like", comment=comment)
+        self.assertEqual(self.action("delete", comment=comment).status_code, 200)
+        self.assertFalse(GalleryPhotoComment.objects.filter(pk=comment.pk).exists())
+        self.assertFalse(GalleryPhotoCommentReaction.objects.filter(comment_id=comment.pk).exists())
+
+    def test_photographer_cannot_delete_client_comment(self):
+        self.assertEqual(self.action("delete").status_code, 403)
+        self.assertTrue(GalleryPhotoComment.objects.filter(pk=self.comment.pk).exists())
+
+    def test_only_author_sees_workspace_delete_control(self):
+        own = GalleryPhotoComment.objects.create(gallery=self.gallery, photo=self.photo, author=self.owner, body="My note")
+        response = self.client.get(reverse("photographer_workspace:gallery_photo_comments", args=[self.photo.pk]))
+        self.assertContains(response, "data-comment-delete", count=1)

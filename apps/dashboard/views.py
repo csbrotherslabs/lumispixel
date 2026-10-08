@@ -2205,7 +2205,7 @@ def _photo_comments_response(request, photo):
     )
     page = Paginator(roots, 20).get_page(request.GET.get("page"))
     return render(request, "photographer_workspace/galleries/components/photo_comments.html", {
-        "photo": photo, "comment_page": page, "comment_sort": sort,
+        "photo": photo, "comment_page": page, "comment_sort": sort, "viewer_id": request.user.pk,
         "comment_count": GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).count(),
     })
 
@@ -2247,6 +2247,10 @@ def gallery_photo_comment_action(request, pk, comment_pk):
                 gallery=photo.gallery, photo=photo, invitation=parent.invitation,
                 author=request.user, parent=parent, body=body,
             )
+        elif action == "delete":
+            if comment.author_id != request.user.pk:
+                return JsonResponse({"error": "You can only delete your own comments."}, status=403)
+            comment.delete()
         elif action in {"like", "dislike"}:
             value = 1 if action == "like" else -1
             reaction = GalleryPhotoCommentReaction.objects.filter(comment=comment, user=request.user).first()

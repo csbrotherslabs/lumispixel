@@ -1,0 +1,7 @@
+.lp-client-comment-delete{display:flex;align-items:center;gap:8px;margin:6px 0 0}
+.lp-client-comment-delete button{min-height:30px;width:auto;padding:4px 8px;border:1px solid #f1c9cc;border-radius:7px;background:transparent;color:#b42328;font-size:11px;cursor:pointer}
+.lp-client-comment-delete button:hover{background:#fff0f1}
+.lp-client-comment-delete button:focus-visible{outline:2px solid #d71920;outline-offset:2px}
+.lp-client-comment-delete button:disabled{opacity:.5;cursor:wait}
+.lp-client-comment-delete [role=status]{font-size:11px;color:#b42328}
+@media(pointer:coarse){.lp-client-comment-delete button{min-height:40px}}

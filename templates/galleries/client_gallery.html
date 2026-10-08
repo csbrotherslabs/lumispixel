@@ -9,7 +9,8 @@
   <link rel="icon" type="image/png" href="{% static 'img/lumis_favicon_v1.png' %}">
   <link rel="apple-touch-icon" href="{% static 'img/lumis_favicon_v1.png' %}">
   <link rel="stylesheet" href="{% static 'css/client_gallery_delivery.css' %}">
-{% include "partials/gallery_social_preview.html" %}</head>
+{% include "partials/gallery_social_preview.html" %}<link rel="stylesheet" href="{% static 'css/client_comment_delete.css' %}">
+</head>
 <body class="lp-client-gallery" style="--gallery-accent: {{ gallery_settings.accent_color }};">
   <header class="lp-client-gallery__hero">
     <div>
@@ -65,7 +66,7 @@
               {% if photo.client_comment_list %}
                 <div class="lp-client-photo__comment-list">
                   {% for comment in photo.client_comment_list %}
-                    <p><strong>{{ comment.display_author }}</strong> {{ comment.body }}</p>
+                    <div data-client-comment-id="{{ comment.pk }}"><p><strong>{{ comment.display_author }}</strong> {{ comment.body }}</p>{% include "galleries/components/comment_delete.html" %}</div>
                   {% endfor %}
                 </div>
               {% endif %}
@@ -84,7 +85,7 @@
     </section>
   </main>
 {% if can_share_gallery %}<script>document.querySelector('[data-client-share-jump]')?.addEventListener('click',()=>document.querySelector('.lp-client-share-card')?.scrollIntoView({behavior:'smooth',block:'center'}));document.querySelector('[data-client-copy-link]')?.addEventListener('click',async function(){try{await navigator.clipboard.writeText(this.dataset.url);this.closest('form')?.requestSubmit();this.textContent='Copied';setTimeout(()=>this.textContent='Copy Link',1500)}catch(e){}});const q=document.querySelector('[data-client-qr-dialog]');document.querySelector('[data-client-qr-open]')?.addEventListener('click',()=>q.showModal());document.querySelector('[data-client-qr-close]')?.addEventListener('click',()=>q.close());q?.addEventListener('click',e=>{if(e.target===q)q.close()});</script>{% endif %}
-</body>
+<script src="{% static 'js/client_gallery_interactions.js' %}" defer></script></body>
 </html>
 
 <style>
