@@ -627,7 +627,6 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     controller?.abort(); ++version; busy = false; page = '1'; sort.value = 'newest'; sort.disabled = false;
     source = button; url = button.dataset.commentsUrl || ''; createUrl = button.dataset.commentCreateUrl || '';
     list.replaceChildren(); status.textContent = ''; cancelReply();
-    dialog.querySelector('[data-comments-photo-name]').textContent = button.dataset.previewName || 'Gallery photo';
     syncCount(button.dataset.commentCount || '0');
     showPanel(false); toggle.disabled = !url;
   }));

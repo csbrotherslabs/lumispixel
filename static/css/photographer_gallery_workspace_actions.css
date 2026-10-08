@@ -773,3 +773,19 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 
 .lp-photo-preview-modal .lp-preview-comment-copy button[data-comment-delete]{color:#b42328}
 .lp-photo-preview-modal .lp-preview-comment-copy button[data-comment-delete]:hover{background:#fff0f1;border-color:#f4d4d6}
+
+/* Compact feedback rows and sort control within the header subtitle row. */
+.lp-photo-preview-modal .lp-preview-comments>header>div{flex:1;min-width:0}
+.lp-photo-preview-modal .lp-preview-comments-subhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+.lp-photo-preview-modal .lp-preview-comments-subhead p{margin:0;font-size:11px;line-height:1.4}
+.lp-photo-preview-modal .lp-preview-comments-subhead select{width:auto;max-width:115px;min-width:0;height:28px;margin:0;padding:0 2px;border:0;border-radius:6px;background:#fff;color:#746b65;font:inherit;font-size:10px;line-height:1.3;cursor:pointer}
+.lp-photo-preview-modal .lp-preview-comment{padding:12px 0}
+.lp-photo-preview-modal .lp-preview-comment-entry{gap:8px}
+.lp-photo-preview-modal .lp-preview-comment-avatar{width:28px;height:28px;font-size:10px}
+.lp-photo-preview-modal .lp-preview-comment-copy p{margin:5px 0 6px;font-size:12px;line-height:1.45}
+.lp-photo-preview-modal .lp-preview-comment-meta{gap:4px 6px}
+.lp-photo-preview-modal .lp-preview-comment-actions{gap:4px}
+.lp-photo-preview-modal .lp-preview-comment-copy button{min-height:28px;padding:3px 6px}
+.lp-photo-preview-modal .lp-preview-replies{gap:10px;margin-top:10px;padding-left:12px}
+@media(pointer:coarse){.lp-photo-preview-modal .lp-preview-comment-copy button{min-height:40px}}
+@media(max-width:360px){.lp-photo-preview-modal .lp-preview-comments>header{padding-left:16px;padding-right:16px}.lp-photo-preview-modal .lp-preview-comments-subhead{gap:6px}.lp-photo-preview-modal .lp-preview-comments-subhead p{font-size:10px}}
