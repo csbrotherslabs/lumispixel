@@ -542,20 +542,28 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   const composer = dialog.querySelector('[data-comment-reply-form]');
   const textarea = composer.querySelector('textarea');
   const send = composer.querySelector('[type=submit]');
-  let url = '', source, controller, version = 0, busy = false, page = '1', replyUrl = '';
+  let url = '', createUrl = '', source, controller, version = 0, busy = false, page = '1', replyUrl = '';
   function showPanel(open) {
     panel.hidden = !open;
     dialog.classList.toggle('has-comments', open);
     toggle.setAttribute('aria-expanded', String(open));
   }
   function composerState() {
-    send.disabled = busy || !textarea.value.trim();
+    send.disabled = busy || !createUrl || !textarea.value.trim();
     textarea.disabled = busy;
     composer.querySelector('[data-reply-cancel]').disabled = busy;
     dialog.querySelector('[data-reply-length]').textContent = textarea.value.length.toLocaleString() + ' / 2,000';
   }
   function cancelReply() {
-    composer.hidden = true; replyUrl = ''; textarea.value = ''; composerState();
+    composer.hidden = false; replyUrl = ''; textarea.value = '';
+    composer.querySelector('[name=action]').value = 'comment';
+    dialog.querySelector('[data-composer-label]').textContent = 'Comment on this photo';
+    dialog.querySelector('[data-reply-recipient]').hidden = true;
+    dialog.querySelector('[data-reply-cancel]').hidden = true;
+    dialog.querySelector('[data-composer-input-label]').textContent = 'Write a comment';
+    textarea.placeholder = 'Write a comment…';
+    dialog.querySelector('[data-composer-submit-label]').textContent = 'Post comment';
+    composerState();
   }
   function syncCount(value) {
     const count = value ?? list.querySelector('[data-comment-page]')?.dataset.commentCount;
@@ -607,7 +615,7 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     } catch (error) {
       if (error.name !== 'AbortError' && current === version) {
         const message = error instanceof TypeError ? 'Check your connection and try again.' : error.message;
-        if (options.method) status.textContent = message + (options.body?.get('action') === 'reply' ? ' Your reply has been kept.' : ' The reaction could not be confirmed.');
+        if (options.method) status.textContent = message + (['reply', 'comment'].includes(options.body?.get('action')) ? ' Your text has been kept.' : ' The reaction could not be confirmed.');
         else errorState(message);
       }
       return false;
@@ -617,7 +625,7 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   }
   document.querySelectorAll('[data-photo-preview]').forEach(button => button.addEventListener('click', () => {
     controller?.abort(); ++version; busy = false; page = '1'; sort.value = 'newest'; sort.disabled = false;
-    source = button; url = button.dataset.commentsUrl || '';
+    source = button; url = button.dataset.commentsUrl || ''; createUrl = button.dataset.commentCreateUrl || '';
     list.replaceChildren(); status.textContent = ''; cancelReply();
     dialog.querySelector('[data-comments-photo-name]').textContent = button.dataset.previewName || 'Gallery photo';
     syncCount(button.dataset.commentCount || '0');
@@ -629,7 +637,7 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   });
   dialog.querySelector('[data-preview-comments-close]').addEventListener('click', () => { showPanel(false); toggle.focus(); });
   textarea.addEventListener('input', composerState);
-  dialog.querySelector('[data-reply-cancel]').addEventListener('click', () => { cancelReply(); toggle.focus(); });
+  dialog.querySelector('[data-reply-cancel]').addEventListener('click', () => { cancelReply(); textarea.focus(); });
   sort.addEventListener('change', () => { if (!busy) { page = '1'; list.scrollTop = 0; request(url); } });
   list.addEventListener('click', event => {
     if (busy) return;
@@ -637,6 +645,13 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     if (reply) {
       replyUrl = reply.dataset.replyUrl;
       dialog.querySelector('[data-reply-recipient]').textContent = reply.dataset.replyAuthor;
+      dialog.querySelector('[data-reply-recipient]').hidden = false;
+      dialog.querySelector('[data-reply-cancel]').hidden = false;
+      dialog.querySelector('[data-composer-label]').textContent = 'Replying to ';
+      dialog.querySelector('[data-composer-input-label]').textContent = 'Write your reply';
+      dialog.querySelector('[data-composer-submit-label]').textContent = 'Send reply';
+      composer.querySelector('[name=action]').value = 'reply';
+      textarea.placeholder = 'Write your reply…';
       composer.hidden = false; composerState(); textarea.focus(); return;
     }
     if (event.target.closest('[data-comments-retry]')) { request(url); return; }
@@ -659,14 +674,15 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   });
   composer.addEventListener('submit', async event => {
     event.preventDefault();
-    if (busy || !replyUrl || !textarea.value.trim()) return;
+    if (busy || !createUrl || !textarea.value.trim()) return;
     const draft = textarea.value;
     const data = new FormData(composer);
     busy = true; sort.disabled = true; composerState();
     list.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    if (!replyUrl) { page = '1'; sort.value = 'newest'; }
     const current = version + 1;
-    const saved = await request(replyUrl, {method: 'POST', body: data});
-    if (saved && current === version) { cancelReply(); toggle.focus(); }
+    const saved = await request(replyUrl || createUrl, {method: 'POST', body: data});
+    if (saved && current === version) { cancelReply(); textarea.focus(); }
     else if (current === version) { textarea.value = draft; composerState(); }
   });
   dialog.addEventListener('close', () => { controller?.abort(); ++version; busy = false; list.replaceChildren(); cancelReply(); showPanel(false); });

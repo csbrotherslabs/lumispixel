@@ -30,6 +30,7 @@ urlpatterns = [
     path("galleries/uploads/multipart/<uuid:upload_uuid>/abort/", views.gallery_multipart_abort, name="gallery_multipart_abort"),
     path("galleries/ai-processing/", views.ai_processing_center, name="ai_processing"),
     path("galleries/ai-processing/jobs/<int:pk>/action/", views.ai_job_action, name="ai_job_action"),
+    path("galleries/photos/<int:pk>/comments/add/", views.gallery_photo_comment_create, name="gallery_photo_comment_create"),
     path("galleries/photos/<int:pk>/comments/", views.gallery_photo_comments, name="gallery_photo_comments"),
     path("galleries/photos/<int:pk>/comments/<int:comment_pk>/action/", views.gallery_photo_comment_action, name="gallery_photo_comment_action"),
     path("galleries/photos/<int:pk>/media/", views.gallery_photo_media, name="gallery_photo_media"),

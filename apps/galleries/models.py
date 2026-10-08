@@ -493,19 +493,23 @@ class GalleryPermission(models.Model):
 
 
 class GalleryPhotoComment(models.Model):
-    """A client comment attached to a delivered gallery photo."""
+    """A client or studio comment attached to a gallery photo."""
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="photo_comments")
     photo = models.ForeignKey("GalleryPhoto", on_delete=models.CASCADE, related_name="client_comments")
-    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments")
+    invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments", blank=True, null=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
     body = models.TextField(max_length=2000)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
+    def is_studio_comment(self):
+        return not self.invitation_id or bool(self.parent_id)
+
+    @property
     def display_author(self):
-        if self.parent_id:
+        if self.is_studio_comment:
             return (self.author.full_name or "Photographer") if self.author else "Photographer"
         return self.invitation.client_name or "Guest"
 
