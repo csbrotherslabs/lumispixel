@@ -500,16 +500,37 @@ class GalleryPhotoComment(models.Model):
     invitation = models.ForeignKey("GalleryInvitation", on_delete=models.CASCADE, related_name="photo_comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="gallery_photo_comments")
     body = models.TextField(max_length=2000)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def display_author(self):
+        if self.parent_id:
+            return (self.author.full_name or "Photographer") if self.author else "Photographer"
+        return self.invitation.client_name or "Guest"
 
     class Meta:
         ordering = ["created_at", "pk"]
 
     def clean(self):
+        if self.parent_id and (self.parent.photo_id != self.photo_id or self.parent.gallery_id != self.gallery_id or self.parent.parent_id):
+            raise ValidationError({"parent": "Replies must reference a top-level comment on the same photo."})
         if self.photo_id and self.photo.gallery_id != self.gallery_id:
             raise ValidationError({"photo": "Comment photo must belong to this gallery."})
         if self.invitation_id and self.invitation.gallery_id != self.gallery_id:
             raise ValidationError({"invitation": "Comment invitation must belong to this gallery."})
+
+
+class GalleryPhotoCommentReaction(models.Model):
+    comment = models.ForeignKey(GalleryPhotoComment, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="photo_comment_reactions")
+    value = models.SmallIntegerField(choices=[(1, "Like"), (-1, "Dislike")])
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["comment", "user"], name="photo_comment_user_reaction"),
+            models.CheckConstraint(condition=models.Q(value__in=[-1, 1]), name="photo_comment_reaction_value"),
+        ]
 
 
 class GallerySettings(models.Model):
