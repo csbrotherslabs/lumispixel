@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -64,6 +64,8 @@ def mark_read(request, pk):
 @require_POST
 def mark_all_read(request):
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True, read_at=timezone.now())
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"unread_count": Notification.objects.filter(recipient=request.user, is_read=False).count()})
     return redirect(_inbox_url(request))
 
 
@@ -79,6 +81,18 @@ def dismiss(request, pk):
 @require_GET
 @never_cache
 def preview(request):
-    return render(request, "notifications/_preview.html", {
-        "notifications": Notification.objects.filter(recipient=request.user)[:15],
+    status = request.GET.get("status", "all")
+    if status not in {"all", "unread"}:
+        raise Http404
+    notices = Notification.objects.filter(recipient=request.user)
+    unread_count = notices.filter(is_read=False).count()
+    if status == "unread":
+        notices = notices.filter(is_read=False)
+    response = render(request, "notifications/_preview.html", {
+        "notifications": notices[:30],
+        "status": status,
+        "today": timezone.localdate(),
+        "yesterday": timezone.localdate() - timezone.timedelta(days=1),
     })
+    response["X-Unread-Count"] = str(unread_count)
+    return response

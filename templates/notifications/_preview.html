@@ -1,9 +1,11 @@
+{% load tz %}
 {% for notification in notifications %}
+{% with day=notification.created_at|localtime|date:"Y-m-d" %}
+{% ifchanged day %}<h3 class="lp-notification-date">{% if day == today|date:"Y-m-d" %}Today{% elif day == yesterday|date:"Y-m-d" %}Yesterday{% else %}{{ notification.created_at|date:"M j, Y" }}{% endif %}</h3>{% endifchanged %}
+{% endwith %}
 <article class="lp-notification-item{% if not notification.is_read %} lp-notification-item--unread{% endif %}">
-  <h3>{{ notification.title }}</h3>
-  {% if not notification.is_read %}<span class="lp-notification-unread">Unread</span>{% endif %}
-  <p>{{ notification.message }}</p>
-  <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|timesince }} ago</time>
-  {% if notification.safe_action_url %}<a href="{{ notification.safe_action_url }}">{{ notification.action_label|default:'View details' }}</a>{% endif %}
+  <span class="lp-notification-icon" aria-hidden="true"><i class="bi {% if notification.category == 'gallery' %}bi-image{% elif notification.category == 'payment' %}bi-credit-card{% elif notification.category == 'download' %}bi-download{% elif notification.category == 'message' %}bi-chat{% elif notification.category == 'security' %}bi-shield-check{% else %}bi-bell{% endif %}"></i></span>
+  <div class="lp-notification-copy"><h3>{{ notification.title }}</h3><p>{{ notification.message }}</p><div class="lp-notification-meta"><time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|timesince }} ago</time>{% if notification.safe_action_url %}<a href="{{ notification.safe_action_url }}">{{ notification.action_label|default:'View details' }} <i class="bi bi-chevron-right" aria-hidden="true"></i></a>{% endif %}</div></div>
+  {% if not notification.is_read %}<span class="lp-notification-unread" role="img" aria-label="Unread"></span>{% endif %}
 </article>
-{% empty %}<p class="lp-notification-empty">You have no notifications yet.</p>{% endfor %}
+{% empty %}<div class="lp-notification-empty"><i class="bi bi-bell" aria-hidden="true"></i><strong>{% if status == 'unread' %}You're all caught up{% else %}No notifications yet{% endif %}</strong><p>{% if status == 'unread' %}New updates will appear here.{% else %}Your workspace updates will appear here.{% endif %}</p></div>{% endfor %}
