@@ -4,7 +4,7 @@
     <input class="lp-photo-card__check" type="checkbox" data-photo-check value="{{ photo.pk }}" aria-label="Select {{ photo.original_name }}">
     {% if photo.is_cover %}<span class="lp-photo-card__cover"><i class="bi bi-star-fill" aria-hidden="true"></i>Cover</span>{% endif %}
     <div class="lp-photo-hover lp-photo-card__tools" id="photo-tools-{{ photo.pk }}" role="group" aria-label="Photo actions">
-      <button type="button" data-photo-preview data-preview-url="{{ photo.delivery_url }}" data-preview-name="{{ photo.original_name }}" aria-label="Preview {{ photo.original_name }}" title="Preview"><i class="bi bi-eye" aria-hidden="true"></i></button>
+      <button type="button" data-photo-preview data-comments-url="{% url 'photographer_workspace:gallery_photo_comments' photo.pk %}" data-comment-count="{{ photo.client_comment_count }}" data-preview-url="{{ photo.delivery_url }}" data-preview-name="{{ photo.original_name }}" aria-label="Preview {{ photo.original_name }}" title="Preview"><i class="bi bi-eye" aria-hidden="true"></i></button>
       <button type="button" data-photo-action="cover" data-action-url="{% url 'photographer_workspace:gallery_photo_action' photo.pk %}" aria-label="Set {{ photo.original_name }} as cover" title="Set as cover"><i class="bi bi-star" aria-hidden="true"></i></button>
       <button type="button" data-photo-move data-photo-id="{{ photo.pk }}" aria-label="Move {{ photo.original_name }} to an album" title="Move to album"><i class="bi bi-folder" aria-hidden="true"></i></button>
       <button type="button" class="is-danger" data-photo-action="delete" data-action-url="{% url 'photographer_workspace:gallery_photo_action' photo.pk %}" aria-label="Delete {{ photo.original_name }}" title="Delete"><i class="bi bi-trash3" aria-hidden="true"></i></button>
@@ -14,7 +14,7 @@
     <div class="lp-photo-card__meta"><strong title="{{ photo.original_name }}">{{ photo.original_name }}</strong><span>{{ photo.file_size|filesizeformat }}</span></div>
     <div class="lp-photo-client-metrics" aria-label="Client interactions">
       <span title="Favorites" aria-label="{{ photo.client_favorite_count }} favorites"><i class="bi bi-heart" aria-hidden="true"></i>{{ photo.client_favorite_count }}</span>
-      <span title="Comments" aria-label="{{ photo.client_comment_count }} comments"><i class="bi bi-chat" aria-hidden="true"></i>{{ photo.client_comment_count }}</span>
+      <span data-photo-comment-metric title="Comments" aria-label="{{ photo.client_comment_count }} comments"><i class="bi bi-chat" aria-hidden="true"></i>{{ photo.client_comment_count }}</span>
       <span title="Downloads" aria-label="{{ photo.client_download_count }} downloads"><i class="bi bi-download" aria-hidden="true"></i>{{ photo.client_download_count }}</span>
     </div>
   </footer>

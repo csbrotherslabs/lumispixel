@@ -528,3 +528,82 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
     });
   });
 })();
+
+
+// Threaded feedback within the photographer photo preview.
+(() => {
+  const dialog = document.querySelector('[data-photo-preview-dialog]');
+  if (!dialog) return;
+  const panel = dialog.querySelector('.lp-preview-comments');
+  const list = dialog.querySelector('[data-preview-comments-list]');
+  const toggle = dialog.querySelector('[data-preview-comments-toggle]');
+  const status = dialog.querySelector('[data-preview-comments-status]');
+  let url = '', source, controller, version = 0, busy = false;
+  function showPanel(open) {
+    panel.hidden = !open;
+    dialog.classList.toggle('has-comments', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+  function syncCount() {
+    const count = list.querySelector('[data-comment-page]')?.dataset.commentCount;
+    if (count === undefined) return;
+    dialog.querySelector('[data-preview-comment-count]').textContent = count;
+    if (source) {
+      source.dataset.commentCount = count;
+      const metric = source.closest('article')?.querySelector('[data-photo-comment-metric]');
+      if (metric) { metric.setAttribute('aria-label', count + ' comments'); metric.lastChild.textContent = count; }
+    }
+  }
+  async function request(target, options = {}) {
+    controller?.abort();
+    const current = ++version;
+    controller = new AbortController();
+    list.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(target, {credentials: 'same-origin', signal: controller.signal, ...options});
+      if (!response.ok || response.redirected) {
+        let error = 'Comments could not be loaded. Please try again.';
+        if (response.headers.get('content-type')?.includes('application/json')) error = (await response.json()).error || error;
+        throw new Error(error);
+      }
+      const html = await response.text();
+      if (current !== version) return;
+      list.innerHTML = html; syncCount();
+      status.textContent = options.method === 'POST' ? 'Saved.' : '';
+    } catch (error) {
+      if (error.name !== 'AbortError' && current === version) status.textContent = error.message;
+    } finally {
+      if (current === version) { list.removeAttribute('aria-busy'); busy = false; list.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
+    }
+  }
+  document.querySelectorAll('[data-photo-preview]').forEach(button => button.addEventListener('click', () => {
+    controller?.abort(); ++version; busy = false;
+    source = button; url = button.dataset.commentsUrl || '';
+    list.replaceChildren(); status.textContent = '';
+    dialog.querySelector('[data-preview-comment-count]').textContent = button.dataset.commentCount || '0';
+    showPanel(false); toggle.disabled = !url;
+  }));
+  toggle.addEventListener('click', () => {
+    showPanel(panel.hidden);
+    if (!panel.hidden && !list.querySelector('[data-comment-page]')) request(url);
+  });
+  dialog.querySelector('[data-preview-comments-close]').addEventListener('click', () => { showPanel(false); toggle.focus(); });
+  list.addEventListener('click', event => {
+    const button = event.target.closest('[data-comments-page]');
+    if (!button || busy) return;
+    const target = new URL(url, window.location.origin); target.searchParams.set('page', button.dataset.commentsPage);
+    list.scrollTop = 0; request(target);
+  });
+  list.addEventListener('submit', event => {
+    const form = event.target.closest('form');
+    if (!form) return;
+    event.preventDefault();
+    if (busy) return;
+    const data = new FormData(form);
+    if (event.submitter?.name) data.set(event.submitter.name, event.submitter.value);
+    busy = true;
+    list.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    request(form.action, {method: 'POST', body: data});
+  });
+  dialog.addEventListener('close', () => { controller?.abort(); ++version; busy = false; list.replaceChildren(); showPanel(false); });
+})();

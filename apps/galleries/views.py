@@ -251,7 +251,7 @@ def client_gallery_access(request, token):
         for comment in GalleryPhotoComment.objects.filter(
             gallery=gallery,
             photo_id__in=page_photo_ids,
-        ).select_related("invitation"):
+        ).select_related("invitation", "author"):
             comments_by_photo.setdefault(comment.photo_id, []).append(comment)
 
     interaction_counts = {}
