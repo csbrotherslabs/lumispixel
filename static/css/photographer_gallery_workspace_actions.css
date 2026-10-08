@@ -647,7 +647,7 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
   background: var(--lp-color-surface); color: var(--lp-text-primary);
 }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-card__meta { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.lp-gallery-workspace-v2 .lp-photo-card__meta strong { flex: 1; min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.lp-gallery-workspace-v2 .lp-photo-card__meta strong { flex: 1; min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; line-height: 1.4; }
 .lp-gallery-workspace-v2 .lp-photo-card__meta > span { flex: none; color: var(--lp-text-secondary); font-size: 11px; }
 .lp-gallery-workspace-v2 .lp-photo-card .lp-photo-client-metrics {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0;
@@ -789,3 +789,9 @@ dialog.lpw-confirm-modal.lp-photo-delete-modal .lp-photo-modal__close:focus-visi
 .lp-photo-preview-modal .lp-preview-replies{gap:10px;margin-top:10px;padding-left:12px}
 @media(pointer:coarse){.lp-photo-preview-modal .lp-preview-comment-copy button{min-height:40px}}
 @media(max-width:360px){.lp-photo-preview-modal .lp-preview-comments>header{padding-left:16px;padding-right:16px}.lp-photo-preview-modal .lp-preview-comments-subhead{gap:6px}.lp-photo-preview-modal .lp-preview-comments-subhead p{font-size:10px}}
+
+/* Align the compact close control with the Comments heading. */
+.lp-photo-preview-modal .lp-preview-comments-heading{min-height:28px}
+.lp-photo-preview-modal .lp-preview-comments-heading>[data-preview-comments-close]{display:grid;place-items:center;flex:none;width:26px;height:26px;min-height:26px;margin:0 0 0 auto;padding:0;border:0;border-radius:50%;background:#f5f4f3;color:#746b65;font-size:12px;line-height:1;cursor:pointer}
+.lp-photo-preview-modal .lp-preview-comments-heading>[data-preview-comments-close]:hover{background:#fff0f1;color:#d71920}
+.lp-photo-preview-modal .lp-preview-comments-heading>[data-preview-comments-close]>i{font-size:12px;line-height:1}
