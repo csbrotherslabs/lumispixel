@@ -12,10 +12,10 @@ class NotificationPreviewTests(TestCase):
         user = User.objects.create_user(email='preview@example.com', password='password')
         other = User.objects.create_user(email='other-preview@example.com', password='password')
         Notification.objects.create(recipient=other, title='Other user private notice', message='Private')
-        records = [Notification.objects.create(recipient=user, title=f'Notice {i}', message='<script>bad()</script>') for i in range(17)]
+        records = [Notification.objects.create(recipient=user, title=f'Notice {i}', message='<script>bad()</script>') for i in range(32)]
         self.client.force_login(user)
         response = self.client.get(reverse('notifications:preview'))
-        self.assertEqual(list(response.context['notifications']), list(reversed(records[-15:])))
+        self.assertEqual(list(response.context['notifications']), list(reversed(records[-30:])))
         self.assertNotContains(response, 'Other user private notice')
         self.assertNotContains(response, '<script>bad()</script>')
         self.assertIn('no-store', response.headers['Cache-Control'])
@@ -24,6 +24,6 @@ class NotificationPreviewTests(TestCase):
     def test_empty_preview_and_unsafe_action(self):
         user = User.objects.create_user(email='empty-preview@example.com', password='password')
         self.client.force_login(user)
-        self.assertContains(self.client.get(reverse('notifications:preview')), 'no notifications yet')
+        self.assertContains(self.client.get(reverse('notifications:preview')), 'No notifications yet')
         Notification.objects.create(recipient=user, title='Unsafe', message='Message', action_url='https://evil.example/')
         self.assertNotContains(self.client.get(reverse('notifications:preview')), 'https://evil.example/')
