@@ -497,3 +497,34 @@ document.querySelectorAll('.lp-activity-panel').forEach((panel) => panel.addEven
   gallerySelect?.addEventListener('change', () => { const option = gallerySelect.selectedOptions[0]; page.querySelector('[data-preview-photos]').textContent = option?.dataset.photos || '—'; page.querySelector('[data-preview-storage]').textContent = option?.dataset.storage || '—'; page.querySelector('[data-preview-access]').textContent = option?.dataset.access || '—'; });
   page.querySelectorAll('[data-delete-open]').forEach(b => b.addEventListener('click', () => { checks.forEach(c => c.checked = false); const modal = page.querySelector('[data-delete-modal]'); const id = modal.querySelector('[data-delete-id]'); id.disabled = false; id.value = b.dataset.id; modal.querySelector('[data-delete-name]').textContent = b.dataset.name; modal.querySelector('[name=gallery_name]').value = ''; modal.querySelector('[name=acknowledge_delete]').checked = false; modal.showModal(); }));
 })();
+
+/* Touch and keyboard access to the photo card action strip. */
+(function () {
+  const grid = document.querySelector('.lp-photo-cards');
+  if (!grid) return;
+  function closeTools(card) {
+    card.classList.remove('is-tools-open');
+    card.querySelector('[data-photo-tools-toggle]').setAttribute('aria-expanded', 'false');
+  }
+  grid.querySelectorAll('[data-photo-tools-toggle]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const card = button.closest('.lp-photo-card');
+      const opening = !card.classList.contains('is-tools-open');
+      grid.querySelectorAll('.is-tools-open').forEach(closeTools);
+      if (opening) { card.classList.add('is-tools-open'); button.setAttribute('aria-expanded', 'true'); }
+    });
+  });
+  grid.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    const card = event.target.closest('.lp-photo-card');
+    if (card && card.classList.contains('is-tools-open')) {
+      closeTools(card);
+      card.querySelector('[data-photo-tools-toggle]').focus();
+    }
+  });
+  document.addEventListener('click', function (event) {
+    grid.querySelectorAll('.is-tools-open').forEach(function (card) {
+      if (!card.contains(event.target)) closeTools(card);
+    });
+  });
+})();
