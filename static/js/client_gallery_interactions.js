@@ -60,6 +60,7 @@
           const authorName = data.comment.author || 'Guest';
           const article = document.createElement('article');
           article.className = 'sf-comment';
+          article.dataset.clientCommentId = data.comment.id;
 
           const avatar = document.createElement('div');
           avatar.className = 'sf-comment__avatar';
@@ -79,6 +80,18 @@
 
           meta.append(author, time);
           content.append(meta, body);
+          if (data.comment.delete_url) {
+            const deleteForm = document.createElement('form');
+            deleteForm.className = 'lp-client-comment-delete';
+            deleteForm.method = 'POST'; deleteForm.action = data.comment.delete_url;
+            deleteForm.dataset.clientCommentDelete = '';
+            deleteForm.dataset.photoId = data.comment.delete_url.match(/photos\/(\d+)/)?.[1] || '';
+            const token = form.querySelector('[name=csrfmiddlewaretoken]')?.cloneNode(true);
+            if (token) deleteForm.append(token);
+            const button = document.createElement('button'); button.type = 'submit'; button.textContent = 'Delete'; button.setAttribute('aria-label', 'Delete your comment');
+            const feedback = document.createElement('span'); feedback.setAttribute('role', 'status'); feedback.dataset.commentDeleteStatus = '';
+            deleteForm.append(button, feedback); content.append(deleteForm);
+          }
           article.append(avatar, content);
           thread.appendChild(article);
           thread.scrollTop = thread.scrollHeight;
@@ -101,5 +114,25 @@
       const next = (parseInt(badges[0].textContent || '0', 10) || 0) + 1;
       badges.forEach(function (badge) { updateCount(badge, next); });
     });
+  });
+
+  document.addEventListener('submit', async function(event) {
+    const form = event.target.closest('[data-client-comment-delete]');
+    if (!form) return;
+    event.preventDefault();
+    const button = form.querySelector('button');
+    if (button.disabled || !confirm('Delete your comment? Replies to this comment will also be deleted.')) return;
+    button.disabled = true;
+    const feedback = form.querySelector('[data-comment-delete-status]');
+    feedback.textContent = '';
+    try {
+      const response = await fetch(form.getAttribute('action'), {method: 'POST', credentials: 'same-origin', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest'}});
+      if (!response.ok || response.redirected) throw new Error('Your comment could not be deleted. Please try again.');
+      const result = await response.json();
+      const photo = form.closest('[data-client-photo]') || document.getElementById('photo-' + form.dataset.photoId);
+      result.deleted_ids.forEach(id => document.querySelectorAll('[data-client-comment-id="' + Number(id) + '"]').forEach(node => node.remove()));
+      photo?.querySelectorAll('[data-comment-count], [data-thread-count]').forEach(node => updateCount(node, result.comment_count));
+    } catch(error) { feedback.textContent = error.message; }
+    finally { button.disabled = false; }
   });
 })();
