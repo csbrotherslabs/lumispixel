@@ -578,3 +578,18 @@
         transition-duration: .01ms !important;
     }
 }
+
+/* Phone sections lead with their main titles and content, without intro subtitles. */
+@media(max-width:767px){
+ .page-home .wptb-hero-subheadline,
+ .page-home .lp-discovery-intro-copy,
+ .page-home .lp-discovery-preview__intro,
+ .page-home .lumis-photographer-workflow__intro,
+ .page-home .lumis-audiences__intro,
+ .page-home .lp-flow__header>p:last-child,
+ .page-home .lumis-final-cta__copy,
+ .page-home .lp-marketplace__intro,
+ .page-home .lumis-pricing-content__intro,
+ .page-home .lp-ai__intro{display:none!important}
+ .page-home .lp-ai__tabs{margin-top:18px}
+}
