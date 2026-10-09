@@ -290,3 +290,14 @@
         letter-spacing: .18em;
     }
 }
+
+
+/* Phone pricing starts with the heading and plans, without the image collage. */
+@media (max-width: 767px) {
+    .page-home .lumis-pricing-section .lumis-pricing-visual {
+        display: none;
+    }
+    .page-home .lumis-pricing-section .lumis-pricing-shell {
+        gap: 0;
+    }
+}
