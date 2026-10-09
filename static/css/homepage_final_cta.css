@@ -1,0 +1,49 @@
+/* Approved compact glass CTA; scoped specificity overrides legacy CTA rules. */
+.page-home .lumis-final-cta{display:flex;align-items:center;min-height:500px;padding:60px 0;isolation:isolate}
+.page-home .lumis-final-cta__media img{filter:none;opacity:1;transform:none;object-position:center}
+.page-home .lumis-final-cta__overlay{background:rgba(0,0,0,.12)}
+.page-home .lumis-final-cta__panel{width:min(100%,660px);max-width:660px;padding:32px;border:1px solid rgba(255,255,255,.48);border-radius:18px;background:rgba(18,18,18,.52);box-shadow:0 12px 36px rgba(0,0,0,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.page-home .lumis-final-cta__panel::before{display:none}
+.page-home .lumis-final-cta__eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;color:#ffc4c4;margin:0 0 14px}
+.page-home .lumis-final-cta__title{font-size:clamp(30px,3vw,38px);font-weight:600;line-height:1.12;letter-spacing:-.035em;margin:0;color:#fff}
+.page-home .lumis-final-cta__copy{font-size:14px;line-height:1.55;max-width:490px;color:#f2f2f2;margin:18px 0 0}
+.page-home .lumis-final-cta__actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;margin-top:24px}
+.page-home .lumis-final-cta__button,.page-home .lumis-final-cta__link{width:auto;min-height:38px;border-radius:8px;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;line-height:1.4;gap:10px;transform:none;text-decoration:none}
+.page-home .lumis-final-cta__button{padding:9px 16px}
+.page-home .lumis-final-cta__button--primary{background:#d00000;border:1px solid #d00000;color:#fff;box-shadow:none}
+.page-home .lumis-final-cta__button--primary:hover{background:#df2630;border-color:#df2630;color:#fff;box-shadow:none;transform:none}
+.page-home .lumis-final-cta__button--secondary{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.85);color:#fff;box-shadow:none}
+.page-home .lumis-final-cta__button--secondary:hover{background:rgba(255,255,255,.18);border-color:#fff;color:#fff;transform:none}
+.page-home .lumis-final-cta__link{padding:8px 4px;border:0;background:transparent;color:#fff}
+.page-home .lumis-final-cta__link:hover{color:#ffd0d0;transform:none}
+.page-home .lumis-final-cta__reassurance{font-size:12px;line-height:1.5;color:#d0d0d0;margin:16px 0 0}
+.page-home .lumis-final-cta__mobile-portraits{display:none}
+.page-home .lumis-final-cta a:focus-visible{outline:3px solid #fff;outline-offset:4px}
+@media(max-width:767px){
+ .page-home .lumis-final-cta{align-items:flex-end;min-height:700px;padding:300px 0 20px}
+ .page-home .lumis-final-cta>.container{width:100%;padding-inline:16px}
+ .page-home .lumis-final-cta__media>img{display:none}
+ .page-home .lumis-final-cta__mobile-portraits{display:grid;position:absolute;inset:0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:2px;background:#eee}
+ .page-home .lumis-final-cta__mobile-portraits span{background-image:var(--cta-portraits);background-size:400% 100%;background-repeat:no-repeat}
+ .page-home .lumis-final-cta__mobile-portraits span:nth-child(1){background-position:0% center}
+ .page-home .lumis-final-cta__mobile-portraits span:nth-child(2){background-position:33.333333% center}
+ .page-home .lumis-final-cta__mobile-portraits span:nth-child(3){background-position:66.666667% center}
+ .page-home .lumis-final-cta__mobile-portraits span:nth-child(4){background-position:100% center}
+ .page-home .lumis-final-cta__panel{width:100%;max-width:none;padding:22px 20px;border-radius:16px;background:rgba(18,18,18,.55)}
+ .page-home .lumis-final-cta__title{font-size:28px}
+ .page-home .lumis-final-cta__copy{font-size:13px;margin-top:14px}
+ .page-home .lumis-final-cta__actions{flex-direction:column;align-items:stretch;gap:9px;margin-top:20px}
+ .page-home .lumis-final-cta__button{width:100%;min-height:44px;font-size:13px}
+ .page-home .lumis-final-cta__link{width:100%;min-height:44px;justify-content:center;font-size:13px}
+ .page-home .lumis-final-cta__reassurance{text-align:center;font-size:11px;margin-top:10px}
+}
+
+/* Explicit text bounds protect the card from generic heading rules. */
+.page-home .lumis-final-cta__panel{box-sizing:border-box;min-width:0}
+.page-home .lumis-final-cta__title{display:block;max-width:100%;width:auto;white-space:normal;overflow-wrap:normal;word-break:normal}
+.page-home .lumis-final-cta__title-line{display:block}
+@media(max-width:767px){
+ .page-home .lumis-final-cta__title{font-size:clamp(24px,6.6vw,28px);line-height:1.16}
+ .page-home .lumis-final-cta__copy{white-space:normal;overflow-wrap:anywhere}
+ .page-home .lumis-final-cta__panel{padding:22px 18px}
+}

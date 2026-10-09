@@ -42,18 +42,7 @@
         }
     });
 
-    const audienceImages = [
-        'audience-photographers.webp',
-        'audience-clients.webp',
-        'audience-hire-photographer.webp',
-    ];
-
-    document.querySelectorAll('.lumis-audiences__grid .lumis-audience-card').forEach((card, index) => {
-        const image = card.querySelector('.lumis-audience-card__image img');
-        if (image && audienceImages[index]) {
-            image.src = staticPath(audienceImages[index]);
-        }
-    });
+    // Audience assets are rendered by Django static to retain fingerprinted URLs.
 
     const howItWorksImages = {
         '#lumis-workflow-upload > img': 'destination-tropical-islands.webp',
@@ -69,5 +58,5 @@
 
     setImageSource('.lumis-pricing-visual__primary img', 'executive-portrait.webp');
     setImageSource('.lumis-pricing-visual__secondary img', 'creative-rainbow-portrait.webp');
-    setImageSource('.lumis-final-cta__media img', 'professional-portrait-collection.webp');
+    // CTA portraits use Django static URLs for cache-safe desktop/mobile delivery.
 })();

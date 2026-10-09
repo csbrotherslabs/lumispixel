@@ -1,0 +1,70 @@
+
+.page-home .lp-ai{padding:64px 0;background:#fff;color:#101217}
+.lp-ai *{box-sizing:border-box}
+.page-home .lp-ai__grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.15fr);align-items:center;gap:36px}
+.lp-ai__eyebrow{display:flex;align-items:center;gap:22px;margin-bottom:24px}
+.lp-ai__eyebrow>span:first-child{font-size:11px;letter-spacing:2px;font-weight:700;color:#d00000}
+.lp-ai__eyebrow>span:last-child{border:1px solid #f28b95;border-radius:99px;padding:5px 12px;background:#fff5f5;color:#d00000;font-size:12px}
+.lp-ai__content h2{margin:0;color:#101217;font-size:clamp(30px,3.2vw,44px);line-height:1.12;letter-spacing:-1.2px}
+.lp-ai__intro{margin:20px 0 28px;font-size:17px;line-height:1.5;color:#626772}
+.lp-ai__tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.lp-ai__tabs button{display:flex;align-items:center;gap:14px;min-height:55px;padding:12px 16px;border:1px solid #dfe1e6;border-radius:11px;background:#fff;color:#101217;font-family:inherit;font-size:13px;font-weight:600;text-align:left;line-height:1.4;cursor:pointer}
+.lp-ai__tabs button i{color:#d00000;font-size:22px;line-height:1}
+.lp-ai__tabs button[aria-selected=true]{border-color:#d00000;background:#fff2f3}
+.lp-ai__tabs button:hover{background:#fff7f7;border-color:#ec9ba3}
+.lp-ai__tabs button:focus-visible,.lp-ai__cta:focus-visible{outline:3px solid #eb8e97;outline-offset:3px}
+.lp-ai__cta{display:inline-flex;align-items:center;gap:14px;min-height:42px;padding:10px 18px;border-radius:10px;background:#d00000;color:#fff!important;font-size:14px;font-weight:600;text-decoration:none}
+.lp-ai__cta:hover{background:#b90000}
+.lp-ai__preview{min-width:0;padding:20px;border:1px solid #e3e4e7;border-radius:20px;background:#fff;box-shadow:0 12px 36px #00000008}
+.lp-ai__toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:15px;margin-bottom:12px;border-bottom:1px solid #e3e4e7}
+.lp-ai__toolbar strong{display:flex;align-items:center;gap:12px;font-size:13px;color:#101217}
+.lp-ai__toolbar strong i{font-size:20px;color:#d00000}
+.lp-ai__toolbar>span{flex-shrink:0;padding:6px 10px;border-radius:99px;background:#f1f2f4;color:#777d88;font-size:10px}
+.lp-ai__workspace{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(0,1fr);gap:10px}
+.lp-ai__workspace figure{position:relative;overflow:hidden;margin:0;border-radius:9px;background:#f2f2f2}
+.lp-ai__main{aspect-ratio:4/3}
+.lp-ai__workspace img{position:absolute;display:block;max-width:none;width:200%;height:200%;top:0;left:0;filter:none;opacity:1}
+.lp-ai__main>span{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:9px;padding:6px 10px;color:#d00000;font-size:11px;font-weight:600}
+.lp-ai__main b,.lp-ai__check{display:grid;place-items:center;background:#d00000;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px}
+.lp-ai__thumbs{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;min-height:0}
+.lp-ai__thumbs figure:nth-child(1) img{left:-100%;top:0}
+.lp-ai__thumbs figure:nth-child(2) img{left:0;top:-100%}
+.lp-ai__thumbs figure:nth-child(3) img{left:-100%;top:-100%}
+.lp-ai__caption{display:flex;align-items:center;gap:14px;border-top:1px solid #e3e4e7;padding-top:14px;margin-top:12px}
+.lp-ai__caption[hidden]{display:none}
+.lp-ai__check{flex:0 0 28px;width:28px;height:28px;font-size:18px}
+.lp-ai__caption h3{margin:0 0 3px;font-size:13px;line-height:1.4;color:#101217}
+.lp-ai__caption p{margin:0;font-size:11px;line-height:1.5;color:#626772}
+.lp-ai__caption em{flex:0 0 110px;border-left:1px solid #e3e4e7;padding-left:12px;font-size:9px;line-height:1.5;color:#9398a2}
+@media(max-width:991px){.page-home .lp-ai__grid{grid-template-columns:1fr;gap:28px}.lp-ai__preview{max-width:680px;width:100%;margin-inline:auto}}
+@media(max-width:575px){.page-home .lp-ai{padding:40px 0}.lp-ai__content h2{font-size:30px}.lp-ai__intro{font-size:15px;margin:16px 0 20px}.lp-ai__tabs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:3px 3px 10px;margin-inline:-3px}.lp-ai__tabs button{flex:0 0 auto;scroll-snap-align:start;min-height:48px;font-size:12px;padding:10px 14px;white-space:nowrap}.lp-ai__preview{padding:14px;border-radius:16px}.lp-ai__toolbar strong{font-size:11px;gap:7px}.lp-ai__toolbar>span{font-size:9px;padding:5px 8px}.lp-ai__workspace{gap:7px}.lp-ai__main>span{top:8px;left:8px;font-size:10px;padding:5px 7px}.lp-ai__caption{flex-wrap:wrap;gap:10px}.lp-ai__caption>div{flex:1}.lp-ai__caption em{flex-basis:100%;border:0;padding-left:38px}.lp-ai__cta{font-size:13px;min-height:40px}}
+
+/* Phone preview: large portrait, horizontal variations, no compressed sidebar. */
+@media(max-width:767px){
+ .page-home .lp-ai{padding:36px 0}
+ .page-home .lp-ai__grid{gap:22px;min-width:0}
+ .lp-ai__content,.lp-ai__preview,.lp-ai__caption>div{min-width:0}
+ .lp-ai__eyebrow{gap:14px;margin-bottom:16px}
+ .lp-ai__content h2{font-size:30px;line-height:1.12}
+ .lp-ai__intro{font-size:15px;margin:14px 0 18px}
+ .lp-ai__tabs{display:flex;overflow-x:auto;gap:8px;scroll-snap-type:x proximity;padding:4px 3px 10px;margin:0 -3px 14px;scrollbar-width:thin;scrollbar-color:#e5bfc4 transparent}
+ .lp-ai__tabs button{flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 12px;font-size:12px;gap:9px;scroll-snap-align:start}
+ .lp-ai__tabs button i{font-size:19px}
+ .lp-ai__cta{font-size:13px;min-height:40px;padding:9px 16px}
+ .lp-ai__preview{padding:12px;border-radius:16px}
+ .lp-ai__toolbar{flex-wrap:wrap;gap:8px;padding-bottom:10px;margin-bottom:10px}
+ .lp-ai__toolbar strong{font-size:11px;gap:7px;min-width:0;line-height:1.4}
+ .lp-ai__toolbar strong i{font-size:17px;flex-shrink:0}
+ .lp-ai__toolbar>span{font-size:9px;padding:4px 8px}
+ .lp-ai__workspace{grid-template-columns:minmax(0,1fr);gap:8px}
+ .lp-ai__main{aspect-ratio:4/3}
+ .lp-ai__thumbs{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;gap:8px}
+ .lp-ai__thumbs figure{aspect-ratio:4/3}
+ .lp-ai__main>span{top:8px;left:8px;font-size:10px;padding:5px 7px;gap:6px}
+ .lp-ai__caption{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px 10px;align-items:start;padding-top:12px;margin-top:10px}
+ .lp-ai__check{width:24px;height:24px;font-size:15px}
+ .lp-ai__caption h3{font-size:12px}
+ .lp-ai__caption p{font-size:11px;overflow-wrap:anywhere}
+ .lp-ai__caption em{grid-column:2;border:0;padding:0;font-size:9px}
+}
+@media(max-width:359px){.lp-ai__toolbar{align-items:flex-start;flex-direction:column}.lp-ai__content h2{font-size:28px}}

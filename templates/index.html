@@ -3,8 +3,13 @@
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage_workflow_preview.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_ai_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_create_deliver_grow.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_photo_discovery.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_marketplace_preview.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_final_cta.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -240,9 +245,9 @@
             <div class="row align-items-center g-4 g-xl-5">
                 <div class="col-xl-7 col-lg-7">
                     <div class="lumis-photo-match__content wow fadeInLeft">
-                        {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." %}
+                        {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." copy_class="lp-discovery-intro-copy" %}
 
-                        <ol class="lumis-photo-match__steps" aria-label="How photo matching works">
+                        <ol id="photo-match-steps" tabindex="-1" class="lumis-photo-match__steps" aria-label="How photo matching works">
                             <li>
                                 <span class="lumis-photo-match__step-number">01</span>
                                 <div>
@@ -269,39 +274,31 @@
                 </div>
 
                 <div class="col-xl-5 col-lg-5">
-                    <div class="lumis-photo-match__panel wow fadeInRight" aria-label="Feature preview of selfie photo matching">
-                        <div class="lumis-photo-match__panel-header">
-                            <span class="lumis-photo-match__preview-label">Feature preview</span>
-                            <span class="lumis-photo-match__status"><span aria-hidden="true"></span> Preview only</span>
+                    <article class="lp-discovery-preview" aria-labelledby="discovery-preview-title">
+                        <div class="lp-discovery-preview__header">
+                            <span class="lp-discovery-preview__eyebrow">AI photo discovery</span>
+                            <span class="lp-discovery-preview__coming">Coming soon</span>
                         </div>
-
-                        <div class="lumis-photo-match__upload" aria-label="Nonfunctional selfie upload preview">
-                            <div class="lumis-photo-match__upload-icon" aria-hidden="true">
-                                <i class="bi bi-cloud-arrow-up"></i>
-                            </div>
-                            <h3>Upload a Selfie</h3>
-                            <p>JPG, PNG, or HEIC preview</p>
+                        <h3 id="discovery-preview-title" class="lp-discovery-preview__title">Your photos. Found.</h3>
+                        <p class="lp-discovery-preview__intro">A selfie is all it takes.</p>
+                        <div class="lp-discovery-preview__upload" aria-label="Illustration of the upcoming selfie upload">
+                            <span class="lp-discovery-preview__avatar" aria-hidden="true"><img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="" loading="lazy" decoding="async"></span>
+                            <i class="bi bi-cloud-arrow-up lp-discovery-preview__upload-icon" aria-hidden="true"></i>
+                            <div class="lp-discovery-preview__upload-copy"><strong>Upload a selfie</strong><span>JPG, PNG or HEIC</span></div>
+                            <button class="lp-discovery-preview__choose" type="button" disabled aria-label="Choose photo — coming soon">Choose photo</button>
                         </div>
-
-                        <div class="lumis-photo-match__search-card">
-                            <div>
-                                <span>Searching selected gallery</span>
-                                <strong>AI match preview</strong>
-                            </div>
-                            <div class="lumis-photo-match__progress" aria-hidden="true"><span></span></div>
+                        <div class="lp-discovery-preview__results-heading">
+                            <h4><i class="bi bi-stars" aria-hidden="true"></i> Match preview</h4>
+                            <span>Sample results</span>
                         </div>
-
-                        <div class="lumis-photo-match__grid" aria-label="Preview grid of matching event photos">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Preview match from an event gallery">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/30.jpg' %}" alt="Preview match from an event gallery">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/36.jpg' %}" alt="Preview match from an event gallery">
+                        <div class="lp-discovery-preview__photos" aria-label="Sample photo matches, not live search results">
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="Sample couple portrait on a cobblestone street" loading="lazy" decoding="async"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></figure>
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="Sample couple portrait from another angle" loading="lazy" decoding="async"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></figure>
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="Sample couple walking through the event location" loading="lazy" decoding="async"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></figure>
                         </div>
-
-                        <p class="lumis-photo-match__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i> Selfie used only for this gallery search.</p>
-
-                        <!-- Future named URL: photo_matching_demo -->
-                        {% include "components/button.html" with label="Try Photo Search" href=find_photos_url variant="outline" aria_label="Try LumisPixel photo search" %}
-                    </div>
+                        <p class="lp-discovery-preview__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i><span>Selfie used only for this gallery search.</span></p>
+                        <a class="lp-discovery-preview__cta" href="#photo-match-steps">See how it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    </article>
                 </div>
             </div>
 
@@ -474,8 +471,8 @@
             <div class="wptb-heading">
                 <div class="wptb-item--inner text-center">
                     <h6 class="wptb-item--subtitle">ONE CONNECTED PLATFORM</h6>
-                    <h2 class="wptb-item--title" id="lumis-audiences-title">Built for Every Side of Photography.</h2>
-                    <p class="wptb-item--description lumis-audiences__intro">Photographers manage their workflow, clients find and enjoy their photos, and customers book the right professional—all in one place.</p>
+                    <h2 class="wptb-item--title" id="lumis-audiences-title">Made for your side of photography.</h2>
+                    <p class="wptb-item--description lumis-audiences__intro">Create, enjoy, and book—all in one place.</p>
                 </div>
             </div>
 
@@ -483,13 +480,13 @@
                 <div class="col-lg-4 col-md-6">
                     <article class="lumis-audience-card wow fadeInUp">
                         <div class="lumis-audience-card__image">
-                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer reviewing event images in a professional gallery workflow">
+                            <img loading="lazy" decoding="async" width="1536" height="512" src="{% static 'img/landing/gallery/audience-portraits-v2.webp' %}" alt="Photographer capturing a wedding couple on a sunlit street"><span class="lumis-audience-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="m8 6 2-3h4l2 3"/><circle cx="12" cy="13" r="4"/></svg></span>
                         </div>
                         <div class="lumis-audience-card__body">
-                            <span class="lumis-audience-card__kicker">Creator workspace</span>
+                            <span class="lumis-audience-card__kicker">Create &amp; deliver</span>
                             <h2>For Photographers</h2>
-                            <p>Manage shoots, cull and edit faster, deliver galleries, sell photos, and grow your business.</p>
-                            <a class="lumis-audience-card__link" href="{% url 'core:for_photographers' %}" aria-label="Explore LumisPixel photographer tools">Explore Photographer Tools <span aria-hidden="true">→</span></a>
+                            <p>Manage clients, deliver galleries, and grow your business.</p>
+                            <a class="lumis-audience-card__link" href="{% url 'core:for_photographers' %}" aria-label="Explore LumisPixel photographer tools">Explore tools <span aria-hidden="true">→</span></a>
                         </div>
                     </article>
                 </div>
@@ -497,13 +494,13 @@
                 <div class="col-lg-4 col-md-6">
                     <article class="lumis-audience-card wow fadeInUp" data-wow-delay="0.1s">
                         <div class="lumis-audience-card__image">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Client browsing photos from a private event gallery">
+                            <img loading="lazy" decoding="async" width="1536" height="512" src="{% static 'img/landing/gallery/audience-portraits-v2.webp' %}" alt="Family enjoying a photo album together at home"><span class="lumis-audience-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg></span>
                         </div>
                         <div class="lumis-audience-card__body">
-                            <span class="lumis-audience-card__kicker">Gallery access</span>
+                            <span class="lumis-audience-card__kicker">View &amp; enjoy</span>
                             <h2>For Clients</h2>
-                            <p>Find your photos with a selfie, browse private galleries, purchase images, and save your favorites.</p>
-                            <a class="lumis-audience-card__link" href="{% url 'clients:for_clients' %}" aria-label="Find my photos on LumisPixel">Find My Photos <span aria-hidden="true">→</span></a>
+                            <p>Explore your galleries and save the moments you love.</p>
+                            <a class="lumis-audience-card__link" href="{% url 'clients:for_clients' %}" aria-label="Find my photos on LumisPixel">View my photos <span aria-hidden="true">→</span></a>
                         </div>
                     </article>
                 </div>
@@ -511,13 +508,13 @@
                 <div class="col-lg-4 col-md-6 mx-md-auto mx-lg-0">
                     <article class="lumis-audience-card wow fadeInUp" data-wow-delay="0.2s">
                         <div class="lumis-audience-card__image">
-                            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="Photographer covering an event for customers looking to book a professional">
+                            <img loading="lazy" decoding="async" width="1536" height="512" src="{% static 'img/landing/gallery/audience-portraits-v2.webp' %}" alt="Photographer capturing a studio portrait"><span class="lumis-audience-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></span>
                         </div>
                         <div class="lumis-audience-card__body">
-                            <span class="lumis-audience-card__kicker">Booking marketplace</span>
+                            <span class="lumis-audience-card__kicker">Discover &amp; book</span>
                             <h2>Hire a Photographer</h2>
-                            <p>Discover professionals by specialty, location, availability, and budget.</p>
-                            <a class="lumis-audience-card__link" href="{{ find_photographer_url }}" aria-label="Find a photographer on LumisPixel">Find a Photographer <span aria-hidden="true">→</span></a>
+                            <p>Find the right professional for your next moment.</p>
+                            <a class="lumis-audience-card__link" href="{{ find_photographer_url }}" aria-label="Find a photographer on LumisPixel">Find a photographer <span aria-hidden="true">→</span></a>
                         </div>
                     </article>
                 </div>
@@ -526,167 +523,56 @@
     </section>
 
     <!-- How It Works -->
-    <section class="pt-0 overflow-hidden lumis-how-it-works" aria-labelledby="lumis-how-it-works-title">
-        <div class="container">
-            <div class="wptb-heading">
-                <div class="wptb-item--inner">
-                    <h6 class="wptb-item--subtitle">HOW IT WORKS</h6>
-                    <h2 class="wptb-item--title mb-0" id="lumis-how-it-works-title">From Camera to Client, All in One Flow.</h2>
-                </div>
-            </div>
-
-            <ol class="wptb-features lumis-how-it-works__steps" aria-label="LumisPixel photographer workflow steps">
-                <li class="wptb-item active highlight">
-                    <div class="wptb-item--inner">
-                        <div class="wptb-item--features-holder">
-                            <div class="wptb-item--title">
-                                <a href="#lumis-workflow-upload"><span class="lumis-how-it-works__step-number">01</span> Upload</a>
-                            </div>
-                        </div>
-                        <div class="wptb-item--image" id="lumis-workflow-upload">
-                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/1.jpg' %}" alt="Photographer workspace for adding a new photo gallery">
-
-                            <div class="wptb-item--features-bottom">
-                                <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo" aria-hidden="true">
-                                        <span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
-                                    </div>
-                                    <div class="wptb-item--description">
-                                        Add photos from a shoot, event, or gallery.
-                                    </div>
-                                    <div class="wptb-item--button">
-                                        <!-- Future named URL: photographers:workflow -->
-                                        <a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                                    </div>
-                                </div>
-
-                                <div class="wptb-counter--box" aria-label="Workflow overview">
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="5"></span><span class="suffix"></span></div>
-                                                <div class="wptb-item--text">Workflow Steps</div>
-                                            </div>
-                                        </div>
-                                    </div>
-        
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner">
-                                            <div class="wptb-item--holder">
-                                                <div class="wptb-item--value"><span class="odometer" data-count="1"></span><span class="suffix"></span></div>
-                                                <div class="wptb-item--text">Connected Workspace</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="wptb-item">
-                    <div class="wptb-item--inner">
-                        <div class="wptb-item--features-holder">
-                            <div class="wptb-item--title">
-                                <a href="#lumis-workflow-organize"><span class="lumis-how-it-works__step-number">02</span> Organize</a>
-                            </div>
-                        </div>
-                        <div class="wptb-item--image" id="lumis-workflow-organize">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Client photo gallery organized for quick browsing and face-based discovery">
-
-                            <div class="wptb-item--features-bottom">
-                                <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo" aria-hidden="true">
-                                        <span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span>
-                                    </div>
-                                    <div class="wptb-item--description">
-                                        LumisPixel groups images, detects faces, and helps identify the strongest shots.
-                                    </div>
-                                    <div class="wptb-item--button">
-                                        <!-- Future named URL: photographers:workflow -->
-                                        <a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                                    </div>
-                                </div>
-
-                                <div class="wptb-counter--box" aria-label="Workflow overview">
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div>
-                                    </div>
-                                    <div class="wptb-counter2">
-                                        <div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="wptb-item">
-                    <div class="wptb-item--inner">
-                        <div class="wptb-item--features-holder">
-                            <div class="wptb-item--title">
-                                <a href="#lumis-workflow-refine"><span class="lumis-how-it-works__step-number">03</span> Refine</a>
-                            </div>
-                        </div>
-                        <div class="wptb-item--image" id="lumis-workflow-refine">
-                            <img loading="lazy" decoding="async" src="{% static 'img/more/8.jpg' %}" alt="Photographer refining selected images before client delivery">
-
-                            <div class="wptb-item--features-bottom">
-                                <div class="wptb-item--content flex-shrink-0">
-                                    <div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div>
-                                    <div class="wptb-item--description">Use AI-assisted culling and editing tools to speed up post-production.</div>
-                                    <div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-                                </div>
-                                <div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="wptb-item">
-                    <div class="wptb-item--inner">
-                        <div class="wptb-item--features-holder">
-                            <div class="wptb-item--title">
-                                <a href="#lumis-workflow-deliver"><span class="lumis-how-it-works__step-number">04</span> Deliver</a>
-                            </div>
-                        </div>
-                        <div class="wptb-item--image" id="lumis-workflow-deliver">
-                            <img loading="lazy" decoding="async" src="{% static 'img/projects/gallery/5.jpg' %}" alt="Secure branded gallery prepared for client delivery">
-                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Publish a secure, branded gallery for clients.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="3"></span></div><div class="wptb-item--text">Core Journeys</div></div></div></div></div></div>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="wptb-item">
-                    <div class="wptb-item--inner">
-                        <div class="wptb-item--features-holder">
-                            <div class="wptb-item--title">
-                                <a href="#lumis-workflow-sell-share"><span class="lumis-how-it-works__step-number">05</span> Sell &amp; Share</a>
-                            </div>
-                        </div>
-                        <div class="wptb-item--image" id="lumis-workflow-sell-share">
-                            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="Event photography experience ready for clients to view purchase download and share">
-                            <div class="wptb-item--features-bottom"><div class="wptb-item--content flex-shrink-0"><div class="logo" aria-hidden="true"><span class="dark_logo"><img loading="lazy" decoding="async" src="/static/img/lumis_logo_dark_v1.png" alt="" class="lumis-company-logo"></span></div><div class="wptb-item--description">Let clients favorite, purchase, download, and share their photos.</div><div class="wptb-item--button"><a href="{% url 'core:business_hub' %}" class="btn">See the Photographer Workflow <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div><div class="wptb-counter--box" aria-label="Workflow overview"><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="5"></span></div><div class="wptb-item--text">Workflow Steps</div></div></div></div><div class="wptb-counter2"><div class="wptb-item--inner"><div class="wptb-item--holder"><div class="wptb-item--value"><span class="odometer" data-count="1"></span></div><div class="wptb-item--text">Connected Workspace</div></div></div></div></div></div>
-                        </div>
-                    </div>
-                </li>
-            </ol>
-        </div>
-    </section>
+    <section class="lp-flow" data-lp-flow aria-labelledby="lumis-how-it-works-title">
+ <div class="container">
+  <header class="lp-flow__header"><p>HOW IT WORKS</p><h2 id="lumis-how-it-works-title">From shoot to share.</h2><p>A simple flow for every gallery.</p></header>
+  <div class="lp-flow__layout">
+   <div class="lp-flow__steps" role="tablist" aria-label="Photographer workflow">
+    <button type="button" role="tab" id="lp-flow-tab-upload" aria-controls="lumis-workflow-upload" aria-selected="true" tabindex="0" data-flow-tab="upload"><i class="bi bi-cloud-upload" aria-hidden="true"></i><span class="lp-flow__number">01</span><span class="lp-flow__label">Upload<small>Add your photos. Keep every shoot together.</small></span></button>
+    <button type="button" role="tab" id="lp-flow-tab-organize" aria-controls="lumis-workflow-organize" aria-selected="false" tabindex="-1" data-flow-tab="organize"><i class="bi bi-folder" aria-hidden="true"></i><span class="lp-flow__number">02</span><span class="lp-flow__label">Organize<small>Keep each gallery easy to navigate.</small></span></button>
+    <button type="button" role="tab" id="lp-flow-tab-refine" aria-controls="lumis-workflow-refine" aria-selected="false" tabindex="-1" data-flow-tab="refine"><i class="bi bi-sliders" aria-hidden="true"></i><span class="lp-flow__number">03</span><span class="lp-flow__label">Refine<small>Choose the photos you want to deliver.</small></span></button>
+    <button type="button" role="tab" id="lp-flow-tab-deliver" aria-controls="lumis-workflow-deliver" aria-selected="false" tabindex="-1" data-flow-tab="deliver"><i class="bi bi-send" aria-hidden="true"></i><span class="lp-flow__number">04</span><span class="lp-flow__label">Deliver<small>Share a gallery made for your clients.</small></span></button>
+    <button type="button" role="tab" id="lp-flow-tab-sell-share" aria-controls="lumis-workflow-sell-share" aria-selected="false" tabindex="-1" data-flow-tab="sell-share"><i class="bi bi-cart3" aria-hidden="true"></i><span class="lp-flow__number">05</span><span class="lp-flow__label">Sell &amp; Share<small>Let your clients enjoy every moment.</small></span></button>
+   </div>
+   <div class="lp-flow__panels">
+    <div class="lp-flow__panel" role="tabpanel" id="lumis-workflow-upload" aria-labelledby="lp-flow-tab-upload"  tabindex="0">
+     <img src="{% static 'img/projects/gallery/1.jpg' %}" alt="Turquoise islands and clear blue water" loading="lazy" decoding="async">
+     <div class="lp-flow__caption"><i class="bi bi-cloud-upload" aria-hidden="true"></i><div><h3>Your gallery starts here.</h3><p>Upload your shoot and keep it organized in one place.</p></div></div>
+    </div>
+    <div class="lp-flow__panel" role="tabpanel" id="lumis-workflow-organize" aria-labelledby="lp-flow-tab-organize" hidden tabindex="0">
+     <img src="{% static 'img/slider/21.jpg' %}" alt="Landscape photography collection" loading="lazy" decoding="async">
+     <div class="lp-flow__caption"><i class="bi bi-folder" aria-hidden="true"></i><div><h3>Everything in its place.</h3><p>Arrange your photos into sets for a clear client experience.</p></div></div>
+    </div>
+    <div class="lp-flow__panel" role="tabpanel" id="lumis-workflow-refine" aria-labelledby="lp-flow-tab-refine" hidden tabindex="0">
+     <img src="{% static 'img/more/8.jpg' %}" alt="Photography selection preview" loading="lazy" decoding="async">
+     <div class="lp-flow__caption"><i class="bi bi-sliders" aria-hidden="true"></i><div><h3>Make your final selection.</h3><p>Review your images before delivery. AI culling and editing are coming soon.</p></div></div>
+    </div>
+    <div class="lp-flow__panel" role="tabpanel" id="lumis-workflow-deliver" aria-labelledby="lp-flow-tab-deliver" hidden tabindex="0">
+     <img src="{% static 'img/projects/gallery/5.jpg' %}" alt="Scenic photography ready for gallery delivery" loading="lazy" decoding="async">
+     <div class="lp-flow__caption"><i class="bi bi-send" aria-hidden="true"></i><div><h3>Ready for your clients.</h3><p>Deliver a branded gallery with the access settings you choose.</p></div></div>
+    </div>
+    <div class="lp-flow__panel" role="tabpanel" id="lumis-workflow-sell-share" aria-labelledby="lp-flow-tab-sell-share" hidden tabindex="0">
+     <img src="{% static 'img/more/10.jpg' %}" alt="Canyon landscape at sunset" loading="lazy" decoding="async">
+     <div class="lp-flow__caption"><i class="bi bi-cart3" aria-hidden="true"></i><div><h3>Make more of every gallery.</h3><p>Let clients favorite, purchase, download, and share their photos.</p></div></div>
+    </div></div>
+  <footer class="lp-flow__footer"><span>5 steps · 1 workspace</span><a href="{{ homepage_workspace_url }}">Explore the workflow <span aria-hidden="true">→</span></a></footer>
+  </div>
+ </div>
+</section>
 
     <div class="divider-line-hr"></div>
 
     <!-- LumisPixel Final CTA -->
     <section class="lumis-final-cta" aria-labelledby="lumis-final-cta-title">
         <div class="lumis-final-cta__media" aria-hidden="true">
-            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="">
-        </div>
+            <img loading="lazy" decoding="async" src="{% static 'img/landing/gallery/professional-portrait-collection.webp' %}" alt="">
+        <div class="lumis-final-cta__mobile-portraits" style="--cta-portraits:url('{% static 'img/landing/gallery/professional-portrait-collection.webp' %}')"><span></span><span></span><span></span><span></span></div></div>
         <div class="lumis-final-cta__overlay" aria-hidden="true"></div>
         <div class="container">
-            <div class="lumis-final-cta__panel wow fadeInUp">
+            <div class="lumis-final-cta__panel">
                 <p class="lumis-final-cta__eyebrow">READY TO GET STARTED?</p>
-                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Bring Every Part of Photography Together.</h2>
-                <p class="lumis-final-cta__copy">Join LumisPixel to manage your workflow, find your photos, or connect with the right photographer—all from one platform.</p>
+                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Your photography, <span class="lumis-final-cta__title-line">connected.</span></h2>
+                <p class="lumis-final-cta__copy">Manage your business, enjoy your photos, or find your photographer.</p>
 
                 <div class="lumis-final-cta__actions" aria-label="Get started with LumisPixel">
                     {% if request.user.is_authenticated %}
@@ -694,15 +580,15 @@
                         <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">Go to Dashboard</a>
                     {% else %}
                         <!-- Future named URL: accounts:signup -->
-                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{{ homepage_get_started_url }}">Start as a Photographer</a>
+                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{{ homepage_get_started_url }}">Start free <span aria-hidden="true">→</span></a>
                     {% endif %}
                     <!-- Future named URL: galleries:photo_search -->
-                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find My Photos</a>
+                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find my photos</a>
                     <!-- Future named URL: marketplace:photographer_search -->
-                    <a class="lumis-final-cta__link" href="{{ find_photographer_url }}">Hire a Photographer <span aria-hidden="true">→</span></a>
+                    <a class="lumis-final-cta__link" href="{{ find_photographer_url }}">Hire a photographer <span aria-hidden="true">→</span></a>
                 </div>
 
-                <p class="lumis-final-cta__reassurance">Start free and explore the platform before choosing a paid plan.</p>
+                <p class="lumis-final-cta__reassurance">Start free. Grow when you’re ready.</p>
             </div>
         </div>
     </section>
@@ -710,89 +596,28 @@
     <div class="divider-line-hr"></div>
 
     <!-- Photographer Marketplace Preview -->
-    <section class="wptb-team-one lumis-photographer-marketplace" aria-labelledby="lumis-photographer-marketplace-title">
-        <div class="container">
-            <div class="lumis-photographer-marketplace__grid">
-                <div class="lumis-photographer-marketplace__content">
-                    <p class="lumis-photographer-marketplace__eyebrow">PHOTOGRAPHER MARKETPLACE</p>
-                    <h2 class="lumis-photographer-marketplace__title" id="lumis-photographer-marketplace-title">Need a Photographer? Find the Right One Here.</h2>
-                    <p class="lumis-photographer-marketplace__intro">Tell LumisPixel what you need, compare professionals by specialty and location, and connect with the right photographer for your event.</p>
-
-                    <ol class="lumis-photographer-marketplace__steps" aria-label="Marketplace request journey">
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">01</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Tell Us What You Need</strong>
-                                <span>Share your event type, location, date, and budget.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">02</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Discover Matches</strong>
-                                <span>Explore photographers whose specialty and service area fit your request.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">03</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Compare Profiles</strong>
-                                <span>Review portfolios, services, availability, and future verified reviews.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">04</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Send a Request</strong>
-                                <span>Contact the photographer or submit a booking request through LumisPixel.</span>
-                            </span>
-                        </li>
-                    </ol>
-
-                    <p class="lumis-photographer-marketplace__reassurance">Compare specialties, locations, and service details before sending a request.</p>
-
-                    <div class="lumis-photographer-marketplace__actions">
-                        {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="solid" show_second=True second_label="Find a Photographer" %}
-                        <!-- Future named URL: photographers:signup -->
-                        <a class="lumis-photographer-marketplace__secondary" href="{{ homepage_get_started_url }}">Join as a Photographer <span aria-hidden="true">→</span></a>
-                    </div>
-                </div>
-
-                <div class="lumis-photographer-marketplace__preview" aria-label="Marketplace request preview">
-                    <div class="lumis-marketplace-panel" role="group" aria-labelledby="lumis-marketplace-panel-title" aria-describedby="lumis-marketplace-panel-note">
-                        <div class="lumis-marketplace-panel__topline">
-                            <span class="lumis-marketplace-panel__label" id="lumis-marketplace-panel-title">Marketplace preview</span>
-                            {% include "components/badge.html" with label="Visual only" class_name="lumis-marketplace-panel__badge" %}
-                        </div>
-                        <div class="lumis-marketplace-panel__fields">
-                            <div class="lumis-marketplace-field">
-                                <span>Photography Type</span>
-                                <strong>Wedding Photography</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Location</span>
-                                <strong>Kansas City, MO</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Event Date</span>
-                                <strong>Select a date</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Budget</span>
-                                <strong>$1,000–$2,500</strong>
-                            </div>
-                            <div class="lumis-marketplace-field lumis-marketplace-field--wide">
-                                <span>Request Summary</span>
-                                <strong>Looking for a wedding photographer for an indoor and outdoor ceremony.</strong>
-                            </div>
-                        </div>
-                        <button class="lumis-marketplace-panel__button" type="button" aria-disabled="true" tabindex="-1">Find Matching Photographers</button>
-                        <p class="lumis-marketplace-panel__note" id="lumis-marketplace-panel-note">Preview only — no request is submitted here.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section class="lp-marketplace" aria-labelledby="lumis-photographer-marketplace-title">
+<div class="container lp-marketplace__grid">
+ <div class="lp-marketplace__content">
+  <p class="lp-marketplace__eyebrow">PHOTOGRAPHER MARKETPLACE</p>
+  <h2 id="lumis-photographer-marketplace-title">The right photographer.<br>For your moment.</h2>
+  <p class="lp-marketplace__intro">Explore portfolios and connect with photographers near you.</p>
+  <ol class="lp-marketplace__steps"><li><span aria-hidden="true">01</span>Choose your occasion</li><li><span aria-hidden="true">02</span>Explore their work</li><li><span aria-hidden="true">03</span>Make a connection</li></ol>
+  <div class="lp-marketplace__actions"><a class="lp-marketplace__button" href="{{ find_photographer_url }}">Find a photographer <span aria-hidden="true">→</span></a><a class="lp-marketplace__join" href="{{ homepage_get_started_url }}">Join as a photographer <span aria-hidden="true">→</span></a></div>
+ </div>
+ <div class="lp-marketplace__panel" aria-labelledby="lp-marketplace-preview-title" aria-describedby="lp-marketplace-sample-note">
+  <div class="lp-marketplace__panel-header"><h3 id="lp-marketplace-preview-title">Find your photographer</h3><span>Sample preview</span></div>
+  <div class="lp-marketplace__panel-grid">
+   <div class="lp-marketplace__form" role="group" aria-label="Illustrative search form"><h4>Your occasion</h4><div class="lp-marketplace__fields"><div class="lp-market-field"><i class="bi bi-camera" aria-hidden="true"></i><div><span>Occasion</span><strong>Wedding</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-geo-alt" aria-hidden="true"></i><div><span>Location</span><strong>Kansas City, MO</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-calendar" aria-hidden="true"></i><div><span>Date</span><strong>Choose a date</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-wallet2" aria-hidden="true"></i><div><span>Budget</span><strong>$1,000–$2,500</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div></div><a class="lp-marketplace__button" href="{{ find_photographer_url }}">Find photographers <span aria-hidden="true">→</span></a></div>
+   <div class="lp-marketplace__matches"><h4>Photographer matches</h4><div class="lp-marketplace__profiles"><article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Alex Morgan" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Alex Morgan</h4><p>Wedding &amp; Engagement</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Kansas City, MO</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.9 <span>(24)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Alex Morgan)">View profile <span aria-hidden="true">→</span></a></article>
+<article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Jordan Ellis" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Jordan Ellis</h4><p>Weddings &amp; Portraits</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Overland Park, KS</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.8 <span>(18)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Jordan Ellis)">View profile <span aria-hidden="true">→</span></a></article>
+<article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Taylor Brooks" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Taylor Brooks</h4><p>Events &amp; Lifestyle</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Kansas City, MO</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.9 <span>(32)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Taylor Brooks)">View profile <span aria-hidden="true">→</span></a></article></div><p id="lp-marketplace-sample-note">Sample profiles and ratings for illustration only.</p></div>
+  </div>
+ </div>
+</div></section>
 
     <!-- LumisPixel Pricing Preview -->
     <section class="lumis-pricing-section" aria-labelledby="lumis-pricing-title" data-lumis-pricing>
@@ -839,122 +664,8 @@
         </div>
     </section>
 
-    <section class="wptb-project lumis-ai-features" aria-labelledby="lumis-ai-features-title">
-        <div class="container">
-            <div class="wptb-project--inner lumis-ai-features__inner">
-                <div class="lumis-ai-features__content">
-                    <div class="wptb-heading lumis-ai-features__heading">
-                        <div class="wptb-item--inner">
-                            <h6 class="wptb-item--subtitle"><span>AI</span> FEATURES</h6>
-                            <h2 class="wptb-item--title" id="lumis-ai-features-title">The Platform Does Far More Than Photo Delivery.</h2>
-                            <p class="wptb-item--description">LumisPixel helps photographers organize, refine, search, and deliver images with intelligent tools built into the workflow.</p>
-                        </div>
-                    </div>
-
-                    <div class="lumis-ai-features__tabs" role="tablist" aria-label="AI workflow capabilities">
-                        <button class="lumis-ai-feature-tab active" type="button" role="tab" id="ai-feature-tab-culling" aria-selected="true" aria-controls="ai-feature-panel-culling" data-ai-feature="culling">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">01</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">AI Culling</span>
-                            </span>
-                        </button>
-                        <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-quality" aria-selected="false" aria-controls="ai-feature-panel-quality" data-ai-feature="quality" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">02</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">Blur &amp; Quality Detection</span>
-                            </span>
-                        </button>
-                        <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-duplicates" aria-selected="false" aria-controls="ai-feature-panel-duplicates" data-ai-feature="duplicates" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">03</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">Duplicate Detection</span>
-                            </span>
-                        </button>
-                        <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-faces" aria-selected="false" aria-controls="ai-feature-panel-faces" data-ai-feature="faces" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">04</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">Face Recognition</span>
-                            </span>
-                        </button>
-                        <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-search" aria-selected="false" aria-controls="ai-feature-panel-search" data-ai-feature="search" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">05</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">Semantic Search</span>
-                            </span>
-                        </button>
-                        <button class="lumis-ai-feature-tab" type="button" role="tab" id="ai-feature-tab-tags" aria-selected="false" aria-controls="ai-feature-panel-tags" data-ai-feature="tags" tabindex="-1">
-                            <span class="lumis-ai-feature-tab__index" aria-hidden="true">06</span>
-                            <span class="lumis-ai-feature-tab__copy">
-                                <span class="lumis-ai-feature-tab__title">Auto Tagging</span>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div class="wptb-item--button lumis-ai-features__cta">
-                        <!-- Future Django named URL: ai_tools:index -->
-                        {% include "components/button.html" with label="Explore AI Tools →" href=homepage_ai_tools_url variant="solid" show_second=True second_label="Explore AI Tools →" %}
-                    </div>
-                </div>
-
-                <div class="lumis-ai-features__preview" aria-label="AI workflow preview">
-                    <div class="lumis-ai-product-panel">
-                        <div class="lumis-ai-product-panel__toolbar">
-                            <span class="lumis-ai-product-panel__dot"></span>
-                            <span class="lumis-ai-product-panel__dot"></span>
-                            <span class="lumis-ai-product-panel__dot"></span>
-                            <span class="lumis-ai-product-panel__toolbar-label">Gallery intelligence</span>
-                            <span class="lumis-ai-product-panel__badge">Presentational</span>
-                        </div>
-
-                        <div class="lumis-ai-product-panel__workspace">
-                            <div class="lumis-ai-product-panel__main-image" aria-hidden="true">
-                                <span class="lumis-ai-product-panel__image-label">Selected image</span>
-                                <span class="lumis-ai-product-panel__focus-chip" data-ai-selected-chip>Strong frame</span>
-                            </div>
-                            <div class="lumis-ai-product-panel__thumbs" aria-label="Example image review queue">
-                                <span class="lumis-ai-thumb is-selected"><span data-ai-thumb-one>Strong frame</span></span>
-                                <span class="lumis-ai-thumb"><span data-ai-thumb-two>Review</span></span>
-                                <span class="lumis-ai-thumb"><span data-ai-thumb-three>Similar shot</span></span>
-                                <span class="lumis-ai-thumb"><span data-ai-thumb-four>Review</span></span>
-                            </div>
-                        </div>
-
-                        <div class="lumis-ai-product-panel__panels" aria-live="polite">
-                            <article class="lumis-ai-preview-panel active" id="ai-feature-panel-culling" role="tabpanel" aria-labelledby="ai-feature-tab-culling" data-ai-panel="culling" data-chip="Strong frame" data-labels="Strong frame|Review|Similar shot|Review">
-                                <h3>AI Culling</h3>
-                                <p class="lumis-ai-preview-panel__description">Surface stronger images and reduce repetitive review work.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Strong frame</span><span>Review</span><span>Similar shot</span></div>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-quality" role="tabpanel" aria-labelledby="ai-feature-tab-quality" data-ai-panel="quality" data-chip="Soft focus" data-labels="Soft focus|Review sharpness|Delivery check|Review" hidden>
-                                <h3>Blur &amp; Quality Detection</h3>
-                                <p class="lumis-ai-preview-panel__description">Flag soft, blurry, or low-quality shots before delivery.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Soft focus</span><span>Review sharpness</span></div>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-duplicates" role="tabpanel" aria-labelledby="ai-feature-tab-duplicates" data-ai-panel="duplicates" data-chip="Keep selected" data-labels="Similar group|Keep selected|Compare|Near match" hidden>
-                                <h3>Duplicate Detection</h3>
-                                <p class="lumis-ai-preview-panel__description">Group near-identical images and simplify final selection.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Similar group</span><span>Keep selected</span></div>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-faces" role="tabpanel" aria-labelledby="ai-feature-tab-faces" data-ai-panel="faces" data-chip="Match group" data-labels="Match group|Client search|Guest set|Review" hidden>
-                                <h3>Face Recognition</h3>
-                                <p class="lumis-ai-preview-panel__description">Organize event photos and help clients find their matches.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Match group</span><span>Client search</span></div>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-search" role="tabpanel" aria-labelledby="ai-feature-tab-search" data-ai-panel="search" data-chip="Search phrase" data-labels="Search phrase|Matching scenes|Outdoor vows|Reception" hidden>
-                                <h3>Semantic Search</h3>
-                                <p class="lumis-ai-preview-panel__description">Search galleries using natural language, subjects, or scene descriptions.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Search phrase</span><span>Matching scenes</span></div>
-                            </article>
-                            <article class="lumis-ai-preview-panel" id="ai-feature-panel-tags" role="tabpanel" aria-labelledby="ai-feature-tab-tags" data-ai-panel="tags" data-chip="Auto tags" data-labels="Event|Portrait|Outdoor|Details" hidden>
-                                <h3>Auto Tagging</h3>
-                                <p class="lumis-ai-preview-panel__description">Add useful tags for people, events, locations, and visual content.</p>
-                                <div class="lumis-ai-preview-panel__chips"><span>Event</span><span>Portrait</span><span>Outdoor</span></div>
-                            </article>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section class="lp-ai" data-lp-ai aria-labelledby="lumis-ai-features-title"><div class="container lp-ai__grid"><div class="lp-ai__content"><div class="lp-ai__eyebrow"><span>LUMIS AI</span><span>Coming soon</span></div><h2 id="lumis-ai-features-title">Less sorting.<br>More creating.</h2><p class="lp-ai__intro">A smarter way to select, refine, and find your best work.</p><div class="lp-ai__tabs" role="tablist" aria-label="Planned AI tools"><button type="button" role="tab" id="lp-ai-tab-culling" aria-controls="lp-ai-panel-culling" aria-selected="true" tabindex="0" data-lp-ai-tab="culling"><i class="bi bi-stars" aria-hidden="true"></i>AI Culling</button><button type="button" role="tab" id="lp-ai-tab-quality" aria-controls="lp-ai-panel-quality" aria-selected="false" tabindex="-1" data-lp-ai-tab="quality"><i class="bi bi-image" aria-hidden="true"></i>Quality Detection</button><button type="button" role="tab" id="lp-ai-tab-duplicates" aria-controls="lp-ai-panel-duplicates" aria-selected="false" tabindex="-1" data-lp-ai-tab="duplicates"><i class="bi bi-files" aria-hidden="true"></i>Duplicate Detection</button><button type="button" role="tab" id="lp-ai-tab-faces" aria-controls="lp-ai-panel-faces" aria-selected="false" tabindex="-1" data-lp-ai-tab="faces"><i class="bi bi-person-bounding-box" aria-hidden="true"></i>Face Recognition</button><button type="button" role="tab" id="lp-ai-tab-search" aria-controls="lp-ai-panel-search" aria-selected="false" tabindex="-1" data-lp-ai-tab="search"><i class="bi bi-search" aria-hidden="true"></i>Semantic Search</button><button type="button" role="tab" id="lp-ai-tab-tags" aria-controls="lp-ai-panel-tags" aria-selected="false" tabindex="-1" data-lp-ai-tab="tags"><i class="bi bi-tag" aria-hidden="true"></i>Auto Tagging</button></div><a class="lp-ai__cta" href="{{ homepage_ai_tools_url }}">Explore AI tools <span aria-hidden="true">→</span></a></div><div class="lp-ai__preview"><div class="lp-ai__toolbar"><strong><i class="bi bi-stars" aria-hidden="true"></i>Your next creative workflow</strong><span>Concept preview</span></div><div class="lp-ai__workspace"><figure class="lp-ai__main"><img src="{% static 'img/landing/gallery/ai-workflow-portraits.webp' %}" alt="Sample portrait in natural window light" loading="lazy" decoding="async"><span><b aria-hidden="true">✓</b> Selected</span></figure><div class="lp-ai__thumbs" aria-label="Sample portrait variations"><figure><img src="{% static 'img/landing/gallery/ai-workflow-portraits.webp' %}" alt="Sample portrait variation 1" loading="lazy" decoding="async"></figure><figure><img src="{% static 'img/landing/gallery/ai-workflow-portraits.webp' %}" alt="Sample portrait variation 2" loading="lazy" decoding="async"></figure><figure><img src="{% static 'img/landing/gallery/ai-workflow-portraits.webp' %}" alt="Sample portrait variation 3" loading="lazy" decoding="async"></figure></div></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-culling" aria-labelledby="lp-ai-tab-culling" ><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Keep the strongest moments</h3><p>Review suggested selections before making the final choice.</p></div><em>Illustration of planned AI tools.</em></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-quality" aria-labelledby="lp-ai-tab-quality" hidden><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Review image quality</h3><p>Review potential focus and quality issues.</p></div><em>Illustration of planned AI tools.</em></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-duplicates" aria-labelledby="lp-ai-tab-duplicates" hidden><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Compare similar moments</h3><p>Choose the version you prefer.</p></div><em>Illustration of planned AI tools.</em></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-faces" aria-labelledby="lp-ai-tab-faces" hidden><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Find familiar faces</h3><p>Explore planned gallery face matching.</p></div><em>Illustration of planned AI tools.</em></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-search" aria-labelledby="lp-ai-tab-search" hidden><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Find the moment you mean</h3><p>Explore searches using everyday descriptions.</p></div><em>Illustration of planned AI tools.</em></div><div class="lp-ai__caption" role="tabpanel" id="lp-ai-panel-tags" aria-labelledby="lp-ai-tab-tags" hidden><span class="lp-ai__check" aria-hidden="true">✓</span><div><h3>Organize with useful tags</h3><p>Review suggested labels for your work.</p></div><em>Illustration of planned AI tools.</em></div></div></div></section>
 
 {% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/homepage_workflow_preview.js' %}" defer></script><script src="{% static 'js/homepage_ai_preview.js' %}" defer></script>{% endblock %}
