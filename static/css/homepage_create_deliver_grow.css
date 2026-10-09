@@ -265,3 +265,15 @@
 
 /* Keep mobile pricing focused on the headline and plan choices. */
 @media(max-width:767px){.page-home .lumis-pricing-content__intro{display:none}}
+
+
+/* Keep phone workflow captions compact and close to the image's lower edge. */
+@media (max-width: 767px) {
+    .page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--meta > p {
+        display: none;
+    }
+    .page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--holder {
+        padding: 17px 17px 10px;
+        align-items: flex-end;
+    }
+}
