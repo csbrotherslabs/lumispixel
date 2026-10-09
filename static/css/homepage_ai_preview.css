@@ -68,3 +68,12 @@
  .lp-ai__caption em{grid-column:2;border:0;padding:0;font-size:9px}
 }
 @media(max-width:359px){.lp-ai__toolbar{align-items:flex-start;flex-direction:column}.lp-ai__content h2{font-size:28px}}
+
+
+/* Place the section action after its visual preview in reading order. */
+.page-home .lp-ai__grid > .lp-ai__cta { justify-self: start; }
+@media (min-width: 992px) {
+ .page-home .lp-ai__content { grid-column: 1; grid-row: 1; }
+ .page-home .lp-ai__preview { grid-column: 2; grid-row: 1 / span 2; }
+ .page-home .lp-ai__grid > .lp-ai__cta { grid-column: 1; grid-row: 2; }
+}
