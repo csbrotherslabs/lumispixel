@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_create_deliver_grow.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_photo_discovery.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_marketplace_preview.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -703,89 +704,28 @@
     <div class="divider-line-hr"></div>
 
     <!-- Photographer Marketplace Preview -->
-    <section class="wptb-team-one lumis-photographer-marketplace" aria-labelledby="lumis-photographer-marketplace-title">
-        <div class="container">
-            <div class="lumis-photographer-marketplace__grid">
-                <div class="lumis-photographer-marketplace__content">
-                    <p class="lumis-photographer-marketplace__eyebrow">PHOTOGRAPHER MARKETPLACE</p>
-                    <h2 class="lumis-photographer-marketplace__title" id="lumis-photographer-marketplace-title">Need a Photographer? Find the Right One Here.</h2>
-                    <p class="lumis-photographer-marketplace__intro">Tell LumisPixel what you need, compare professionals by specialty and location, and connect with the right photographer for your event.</p>
-
-                    <ol class="lumis-photographer-marketplace__steps" aria-label="Marketplace request journey">
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">01</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Tell Us What You Need</strong>
-                                <span>Share your event type, location, date, and budget.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">02</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Discover Matches</strong>
-                                <span>Explore photographers whose specialty and service area fit your request.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">03</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Compare Profiles</strong>
-                                <span>Review portfolios, services, availability, and future verified reviews.</span>
-                            </span>
-                        </li>
-                        <li class="lumis-photographer-marketplace__step">
-                            <span class="lumis-photographer-marketplace__step-number" aria-hidden="true">04</span>
-                            <span class="lumis-photographer-marketplace__step-copy">
-                                <strong>Send a Request</strong>
-                                <span>Contact the photographer or submit a booking request through LumisPixel.</span>
-                            </span>
-                        </li>
-                    </ol>
-
-                    <p class="lumis-photographer-marketplace__reassurance">Compare specialties, locations, and service details before sending a request.</p>
-
-                    <div class="lumis-photographer-marketplace__actions">
-                        {% include "components/button.html" with label="Find a Photographer" href=find_photographer_url variant="solid" show_second=True second_label="Find a Photographer" %}
-                        <!-- Future named URL: photographers:signup -->
-                        <a class="lumis-photographer-marketplace__secondary" href="{{ homepage_get_started_url }}">Join as a Photographer <span aria-hidden="true">→</span></a>
-                    </div>
-                </div>
-
-                <div class="lumis-photographer-marketplace__preview" aria-label="Marketplace request preview">
-                    <div class="lumis-marketplace-panel" role="group" aria-labelledby="lumis-marketplace-panel-title" aria-describedby="lumis-marketplace-panel-note">
-                        <div class="lumis-marketplace-panel__topline">
-                            <span class="lumis-marketplace-panel__label" id="lumis-marketplace-panel-title">Marketplace preview</span>
-                            {% include "components/badge.html" with label="Visual only" class_name="lumis-marketplace-panel__badge" %}
-                        </div>
-                        <div class="lumis-marketplace-panel__fields">
-                            <div class="lumis-marketplace-field">
-                                <span>Photography Type</span>
-                                <strong>Wedding Photography</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Location</span>
-                                <strong>Kansas City, MO</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Event Date</span>
-                                <strong>Select a date</strong>
-                            </div>
-                            <div class="lumis-marketplace-field">
-                                <span>Budget</span>
-                                <strong>$1,000–$2,500</strong>
-                            </div>
-                            <div class="lumis-marketplace-field lumis-marketplace-field--wide">
-                                <span>Request Summary</span>
-                                <strong>Looking for a wedding photographer for an indoor and outdoor ceremony.</strong>
-                            </div>
-                        </div>
-                        <button class="lumis-marketplace-panel__button" type="button" aria-disabled="true" tabindex="-1">Find Matching Photographers</button>
-                        <p class="lumis-marketplace-panel__note" id="lumis-marketplace-panel-note">Preview only — no request is submitted here.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section class="lp-marketplace" aria-labelledby="lumis-photographer-marketplace-title">
+<div class="container lp-marketplace__grid">
+ <div class="lp-marketplace__content">
+  <p class="lp-marketplace__eyebrow">PHOTOGRAPHER MARKETPLACE</p>
+  <h2 id="lumis-photographer-marketplace-title">The right photographer.<br>For your moment.</h2>
+  <p class="lp-marketplace__intro">Explore portfolios and connect with photographers near you.</p>
+  <ol class="lp-marketplace__steps"><li><span aria-hidden="true">01</span>Choose your occasion</li><li><span aria-hidden="true">02</span>Explore their work</li><li><span aria-hidden="true">03</span>Make a connection</li></ol>
+  <div class="lp-marketplace__actions"><a class="lp-marketplace__button" href="{{ find_photographer_url }}">Find a photographer <span aria-hidden="true">→</span></a><a class="lp-marketplace__join" href="{{ homepage_get_started_url }}">Join as a photographer <span aria-hidden="true">→</span></a></div>
+ </div>
+ <div class="lp-marketplace__panel" aria-labelledby="lp-marketplace-preview-title" aria-describedby="lp-marketplace-sample-note">
+  <div class="lp-marketplace__panel-header"><h3 id="lp-marketplace-preview-title">Find your photographer</h3><span>Sample preview</span></div>
+  <div class="lp-marketplace__panel-grid">
+   <div class="lp-marketplace__form" role="group" aria-label="Illustrative search form"><h4>Your occasion</h4><div class="lp-marketplace__fields"><div class="lp-market-field"><i class="bi bi-camera" aria-hidden="true"></i><div><span>Occasion</span><strong>Wedding</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-geo-alt" aria-hidden="true"></i><div><span>Location</span><strong>Kansas City, MO</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-calendar" aria-hidden="true"></i><div><span>Date</span><strong>Choose a date</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div>
+<div class="lp-market-field"><i class="bi bi-wallet2" aria-hidden="true"></i><div><span>Budget</span><strong>$1,000–$2,500</strong></div><i class="bi bi-chevron-down" aria-hidden="true"></i></div></div><a class="lp-marketplace__button" href="{{ find_photographer_url }}">Find photographers <span aria-hidden="true">→</span></a></div>
+   <div class="lp-marketplace__matches"><h4>Photographer matches</h4><div class="lp-marketplace__profiles"><article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Alex Morgan" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Alex Morgan</h4><p>Wedding &amp; Engagement</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Kansas City, MO</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.9 <span>(24)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Alex Morgan)">View profile <span aria-hidden="true">→</span></a></article>
+<article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Jordan Ellis" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Jordan Ellis</h4><p>Weddings &amp; Portraits</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Overland Park, KS</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.8 <span>(18)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Jordan Ellis)">View profile <span aria-hidden="true">→</span></a></article>
+<article class="lp-market-profile"><div class="lp-market-profile__photo"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Illustrative portrait for sample photographer Taylor Brooks" loading="lazy" decoding="async"></div><div class="lp-market-profile__copy"><h4>Taylor Brooks</h4><p>Events &amp; Lifestyle</p><p><i class="bi bi-geo-alt" aria-hidden="true"></i> Kansas City, MO</p><p class="lp-market-profile__rating"><span aria-hidden="true">★</span> 4.9 <span>(32)</span></p></div><a href="{{ find_photographer_url }}" aria-label="Explore marketplace profiles (sample Taylor Brooks)">View profile <span aria-hidden="true">→</span></a></article></div><p id="lp-marketplace-sample-note">Sample profiles and ratings for illustration only.</p></div>
+  </div>
+ </div>
+</div></section>
 
     <!-- LumisPixel Pricing Preview -->
     <section class="lumis-pricing-section" aria-labelledby="lumis-pricing-title" data-lumis-pricing>
