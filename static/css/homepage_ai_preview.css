@@ -23,13 +23,13 @@
 .lp-ai__workspace{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(0,1fr);gap:10px}
 .lp-ai__workspace figure{position:relative;overflow:hidden;margin:0;border-radius:9px;background:#f2f2f2}
 .lp-ai__main{aspect-ratio:4/3}
-.lp-ai__workspace img{position:absolute;display:block;max-width:none;width:400%;height:auto;top:-8%;left:0;filter:none;opacity:1}
+.lp-ai__workspace img{position:absolute;display:block;max-width:none;width:200%;height:200%;top:0;left:0;filter:none;opacity:1}
 .lp-ai__main>span{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:9px;padding:6px 10px;color:#d00000;font-size:11px;font-weight:600}
 .lp-ai__main b,.lp-ai__check{display:grid;place-items:center;background:#d00000;color:#fff;border-radius:50%;width:18px;height:18px;font-size:12px}
 .lp-ai__thumbs{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;min-height:0}
-.lp-ai__thumbs figure:nth-child(1) img{left:-100%}
-.lp-ai__thumbs figure:nth-child(2) img{left:-200%}
-.lp-ai__thumbs figure:nth-child(3) img{left:-300%}
+.lp-ai__thumbs figure:nth-child(1) img{left:-100%;top:0}
+.lp-ai__thumbs figure:nth-child(2) img{left:0;top:-100%}
+.lp-ai__thumbs figure:nth-child(3) img{left:-100%;top:-100%}
 .lp-ai__caption{display:flex;align-items:center;gap:14px;border-top:1px solid #e3e4e7;padding-top:14px;margin-top:12px}
 .lp-ai__caption[hidden]{display:none}
 .lp-ai__check{flex:0 0 28px;width:28px;height:28px;font-size:18px}
