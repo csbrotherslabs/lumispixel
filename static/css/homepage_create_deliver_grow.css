@@ -277,3 +277,16 @@
         align-items: flex-end;
     }
 }
+
+
+/* Match the other phone section labels and bring this label closer to its title. */
+@media (max-width: 767px) {
+    .page-home .lumis-audiences .wptb-item--subtitle {
+        position: relative;
+        top: 24px;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1.6;
+        letter-spacing: .18em;
+    }
+}
