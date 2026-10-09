@@ -24,7 +24,7 @@
  .page-home .lumis-final-cta>.container{width:100%;padding-inline:16px}
  .page-home .lumis-final-cta__media>img{display:none}
  .page-home .lumis-final-cta__mobile-portraits{display:grid;position:absolute;inset:0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:2px;background:#eee}
- .page-home .lumis-final-cta__mobile-portraits span{background-image:var(--cta-portraits);background-size:400% 100%;background-repeat:no-repeat}
+ .page-home .lumis-final-cta__mobile-portraits span{background-image:var(--cta-portraits);background-size:400% auto;background-repeat:no-repeat}
  .page-home .lumis-final-cta__mobile-portraits span:nth-child(1){background-position:0% center}
  .page-home .lumis-final-cta__mobile-portraits span:nth-child(2){background-position:33.333333% center}
  .page-home .lumis-final-cta__mobile-portraits span:nth-child(3){background-position:66.666667% center}

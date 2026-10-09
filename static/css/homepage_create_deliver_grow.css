@@ -265,3 +265,39 @@
 
 /* Keep mobile pricing focused on the headline and plan choices. */
 @media(max-width:767px){.page-home .lumis-pricing-content__intro{display:none}}
+
+
+/* Keep phone workflow captions compact and close to the image's lower edge. */
+@media (max-width: 767px) {
+    .page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--meta > p {
+        display: none;
+    }
+    .page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--holder {
+        padding: 17px 17px 10px;
+        align-items: flex-end;
+    }
+}
+
+
+/* Match the other phone section labels and bring this label closer to its title. */
+@media (max-width: 767px) {
+    .page-home .lumis-audiences .wptb-item--subtitle {
+        position: relative;
+        top: 24px;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1.6;
+        letter-spacing: .18em;
+    }
+}
+
+
+/* Phone pricing starts with the heading and plans, without the image collage. */
+@media (max-width: 767px) {
+    .page-home .lumis-pricing-section .lumis-pricing-visual {
+        display: none;
+    }
+    .page-home .lumis-pricing-section .lumis-pricing-shell {
+        gap: 0;
+    }
+}
