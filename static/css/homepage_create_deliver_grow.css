@@ -187,3 +187,17 @@
  background:#d70006; border-color:#d70006;
  box-shadow:0 10px 24px rgba(215,0,6,.24);
 }
+
+/* Show workflow photography in its original colors; shade only the caption. */
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--image::after {
+    display: none;
+    background: none;
+}
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--image img {
+    filter: none;
+    opacity: 1;
+}
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--holder {
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.72));
+    text-shadow: 0 1px 3px rgba(0,0,0,.65);
+}
