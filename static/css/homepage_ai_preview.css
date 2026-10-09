@@ -38,3 +38,33 @@
 .lp-ai__caption em{flex:0 0 110px;border-left:1px solid #e3e4e7;padding-left:12px;font-size:9px;line-height:1.5;color:#9398a2}
 @media(max-width:991px){.page-home .lp-ai__grid{grid-template-columns:1fr;gap:28px}.lp-ai__preview{max-width:680px;width:100%;margin-inline:auto}}
 @media(max-width:575px){.page-home .lp-ai{padding:40px 0}.lp-ai__content h2{font-size:30px}.lp-ai__intro{font-size:15px;margin:16px 0 20px}.lp-ai__tabs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:3px 3px 10px;margin-inline:-3px}.lp-ai__tabs button{flex:0 0 auto;scroll-snap-align:start;min-height:48px;font-size:12px;padding:10px 14px;white-space:nowrap}.lp-ai__preview{padding:14px;border-radius:16px}.lp-ai__toolbar strong{font-size:11px;gap:7px}.lp-ai__toolbar>span{font-size:9px;padding:5px 8px}.lp-ai__workspace{gap:7px}.lp-ai__main>span{top:8px;left:8px;font-size:10px;padding:5px 7px}.lp-ai__caption{flex-wrap:wrap;gap:10px}.lp-ai__caption>div{flex:1}.lp-ai__caption em{flex-basis:100%;border:0;padding-left:38px}.lp-ai__cta{font-size:13px;min-height:40px}}
+
+/* Phone preview: large portrait, horizontal variations, no compressed sidebar. */
+@media(max-width:767px){
+ .page-home .lp-ai{padding:36px 0}
+ .page-home .lp-ai__grid{gap:22px;min-width:0}
+ .lp-ai__content,.lp-ai__preview,.lp-ai__caption>div{min-width:0}
+ .lp-ai__eyebrow{gap:14px;margin-bottom:16px}
+ .lp-ai__content h2{font-size:30px;line-height:1.12}
+ .lp-ai__intro{font-size:15px;margin:14px 0 18px}
+ .lp-ai__tabs{display:flex;overflow-x:auto;gap:8px;scroll-snap-type:x proximity;padding:4px 3px 10px;margin:0 -3px 14px;scrollbar-width:thin;scrollbar-color:#e5bfc4 transparent}
+ .lp-ai__tabs button{flex:0 0 auto;white-space:nowrap;min-height:44px;padding:10px 12px;font-size:12px;gap:9px;scroll-snap-align:start}
+ .lp-ai__tabs button i{font-size:19px}
+ .lp-ai__cta{font-size:13px;min-height:40px;padding:9px 16px}
+ .lp-ai__preview{padding:12px;border-radius:16px}
+ .lp-ai__toolbar{flex-wrap:wrap;gap:8px;padding-bottom:10px;margin-bottom:10px}
+ .lp-ai__toolbar strong{font-size:11px;gap:7px;min-width:0;line-height:1.4}
+ .lp-ai__toolbar strong i{font-size:17px;flex-shrink:0}
+ .lp-ai__toolbar>span{font-size:9px;padding:4px 8px}
+ .lp-ai__workspace{grid-template-columns:minmax(0,1fr);gap:8px}
+ .lp-ai__main{aspect-ratio:4/3}
+ .lp-ai__thumbs{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;gap:8px}
+ .lp-ai__thumbs figure{aspect-ratio:4/3}
+ .lp-ai__main>span{top:8px;left:8px;font-size:10px;padding:5px 7px;gap:6px}
+ .lp-ai__caption{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px 10px;align-items:start;padding-top:12px;margin-top:10px}
+ .lp-ai__check{width:24px;height:24px;font-size:15px}
+ .lp-ai__caption h3{font-size:12px}
+ .lp-ai__caption p{font-size:11px;overflow-wrap:anywhere}
+ .lp-ai__caption em{grid-column:2;border:0;padding:0;font-size:9px}
+}
+@media(max-width:359px){.lp-ai__toolbar{align-items:flex-start;flex-direction:column}.lp-ai__content h2{font-size:28px}}

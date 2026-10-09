@@ -1,1 +1,32 @@
-(() => {'use strict';document.querySelectorAll('[data-lp-ai]').forEach(section=>{const tabs=[...section.querySelectorAll('[data-lp-ai-tab]')];const activate=tab=>tabs.forEach(item=>{const selected=item===tab;item.setAttribute('aria-selected',String(selected));item.tabIndex=selected?0:-1;section.querySelector('#lp-ai-panel-'+item.dataset.lpAiTab).hidden=!selected;});tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>activate(tab));tab.addEventListener('keydown',event=>{let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;if(event.key==='Home')next=0;if(event.key==='End')next=tabs.length-1;if(next===undefined)return;event.preventDefault();activate(tabs[next]);tabs[next].focus();});});});})();
+(() => {
+  'use strict';
+  document.querySelectorAll('[data-lp-ai]').forEach(section => {
+    const tabs = [...section.querySelectorAll('[data-lp-ai-tab]')];
+    const activate = tab => {
+      tabs.forEach(item => {
+        const selected = item === tab;
+        item.setAttribute('aria-selected', String(selected));
+        item.tabIndex = selected ? 0 : -1;
+        section.querySelector('#lp-ai-panel-' + item.dataset.lpAiTab).hidden = !selected;
+      });
+      const strip = section.querySelector('.lp-ai__tabs');
+      if (strip.scrollWidth > strip.clientWidth) {
+        tab.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: 'auto'});
+      }
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activate(tab));
+      tab.addEventListener('keydown', event => {
+        let next;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = tabs.length - 1;
+        if (next === undefined) return;
+        event.preventDefault();
+        activate(tabs[next]);
+        tabs[next].focus();
+      });
+    });
+  });
+})();

@@ -3,6 +3,7 @@
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage_final_cta.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_workflow_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_ai_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
@@ -564,14 +565,14 @@
     <!-- LumisPixel Final CTA -->
     <section class="lumis-final-cta" aria-labelledby="lumis-final-cta-title">
         <div class="lumis-final-cta__media" aria-hidden="true">
-            <img loading="lazy" decoding="async" src="{% static 'img/more/10.jpg' %}" alt="">
-        </div>
+            <img loading="lazy" decoding="async" src="{% static 'img/landing/gallery/professional-portrait-collection.webp' %}" alt="">
+        <div class="lumis-final-cta__mobile-portraits" style="--cta-portraits:url('{% static 'img/landing/gallery/professional-portrait-collection.webp' %}')"><span></span><span></span><span></span><span></span></div></div>
         <div class="lumis-final-cta__overlay" aria-hidden="true"></div>
         <div class="container">
-            <div class="lumis-final-cta__panel wow fadeInUp">
+            <div class="lumis-final-cta__panel">
                 <p class="lumis-final-cta__eyebrow">READY TO GET STARTED?</p>
-                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Bring Every Part of Photography Together.</h2>
-                <p class="lumis-final-cta__copy">Join LumisPixel to manage your workflow, find your photos, or connect with the right photographer—all from one platform.</p>
+                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Your photography,<br>connected.</h2>
+                <p class="lumis-final-cta__copy">Manage your business, enjoy your photos, or find your photographer.</p>
 
                 <div class="lumis-final-cta__actions" aria-label="Get started with LumisPixel">
                     {% if request.user.is_authenticated %}
@@ -579,15 +580,15 @@
                         <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{% if request.user.is_client %}{% url 'clients:dashboard' %}{% else %}{% url 'photographer_workspace:dashboard' %}{% endif %}">Go to Dashboard</a>
                     {% else %}
                         <!-- Future named URL: accounts:signup -->
-                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{{ homepage_get_started_url }}">Start as a Photographer</a>
+                        <a class="lumis-final-cta__button lumis-final-cta__button--primary" href="{{ homepage_get_started_url }}">Start free <span aria-hidden="true">→</span></a>
                     {% endif %}
                     <!-- Future named URL: galleries:photo_search -->
-                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find My Photos</a>
+                    <a class="lumis-final-cta__button lumis-final-cta__button--secondary" href="{% url 'accounts:find-photos-placeholder' %}">Find my photos</a>
                     <!-- Future named URL: marketplace:photographer_search -->
-                    <a class="lumis-final-cta__link" href="{{ find_photographer_url }}">Hire a Photographer <span aria-hidden="true">→</span></a>
+                    <a class="lumis-final-cta__link" href="{{ find_photographer_url }}">Hire a photographer <span aria-hidden="true">→</span></a>
                 </div>
 
-                <p class="lumis-final-cta__reassurance">Start free and explore the platform before choosing a paid plan.</p>
+                <p class="lumis-final-cta__reassurance">Start free. Grow when you’re ready.</p>
             </div>
         </div>
     </section>
