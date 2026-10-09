@@ -5,6 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_create_deliver_grow.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_photo_discovery.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -242,7 +243,7 @@
                     <div class="lumis-photo-match__content wow fadeInLeft">
                         {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." %}
 
-                        <ol class="lumis-photo-match__steps" aria-label="How photo matching works">
+                        <ol id="photo-match-steps" tabindex="-1" class="lumis-photo-match__steps" aria-label="How photo matching works">
                             <li>
                                 <span class="lumis-photo-match__step-number">01</span>
                                 <div>
@@ -269,39 +270,31 @@
                 </div>
 
                 <div class="col-xl-5 col-lg-5">
-                    <div class="lumis-photo-match__panel wow fadeInRight" aria-label="Feature preview of selfie photo matching">
-                        <div class="lumis-photo-match__panel-header">
-                            <span class="lumis-photo-match__preview-label">Feature preview</span>
-                            <span class="lumis-photo-match__status"><span aria-hidden="true"></span> Preview only</span>
+                    <article class="lp-discovery-preview" aria-labelledby="discovery-preview-title">
+                        <div class="lp-discovery-preview__header">
+                            <span class="lp-discovery-preview__eyebrow">AI photo discovery</span>
+                            <span class="lp-discovery-preview__coming">Coming soon</span>
                         </div>
-
-                        <div class="lumis-photo-match__upload" aria-label="Nonfunctional selfie upload preview">
-                            <div class="lumis-photo-match__upload-icon" aria-hidden="true">
-                                <i class="bi bi-cloud-arrow-up"></i>
-                            </div>
-                            <h3>Upload a Selfie</h3>
-                            <p>JPG, PNG, or HEIC preview</p>
+                        <h3 id="discovery-preview-title" class="lp-discovery-preview__title">Your photos. Found.</h3>
+                        <p class="lp-discovery-preview__intro">A selfie is all it takes.</p>
+                        <div class="lp-discovery-preview__upload" aria-label="Illustration of the upcoming selfie upload">
+                            <span class="lp-discovery-preview__avatar" aria-hidden="true"><img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="" loading="lazy" decoding="async"></span>
+                            <i class="bi bi-cloud-arrow-up lp-discovery-preview__upload-icon" aria-hidden="true"></i>
+                            <div class="lp-discovery-preview__upload-copy"><strong>Upload a selfie</strong><span>JPG, PNG or HEIC</span></div>
+                            <button class="lp-discovery-preview__choose" type="button" disabled aria-label="Choose photo — coming soon">Choose photo</button>
                         </div>
-
-                        <div class="lumis-photo-match__search-card">
-                            <div>
-                                <span>Searching selected gallery</span>
-                                <strong>AI match preview</strong>
-                            </div>
-                            <div class="lumis-photo-match__progress" aria-hidden="true"><span></span></div>
+                        <div class="lp-discovery-preview__results-heading">
+                            <h4><i class="bi bi-stars" aria-hidden="true"></i> Match preview</h4>
+                            <span>Sample results</span>
                         </div>
-
-                        <div class="lumis-photo-match__grid" aria-label="Preview grid of matching event photos">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/21.jpg' %}" alt="Preview match from an event gallery">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/30.jpg' %}" alt="Preview match from an event gallery">
-                            <img loading="lazy" decoding="async" src="{% static 'img/slider/36.jpg' %}" alt="Preview match from an event gallery">
+                        <div class="lp-discovery-preview__photos" aria-label="Sample photo matches, not live search results">
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="Sample couple portrait on a cobblestone street" loading="lazy" decoding="async"><span aria-hidden="true"><i class="bi bi-check-lg"></i></span></figure>
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-event-result-02.webp' %}" alt="Sample couple portrait from another angle" loading="lazy" decoding="async"><span aria-hidden="true"><i class="bi bi-check-lg"></i></span></figure>
+                            <figure><img src="{% static 'img/landing/gallery/photo-match-event-result-03.webp' %}" alt="Sample couple walking through the event location" loading="lazy" decoding="async"><span aria-hidden="true"><i class="bi bi-check-lg"></i></span></figure>
                         </div>
-
-                        <p class="lumis-photo-match__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i> Selfie used only for this gallery search.</p>
-
-                        <!-- Future named URL: photo_matching_demo -->
-                        {% include "components/button.html" with label="Try Photo Search" href=find_photos_url variant="outline" aria_label="Try LumisPixel photo search" %}
-                    </div>
+                        <p class="lp-discovery-preview__privacy"><i class="bi bi-shield-check" aria-hidden="true"></i><span>Selfie used only for this gallery search.</span></p>
+                        <a class="lp-discovery-preview__cta" href="#photo-match-steps">See how it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    </article>
                 </div>
             </div>
 
