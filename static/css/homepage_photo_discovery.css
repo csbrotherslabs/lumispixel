@@ -44,3 +44,10 @@
  .page-home .lumis-photo-match #photo-match-title{display:none}
  .page-home .lumis-photo-match .lp-discovery-preview{margin-top:20px}
 }
+
+/* Two equal portrait previews on phones; preserve the source-panel crop ratio. */
+@media(max-width:767px){
+ .page-home .lp-discovery-preview__photos{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .page-home .lp-discovery-preview__photos figure:nth-child(n+3){display:none}
+ .page-home .lp-discovery-preview__photos figure{aspect-ratio:3/4}
+}
