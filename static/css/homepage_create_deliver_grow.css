@@ -253,3 +253,12 @@
     .page-home .lumis-photographer-workflow{padding-bottom:16px}
     .page-home .lumis-audiences.pt-0{padding-top:24px!important}
 }
+
+/* Keep the final invitation portraits visible beneath a light, uniform tint. */
+.page-home .lumis-final-cta .lumis-final-cta__overlay{
+    background:rgba(0,0,0,.16);
+}
+.page-home .lumis-final-cta .lumis-final-cta__media img{
+    filter:none;
+    opacity:1;
+}
