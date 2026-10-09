@@ -262,3 +262,6 @@
     filter:none;
     opacity:1;
 }
+
+/* Keep mobile pricing focused on the headline and plan choices. */
+@media(max-width:767px){.page-home .lumis-pricing-content__intro{display:none}}

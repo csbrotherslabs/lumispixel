@@ -3,13 +3,13 @@
 {% block title %}LumisPixel | Photography Made Discoverable{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/homepage_final_cta.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_workflow_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_ai_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/home_responsive.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_create_deliver_grow.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_photo_discovery.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_marketplace_preview.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_final_cta.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -245,7 +245,7 @@
             <div class="row align-items-center g-4 g-xl-5">
                 <div class="col-xl-7 col-lg-7">
                     <div class="lumis-photo-match__content wow fadeInLeft">
-                        {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." %}
+                        {% include "components/section_heading.html" with wrapper_class="wptb-heading mb-0" section_number="01 //" eyebrow="FIND YOUR PHOTOS" title="Your Photos. <span>Found in Seconds.</span>" title_id="photo-match-title" copy="Upload a selfie and quickly find your photos from participating events and galleries." copy_class="lp-discovery-intro-copy" %}
 
                         <ol id="photo-match-steps" tabindex="-1" class="lumis-photo-match__steps" aria-label="How photo matching works">
                             <li>
@@ -555,8 +555,8 @@
      <img src="{% static 'img/more/10.jpg' %}" alt="Canyon landscape at sunset" loading="lazy" decoding="async">
      <div class="lp-flow__caption"><i class="bi bi-cart3" aria-hidden="true"></i><div><h3>Make more of every gallery.</h3><p>Let clients favorite, purchase, download, and share their photos.</p></div></div>
     </div></div>
-  </div>
   <footer class="lp-flow__footer"><span>5 steps · 1 workspace</span><a href="{{ homepage_workspace_url }}">Explore the workflow <span aria-hidden="true">→</span></a></footer>
+  </div>
  </div>
 </section>
 
@@ -571,7 +571,7 @@
         <div class="container">
             <div class="lumis-final-cta__panel">
                 <p class="lumis-final-cta__eyebrow">READY TO GET STARTED?</p>
-                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Your photography,<br>connected.</h2>
+                <h2 class="lumis-final-cta__title" id="lumis-final-cta-title">Your photography, <span class="lumis-final-cta__title-line">connected.</span></h2>
                 <p class="lumis-final-cta__copy">Manage your business, enjoy your photos, or find your photographer.</p>
 
                 <div class="lumis-final-cta__actions" aria-label="Get started with LumisPixel">
