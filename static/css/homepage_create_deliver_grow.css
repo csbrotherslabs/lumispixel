@@ -198,7 +198,7 @@
     opacity: 1;
 }
 .page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--holder {
-    background: linear-gradient(180deg, transparent, rgba(0,0,0,.72));
+    background: none;
     text-shadow: 0 1px 3px rgba(0,0,0,.65);
 }
 
@@ -234,3 +234,31 @@
  .page-home .lumis-audiences__grid::-webkit-scrollbar-thumb{background:#d00000;border-radius:9px}
 }
 @media(prefers-reduced-motion:reduce){.page-home .lumis-audience-card,.page-home .lumis-audience-card__link{transition:none}}
+
+/* The carousel holder is full-height: keep its surface completely clear. */
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--holder {
+    background: none;
+}
+.page-home .lumis-photographer-workflow .lumis-feature-card .wptb-item--meta {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(0,0,0,.62);
+}
+
+/* Avoid stacking two large section paddings between workflow and audiences. */
+.page-home .lumis-photographer-workflow{padding-bottom:24px}
+.page-home .lumis-audiences.pt-0{padding-top:32px!important}
+.page-home .lumis-audiences .wptb-item--subtitle{margin-bottom:14px}
+@media(max-width:767px){
+    .page-home .lumis-photographer-workflow{padding-bottom:16px}
+    .page-home .lumis-audiences.pt-0{padding-top:24px!important}
+}
+
+/* Keep the final invitation portraits visible beneath a light, uniform tint. */
+.page-home .lumis-final-cta .lumis-final-cta__overlay{
+    background:rgba(0,0,0,.16);
+}
+.page-home .lumis-final-cta .lumis-final-cta__media img{
+    filter:none;
+    opacity:1;
+}
