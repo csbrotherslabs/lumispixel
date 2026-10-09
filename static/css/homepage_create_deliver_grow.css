@@ -244,3 +244,12 @@
     border-radius: 12px;
     background: rgba(0,0,0,.62);
 }
+
+/* Avoid stacking two large section paddings between workflow and audiences. */
+.page-home .lumis-photographer-workflow{padding-bottom:24px}
+.page-home .lumis-audiences.pt-0{padding-top:32px!important}
+.page-home .lumis-audiences .wptb-item--subtitle{margin-bottom:14px}
+@media(max-width:767px){
+    .page-home .lumis-photographer-workflow{padding-bottom:16px}
+    .page-home .lumis-audiences.pt-0{padding-top:24px!important}
+}
