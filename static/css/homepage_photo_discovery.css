@@ -38,3 +38,9 @@
 
 /* Omit the outer selfie-search subtitle on phones. */
 @media(max-width:767px){.page-home .lumis-photo-match .lp-discovery-intro-copy{display:none}}
+
+/* Mobile discovery uses the preview card's title instead of a duplicate heading. */
+@media(max-width:767px){
+ .page-home .lumis-photo-match #photo-match-title{display:none}
+ .page-home .lumis-photo-match .lp-discovery-preview{margin-top:20px}
+}
