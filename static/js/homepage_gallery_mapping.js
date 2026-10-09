@@ -58,5 +58,5 @@
 
     setImageSource('.lumis-pricing-visual__primary img', 'executive-portrait.webp');
     setImageSource('.lumis-pricing-visual__secondary img', 'creative-rainbow-portrait.webp');
-    setImageSource('.lumis-final-cta__media img', 'professional-portrait-collection.webp');
+    // CTA portraits use Django static URLs for cache-safe desktop/mobile delivery.
 })();
