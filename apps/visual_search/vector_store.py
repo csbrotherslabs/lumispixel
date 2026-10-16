@@ -23,8 +23,8 @@ def replace_embeddings(*, photo_id, gallery_id, photographer_id, source_version,
         with conn.transaction():
             conn.execute(
                 """DELETE FROM visual_search.app_face_embeddings
-                   WHERE photo_id = %s AND source_version = %s AND model_version = %s""",
-                (photo_id, source_version, model_version),
+                   WHERE photo_id = %s""",
+                (photo_id,),
             )
             for index, vector in enumerate(vectors):
                 conn.execute(
@@ -40,3 +40,8 @@ def replace_embeddings(*, photo_id, gallery_id, photographer_id, source_version,
 def delete_photo_embeddings(photo_id):
     with vector_connection() as conn:
         conn.execute("DELETE FROM visual_search.app_face_embeddings WHERE photo_id = %s", (photo_id,))
+
+
+def delete_gallery_embeddings(gallery_id):
+    with vector_connection() as conn:
+        conn.execute("DELETE FROM visual_search.app_face_embeddings WHERE gallery_id = %s", (gallery_id,))
