@@ -1,5 +1,6 @@
-"""Consent-gated, server-side face indexing worker."""
+"""Consent-gated face indexing with stale-worker recovery and serialized writes."""
 import logging
+from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
@@ -19,6 +20,7 @@ def _eligible(job):
         and photo.status == GalleryPhoto.Status.COMPLETED
         and photo.gallery.deleted_at is None
         and photo.gallery.archived_at is None
+        and bool(photo.file)
         and photo.file.name == job.source_key
         and GalleryFaceSearchPolicy.objects.filter(
             gallery_id=photo.gallery_id, processing_authorized=True
@@ -47,23 +49,22 @@ def process_face_index_job(self, job_id):
         from .inference import extract_face_embeddings
         from .vector_store import replace_embeddings
 
-        # Read originals using the storage configured on the GalleryPhoto field,
-        # which works for both direct B2 multipart and ordinary Django uploads.
-        photo = job.photo
-        with photo.file.open("rb") as stream:
+        with job.photo.file.open("rb") as stream:
             vectors = extract_face_embeddings(stream)
 
-        # Serialize final authorization check with policy updates and photo deletion.
         with transaction.atomic():
             current = (FaceIndexJob.objects.select_for_update()
                        .select_related("photo__gallery").get(pk=job_id))
-            if not _eligible(current):
+            if current.status != FaceIndexJob.Status.PROCESSING:
+                return "superseded"
+            # Lock policy to serialize authorization changes with the vector write.
+            policy = (GalleryFaceSearchPolicy.objects.select_for_update()
+                      .filter(gallery_id=current.photo.gallery_id).first())
+            if not policy or not policy.processing_authorized or not _eligible(current):
                 current.status = FaceIndexJob.Status.CANCELLED
                 current.finished_at = timezone.now()
                 current.save(update_fields=["status", "finished_at", "updated_at"])
                 return "cancelled"
-            # The vector database is separate from Django's transaction; an
-            # administrative revocation must also purge vectors independently.
             replace_embeddings(
                 photo_id=current.photo_id,
                 gallery_id=current.photo.gallery_id,
@@ -89,3 +90,10 @@ def process_face_index_job(self, job_id):
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc, countdown=min(60 * (2 ** self.request.retries), 300))
         return "failed"
+
+
+@shared_task
+def reconcile_face_index():
+    """Recover interrupted jobs and remove vectors without valid consent or photos."""
+    from .maintenance import reconcile
+    return reconcile()
