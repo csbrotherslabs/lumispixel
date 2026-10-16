@@ -95,5 +95,7 @@ def process_face_index_job(self, job_id):
 @shared_task
 def reconcile_face_index():
     """Recover interrupted jobs and remove vectors without valid consent or photos."""
+    if not settings.VISUAL_SEARCH_DATABASE_URL:
+        return "not_configured"
     from .maintenance import reconcile
     return reconcile()
