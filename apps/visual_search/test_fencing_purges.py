@@ -40,3 +40,57 @@ class DurablePurgeTests(TestCase):
         with patch("apps.visual_search.vector_store.delete_photo_embeddings") as delete:
             self.assertEqual(execute_purge(record.pk), "already_processing")
             delete.assert_not_called()
+
+
+class LifecyclePurgeTests(TestCase):
+    """Archival and non-completed photos require durable deletion requests."""
+
+    def test_archived_gallery_creates_outbox_before_dispatch(self):
+        from types import SimpleNamespace
+        from apps.galleries.models import Gallery
+        from apps.visual_search.signals import gallery_inactive
+
+        with patch("apps.visual_search.purges.dispatch_purge") as dispatch:
+            with self.captureOnCommitCallbacks(execute=True):
+                gallery_inactive(
+                    sender=Gallery,
+                    instance=SimpleNamespace(pk=77321, archived_at="archived", deleted_at=None),
+                )
+                self.assertTrue(FaceVectorPurge.objects.filter(
+                    kind="gallery", object_id=77321,
+                    status=FaceVectorPurge.Status.PENDING,
+                ).exists())
+                dispatch.assert_not_called()
+            dispatch.assert_called_once()
+
+    def test_soft_deleted_gallery_creates_outbox(self):
+        from types import SimpleNamespace
+        from apps.galleries.models import Gallery
+        from apps.visual_search.signals import gallery_inactive
+
+        with patch("apps.visual_search.purges.dispatch_purge"):
+            gallery_inactive(
+                sender=Gallery,
+                instance=SimpleNamespace(pk=77323, archived_at=None, deleted_at="deleted"),
+            )
+        self.assertTrue(FaceVectorPurge.objects.filter(
+            kind="gallery", object_id=77323,
+        ).exists())
+
+    def test_inactive_photo_creates_outbox_before_dispatch(self):
+        from types import SimpleNamespace
+        from apps.galleries.models import GalleryPhoto
+        from apps.visual_search.signals import photo_inactive
+
+        with patch("apps.visual_search.purges.dispatch_purge") as dispatch:
+            with self.captureOnCommitCallbacks(execute=True):
+                photo_inactive(
+                    sender=GalleryPhoto,
+                    instance=SimpleNamespace(pk=77322, status="failed"),
+                )
+                self.assertTrue(FaceVectorPurge.objects.filter(
+                    kind="photo", object_id=77322,
+                    status=FaceVectorPurge.Status.PENDING,
+                ).exists())
+                dispatch.assert_not_called()
+            dispatch.assert_called_once()
