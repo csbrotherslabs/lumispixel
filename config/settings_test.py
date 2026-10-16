@@ -23,3 +23,15 @@ GALLERY_STORAGE_ENVIRONMENT = "dev"
 # environment preserves the production database connection contract.
 DATABASES["default"]["CONN_MAX_AGE"] = None  # noqa: F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
+
+# SQLite is opt-in for lightweight unit tests when managed PostgreSQL users
+# cannot create a temporary test database. Existing PostgreSQL CI behavior
+# remains unchanged unless this flag is explicitly set.
+if env_bool("LUMISPIXEL_TEST_SQLITE", False):  # noqa: F405
+    DATABASES = {  # noqa: F405
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_visual_search.sqlite3",  # noqa: F405
+            "TEST": {"NAME": ":memory:"},
+        }
+    }
