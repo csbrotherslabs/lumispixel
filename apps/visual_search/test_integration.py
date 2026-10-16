@@ -99,18 +99,18 @@ class LifecycleIntegrationTests(TestCase):
     def test_photo_deletion_dispatches_purge_after_commit(self):
         from apps.visual_search.signals import photo_deleted
         from apps.galleries.models import GalleryPhoto
-        with patch("apps.visual_search.signals._purge_photo") as purge:
+        with patch("apps.visual_search.purges.enqueue_purge") as purge:
             with self.captureOnCommitCallbacks(execute=True):
                 photo_deleted(sender=GalleryPhoto, instance=GalleryPhoto(pk=991237))
-            purge.assert_called_once_with(991237)
+            purge.assert_called_once_with("photo", 991237)
 
     def test_gallery_deletion_dispatches_purge_after_commit(self):
         from apps.visual_search.signals import gallery_deleted
         from apps.galleries.models import Gallery
-        with patch("apps.visual_search.signals._purge_gallery") as purge:
+        with patch("apps.visual_search.purges.enqueue_purge") as purge:
             with self.captureOnCommitCallbacks(execute=True):
                 gallery_deleted(sender=Gallery, instance=Gallery(pk=991238))
-            purge.assert_called_once_with(991238)
+            purge.assert_called_once_with("gallery", 991238)
 
     def test_reconciliation_does_not_touch_vector_db_when_unconfigured(self):
         from apps.visual_search.tasks import reconcile_face_index
