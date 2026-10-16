@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import GalleryFaceSearchPolicy, FaceIndexJob
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)\n\n\ndef _queue_purge(kind, object_id):\n    from .purges import enqueue_purge\n    enqueue_purge(kind, object_id)
 
 
 def _purge_photo(photo_id):
@@ -27,12 +27,12 @@ def _purge_gallery(gallery_id):
 
 @receiver(post_delete, sender=GalleryPhoto)
 def photo_deleted(sender, instance, **kwargs):
-    transaction.on_commit(lambda photo_id=instance.pk: _purge_photo(photo_id))
+    _queue_purge("photo", instance.pk)
 
 
 @receiver(post_delete, sender=Gallery)
 def gallery_deleted(sender, instance, **kwargs):
-    transaction.on_commit(lambda gallery_id=instance.pk: _purge_gallery(gallery_id))
+    _queue_purge("gallery", instance.pk)
 
 
 @receiver(pre_save, sender=GalleryFaceSearchPolicy)
@@ -48,7 +48,7 @@ def processing_revoked(sender, instance, **kwargs):
             photo__gallery_id=instance.gallery_id,
             status__in=[FaceIndexJob.Status.PENDING, FaceIndexJob.Status.PROCESSING],
         ).update(status=FaceIndexJob.Status.CANCELLED)
-        transaction.on_commit(lambda gallery_id=instance.gallery_id: _purge_gallery(gallery_id))
+        _queue_purge("gallery", instance.gallery_id)
 
 
 @receiver(post_save, sender=Gallery)
