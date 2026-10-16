@@ -41,7 +41,7 @@ class ConsentRevocationTests(TestCase):
             processing_authorized=True,
         )
         with patch("apps.visual_search.signals.FaceIndexJob.objects.filter") as jobs, patch(
-            "apps.visual_search.signals._purge_gallery"
+            "apps.visual_search.signals._queue_purge"
         ) as purge:
             with self.captureOnCommitCallbacks(execute=True):
                 processing_revoked(sender=GalleryFaceSearchPolicy, instance=policy)
