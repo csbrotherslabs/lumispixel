@@ -51,6 +51,7 @@ from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as ab
     complete as complete_multipart, delete_object as delete_multipart_object,
     get_object_stream as get_multipart_object_stream, initiate as initiate_multipart,
     multipart_object_key, sign_part, list_parts as list_multipart_parts)
+from apps.visual_search.services import schedule_face_indexing
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -1602,6 +1603,7 @@ def gallery_multipart_complete(request, upload_uuid):
             original_name=locked_session.original_name, file_size=locked_session.file_size,
             status=GalleryPhoto.Status.COMPLETED,
         )
+        schedule_face_indexing(photo.pk)
         Gallery.objects.filter(pk=locked_session.gallery_id).update(
             image_count=F("image_count") + 1, storage_used=F("storage_used") + locked_session.file_size
         )
@@ -1672,6 +1674,7 @@ def gallery_upload_queue(request):
             except Exception:
                 errors.append({"name": upload.name, "error": "The image could not be validated."})
                 continue
+            schedule_face_indexing(photo.pk)
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
             if storage_remaining is not None:
                 storage_remaining -= upload.size
