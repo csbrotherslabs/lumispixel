@@ -28,8 +28,11 @@ INSTALLED_APPS = [
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
     "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
-    "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig",
+    "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
+VISUAL_SEARCH_FACE_INDEXING_ENABLED = env_bool("VISUAL_SEARCH_FACE_INDEXING_ENABLED", False)
+VISUAL_SEARCH_FACE_MODEL_VERSION = os.getenv("VISUAL_SEARCH_FACE_MODEL_VERSION", "arcface-buffalo-l-v1")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware",
     "apps.core.observability.RequestIDMiddleware", "django.contrib.sessions.middleware.SessionMiddleware",
