@@ -38,3 +38,46 @@ class ConsentInvariantTests(TestCase):
     def test_reconciliation_skips_unconfigured_database(self):
         from apps.visual_search.tasks import reconcile_face_index
         self.assertEqual(reconcile_face_index.run(), "not_configured")
+
+
+class ConsentPersistenceTests(TestCase):
+    def setUp(self):
+        from uuid import uuid4
+        from django.contrib.auth import get_user_model
+        from apps.accounts.models import PhotographerProfile
+        from apps.billing.models import Plan
+        from apps.galleries.models import Gallery
+        from apps.visual_search.models import GalleryFaceSearchPolicy
+
+        Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
+        user = get_user_model().objects.create(email=f"consent-{uuid4().hex}@example.test")
+        photographer = PhotographerProfile.objects.create(user=user, slug=f"consent-{uuid4().hex}")
+        gallery = Gallery.objects.create(
+            photographer=photographer, name="Consent test", slug=f"consent-{uuid4().hex}"
+        )
+        self.policy = GalleryFaceSearchPolicy.objects.create(
+            gallery=gallery, processing_authorized=True, global_discovery_enabled=True
+        )
+
+    def test_partial_save_revocation_also_clears_discovery(self):
+        from apps.visual_search.models import GalleryFaceSearchPolicy
+        with patch("apps.visual_search.purges.dispatch_purge"):
+            self.policy.processing_authorized = False
+            self.policy.save(update_fields=["processing_authorized"])
+        self.policy.refresh_from_db()
+        self.assertFalse(self.policy.processing_authorized)
+        self.assertFalse(self.policy.global_discovery_enabled)
+
+    def test_queryset_update_cannot_enable_discovery_without_consent(self):
+        from django.db import IntegrityError, transaction
+        from apps.visual_search.models import GalleryFaceSearchPolicy
+        with patch("apps.visual_search.purges.dispatch_purge"):
+            self.policy.processing_authorized = False
+            self.policy.save(update_fields=["processing_authorized"])
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                GalleryFaceSearchPolicy.objects.filter(pk=self.policy.pk).update(
+                    global_discovery_enabled=True
+                )
+        self.policy.refresh_from_db()
+        self.assertFalse(self.policy.global_discovery_enabled)
