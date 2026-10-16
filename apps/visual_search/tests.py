@@ -81,3 +81,20 @@ class ConsentPersistenceTests(TestCase):
                 )
         self.policy.refresh_from_db()
         self.assertFalse(self.policy.global_discovery_enabled)
+
+    def test_queryset_cannot_bypass_revocation_signal(self):
+        from apps.visual_search.models import GalleryFaceSearchPolicy
+        with self.assertRaisesMessage(ValueError, "Use GalleryFaceSearchPolicy.save()"):
+            GalleryFaceSearchPolicy.objects.filter(pk=self.policy.pk).update(
+                processing_authorized=False
+            )
+        self.policy.refresh_from_db()
+        self.assertTrue(self.policy.processing_authorized)
+
+    def test_bulk_update_cannot_bypass_revocation_signal(self):
+        from apps.visual_search.models import GalleryFaceSearchPolicy
+        self.policy.processing_authorized = False
+        with self.assertRaisesMessage(ValueError, "Use GalleryFaceSearchPolicy.save()"):
+            GalleryFaceSearchPolicy.objects.bulk_update(
+                [self.policy], ["processing_authorized"]
+            )
