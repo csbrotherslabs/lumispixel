@@ -23,7 +23,7 @@ def extract_face_embeddings(stream):
             raise ValueError("Image exceeds face indexing pixel limit")
         rgb = np.asarray(image.convert("RGB"))
     # InsightFace expects BGR images. The model pack must be provisioned offline.
-    app = FaceAnalysis(name=settings.VISUAL_SEARCH_FACE_MODEL_VERSION.split("-v")[0],
+    app = FaceAnalysis(name=settings.VISUAL_SEARCH_MODEL_PACK,
                        root=settings.VISUAL_SEARCH_MODEL_PATH, providers=["CPUExecutionProvider"])
     app.prepare(ctx_id=-1, det_size=(640, 640))
     faces = app.get(rgb[:, :, ::-1].copy())
