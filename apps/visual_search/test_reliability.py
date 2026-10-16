@@ -22,7 +22,7 @@ class ConsentRevocationTests(TestCase):
             global_discovery_enabled=False,
         )
         with patch("apps.visual_search.signals.FaceIndexJob.objects.filter") as jobs, patch(
-            "apps.visual_search.signals._purge_gallery"
+            "apps.visual_search.purges.enqueue_purge"
         ) as purge:
             with self.captureOnCommitCallbacks(execute=True):
                 processing_revoked(sender=GalleryFaceSearchPolicy, instance=policy)
@@ -33,7 +33,7 @@ class ConsentRevocationTests(TestCase):
             jobs.return_value.update.assert_called_once_with(
                 status=FaceIndexJob.Status.CANCELLED
             )
-            purge.assert_called_once_with(policy.gallery_id)
+            purge.assert_called_once_with("gallery", policy.gallery_id)
 
     def test_authorized_policy_does_not_purge(self):
         policy = GalleryFaceSearchPolicy(
