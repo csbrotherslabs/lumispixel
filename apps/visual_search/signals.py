@@ -1,33 +1,12 @@
-"""Best-effort immediate purges, backed by periodic reconciliation."""
-import logging
-from django.db import transaction
+"""Durable biometric purge requests for gallery and photo lifecycle changes."""
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import GalleryFaceSearchPolicy, FaceIndexJob
 
-logger = logging.getLogger(__name__)
-
-
 def _queue_purge(kind, object_id):
     from .purges import enqueue_purge
     enqueue_purge(kind, object_id)
-
-
-def _purge_photo(photo_id):
-    from .vector_store import delete_photo_embeddings
-    try:
-        delete_photo_embeddings(photo_id)
-    except Exception:
-        logger.exception("Face purge failed for photo %s", photo_id)
-
-
-def _purge_gallery(gallery_id):
-    from .vector_store import delete_gallery_embeddings
-    try:
-        delete_gallery_embeddings(gallery_id)
-    except Exception:
-        logger.exception("Face purge failed for gallery %s", gallery_id)
 
 
 @receiver(post_delete, sender=GalleryPhoto)
@@ -59,10 +38,10 @@ def processing_revoked(sender, instance, **kwargs):
 @receiver(post_save, sender=Gallery)
 def gallery_inactive(sender, instance, **kwargs):
     if instance.deleted_at or instance.archived_at:
-        transaction.on_commit(lambda gallery_id=instance.pk: _purge_gallery(gallery_id))
+        _queue_purge("gallery", instance.pk)
 
 
 @receiver(post_save, sender=GalleryPhoto)
 def photo_inactive(sender, instance, **kwargs):
     if instance.status != GalleryPhoto.Status.COMPLETED:
-        transaction.on_commit(lambda photo_id=instance.pk: _purge_photo(photo_id))
+        _queue_purge("photo", instance.pk)
