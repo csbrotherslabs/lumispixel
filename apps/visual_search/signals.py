@@ -6,7 +6,12 @@ from django.dispatch import receiver
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import GalleryFaceSearchPolicy, FaceIndexJob
 
-logger = logging.getLogger(__name__)\n\n\ndef _queue_purge(kind, object_id):\n    from .purges import enqueue_purge\n    enqueue_purge(kind, object_id)
+logger = logging.getLogger(__name__)
+
+
+def _queue_purge(kind, object_id):
+    from .purges import enqueue_purge
+    enqueue_purge(kind, object_id)
 
 
 def _purge_photo(photo_id):
