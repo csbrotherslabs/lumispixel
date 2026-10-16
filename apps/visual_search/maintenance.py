@@ -31,8 +31,9 @@ def reconcile():
         )[:100])
         for job in jobs:
             job.status = FaceIndexJob.Status.PENDING if job.attempts < 4 else FaceIndexJob.Status.FAILED
+            job.claim_token = None
             job.last_error = "Worker interrupted or timed out"
-            job.save(update_fields=["status", "last_error", "updated_at"])
+            job.save(update_fields=["status", "claim_token", "last_error", "updated_at"])
             recovered += 1
     if settings.VISUAL_SEARCH_FACE_INDEXING_ENABLED:
         ids = list(FaceIndexJob.objects.filter(status=FaceIndexJob.Status.PENDING).order_by(
