@@ -1,0 +1,7 @@
+# Install on a dedicated, CPU-capable indexing worker only.
+# Validate the selected pretrained model's commercial-use rights separately.
+-r requirements.txt
+numpy>=1.26,<3
+pgvector>=0.4,<1
+insightface>=0.7.3,<1
+onnxruntime>=1.18,<2
