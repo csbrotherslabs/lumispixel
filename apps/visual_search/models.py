@@ -3,8 +3,22 @@ from django.db import models
 from django.db.models import Q
 
 
+class ConsentPolicyQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if "processing_authorized" in kwargs:
+            raise ValueError("Use GalleryFaceSearchPolicy.save() to change processing consent")
+        return super().update(**kwargs)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        if "processing_authorized" in fields:
+            raise ValueError("Use GalleryFaceSearchPolicy.save() to change processing consent")
+        return super().bulk_update(objs, fields, batch_size=batch_size)
+
+
 class GalleryFaceSearchPolicy(models.Model):
     """Explicit photographer authorization; global discovery is independently opt-in."""
+
+    objects = ConsentPolicyQuerySet.as_manager()
 
     gallery = models.OneToOneField(
         "galleries.Gallery", on_delete=models.CASCADE, related_name="face_search_policy"
