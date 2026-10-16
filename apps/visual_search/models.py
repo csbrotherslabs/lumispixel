@@ -14,6 +14,23 @@ class GalleryFaceSearchPolicy(models.Model):
     authorized_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(processing_authorized=True) | Q(global_discovery_enabled=False),
+                name="visual_discovery_requires_consent",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Persist consent-dependent discovery changes even for partial saves.
+        if not self.processing_authorized:
+            self.global_discovery_enabled = False
+            fields = kwargs.get("update_fields")
+            if fields is not None:
+                kwargs["update_fields"] = set(fields) | {"global_discovery_enabled"}
+        return super().save(*args, **kwargs)
+
 
 class FaceIndexJob(models.Model):
     class Status(models.TextChoices):
