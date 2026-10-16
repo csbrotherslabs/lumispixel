@@ -4,6 +4,7 @@ Requires a disposable Django PostgreSQL test database. No real images, vector
 writes, Celery broker, or research database access: inference and storage are
 mocked, but ORM transactions and locking are real.
 """
+import os
 import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -26,7 +27,7 @@ from apps.visual_search.purges import execute_purge
 
 
 @unittest.skipUnless(
-    getattr(settings, "VISUAL_SEARCH_DJANGO_CONCURRENCY_TESTS", False),
+    os.environ.get("VISUAL_SEARCH_DJANGO_CONCURRENCY_TESTS") == "1",
     "Opt in with VISUAL_SEARCH_DJANGO_CONCURRENCY_TESTS=1 and disposable Django PostgreSQL test DB",
 )
 class DjangoModelConcurrencyTests(TransactionTestCase):
