@@ -23,7 +23,7 @@ def reconcile():
         ).exists():
             delete_photo_embeddings(photo_id)
             removed += 1
-    stale_before = timezone.now() - timedelta(seconds=int(settings.CELERY_TASK_TIME_LIMIT) + 300)
+    stale_before = timezone.now() - timedelta(seconds=int(getattr(settings, 'CELERY_TASK_TIME_LIMIT', None) or 3600) + 300)
     recovered = 0
     with transaction.atomic():
         jobs = list(FaceIndexJob.objects.select_for_update().filter(
