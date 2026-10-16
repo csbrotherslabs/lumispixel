@@ -20,6 +20,7 @@ from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile
+from apps.billing.models import Plan
 from apps.galleries.models import Gallery, GalleryPhoto
 from apps.visual_search.models import FaceIndexJob, FaceVectorPurge, GalleryFaceSearchPolicy
 from apps.visual_search.tasks import process_face_index_job
@@ -36,6 +37,7 @@ class DjangoModelConcurrencyTests(TransactionTestCase):
     def setUp(self):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL row locks required")
+        Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
         user = get_user_model().objects.create(email=f"race-{uuid4().hex}@example.test")
         photographer = PhotographerProfile.objects.create(user=user, slug=f"race-{uuid4().hex}")
         self.gallery = Gallery.objects.create(
