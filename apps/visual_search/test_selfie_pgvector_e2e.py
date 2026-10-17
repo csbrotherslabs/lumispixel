@@ -8,7 +8,6 @@ import os
 import unittest
 from uuid import uuid4
 
-import numpy as np
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -58,8 +57,7 @@ class RealPgvectorSearchIntegrationTests(TestCase):
             gallery=self.gallery, photographer=photographer, original_name="synthetic.jpg",
             status=GalleryPhoto.Status.COMPLETED, is_visible=True,
         )
-        self.vector = np.zeros(512, dtype=np.float32)
-        self.vector[0] = 1
+        self.vector = [1.0] + [0.0] * 511
 
     def tearDown(self):
         if hasattr(self, "photo"):
