@@ -91,3 +91,50 @@ class SelfieSearchAPITests(TestCase):
     def test_explicit_calibration_value(self):
         from apps.visual_search.search import calibrated_max_distance
         self.assertEqual(calibrated_max_distance(), 0.4)
+
+    @override_settings(
+        VISUAL_SEARCH_FACE_INDEXING_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_API_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_RATE_LIMIT_SHARED_CACHE=True,
+    )
+    def test_http_upload_inference_search_response_contract(self):
+        from django.core.cache import cache
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        cache.clear()
+        self.client.force_login(self.user)
+        selfie = SimpleUploadedFile(
+            "selfie.jpg", b"test-image-bytes", content_type="image/jpeg"
+        )
+        with patch("apps.visual_search.api.extract_face_embeddings", return_value=[[0.0] * 512]) as infer:
+            with patch("apps.visual_search.api.find_public_matches", return_value=[{"gallery_id": 17}]) as search:
+                response = self.client.post(self.url, {
+                    "biometric_search_consent": "yes",
+                    "selfie": selfie,
+                })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"results": [{"gallery_id": 17}]})
+        infer.assert_called_once()
+        search.assert_called_once()
+        cache.clear()
+
+    @override_settings(
+        VISUAL_SEARCH_FACE_INDEXING_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_API_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_RATE_LIMIT_SHARED_CACHE=True,
+    )
+    def test_multiple_faces_do_not_reach_vector_search(self):
+        from django.core.cache import cache
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        cache.clear()
+        self.client.force_login(self.user)
+        selfie = SimpleUploadedFile(
+            "selfie.jpg", b"test-image-bytes", content_type="image/jpeg"
+        )
+        with patch("apps.visual_search.api.extract_face_embeddings", return_value=[[0] * 512, [0] * 512]):
+            with patch("apps.visual_search.api.find_public_matches") as search:
+                response = self.client.post(self.url, {
+                    "biometric_search_consent": "yes", "selfie": selfie,
+                })
+        self.assertEqual(response.status_code, 400)
+        search.assert_not_called()
+        cache.clear()
