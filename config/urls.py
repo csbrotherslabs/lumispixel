@@ -29,6 +29,7 @@ urlpatterns = [
     path("photographer/workspace/clients/<int:pk>/contracts/", client_contracts, name="client_contracts"),
     path("photographer/workspace/", include("apps.dashboard.urls")),
     path("internal/", include("apps.internal_ops.urls")),
+    path("api/visual-search/", include("apps.visual_search.urls")),
     path("api/", include("apps.api.urls")),
 ]
 
