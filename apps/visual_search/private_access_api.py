@@ -1,5 +1,6 @@
 """Invitation-only requests. Generic responses prevent gallery enumeration."""
 import json
+from django.conf import settings
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -35,6 +36,8 @@ def _payload(request):
 @require_POST
 def issue_private_invitation(request, gallery_id):
     """Only the gallery's photographer account can create an invitation."""
+    if not getattr(settings, "VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED", False):
+        return JsonResponse({"error": "unavailable"}, status=503)
     from .access_requests import PrivateGalleryInvitation
     gallery = Gallery.objects.select_related("photographer").filter(
         pk=gallery_id, photographer__user=request.user,
@@ -52,6 +55,8 @@ def issue_private_invitation(request, gallery_id):
 @require_POST
 def submit_private_request(request):
     """Do not reveal whether a supplied invitation exists or is valid."""
+    if not getattr(settings, "VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED", False):
+        return JsonResponse({"error": "unavailable"}, status=503)
     data = _payload(request)
     token = data.get("invitation_token")
     if not isinstance(token, str) or not 32 <= len(token) <= 256:
@@ -71,6 +76,8 @@ def submit_private_request(request):
 @require_POST
 def review_private_request(request, request_id):
     """Review is an administrative decision, NOT an access-control grant."""
+    if not getattr(settings, "VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED", False):
+        return JsonResponse({"error": "unavailable"}, status=503)
     data = _payload(request)
     decision = data.get("decision")
     if decision not in ("approved", "denied"):
