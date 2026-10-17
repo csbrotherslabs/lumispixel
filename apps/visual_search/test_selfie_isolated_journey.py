@@ -4,6 +4,8 @@ Synthetic vectors only. Vector adapter is stubbed in these tests; the optional
 real pgvector test suite is separate and requires a disposable database.
 """
 from contextlib import contextmanager
+from importlib.util import find_spec
+import unittest
 from datetime import timedelta
 from unittest.mock import patch
 from uuid import uuid4
@@ -35,6 +37,8 @@ class FakeVectorConnection:
         return self.rows
 
 
+@unittest.skipUnless(find_spec("numpy") and find_spec("pgvector"),
+                     "Requires optional numpy and pgvector packages")
 class IsolatedSelfieSearchJourneyTests(TestCase):
     def setUp(self):
         Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
