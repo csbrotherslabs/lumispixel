@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
 VISUAL_SEARCH_FACE_INDEXING_ENABLED = env_bool("VISUAL_SEARCH_FACE_INDEXING_ENABLED", False)
+VISUAL_SEARCH_SELFIE_API_ENABLED = env_bool("VISUAL_SEARCH_SELFIE_API_ENABLED", False)
 VISUAL_SEARCH_FACE_MODEL_VERSION = os.getenv("VISUAL_SEARCH_FACE_MODEL_VERSION", "arcface-buffalo-l-v1")
 VISUAL_SEARCH_DATABASE_URL = os.getenv("VISUAL_SEARCH_DATABASE_URL", "")
 VISUAL_SEARCH_MODEL_PATH = os.getenv("VISUAL_SEARCH_MODEL_PATH", "")
