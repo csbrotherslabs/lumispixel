@@ -8,7 +8,6 @@ from datetime import timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
-import numpy as np
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -100,8 +99,7 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         def fake_connection():
             yield connection
 
-        embedding = np.zeros(512, dtype=np.float32)
-        embedding[0] = 1
+        embedding = [1.0] + [0.0] * 511
         with patch("apps.visual_search.search.vector_connection", fake_connection), \
              patch("pgvector.psycopg.register_vector"):
             result = find_public_matches(embedding)
