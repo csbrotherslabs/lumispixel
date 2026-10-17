@@ -64,7 +64,7 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
             name="Synthetic fixture", slug=f"fixture-{uuid4().hex}",
             status=Gallery.Status.PUBLISHED if published else Gallery.Status.DRAFT,
             visibility=visibility,
-            published_at=now if published else None,
+            published_at=(now - timedelta(days=2) if expired else now) if published else None,
             expires_at=now + timedelta(days=-1 if expired else 1),
         )
         GalleryFaceSearchPolicy.objects.create(
