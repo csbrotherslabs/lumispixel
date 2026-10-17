@@ -6,6 +6,7 @@ No real images, faces, or customer embeddings are used.
 """
 import os
 import unittest
+from importlib.util import find_spec
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
@@ -21,8 +22,9 @@ from apps.visual_search.vector_store import replace_embeddings, delete_photo_emb
 
 
 @unittest.skipUnless(
-    os.environ.get("VISUAL_SEARCH_INTEGRATION_DATABASE_URL"),
-    "Requires an explicitly configured disposable pgvector database",
+    os.environ.get("VISUAL_SEARCH_INTEGRATION_DATABASE_URL")
+    and find_spec("numpy") and find_spec("pgvector"),
+    "Requires disposable pgvector database and optional numpy/pgvector packages",
 )
 class RealPgvectorSearchIntegrationTests(TestCase):
     def setUp(self):
