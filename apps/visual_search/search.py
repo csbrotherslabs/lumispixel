@@ -43,7 +43,7 @@ def find_public_matches(embedding, *, limit=20):
         archived_at__isnull=True,
         face_search_policy__processing_authorized=True,
         face_search_policy__global_discovery_enabled=True,
-        gallery_photos__status=GalleryPhoto.Status.COMPLETED,
+        photos__status=GalleryPhoto.Status.COMPLETED,
     ).values_list("id", flat=True).distinct())
     return [{"gallery_id": gallery_id, "distance": float(distance)}
             for gallery_id, distance in rows if gallery_id in eligible][:limit]
