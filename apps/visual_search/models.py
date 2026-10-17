@@ -100,3 +100,5 @@ class FaceVectorPurge(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["status", "created_at"], name="visual_purge_pending")]
+
+from .access_requests import PrivateGalleryInvitation, PrivateGalleryAccessRequest
