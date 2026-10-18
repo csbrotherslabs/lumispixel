@@ -5,7 +5,7 @@ This change creates account-scoped authorization for **ephemeral public-gallery 
 ## Rollout controls
 
 - `VISUAL_SEARCH_CLIENT_CONSENT_COLLECTION_ENABLED` defaults to **False** when unset. Do not enable until legal/privacy review approves the notice and the user-facing authorization experience.
-- `VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION` defaults to an empty value when unset; a nonempty approved policy version is required to grant and use permission.
+- `VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION` defaults to an empty value when unset; a nonempty approved policy version is required to grant and use permission.\n- `VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL` must point to an approved, published notice before new permissions can be collected. The privacy page remains accessible for withdrawal when collection is disabled.
 - Existing `VISUAL_SEARCH_FACE_INDEXING_ENABLED` and `VISUAL_SEARCH_SELFIE_API_ENABLED` gates remain unchanged and must remain **False** in customer environments pending review and calibration.
 - The legacy per-request `biometric_search_consent=yes` check remains necessary, but is not sufficient without a persisted, active, current-version permission.
 
@@ -33,3 +33,11 @@ The current selfie API processes uploaded query images in memory and does not cr
 - Proper end-to-end deletion of individual biometric data, including index membership and backups.
 - Concurrency/in-flight processing cancellation guarantees.
 - Consented evaluation dataset, calibrated threshold, privacy/security review, and separate release approval.
+
+## Client self-service privacy page
+
+Authenticated users can visit `/api/visual-search/selfie/privacy/` to view permission status and withdraw it even when enrollment is disabled. When an approved notice URL, policy version and collection flag are configured, the page also offers explicit opt-in. The page sets a CSRF cookie; the API uses standard same-origin CSRF protection. The page is not yet linked from the broader client navigation pending UX review.
+
+## In-flight withdrawal
+
+The selfie API rechecks authorization after embedding extraction and after vector matching, suppressing results when a completed withdrawal is observed. This narrows the race window but does not provide atomic cancellation of inference already in progress. Stronger job cancellation/deletion controls remain a launch blocker.
