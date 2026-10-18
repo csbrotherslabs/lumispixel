@@ -14,6 +14,7 @@ from apps.visual_search.models import ClientSelfieSearchPermission
 @override_settings(
     VISUAL_SEARCH_CLIENT_CONSENT_COLLECTION_ENABLED=True,
     VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION="test-notice-v1",
+    VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL="/privacy/biometric-test-notice/",
 )
 class ClientSelfiePermissionTests(TestCase):
     def setUp(self):
@@ -127,3 +128,54 @@ class ClientSelfiePermissionTests(TestCase):
             "biometric_search_consent": "yes",
         })
         self.assertEqual(response.status_code, 503)
+
+    def test_privacy_page_exposes_withdrawal_even_when_enrollment_disabled(self):
+        page = reverse("visual_search:selfie-privacy")
+        with override_settings(VISUAL_SEARCH_CLIENT_CONSENT_COLLECTION_ENABLED=False):
+            response = self.client.get(page)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Withdraw selfie search permission")
+        self.assertNotContains(response, 'id="grant"')
+
+    def test_privacy_page_requires_authentication_and_sets_csrf_cookie(self):
+        page = reverse("visual_search:selfie-privacy")
+        response = self.client.get(page)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("csrftoken", response.cookies)
+        self.client.logout()
+        self.assertEqual(self.client.get(page).status_code, 302)
+
+    @override_settings(VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL="")
+    def test_no_approved_notice_blocks_new_authorization(self):
+        self.assertEqual(self.grant().status_code, 503)
+        self.assertEqual(self.client.delete(self.url).status_code, 200)
+
+    @override_settings(
+        VISUAL_SEARCH_FACE_INDEXING_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_API_ENABLED=True,
+        VISUAL_SEARCH_SELFIE_RATE_LIMIT_SHARED_CACHE=True,
+    )
+    def test_withdrawal_during_search_suppresses_results(self):
+        from django.core.cache import cache
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.grant()
+
+        def withdraw_during_match(*args, **kwargs):
+            ClientSelfieSearchPermission.objects.filter(
+                user=self.alice, withdrawn_at__isnull=True,
+            ).update(withdrawn_at=__import__("django.utils.timezone", fromlist=["now"]).now())
+            return [{"gallery_id": 999}]
+
+        with patch("apps.visual_search.api.extract_face_embeddings", return_value=[[0.0] * 512]):
+            with patch("apps.visual_search.api.find_public_matches", side_effect=withdraw_during_match):
+                response = self.client.post(reverse("visual_search:selfie"), {
+                    "biometric_search_consent": "yes",
+                    "selfie": SimpleUploadedFile(
+                        "selfie.jpg", b"synthetic", content_type="image/jpeg",
+                    ),
+                })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"], "client_permission_withdrawn")
+        self.assertNotIn("results", response.json())
