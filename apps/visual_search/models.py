@@ -191,3 +191,31 @@ class FaceDeletionReview(models.Model):
         indexes = [
             models.Index(fields=["photo", "deleted_at"], name="visual_face_erasure_photo"),
         ]
+
+
+class PhotographerDeletionAssessment(models.Model):
+    """Owner-scoped review outcome; unverified never means no embeddings exist."""
+    request = models.ForeignKey(
+        ClientBiometricDeletionRequest, on_delete=models.CASCADE,
+        related_name="photographer_assessments",
+    )
+    gallery = models.ForeignKey("galleries.Gallery", on_delete=models.CASCADE)
+    photographer_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="biometric_deletion_assessments",
+    )
+    outcome = models.CharField(
+        max_length=24, choices=[
+            ("unverified", "Identity could not be verified"),
+            ("reviewed", "Review completed for this gallery"),
+        ],
+    )
+    reviewed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "gallery"],
+                name="visual_unique_gallery_deletion_assessment",
+            ),
+        ]
