@@ -50,7 +50,14 @@ def client_selfie_permission(request):
     version = getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION", "")
     if not version or not getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL", ""):
         return JsonResponse({"error": "unavailable"}, status=503)
-    if ClientBiometricDeletionRequest.objects.filter(\n        user=request.user, status__in=[\n            ClientBiometricDeletionRequest.Status.PENDING,\n            ClientBiometricDeletionRequest.Status.IN_REVIEW,\n        ],\n    ).exists():\n        return JsonResponse({"error": "deletion_request_pending"}, status=409)\n    if not getattr(request.user, "email_verified", False):
+    if ClientBiometricDeletionRequest.objects.filter(
+        user=request.user, status__in=[
+            ClientBiometricDeletionRequest.Status.PENDING,
+            ClientBiometricDeletionRequest.Status.IN_REVIEW,
+        ],
+    ).exists():
+        return JsonResponse({"error": "deletion_request_pending"}, status=409)
+    if not getattr(request.user, "email_verified", False):
         return JsonResponse({"error": "account_not_verified"}, status=403)
     try:
         payload = json.loads(request.body)
@@ -60,7 +67,14 @@ def client_selfie_permission(request):
         return JsonResponse({"error": "explicit_authorization_required"}, status=400)
     with transaction.atomic():
         type(request.user).objects.select_for_update().get(pk=request.user.pk)
-        if ClientBiometricDeletionRequest.objects.filter(\n            user=request.user, status__in=[\n                ClientBiometricDeletionRequest.Status.PENDING,\n                ClientBiometricDeletionRequest.Status.IN_REVIEW,\n            ],\n        ).exists():\n            return JsonResponse({"error": "deletion_request_pending"}, status=409)\n        existing = ClientSelfieSearchPermission.objects.filter(
+        if ClientBiometricDeletionRequest.objects.filter(
+            user=request.user, status__in=[
+                ClientBiometricDeletionRequest.Status.PENDING,
+                ClientBiometricDeletionRequest.Status.IN_REVIEW,
+            ],
+        ).exists():
+            return JsonResponse({"error": "deletion_request_pending"}, status=409)
+        existing = ClientSelfieSearchPermission.objects.filter(
             user=request.user, purpose=PURPOSE, withdrawn_at__isnull=True,
         ).first()
         if existing and existing.policy_version != version:
