@@ -94,14 +94,15 @@ def revoke_private_invitation(request, invitation_id):
     blocked = _check_throttle(request, "revoke")
     if blocked is not None:
         return blocked
-    invitation = PrivateGalleryInvitation.objects.filter(
-        pk=invitation_id, gallery__photographer__user=request.user,
-    ).first()
-    if invitation is None:
-        return JsonResponse({"error": "not_found"}, status=404)
-    if invitation.revoked_at is None:
-        invitation.revoked_at = timezone.now()
-        invitation.save(update_fields=["revoked_at"])
+    with transaction.atomic():
+        invitation = PrivateGalleryInvitation.objects.select_for_update().filter(
+            pk=invitation_id, gallery__photographer__user=request.user,
+        ).first()
+        if invitation is None:
+            return JsonResponse({"error": "not_found"}, status=404)
+        if invitation.revoked_at is None:
+            invitation.revoked_at = timezone.now()
+            invitation.save(update_fields=["revoked_at"])
     return JsonResponse({"revoked": True})
 
 
@@ -158,6 +159,14 @@ def review_private_request(request, request_id):
     if decision not in ("approved", "denied"):
         return JsonResponse({"error": "invalid_decision"}, status=400)
     with transaction.atomic():
+        # Lock invitation first in both review and revocation paths so an
+        # approval cannot race an invitation revocation.
+        parent_id = PrivateGalleryAccessRequest.objects.filter(
+            pk=request_id, invitation__gallery__photographer__user=request.user,
+        ).values_list("invitation_id", flat=True).first()
+        if parent_id is None:
+            return JsonResponse({"error": "not_found"}, status=404)
+        PrivateGalleryInvitation.objects.select_for_update().get(pk=parent_id)
         item = PrivateGalleryAccessRequest.objects.select_for_update().select_related(
             "invitation__gallery__photographer", "requester",
         ).filter(pk=request_id, invitation__gallery__photographer__user=request.user).first()
