@@ -10,7 +10,9 @@ import logging
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import JsonResponse\nfrom django.shortcuts import render\nfrom django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
