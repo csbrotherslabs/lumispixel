@@ -148,4 +148,6 @@ def client_biometric_deletion(request):
         ).order_by("-requested_at").first()
         if pending is None:
             pending = ClientBiometricDeletionRequest.objects.create(user=request.user)
+    from .deletion_service import send_deletion_notice
+    transaction.on_commit(lambda: send_deletion_notice(pending.pk, "requested"))
     return JsonResponse({"status": pending.status, "request_id": pending.pk}, status=202)
