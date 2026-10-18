@@ -23,6 +23,7 @@
 {% endblock %}
 {% block workspace_content %}
 <section class="lp-access-wrap" aria-labelledby="workspace-page-title">
+  <form hidden aria-hidden="true">{% csrf_token %}</form>
   <header class="lp-access-heading">
     <div><p class="lp-access-muted">Galleries / Access management</p><h1 id="workspace-page-title">Private gallery access requests</h1><p class="lp-access-muted">Review requests from people you've invited. Selfie search never reveals private galleries.</p></div>
     <a href="{% url 'photographer_workspace:all_galleries' %}">Back to galleries</a>
@@ -56,8 +57,7 @@
 <script>
 (function(){
   const feedback = document.getElementById('lp-access-feedback');
-  const cookie = document.cookie.split('; ').find(x => x.startsWith('csrftoken='));
-  const csrf = cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : '';
+  const csrf = document.querySelector('.lp-access-wrap input[name="csrfmiddlewaretoken"]')?.value || '';
   document.querySelectorAll('[data-review-url]').forEach(button => {
     button.addEventListener('click', async () => {
       const decision = button.dataset.decision;
