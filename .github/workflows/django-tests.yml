@@ -172,6 +172,11 @@ jobs:
         run: python manage.py test apps/galleries/tests --pattern=test_client_mobile_designs.py --verbosity 2
       - name: Run client access-control browser matrix
         run: python manage.py test apps/galleries/tests --pattern=test_client_permission_browser_matrix.py --verbosity 2
+      - name: Run photographer private gallery request inbox Chromium journeys
+        env:
+          VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED: "true"
+          VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE: "true"
+        run: python manage.py test apps.dashboard.test_private_gallery_request_browser --verbosity 2
 
   django-tests:
     name: Django tests (fast SQLite feedback)
