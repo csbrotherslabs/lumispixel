@@ -1,6 +1,6 @@
 from django.urls import path
 from .api import selfie_search
-from .client_permissions import client_selfie_permission, client_selfie_permission_page
+from .client_permissions import client_selfie_permission, client_selfie_permission_page, client_biometric_deletion
 from .private_access_api import (
     issue_private_invitation, revoke_private_invitation, submit_private_request,
     private_request_inbox, review_private_request,
@@ -11,6 +11,7 @@ urlpatterns = [
     path("selfie/", selfie_search, name="selfie"),
     path("selfie/permission/", client_selfie_permission, name="selfie-permission"),
     path("selfie/privacy/", client_selfie_permission_page, name="selfie-privacy"),
+    path("selfie/deletion/", client_biometric_deletion, name="selfie-deletion"),
     path("private-access/request/", submit_private_request, name="private-access-request"),
     path("private-access/inbox/", private_request_inbox, name="private-access-inbox"),
     path("private-access/galleries/<int:gallery_id>/invite/", issue_private_invitation, name="private-access-invite"),
