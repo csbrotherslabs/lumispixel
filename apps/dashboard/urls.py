@@ -3,6 +3,7 @@ from django.urls import path
 from apps.workflows.views import automation_dashboard
 
 from . import views
+from .private_gallery_request_views import private_gallery_request_inbox_page
 from .billing_views import billing_account
 from .help_views import workspace_help
 from .profile_views import photographer_profile
@@ -12,6 +13,7 @@ app_name = "photographer_workspace"
 urlpatterns = [
     path("", views.photographer_dashboard, name="dashboard"),
     path("galleries/", views.galleries_dashboard, name="galleries"),
+    path("galleries/access-requests/", private_gallery_request_inbox_page, name="private_gallery_requests"),
     path("galleries/all/", views.all_galleries, name="all_galleries"),
     path("galleries/archive/", views.gallery_archive, name="gallery_archive"),
     path("galleries/archive/actions/", views.gallery_archive_actions, name="gallery_archive_actions"),
