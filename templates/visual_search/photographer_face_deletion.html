@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Biometric deletion reviews | LumisPixel{% endblock %}
+{% block content %}
+<main class="container" style="max-width:760px;padding:3rem 1rem">
+  <h1>Client biometric deletion requests</h1>
+  <p>Review requests only for clients explicitly linked to your galleries. Confirm the person's identity using your original client records and the gallery photos. Do not guess which face belongs to a person.</p>
+  <p><strong>Face-level deletion requires a verified photo and face index.</strong> If you cannot establish which face index belongs to the client, leave the request pending and contact LumisPixel support.</p>
+  <div id="reviews" role="region" aria-label="Deletion requests"></div>
+  <p id="message" role="status" aria-live="polite"></p>
+</main>
+<script>
+(async function () {
+  const root = document.getElementById("reviews");
+  const message = document.getElementById("message");
+  try {
+    const response = await fetch("{% url 'visual_search:face-deletion-inbox' %}", {credentials:"same-origin"});
+    if (!response.ok) throw new Error("Unable to load requests");
+    const data = await response.json();
+    if (!data.requests.length) {
+      root.textContent = "No linked client deletion requests currently require review.";
+      return;
+    }
+    const list = document.createElement("ul");
+    for (const item of data.requests) {
+      const li = document.createElement("li");
+      li.textContent = "Request #" + item.request_id + " — received " + new Date(item.requested_at).toLocaleDateString() + ". Review the client's gallery and contact support for verified face-slot selection.";
+      list.appendChild(li);
+    }
+    root.appendChild(list);
+  } catch (error) { message.textContent = error.message; }
+}());
+</script>
+{% endblock %}
