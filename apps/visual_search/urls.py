@@ -1,6 +1,6 @@
 from django.urls import path
 from .api import selfie_search
-from .client_permissions import client_selfie_permission, client_selfie_permission_page, client_biometric_deletion\nfrom .face_deletion_api import photographer_face_deletion_inbox, photographer_confirm_face_deletion, photographer_face_deletion_page
+from .client_permissions import client_selfie_permission, client_selfie_permission_page, client_biometric_deletion\nfrom .face_deletion_api import photographer_face_deletion_inbox, photographer_confirm_face_deletion, photographer_face_deletion_page, photographer_face_review_photos, photographer_face_review_crops, photographer_assess_deletion
 from .private_access_api import (
     issue_private_invitation, revoke_private_invitation, submit_private_request,
     private_request_inbox, review_private_request,
@@ -11,7 +11,7 @@ urlpatterns = [
     path("selfie/", selfie_search, name="selfie"),
     path("selfie/permission/", client_selfie_permission, name="selfie-permission"),
     path("selfie/privacy/", client_selfie_permission_page, name="selfie-privacy"),
-    path("selfie/deletion/", client_biometric_deletion, name="selfie-deletion"),\n    path("selfie/deletion/photographer/", photographer_face_deletion_page, name="face-deletion-page"),\n    path("selfie/deletion/photographer/inbox/", photographer_face_deletion_inbox, name="face-deletion-inbox"),\n    path("selfie/deletion/photographer/<int:deletion_id>/confirm/", photographer_confirm_face_deletion, name="face-deletion-confirm"),
+    path("selfie/deletion/", client_biometric_deletion, name="selfie-deletion"),\n    path("selfie/deletion/photographer/", photographer_face_deletion_page, name="face-deletion-page"),\n    path("selfie/deletion/photographer/inbox/", photographer_face_deletion_inbox, name="face-deletion-inbox"),\n    path("selfie/deletion/photographer/<int:deletion_id>/galleries/<int:gallery_id>/photos/", photographer_face_review_photos, name="face-review-photos"),\n    path("selfie/deletion/photographer/<int:deletion_id>/photos/<int:photo_id>/faces/", photographer_face_review_crops, name="face-review-crops"),\n    path("selfie/deletion/photographer/<int:deletion_id>/assess/", photographer_assess_deletion, name="face-review-assess"),\n    path("selfie/deletion/photographer/<int:deletion_id>/confirm/", photographer_confirm_face_deletion, name="face-deletion-confirm"),
     path("private-access/request/", submit_private_request, name="private-access-request"),
     path("private-access/inbox/", private_request_inbox, name="private-access-inbox"),
     path("private-access/galleries/<int:gallery_id>/invite/", issue_private_invitation, name="private-access-invite"),
