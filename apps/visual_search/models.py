@@ -133,3 +133,32 @@ class ClientSelfieSearchPermission(models.Model):
         indexes = [
             models.Index(fields=["user", "purpose", "withdrawn_at"], name="visual_client_permission"),
         ]
+
+
+class ClientBiometricDeletionRequest(models.Model):
+    """Durable privacy request requiring scoped identification and verified erasure.
+
+    Gallery embeddings have no subject identity link. Never delete other people's
+    faces based on a selfie similarity match, or mark deletion complete by fiat.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending review"
+        IN_REVIEW = "in_review", "In review"
+        COMPLETED = "completed", "Verified complete"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="biometric_deletion_requests",
+    )
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.PENDING,
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    resolution_note = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "requested_at"], name="visual_client_delete_queue"),
+        ]
