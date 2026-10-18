@@ -41,3 +41,13 @@ Authenticated users can visit `/api/visual-search/selfie/privacy/` to view permi
 ## In-flight withdrawal
 
 The selfie API rechecks authorization after embedding extraction and after vector matching, suppressing results when a completed withdrawal is observed. This narrows the race window but does not provide atomic cancellation of inference already in progress. Stronger job cancellation/deletion controls remain a launch blocker.
+
+## Client biometric deletion requests
+
+`GET /api/visual-search/selfie/deletion/` returns only the authenticated user's latest request status. `POST` creates an idempotent durable pending review request, withdraws active selfie-query permission atomically, and blocks reauthorization while the request remains pending/in review. The privacy page provides the action and status, and client Account Settings links to the privacy page.
+
+**Important:** Current gallery vectors contain photo/gallery/photographer identifiers but no verified identity-to-face association. It is not technically safe to delete an individual's vector by using an uncalibrated similarity match, nor to purge entire customer galleries based on a client request. The durable deletion request is intentionally left `pending` for verified review; no automated individual gallery-vector deletion is claimed. Subject-scoped face identifiers, ownership/identity verification, erasure propagation, backup retention handling, and an authorized completion procedure are prerequisites for full erasure. No admin completion API is exposed.
+
+## In-flight request handling
+
+The search API checks active permission before inference, after inference and after matching before returning a response. This is best-effort suppression and **not** a linearizable cancellation guarantee. Strong cancellation will require an explicit request/lease state machine and coordination with biometric processing workers before the selfie API can be enabled.
