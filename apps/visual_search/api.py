@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from .inference import extract_face_embeddings
 from .search import find_public_matches
+from .client_permissions import active_client_permission
 
 logger = logging.getLogger(__name__)
 MAX_SELFIE_BYTES = 5 * 1024 * 1024
@@ -50,6 +51,8 @@ def selfie_search(request):
     except Exception:
         logger.exception("Selfie rate limiter unavailable")
         return JsonResponse({"error": "unavailable"}, status=503)
+    if not active_client_permission(request.user):
+        return JsonResponse({"error": "client_permission_required"}, status=403)
     if request.POST.get("biometric_search_consent") != "yes":
         return JsonResponse({"error": "consent_required"}, status=400)
     photo = request.FILES.get("selfie")
