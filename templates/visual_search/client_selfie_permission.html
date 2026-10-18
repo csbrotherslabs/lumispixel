@@ -73,7 +73,7 @@
       const response = await fetch(deletionEndpoint, {credentials:"same-origin"});
       if (!response.ok) return;
       const data = await response.json();
-      if (data.status !== "not_requested") erasureStatus.textContent = "Deletion request: " + data.status.replace("_", " ");
+      if (data.status !== "not_requested") erasureStatus.textContent = "Deletion request: " + data.status.replace("_", " ") + ". " + (data.message || "") + " Confirmed faces deleted: " + (data.confirmed_faces_deleted || 0) + ".";
     } catch (_) { erasureStatus.textContent = "Deletion status temporarily unavailable."; }
   }
   erase.addEventListener("click", async () => {
