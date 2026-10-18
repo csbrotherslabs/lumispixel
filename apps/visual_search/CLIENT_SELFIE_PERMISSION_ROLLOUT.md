@@ -63,3 +63,13 @@ A scoped confirmation endpoint takes `gallery_id`, `photo_id`, and `face_index`;
 If a photographer cannot identify a requester, report **identity not verified / deletion unresolved**, never **no embeddings exist**. No global matching, automatic absence conclusion, or automatic closure is implemented. A request remains open until all relevant scopes are verified and erasure is confirmed.
 
 The user asked to omit guaranteed in-progress search cancellation; this remains out of scope. Existing permission rechecks are retained.
+
+## Photographer-mediated review implemented in this iteration
+
+Photographers can open the owner-scoped inbox, inspect linked galleries and photos, request ephemeral cropped previews of face slots, explicitly confirm a face for deletion, or mark a gallery identity as unverified. Before deletion the backend regenerates the crop using the configured model and verifies that the selected slot's embedding matches the stored embedding at a very strict distance threshold. If the source/model changed or the slot cannot be proven, the action fails closed. The original photograph and other face slots remain intact.
+
+The client status endpoint reports verified deleted-face counts and unresolved gallery verification; **it never infers that no embeddings exist merely because a photographer cannot recognize a client**. Search authorization stays withdrawn.
+
+The actual deletion review gate `VISUAL_SEARCH_FACE_DELETION_REVIEW_ENABLED` remains **off** pending end-to-end verification. The review only covers galleries with a trustworthy `Gallery.client.user` relationship. Unlinked event guests require a separate verified gallery-claim path; no broad private-gallery enumeration is permitted. Face-level deletion is not claimed complete across all photographers, and request completion remains an explicit future administrative verification step.
+
+Guaranteed cancellation of in-flight searches remains excluded by user request.
