@@ -9,7 +9,7 @@ import logging
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse\nfrom django.shortcuts import render\nfrom django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
@@ -110,3 +110,10 @@ def photographer_confirm_face_deletion(request, deletion_id):
         "deleted_rows": deleted_rows,
         "request_status": "in_review",
     })
+
+
+@login_required
+@ensure_csrf_cookie
+@require_GET
+def photographer_face_deletion_page(request):
+    return render(request, "visual_search/photographer_face_deletion.html")
