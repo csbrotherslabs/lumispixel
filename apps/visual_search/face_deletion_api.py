@@ -9,7 +9,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import transaction, models
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -18,7 +18,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import (
-    ClientBiometricDeletionRequest, FaceDeletionReview, PhotographerDeletionAssessment,
+    ClientBiometricDeletionRequest, FaceDeletionReview, PhotographerDeletionAssessment, BiometricDeletionDiscoveryCandidate,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,15 +33,24 @@ def photographer_face_deletion_inbox(request):
             ClientBiometricDeletionRequest.Status.IN_REVIEW,
         ],
         user__crm_client_records__galleries__photographer__user=request.user,
-        user__crm_client_records__galleries__client__user__isnull=False,
+
     ).distinct().order_by("requested_at")[:100]
+    candidate_requests = ClientBiometricDeletionRequest.objects.filter(
+        status__in=["pending", "in_review"],
+        discovery_candidates__gallery__photographer__user=request.user,
+    ).distinct().order_by("requested_at")[:100]
+    requests = {item.pk: item for item in list(requests) + list(candidate_requests)}
+
     return JsonResponse({
         "requests": [
             {"request_id": item.pk, "requested_at": item.requested_at.isoformat(),
              "galleries": list(Gallery.objects.filter(
-                 photographer__user=request.user, client__user_id=item.user_id,
-             ).values("id", "name")[:50])}
-            for item in requests
+                 photographer__user=request.user,
+             ).filter(
+                 models.Q(client__user_id=item.user_id) |
+                 models.Q(biometricdeletiondiscoverycandidate__request=item),
+             ).distinct().values("id", "name")[:50])}
+            for item in requests.values()
         ],
     })
 
