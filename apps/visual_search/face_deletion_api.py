@@ -226,6 +226,14 @@ def photographer_assess_deletion(request, deletion_id):
             request=deletion, gallery=gallery,
             defaults={"photographer_user": request.user, "outcome": outcome},
         )
+        BiometricDeletionDiscoveryCandidate.objects.filter(
+            request=deletion, gallery=gallery,
+        ).update(status=outcome)
+        if outcome == "unverified":
+            from .deletion_service import send_deletion_notice
+            transaction.on_commit(
+                lambda: send_deletion_notice(deletion.pk, "unverified")
+            )
         if deletion.status == ClientBiometricDeletionRequest.Status.PENDING:
             deletion.status = ClientBiometricDeletionRequest.Status.IN_REVIEW
             deletion.save(update_fields=["status"])
