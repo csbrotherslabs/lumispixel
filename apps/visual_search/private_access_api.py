@@ -176,7 +176,7 @@ def review_private_request(request, request_id):
             # mechanisms; do not invent a new access bypass.
             invitation, _ = GalleryInvitation.objects.get_or_create(
                 gallery=gallery, email=item.requester.email,
-                defaults={"client_name": item.requester.display_name[:160]},
+                defaults={"client_name": item.requester.display_name()[:160]},
             )
             if invitation.status == GalleryInvitation.Status.DISABLED:
                 return JsonResponse({"error": "invitation_disabled"}, status=409)
