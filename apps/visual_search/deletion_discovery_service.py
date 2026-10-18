@@ -10,6 +10,7 @@ def discover_gallery_ids(embedding):
     from .vector_store import vector_connection
     from .search import calibrated_max_distance
     from .models import FaceDeletionReview
+    from apps.galleries.models import GalleryPhoto
 
     vector = np.asarray(embedding, dtype=np.float32)
     if vector.shape != (512,) or not np.isfinite(vector).all():
@@ -29,7 +30,14 @@ def discover_gallery_ids(embedding):
     erased = set(FaceDeletionReview.objects.filter(
         photo_id__in=[row[0] for row in rows],
     ).values_list("photo_id", "face_index"))
+    eligible = dict(GalleryPhoto.objects.filter(
+        pk__in=[row[0] for row in rows],
+        gallery__deleted_at__isnull=True,
+        gallery__archived_at__isnull=True,
+        gallery__face_search_policy__processing_authorized=True,
+    ).values_list("pk", "gallery_id"))
     return sorted({
         gallery_id for photo_id, gallery_id, face_index in rows
         if (photo_id, face_index) not in erased
+        and eligible.get(photo_id) == gallery_id
     })
