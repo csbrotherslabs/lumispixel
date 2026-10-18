@@ -1,0 +1,87 @@
+{% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}
+<style>
+.lp-access-wrap{max-width:1100px;margin:0 auto;padding:clamp(16px,3vw,32px)}
+.lp-access-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.lp-access-heading h1{font-size:clamp(1.5rem,3vw,2rem);margin:4px 0}
+.lp-access-muted{color:var(--lpw-text-muted,#697386)}
+.lp-access-filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.lp-access-filters a{border:1px solid #d4d9e1;border-radius:999px;padding:8px 14px;text-decoration:none;color:inherit}
+.lp-access-filters a[aria-current=page]{background:#202938;color:white;border-color:#202938}
+.lp-access-table{width:100%;border-collapse:collapse}
+.lp-access-table th,.lp-access-table td{padding:14px;text-align:left;border-bottom:1px solid #e5e8ed}
+.lp-access-card{background:var(--lpw-card-bg,#fff);border:1px solid #e5e8ed;border-radius:16px;overflow:auto}
+.lp-access-actions{display:flex;gap:8px;flex-wrap:wrap}
+.lp-access-actions button{padding:8px 12px;border-radius:8px;border:1px solid #c8ced8;cursor:pointer}
+.lp-access-actions button[data-decision=approved]{background:#202938;color:white}
+.lp-access-actions button:disabled{opacity:.5;cursor:wait}
+.lp-access-status{font-weight:600}
+.lp-access-feedback{min-height:24px}
+@media(max-width:700px){.lp-access-table thead{display:none}.lp-access-table,.lp-access-table tbody,.lp-access-table tr,.lp-access-table td{display:block}.lp-access-table tr{padding:14px;border-bottom:1px solid #e5e8ed}.lp-access-table td{border:0;padding:4px}.lp-access-table td:before{content:attr(data-label) ": ";font-weight:600}}
+</style>
+{% endblock %}
+{% block workspace_content %}
+<section class="lp-access-wrap" aria-labelledby="workspace-page-title">
+  <header class="lp-access-heading">
+    <div><p class="lp-access-muted">Galleries / Access management</p><h1 id="workspace-page-title">Private gallery access requests</h1><p class="lp-access-muted">Review requests from people you've invited. Selfie search never reveals private galleries.</p></div>
+    <a href="{% url 'photographer_workspace:all_galleries' %}">Back to galleries</a>
+  </header>
+  <nav class="lp-access-filters" aria-label="Filter access requests">
+    <a href="?status=pending" {% if request_status == 'pending' %}aria-current="page"{% endif %}>Pending ({{ status_counts.pending }})</a>
+    <a href="?status=approved" {% if request_status == 'approved' %}aria-current="page"{% endif %}>Approved ({{ status_counts.approved }})</a>
+    <a href="?status=denied" {% if request_status == 'denied' %}aria-current="page"{% endif %}>Denied ({{ status_counts.denied }})</a>
+    <a href="?status=all" {% if request_status == 'all' %}aria-current="page"{% endif %}>All ({{ total_count }})</a>
+  </nav>
+  <p id="lp-access-feedback" class="lp-access-feedback" role="status" aria-live="polite"></p>
+  <div class="lp-access-card">
+  {% if requests %}
+    <table class="lp-access-table"><thead><tr><th scope="col">Gallery</th><th scope="col">Requester</th><th scope="col">Requested</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+    <tbody>{% for item in requests %}<tr>
+      <td data-label="Gallery">{{ item.invitation.gallery.name }}</td>
+      <td data-label="Requester">{{ item.requester.email }}</td>
+      <td data-label="Requested">{{ item.created_at|date:"M j, Y" }}</td>
+      <td data-label="Status"><span class="lp-access-status">{{ item.get_status_display }}</span></td>
+      <td data-label="Action">{% if item.status == 'pending' %}<div class="lp-access-actions" data-review-actions>
+        <button type="button" data-decision="approved" data-review-url="{% url 'visual_search:private-access-review' item.pk %}">Approve &amp; email access</button>
+        <button type="button" data-decision="denied" data-review-url="{% url 'visual_search:private-access-review' item.pk %}">Deny</button>
+      </div>{% else %}Reviewed{% endif %}</td>
+    </tr>{% endfor %}</tbody></table>
+  {% else %}<p style="padding:24px">No {{ request_status }} access requests. Requests appear here after an invited person asks for access.</p>{% endif %}
+  </div>
+  <p class="lp-access-muted" style="margin-top:18px">Approving a request sends an access invitation through LumisPixel's existing gallery delivery system. Invitation revocation does not revoke previously delivered gallery access links.</p>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const feedback = document.getElementById('lp-access-feedback');
+  const cookie = document.cookie.split('; ').find(x => x.startsWith('csrftoken='));
+  const csrf = cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : '';
+  document.querySelectorAll('[data-review-url]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const decision = button.dataset.decision;
+      if (decision === 'approved' && !window.confirm('Approve this request and email a gallery access link?')) return;
+      const group = button.closest('[data-review-actions]');
+      const buttons = group.querySelectorAll('button');
+      buttons.forEach(b => b.disabled = true);
+      feedback.textContent = 'Processing request…';
+      try {
+        const response = await fetch(button.dataset.reviewUrl, {
+          method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+          body:JSON.stringify({decision})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error === 'rate_limited' ? 'Too many requests. Please try later.' : 'Unable to process this request. Please retry.');
+        feedback.textContent = decision === 'approved' ? 'Approved. The gallery invitation was processed.' : 'Request denied.';
+        window.location.reload();
+      } catch (error) {
+        feedback.textContent = error.message;
+        buttons.forEach(b => b.disabled = false);
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}
