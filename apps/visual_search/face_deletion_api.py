@@ -90,6 +90,25 @@ def photographer_confirm_face_deletion(request, deletion_id):
     ).exists():
         return JsonResponse({"error": "not_found"}, status=404)
 
+    # Confirm the selected face index against the stored vector before any
+    # irreversible deletion. Reordered detections fail closed.
+    try:
+        from .inference import extract_face_review_crops
+        from .vector_store import verify_stored_face_slot
+        photo = GalleryPhoto.objects.get(pk=photo_id)
+        with photo.file.open("rb") as stream:
+            crops = extract_face_review_crops(stream)
+        face = next((value for value in crops if value["face_index"] == face_index), None)
+        if face is None or not verify_stored_face_slot(
+            photo_id=photo_id, face_index=face_index,
+            model_version=settings.VISUAL_SEARCH_FACE_MODEL_VERSION,
+            vector=face["embedding"],
+        ):
+            return JsonResponse({"error": "face_slot_not_verified"}, status=409)
+    except Exception:
+        logger.exception("Unable to verify face for deletion")
+        return JsonResponse({"error": "face_review_unavailable"}, status=503)
+
     with transaction.atomic():
         current = ClientBiometricDeletionRequest.objects.select_for_update().get(
             pk=deletion.pk,
@@ -109,10 +128,11 @@ def photographer_confirm_face_deletion(request, deletion_id):
     # Review is a durable suppression marker before touching the separate
     # vector database. Retry this exact endpoint if vector deletion fails.
     try:
-        from .vector_store import delete_confirmed_face
-        deleted_rows = delete_confirmed_face(
-            photo_id=photo_id, face_index=face_index,
-        )
+        from .deletion_service import retry_confirmed_erasure
+        outcome = retry_confirmed_erasure(review.pk)
+        if outcome != "completed":
+            return JsonResponse({"error": "deletion_pending_retry"}, status=503)
+        deleted_rows = 1
     except Exception:
         logger.exception("Confirmed face erasure failed for review %s", review.pk)
         FaceDeletionReview.objects.filter(pk=review.pk).update(
@@ -170,7 +190,6 @@ def photographer_face_review_crops(request, deletion_id, photo_id):
     ).first()
     photo = GalleryPhoto.objects.filter(
         pk=photo_id, gallery__photographer__user=request.user,
-        gallery__
     ).first()
     if photo is None or deletion is None or not _gallery_in_request_scope(deletion, photo.gallery):
         return JsonResponse({"error": "not_found"}, status=404)
