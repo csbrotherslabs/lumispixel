@@ -162,3 +162,32 @@ class ClientBiometricDeletionRequest(models.Model):
         indexes = [
             models.Index(fields=["status", "requested_at"], name="visual_client_delete_queue"),
         ]
+
+
+class FaceDeletionReview(models.Model):
+    """A photographer's scoped confirmation of a particular indexed face."""
+    request = models.ForeignKey(
+        ClientBiometricDeletionRequest, on_delete=models.CASCADE,
+        related_name="face_reviews",
+    )
+    gallery = models.ForeignKey("galleries.Gallery", on_delete=models.CASCADE)
+    photo = models.ForeignKey("galleries.GalleryPhoto", on_delete=models.CASCADE)
+    face_index = models.PositiveIntegerField()
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="confirmed_face_deletions",
+    )
+    confirmed_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "photo", "face_index"],
+                name="visual_unique_face_deletion_review",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["photo", "deleted_at"], name="visual_face_erasure_photo"),
+        ]
