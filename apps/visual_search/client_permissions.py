@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .models import ClientSelfieSearchPermission, ClientBiometricDeletionRequest
+from .models import ClientSelfieSearchPermission, ClientBiometricDeletionRequest, PhotographerDeletionAssessment, FaceDeletionReview
 
 PURPOSE = "public_gallery_selfie_search"
 
@@ -116,8 +116,23 @@ def client_biometric_deletion(request):
         latest = ClientBiometricDeletionRequest.objects.filter(
             user=request.user,
         ).order_by("-requested_at").first()
+        if latest is None:
+            return JsonResponse({"status": "not_requested"})
+        confirmed = FaceDeletionReview.objects.filter(
+            request=latest, deleted_at__isnull=False,
+        ).count()
+        unverified = PhotographerDeletionAssessment.objects.filter(
+            request=latest, outcome="unverified",
+        ).count()
         return JsonResponse({
-            "status": latest.status if latest else "not_requested",
+            "status": latest.status,
+            "confirmed_faces_deleted": confirmed,
+            "galleries_unverified": unverified,
+            "message": (
+                "Some gallery identities could not be verified; this does not prove no embeddings exist."
+                if unverified else
+                "Your request is being reviewed; selfie-search permission remains withdrawn."
+            ),
         })
     with transaction.atomic():
         type(request.user).objects.select_for_update().get(pk=request.user.pk)
