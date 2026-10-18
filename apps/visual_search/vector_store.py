@@ -63,3 +63,23 @@ def delete_confirmed_face(*, photo_id, face_index):
                 (photo_id, face_index),
             )
             return cursor.rowcount
+
+
+def verify_stored_face_slot(*, photo_id, face_index, model_version, vector):
+    """Compare regenerated crop identity to the indexed face before deletion."""
+    import numpy as np
+    from pgvector.psycopg import register_vector
+    probe = np.asarray(vector, dtype=np.float32)
+    if probe.shape != (512,) or not np.isfinite(probe).all():
+        return False
+    with vector_connection() as conn:
+        register_vector(conn)
+        row = conn.execute(
+            """SELECT embedding <=> %s
+               FROM visual_search.app_face_embeddings
+               WHERE photo_id = %s AND face_index = %s AND model_version = %s""",
+            (probe, photo_id, face_index, model_version),
+        ).fetchone()
+    # Same-image, same-model extraction should be extremely close; fail closed
+    # on model changes, reordered faces or altered source images.
+    return bool(row and row[0] is not None and float(row[0]) < 0.0001)
