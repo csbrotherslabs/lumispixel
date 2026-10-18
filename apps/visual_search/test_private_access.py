@@ -20,7 +20,7 @@ class PrivateAccessRequestTests(TestCase):
         Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
         self.owner = get_user_model().objects.create_user(email=f"owner-{uuid4().hex}@example.test", password="test-only")
         self.visitor = get_user_model().objects.create_user(email=f"visitor-{uuid4().hex}@example.test", password="test-only")
-        photographer = PhotographerProfile.objects.create(user=self.owner, slug=f"studio-{uuid4().hex}")
+        photographer = PhotographerProfile.objects.create(user=self.owner, slug=f"studio-{uuid4().hex}", onboarding_completed=True)
         self.gallery = Gallery.objects.create(
             photographer=photographer, name="Private test", slug=f"private-{uuid4().hex}",
             status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
@@ -171,3 +171,39 @@ class PrivateAccessRequestTests(TestCase):
         self.assertEqual(second.status_code, 409)
         self.assertEqual(AccessToken.objects.count(), 1)
         mail.assert_called_once()
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_inbox_page_owner_can_view_and_review(self):
+        from django.urls import reverse
+        self.client.force_login(self.owner)
+        issued = self._post(self.invite_url, {}).json()
+        self.client.force_login(self.visitor)
+        self._post(self.submit_url, {"invitation_token": issued["token"]})
+        self.client.force_login(self.owner)
+        url = reverse("photographer_workspace:private_gallery_requests")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.visitor.email)
+        self.assertContains(response, "Approve &amp; email access")
+        self.assertContains(response, 'data-review-url')
+        self.assertContains(response, 'Access requests')
+        self.assertEqual(len(response.context["requests"]), 1)
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_inbox_page_hides_other_photographer_requests(self):
+        from django.urls import reverse
+        self.client.force_login(self.owner)
+        issued = self._post(self.invite_url, {}).json()
+        self.client.force_login(self.visitor)
+        self._post(self.submit_url, {"invitation_token": issued["token"]})
+        self.client.force_login(self.owner)
+        owner_response = self.client.get(reverse("photographer_workspace:private_gallery_requests"))
+        self.assertEqual(owner_response.status_code, 200)
+        self.assertEqual(len(owner_response.context["requests"]), 1)
+        self.client.force_login(self.visitor)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:private_gallery_requests")).status_code, 302)
+
+    def test_inbox_page_disabled_by_default(self):
+        from django.urls import reverse
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(reverse("photographer_workspace:private_gallery_requests")).status_code, 404)
