@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Selfie search privacy · LumisPixel</title>
+  <style>
+    body{font:16px/1.5 system-ui,sans-serif;background:#111827;color:#f9fafb;margin:0}
+    main{max-width:620px;margin:5vh auto;padding:24px}
+    section{background:#1f2937;border-radius:14px;padding:24px}
+    a{color:#fca5a5}button{border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+    button:disabled{opacity:.5;cursor:not-allowed}.danger{background:#fca5a5;color:#111827}
+    .primary{background:#fff;color:#111827}.muted{color:#d1d5db}
+    label{display:block;margin:18px 0}#message{min-height:1.5em}
+  </style>
+</head>
+<body>
+<main>
+<section>
+<h1>Selfie search privacy</h1>
+<p class="muted">Manage permission to use a selfie for matching against eligible public photographs. This does not authorize AI training or access to private galleries.</p>
+<p id="status">{% if authorized %}Permission active{% else %}No active permission{% endif %}</p>
+{% if enrollment_enabled %}
+<p>Read the <a href="{{ notice_url }}" target="_blank" rel="noopener noreferrer">biometric search privacy notice</a> before choosing to participate.</p>
+<label><input type="checkbox" id="agree"> I have read the notice and explicitly agree to selfie matching for public-gallery search.</label>
+<button class="primary" id="grant" type="button">Authorize selfie search</button>
+{% else %}
+<p class="muted">New selfie-search permissions are not currently available. You can still withdraw existing permission.</p>
+{% endif %}
+<hr>
+<button class="danger" id="withdraw" type="button">Withdraw selfie search permission</button>
+<p id="message" role="status" aria-live="polite"></p>
+<p class="muted">Withdrawal prevents subsequent authorized selfie searches. It does not automatically delete photographs owned by photographers.</p>
+</section>
+</main>
+<script>
+(function () {
+  const endpoint = "{% url 'visual_search:selfie-permission' %}";
+  const status = document.getElementById("status");
+  const message = document.getElementById("message");
+  const withdraw = document.getElementById("withdraw");
+  const grant = document.getElementById("grant");
+  function cookie(name) {
+    return document.cookie.split("; ").find(x => x.startsWith(name + "="))?.split("=").slice(1).join("=") || "";
+  }
+  async function submit(method, body) {
+    message.textContent = "";
+    withdraw.disabled = true;
+    if (grant) grant.disabled = true;
+    try {
+      const response = await fetch(endpoint, {
+        method, credentials: "same-origin",
+        headers: {"X-CSRFToken": decodeURIComponent(cookie("csrftoken")), "Content-Type": "application/json"},
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to update permission");
+      status.textContent = data.authorized ? "Permission active" : "No active permission";
+      message.textContent = method === "DELETE" ? "Your selfie-search permission has been withdrawn." : "Your permission has been recorded.";
+    } catch (error) {
+      message.textContent = error.message;
+    } finally {
+      withdraw.disabled = false;
+      if (grant) grant.disabled = false;
+    }
+  }
+  withdraw.addEventListener("click", () => submit("DELETE"));
+  if (grant) {
+    grant.addEventListener("click", () => {
+      if (!document.getElementById("agree").checked) {
+        message.textContent = "Please read and agree to the notice first.";
+        return;
+      }
+      submit("POST", {
+        purpose: "public_gallery_selfie_search",
+        policy_version: "{{ policy_version|escapejs }}",
+        agree: true
+      });
+    });
+  }
+}());
+</script>
+</body>
+</html>
