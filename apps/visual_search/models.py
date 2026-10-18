@@ -173,6 +173,9 @@ class FaceDeletionReview(models.Model):
     gallery = models.ForeignKey("galleries.Gallery", on_delete=models.CASCADE)
     photo = models.ForeignKey("galleries.GalleryPhoto", on_delete=models.CASCADE)
     face_index = models.PositiveIntegerField()
+    face_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    source_version = models.PositiveIntegerField(default=1)
+    model_version = models.CharField(max_length=80, blank=True)
     confirmed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
         related_name="confirmed_face_deletions",
@@ -218,4 +221,39 @@ class PhotographerDeletionAssessment(models.Model):
                 fields=["request", "gallery"],
                 name="visual_unique_gallery_deletion_assessment",
             ),
+        ]
+
+
+class BiometricDeletionDiscoveryGrant(models.Model):
+    """Purpose-limited deletion-only matching authorization, never search consent."""
+    request = models.OneToOneField(
+        ClientBiometricDeletionRequest, on_delete=models.CASCADE,
+        related_name="discovery_grant",
+    )
+    policy_version = models.CharField(max_length=40)
+    authorized_at = models.DateTimeField()
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def active(self):
+        return self.withdrawn_at is None
+
+
+class BiometricDeletionDiscoveryCandidate(models.Model):
+    """Internal photographer-scoped candidate; never client-visible gallery metadata."""
+    request = models.ForeignKey(
+        ClientBiometricDeletionRequest, on_delete=models.CASCADE,
+        related_name="discovery_candidates",
+    )
+    gallery = models.ForeignKey("galleries.Gallery", on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=[
+        ("pending", "Pending photographer review"),
+        ("unverified", "Unable to verify"),
+        ("reviewed", "Reviewed"),
+    ], default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["request", "gallery"], name="visual_unique_erasure_candidate"),
         ]
