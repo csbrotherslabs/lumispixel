@@ -1,5 +1,8 @@
 """Durable deletion verification; never equate unverified identity with absence."""
 from django.db import transaction
+from django.conf import settings
+from django.core.mail import send_mail
+from apps.galleries.models import Gallery
 from django.utils import timezone
 
 from .models import (
@@ -52,5 +55,49 @@ def try_complete_deletion(request_id):
             request=item, status__in=["pending", "unverified"],
         ).exists():
             return False
-        # Explicit external scope reconciliation is required before closure.
+        if item.scope_verified_at is None or item.scope_verified_by_id is None:
+            return False
+        linked = Gallery.objects.filter(client__user_id=item.user_id)
+        assessed = PhotographerDeletionAssessment.objects.filter(
+            request=item, outcome="reviewed",
+        ).values_list("gallery_id", flat=True)
+        if linked.exclude(pk__in=assessed).exists():
+            return False
+        candidates = BiometricDeletionDiscoveryCandidate.objects.filter(request=item)
+        if candidates.exclude(status="reviewed").exists():
+            return False
+        # Scope attestation explicitly documents what was and was not searched;
+        # never represent an unknown gallery as verified absent.
+        item.status = ClientBiometricDeletionRequest.Status.COMPLETED
+        item.completed_at = timezone.now()
+        item.save(update_fields=["status", "completed_at"])
+        transaction.on_commit(lambda: send_deletion_notice(item.pk, "completed"))
+        return True
+
+
+def send_deletion_notice(request_id, event):
+    """Send minimal privacy notification without gallery identities or biometrics."""
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        item = ClientBiometricDeletionRequest.objects.select_related("user").get(
+            pk=request_id,
+        )
+        if not item.user.email:
+            return False
+        messages = {
+            "requested": "We received your biometric deletion request. Selfie search has been disabled.",
+            "completed": "Your reviewed biometric deletion request has been completed for the verified scope. Check your LumisPixel account for details.",
+            "unverified": "A photographer could not verify your identity in a gallery. Your deletion request remains open.",
+        }
+        send_mail(
+            "LumisPixel biometric privacy request",
+            messages[event],
+            settings.DEFAULT_FROM_EMAIL,
+            [item.user.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        logger.exception("Unable to deliver biometric deletion notice %s", request_id)
         return False
