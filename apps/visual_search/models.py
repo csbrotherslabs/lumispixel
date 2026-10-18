@@ -102,3 +102,33 @@ class FaceVectorPurge(models.Model):
         indexes = [models.Index(fields=["status", "created_at"], name="visual_purge_pending")]
 
 from .access_requests import PrivateGalleryInvitation, PrivateGalleryAccessRequest
+
+
+class ClientSelfieSearchPermission(models.Model):
+    """Account-level, purpose-specific authorization for ephemeral selfie queries.
+
+    Does not authorize indexing photographs, private gallery discovery or model
+    training. Withdrawn records are retained as evidence, never reactivated.
+    """
+
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE,
+        related_name="selfie_search_permissions",
+    )
+    purpose = models.CharField(max_length=40, default="public_gallery_selfie_search")
+    policy_version = models.CharField(max_length=40)
+    granted_at = models.DateTimeField()
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "purpose"],
+                condition=Q(withdrawn_at__isnull=True),
+                name="visual_one_active_client_selfie_permission",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "purpose", "withdrawn_at"], name="visual_client_permission"),
+        ]
