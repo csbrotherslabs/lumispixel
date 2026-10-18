@@ -37,7 +37,10 @@ def photographer_face_deletion_inbox(request):
     ).distinct().order_by("requested_at")[:100]
     return JsonResponse({
         "requests": [
-            {"request_id": item.pk, "requested_at": item.requested_at.isoformat(),\n             "galleries": list(Gallery.objects.filter(\n                 photographer__user=request.user, client__user_id=item.user_id,\n             ).values("id", "name")[:50])}
+            {"request_id": item.pk, "requested_at": item.requested_at.isoformat(),
+             "galleries": list(Gallery.objects.filter(
+                 photographer__user=request.user, client__user_id=item.user_id,
+             ).values("id", "name")[:50])}
             for item in requests
         ],
     })
