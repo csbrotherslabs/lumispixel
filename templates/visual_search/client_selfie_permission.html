@@ -29,7 +29,7 @@
 {% endif %}
 <hr>
 <button class="danger" id="withdraw" type="button">Withdraw selfie search permission</button>
-<p id="message" role="status" aria-live="polite"></p>
+<p><button class="danger" id="erase" type="button">Request deletion of my biometric data</button></p>\n<p id="erasure-status" role="status" aria-live="polite"></p>\n<p id="message" role="status" aria-live="polite"></p>
 <p class="muted">Withdrawal prevents subsequent authorized selfie searches. It does not automatically delete photographs owned by photographers.</p>
 </section>
 </main>
@@ -65,6 +65,32 @@
     }
   }
   withdraw.addEventListener("click", () => submit("DELETE"));
+  const erase = document.getElementById("erase");
+  const erasureStatus = document.getElementById("erasure-status");
+  const deletionEndpoint = "{% url 'visual_search:selfie-deletion' %}";
+  async function refreshDeletionStatus() {
+    try {
+      const response = await fetch(deletionEndpoint, {credentials:"same-origin"});
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.status !== "not_requested") erasureStatus.textContent = "Deletion request: " + data.status.replace("_", " ");
+    } catch (_) { erasureStatus.textContent = "Deletion status temporarily unavailable."; }
+  }
+  erase.addEventListener("click", async () => {
+    if (!confirm("Request review and deletion of applicable biometric data? Your selfie-search permission will also be withdrawn.")) return;
+    erase.disabled = true;
+    try {
+      const response = await fetch(deletionEndpoint, {
+        method:"POST", credentials:"same-origin",
+        headers:{"X-CSRFToken":decodeURIComponent(cookie("csrftoken"))}
+      });
+      if (!response.ok) throw new Error("Unable to submit deletion request");
+      status.textContent = "No active permission";
+      erasureStatus.textContent = "Deletion requested. Review is pending; deletion is not yet confirmed.";
+    } catch (error) { erasureStatus.textContent = error.message; }
+    finally { erase.disabled = false; }
+  });
+  refreshDeletionStatus();
   if (grant) {
     grant.addEventListener("click", () => {
       if (!document.getElementById("agree").checked) {
