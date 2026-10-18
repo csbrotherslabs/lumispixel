@@ -63,7 +63,9 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
         cache.clear()
 
     def _user(self, label, photographer=False):
-        user = get_user_model().objects.create_user(
+        User = get_user_model()
+        user = User.objects.create_user(
+            primary_role=User.PrimaryRole.PHOTOGRAPHER if photographer else User.PrimaryRole.CLIENT,
             email=f"{label}-{uuid4().hex}@example.test",
             password="BrowserTestOnly123!",
             email_verified=True,
