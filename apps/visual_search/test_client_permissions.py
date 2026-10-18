@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.visual_search.client_permissions import PURPOSE
-from apps.visual_search.models import ClientSelfieSearchPermission
+from apps.visual_search.models import ClientSelfieSearchPermission, ClientBiometricDeletionRequest
 
 
 @override_settings(
@@ -179,3 +179,28 @@ class ClientSelfiePermissionTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json()["error"], "client_permission_withdrawn")
         self.assertNotIn("results", response.json())
+
+    def test_deletion_request_is_idempotent_revokes_permission_and_blocks_regrant(self):
+        self.assertEqual(self.grant().status_code, 200)
+        url = reverse("visual_search:selfie-deletion")
+        first = self.client.post(url)
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(first.json()["status"], "pending")
+        self.assertEqual(self.client.post(url).json()["request_id"], first.json()["request_id"])
+        self.assertFalse(self.client.get(self.url).json()["authorized"])
+        self.assertEqual(self.grant().status_code, 409)
+        self.assertEqual(
+            ClientBiometricDeletionRequest.objects.filter(user=self.alice).count(), 1,
+        )
+        self.client.force_login(self.bob)
+        self.assertEqual(self.client.get(url).json()["status"], "not_requested")
+        self.assertEqual(self.client.post(url).status_code, 202)
+        self.assertEqual(
+            ClientBiometricDeletionRequest.objects.filter(user=self.alice).count(), 1,
+        )
+
+    def test_deletion_request_requires_authentication(self):
+        self.client.logout()
+        url = reverse("visual_search:selfie-deletion")
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.assertEqual(self.client.post(url).status_code, 302)
