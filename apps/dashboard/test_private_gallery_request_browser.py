@@ -3,6 +3,9 @@
 Uses Django LiveServerTestCase and synthetic invitation records. No face data.
 """
 from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+
+from django.db import close_old_connections, connections
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
@@ -78,12 +81,26 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
             )
         return user
 
+    def _db(self, operation):
+        """Keep synchronous Django database calls off Playwright's event loop."""
+        def execute():
+            close_old_connections()
+            try:
+                return operation()
+            finally:
+                connections.close_all()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(execute).result()
+
     def _login(self, user):
-        self.client.force_login(user)
+        def create_session():
+            self.client.force_login(user)
+            return self.client.cookies["sessionid"].value
+        session_key = self._db(create_session)
         self.context.clear_cookies()
         self.context.add_cookies([{
             "name": "sessionid",
-            "value": self.client.cookies["sessionid"].value,
+            "value": session_key,
             "url": self.live_server_url,
         }])
 
@@ -118,22 +135,22 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
             with self.page.expect_response(lambda resp: self.review_path in resp.url and resp.request.method == "POST") as approval:
                 self.page.get_by_role("button", name="Approve & email access").click()
             self.assertEqual(approval.value.status, 200)
-        self.access_request.refresh_from_db()
-        self.assertEqual(self.access_request.status, "approved")
+        self.assertEqual(self._db(lambda: PrivateGalleryAccessRequest.objects.get(pk=self.access_request.pk).status), "approved")
         email.assert_called_once()
 
-        second_invite, _ = PrivateGalleryInvitation.issue(
-            gallery=self.gallery, user=self.owner,
-        )
-        second = PrivateGalleryAccessRequest.objects.create(
-            invitation=second_invite, requester=self.visitor,
-        )
+        def make_second_request():
+            second_invite, _ = PrivateGalleryInvitation.issue(
+                gallery=self.gallery, user=self.owner,
+            )
+            return PrivateGalleryAccessRequest.objects.create(
+                invitation=second_invite, requester=self.visitor,
+            ).pk
+        second_id = self._db(make_second_request)
         self._open()
-        with self.page.expect_response(lambda resp: self.review_path.replace(str(self.access_request.pk), str(second.pk)) in resp.url and resp.request.method == "POST") as denial:
+        with self.page.expect_response(lambda resp: self.review_path.replace(str(self.access_request.pk), str(second_id)) in resp.url and resp.request.method == "POST") as denial:
             self.page.get_by_role("button", name="Deny").click()
         self.assertEqual(denial.value.status, 200)
-        second.refresh_from_db()
-        self.assertEqual(second.status, "denied")
+        self.assertEqual(self._db(lambda: PrivateGalleryAccessRequest.objects.get(pk=second_id).status), "denied")
 
     def test_mobile_layout_and_filters(self):
         self._login(self.owner)
