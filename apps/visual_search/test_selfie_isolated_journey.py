@@ -20,7 +20,7 @@ from django.utils import timezone
 from apps.accounts.models import PhotographerProfile
 from apps.billing.models import Plan
 from apps.galleries.models import Gallery, GalleryPhoto
-from apps.visual_search.models import GalleryFaceSearchPolicy
+from apps.visual_search.models import GalleryFaceSearchPolicy, ClientSelfieSearchPermission
 from apps.visual_search.search import find_public_matches
 
 
@@ -47,6 +47,10 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         )
         self.photographer = PhotographerProfile.objects.create(
             user=self.user, slug=f"test-{uuid4().hex}"
+        )
+        ClientSelfieSearchPermission.objects.create(
+            user=self.user, purpose="public_gallery_selfie_search",
+            policy_version="synthetic-test", granted_at=timezone.now(),
         )
         self.client.force_login(self.user)
         self.url = reverse("visual_search:selfie")
@@ -92,10 +96,10 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         wrong, g = self.gallery()
         # Deliberately spoof a photo/gallery association in the vector database.
         rows = [
-            (b.pk, private.pk, 0.01), (c.pk, revoked.pk, 0.02),
-            (d.pk, hidden.pk, 0.03), (e.pk, expired.pk, 0.04),
-            (f.pk, unpublished.pk, 0.05), (g.pk, private.pk, 0.06),
-            (a.pk, allowed.pk, 0.1),
+            (b.pk, private.pk, 0, 0.01), (c.pk, revoked.pk, 0, 0.02),
+            (d.pk, hidden.pk, 0, 0.03), (e.pk, expired.pk, 0, 0.04),
+            (f.pk, unpublished.pk, 0, 0.05), (g.pk, private.pk, 0, 0.06),
+            (a.pk, allowed.pk, 0, 0.1),
         ]
         connection = FakeVectorConnection(rows)
 
@@ -112,6 +116,7 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         self.assertIn("model_version", connection.sql)
 
     @override_settings(
+        VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION="synthetic-test",
         VISUAL_SEARCH_FACE_INDEXING_ENABLED=True,
         VISUAL_SEARCH_SELFIE_API_ENABLED=True,
         VISUAL_SEARCH_SELFIE_RATE_LIMIT_SHARED_CACHE=True,
@@ -121,8 +126,8 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         allowed, photo = self.gallery()
         private, private_photo = self.gallery(visibility=Gallery.Visibility.PRIVATE)
         connection = FakeVectorConnection([
-            (private_photo.pk, private.pk, 0.02),
-            (photo.pk, allowed.pk, 0.1),
+            (private_photo.pk, private.pk, 0, 0.02),
+            (photo.pk, allowed.pk, 0, 0.1),
         ])
 
         @contextmanager
@@ -149,7 +154,7 @@ class IsolatedSelfieSearchJourneyTests(TestCase):
         policy.processing_authorized = False
         with patch("apps.visual_search.purges.dispatch_purge"):
             policy.save()
-        connection = FakeVectorConnection([(photo.pk, gallery.pk, 0.01)])
+        connection = FakeVectorConnection([(photo.pk, gallery.pk, 0, 0.01)])
 
         @contextmanager
         def fake_connection():
