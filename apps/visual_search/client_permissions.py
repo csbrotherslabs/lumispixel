@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import ClientSelfieSearchPermission
 
@@ -75,6 +76,7 @@ def client_selfie_permission(request):
 
 
 @login_required
+@ensure_csrf_cookie
 @require_http_methods(["GET"])
 def client_selfie_permission_page(request):
     """Self-service privacy controls; withdrawal remains accessible when disabled."""
