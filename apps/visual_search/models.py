@@ -1,4 +1,5 @@
 import uuid
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
@@ -112,7 +113,7 @@ class ClientSelfieSearchPermission(models.Model):
     """
 
     user = models.ForeignKey(
-        "accounts.User", on_delete=models.CASCADE,
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         related_name="selfie_search_permissions",
     )
     purpose = models.CharField(max_length=40, default="public_gallery_selfie_search")
