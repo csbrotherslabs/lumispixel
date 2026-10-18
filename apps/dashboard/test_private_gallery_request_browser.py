@@ -2,6 +2,8 @@
 
 Uses Django LiveServerTestCase and synthetic invitation records. No face data.
 """
+import os
+import unittest
 from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,6 +23,10 @@ from apps.galleries.models import Gallery
 from apps.visual_search.access_requests import PrivateGalleryAccessRequest, PrivateGalleryInvitation
 
 
+@unittest.skipUnless(
+    os.environ.get('LUMISPIXEL_RUN_INBOX_BROWSER_E2E') == '1',
+    'Dedicated Chromium inbox browser job only',
+)
 @override_settings(
     VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True,
     VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True,
@@ -54,16 +60,36 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
             "visual_search:private-access-review", args=[self.access_request.pk],
         )
         cache.clear()
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=True)
-        self.context = self.browser.new_context()
-        self.page = self.context.new_page()
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        try:
+            self.playwright = sync_playwright().start()
+            self.browser = self.playwright.chromium.launch(headless=True)
+            self.context = self.browser.new_context()
+            self.page = self.context.new_page()
+        except BaseException:
+            self._close_browser()
+            raise
+
+    def _close_browser(self):
+        try:
+            if self.context is not None:
+                self.context.close()
+        finally:
+            try:
+                if self.browser is not None:
+                    self.browser.close()
+            finally:
+                if self.playwright is not None:
+                    self.playwright.stop()
+                    self.playwright = None
 
     def tearDown(self):
-        self.context.close()
-        self.browser.close()
-        self.playwright.stop()
-        cache.clear()
+        try:
+            self._close_browser()
+        finally:
+            cache.clear()
 
     def _user(self, label, photographer=False):
         User = get_user_model()
