@@ -2,8 +2,6 @@
 import json
 from unittest.mock import patch
 from django.core.cache import cache
-from unittest.mock import patch
-from django.core.cache import cache
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
@@ -30,13 +28,8 @@ class PrivateAccessRequestTests(TestCase):
         )
         self.visitor.mark_email_verified()
         cache.clear()
-        self.visitor.mark_email_verified()
-        cache.clear()
         self.invite_url = reverse("visual_search:private-access-invite", args=[self.gallery.pk])
         self.submit_url = reverse("visual_search:private-access-request")
-
-    def tearDown(self):
-        cache.clear()
 
     def tearDown(self):
         cache.clear()
@@ -86,7 +79,7 @@ class PrivateAccessRequestTests(TestCase):
         self.assertEqual(invalid.json(), missing.json())
         self.assertEqual(PrivateGalleryAccessRequest.objects.count(), 0)
 
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=False)
     def test_no_shared_cache_fails_closed(self):
         self.client.force_login(self.owner)
         self.assertEqual(self._post(self.invite_url, {}).status_code, 503)
@@ -120,27 +113,61 @@ class PrivateAccessRequestTests(TestCase):
         self.assertEqual(response.status_code, 202)
         self.assertEqual(PrivateGalleryAccessRequest.objects.count(), 0)
 
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True)
-    def test_no_shared_cache_fails_closed(self):
-        self.client.force_login(self.owner)
-        self.assertEqual(self._post(self.invite_url, {}).status_code, 503)
 
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True, VISUAL_SEARCH_PRIVATE_ACCESS_RATE_LIMIT=1)
-    def test_rate_limit_blocks_second_invite(self):
-        self.client.force_login(self.owner)
-        self.assertEqual(self._post(self.invite_url, {}).status_code, 201)
-        self.assertEqual(self._post(self.invite_url, {}).status_code, 429)
-
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
-    def test_revocation_and_owner_inbox_isolation(self):
+    def _make_pending(self):
         self.client.force_login(self.owner)
         issued = self._post(self.invite_url, {}).json()
         self.client.force_login(self.visitor)
-        self.assertEqual(self.client.get(reverse("visual_search:private-access-inbox")).json(), {"results": []})
+        self._post(self.submit_url, {"invitation_token": issued["token"]})
+        item = PrivateGalleryAccessRequest.objects.get()
         self.client.force_login(self.owner)
-        revoke = self._post(reverse("visual_search:private-access-revoke", args=[issued["invitation_id"]]), {})
-        self.assertEqual(revoke.status_code, 200)
-        self.client.force_login(self.visitor)
-        response = self._post(self.submit_url, {"invitation_token": issued["token"]})
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(PrivateGalleryAccessRequest.objects.count(), 0)
+        return issued, item
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_email_delivery_failure_rolls_back_and_can_retry(self):
+        from apps.galleries.models import AccessToken, GalleryInvitation
+        from apps.galleries.services import GalleryInvitationDeliveryError
+        _, item = self._make_pending()
+        url = reverse("visual_search:private-access-review", args=[item.pk])
+        with patch("apps.visual_search.private_access_api.send_gallery_invitation_email", side_effect=GalleryInvitationDeliveryError("offline")):
+            response = self._post(url, {"decision": "approved"})
+        self.assertEqual(response.status_code, 503)
+        item.refresh_from_db()
+        self.assertEqual(item.status, "pending")
+        self.assertEqual(AccessToken.objects.count(), 0)
+        self.assertEqual(GalleryInvitation.objects.count(), 0)
+        with patch("apps.visual_search.private_access_api.send_gallery_invitation_email"):
+            response = self._post(url, {"decision": "approved"})
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.status, "approved")
+        self.assertEqual(AccessToken.objects.count(), 1)
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_revocation_blocks_approval_after_request_submitted(self):
+        issued, item = self._make_pending()
+        self.assertEqual(self._post(
+            reverse("visual_search:private-access-revoke", args=[issued["invitation_id"]]), {}
+        ).status_code, 200)
+        with patch("apps.visual_search.private_access_api.send_gallery_invitation_email") as mail:
+            response = self._post(
+                reverse("visual_search:private-access-review", args=[item.pk]),
+                {"decision": "approved"},
+            )
+        self.assertEqual(response.status_code, 400)
+        mail.assert_not_called()
+        item.refresh_from_db()
+        self.assertEqual(item.status, "pending")
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_duplicate_approval_does_not_issue_second_token(self):
+        from apps.galleries.models import AccessToken
+        _, item = self._make_pending()
+        url = reverse("visual_search:private-access-review", args=[item.pk])
+        with patch("apps.visual_search.private_access_api.send_gallery_invitation_email") as mail:
+            first = self._post(url, {"decision": "approved"})
+            second = self._post(url, {"decision": "approved"})
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 409)
+        self.assertEqual(AccessToken.objects.count(), 1)
+        mail.assert_called_once()
