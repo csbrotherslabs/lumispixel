@@ -1,5 +1,6 @@
 from django.urls import path
 from .api import selfie_search
+from .deletion_discovery_api import deletion_discovery_permission
 from .client_permissions import client_selfie_permission, client_selfie_permission_page, client_biometric_deletion
 from .face_deletion_api import photographer_face_deletion_inbox, photographer_confirm_face_deletion, photographer_face_deletion_page, photographer_face_review_photos, photographer_face_review_crops, photographer_assess_deletion
 from .private_access_api import (
@@ -13,6 +14,7 @@ urlpatterns = [
     path("selfie/permission/", client_selfie_permission, name="selfie-permission"),
     path("selfie/privacy/", client_selfie_permission_page, name="selfie-privacy"),
     path("selfie/deletion/", client_biometric_deletion, name="selfie-deletion"),
+    path("selfie/deletion/discovery-permission/", deletion_discovery_permission, name="deletion-discovery-permission"),
     path("selfie/deletion/photographer/", photographer_face_deletion_page, name="face-deletion-page"),
     path("selfie/deletion/photographer/inbox/", photographer_face_deletion_inbox, name="face-deletion-inbox"),
     path("selfie/deletion/photographer/<int:deletion_id>/galleries/<int:gallery_id>/photos/", photographer_face_review_photos, name="face-review-photos"),
