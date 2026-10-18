@@ -112,9 +112,10 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
         with patch(
             "apps.visual_search.private_access_api.send_gallery_invitation_email"
         ) as email:
-            self.page.get_by_role("button", name="Approve & email access").click()
             self.page.once("dialog", lambda dialog: dialog.accept())
-            self.page.wait_for_url("**/galleries/access-requests/**")
+            with self.page.expect_response(lambda resp: self.review_path in resp.url and resp.request.method == "POST") as approval:
+                self.page.get_by_role("button", name="Approve & email access").click()
+            self.assertEqual(approval.value.status, 200)
         self.access_request.refresh_from_db()
         self.assertEqual(self.access_request.status, "approved")
         email.assert_called_once()
@@ -126,8 +127,9 @@ class PrivateGalleryInboxBrowserTests(LiveServerTestCase):
             invitation=second_invite, requester=self.visitor,
         )
         self._open()
-        self.page.get_by_role("button", name="Deny").click()
-        self.page.wait_for_url("**/galleries/access-requests/**")
+        with self.page.expect_response(lambda resp: self.review_path.replace(str(self.access_request.pk), str(second.pk)) in resp.url and resp.request.method == "POST") as denial:
+            self.page.get_by_role("button", name="Deny").click()
+        self.assertEqual(denial.value.status, 200)
         second.refresh_from_db()
         self.assertEqual(second.status, "denied")
 
