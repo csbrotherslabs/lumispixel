@@ -52,6 +52,7 @@ def discover_deletion_candidates(request):
         authorized = GalleryFaceSearchPolicy.objects.filter(
             gallery_id__in=gallery_ids, processing_authorized=True,
         ).values_list("gallery_id", flat=True)
+        notified_gallery_ids = []
         with transaction.atomic():
             grant = BiometricDeletionDiscoveryGrant.objects.select_for_update().get(
                 request=item,
@@ -61,12 +62,19 @@ def discover_deletion_candidates(request):
             ):
                 return JsonResponse({"error": "authorization_withdrawn"}, status=403)
             for gallery_id in authorized:
-                BiometricDeletionDiscoveryCandidate.objects.get_or_create(
+                _, created = BiometricDeletionDiscoveryCandidate.objects.get_or_create(
                     request=item, gallery_id=gallery_id,
                 )
+                if created:
+                    notified_gallery_ids.append(gallery_id)
             if item.status == ClientBiometricDeletionRequest.Status.PENDING:
                 item.status = ClientBiometricDeletionRequest.Status.IN_REVIEW
                 item.save(update_fields=["status"])
+        if notified_gallery_ids:
+            from .deletion_service import notify_photographers_for_candidates
+            transaction.on_commit(lambda: notify_photographers_for_candidates(
+                item.pk, notified_gallery_ids,
+            ))
         return JsonResponse({
             "status": "review_pending",
             "message": "Eligible photographers will review potential matches.",
