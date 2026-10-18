@@ -165,6 +165,8 @@ def _workspace_nav(active_key):
         for key, title, icon in group["items"]:
             module = MODULE_BY_KEY[key]
             items.append({"key": key, "title": title, "icon": icon, "url": _reverse_module(module), "active": key == active_key})
+        if group["title"] == "Galleries" and getattr(settings, "VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED", False):
+            items.append({"key": "private_gallery_requests", "title": "Access requests", "icon": "bi-person-check", "url": reverse("photographer_workspace:private_gallery_requests"), "active": active_key == "private_gallery_requests"})
         groups.append({"title": group["title"], "icon": group["icon"], "id": f"nav-group-{index}", "items": items, "expanded": not group["title"] or any(item["active"] for item in items), "active": any(item["active"] for item in items)})
     return groups
 
