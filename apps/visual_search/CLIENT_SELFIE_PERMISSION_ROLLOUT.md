@@ -51,3 +51,15 @@ The selfie API rechecks authorization after embedding extraction and after vecto
 ## In-flight request handling
 
 The search API checks active permission before inference, after inference and after matching before returning a response. This is best-effort suppression and **not** a linearizable cancellation guarantee. Strong cancellation will require an explicit request/lease state machine and coordination with biometric processing workers before the selfie API can be enabled.
+
+## Photographer-mediated face-level erasure (draft implementation)
+
+A photographer review inbox is available at `/api/visual-search/selfie/deletion/photographer/`. It lists requests **only** for explicitly account-linked CRM clients who have a gallery owned by the logged-in photographer. It does not enumerate a client's potential matches across private galleries.
+
+A scoped confirmation endpoint takes `gallery_id`, `photo_id`, and `face_index`; it requires a matching deletion request, photographer ownership, and an explicit `Gallery.client.user` relationship to the requester. The pgvector deletion primitive targets only `photo_id + face_index`, not other faces in that photo. A durable review record suppresses that face from public search and blocks future indexing of that entire photo as a conservative anti-resurrection measure.
+
+**Safety gate:** `VISUAL_SEARCH_FACE_DELETION_REVIEW_ENABLED` defaults to false. Do not enable until a verified visual face-slot selection UI and face-index stability/worker reconciliation have been implemented and validated. The current photographer inbox does not provide a reliable visual mapping between a face and its numeric `face_index`; permitting free-form slot entry now could delete the wrong person's embedding. This draft is not yet a production-ready erasure mechanism.
+
+If a photographer cannot identify a requester, report **identity not verified / deletion unresolved**, never **no embeddings exist**. No global matching, automatic absence conclusion, or automatic closure is implemented. A request remains open until all relevant scopes are verified and erasure is confirmed.
+
+The user asked to omit guaranteed in-progress search cancellation; this remains out of scope. Existing permission rechecks are retained.
