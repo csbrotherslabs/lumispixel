@@ -64,7 +64,7 @@ def selfie_search(request):
         vectors = extract_face_embeddings(photo)
         if len(vectors) != 1:
             return JsonResponse({"error": "exactly_one_face_required"}, status=400)
-        matches = find_public_matches(vectors[0])
+        # Withdrawal may occur while inference/search is running. Never return\n        # results after a completed withdrawal has been observed.\n        if not active_client_permission(request.user):\n            return JsonResponse({"error": "client_permission_withdrawn"}, status=403)\n        matches = find_public_matches(vectors[0])\n        if not active_client_permission(request.user):\n            return JsonResponse({"error": "client_permission_withdrawn"}, status=403)
     except (ValueError, OSError):
         return JsonResponse({"error": "invalid_selfie"}, status=400)
     except Exception:
