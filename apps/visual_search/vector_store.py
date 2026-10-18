@@ -83,3 +83,13 @@ def verify_stored_face_slot(*, photo_id, face_index, model_version, vector):
     # Same-image, same-model extraction should be extremely close; fail closed
     # on model changes, reordered faces or altered source images.
     return bool(row and row[0] is not None and float(row[0]) < 0.0001)
+
+
+def face_slot_exists(*, photo_id, face_index):
+    with vector_connection() as conn:
+        row = conn.execute(
+            """SELECT 1 FROM visual_search.app_face_embeddings
+               WHERE photo_id = %s AND face_index = %s LIMIT 1""",
+            (photo_id, face_index),
+        ).fetchone()
+    return row is not None
