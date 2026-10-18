@@ -1,5 +1,7 @@
 """Privacy contract for invitation-only access requests."""
 import json
+from unittest.mock import patch
+from django.core.cache import cache
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
@@ -24,8 +26,13 @@ class PrivateAccessRequestTests(TestCase):
             status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
             published_at=timezone.now(),
         )
+        self.visitor.mark_email_verified()
+        cache.clear()
         self.invite_url = reverse("visual_search:private-access-invite", args=[self.gallery.pk])
         self.submit_url = reverse("visual_search:private-access-request")
+
+    def tearDown(self):
+        cache.clear()
 
     def _post(self, url, data):
         return self.client.post(url, data=json.dumps(data), content_type="application/json")
@@ -34,7 +41,7 @@ class PrivateAccessRequestTests(TestCase):
         self.client.force_login(self.owner)
         self.assertEqual(self._post(self.invite_url, {}).status_code, 503)
 
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True)
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
     def test_only_owner_can_issue_and_request_never_grants_access(self):
         self.client.force_login(self.visitor)
         self.assertEqual(self._post(self.invite_url, {}).status_code, 404)
@@ -54,14 +61,15 @@ class PrivateAccessRequestTests(TestCase):
         item = PrivateGalleryAccessRequest.objects.get()
         self.assertEqual(item.status, "pending")
         self.client.force_login(self.owner)
-        reviewed = self._post(
-            reverse("visual_search:private-access-review", args=[item.pk]),
-            {"decision": "approved"},
-        )
+        with patch("apps.visual_search.private_access_api.send_gallery_invitation_email"):
+            reviewed = self._post(
+                reverse("visual_search:private-access-review", args=[item.pk]),
+                {"decision": "approved"},
+            )
         self.assertEqual(reviewed.status_code, 200)
-        self.assertFalse(reviewed.json()["access_granted"])
+        self.assertTrue(reviewed.json()["access_granted"])
 
-    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True)
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
     def test_invalid_invitation_is_indistinguishable(self):
         self.client.force_login(self.visitor)
         valid_format = "X" * 50
@@ -69,4 +77,38 @@ class PrivateAccessRequestTests(TestCase):
         missing = self._post(self.submit_url, {})
         self.assertEqual(invalid.status_code, 202)
         self.assertEqual(invalid.json(), missing.json())
+        self.assertEqual(PrivateGalleryAccessRequest.objects.count(), 0)
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True)
+    def test_no_shared_cache_fails_closed(self):
+        self.client.force_login(self.owner)
+        self.assertEqual(self._post(self.invite_url, {}).status_code, 503)
+
+    @override_settings(
+        VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True,
+        VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True,
+        VISUAL_SEARCH_PRIVATE_ACCESS_RATE_LIMIT=1,
+    )
+    def test_rate_limit_blocks_second_invite(self):
+        self.client.force_login(self.owner)
+        self.assertEqual(self._post(self.invite_url, {}).status_code, 201)
+        self.assertEqual(self._post(self.invite_url, {}).status_code, 429)
+
+    @override_settings(VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED=True, VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE=True)
+    def test_revocation_prevents_request_and_owner_inbox_isolated(self):
+        self.client.force_login(self.owner)
+        issued = self._post(self.invite_url, {}).json()
+        self.client.force_login(self.visitor)
+        self.assertEqual(
+            self.client.get(reverse("visual_search:private-access-inbox")).json(),
+            {"results": []},
+        )
+        self.client.force_login(self.owner)
+        revoke = self._post(
+            reverse("visual_search:private-access-revoke", args=[issued["invitation_id"]]), {}
+        )
+        self.assertEqual(revoke.status_code, 200)
+        self.client.force_login(self.visitor)
+        response = self._post(self.submit_url, {"invitation_token": issued["token"]})
+        self.assertEqual(response.status_code, 202)
         self.assertEqual(PrivateGalleryAccessRequest.objects.count(), 0)
