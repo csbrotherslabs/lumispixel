@@ -176,6 +176,7 @@ jobs:
         env:
           VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED: "true"
           VISUAL_SEARCH_PRIVATE_ACCESS_SHARED_CACHE: "true"
+          LUMISPIXEL_RUN_INBOX_BROWSER_E2E: "1"
         run: python manage.py test apps.dashboard.test_private_gallery_request_browser --verbosity 2
 
   django-tests:
