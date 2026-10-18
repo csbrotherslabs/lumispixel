@@ -47,7 +47,7 @@ def client_selfie_permission(request):
     if not getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_COLLECTION_ENABLED", False):
         return JsonResponse({"error": "unavailable"}, status=503)
     version = getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION", "")
-    if not version:
+    if not version or not getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL", ""):
         return JsonResponse({"error": "unavailable"}, status=503)
     if not getattr(request.user, "email_verified", False) or not request.user.can_login:
         return JsonResponse({"error": "account_not_verified"}, status=403)
