@@ -116,3 +116,18 @@ def process_vector_purge(purge_id):
 def reconcile_vector_purges():
     from .purges import recover_and_dispatch_purges
     return recover_and_dispatch_purges()
+
+
+@shared_task
+def retry_pending_face_deletions():
+    """Retry durable confirmed erasures; do not auto-close privacy requests."""
+    from .models import FaceDeletionReview
+    from .deletion_service import retry_confirmed_erasure
+    pending = FaceDeletionReview.objects.filter(
+        deleted_at__isnull=True,
+    ).order_by("confirmed_at").values_list("pk", flat=True)[:100]
+    results = {"completed": 0, "retry_required": 0}
+    for review_id in pending:
+        status = retry_confirmed_erasure(review_id)
+        results[status] += 1
+    return results
