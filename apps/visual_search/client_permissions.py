@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -71,3 +72,21 @@ def client_selfie_permission(request):
                 policy_version=version, granted_at=timezone.now(),
             )
     return JsonResponse({"purpose": PURPOSE, "authorized": True, "policy_version": version})
+
+
+@login_required
+@require_http_methods(["GET"])
+def client_selfie_permission_page(request):
+    """Self-service privacy controls; withdrawal remains accessible when disabled."""
+    version = getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION", "")
+    enrollment_enabled = bool(
+        getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_COLLECTION_ENABLED", False)
+        and version
+        and getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL", "")
+    )
+    return render(request, "visual_search/client_selfie_permission.html", {
+        "authorized": active_client_permission(request.user),
+        "policy_version": version,
+        "enrollment_enabled": enrollment_enabled,
+        "notice_url": getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL", ""),
+    })
