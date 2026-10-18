@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .models import ClientSelfieSearchPermission
+from .models import ClientSelfieSearchPermission, ClientBiometricDeletionRequest
 
 PURPOSE = "public_gallery_selfie_search"
 
@@ -92,3 +92,31 @@ def client_selfie_permission_page(request):
         "enrollment_enabled": enrollment_enabled,
         "notice_url": getattr(settings, "VISUAL_SEARCH_CLIENT_CONSENT_NOTICE_URL", ""),
     })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def client_biometric_deletion(request):
+    """User-scoped erasure request, not an unverified vector-delete operation."""
+    if request.method == "GET":
+        latest = ClientBiometricDeletionRequest.objects.filter(
+            user=request.user,
+        ).order_by("-requested_at").first()
+        return JsonResponse({
+            "status": latest.status if latest else "not_requested",
+        })
+    with transaction.atomic():
+        type(request.user).objects.select_for_update().get(pk=request.user.pk)
+        ClientSelfieSearchPermission.objects.filter(
+            user=request.user, purpose=PURPOSE, withdrawn_at__isnull=True,
+        ).update(withdrawn_at=timezone.now())
+        pending = ClientBiometricDeletionRequest.objects.filter(
+            user=request.user,
+            status__in=[
+                ClientBiometricDeletionRequest.Status.PENDING,
+                ClientBiometricDeletionRequest.Status.IN_REVIEW,
+            ],
+        ).order_by("-requested_at").first()
+        if pending is None:
+            pending = ClientBiometricDeletionRequest.objects.create(user=request.user)
+    return JsonResponse({"status": pending.status, "request_id": pending.pk}, status=202)
