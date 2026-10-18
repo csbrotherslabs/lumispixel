@@ -45,3 +45,21 @@ def delete_photo_embeddings(photo_id):
 def delete_gallery_embeddings(gallery_id):
     with vector_connection() as conn:
         conn.execute("DELETE FROM visual_search.app_face_embeddings WHERE gallery_id = %s", (gallery_id,))
+
+
+def delete_confirmed_face(*, photo_id, face_index):
+    """Delete one face slot, not the entire photograph or gallery.
+
+    Returns affected row count. Caller must verify photographer ownership and
+    subject identity separately; face_index alone is not identity evidence.
+    """
+    if not isinstance(face_index, int) or face_index < 0:
+        raise ValueError("Invalid face index")
+    with vector_connection() as conn:
+        with conn.transaction():
+            cursor = conn.execute(
+                """DELETE FROM visual_search.app_face_embeddings
+                   WHERE photo_id = %s AND face_index = %s""",
+                (photo_id, face_index),
+            )
+            return cursor.rowcount
