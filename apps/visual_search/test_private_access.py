@@ -20,7 +20,7 @@ class PrivateAccessRequestTests(TestCase):
         Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
         self.owner = get_user_model().objects.create_user(email=f"owner-{uuid4().hex}@example.test", password="test-only")
         self.visitor = get_user_model().objects.create_user(email=f"visitor-{uuid4().hex}@example.test", password="test-only")
-        photographer = PhotographerProfile.objects.create(user=self.owner, slug=f"studio-{uuid4().hex}")
+        photographer = PhotographerProfile.objects.create(user=self.owner, slug=f"studio-{uuid4().hex}", onboarding_completed=True)
         self.gallery = Gallery.objects.create(
             photographer=photographer, name="Private test", slug=f"private-{uuid4().hex}",
             status=Gallery.Status.PUBLISHED, visibility=Gallery.Visibility.PRIVATE,
