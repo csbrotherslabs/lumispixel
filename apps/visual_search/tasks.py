@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 def _eligible(job):
     photo = job.photo
     return (
-        not FaceDeletionReview.objects.filter(photo_id=photo.pk).exists()\n        and settings.VISUAL_SEARCH_FACE_INDEXING_ENABLED
+        not FaceDeletionReview.objects.filter(photo_id=photo.pk).exists()
+        and settings.VISUAL_SEARCH_FACE_INDEXING_ENABLED
         and photo.status == GalleryPhoto.Status.COMPLETED
         and photo.gallery.deleted_at is None
         and photo.gallery.archived_at is None
