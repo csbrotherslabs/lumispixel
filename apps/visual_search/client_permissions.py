@@ -6,6 +6,7 @@ Withdrawal is always available, including when search is disabled.
 import json
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
@@ -37,7 +38,7 @@ def client_selfie_permission(request):
     if request.method == "DELETE":
         # Lock the user row to serialize grant/withdraw requests for this account.
         with transaction.atomic():
-            type(request.user).objects.select_for_update().get(pk=request.user.pk)
+            get_user_model().objects.select_for_update().get(pk=request.user.pk)
             count = ClientSelfieSearchPermission.objects.filter(
                 user=request.user, purpose=PURPOSE, withdrawn_at__isnull=True,
             ).update(withdrawn_at=timezone.now())
@@ -66,7 +67,7 @@ def client_selfie_permission(request):
     if not isinstance(payload, dict) or payload.get("purpose") != PURPOSE or payload.get("policy_version") != version or payload.get("agree") is not True:
         return JsonResponse({"error": "explicit_authorization_required"}, status=400)
     with transaction.atomic():
-        type(request.user).objects.select_for_update().get(pk=request.user.pk)
+        get_user_model().objects.select_for_update().get(pk=request.user.pk)
         if ClientBiometricDeletionRequest.objects.filter(
             user=request.user, status__in=[
                 ClientBiometricDeletionRequest.Status.PENDING,
@@ -135,7 +136,7 @@ def client_biometric_deletion(request):
             ),
         })
     with transaction.atomic():
-        type(request.user).objects.select_for_update().get(pk=request.user.pk)
+        get_user_model().objects.select_for_update().get(pk=request.user.pk)
         ClientSelfieSearchPermission.objects.filter(
             user=request.user, purpose=PURPOSE, withdrawn_at__isnull=True,
         ).update(withdrawn_at=timezone.now())
