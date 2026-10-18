@@ -5,7 +5,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.galleries.models import Gallery, GalleryPhoto
-from .vector_store import vector_connection\nfrom .models import FaceDeletionReview
+from .vector_store import vector_connection
+from .models import FaceDeletionReview
 
 
 def calibrated_max_distance():
@@ -53,7 +54,10 @@ def find_public_matches(embedding, *, limit=20):
 
     # Recheck exact photo membership, completion, visibility and gallery consent.
     # Never accept the gallery_id supplied by the vector database as authority.
-    photo_ids = [photo_id for photo_id, _, _, _ in rows]\n    erased_slots = set(FaceDeletionReview.objects.filter(\n        photo_id__in=photo_ids,\n    ).values_list("photo_id", "face_index"))
+    photo_ids = [photo_id for photo_id, _, _, _ in rows]
+    erased_slots = set(FaceDeletionReview.objects.filter(
+        photo_id__in=photo_ids,
+    ).values_list("photo_id", "face_index"))
     allowed = dict(GalleryPhoto.objects.filter(
         pk__in=photo_ids,
         status=GalleryPhoto.Status.COMPLETED,
@@ -86,7 +90,9 @@ def find_public_matches(embedding, *, limit=20):
     allowed.update(dict(eligible_expiring))
     seen = set()
     results = []
-    for photo_id, gallery_id, face_index, distance in rows:\n        if (photo_id, face_index) in erased_slots:\n            continue
+    for photo_id, gallery_id, face_index, distance in rows:
+        if (photo_id, face_index) in erased_slots:
+            continue
         actual_gallery = allowed.get(photo_id)
         if actual_gallery != gallery_id or actual_gallery in seen:
             continue
