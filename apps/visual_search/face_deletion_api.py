@@ -7,6 +7,7 @@ slot. This API never performs similarity-based identity discovery.
 import json
 import logging
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse\nfrom django.shortcuts import render\nfrom django.views.decorators.csrf import ensure_csrf_cookie
@@ -43,6 +44,9 @@ def photographer_face_deletion_inbox(request):
 @login_required
 @require_POST
 def photographer_confirm_face_deletion(request, deletion_id):
+    # Never accept unverified face-slot guesses in customer environments.
+    if not getattr(settings, "VISUAL_SEARCH_FACE_DELETION_REVIEW_ENABLED", False):
+        return JsonResponse({"error": "unavailable"}, status=503)
     try:
         data = json.loads(request.body)
         gallery_id = int(data["gallery_id"])
