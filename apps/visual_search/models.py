@@ -157,6 +157,8 @@ class ClientBiometricDeletionRequest(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     resolution_note = models.TextField(blank=True)
+    scope_verified_at = models.DateTimeField(null=True, blank=True)
+    scope_verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="verified_biometric_deletion_scopes")
 
     class Meta:
         indexes = [
