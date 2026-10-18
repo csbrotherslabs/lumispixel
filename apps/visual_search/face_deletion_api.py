@@ -18,7 +18,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import (
-    ClientBiometricDeletionRequest, FaceDeletionReview,
+    ClientBiometricDeletionRequest, FaceDeletionReview, PhotographerDeletionAssessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def photographer_face_deletion_inbox(request):
     ).distinct().order_by("requested_at")[:100]
     return JsonResponse({
         "requests": [
-            {"request_id": item.pk, "requested_at": item.requested_at.isoformat()}
+            {"request_id": item.pk, "requested_at": item.requested_at.isoformat(),\n             "galleries": list(Gallery.objects.filter(\n                 photographer__user=request.user, client__user_id=item.user_id,\n             ).values("id", "name")[:50])}
             for item in requests
         ],
     })
@@ -123,3 +123,98 @@ def photographer_confirm_face_deletion(request, deletion_id):
 @require_GET
 def photographer_face_deletion_page(request):
     return render(request, "visual_search/photographer_face_deletion.html")
+
+
+@login_required
+@require_GET
+def photographer_face_review_photos(request, deletion_id, gallery_id):
+    deletion = ClientBiometricDeletionRequest.objects.filter(
+        pk=deletion_id, status__in=[
+            ClientBiometricDeletionRequest.Status.PENDING,
+            ClientBiometricDeletionRequest.Status.IN_REVIEW,
+        ],
+    ).first()
+    gallery = Gallery.objects.filter(
+        pk=gallery_id, photographer__user=request.user,
+        client__user_id=deletion.user_id if deletion else None,
+    ).first()
+    if gallery is None:
+        return JsonResponse({"error": "not_found"}, status=404)
+    return JsonResponse({
+        "photos": list(GalleryPhoto.objects.filter(
+            gallery=gallery,
+        ).order_by("pk").values("id")[:100]),
+    })
+
+
+@login_required
+@require_GET
+def photographer_face_review_crops(request, deletion_id, photo_id):
+    deletion = ClientBiometricDeletionRequest.objects.filter(
+        pk=deletion_id, status__in=[
+            ClientBiometricDeletionRequest.Status.PENDING,
+            ClientBiometricDeletionRequest.Status.IN_REVIEW,
+        ],
+    ).first()
+    photo = GalleryPhoto.objects.filter(
+        pk=photo_id, gallery__photographer__user=request.user,
+        gallery__client__user_id=deletion.user_id if deletion else None,
+    ).first()
+    if photo is None:
+        return JsonResponse({"error": "not_found"}, status=404)
+    if not getattr(settings, "VISUAL_SEARCH_FACE_DELETION_REVIEW_ENABLED", False):
+        return JsonResponse({"error": "unavailable"}, status=503)
+    try:
+        from .inference import extract_face_review_crops
+        from .vector_store import verify_stored_face_slot
+        with photo.file.open("rb") as stream:
+            crops = extract_face_review_crops(stream)
+        verified = [
+            {"face_index": face["face_index"], "preview": face["preview"]}
+            for face in crops
+            if verify_stored_face_slot(
+                photo_id=photo_id, face_index=face["face_index"],
+                model_version=settings.VISUAL_SEARCH_FACE_MODEL_VERSION,
+                vector=face["embedding"],
+            )
+        ]
+        response = JsonResponse({"faces": verified})
+        response["Cache-Control"] = "no-store"
+        return response
+    except Exception:
+        logger.exception("Unable to render face review for photo %s", photo_id)
+        return JsonResponse({"error": "review_unavailable"}, status=503)
+
+
+@login_required
+@require_POST
+def photographer_assess_deletion(request, deletion_id):
+    try:
+        payload = json.loads(request.body)
+        gallery_id = int(payload["gallery_id"])
+        outcome = payload["outcome"]
+    except (ValueError, TypeError, KeyError, UnicodeDecodeError):
+        return JsonResponse({"error": "invalid_request"}, status=400)
+    if outcome not in ("unverified", "reviewed"):
+        return JsonResponse({"error": "invalid_outcome"}, status=400)
+    deletion = ClientBiometricDeletionRequest.objects.filter(
+        pk=deletion_id, status__in=[
+            ClientBiometricDeletionRequest.Status.PENDING,
+            ClientBiometricDeletionRequest.Status.IN_REVIEW,
+        ],
+    ).first()
+    gallery = Gallery.objects.filter(
+        pk=gallery_id, photographer__user=request.user,
+        client__user_id=deletion.user_id if deletion else None,
+    ).first()
+    if gallery is None:
+        return JsonResponse({"error": "not_found"}, status=404)
+    with transaction.atomic():
+        PhotographerDeletionAssessment.objects.update_or_create(
+            request=deletion, gallery=gallery,
+            defaults={"photographer_user": request.user, "outcome": outcome},
+        )
+        if deletion.status == ClientBiometricDeletionRequest.Status.PENDING:
+            deletion.status = ClientBiometricDeletionRequest.Status.IN_REVIEW
+            deletion.save(update_fields=["status"])
+    return JsonResponse({"outcome": outcome, "request_status": "in_review"})
