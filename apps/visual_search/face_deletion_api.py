@@ -83,9 +83,9 @@ def photographer_confirm_face_deletion(request, deletion_id):
     gallery = Gallery.objects.filter(
         pk=gallery_id,
         photographer__user=request.user,
-        client__user_id=deletion.user_id if deletion else None,
+        
     ).first()
-    if deletion is None or gallery is None or not GalleryPhoto.objects.filter(
+    if deletion is None or gallery is None or not _gallery_in_request_scope(deletion, gallery) or not GalleryPhoto.objects.filter(
         pk=photo_id, gallery_id=gallery.pk,
     ).exists():
         return JsonResponse({"error": "not_found"}, status=404)
@@ -148,9 +148,9 @@ def photographer_face_review_photos(request, deletion_id, gallery_id):
     ).first()
     gallery = Gallery.objects.filter(
         pk=gallery_id, photographer__user=request.user,
-        client__user_id=deletion.user_id if deletion else None,
+        
     ).first()
-    if gallery is None:
+    if gallery is None or deletion is None or not _gallery_in_request_scope(deletion, gallery):
         return JsonResponse({"error": "not_found"}, status=404)
     return JsonResponse({
         "photos": list(GalleryPhoto.objects.filter(
@@ -170,9 +170,9 @@ def photographer_face_review_crops(request, deletion_id, photo_id):
     ).first()
     photo = GalleryPhoto.objects.filter(
         pk=photo_id, gallery__photographer__user=request.user,
-        gallery__client__user_id=deletion.user_id if deletion else None,
+        gallery__
     ).first()
-    if photo is None:
+    if photo is None or deletion is None or not _gallery_in_request_scope(deletion, photo.gallery):
         return JsonResponse({"error": "not_found"}, status=404)
     if not getattr(settings, "VISUAL_SEARCH_FACE_DELETION_REVIEW_ENABLED", False):
         return JsonResponse({"error": "unavailable"}, status=503)
@@ -217,7 +217,7 @@ def photographer_assess_deletion(request, deletion_id):
     ).first()
     gallery = Gallery.objects.filter(
         pk=gallery_id, photographer__user=request.user,
-        client__user_id=deletion.user_id if deletion else None,
+        
     ).first()
     if gallery is None:
         return JsonResponse({"error": "not_found"}, status=404)
@@ -230,3 +230,11 @@ def photographer_assess_deletion(request, deletion_id):
             deletion.status = ClientBiometricDeletionRequest.Status.IN_REVIEW
             deletion.save(update_fields=["status"])
     return JsonResponse({"outcome": outcome, "request_status": "in_review"})
+
+
+def _gallery_in_request_scope(deletion, gallery):
+    if gallery.client_id and gallery.client.user_id == deletion.user_id:
+        return True
+    return BiometricDeletionDiscoveryCandidate.objects.filter(
+        request=deletion, gallery=gallery,
+    ).exists()
