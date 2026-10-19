@@ -135,7 +135,12 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.page.locator('input[name="name"]').fill("Golden Delivery")
         self.page.locator('select[name="status"]').select_option("draft")
         self.page.locator('select[name="visibility"]').select_option("private")
-        self.page.get_by_role("button", name="Create Gallery").click()
+        expect(self.page.get_by_role("button", name="Create Gallery", exact=True)).to_have_count(2)
+        # Both controls submit the same form. Exercise the bottom action without
+        # relying on document order or an ambiguous page-wide locator.
+        self.page.get_by_role("group", name="Create gallery actions").get_by_role(
+            "button", name="Create Gallery", exact=True,
+        ).click()
         self.page.wait_for_load_state("networkidle")
         gallery_id = self._db(
             lambda: Gallery.objects.values_list("pk", flat=True).get(

@@ -30,6 +30,13 @@ INSTALLED_APPS = [
     "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
     "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
+# Semantic discovery is independently approved and always opt-in per gallery.
+VISUAL_SEARCH_SEMANTIC_ENABLED = env_bool("VISUAL_SEARCH_SEMANTIC_ENABLED", False)
+VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED = env_bool("VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False)
+VISUAL_SEARCH_SEMANTIC_MODEL_PATH = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_PATH", "")
+VISUAL_SEARCH_SEMANTIC_MODEL_VERSION = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_VERSION", "clip-v1")
+CELERY_IMPORTS = ("apps.visual_search.semantic_tasks",)
+
 VISUAL_SEARCH_FACE_INDEXING_ENABLED = env_bool("VISUAL_SEARCH_FACE_INDEXING_ENABLED", False)
 VISUAL_SEARCH_SELFIE_API_ENABLED = env_bool("VISUAL_SEARCH_SELFIE_API_ENABLED", False)
 VISUAL_SEARCH_FACE_MODEL_VERSION = os.getenv("VISUAL_SEARCH_FACE_MODEL_VERSION", "arcface-buffalo-l-v1")
