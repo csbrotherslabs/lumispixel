@@ -43,6 +43,27 @@
   </form>
 
 
+
+  <section class="lp-access-panel" id="ai-photo-discovery" data-ai-discovery-url="{% url 'visual_search:ai-discovery-settings' gallery.pk %}">
+    <div class="lp-access-panel__section">
+      <header><div><span class="lp-access-panel__icon"><i class="bi bi-stars"></i></span><div>
+        <h3>AI Photo Discovery</h3>
+        <p>Semantic and facial search have separate permissions. Both are off for new galleries.</p>
+      </div></div></header>
+      <div class="lp-toggle-grid">
+        <label><span><strong>Semantic Photo Search</strong><small>Search by descriptions such as "first dance" or "birthday cake". Requires approved semantic processing.</small></span>
+          <input type="checkbox" id="lp-semantic-toggle" disabled aria-describedby="lp-ai-status"><i></i>
+        </label>
+        <label><span><strong>Find My Photos (Facial Search)</strong><small>Biometric indexing requires separate legal approval and verified permissions. Managed independently.</small></span>
+          <input type="checkbox" id="lp-facial-toggle" disabled aria-label="Facial indexing status (read only)"><i></i>
+        </label>
+      </div>
+      <p id="lp-ai-status" role="status" aria-live="polite">Loading AI Photo Discovery settings…</p>
+      <button type="button" class="lpw-btn lpw-btn-outline" id="lp-ai-save" disabled>Save AI Photo Discovery</button>
+    </div>
+  </section>
+  <script src="{% static 'js/photographer_gallery_ai_discovery.js' %}" defer></script>
+
   <section class="lp-access-panel lp-gallery-qr-card">
     <div class="lp-gallery-qr-card__preview"><img src="{{ stable_qr_png }}" alt="QR code for {{ gallery.name }}" width="220" height="220"></div>
     <div class="lp-gallery-qr-card__body"><span class="lp-contract-eyebrow">Gallery Link &amp; QR Code</span><h3>Share this gallery anywhere</h3><p>This QR code points to the gallery’s permanent LumisPixel address. Storage links and temporary image URLs are never embedded in the code.</p><div class="lp-gallery-qr-card__url"><input id="stable-gallery-url" value="{{ stable_gallery_url }}" readonly onclick="this.select()"><button type="button" data-copy-stable-gallery><i class="bi bi-copy"></i>Copy Link</button></div><div class="lp-gallery-qr-card__actions"><a href="{{ stable_qr_png }}" download="{{ gallery.slug }}-qr.png"><i class="bi bi-download"></i>Download PNG</a><a href="{{ stable_qr_svg }}" download="{{ gallery.slug }}-qr.svg"><i class="bi bi-filetype-svg"></i>Download SVG</a><button type="button" data-print-stable-qr><i class="bi bi-printer"></i>Print QR</button></div><small>Clients can see this QR inside their gallery only while <strong>Share Gallery</strong> is enabled.</small></div>

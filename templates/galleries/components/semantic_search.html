@@ -1,0 +1,13 @@
+{% load static %}
+{% if semantic_search_available %}
+<section class="lp-semantic-client" aria-label="Search photos by description" style="position:relative;z-index:5;padding:16px;background:#121827;color:#fff">
+  <form data-semantic-client-form data-search-url="{% if access_token %}{% url 'visual_search:invited-semantic-search' access_token %}{% else %}{% url 'visual_search:public-semantic-search' gallery.public_id %}{% endif %}" style="display:flex;gap:8px;flex-wrap:wrap">
+    <label for="lp-semantic-query">Find photos by description</label>
+    <input id="lp-semantic-query" name="q" type="search" minlength="2" maxlength="200" placeholder="e.g. first dance, birthday cake" required style="flex:1;min-width:180px;padding:8px;color:#111">
+    <button type="submit" style="padding:8px">Search photos</button>
+  </form>
+  <p data-semantic-status role="status" aria-live="polite"></p>
+  <div data-semantic-results style="display:flex;gap:12px;flex-wrap:wrap"></div>
+</section>
+<script src="{% static 'js/client_gallery_semantic_search.js' %}" defer></script>
+{% endif %}

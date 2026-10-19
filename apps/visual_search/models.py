@@ -259,3 +259,25 @@ class BiometricDeletionDiscoveryCandidate(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["request", "gallery"], name="visual_unique_erasure_candidate"),
         ]
+
+class GallerySemanticSearchPolicy(models.Model):
+    """Separate opt-in from face indexing; defaults to disabled."""
+    gallery = models.OneToOneField("galleries.Gallery",on_delete=models.CASCADE,related_name="semantic_search_policy")
+    processing_authorized = models.BooleanField(default=False)
+    authorized_at = models.DateTimeField(null=True,blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class SemanticIndexJob(models.Model):
+    """Durable semantic-only job; a new source key or model gets a new job."""
+    photo = models.ForeignKey("galleries.GalleryPhoto",on_delete=models.CASCADE,related_name="semantic_index_jobs")
+    source_key = models.CharField(max_length=700)
+    model_version = models.CharField(max_length=80)
+    status = models.CharField(max_length=16,default="pending",choices=[
+        ("pending","Pending"),("processing","Processing"),("completed","Completed"),
+        ("failed","Failed"),("cancelled","Cancelled"),
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=["photo","source_key","model_version"],name="visual_semantic_job_unique")]
+        indexes=[models.Index(fields=["status","created_at"],name="visual_semantic_job_queue")]
