@@ -4,13 +4,20 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+from apps.visual_search.models import ClientSelfieSearchPermission
 
 
+@override_settings(VISUAL_SEARCH_CLIENT_CONSENT_POLICY_VERSION="selfie-api-test-v1")
 class SelfieSearchAPITests(TestCase):
     def setUp(self):
         self.url = reverse("visual_search:selfie")
         self.user = get_user_model().objects.create_user(
             email="selfie-api@example.com", password="safe-test-password-123"
+        )
+        ClientSelfieSearchPermission.objects.create(
+            user=self.user, purpose="public_gallery_selfie_search",
+            policy_version="selfie-api-test-v1", granted_at=timezone.now(),
         )
 
     def test_anonymous_request_is_not_allowed(self):

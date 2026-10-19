@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.galleries.models import GalleryPhoto
-from .models import FaceIndexJob, GalleryFaceSearchPolicy
+from .models import FaceIndexJob, GalleryFaceSearchPolicy, FaceDeletionReview
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 def _eligible(job):
     photo = job.photo
     return (
-        settings.VISUAL_SEARCH_FACE_INDEXING_ENABLED
+        not FaceDeletionReview.objects.filter(photo_id=photo.pk).exists()
+        and settings.VISUAL_SEARCH_FACE_INDEXING_ENABLED
         and photo.status == GalleryPhoto.Status.COMPLETED
         and photo.gallery.deleted_at is None
         and photo.gallery.archived_at is None
@@ -115,3 +116,18 @@ def process_vector_purge(purge_id):
 def reconcile_vector_purges():
     from .purges import recover_and_dispatch_purges
     return recover_and_dispatch_purges()
+
+
+@shared_task
+def retry_pending_face_deletions():
+    """Retry durable confirmed erasures; do not auto-close privacy requests."""
+    from .models import FaceDeletionReview
+    from .deletion_service import retry_confirmed_erasure
+    pending = FaceDeletionReview.objects.filter(
+        deleted_at__isnull=True,
+    ).order_by("confirmed_at").values_list("pk", flat=True)[:100]
+    results = {"completed": 0, "retry_required": 0}
+    for review_id in pending:
+        status = retry_confirmed_erasure(review_id)
+        results[status] += 1
+    return results
