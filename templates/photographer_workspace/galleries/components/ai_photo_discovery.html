@@ -2,26 +2,26 @@
 <section class="lp-ai-discovery" {% if not ai_discovery_create %}id="ai-photo-discovery" data-ai-discovery-url="{% url 'visual_search:ai-discovery-settings' gallery.pk %}"{% endif %} aria-labelledby="lp-ai-heading">
   <div class="lp-ai-discovery__intro">
     <span class="lp-ai-discovery__mark"><i class="bi bi-stars" aria-hidden="true"></i></span>
-    <div class="lp-ai-discovery__heading"><h2 id="lp-ai-heading">AI Photo Discovery</h2><p>Help your clients find their photos using AI. Semantic and facial search have separate permissions, so you can choose which features to enable for this gallery.</p></div>
-    <div class="lp-ai-discovery__notice"><i class="bi bi-lightbulb" aria-hidden="true"></i><span>Both features are off by default for new galleries until their policies and safeguards are approved.</span></div>
+    <div class="lp-ai-discovery__heading"><h2 id="lp-ai-heading">AI Photo Discovery</h2><p>Help clients find their favorite moments, faster.</p></div>
+    <div class="lp-ai-discovery__notice"><i class="bi bi-lightbulb" aria-hidden="true"></i><span>Choose how clients discover photos. Both options start off.</span></div>
   </div>
   <div class="lp-ai-discovery__grid">
     <article class="lp-ai-discovery__card lp-ai-discovery__card--semantic">
-      <div class="lp-ai-discovery__card-head"><span class="lp-ai-discovery__feature-icon"><i class="bi bi-search" aria-hidden="true"></i></span><div><h3>Semantic Photo Search</h3><p>Let clients search photos using natural language descriptions.</p></div>
+      <div class="lp-ai-discovery__card-head"><span class="lp-ai-discovery__feature-icon"><i class="bi bi-search" aria-hidden="true"></i></span><div><h3>Semantic Photo Search</h3><p>Find moments using everyday words.</p></div>
         <label class="lp-ai-discovery__switch"><input type="checkbox" id="lp-semantic-toggle" {% if ai_discovery_create %}name="semantic_search_enabled" value="on" {% if not semantic_create_available %}disabled{% endif %}{% else %}disabled{% endif %} aria-describedby="lp-ai-status"><span aria-hidden="true"></span><small>Off</small></label>
       </div>
-      <ul class="lp-ai-discovery__benefits"><li>Search by scenes, objects, and descriptions</li><li>Works across authorized photos in this gallery</li><li>Respects gallery visibility and client permissions</li><li>Does not identify individuals by face</li></ul>
-      <div class="lp-ai-discovery__example"><strong><i class="bi bi-search" aria-hidden="true"></i> Example searches</strong><div><span>“first dance”</span><span>“birthday cake”</span><span>“bride and groom”</span><span>“dancing guests”</span><span>“sunset portraits”</span><span>“ceremony”</span></div></div>
-      <div class="lp-ai-discovery__info"><i class="bi bi-shield-check" aria-hidden="true"></i><div><strong>Privacy</strong><p>Semantic search uses image content to find relevant photos. It does not identify or match individuals by face.</p></div></div>
+      <ul class="lp-ai-discovery__benefits"><li>Search scenes and moments</li><li>Respects gallery access</li></ul>
+      <div class="lp-ai-discovery__example"><strong><i class="bi bi-search" aria-hidden="true"></i> Example searches</strong><div><span>“first dance”</span><span>“birthday cake”</span><span>“sunset portraits”</span></div></div>
+      <div class="lp-ai-discovery__info"><i class="bi bi-shield-check" aria-hidden="true"></i><div><strong>Privacy</strong><p>Searches photo content without identifying faces.</p></div></div>
     </article>
     <article class="lp-ai-discovery__card lp-ai-discovery__card--facial">
-      <div class="lp-ai-discovery__card-head"><span class="lp-ai-discovery__feature-icon"><i class="bi bi-person-bounding-box" aria-hidden="true"></i></span><div><h3>Find My Photos (Facial Search)</h3><p>Let clients use a selfie to find photos containing their face.</p></div>
+      <div class="lp-ai-discovery__card-head"><span class="lp-ai-discovery__feature-icon"><i class="bi bi-person-bounding-box" aria-hidden="true"></i></span><div><h3>Find My Photos (Facial Search)</h3><p>Find matching photos using a selfie.</p></div>
         <label class="lp-ai-discovery__switch"><input type="checkbox" id="lp-facial-toggle" disabled aria-label="Facial indexing status, managed separately"><span aria-hidden="true"></span><small>Off</small></label>
       </div>
-      <ul class="lp-ai-discovery__benefits"><li>Uses facial recognition to find matching photos</li><li>Requires verified permissions and legal approval</li><li>Managed independently from semantic search</li><li>Only returns photos clients are authorized to access</li></ul>
-      <div class="lp-ai-discovery__info lp-ai-discovery__info--purple"><i class="bi bi-person-check" aria-hidden="true"></i><div><strong>Requires approval</strong><p>Facial indexing must be enabled only after required permissions and platform safeguards are verified.</p></div></div>
-      <div class="lp-ai-discovery__info lp-ai-discovery__info--red"><i class="bi bi-shield-lock" aria-hidden="true"></i><div><strong>Biometric data</strong><p>Facial search processes biometric information. Obtain required consent and follow applicable privacy laws.</p></div></div>
+      <ul class="lp-ai-discovery__benefits"><li>Selfie-based photo matching</li><li>Separate consent and access controls</li></ul>
+      <div class="lp-ai-discovery__info lp-ai-discovery__info--purple"><i class="bi bi-person-check" aria-hidden="true"></i><div><strong>Requires approval</strong><p>Available after separate biometric approval.</p></div></div>
+      <div class="lp-ai-discovery__info lp-ai-discovery__info--red"><i class="bi bi-shield-lock" aria-hidden="true"></i><div><strong>Biometric data</strong><p>Biometric consent and privacy safeguards are required.</p></div></div>
     </article>
   </div>
-  <div class="lp-ai-discovery__footer"><p id="lp-ai-status" role="status" aria-live="polite">{% if ai_discovery_create %}{% if semantic_create_available %}Semantic search is optional. Both features start off.{% else %}Semantic indexing is awaiting platform and policy approval. You can configure discovery after creating the gallery.{% endif %}{% else %}Loading AI Photo Discovery settings…{% endif %}</p><div class="lp-ai-discovery__actions"><button type="button" class="lp-ai-discovery__reset" id="lp-ai-reset">Reset to Defaults</button>{% if not ai_discovery_create %}<button type="button" class="lp-ai-discovery__save" id="lp-ai-save" disabled>Save AI Photo Discovery <i class="bi bi-arrow-right" aria-hidden="true"></i></button>{% endif %}</div></div>
+  <div class="lp-ai-discovery__footer"><p id="lp-ai-status" role="status" aria-live="polite">{% if ai_discovery_create %}{% if semantic_create_available %}Semantic search is optional. Both features start off.{% else %}Semantic search is not yet available. Configure it later in Client Access.{% endif %}{% else %}Loading AI Photo Discovery settings…{% endif %}</p><div class="lp-ai-discovery__actions"><button type="button" class="lp-ai-discovery__reset" id="lp-ai-reset">Reset to Defaults</button>{% if not ai_discovery_create %}<button type="button" class="lp-ai-discovery__save" id="lp-ai-save" disabled>Save AI Photo Discovery <i class="bi bi-arrow-right" aria-hidden="true"></i></button>{% endif %}</div></div>
 </section>
