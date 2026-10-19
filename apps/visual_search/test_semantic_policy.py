@@ -1,6 +1,4 @@
 """Tests for default-off, owner-scoped AI Photo Discovery controls."""
-import json
-from unittest.mock import patch
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from apps.visual_search.models import GallerySemanticSearchPolicy
@@ -29,13 +27,11 @@ class SemanticPolicyDefaultsTests(TestCase):
         self.assertEqual(resolve(reverse("visual_search:invited-semantic-search",args=["test-token"])).url_name,"invited-semantic-search")
 
     def test_unauthorized_client_search_is_not_disclosed(self):
-        from unittest.mock import patch
+        from django.http import Http404
         from apps.visual_search.semantic_api import public_semantic_search
         from django.test import RequestFactory
-        with patch("apps.visual_search.semantic_api.get_object_or_404",create=True):
-            pass
-        response=public_semantic_search(RequestFactory().get("/?q=first+dance"),"00000000-0000-0000-0000-000000000001")
-        self.assertEqual(response.status_code,404)
+        with self.assertRaises(Http404):
+            public_semantic_search(RequestFactory().get("/?q=first+dance"),"00000000-0000-0000-0000-000000000001")
 
     def test_unapproved_semantic_model_fails_closed(self):
         from apps.visual_search.semantic_tasks import schedule_semantic_photo
