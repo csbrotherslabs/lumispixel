@@ -13,11 +13,6 @@ class Command(BaseCommand):
         parser.add_argument("--query", required=True, help="Description expected to match the image")
 
     def handle(self, *args, **options):
-        import numpy as np
-        from pgvector.psycopg import register_vector
-        from apps.visual_search.semantic import DIMENSION, embed_image, embed_text
-        from apps.visual_search.vector_store import vector_connection
-
         path = Path(options["image"])
         if not path.is_file():
             raise CommandError("Image not found. Provide a local photograph with permission to process.")
@@ -31,6 +26,14 @@ class Command(BaseCommand):
             raise CommandError("Set VISUAL_SEARCH_SEMANTIC_MODEL_PATH to an approved local CLIP model.")
         if not getattr(settings, "VISUAL_SEARCH_DATABASE_URL", ""):
             raise CommandError("VISUAL_SEARCH_DATABASE_URL must point to an isolated pgvector test database.")
+
+        try:
+            import numpy as np
+            from pgvector.psycopg import register_vector
+            from apps.visual_search.semantic import DIMENSION, embed_image, embed_text
+            from apps.visual_search.vector_store import vector_connection
+        except ImportError as exc:
+            raise CommandError("Install requirements-semantic-search.txt on the isolated worker.") from exc
 
         with path.open("rb") as stream:
             image_vector = np.asarray(embed_image(stream), dtype=np.float32)
