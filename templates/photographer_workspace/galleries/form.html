@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
 document.addEventListener("DOMContentLoaded", function () {
   const picker = document.querySelector("[data-gallery-design-picker]");
   const storyFields = document.querySelector("[data-story-fields]");
@@ -116,6 +116,8 @@ document.addEventListener("DOMContentLoaded", function () {
           {% include "photographer_workspace/components/form_field.html" with field=form.expiration_date %}
         </div>
       </section>
+      {% include "photographer_workspace/galleries/components/ai_photo_discovery.html" with ai_discovery_create=True %}
+
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
