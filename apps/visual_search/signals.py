@@ -45,3 +45,31 @@ def gallery_inactive(sender, instance, **kwargs):
 def photo_inactive(sender, instance, **kwargs):
     if instance.status != GalleryPhoto.Status.COMPLETED:
         _queue_purge("photo", instance.pk)
+
+# Semantic vectors have a separate lifecycle and never use face-vector purges.
+# Purges are queued on commit, including soft deletes and gallery archival.
+@receiver(post_delete, sender=GalleryPhoto)
+def semantic_photo_deleted(sender, instance, **kwargs):
+    from django.db import transaction
+    from .semantic_tasks import purge_semantic_photo
+    transaction.on_commit(lambda pk=instance.pk: purge_semantic_photo.delay(pk))
+
+@receiver(post_delete, sender=Gallery)
+def semantic_gallery_deleted(sender, instance, **kwargs):
+    from django.db import transaction
+    from .semantic_tasks import purge_semantic_gallery
+    transaction.on_commit(lambda pk=instance.pk: purge_semantic_gallery.delay(pk))
+
+@receiver(post_save, sender=Gallery)
+def semantic_gallery_inactive(sender, instance, **kwargs):
+    if instance.deleted_at or instance.archived_at:
+        from django.db import transaction
+        from .semantic_tasks import purge_semantic_gallery
+        transaction.on_commit(lambda pk=instance.pk: purge_semantic_gallery.delay(pk))
+
+@receiver(post_save, sender=GalleryPhoto)
+def semantic_photo_inactive(sender, instance, **kwargs):
+    if instance.status != GalleryPhoto.Status.COMPLETED:
+        from django.db import transaction
+        from .semantic_tasks import purge_semantic_photo
+        transaction.on_commit(lambda pk=instance.pk: purge_semantic_photo.delay(pk))
