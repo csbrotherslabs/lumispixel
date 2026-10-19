@@ -1,0 +1,8 @@
+# Install only in a controlled semantic indexing/test environment.
+# Use a locally provisioned, license-reviewed CLIP-compatible model.
+-r requirements.txt
+numpy>=1.26,<3
+pgvector>=0.4,<1
+torch>=2.2,<3
+transformers>=4.40,<5
+Pillow>=10,<13
