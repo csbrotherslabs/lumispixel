@@ -1255,6 +1255,14 @@ def create_gallery(request):
         gallery.slug = _unique_gallery_slug(profile, gallery.name)
         gallery.full_clean()
         gallery.save()
+        # Semantic authorization is separate and gated; facial search remains off.
+        if request.POST.get("semantic_search_enabled") == "on":
+            from apps.visual_search.models import GallerySemanticSearchPolicy
+            from apps.visual_search.semantic import semantic_enabled
+            if semantic_enabled() and getattr(settings, "VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False):
+                GallerySemanticSearchPolicy.objects.update_or_create(
+                    gallery=gallery, defaults={"processing_authorized": True}
+                )
         log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_CREATED,
                              description=f"{gallery.name} was created and its workspace is ready.", actor=request.user)
         messages.success(request, "Gallery created. Your workspace is ready.")
@@ -1266,6 +1274,7 @@ def create_gallery(request):
                 field.widget.attrs["aria-invalid"] = "true"
                 field.widget.attrs["aria-describedby"] = f"{field.widget.attrs.get('id', f'id_{field_name}')}-error"
     context = _dashboard_context(request, "all_galleries", "Create Gallery")
+    context["semantic_create_available"] = bool(getattr(settings, "VISUAL_SEARCH_SEMANTIC_ENABLED", False) and getattr(settings, "VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False))
     context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the gallery now. Add photos and delivery settings next.", "submit_label": "Create Gallery", "is_create_gallery": True, "hide_topbar_heading": True})
     return render(request, "photographer_workspace/galleries/form.html", context)
 
