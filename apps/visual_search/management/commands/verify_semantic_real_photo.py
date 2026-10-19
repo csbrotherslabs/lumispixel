@@ -46,6 +46,9 @@ class Command(BaseCommand):
             database = conn.execute("SELECT current_database()").fetchone()[0]
             if not any(word in database.lower() for word in ("test", "e2e", "scratch", "sandbox")):
                 raise CommandError("Refusing to run on a database without a test/e2e/scratch/sandbox name.")
+            class _RollbackSmoke(Exception):
+                pass
+
             try:
                 with conn.transaction():
                     photo_id = -9223372036854775000
@@ -85,7 +88,9 @@ class Command(BaseCommand):
                         )
                     )
                     self.stdout.write("No test vectors retained; transaction will be rolled back.")
-                    conn.rollback()
+                    raise _RollbackSmoke()
+            except _RollbackSmoke:
+                pass
             except CommandError:
                 raise
             except Exception as exc:
