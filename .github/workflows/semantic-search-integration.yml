@@ -1,0 +1,41 @@
+name: Semantic search integration
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+permissions:
+  contents: read
+jobs:
+  semantic-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      vectors:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: lumispixel_visual_search_test_ci
+          POSTGRES_USER: semantic
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U semantic -d lumispixel_visual_search_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings_test
+      DJANGO_DEBUG: '1'
+      LUMISPIXEL_TEST_SQLITE: '1'
+      GALLERY_STORAGE_BACKEND: local
+      VISUAL_SEARCH_INTEGRATION_DATABASE_URL: postgresql://semantic:ci-only-password@localhost:5432/lumispixel_visual_search_test_ci
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt 'numpy>=1.26,<3' 'pgvector>=0.4,<1'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node --test scripts/tests/ai_discovery.test.cjs
+      - run: python scripts/verify_required_ci_contract.py
+      - run: python manage.py test apps.visual_search.test_semantic_policy apps.visual_search.test_semantic_journey apps.visual_search.test_semantic_vectors --verbosity 2

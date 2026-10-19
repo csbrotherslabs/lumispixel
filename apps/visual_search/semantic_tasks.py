@@ -95,8 +95,15 @@ def index_semantic_gallery(gallery_id):
 @shared_task(bind=True, max_retries=5)
 def purge_semantic_gallery(self, gallery_id):
     try:
-        purge_gallery(gallery_id)
-        SemanticIndexJob.objects.filter(photo__gallery_id=gallery_id).exclude(status="cancelled").update(status="cancelled")
+        # A delayed purge must not erase a later explicit opt-in. Serialize with
+        # both settings updates and in-flight embedding writes.
+        with transaction.atomic():
+            policy = GallerySemanticSearchPolicy.objects.select_for_update().filter(gallery_id=gallery_id).first()
+            gallery = Gallery.objects.filter(pk=gallery_id, deleted_at__isnull=True, archived_at__isnull=True).first()
+            if policy and policy.processing_authorized and gallery:
+                return "reauthorized"
+            purge_gallery(gallery_id)
+            SemanticIndexJob.objects.filter(photo__gallery_id=gallery_id).exclude(status="cancelled").update(status="cancelled")
         return "purged"
     except Exception as exc:
         raise self.retry(exc=exc, countdown=min(60 * 2 ** self.request.retries, 3600))

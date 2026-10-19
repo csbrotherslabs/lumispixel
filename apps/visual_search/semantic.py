@@ -3,6 +3,7 @@
 Operator must provision a reviewed CLIP-compatible model offline. No downloads.
 Semantic data has independent gallery authorization and deletion controls.
 """
+from functools import lru_cache
 from django.conf import settings
 from .vector_store import vector_connection
 
@@ -11,17 +12,24 @@ DIMENSION = 512
 def semantic_enabled():
     return bool(getattr(settings, "VISUAL_SEARCH_SEMANTIC_ENABLED", False))
 
+@lru_cache(maxsize=1)
+def _load_model(path):
+    from transformers import CLIPModel, CLIPProcessor
+    if not path:
+        raise RuntimeError("Approved semantic model is not configured")
+    model = CLIPModel.from_pretrained(path, local_files_only=True)
+    if model.config.projection_dim != DIMENSION:
+        raise RuntimeError("Semantic model must produce 512-dimensional embeddings")
+    model.eval()
+    return model, CLIPProcessor.from_pretrained(path, local_files_only=True)
+
+
 def embed_image(stream):
     if not semantic_enabled():
         raise RuntimeError("Semantic indexing is disabled")
     from PIL import Image, ImageOps
-    from transformers import CLIPModel, CLIPProcessor
     import torch
-    path = getattr(settings, "VISUAL_SEARCH_SEMANTIC_MODEL_PATH", "")
-    if not path:
-        raise RuntimeError("Approved semantic model is not configured")
-    model = CLIPModel.from_pretrained(path, local_files_only=True)
-    processor = CLIPProcessor.from_pretrained(path, local_files_only=True)
+    model, processor = _load_model(settings.VISUAL_SEARCH_SEMANTIC_MODEL_PATH)
     with Image.open(stream) as img:
         img = ImageOps.exif_transpose(img).convert("RGB")
         img.thumbnail((2048, 2048))
@@ -31,16 +39,12 @@ def embed_image(stream):
         vector = torch.nn.functional.normalize(vector, dim=0)
     return vector.cpu().numpy()
 
+
 def embed_text(query):
     if not semantic_enabled():
         raise RuntimeError("Semantic search is disabled")
-    from transformers import CLIPModel, CLIPProcessor
     import torch
-    path = getattr(settings, "VISUAL_SEARCH_SEMANTIC_MODEL_PATH", "")
-    if not path:
-        raise RuntimeError("Approved semantic model is not configured")
-    model = CLIPModel.from_pretrained(path, local_files_only=True)
-    processor = CLIPProcessor.from_pretrained(path, local_files_only=True)
+    model, processor = _load_model(settings.VISUAL_SEARCH_SEMANTIC_MODEL_PATH)
     inputs = processor(text=[query], return_tensors="pt", padding=True, truncation=True)
     with torch.inference_mode():
         vector = model.get_text_features(**inputs)[0]

@@ -50,6 +50,9 @@ def discovery_settings(request, gallery_id):
             transaction.on_commit(lambda: purge_semantic_gallery.delay(gallery.pk))
         else:
             from .semantic_tasks import index_semantic_gallery
+            from .models import SemanticIndexJob
+            # Reindex even if an earlier completed job predates a queued purge.
+            SemanticIndexJob.objects.filter(photo__gallery=gallery).update(status="pending")
             transaction.on_commit(lambda: index_semantic_gallery.delay(gallery.pk))
     return JsonResponse({"semantic_enabled":enabled,"facial_settings_read_only":True})
 

@@ -1,0 +1,6 @@
+# Install in both the semantic worker and the web process serving text search.
+-r requirements.txt
+numpy>=1.26,<3
+pgvector>=0.4,<1
+torch>=2.6,<3
+transformers>=4.48,<5
