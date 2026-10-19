@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'js/gallery_design_picker.js' %}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/gallery_design_picker.js' %}" defer></script><script src="{% static 'js/photographer_gallery_ai_discovery_create.js' %}" defer></script>{% endblock %}
 {% block workspace_content %}
 {% if is_create_gallery %}
 <form class="lp-workspace-page workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
