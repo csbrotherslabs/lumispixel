@@ -1,5 +1,5 @@
 from django.urls import path
-from .semantic_api import discovery_settings, semantic_search
+from .semantic_api import discovery_settings, semantic_search, public_semantic_search, invited_semantic_search
 from .api import selfie_search
 from .deletion_discovery_api import deletion_discovery_permission
 from .deletion_discovery_match_api import discover_deletion_candidates
@@ -13,6 +13,8 @@ from .private_access_api import (
 
 app_name = "visual_search"
 urlpatterns = [
+    path('public/<uuid:public_id>/semantic/', public_semantic_search, name='public-semantic-search'),
+    path('invited/<str:token>/semantic/', invited_semantic_search, name='invited-semantic-search'),
     path('galleries/<int:gallery_id>/ai-discovery/', discovery_settings, name='ai-discovery-settings'),
     path('galleries/<int:gallery_id>/semantic-search/', semantic_search, name='semantic-search'),
     path("selfie/", selfie_search, name="selfie"),
