@@ -80,6 +80,16 @@ def client_galleries(request):
 
 
 
+def _semantic_search_available(gallery):
+    from django.conf import settings as django_settings
+    from apps.visual_search.models import GallerySemanticSearchPolicy
+    return bool(
+        getattr(django_settings,"VISUAL_SEARCH_SEMANTIC_ENABLED",False)
+        and getattr(django_settings,"VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED",False)
+        and GallerySemanticSearchPolicy.objects.filter(gallery=gallery,processing_authorized=True).exists()
+    )
+
+
 def _client_gallery_template(gallery):
     """Resolve presentation independently from gallery content and permissions."""
     templates = {
@@ -162,7 +172,7 @@ def stable_gallery_access(request, public_id):
     photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
-    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
+    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
 def _client_gallery_access(raw_token):
     token_hash = AccessToken.digest(raw_token)
