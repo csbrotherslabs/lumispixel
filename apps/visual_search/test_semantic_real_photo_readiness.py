@@ -4,7 +4,6 @@ from tempfile import TemporaryDirectory
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.template.loader import render_to_string
 from django.test import SimpleTestCase, override_settings
 
 
@@ -26,7 +25,7 @@ class RealPhotoVerificationSafetyTests(SimpleTestCase):
 
     def test_create_form_has_bottom_submit_action(self):
         source = Path("templates/photographer_workspace/galleries/form.html").read_text()
-        create_part = source.split("{% if is_create_gallery %}", 1)[1].split("{% else %}", 1)[0]
+        create_part = source.split("{% if is_create_gallery %}", 1)[1].split("</form>", 1)[0]
         self.assertIn('class="lp-gallery-create-bottom-actions"', create_part)
         self.assertIn('<span>Create Gallery</span>', create_part)
 
