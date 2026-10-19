@@ -22,3 +22,22 @@ class SemanticPolicyDefaultsTests(TestCase):
     def test_semantic_routes_exist(self):
         self.assertTrue(reverse("visual_search:ai-discovery-settings",args=[1]).endswith("/galleries/1/ai-discovery/"))
         self.assertTrue(reverse("visual_search:semantic-search",args=[1]).endswith("/galleries/1/semantic-search/"))
+
+    def test_client_search_does_not_use_owner_only_endpoint(self):
+        from django.urls import resolve
+        self.assertEqual(resolve(reverse("visual_search:public-semantic-search",args=["00000000-0000-0000-0000-000000000001"])).url_name,"public-semantic-search")
+        self.assertEqual(resolve(reverse("visual_search:invited-semantic-search",args=["test-token"])).url_name,"invited-semantic-search")
+
+    def test_unauthorized_client_search_is_not_disclosed(self):
+        from unittest.mock import patch
+        from apps.visual_search.semantic_api import public_semantic_search
+        from django.test import RequestFactory
+        with patch("apps.visual_search.semantic_api.get_object_or_404",create=True):
+            pass
+        response=public_semantic_search(RequestFactory().get("/?q=first+dance"),"00000000-0000-0000-0000-000000000001")
+        self.assertEqual(response.status_code,404)
+
+    def test_unapproved_semantic_model_fails_closed(self):
+        from apps.visual_search.semantic_tasks import schedule_semantic_photo
+        with override_settings(VISUAL_SEARCH_SEMANTIC_ENABLED=False,VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED=False):
+            self.assertIsNone(schedule_semantic_photo(123456789))
