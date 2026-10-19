@@ -130,6 +130,10 @@ document.addEventListener("DOMContentLoaded", function () {
       <section class="lp-gallery-create__guidance" aria-labelledby="gallery-next-title"><span class="lp-contract-eyebrow">After creation</span><h2 id="gallery-next-title">Your delivery workspace is next</h2><ul><li><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><span><strong>Upload the finished images</strong><small>Add photos directly to this gallery.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Organize the collection</strong><small>Build albums and choose the final cover.</small></span></li><li><i class="bi bi-send-check" aria-hidden="true"></i><span><strong>Review and publish</strong><small>Confirm access before sharing with your client.</small></span></li></ul></section>
     </aside>
   </div>
+  <div class="lp-gallery-create-bottom-actions" aria-label="Create gallery actions">
+    <a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:all_galleries' %}">Cancel</a>
+    <button class="lp-button lp-button--primary lp-button--md" type="submit" data-gallery-submit><i class="bi bi-check2" aria-hidden="true"></i><span>Create Gallery</span></button>
+  </div>
 </form>
 {% else %}
 <form class="lp-workspace-page workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-gallery-edit-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form data-gallery-edit-form data-submit-pending-label="Saving…" novalidate>{% csrf_token %}
