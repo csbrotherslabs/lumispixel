@@ -44,24 +44,7 @@
 
 
 
-  <section class="lp-access-panel" id="ai-photo-discovery" data-ai-discovery-url="{% url 'visual_search:ai-discovery-settings' gallery.pk %}">
-    <div class="lp-access-panel__section">
-      <header><div><span class="lp-access-panel__icon"><i class="bi bi-stars"></i></span><div>
-        <h3>AI Photo Discovery</h3>
-        <p>Semantic and facial search have separate permissions. Both are off for new galleries.</p>
-      </div></div></header>
-      <div class="lp-toggle-grid">
-        <label><span><strong>Semantic Photo Search</strong><small>Search by descriptions such as "first dance" or "birthday cake". Requires approved semantic processing.</small></span>
-          <input type="checkbox" id="lp-semantic-toggle" disabled aria-describedby="lp-ai-status"><i></i>
-        </label>
-        <label><span><strong>Find My Photos (Facial Search)</strong><small>Biometric indexing requires separate legal approval and verified permissions. Managed independently.</small></span>
-          <input type="checkbox" id="lp-facial-toggle" disabled aria-label="Facial indexing status (read only)"><i></i>
-        </label>
-      </div>
-      <p id="lp-ai-status" role="status" aria-live="polite">Loading AI Photo Discovery settings…</p>
-      <button type="button" class="lpw-btn lpw-btn-outline" id="lp-ai-save" disabled>Save AI Photo Discovery</button>
-    </div>
-  </section>
+  {% include "photographer_workspace/galleries/components/ai_photo_discovery.html" %}
   <script src="{% static 'js/photographer_gallery_ai_discovery.js' %}" defer></script>
 
   <section class="lp-access-panel lp-gallery-qr-card">
