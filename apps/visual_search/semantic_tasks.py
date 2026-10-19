@@ -38,3 +38,12 @@ def purge_semantic_gallery(self,gallery_id):
         return "purged"
     except Exception as exc:
         raise self.retry(exc=exc,countdown=min(60*(2**self.request.retries),3600))
+
+@shared_task(bind=True,max_retries=5)
+def purge_semantic_photo(self,photo_id):
+    from .semantic import purge_photo
+    try:
+        purge_photo(photo_id)
+        return "purged"
+    except Exception as exc:
+        raise self.retry(exc=exc,countdown=min(60*(2**self.request.retries),3600))
