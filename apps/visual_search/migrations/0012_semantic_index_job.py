@@ -6,7 +6,7 @@ class Migration(migrations.Migration):
     operations=[migrations.CreateModel(
         name="SemanticIndexJob",
         fields=[
-            ("id",models.BigAutoField(primary_key=True,serialize=False)),
+            ("id",models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
             ("source_key",models.CharField(max_length=700)),
             ("model_version",models.CharField(max_length=80)),
             ("status",models.CharField(max_length=16,default="pending",choices=[("pending","Pending"),("processing","Processing"),("completed","Completed"),("failed","Failed"),("cancelled","Cancelled")])),
