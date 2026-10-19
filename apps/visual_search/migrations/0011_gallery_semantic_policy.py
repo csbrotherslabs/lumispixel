@@ -6,7 +6,7 @@ class Migration(migrations.Migration):
     operations=[migrations.CreateModel(
         name="GallerySemanticSearchPolicy",
         fields=[
-            ("id",models.BigAutoField(primary_key=True,serialize=False)),
+            ("id",models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
             ("processing_authorized",models.BooleanField(default=False)),
             ("authorized_at",models.DateTimeField(blank=True,null=True)),
             ("updated_at",models.DateTimeField(auto_now=True)),
