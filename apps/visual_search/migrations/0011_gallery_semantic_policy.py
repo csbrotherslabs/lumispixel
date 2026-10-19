@@ -2,7 +2,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 class Migration(migrations.Migration):
-    dependencies=[("visual_search","0010_deletion_scope_attestation"),("galleries","__latest__")]
+    dependencies=[("visual_search","0010_deletion_scope_attestation")]
     operations=[migrations.CreateModel(
         name="GallerySemanticSearchPolicy",
         fields=[
