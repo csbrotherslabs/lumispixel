@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
       <section class="form-section-card" aria-labelledby="gallery-details-title">
         <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-details-title">Gallery Details</h2><p>Name the collection and connect it to your client and booking.</p></div></header>
         <div class="form-grid">
-          {% include "photographer_workspace/components/form_field.html" with field=form.name %}
+          {% include "photographer_workspace/components/form_field.html" with field=form.name label="GALLERY TITLE" %}
           {% include "photographer_workspace/components/form_field.html" with field=form.client %}
           {% include "photographer_workspace/components/form_field.html" with field=form.booking %}
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
@@ -119,8 +119,9 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
-      <section class="lp-gallery-create__preview" aria-labelledby="gallery-preview-title">
+      <section class="lp-gallery-create__preview lpw-gallery-preview-refresh" aria-labelledby="gallery-preview-title">
         <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-preview-title">Gallery Preview</h2></div></header>
+        <p class="lpw-gallery-preview-refresh__intro">See your gallery details come together as you create.</p>
         <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>
         <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client hidden></p><h3 data-gallery-preview-name>Untitled gallery</h3><time data-gallery-preview-date hidden></time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility></span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status></span></div></div>
       </section>
