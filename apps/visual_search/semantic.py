@@ -27,7 +27,7 @@ def embed_image(stream):
         img.thumbnail((2048, 2048))
         inputs = processor(images=img, return_tensors="pt")
     with torch.inference_mode():
-        vector = model.get_image_features(**inputs).pooler_output[0]
+        vector = model.get_image_features(**inputs)[0]
         vector = torch.nn.functional.normalize(vector, dim=0)
     return vector.cpu().numpy()
 
@@ -43,7 +43,7 @@ def embed_text(query):
     processor = CLIPProcessor.from_pretrained(path, local_files_only=True)
     inputs = processor(text=[query], return_tensors="pt", padding=True, truncation=True)
     with torch.inference_mode():
-        vector = model.get_text_features(**inputs).pooler_output[0]
+        vector = model.get_text_features(**inputs)[0]
         vector = torch.nn.functional.normalize(vector, dim=0)
     return vector.cpu().numpy()
 
