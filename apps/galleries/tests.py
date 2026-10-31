@@ -728,7 +728,9 @@ class ClientAdvancedAccessRuleTests(TestCase):
             with Image.open(BytesIO(b"".join(response.streaming_content))) as image:
                 self.assertEqual(image.size, (edge, edge // 2))
                 self.assertFalse(image.getexif())
-            response.close()
+            # Consuming streaming_content closes the response via Django's test
+            # client wrapper. A second close emits request_finished again and
+            # can close PostgreSQL inside this TestCase's atomic transaction.
         self.assertEqual(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery, event_type="download").count(), 3)
         original = reverse("galleries:client_gallery_download_original", args=[self.raw_token, self.photo.pk])
         self.assertEqual(self.client.get(original).status_code, 403)
