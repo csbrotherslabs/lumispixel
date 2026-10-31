@@ -12,7 +12,36 @@
     let controller;
     let generation = 0;
     let lastTrigger;
+    let returningFocus = false;
 
+    const toggle = section.querySelector('[data-semantic-toggle]');
+    const panel = section.querySelector('[data-semantic-panel]');
+    const openSearch = (focus = false) => {
+      section.classList.add('is-open'); form.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
+      if (status.textContent || results.children.length) panel.hidden = false;
+      if (focus) input.focus();
+    };
+    const closeSearch = (focus = false) => {
+      section.classList.remove('is-open'); form.hidden = true; panel.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      if (focus) { returningFocus = true; toggle.focus(); returningFocus = false; }
+    };
+    section.addEventListener('pointerenter', event => {
+      if (event.pointerType === 'mouse') openSearch();
+    });
+    section.addEventListener('pointerleave', () => {
+      if (!section.contains(document.activeElement) && !input.value && !status.textContent) closeSearch();
+    });
+    toggle.addEventListener('focus', () => { if (!returningFocus) openSearch(); });
+    toggle.addEventListener('click', () => openSearch(true));
+    section.querySelector('[data-semantic-dismiss]').addEventListener('click', () => closeSearch(true));
+    section.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !preview.open) { event.preventDefault(); closeSearch(true); }
+    });
+    document.addEventListener('pointerdown', event => {
+      if (!section.contains(event.target) && !preview.open) closeSearch();
+    });
     const closePreview = () => preview.close();
     section.querySelector('[data-semantic-close]').addEventListener('click', closePreview);
     preview.addEventListener('click', event => { if (event.target === preview) closePreview(); });
@@ -23,7 +52,8 @@
     const setBusy = busy => {
       results.setAttribute('aria-busy', String(busy));
       submit.disabled = busy;
-      submit.textContent = busy ? 'Searching…' : 'Search photos';
+      submit.setAttribute('aria-label', busy ? 'Searching…' : 'Search photos');
+      submit.title = busy ? 'Searching…' : 'Search photos';
     };
     clear.addEventListener('click', () => {
       generation += 1;
@@ -32,6 +62,7 @@
       results.replaceChildren();
       results.hidden = true;
       status.textContent = '';
+      panel.hidden = true;
       clear.hidden = true;
       setBusy(false);
       input.focus();
@@ -40,6 +71,7 @@
       event.preventDefault();
       input.value = input.value.trim();
       if (!form.reportValidity()) return;
+      openSearch(); panel.hidden = false;
       const query = input.value;
       const current = ++generation;
       controller?.abort();

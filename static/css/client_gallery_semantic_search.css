@@ -1,40 +1,27 @@
-/* Shared by every client gallery design; all selectors are component scoped. */
-.lp-semantic-client {
-  --lp-search-ink: #192337;
-  --lp-search-muted: #526077;
-  --lp-search-brand: #c51b48;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 5;
-  width: calc(100% - 32px);
-  max-width: 1200px;
-  margin: 24px auto;
-  padding: clamp(18px, 3vw, 32px);
-  background: #fff;
-  color: var(--lp-search-ink);
-  border: 1px solid #e1e5ec;
-  border-radius: 20px;
-  font: 400 16px/1.5 system-ui, sans-serif;
-  text-align: left;
-}
-.lp-semantic-client [hidden] { display: none; }
-.lp-semantic-client__heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
-.lp-semantic-client .lp-semantic-client__heading h2 { color: var(--lp-search-ink); font: 650 clamp(20px, 2.5vw, 28px)/1.25 system-ui, sans-serif; margin: 0 0 8px; letter-spacing: -.02em; }
-.lp-semantic-client p { color: var(--lp-search-muted); margin: 0; }
-.lp-semantic-client__badge { background: #fff0f4; color: #a6173c; padding: 6px 12px; border-radius: 24px; font-size: 12px; white-space: nowrap; }
-.lp-semantic-client__form { margin-top: 20px; }
-.lp-semantic-client__form label { display: block; color: var(--lp-search-ink); font-weight: 600; margin-bottom: 8px; }
-.lp-semantic-client__controls { display: flex; gap: 10px; flex-wrap: wrap; }
-.lp-semantic-client .lp-semantic-client__controls input { box-sizing: border-box; min-width: 0; flex: 1 1 280px; min-height: 48px; padding: 12px 16px; border: 1px solid #aeb8c8; border-radius: 12px; background: #fff; color: var(--lp-search-ink); font: inherit; }
-.lp-semantic-client input::placeholder { color: var(--lp-search-muted); opacity: 1; }
-.lp-semantic-client button { font: inherit; cursor: pointer; }
-.lp-semantic-client__controls button { min-height: 48px; padding: 10px 18px; border: 1px solid var(--lp-search-brand); border-radius: 12px; background: var(--lp-search-brand); color: #fff; }
-.lp-semantic-client__controls button:hover { background: #a6163c; }
-.lp-semantic-client__controls .lp-semantic-client__clear { background: #fff; color: var(--lp-search-ink); border-color: #aeb8c8; }
-.lp-semantic-client__controls .lp-semantic-client__clear:hover { background: #f0f3f7; }
-.lp-semantic-client__controls button:disabled { background: #e5e9ef; border-color: #ccd3de; color: #526077; cursor: wait; }
-.lp-semantic-client .lp-semantic-client__hint { margin-top: 8px; font-size: 13px; }
-.lp-semantic-client .lp-semantic-client__status { margin-top: 16px; }
+/* Fixed shared AI search: a connected prompt field and sparkle button. */
+.lp-semantic-client {--lp-search-ink:#192337;--lp-search-muted:#526077;--lp-search-brand:#c51b48;position:fixed;z-index:40;right:max(24px,env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));width:48px;max-width:calc(100vw - 32px);color:var(--lp-search-ink);font:400 14px/1.5 system-ui,sans-serif;text-align:left}
+.lp-semantic-client,.lp-semantic-client * {box-sizing:border-box}
+.lp-semantic-client [hidden] {display:none!important}
+.lp-semantic-client.is-open {width:min(728px,calc(100vw - 48px))}
+.lp-semantic-client__dock {display:flex;align-items:stretch;width:100%;height:48px;border-radius:28px;box-shadow:0 5px 24px #0003;background:white}
+.lp-semantic-client__form {display:flex;align-items:center;flex:1;min-width:0;margin:0;padding-left:16px;gap:8px}
+.lp-semantic-client__sr {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.lp-semantic-client button {font:inherit;cursor:pointer}
+.lp-semantic-client svg {width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7}
+.lp-semantic-client__input-icon {color:#828695}
+.lp-semantic-client .lp-semantic-client__form input {flex:1;min-width:0;width:100%;height:48px;padding:10px 0;border:0;border-radius:0;background:transparent;color:var(--lp-search-ink);font:inherit;box-shadow:none}
+.lp-semantic-client input::placeholder {color:var(--lp-search-muted);opacity:1}
+.lp-semantic-client .lp-semantic-client__form button {display:grid;place-items:center;flex:0 0 40px;width:40px;height:44px;padding:8px;border:0;background:transparent;color:var(--lp-search-brand)}
+.lp-semantic-client .lp-semantic-client__form button:disabled {opacity:.45;cursor:wait}
+.lp-semantic-client .lp-semantic-client__toggle {display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;padding:12px;border:0;border-radius:50%;background:var(--lp-search-brand);color:white}
+.lp-semantic-client.is-open .lp-semantic-client__toggle {border-radius:0 28px 28px 0}
+.lp-semantic-client__toggle svg {width:25px;height:25px;fill:currentColor;stroke:none}
+.lp-semantic-client .lp-semantic-client__toggle:hover {background:#a6163c}
+.lp-semantic-client__panel {position:absolute;bottom:60px;right:0;width:100%;max-height:min(60dvh,560px);overflow:auto;padding:18px;background:white;border:1px solid #e1e5ec;border-radius:18px;box-shadow:0 8px 36px #0003}
+.lp-semantic-client__panel header {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lp-semantic-client__panel h2 {font:600 16px/1.4 system-ui,sans-serif;margin:0;color:var(--lp-search-ink)}
+.lp-semantic-client__panel header button {width:44px;height:44px;border:0;border-radius:8px;background:#f5f6f8;color:var(--lp-search-ink);font-size:22px}
+.lp-semantic-client__status {color:var(--lp-search-muted);margin:8px 0 0}
 .lp-semantic-client__results { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 20px 0 0; }
 .lp-semantic-client__results li { min-width: 0; margin: 0; padding: 0; }
 .lp-semantic-client .lp-semantic-client__result { display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid #dfe5ed; border-radius: 12px; background: #f5f7fa; color: var(--lp-search-ink); text-align: left; }
@@ -45,9 +32,6 @@
 .lp-semantic-client__preview::backdrop { background: rgb(10 18 32 / 80%); }
 .lp-semantic-client__preview img { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; margin: 12px auto; }
 .lp-semantic-client__preview button { display: block; margin-left: auto; min-height: 44px; padding: 8px 16px; background: #fff; color: var(--lp-search-ink); border: 1px solid #aeb8c8; border-radius: 8px; }
-@media (max-width: 540px) {
-  .lp-semantic-client__heading { flex-direction: column; }
-  .lp-semantic-client__controls input { flex-basis: 100%; }
-  .lp-semantic-client__controls button { flex: 1; }
-  .lp-semantic-client__results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-}
+
+@media(max-width:540px) {.lp-semantic-client {right:16px;bottom:calc(16px + env(safe-area-inset-bottom))}.lp-semantic-client.is-open {width:calc(100vw - 32px)}.lp-semantic-client__form {padding-left:12px;gap:4px}.lp-semantic-client__input-icon {display:none}.lp-semantic-client__results {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+@media(prefers-reduced-motion:reduce) {.lp-semantic-client * {scroll-behavior:auto!important;transition:none!important}}

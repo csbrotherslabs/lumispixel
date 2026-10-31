@@ -113,8 +113,49 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         html = re.sub(r'<link[^>]+>', lambda _: '<style>' + css + '</style>', html)
         html = re.sub(r'<script[^>]+></script>', lambda _: '<script>' + js + '</script>', html)
         self.page.route("https://client.example.test/", lambda route: route.fulfill(content_type="text/html", body='<!doctype html><meta charset="utf-8">' + html))
+        self.search_html = html
         self.page.goto("https://client.example.test/")
         self.input = self.page.get_by_role("searchbox")
+        self.page.get_by_role("button", name="AI photo search", exact=True).click()
+
+    def test_floating_search_hover_keyboard_and_touch(self):
+        toggle = self.page.get_by_role("button", name="AI photo search", exact=True)
+        self.input.press("Escape")
+        expect(toggle).to_have_attribute("aria-expanded", "false")
+        expect(self.input).not_to_be_visible()
+        self.page.mouse.move(20, 20)
+        toggle.hover()
+        expect(self.input).to_be_visible()
+        dock = self.page.locator('.lp-semantic-client__dock')
+        self.assertGreater(dock.bounding_box()['width'], 650)
+        self.assertAlmostEqual(self.page.locator('form').bounding_box()['x'] + self.page.locator('form').bounding_box()['width'], toggle.bounding_box()['x'], delta=1)
+        self.input.fill('people dancing')
+        self.page.mouse.move(20, 20)
+        expect(self.input).to_have_value('people dancing')
+        expect(self.input).to_be_visible()
+        self.input.press('Escape')
+        expect(self.input).not_to_be_visible()
+        # Clicking the icon reopens without discarding the prompt.
+        toggle.click()
+        expect(self.input).to_be_focused()
+        expect(self.input).to_have_value('people dancing')
+        self.page.set_viewport_size({'width': 390, 'height': 800})
+        self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), 390)
+        bounds = self.page.locator('[data-semantic-client]').bounding_box()
+        self.assertAlmostEqual(bounds['x'] + bounds['width'], 374, delta=1)
+        self.assertAlmostEqual(bounds['y'] + bounds['height'], 784, delta=1)
+
+    def test_touch_opens_input_without_hover(self):
+        page = self.browser.new_page(has_touch=True, viewport={'width': 390, 'height': 800})
+        self.addCleanup(page.close)
+        page.route('https://client.example.test/', lambda route: route.fulfill(content_type='text/html', body=self.search_html))
+        page.goto('https://client.example.test/')
+        field = page.get_by_role('searchbox')
+        expect(field).not_to_be_visible()
+        page.get_by_role('button', name='AI photo search', exact=True).tap()
+        expect(field).to_be_focused()
+        field.fill('birthday cake')
+        expect(field).to_have_value('birthday cake')
 
     def test_rank_order_preview_clear_and_responsive_layout(self):
         self.page.route("**/api/visual-search/**", lambda route: route.fulfill(json={"results": [

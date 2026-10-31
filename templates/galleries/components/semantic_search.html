@@ -1,23 +1,24 @@
 {% load static %}
 {% if semantic_search_available %}
 <link rel="stylesheet" href="{% static 'css/client_gallery_semantic_search.css' %}">
-<section class="lp-semantic-client" aria-labelledby="lp-semantic-title" data-semantic-client>
-  <header class="lp-semantic-client__heading">
-    <div><h2 id="lp-semantic-title">Find your favorite moments</h2><p>Describe a scene, detail, or moment in this gallery.</p></div>
-    <span class="lp-semantic-client__badge">AI photo search</span>
-  </header>
-  <form class="lp-semantic-client__form" data-semantic-client-form data-search-url="{% if access_token %}{% url 'visual_search:invited-semantic-search' access_token %}{% else %}{% url 'visual_search:public-semantic-search' gallery.public_id %}{% endif %}">
-    <label for="lp-semantic-query">What would you like to find?</label>
-    <div class="lp-semantic-client__controls">
-      <input id="lp-semantic-query" name="q" type="search" minlength="2" maxlength="200" placeholder="Try “people dancing” or “cake on a table”" required aria-describedby="lp-semantic-hint">
-      <button type="submit" data-semantic-submit>Search photos</button>
-      <button type="button" class="lp-semantic-client__clear" data-semantic-clear hidden>Clear search</button>
-    </div>
-    <p id="lp-semantic-hint" class="lp-semantic-client__hint">Results appear below, with the closest matches first.</p>
-  </form>
-  <p class="lp-semantic-client__status" data-semantic-status role="status" aria-live="polite" aria-atomic="true"></p>
+<section class="lp-semantic-client" aria-label="AI photo search" data-semantic-client>
+  <div class="lp-semantic-client__panel" data-semantic-panel hidden>
+    <header><h2>AI photo search</h2><button type="button" data-semantic-dismiss aria-label="Close AI search">×</button></header>
+    <p class="lp-semantic-client__status" data-semantic-status role="status" aria-live="polite" aria-atomic="true"></p>
   <template data-semantic-watermark>{% include "galleries/components/tiled_watermark.html" %}</template>
   <ol class="lp-semantic-client__results" data-semantic-results aria-label="Photos ranked by relevance" aria-busy="false" hidden></ol>
+  </div>
+  <div class="lp-semantic-client__dock">
+  <form class="lp-semantic-client__form" id="lp-semantic-form" data-semantic-client-form hidden data-search-url="{% if access_token %}{% url 'visual_search:invited-semantic-search' access_token %}{% else %}{% url 'visual_search:public-semantic-search' gallery.public_id %}{% endif %}">
+    <label class="lp-semantic-client__sr" for="lp-semantic-query">What would you like to find?</label>
+    <svg class="lp-semantic-client__input-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/></svg>
+    <input id="lp-semantic-query" name="q" type="search" minlength="2" maxlength="200" placeholder="Describe a moment…" required aria-describedby="lp-semantic-hint">
+    <span id="lp-semantic-hint" class="lp-semantic-client__sr">Search this gallery. Closest matches appear first.</span>
+    <button type="button" data-semantic-clear hidden aria-label="Clear search" title="Clear search">×</button>
+    <button type="submit" data-semantic-submit aria-label="Search photos" title="Search photos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-8-8 18-2-8Z M11 13 21 3"/></svg></button>
+  </form>
+  <button type="button" class="lp-semantic-client__toggle" data-semantic-toggle aria-label="AI photo search" title="AI photo search" aria-expanded="false" aria-controls="lp-semantic-form"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="m11 5 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M22 1l1.5 4.5L28 7l-4.5 1.5L22 13l-1.5-4.5L16 7l4.5-1.5Z"/></svg></button>
+  </div>
   <dialog class="lp-semantic-client__preview" data-semantic-preview aria-label="Search result preview">
     <button type="button" data-semantic-close aria-label="Close photo preview">Close</button>
     <div class="lp-gallery-watermark-media"><img data-semantic-preview-image alt="">{% include "galleries/components/tiled_watermark.html" %}</div>
