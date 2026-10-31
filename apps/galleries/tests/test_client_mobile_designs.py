@@ -49,6 +49,9 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
             onboarding_completed=True,
         )
         self.gallery_cases = [self._build_gallery(design) for design in self.DESIGNS]
+        recipient = User.objects.create_user(email="mobile-client@example.com", email_verified=True)
+        self.client.force_login(recipient)
+        self.client_cookie = self.client.cookies['sessionid'].value
         self._playwright = sync_playwright().start()
         self.browser = self._playwright.chromium.launch(headless=True)
 
@@ -135,6 +138,7 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                     has_touch=True,
                     accept_downloads=True,
                 )
+                context.add_cookies([{'name': 'sessionid', 'value': self.client_cookie, 'url': self.live_server_url}])
                 # The browser contract must not depend on Cloudflare/B2 availability.
                 # Keep signed delivery URLs in the rendered HTML, but fulfill those
                 # image requests locally so failed external previews cannot change
