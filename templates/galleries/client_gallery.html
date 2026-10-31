@@ -22,6 +22,7 @@
   </header>
 
   <main class="lp-client-gallery__main">
+    {% include "galleries/components/semantic_search.html" %}
     <div class="lp-client-gallery__top-actions" aria-label="Gallery actions">
       {% if can_favorite %}<a href="#gallery-photos" class="lp-gallery-action"><span class="lp-gallery-action__icon lp-gallery-action__icon--favorite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></span><span>Favorites</span></a>{% endif %}
       {% if can_download_gallery and access_token %}<a href="{% url 'galleries:client_gallery_download_all' access_token %}" class="lp-gallery-action"><span class="lp-gallery-action__icon lp-gallery-action__download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/></svg></span><span>Download Gallery</span></a>{% endif %}

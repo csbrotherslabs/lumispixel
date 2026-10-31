@@ -337,6 +337,7 @@ def client_gallery_access(request, token):
             "permissions": permissions,
             "gallery_settings": settings,
             "access_token": token,
+            "semantic_search_available": _semantic_search_available(gallery),
             "can_favorite": permissions.favorite_photos,
             "can_download": can_download,
             "can_download_gallery": can_download_gallery,
