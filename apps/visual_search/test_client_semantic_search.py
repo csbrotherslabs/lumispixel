@@ -204,7 +204,8 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         expect(self.page.get_by_role("button", name="Searching…", exact=True)).to_be_disabled()
         self.page.get_by_role("button", name="Clear search").click()
         expect(self.page.locator('[data-semantic-results]')).to_be_hidden()
-        expect(self.page.get_by_role("status")).to_have_text("")
+        expect(self.page.locator("[data-semantic-status]")).to_have_text("")
+        expect(self.page.locator("[data-semantic-panel]")).to_be_hidden()
         expect(self.page.get_by_role("button", name="Search photos", exact=True)).to_be_enabled()
         self.assertTrue(self.page.evaluate("window.searchSignal.aborted"))
         self.page.evaluate("""() => window.resolveSearch({
