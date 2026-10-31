@@ -254,7 +254,7 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         expect(comment_panel.locator("[data-comment-thread]")).to_contain_text("This one is perfect.")
         expect(viewer.locator("[data-viewer-comment-count]")).to_have_text("1")
 
-        viewer.get_by_label("Medium", exact=True).check()
+        viewer.get_by_text("Medium", exact=True).click()
         expect(viewer.locator("[data-viewer-download]")).to_have_attribute("href", re.compile(r"size=medium"))
         with client_page.expect_download() as download_info:
             viewer.locator("[data-viewer-download]").click()
