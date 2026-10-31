@@ -88,6 +88,55 @@ class ClientSemanticSearchTests(TestCase):
             self.assertEqual(self.client.get(self.invited_url, {"q": "cake"}).status_code, 403)
             search.assert_not_called()
 
+    def test_results_page_keeps_rank_and_all_photo_controls_for_every_design(self):
+        self.permission.favorite_photos = True
+        self.permission.comment = True
+        self.permission.download_images = True
+        self.permission.download_originals = True
+        self.permission.save()
+        photos = GalleryPhoto.objects.bulk_create([GalleryPhoto(
+            gallery=self.gallery, photographer=self.profile, file="test.jpg",
+            status=GalleryPhoto.Status.COMPLETED, is_visible=True,
+        ) for _ in range(100)])
+        ranked = [photo.pk for photo in reversed(photos)]
+        url = reverse('galleries:invited_semantic_results', args=[self.token])
+        with patch('apps.visual_search.semantic_api._semantic_results', return_value=ranked):
+            for design in Gallery.DesignTemplate.values:
+                Gallery.objects.filter(pk=self.gallery.pk).update(design_template=design)
+                response = self.client.get(url, {'q': 'people dancing'})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual([photo.pk for photo in response.context['photos']], ranked)
+                self.assertEqual(response.content.count(b'data-client-photo'), 100)
+                for marker in ['data-favorite-form', 'data-comment-form', 'data-photo-download', 'data-full-view', 'data-photo-lightbox', 'data-gallery-watermark']:
+                    self.assertContains(response, marker)
+                self.assertIn('no-store', response.headers['Cache-Control'])
+
+    def test_results_page_preserves_visibility_and_public_read_only_access(self):
+        visible = GalleryPhoto.objects.create(gallery=self.gallery, photographer=self.profile, file='test.jpg', status=GalleryPhoto.Status.COMPLETED)
+        hidden = GalleryPhoto.objects.create(gallery=self.gallery, photographer=self.profile, file='hidden.jpg', status=GalleryPhoto.Status.COMPLETED, is_visible=False)
+        other = Gallery.objects.create(photographer=self.profile, name='Other result', slug='other-result')
+        foreign = GalleryPhoto.objects.create(gallery=other, photographer=self.profile, file='foreign.jpg', status=GalleryPhoto.Status.COMPLETED)
+        url = reverse('galleries:public_semantic_results', args=[self.gallery.public_id])
+        with patch('apps.visual_search.semantic_api._semantic_results', return_value=[foreign.pk, hidden.pk, visible.pk]):
+            response = self.client.get(url, {'q': 'celebration'})
+        self.assertEqual([photo.pk for photo in response.context['photos']], [visible.pk])
+        self.assertNotContains(response, 'data-favorite-form')
+        self.assertNotContains(response, 'data-photo-download')
+        self.assertNotContains(response, 'data-comment-form')
+
+    def test_results_page_rechecks_policy_and_denies_revoked_access(self):
+        url = reverse('galleries:invited_semantic_results', args=[self.token])
+        with patch('apps.visual_search.semantic_api._semantic_results') as search:
+            self.assertEqual(self.client.get(url, {'q': 'x'}).status_code, 400)
+            self.policy.processing_authorized = False
+            self.policy.save()
+            self.assertEqual(self.client.get(url, {'q': 'cake'}).status_code, 403)
+            self.token_record.revoked_at = timezone.now()
+            self.token_record.save()
+            self.assertEqual(self.client.get(url, {'q': 'cake'}).status_code, 404)
+            search.assert_not_called()
+
+
 
 # The ordinary browser CI installs Chromium. Local environments can run the API
 # contracts without installing a browser; the dedicated semantic CI installs it.
@@ -113,8 +162,90 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         html = re.sub(r'<link[^>]+>', lambda _: '<style>' + css + '</style>', html)
         html = re.sub(r'<script[^>]+></script>', lambda _: '<script>' + js + '</script>', html)
         self.page.route("https://client.example.test/", lambda route: route.fulfill(content_type="text/html", body='<!doctype html><meta charset="utf-8">' + html))
+        self.search_html = html
         self.page.goto("https://client.example.test/")
         self.input = self.page.get_by_role("searchbox")
+        self.page.get_by_role("button", name="AI photo search", exact=True).click()
+
+    def test_floating_search_hover_keyboard_and_touch(self):
+        toggle = self.page.get_by_role("button", name="AI photo search", exact=True)
+        self.input.press("Escape")
+        expect(toggle).to_have_attribute("aria-expanded", "false")
+        expect(self.input).not_to_be_visible()
+        self.page.mouse.move(20, 20)
+        toggle.hover()
+        expect(self.input).to_be_visible()
+        dock = self.page.locator('.lp-semantic-client__dock')
+        self.assertGreater(dock.bounding_box()['width'], 580)
+        self.assertAlmostEqual(self.page.locator('form').bounding_box()['x'] + self.page.locator('form').bounding_box()['width'], toggle.bounding_box()['x'], delta=1)
+        self.input.fill('people dancing')
+        self.page.mouse.move(20, 20)
+        expect(self.input).to_have_value('people dancing')
+        expect(self.input).to_be_visible()
+        self.input.press('Escape')
+        expect(self.input).not_to_be_visible()
+        # Clicking the icon reopens without discarding the prompt.
+        toggle.click()
+        expect(self.input).to_be_focused()
+        expect(self.input).to_have_value('people dancing')
+        self.page.set_viewport_size({'width': 390, 'height': 800})
+        self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), 390)
+        bounds = self.page.locator('[data-semantic-client]').bounding_box()
+        self.assertAlmostEqual(bounds['x'] + bounds['width'], 374, delta=1)
+        self.assertAlmostEqual(bounds['y'] + bounds['height'], 784, delta=1)
+
+    def test_top_ten_results_and_page_link_preserve_rank_and_clear(self):
+        ids = [20, 3, 18, 9, 2, 31, 5, 4, 30, 12, 8, 1]
+        self.page.route('**/api/visual-search/**', lambda route: route.fulfill(json={'results': [
+            {'photo_id': photo_id, 'thumbnail_url': '/photo.jpg'} for photo_id in ids]}))
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.input.fill('baby shower')
+            self.input.press('Enter')
+            visible = self.page.locator('[data-semantic-results] > li:visible')
+            expect(visible).to_have_count(10)
+            self.assertEqual(visible.evaluate_all('rows => rows.map(row => Number(row.dataset.photoId))'), ids[:10])
+            expect(self.page.get_by_role('heading', name='Top 10 matches')).to_be_visible()
+            panel = self.page.locator('[data-semantic-panel]')
+            dock = self.page.locator('.lp-semantic-client__dock')
+            bounds, field = panel.bounding_box(), dock.bounding_box()
+            self.assertLessEqual(bounds['y'] + bounds['height'] + 12, field['y'])
+            self.assertEqual(len(self.page.locator('[data-semantic-results]').evaluate('el => getComputedStyle(el).gridTemplateColumns').split()), 2)
+            if width == 1440:
+                self.assertGreater(field['width'], bounds['width'])
+                self.assertGreater(self.page.locator('[data-semantic-results] img').first.bounding_box()['height'], 100)
+            link = self.page.get_by_role('link', name='View all matches', exact=True)
+            expect(link).to_have_attribute('href', __import__('re').compile(r'/galleries/g/.+/search/\?q=baby\+shower|/galleries/g/.+/search/\?q=baby%20shower'))
+            # The normal anchor performs same-tab navigation; existing cards are
+            # rendered and authorization checked by the destination Django view.
+            self.assertNotIn('aria-pressed', link.evaluate('el => el.outerHTML'))
+            self.page.get_by_role('button', name='Clear search', exact=True).click()
+            expect(panel).to_be_hidden()
+            expect(self.page.locator('[data-semantic-view-all]')).to_be_hidden()
+
+    def test_view_all_navigates_to_results_page(self):
+        self.page.route('**/api/visual-search/**', lambda route: route.fulfill(json={'results': [
+            {'photo_id': index, 'thumbnail_url': '/photo.jpg'} for index in range(1, 13)]}))
+        self.page.route('**/galleries/g/**/search/**', lambda route: route.fulfill(body='<h1>Ordered search results</h1>'))
+        self.input.fill('baby shower')
+        self.input.press('Enter')
+        link = self.page.get_by_role('link', name='View all matches', exact=True)
+        expect(link).to_be_visible()
+        link.click()
+        expect(self.page).to_have_url(__import__('re').compile(r'/search/\?q=baby\+shower'))
+        expect(self.page.get_by_role('heading', name='Ordered search results')).to_be_visible()
+
+    def test_touch_opens_input_without_hover(self):
+        page = self.browser.new_page(has_touch=True, viewport={'width': 390, 'height': 800})
+        self.addCleanup(page.close)
+        page.route('https://client.example.test/', lambda route: route.fulfill(content_type='text/html', body=self.search_html))
+        page.goto('https://client.example.test/')
+        field = page.get_by_role('searchbox')
+        expect(field).not_to_be_visible()
+        page.get_by_role('button', name='AI photo search', exact=True).tap()
+        expect(field).to_be_focused()
+        field.fill('birthday cake')
+        expect(field).to_have_value('birthday cake')
 
     def test_rank_order_preview_clear_and_responsive_layout(self):
         self.page.route("**/api/visual-search/**", lambda route: route.fulfill(json={"results": [
@@ -163,7 +294,8 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         expect(self.page.get_by_role("button", name="Searching…", exact=True)).to_be_disabled()
         self.page.get_by_role("button", name="Clear search").click()
         expect(self.page.locator('[data-semantic-results]')).to_be_hidden()
-        expect(self.page.get_by_role("status")).to_have_text("")
+        expect(self.page.locator("[data-semantic-status]")).to_have_text("")
+        expect(self.page.locator("[data-semantic-panel]")).to_be_hidden()
         expect(self.page.get_by_role("button", name="Search photos", exact=True)).to_be_enabled()
         self.assertTrue(self.page.evaluate("window.searchSignal.aborted"))
         self.page.evaluate("""() => window.resolveSearch({

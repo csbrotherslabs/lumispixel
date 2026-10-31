@@ -916,6 +916,8 @@ class ClientGalleryDesignInteractionContractTests(TestCase):
         design_dir = Path(settings.BASE_DIR) / "templates" / "galleries" / "designs"
         for template_name in templates:
             source = (design_dir / template_name).read_text(encoding="utf-8")
+            if 'client_photo_card.html' in source:
+                source += (design_dir.parent / "components" / "client_photo_card.html").read_text(encoding="utf-8")
             for marker in required:
                 with self.subTest(template=template_name, marker=marker):
                     self.assertIn(marker, source)

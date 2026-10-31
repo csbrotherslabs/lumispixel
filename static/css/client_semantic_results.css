@@ -1,0 +1,14 @@
+.lp-search-page {background:#faf9f7;color:#252832}
+.lp-search-page__header {max-width:1200px;margin:auto;padding:32px 24px}
+.lp-search-page__header>a {display:inline-block;padding:12px 0;color:#ac133b;text-decoration:none}
+.lp-search-page__header h1 {font:600 clamp(28px,4vw,42px)/1.2 system-ui,sans-serif;margin:20px 0 8px}
+.lp-search-page__header p {line-height:1.5}
+.lp-search-page__header form {max-width:720px;margin:24px 0}
+.lp-search-page__header label {display:block;margin-bottom:8px}
+.lp-search-page__header form>div {display:flex;gap:10px}
+.lp-search-page__header input {flex:1;min-width:0;padding:12px;border:1px solid #aeb8c8;border-radius:9px;font:inherit}
+.lp-search-page__header button {min-height:44px;padding:10px 18px;border:0;border-radius:9px;background:#ba1744;color:white;font:inherit;cursor:pointer}
+.lp-search-page :is(a,input,button):focus-visible {outline:3px solid #c51b48;outline-offset:3px}
+.lp-search-page .sf-content {padding-top:0}
+.lp-search-rank {position:absolute;top:10px;left:10px;z-index:3;padding:5px 9px;background:white;color:#252832;border-radius:6px;font:600 12px/1.4 system-ui,sans-serif;pointer-events:none}
+@media(max-width:540px) {.lp-search-page__header {padding:20px 14px}.lp-search-page__header form>div {flex-wrap:wrap}.lp-search-page__header input {flex-basis:100%}}

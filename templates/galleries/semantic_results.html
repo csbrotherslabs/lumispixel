@@ -1,0 +1,21 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Search results · {{ gallery.name }} | {{ gallery_brand }}</title>
+<link rel="stylesheet" href="{% static 'css/standard_filterable_gallery.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_comment_delete.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_gallery_watermark.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_photo_viewer.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_semantic_results.css' %}">
+<script src="{% static 'js/client_gallery_watermark.js' %}" defer></script>
+<script src="{% static 'js/client_photo_viewer.js' %}" defer></script>
+</head><body class="sf-client-gallery lp-search-page">
+<main class="sf-gallery">
+<header class="lp-search-page__header"><a href="{{ back_url }}">← Back to gallery</a><p>{{ gallery_brand }}</p><h1>Search results</h1><p>{{ gallery.name }}</p>
+<form method="get" role="search" aria-label="Search this gallery"><label for="results-query">Describe a moment</label><div><input id="results-query" type="search" name="q" value="{{ search_query }}" minlength="2" maxlength="200" required><button type="submit">Search photos</button></div></form>
+<p role="status">{{ photos|length }} match{{ photos|length|pluralize:"es" }} for “{{ search_query }}” · Closest matches first</p></header>
+<section class="sf-content" aria-label="Matching photographs"><div class="sf-photo-grid" data-photo-grid style="--columns:4">
+{% for photo in photos %}{% include "galleries/components/client_photo_card.html" with search_results_page=True %}{% empty %}<p>No matching photos found. Try another description.</p>{% endfor %}
+</div></section></main>
+{% include "galleries/components/photo_viewer.html" %}
+<script src="{% static 'js/client_gallery_interactions.js' %}" defer></script>
+</body></html>

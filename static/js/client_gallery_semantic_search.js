@@ -12,7 +12,44 @@
     let controller;
     let generation = 0;
     let lastTrigger;
+    let returningFocus = false;
 
+    const toggle = section.querySelector('[data-semantic-toggle]');
+    const panel = section.querySelector('[data-semantic-panel]');
+    const viewAll = section.querySelector('[data-semantic-view-all]');
+    const heading = section.querySelector('[data-semantic-heading]');
+    const setResultMode = () => {
+      const rows = Array.from(results.children);
+      rows.forEach((row, index) => { row.hidden = index >= 10; });
+      heading.textContent = rows.length ? `Top ${Math.min(10, rows.length)} matches` : 'AI photo search';
+      viewAll.hidden = !rows.length;
+    };
+    const openSearch = (focus = false) => {
+      section.classList.add('is-open'); form.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
+      if (status.textContent || results.children.length) panel.hidden = false;
+      if (focus) input.focus();
+    };
+    const closeSearch = (focus = false) => {
+      section.classList.remove('is-open'); form.hidden = true; panel.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      if (focus) { returningFocus = true; toggle.focus(); returningFocus = false; }
+    };
+    section.addEventListener('pointerenter', event => {
+      if (event.pointerType === 'mouse') openSearch();
+    });
+    section.addEventListener('pointerleave', () => {
+      if (!section.contains(document.activeElement) && !input.value && !status.textContent) closeSearch();
+    });
+    toggle.addEventListener('focus', () => { if (!returningFocus) openSearch(); });
+    toggle.addEventListener('click', () => openSearch(true));
+    section.querySelector('[data-semantic-dismiss]').addEventListener('click', () => closeSearch(true));
+    section.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !preview.open) { event.preventDefault(); closeSearch(true); }
+    });
+    document.addEventListener('pointerdown', event => {
+      if (!section.contains(event.target) && !preview.open) closeSearch();
+    });
     const closePreview = () => preview.close();
     section.querySelector('[data-semantic-close]').addEventListener('click', closePreview);
     preview.addEventListener('click', event => { if (event.target === preview) closePreview(); });
@@ -23,15 +60,18 @@
     const setBusy = busy => {
       results.setAttribute('aria-busy', String(busy));
       submit.disabled = busy;
-      submit.textContent = busy ? 'Searching…' : 'Search photos';
+      submit.setAttribute('aria-label', busy ? 'Searching…' : 'Search photos');
+      submit.title = busy ? 'Searching…' : 'Search photos';
     };
     clear.addEventListener('click', () => {
       generation += 1;
       controller?.abort();
       form.reset();
       results.replaceChildren();
+      setResultMode();
       results.hidden = true;
       status.textContent = '';
+      panel.hidden = true;
       clear.hidden = true;
       setBusy(false);
       input.focus();
@@ -40,11 +80,16 @@
       event.preventDefault();
       input.value = input.value.trim();
       if (!form.reportValidity()) return;
+      openSearch(); panel.hidden = false;
       const query = input.value;
+      const resultsUrl = new URL(viewAll.getAttribute('href'), window.location.href);
+      resultsUrl.searchParams.set('q', query);
+      viewAll.href = resultsUrl.href;
       const current = ++generation;
       controller?.abort();
       controller = new AbortController();
       results.replaceChildren();
+      setResultMode();
       results.hidden = true;
       clear.hidden = false;
       status.textContent = 'Finding photos… The first search may take a little longer.';
@@ -78,7 +123,8 @@
           image.loading = 'lazy';
           image.decoding = 'async';
           const label = document.createElement('span');
-          label.textContent = `Result ${index + 1}`;
+          label.textContent = String(index + 1);
+          label.className = 'lp-semantic-client__rank';
           const media = document.createElement('span');
           media.className = 'lp-gallery-watermark-media';
           media.append(image);
@@ -96,6 +142,7 @@
           fragment.append(row);
         });
         results.append(fragment);
+        setResultMode();
         const count = results.children.length;
         results.hidden = !count;
         status.textContent = count

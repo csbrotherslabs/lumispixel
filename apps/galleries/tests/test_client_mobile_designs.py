@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from PIL import Image
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.galleries.models import (
@@ -238,8 +238,11 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                     comment_toggle = photo_card.locator("[data-comment-toggle]")
                     comment_toggle.scroll_into_view_if_needed()
                     comment_toggle.click()
-                    comment_form = photo_card.locator("[data-comment-form]")
-                    self.assertTrue(comment_form.is_visible())
+                    viewer = page.get_by_role("dialog", name="Photo viewer", exact=True)
+                    expect(viewer).to_be_visible()
+                    expect(viewer.locator("[data-viewer-comments]")).to_have_attribute("aria-expanded", "true")
+                    comment_form = viewer.locator("[data-comment-form]")
+                    expect(comment_form).to_be_visible()
                     comment_form.locator('textarea[name="comment"]').fill(f"Looks great on {design}.")
                     comment_form.locator('button[type="submit"]').click()
                     page.wait_for_function(
@@ -248,6 +251,13 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                         timeout=5000,
                     )
                     self.assertEqual(page.url, url_before)
+                    expect(viewer.locator("[data-viewer-comment-count]")).to_have_text("1")
+                    expect(viewer.locator("[data-comment-thread]")).to_contain_text(f"Looks great on {design}.")
+                    viewer.get_by_role("button", name="Close full view", exact=True).click()
+                    expect(viewer).not_to_be_visible()
+                    restored_form = photo_card.locator("[data-comment-form]")
+                    expect(restored_form).to_have_count(1)
+                    expect(restored_form).to_be_hidden()
 
                     download_link = photo_card.locator('a[data-photo-download]').first
                     download_link.scroll_into_view_if_needed()

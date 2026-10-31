@@ -1,14 +1,17 @@
 <dialog class="lp-photo-lightbox lp-viewer" data-photo-lightbox aria-label="Photo viewer">
   <header class="lp-viewer__toolbar">
-    <fieldset data-viewer-sizes hidden><legend class="sr-only">Image size</legend>
-      <label><input type="radio" name="viewer-size" value="small">Small</label>
-      <label><input type="radio" name="viewer-size" value="medium">Medium</label>
-      <label><input type="radio" name="viewer-size" value="large" checked>Large</label>
+    <div class="lp-viewer__download-group" data-viewer-download-group hidden>
+    <span class="lp-viewer__size-label">Download size</span>
+    <fieldset data-viewer-sizes><legend class="sr-only">Download size</legend>
+      <label><input type="radio" name="viewer-size" value="small" aria-label="Small"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m4 18 5-5 4 3 3-5 5 7"/></svg>Small<svg class="lp-viewer__selected" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></label>
+      <label><input type="radio" name="viewer-size" value="medium" aria-label="Medium"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m4 18 5-5 4 3 3-5 5 7"/></svg>Medium<svg class="lp-viewer__selected" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></label>
+      <label><input type="radio" name="viewer-size" value="large" aria-label="Large" checked><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m4 18 5-5 4 3 3-5 5 7"/></svg>Large<svg class="lp-viewer__selected" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></label>
     </fieldset>
-    <a data-viewer-download hidden>Download photo</a>
+    <a data-viewer-download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg><span data-viewer-download-label>Download Large</span></a>
+    </div>
     <a data-viewer-original hidden>Original</a>
-    <button type="button" data-viewer-comments hidden aria-expanded="false" aria-controls="viewer-comments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.4 9.4 0 0 1-4-.9L3 21l1.7-4.6A8.5 8.5 0 1 1 21 11.5Z"/></svg> Comments <span data-viewer-comment-count>0</span></button>
     <button type="button" data-viewer-favorite hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg> Favorite <span data-viewer-favorite-count>0</span></button>
+    <button type="button" data-viewer-comments hidden aria-expanded="false" aria-controls="viewer-comments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.4 9.4 0 0 1-4-.9L3 21l1.7-4.6A8.5 8.5 0 1 1 21 11.5Z"/></svg> Comments <span data-viewer-comment-count>0</span></button>
     <button type="button" data-photo-lightbox-close aria-label="Close full view">×</button>
   </header>
   <div class="lp-viewer__body">
