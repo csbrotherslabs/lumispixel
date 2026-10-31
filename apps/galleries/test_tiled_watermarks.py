@@ -72,6 +72,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
         self.browser = self.playwright.chromium.launch()
         self.addCleanup(self.browser.close)
         self.page = self.browser.new_page()
+        self.page.set_default_timeout(7000)
         self.html = ''
         self.page.route('https://gallery.example.test/**', self.serve)
 

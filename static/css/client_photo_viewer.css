@@ -50,3 +50,6 @@
 
 .lp-viewer__toolbar svg {width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.7}
 .lp-viewer__toolbar [aria-pressed=true] svg {fill:#ff7387;color:#ff7387}
+
+.lp-viewer .sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.lp-viewer .sf-comments__header {display:none}
