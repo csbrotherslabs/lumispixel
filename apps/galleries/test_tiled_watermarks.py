@@ -28,6 +28,28 @@ def gallery_context(watermark='preview'):
 
 
 class TiledWatermarkTemplateTests(SimpleTestCase):
+    def test_watermarks_prefer_business_name_across_client_surfaces(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='Golden Light Photography', display_name='Samuel Golomeke')
+        context.update(semantic_search_available=True, search_query='portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates += ['galleries/semantic_results.html', 'galleries/components/semantic_search.html',
+                      'galleries/components/photo_viewer.html']
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                labels = re.findall(r'data-watermark-label="([^"]*)"', html)
+                self.assertTrue(labels)
+                self.assertTrue(all(label == 'Golden Light Photography' for label in labels))
+
+    def test_watermark_falls_back_to_photographer_name(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='', display_name='Samuel Golomeke')
+        html = render_to_string('galleries/components/tiled_watermark.html', context)
+        self.assertIn('data-watermark-label="Samuel Golomeke"', html)
+
     def test_client_pages_include_lumispixel_tab_branding(self):
         context = gallery_context()
         context.update(search_query='baby portraits', back_url='/gallery/')
