@@ -236,22 +236,39 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         client_page.wait_for_load_state("networkidle")
         self.assertIn("Golden Delivery", client_page.content())
         client_page.locator(f'form[action*="/photos/{photo_id}/favorite/"] button').first.click()
-        client_page.wait_for_timeout(250)
+        expect(client_page.locator(f"#photo-{photo_id} [data-favorite-count]")).to_have_text("1")
 
         photo = client_page.locator(f"#photo-{photo_id}")
         comment_toggle = photo.locator("[data-comment-toggle]")
         comment_panel = photo.locator("[data-comment-panel]")
         expect(comment_panel).to_be_hidden()
         comment_toggle.click()
+        viewer = client_page.get_by_role("dialog", name="Photo viewer", exact=True)
+        expect(viewer).to_be_visible()
+        comment_panel = viewer.locator("[data-comment-panel]")
         expect(comment_panel).to_be_visible()
+        expect(viewer.locator("[data-viewer-comments]")).to_have_attribute("aria-expanded", "true")
         comment_form = comment_panel.locator("[data-comment-form]")
         comment_form.locator('textarea[name="comment"]').fill("This one is perfect.")
         comment_form.locator('button[type="submit"]').click()
-        client_page.wait_for_timeout(250)
+        expect(comment_panel.locator("[data-comment-thread]")).to_contain_text("This one is perfect.")
+        expect(viewer.locator("[data-viewer-comment-count]")).to_have_text("1")
 
+        viewer.get_by_label("Medium", exact=True).check()
+        expect(viewer.locator("[data-viewer-download]")).to_have_attribute("href", re.compile(r"size=medium"))
         with client_page.expect_download() as download_info:
-            client_page.locator(f'a[href*="/photos/{photo_id}/download/"]').first.click()
-        self.assertTrue(download_info.value.suggested_filename)
+            viewer.locator("[data-viewer-download]").click()
+        download = download_info.value
+        self.assertEqual(download.suggested_filename, f"photo-{photo_id}-medium.jpg")
+        self.assertIsNone(download.failure())
+        with Image.open(download.path()) as downloaded_image:
+            self.assertEqual(downloaded_image.size, (2048, 2048))
+        viewer.get_by_role("button", name="Close full view", exact=True).click()
+        expect(viewer).not_to_be_visible()
+        restored_panel = photo.locator("[data-comment-panel]")
+        expect(restored_panel).to_have_count(1)
+        expect(restored_panel).to_be_hidden()
+        expect(photo.locator("[data-comment-count]")).to_have_text("1")
         client_context.close()
 
         self.assertTrue(self._db(lambda: GalleryAnalyticsEvent.objects.filter(
