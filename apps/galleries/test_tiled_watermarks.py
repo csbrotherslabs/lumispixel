@@ -28,6 +28,20 @@ def gallery_context(watermark='preview'):
 
 
 class TiledWatermarkTemplateTests(SimpleTestCase):
+    def test_client_pages_include_lumispixel_tab_branding(self):
+        context = gallery_context()
+        context.update(search_query='baby portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates.append('galleries/semantic_results.html')
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                title = re.search(r'<title>(.*?)</title>', html).group(1)
+                self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/(lumispixel-favicon\.svg|lumis_favicon_v1\.png)')
+                if template.endswith('semantic_results.html'):
+                    self.assertTrue(title.startswith('Search results · '))
+
     def test_all_designs_share_grid_and_lightbox_watermarks(self):
         for design in DESIGNS:
             with self.subTest(design=design):
