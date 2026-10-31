@@ -180,6 +180,40 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     dialog.get_by_role('button', name='Close full view', exact=True).click()
                     self.assertEqual(self.page.locator('[data-client-photo] [data-comment-form]').count(), 1)
 
+    def test_dedicated_results_page_reuses_photo_interactions(self):
+        context = gallery_context()
+        context.update(can_favorite=True, can_comment=True, can_download=True,
+                       access_token='results-test-token', search_query='people dancing', back_url='/original-gallery/')
+        context['photos'].append(SimpleNamespace(pk=2, delivery_url='/photo.svg', is_client_favorite=False, client_filter_categories=''))
+        for photo in context['photos']:
+            photo.client_favorite_count = 0
+            photo.client_download_count = 0
+            photo.client_comment_list = []
+        self.page.route('**/favorite/', lambda route: route.fulfill(json={'favorited': True, 'favorite_count': 1}))
+        self.page.route('**/comment/', lambda route: route.fulfill(json={'comment_count': 1, 'comment': {'id': 1, 'author': 'Test client', 'body': 'A great moment'}}))
+        self.page.route('**/download/**', lambda route: route.fulfill(headers={'Content-Disposition': 'attachment; filename="medium.jpg"'}, body='download fixture'))
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.html = render_to_string('galleries/semantic_results.html', context)
+            self.page.goto('https://gallery.example.test/')
+            expect(self.page.get_by_role('heading', name='Search results', exact=True)).to_be_visible()
+            self.assertEqual(self.page.locator('[data-result-rank]').evaluate_all('cards => cards.map(card => card.dataset.resultRank)'), ['1', '2'])
+            self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+            self.page.locator('[data-client-photo] > a').first.click(position={'x': 10, 'y': 10})
+            viewer = self.page.locator('.lp-viewer')
+            viewer.locator('[data-viewer-favorite]').click()
+            expect(viewer.locator('[data-viewer-favorite-count]')).to_have_text('1')
+            viewer.locator('[data-viewer-comments]').click()
+            viewer.locator('textarea').fill('A great moment')
+            viewer.locator('[data-comment-form] button[type="submit"]').click()
+            expect(viewer.locator('[data-viewer-comment-count]')).to_have_text('1')
+            viewer.get_by_text('Medium', exact=True).click()
+            with self.page.expect_download() as download:
+                viewer.locator('[data-viewer-download]').click()
+            self.assertEqual(download.value.suggested_filename, 'medium.jpg')
+            viewer.get_by_role('button', name='Close full view', exact=True).click()
+            expect(self.page.locator('#photo-1 [data-comment-form]')).to_have_count(1)
+
     def test_dynamic_search_watermarks_are_initialized_and_brand_is_svg_text(self):
         self.html = '<!doctype html><meta charset="utf-8"><body><script src="/static/js/client_gallery_watermark.js" defer></script></body>'
         self.page.goto('https://gallery.example.test/')

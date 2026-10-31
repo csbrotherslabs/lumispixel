@@ -102,7 +102,7 @@ def _semantic_results(gallery, query):
     allowed=set(GalleryPhoto.objects.filter(
         pk__in=ids,gallery=gallery,status=GalleryPhoto.Status.COMPLETED,is_visible=True
     ).values_list("pk",flat=True))
-    return [i for i in ids if i in allowed][:40]
+    return [i for i in ids if i in allowed][:100]
 
 def _client_semantic(request, gallery):
     from apps.galleries.models import GalleryPermission

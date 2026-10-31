@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{% static 'css/client_gallery_semantic_search.css' %}">
 <section class="lp-semantic-client" aria-label="AI photo search" data-semantic-client>
   <div class="lp-semantic-client__panel" data-semantic-panel hidden>
-    <header><div><h2 data-semantic-heading>AI photo search</h2><small>Closest matches first</small></div><button type="button" data-semantic-view-all hidden aria-pressed="false">View all matches</button><button type="button" data-semantic-dismiss aria-label="Close AI search">×</button></header>
+    <header><div><h2 data-semantic-heading>AI photo search</h2><small>Closest matches first</small></div><a data-semantic-view-all hidden href="{% if access_token %}{% url 'galleries:invited_semantic_results' access_token %}{% else %}{% url 'galleries:public_semantic_results' gallery.public_id %}{% endif %}">View all matches</a><button type="button" data-semantic-dismiss aria-label="Close AI search">×</button></header>
     <p class="lp-semantic-client__status" data-semantic-status role="status" aria-live="polite" aria-atomic="true"></p>
   <template data-semantic-watermark>{% include "galleries/components/tiled_watermark.html" %}</template>
   <ol class="lp-semantic-client__results" data-semantic-results aria-label="Photos ranked by relevance" aria-busy="false" hidden></ol>

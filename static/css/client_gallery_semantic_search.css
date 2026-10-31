@@ -27,7 +27,7 @@
 .lp-semantic-client .lp-semantic-client__result { position:relative; display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid #dfe5ed; border-radius: 12px; background: #f5f7fa; color: var(--lp-search-ink); text-align: left; }
 .lp-semantic-client__result img { display: block; width: 100%; height:clamp(120px,16dvh,160px); object-fit: cover; }
 .lp-semantic-client__result > .lp-semantic-client__rank {position:absolute;top:7px;left:7px;padding:4px 8px;border-radius:6px;background:white;color:var(--lp-search-ink);font-size:12px;box-shadow:0 1px 5px #0002}
-.lp-semantic-client :is(button, input):focus-visible { outline: 3px solid var(--lp-search-brand); outline-offset: 3px; }
+.lp-semantic-client :is(button, input, a):focus-visible { outline: 3px solid var(--lp-search-brand); outline-offset: 3px; }
 .lp-semantic-client .lp-semantic-client__preview { box-sizing: border-box; width: min(900px, 94vw); max-height: 90vh; padding: 16px; border: 0; border-radius: 16px; background: #fff; color: var(--lp-search-ink); }
 .lp-semantic-client__preview::backdrop { background: rgb(10 18 32 / 80%); }
 .lp-semantic-client__preview img { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; margin: 12px auto; }
@@ -38,7 +38,7 @@
 
 .lp-semantic-client__panel header {position:sticky;top:-18px;background:white;z-index:3;padding-bottom:8px}
 .lp-semantic-client__panel small {color:var(--lp-search-muted);font-size:11px}
-.lp-semantic-client__panel [data-semantic-view-all] {margin-left:auto;width:auto;min-height:36px;padding:6px 10px;border:1px solid var(--lp-search-brand);background:white;color:var(--lp-search-brand);font-size:12px;white-space:nowrap}
+.lp-semantic-client__panel [data-semantic-view-all] {margin-left:auto;width:auto;min-height:36px;padding:6px 10px;border:1px solid var(--lp-search-brand);background:white;color:var(--lp-search-brand);font-size:12px;white-space:nowrap;text-decoration:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
 .lp-semantic-client__panel [data-semantic-view-all]:disabled {opacity:.5;cursor:default}
 .lp-semantic-client__panel [data-semantic-dismiss] {flex-shrink:0}
 @media(max-width:700px) {.lp-semantic-client__panel {right:0;width:100%;max-width:100%}.lp-semantic-client__panel header {gap:8px}.lp-semantic-client__panel {padding:14px}.lp-semantic-client__panel h2 {font-size:14px}}

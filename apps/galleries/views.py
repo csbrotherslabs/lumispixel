@@ -1,3 +1,5 @@
+import json
+from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, F
@@ -114,6 +116,25 @@ def _paginate_client_gallery_photos(request, gallery):
     return page, list(page.object_list)
 
 
+def _semantic_photo_page(request, gallery):
+    """Reuse client search validation and repeat the photo visibility boundary."""
+    from apps.visual_search.semantic_api import _client_semantic
+    response = _client_semantic(request, gallery)
+    if response.status_code != 200:
+        return None, None, render(request, "galleries/semantic_results_unavailable.html", {
+            "gallery": gallery,
+            "back_url": request.path.removesuffix("search/"),
+            "search_query": request.GET.get("q", "")[:200],
+        }, status=response.status_code)
+    ids = [item["photo_id"] for item in json.loads(response.content)["results"]][:100]
+    allowed = {photo.pk: photo for photo in GalleryPhoto.objects.filter(
+        pk__in=ids, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED,
+    )}
+    photos = [allowed[photo_id] for photo_id in dict.fromkeys(ids) if photo_id in allowed]
+    page = Paginator(photos, 100).get_page(1)
+    return page, photos, None
+
+
 def _prepare_client_gallery_content(gallery, photos, albums):
     """Attach presentation-only metadata without changing persisted gallery data."""
     photo_ids = {photo.pk for photo in photos}
@@ -150,7 +171,7 @@ def _client_gallery_brand(gallery):
 
 
 @require_GET
-def stable_gallery_access(request, public_id):
+def stable_gallery_access(request, public_id, search_results=False):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
     now = timezone.now()
     permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
@@ -166,13 +187,20 @@ def stable_gallery_access(request, public_id):
         invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
         if invitation:
             _, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
+            if search_results:
+                return redirect(reverse("galleries:invited_semantic_results", args=[raw_token]) + "?" + urlencode({"q": request.GET.get("q", "")}))
             return redirect("galleries:client_gallery_access", token=raw_token)
     if gallery.visibility != Gallery.Visibility.PUBLIC:
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
-    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
+    if search_results:
+        photo_page, photos, error = _semantic_photo_page(request, gallery)
+        if error is not None:
+            return error
+    else:
+        photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
-    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
+    return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
 def _client_gallery_access(raw_token):
     token_hash = AccessToken.digest(raw_token)
@@ -236,11 +264,16 @@ def _record_client_access(request, token, invitation, gallery):
 
 
 @require_GET
-def client_gallery_access(request, token):
+def client_gallery_access(request, token, search_results=False):
     token_record, invitation, gallery, permissions, settings = _client_gallery_access(token)
     _record_client_access(request, token_record, invitation, gallery)
 
-    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
+    if search_results:
+        photo_page, photos, error = _semantic_photo_page(request, gallery)
+        if error is not None:
+            return error
+    else:
+        photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(
         Album.objects.filter(gallery=gallery)
         .exclude(visibility=Album.Visibility.HIDDEN)
@@ -327,8 +360,10 @@ def client_gallery_access(request, token):
 
     return render(
         request,
-        _client_gallery_template(gallery),
+        "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery),
         {
+            "search_query": request.GET.get("q", "").strip(),
+            "back_url": reverse("galleries:client_gallery_access", args=[token]),
             "gallery": gallery,
             "invitation": invitation,
             "photos": photos,
