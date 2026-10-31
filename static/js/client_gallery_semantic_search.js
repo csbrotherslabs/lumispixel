@@ -16,6 +16,20 @@
 
     const toggle = section.querySelector('[data-semantic-toggle]');
     const panel = section.querySelector('[data-semantic-panel]');
+    const viewAll = section.querySelector('[data-semantic-view-all]');
+    const heading = section.querySelector('[data-semantic-heading]');
+    let showingAll = false;
+    const setResultMode = (all = false) => {
+      showingAll = all;
+      const rows = Array.from(results.children);
+      rows.forEach((row, index) => { row.hidden = !all && index >= 10; });
+      heading.textContent = rows.length ? (all ? 'All matches' : `Top ${Math.min(10, rows.length)} matches`) : 'AI photo search';
+      viewAll.hidden = !rows.length;
+      viewAll.disabled = rows.length <= 10;
+      viewAll.textContent = all ? 'Show top 10' : 'View all matches';
+      viewAll.setAttribute('aria-pressed', String(all));
+    };
+    viewAll.addEventListener('click', () => { setResultMode(!showingAll); panel.scrollTop = 0; });
     const openSearch = (focus = false) => {
       section.classList.add('is-open'); form.hidden = false;
       toggle.setAttribute('aria-expanded', 'true');
@@ -60,6 +74,7 @@
       controller?.abort();
       form.reset();
       results.replaceChildren();
+      setResultMode();
       results.hidden = true;
       status.textContent = '';
       panel.hidden = true;
@@ -77,6 +92,7 @@
       controller?.abort();
       controller = new AbortController();
       results.replaceChildren();
+      setResultMode();
       results.hidden = true;
       clear.hidden = false;
       status.textContent = 'Finding photos… The first search may take a little longer.';
@@ -110,7 +126,8 @@
           image.loading = 'lazy';
           image.decoding = 'async';
           const label = document.createElement('span');
-          label.textContent = `Result ${index + 1}`;
+          label.textContent = String(index + 1);
+          label.className = 'lp-semantic-client__rank';
           const media = document.createElement('span');
           media.className = 'lp-gallery-watermark-media';
           media.append(image);
@@ -128,6 +145,7 @@
           fragment.append(row);
         });
         results.append(fragment);
+        setResultMode();
         const count = results.children.length;
         results.hidden = !count;
         status.textContent = count

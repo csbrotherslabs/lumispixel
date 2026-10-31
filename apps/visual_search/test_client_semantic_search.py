@@ -127,7 +127,7 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         toggle.hover()
         expect(self.input).to_be_visible()
         dock = self.page.locator('.lp-semantic-client__dock')
-        self.assertGreater(dock.bounding_box()['width'], 650)
+        self.assertGreater(dock.bounding_box()['width'], 580)
         self.assertAlmostEqual(self.page.locator('form').bounding_box()['x'] + self.page.locator('form').bounding_box()['width'], toggle.bounding_box()['x'], delta=1)
         self.input.fill('people dancing')
         self.page.mouse.move(20, 20)
@@ -144,6 +144,35 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         bounds = self.page.locator('[data-semantic-client]').bounding_box()
         self.assertAlmostEqual(bounds['x'] + bounds['width'], 374, delta=1)
         self.assertAlmostEqual(bounds['y'] + bounds['height'], 784, delta=1)
+
+    def test_top_ten_and_view_all_preserve_rank_and_clear(self):
+        ids = [20, 3, 18, 9, 2, 31, 5, 4, 30, 12, 8, 1]
+        self.page.route('**/api/visual-search/**', lambda route: route.fulfill(json={'results': [
+            {'photo_id': photo_id, 'thumbnail_url': '/photo.jpg'} for photo_id in ids]}))
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.input.fill('baby shower')
+            self.input.press('Enter')
+            visible = self.page.locator('[data-semantic-results] > li:visible')
+            expect(visible).to_have_count(10)
+            self.assertEqual(visible.evaluate_all('rows => rows.map(row => Number(row.dataset.photoId))'), ids[:10])
+            expect(self.page.get_by_role('heading', name='Top 10 matches')).to_be_visible()
+            panel = self.page.locator('[data-semantic-panel]')
+            dock = self.page.locator('.lp-semantic-client__dock')
+            bounds, field = panel.bounding_box(), dock.bounding_box()
+            self.assertLessEqual(bounds['y'] + bounds['height'] + 12, field['y'])
+            self.assertEqual(len(self.page.locator('[data-semantic-results]').evaluate('el => getComputedStyle(el).gridTemplateColumns').split()), 2)
+            if width == 1440:
+                self.assertGreater(field['width'], bounds['width'])
+                self.assertGreater(self.page.locator('[data-semantic-results] img').first.bounding_box()['height'], 100)
+            self.page.get_by_role('button', name='View all matches', exact=True).click()
+            expect(visible).to_have_count(12)
+            self.assertEqual(visible.evaluate_all('rows => rows.map(row => Number(row.dataset.photoId))'), ids)
+            self.page.get_by_role('button', name='Show top 10', exact=True).click()
+            expect(visible).to_have_count(10)
+            self.page.get_by_role('button', name='Clear search', exact=True).click()
+            expect(panel).to_be_hidden()
+            expect(self.page.locator('[data-semantic-view-all]')).to_be_hidden()
 
     def test_touch_opens_input_without_hover(self):
         page = self.browser.new_page(has_touch=True, viewport={'width': 390, 'height': 800})

@@ -37,6 +37,16 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
                 self.assertEqual(html.count('data-gallery-watermark '), 2)
                 self.assertNotIn('class="lp-client-photo__watermark"', html)
 
+    def test_all_four_designs_share_top_ten_search_controls(self):
+        context = gallery_context()
+        context['semantic_search_available'] = True
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                html = render_to_string(f'galleries/designs/{design}.html', context)
+                self.assertEqual(html.count('data-semantic-view-all'), 1)
+                self.assertIn('data-semantic-results', html)
+                self.assertIn('data-semantic-client-form', html)
+
     def test_watermark_none_removes_all_overlays(self):
         for design in DESIGNS:
             with self.subTest(design=design):
