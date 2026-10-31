@@ -10,6 +10,8 @@
 {% include "partials/gallery_social_preview.html" %}<link rel="stylesheet" href="{% static 'css/client_comment_delete.css' %}">
 <link rel="stylesheet" href="{% static 'css/client_gallery_watermark.css' %}">
 <script src="{% static 'js/client_gallery_watermark.js' %}" defer></script>
+<link rel="stylesheet" href="{% static 'css/client_photo_viewer.css' %}">
+<script src="{% static 'js/client_photo_viewer.js' %}" defer></script>
 </head>
 <body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
   {% include "galleries/components/semantic_search.html" %}<main class="sf-gallery">
@@ -46,5 +48,5 @@
     </section>
   </main>
   {% if can_share_gallery %}<dialog class="sf-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><input value="{{ stable_gallery_url }}" readonly onclick="this.select()"><form method="post" action="{% if access_token %}{% url 'galleries:client_gallery_share' access_token %}{% endif %}" data-client-share-form>{% csrf_token %}<button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button></form><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></dialog>{% endif %}
-  <dialog class="lp-photo-lightbox" data-photo-lightbox><button type="button" class="lp-photo-lightbox__close" data-photo-lightbox-close aria-label="Close full view"><svg class="lp-photo-action__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5"/></svg></button><div class="lp-gallery-watermark-media"><img data-photo-lightbox-image alt="Full view gallery photograph">{% include "galleries/components/tiled_watermark.html" %}</div></dialog><script src="{% static 'js/client_gallery_interactions.js' %}" defer></script><script src="{% static 'js/standard_filterable_gallery.js' %}" defer></script>
+  {% include "galleries/components/photo_viewer.html" %}<script src="{% static 'js/client_gallery_interactions.js' %}" defer></script><script src="{% static 'js/standard_filterable_gallery.js' %}" defer></script>
 </body></html>

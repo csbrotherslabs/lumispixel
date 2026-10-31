@@ -1,0 +1,22 @@
+<dialog class="lp-photo-lightbox lp-viewer" data-photo-lightbox aria-label="Photo viewer">
+  <header class="lp-viewer__toolbar">
+    <fieldset data-viewer-sizes hidden><legend class="sr-only">Image size</legend>
+      <label><input type="radio" name="viewer-size" value="small">Small</label>
+      <label><input type="radio" name="viewer-size" value="medium">Medium</label>
+      <label><input type="radio" name="viewer-size" value="large" checked>Large</label>
+    </fieldset>
+    <a data-viewer-download hidden>Download photo</a>
+    <a data-viewer-original hidden>Original</a>
+    <button type="button" data-viewer-comments hidden aria-expanded="false" aria-controls="viewer-comments">Comments <span data-viewer-comment-count>0</span></button>
+    <button type="button" data-viewer-favorite hidden>Favorite <span data-viewer-favorite-count>0</span></button>
+    <button type="button" data-photo-lightbox-close aria-label="Close full view">×</button>
+  </header>
+  <div class="lp-viewer__body">
+    <section class="lp-viewer__stage" aria-label="Photograph">
+      <button type="button" data-viewer-prev aria-label="Previous photo">‹</button>
+      <div class="lp-gallery-watermark-media"><img data-photo-lightbox-image alt="Full view gallery photograph">{% include "galleries/components/tiled_watermark.html" %}</div>
+      <button type="button" data-viewer-next aria-label="Next photo">›</button>
+    </section>
+    <aside id="viewer-comments" class="lp-viewer__comments" hidden aria-label="Photo comments"><header><h2>Comments</h2><button type="button" data-viewer-comments-close aria-label="Close comments">×</button></header><div data-viewer-thread></div></aside>
+  </div>
+</dialog>

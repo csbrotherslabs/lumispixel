@@ -4,7 +4,7 @@ from django.db.models import Count, F
 import tempfile
 import zipfile
 from django.core.paginator import Paginator
-from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
+from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -527,6 +527,13 @@ def client_gallery_download(request, token, photo_id):
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
     )
+    requested_size = request.GET.get("size")
+    if requested_size and requested_size not in {"small", "medium", "large"}:
+        return HttpResponseBadRequest("Choose small, medium, or large.")
+    resized = None
+    if requested_size:
+        from .photo_downloads import resized_download
+        resized = resized_download(photo, requested_size)
     with transaction.atomic():
         # Lock the gallery while enforcing the per-client quota. Without this,
         # simultaneous requests can both observe the same remaining slot.
@@ -557,6 +564,8 @@ def client_gallery_download(request, token, photo_id):
         actor_type=GalleryActivity.ActorType.CLIENT,
         related_object=photo,
     )
+    if resized is not None:
+        return FileResponse(resized, as_attachment=True, filename=f"photo-{photo.pk}-{requested_size}.jpg", content_type="image/jpeg")
     return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
 
 

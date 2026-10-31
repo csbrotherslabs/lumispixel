@@ -716,6 +716,30 @@ class ClientAdvancedAccessRuleTests(TestCase):
         if self.photo.file:
             self.photo.file.delete(save=False)
 
+    def test_sized_downloads_are_bounded_and_do_not_require_original_permission(self):
+        from io import BytesIO
+        from PIL import Image
+        content = BytesIO()
+        Image.new("RGB", (4000, 2000), "navy").save(content, format="JPEG")
+        self.photo.file.save("sizes.jpg", SimpleUploadedFile("sizes.jpg", content.getvalue()))
+        for size, edge in [("small", 1280), ("medium", 2048), ("large", 3840)]:
+            response = self.client.get(self.download_url, {"size": size})
+            self.assertEqual(response.status_code, 200)
+            with Image.open(BytesIO(b"".join(response.streaming_content))) as image:
+                self.assertEqual(image.size, (edge, edge // 2))
+                self.assertFalse(image.getexif())
+            response.close()
+        self.assertEqual(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery, event_type="download").count(), 3)
+        original = reverse("galleries:client_gallery_download_original", args=[self.raw_token, self.photo.pk])
+        self.assertEqual(self.client.get(original).status_code, 403)
+
+    def test_sized_download_rejects_unknown_size_and_enforces_permissions(self):
+        self.assertEqual(self.client.get(self.download_url, {"size": "original"}).status_code, 400)
+        self.permissions.download_images = False
+        self.permissions.save()
+        for size in ["small", "medium", "large"]:
+            self.assertEqual(self.client.get(self.download_url, {"size": size}).status_code, 403)
+
     def test_download_expiration_hides_downloads_and_blocks_direct_endpoint(self):
         self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
         self.permissions.save(update_fields=["download_expires_at", "updated_at"])

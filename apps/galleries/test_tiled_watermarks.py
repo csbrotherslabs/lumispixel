@@ -116,6 +116,47 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     self.page.get_by_role('button', name='Close full view', exact=True).click()
                     expect(dialog).not_to_be_visible()
 
+    def test_photo_viewer_sizes_comments_and_restored_forms(self):
+        for design in DESIGNS:
+            for width in [1440, 390]:
+                with self.subTest(design=design, width=width):
+                    context = gallery_context()
+                    context.update(can_favorite=True, can_comment=True, can_download=True,
+                                   access_token='viewer-test-token')
+                    photo = context['photos'][0]
+                    photo.client_favorite_count = 12
+                    photo.client_download_count = 8
+                    photo.client_comment_list = []
+                    self.html = render_to_string(f'galleries/designs/{design}.html', context)
+                    self.page.set_viewport_size({'width': width, 'height': 900})
+                    self.page.goto('https://gallery.example.test/')
+                    if design == 'cinematic':
+                        self.page.locator('[data-open-gallery]').first.click()
+                    self.page.locator('[data-client-photo] > a').click()
+                    dialog = self.page.locator('.lp-viewer')
+                    expect(dialog).to_be_visible()
+                    expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('12')
+                    expect(dialog.locator('[data-viewer-comment-count]')).to_have_text('0')
+                    expect(dialog.locator('.lp-viewer__comments')).not_to_be_visible()
+                    dialog.get_by_text('Small', exact=True).click()
+                    expect(dialog.locator('[data-viewer-download]')).to_have_attribute('href', re.compile(r'size=small'))
+                    self.page.route('**/comment/', lambda route: route.fulfill(json={
+                        'comment_count': 1, 'comment': {'id': 21, 'author': 'Test client', 'body': 'Beautiful moment'}}))
+                    self.page.route('**/favorite/', lambda route: route.fulfill(json={'favorited': True, 'favorite_count': 13}))
+                    dialog.locator('[data-viewer-favorite]').click()
+                    expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('13')
+                    dialog.locator('[data-viewer-comments]').click()
+                    expect(dialog.locator('textarea')).to_be_focused()
+                    self.assertEqual(dialog.locator('[data-comment-form]').count(), 1)
+                    dialog.locator('textarea').fill('Beautiful moment')
+                    dialog.locator('[data-comment-form] button[type="submit"]').click()
+                    expect(dialog.locator('[data-viewer-comment-count]')).to_have_text('1')
+                    expect(dialog.locator('[data-comment-thread]')).to_contain_text('Beautiful moment')
+                    dialog.get_by_role('button', name='Close comments', exact=True).click()
+                    expect(dialog.locator('.lp-viewer__comments')).not_to_be_visible()
+                    dialog.get_by_role('button', name='Close full view', exact=True).click()
+                    self.assertEqual(self.page.locator('[data-client-photo] [data-comment-form]').count(), 1)
+
     def test_dynamic_search_watermarks_are_initialized_and_brand_is_svg_text(self):
         self.html = '<!doctype html><meta charset="utf-8"><body><script src="/static/js/client_gallery_watermark.js" defer></script></body>'
         self.page.goto('https://gallery.example.test/')
