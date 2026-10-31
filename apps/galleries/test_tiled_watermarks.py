@@ -211,6 +211,13 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.html = render_to_string('galleries/semantic_results.html', context)
             self.page.goto('https://gallery.example.test/')
             expect(self.page.get_by_role('heading', name='Your moments, found.', exact=True)).to_be_visible()
+            hero = self.page.locator('.lp-search-hero').bounding_box()
+            grid = self.page.locator('[data-photo-grid]').bounding_box()
+            self.assertAlmostEqual(hero['x'], grid['x'], delta=1)
+            self.assertAlmostEqual(hero['x'] + hero['width'], grid['x'] + grid['width'], delta=1)
+            heading_size = self.page.locator('.lp-search-hero h1').evaluate('el => parseFloat(getComputedStyle(el).fontSize)')
+            self.assertLessEqual(heading_size, 30)
+
             query = self.page.get_by_role('searchbox', name='Refine your search')
             expect(query).to_have_value('people dancing')
             query.focus()
