@@ -10,9 +10,22 @@
 <script src="{% static 'js/client_photo_viewer.js' %}" defer></script>
 </head><body class="sf-client-gallery lp-search-page">
 <main class="sf-gallery">
-<header class="lp-search-page__header"><a href="{{ back_url }}">← Back to gallery</a><p>{{ gallery_brand }}</p><h1>Search results</h1><p>{{ gallery.name }}</p>
-<form method="get" role="search" aria-label="Search this gallery"><label for="results-query">Describe a moment</label><div><input id="results-query" type="search" name="q" value="{{ search_query }}" minlength="2" maxlength="200" required><button type="submit">Search photos</button></div></form>
-<p role="status">{{ photos|length }} match{{ photos|length|pluralize:"es" }} for “{{ search_query }}” · Closest matches first</p></header>
+<header class="lp-search-page__header">
+  <div class="lp-search-page__nav"><a href="{{ back_url }}">← Back to gallery</a><p>{{ gallery_brand }}</p></div>
+  <div class="lp-search-hero">
+    <div class="lp-search-hero__content">
+      <p class="lp-search-hero__eyebrow"><span aria-hidden="true">✦</span> AI photo search</p>
+      <h1>Your moments, found.</h1>
+      <p class="lp-search-hero__gallery">{{ gallery.name }}</p>
+      <form method="get" role="search" aria-label="Search this gallery">
+        <label for="results-query">Refine your search</label>
+        <div class="lp-search-hero__field"><span aria-hidden="true">✦</span><input id="results-query" type="search" name="q" value="{{ search_query }}" minlength="2" maxlength="200" required><button type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg>Search photos</button></div>
+      </form>
+    </div>
+    <svg class="lp-search-hero__art" viewBox="0 0 320 280" fill="none" aria-hidden="true" focusable="false"><g transform="rotate(10 160 140)"><rect x="55" y="25" width="210" height="195" rx="12"/><rect x="85" y="55" width="210" height="195" rx="12"/><path d="M105 205v-125h170v125Z M105 175l50-50 35 30 25-20 60 70"/><circle cx="235" cy="110" r="14"/></g><path d="m290 20 5 12 12 5-12 5-5 12-5-12-12-5 12-5Z"/></svg>
+  </div>
+  <div class="lp-search-page__summary"><p role="status"><strong>{{ photos|length }} match{{ photos|length|pluralize:"es" }}</strong><span>for “{{ search_query }}” · Closest matches first</span></p><span class="lp-search-page__sort">Sorted by relevance</span></div>
+</header>
 <section class="sf-content" aria-label="Matching photographs"><div class="sf-photo-grid" data-photo-grid style="--columns:4">
 {% for photo in photos %}{% include "galleries/components/client_photo_card.html" with search_results_page=True %}{% empty %}<p>No matching photos found. Try another description.</p>{% endfor %}
 </div></section></main>
