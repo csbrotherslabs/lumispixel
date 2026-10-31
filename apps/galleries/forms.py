@@ -60,7 +60,7 @@ class GalleryForm(forms.ModelForm):
 
     class Meta:
         model = Gallery
-        fields = ("name", "client", "booking", "event_date", "description", "design_template", "story_title", "story_description", "story_quote", "cover_image", "status", "visibility")
+        fields = ("name", "client", "booking", "event_date", "description", "design_template", "story_title", "story_description", "story_quote", "cover_image", "cover_position_x", "cover_position_y", "status", "visibility")
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Add a short note for your team or client…"}),
@@ -73,6 +73,10 @@ class GalleryForm(forms.ModelForm):
     def __init__(self, *args, photographer, **kwargs):
         super().__init__(*args, **kwargs)
         self.photographer = photographer
+        for axis in ['x', 'y']:
+            field = self.fields['cover_position_' + axis]
+            field.required = False
+            field.widget = forms.NumberInput(attrs={'type': 'range', 'min': 0, 'max': 100, 'step': 1})
         self.instance.photographer = photographer
         self.fields["design_template"].label = "Gallery design"
         self.fields["design_template"].required = False
@@ -95,6 +99,14 @@ class GalleryForm(forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs.setdefault("class", "lpw-form-control")
             field.widget.attrs.setdefault("id", f"gallery-{name.replace('_', '-')}")
+
+    def clean_cover_position_x(self):
+        value = self.cleaned_data.get('cover_position_x')
+        return self.instance.cover_position_x if value is None else value
+
+    def clean_cover_position_y(self):
+        value = self.cleaned_data.get('cover_position_y')
+        return self.instance.cover_position_y if value is None else value
 
     def clean_design_template(self):
         return self.cleaned_data.get("design_template") or Gallery.DesignTemplate.KIMONO_STANDARD_FILTERABLE

@@ -15,7 +15,7 @@
 </head>
 <body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
   {% include "galleries/components/semantic_search.html" %}<main class="sf-gallery">
-    <section class="sf-hero"{% if gallery.cover_image %} style="background-image:url('{{ gallery.cover_image.url }}')"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
+    <section class="sf-hero"{% if gallery.cover_image %} style="background-image:url('{{ gallery.cover_image.url }}');background-position:{{ gallery.cover_position_x|default_if_none:50 }}% {{ gallery.cover_position_y|default_if_none:50 }}%"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
       <div class="sf-hero__shade"></div>
       <div class="sf-hero__brand">{% if gallery_settings.studio_logo %}<img src="{{ gallery_settings.studio_logo.url }}" alt="{{ gallery_brand }}">{% else %}{{ gallery_brand }}{% endif %}</div>
       <div class="sf-hero__copy"><span>PRIVATE GALLERY</span><h1>{{ gallery.name }}</h1>{% if gallery.event_date %}<p>{{ gallery.event_date|date:"F j, Y" }}</p>{% endif %}{% if gallery.description %}<small>{{ gallery.description }}</small>{% endif %}</div>

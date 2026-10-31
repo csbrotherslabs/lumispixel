@@ -253,6 +253,38 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             viewer.get_by_role('button', name='Close full view', exact=True).click()
             expect(self.page.locator('#photo-1 [data-comment-form]')).to_have_count(1)
 
+    def test_cover_position_keyboard_drag_and_live_preview(self):
+        from apps.accounts.models import PhotographerProfile
+        from .forms import GalleryForm
+        form = GalleryForm(photographer=PhotographerProfile(pk=999))
+        controls = render_to_string('photographer_workspace/galleries/cover_position.html', {'form': form})
+        self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<style>[data-cover-drop]{position:relative;width:100%;height:180px}body{margin:12px}</style>'
+            '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
+            '<div data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
+            '<div data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
+            '<script src="/static/js/gallery_cover_position.js" defer></script>')
+        for width in [1000, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.page.goto('https://gallery.example.test/')
+            horizontal = self.page.get_by_label('Horizontal position')
+            vertical = self.page.get_by_label('Vertical position')
+            horizontal.focus(); horizontal.press('Home')
+            vertical.focus(); vertical.press('End')
+            expect(self.page.locator('[data-cover-preview]')).to_have_css('object-position', '0% 100%')
+            expect(self.page.locator('[data-gallery-preview-cover] img')).to_have_css('object-position', '0% 100%')
+            self.page.get_by_role('button', name='Center', exact=True).click()
+            self.page.get_by_role('button', name='Reposition', exact=True).click()
+            image = self.page.locator('[data-cover-preview]')
+            box = image.bounding_box()
+            self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 70)
+            self.page.mouse.down(); self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 120)
+            self.page.mouse.up()
+            self.assertLess(int(vertical.input_value()), 50)
+            self.page.get_by_role('button', name='Center', exact=True).click()
+            expect(image).to_have_css('object-position', '50% 50%')
+            self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+
     def test_dynamic_search_watermarks_are_initialized_and_brand_is_svg_text(self):
         self.html = '<!doctype html><meta charset="utf-8"><body><script src="/static/js/client_gallery_watermark.js" defer></script></body>'
         self.page.goto('https://gallery.example.test/')
