@@ -28,6 +28,20 @@ def gallery_context(watermark='preview'):
 
 
 class TiledWatermarkTemplateTests(SimpleTestCase):
+    def test_client_pages_include_lumispixel_tab_branding(self):
+        context = gallery_context()
+        context.update(search_query='baby portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates.append('galleries/semantic_results.html')
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                title = re.search(r'<title>(.*?)</title>', html).group(1)
+                self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/(lumispixel-favicon\.svg|lumis_favicon_v1\.png)')
+                if template.endswith('semantic_results.html'):
+                    self.assertTrue(title.startswith('Search results · '))
+
     def test_all_designs_share_grid_and_lightbox_watermarks(self):
         for design in DESIGNS:
             with self.subTest(design=design):
@@ -196,9 +210,34 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.page.set_viewport_size({'width': width, 'height': 900})
             self.html = render_to_string('galleries/semantic_results.html', context)
             self.page.goto('https://gallery.example.test/')
-            expect(self.page.get_by_role('heading', name='Search results', exact=True)).to_be_visible()
+            expect(self.page.get_by_role('heading', name='Your moments, found.', exact=True)).to_be_visible()
+            query = self.page.get_by_role('searchbox', name='Refine your search')
+            expect(query).to_have_value('people dancing')
+            query.focus()
+            query.press('Tab')
+            expect(self.page.get_by_role('button', name='Search photos', exact=True)).to_be_focused()
+            self.assertEqual(self.page.locator('.lp-search-hero__art').get_attribute('aria-hidden'), 'true')
+            query.fill('birthday cake')
+            query.press('Enter')
+            self.page.wait_for_url('**/?q=birthday+cake')
+            self.page.goto('https://gallery.example.test/')
             self.assertEqual(self.page.locator('[data-result-rank]').evaluate_all('cards => cards.map(card => card.dataset.resultRank)'), ['1', '2'])
             self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+            card = self.page.locator('[data-result-rank]').first
+            card.hover()
+            actions = card.locator('.sf-photo__actions')
+            expect(actions).to_be_visible()
+            for control in ['[data-favorite-form] button', '[data-comment-toggle]', 'a[data-photo-download]', '[data-full-view]']:
+                button = actions.locator(control).first
+                expect(button).to_be_visible()
+                bounds = button.bounding_box()
+                self.assertGreaterEqual(bounds['width'], 44)
+                self.assertGreaterEqual(bounds['height'], 44)
+                icon = button.locator('svg').first
+                expect(icon).to_have_css('width', '18px')
+                expect(icon).to_have_css('padding-top', '0px')
+            card.locator('[data-full-view]').focus()
+            expect(actions).to_have_css('opacity', '1')
             self.page.locator('[data-client-photo] > a').first.click(position={'x': 10, 'y': 10})
             viewer = self.page.locator('.lp-viewer')
             viewer.locator('[data-viewer-favorite]').click()
