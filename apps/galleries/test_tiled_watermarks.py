@@ -98,7 +98,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     self.page.set_viewport_size({'width': width, 'height': 900})
                     self.page.goto('https://gallery.example.test/')
                     if design == 'cinematic':
-                        self.page.locator('[data-open-gallery]').first.click()
+                        self.page.locator('[data-open-gallery][data-filter="all"]:not([data-favorites-only])').first.click()
                     media = self.page.locator('[data-client-photo] a').first
                     overlay = media.locator('[data-gallery-watermark]')
                     expect(overlay).to_have_css('pointer-events', 'none')
@@ -132,7 +132,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     self.page.set_viewport_size({'width': width, 'height': 900})
                     self.page.goto('https://gallery.example.test/')
                     if design == 'cinematic':
-                        self.page.locator('[data-open-gallery]').first.click()
+                        self.page.locator('[data-open-gallery][data-filter="all"]:not([data-favorites-only])').first.click()
                     self.page.locator('[data-client-photo] > a').click(position={'x': 10, 'y': 10})
                     dialog = self.page.locator('.lp-viewer')
                     expect(dialog).to_be_visible()

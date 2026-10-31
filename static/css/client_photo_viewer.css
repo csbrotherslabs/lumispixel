@@ -53,3 +53,5 @@
 
 .lp-viewer .sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .lp-viewer .sf-comments__header {display:none}
+
+[data-client-photo] :is(.sf-photo__actions,.story-photo__actions,.ms-photo__overlay,.cp-photo__actions) :is(button,a) {pointer-events:auto}

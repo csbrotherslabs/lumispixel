@@ -85,8 +85,10 @@
     if (event.key === 'ArrowLeft') step(-1);
     if (event.key === 'ArrowRight') step(1);
   });
-  viewer.querySelector('[data-photo-lightbox-close]').addEventListener('click', () => viewer.close());
-  viewer.addEventListener('click', event => { if (event.target === viewer) viewer.close(); });
+  function close() { restore(); viewer.close(); }
+  viewer.querySelector('[data-photo-lightbox-close]').addEventListener('click', close);
+  viewer.addEventListener('click', event => { if (event.target === viewer) close(); });
+  viewer.addEventListener('cancel', restore);
   viewer.addEventListener('close', () => { restore(); opener?.focus(); });
   document.addEventListener('lumispixel:favorite-changed', counts);
   document.addEventListener('lumispixel:comment-submitted', counts);
