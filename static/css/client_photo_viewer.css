@@ -47,3 +47,6 @@
 .lp-viewer__toolbar label {position:relative}
 @media(prefers-reduced-motion:reduce) {[data-client-photo] *, .lp-viewer * {transition:none!important;scroll-behavior:auto!important}}
 [data-client-photo] :is(.sf-photo__actions,.story-photo__actions,.ms-photo__overlay,.cp-photo__actions) a[href*="download-original"] {display:none!important}
+
+.lp-viewer__toolbar svg {width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.7}
+.lp-viewer__toolbar [aria-pressed=true] svg {fill:#ff7387;color:#ff7387}

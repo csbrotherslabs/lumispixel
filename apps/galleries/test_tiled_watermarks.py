@@ -132,7 +132,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     self.page.goto('https://gallery.example.test/')
                     if design == 'cinematic':
                         self.page.locator('[data-open-gallery]').first.click()
-                    self.page.locator('[data-client-photo] > a').click()
+                    self.page.locator('[data-client-photo] > a').click(position={'x': 10, 'y': 10})
                     dialog = self.page.locator('.lp-viewer')
                     expect(dialog).to_be_visible()
                     expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('12')
