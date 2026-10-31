@@ -87,12 +87,15 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     self.html = render_to_string(f'galleries/designs/{design}.html', gallery_context())
                     self.page.set_viewport_size({'width': width, 'height': 900})
                     self.page.goto('https://gallery.example.test/')
+                    if design == 'cinematic':
+                        self.page.locator('[data-open-gallery]').first.click()
                     media = self.page.locator('[data-client-photo] a').first
                     overlay = media.locator('[data-gallery-watermark]')
                     expect(overlay).to_have_css('pointer-events', 'none')
                     expect(overlay).to_have_css('background-repeat', 'repeat')
                     self.assertIn('data:image/svg+xml', overlay.evaluate('el => el.style.backgroundImage'))
                     # The repeated background must fill its media parent, not the page.
+                    expect(overlay).to_be_visible()
                     bounds = overlay.bounding_box()
                     parent = media.bounding_box()
                     self.assertAlmostEqual(bounds['width'], parent['width'], delta=1)
