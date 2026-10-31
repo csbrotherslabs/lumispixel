@@ -735,9 +735,9 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.assertEqual(self.client.get(self.gallery_url).status_code, 404)
         self.assertEqual(self.client.get(self.stable_url).status_code, 404)
 
-    def test_preview_watermark_is_rendered_centered_for_client_delivery(self):
+    def test_preview_watermark_is_tiled_for_client_delivery(self):
         page = self.client.get(self.gallery_url)
-        self.assertContains(page, "lp-client-photo__watermark")
+        self.assertContains(page, "data-gallery-watermark")
         self.assertContains(page, "has-watermark")
         self.assertNotContains(page, "is-watermark-bottom_right")
 
@@ -745,7 +745,7 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.permissions.watermark = GalleryPermission.Watermark.NONE
         self.permissions.save(update_fields=["watermark", "updated_at"])
         page = self.client.get(self.gallery_url)
-        self.assertNotContains(page, 'class="lp-client-photo__watermark"')
+        self.assertNotContains(page, "data-gallery-watermark")
 
 
 @override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)

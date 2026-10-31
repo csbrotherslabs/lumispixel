@@ -79,7 +79,12 @@
           image.decoding = 'async';
           const label = document.createElement('span');
           label.textContent = `Result ${index + 1}`;
-          button.append(image, label);
+          const media = document.createElement('span');
+          media.className = 'lp-gallery-watermark-media';
+          media.append(image);
+          const watermark = section.querySelector('[data-semantic-watermark]');
+          if (watermark) media.append(watermark.content.cloneNode(true));
+          button.append(media, label);
           button.addEventListener('click', () => {
             lastTrigger = button;
             previewImage.src = item.thumbnail_url;
