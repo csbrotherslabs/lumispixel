@@ -45,3 +45,34 @@
  .lp-search-page__summary {align-items:flex-start;padding:18px 0}
  .lp-search-page__sort {display:none}
 }
+
+/* Results cards reuse gallery actions; reset legacy icon-circle decoration. */
+.lp-search-page [data-result-rank] .sf-photo__actions {
+ gap:2px;padding:5px!important;border-radius:16px;background:#191d26f2!important;
+ border-color:#ffffff38;box-shadow:0 8px 24px #0004;backdrop-filter:blur(12px);
+}
+.lp-search-page [data-result-rank] .sf-photo__actions form {display:flex;margin:0}
+.lp-search-page [data-result-rank] .sf-photo__actions :is(button,a) {
+ flex-direction:column;gap:4px;min-width:44px;min-height:48px;padding:5px!important;
+ border-radius:11px;cursor:pointer;transform:none;font:500 11px/1.2 Arial,sans-serif;
+}
+.lp-search-page [data-result-rank] .sf-photo__actions .lp-photo-action__icon {
+ display:block;box-sizing:content-box;width:18px;height:18px;padding:0;border:0;border-radius:0;
+ fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+.lp-search-page [data-result-rank] .sf-photo__actions .lp-photo-action__icon.is-filled {fill:#ff91ad;color:#ff91ad}
+.lp-search-page [data-result-rank] .sf-photo__actions :is(button,a)>[aria-hidden] {display:flex;align-items:center;justify-content:center;order:0}
+.lp-search-page [data-result-rank] .sf-photo__actions .sf-action-label {
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;
+}
+.lp-search-page [data-result-rank] .sf-photo__actions :is([data-favorite-count],[data-comment-count],[data-download-count]) {font-size:11px;font-variant-numeric:tabular-nums;line-height:1.2}
+.lp-search-page [data-result-rank] .sf-photo__actions .lp-photo-action--expand .sf-action-label {position:static;width:auto;height:auto;margin:0;clip:auto;overflow:visible;order:2;font:500 10px/1.2 Arial,sans-serif}
+.lp-search-page [data-result-rank] .sf-photo__actions :is(button,a):hover,
+.lp-search-page [data-result-rank] .sf-photo__actions :is(button,a):focus-visible {background:#793048!important;color:#fff!important}
+.lp-search-page [data-result-rank].is-favorite .sf-photo__actions [data-favorite-form] button {color:#ff91ad!important}
+.lp-search-page [data-result-rank] .sf-photo__actions :is(button,a):disabled {opacity:.5;cursor:wait}
+/* Four usable touch targets fit even the narrow two-column cards. */
+@media(max-width:540px) {
+ .lp-search-page [data-result-rank] .sf-photo__actions {display:grid!important;grid-template-columns:repeat(2,44px);border-radius:14px;max-width:calc(100% - 8px)}
+ .lp-search-page [data-result-rank] .sf-photo__actions a[href*="download-original"] {display:none!important}
+}

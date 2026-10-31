@@ -209,6 +209,21 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.page.goto('https://gallery.example.test/')
             self.assertEqual(self.page.locator('[data-result-rank]').evaluate_all('cards => cards.map(card => card.dataset.resultRank)'), ['1', '2'])
             self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+            card = self.page.locator('[data-result-rank]').first
+            card.hover()
+            actions = card.locator('.sf-photo__actions')
+            expect(actions).to_be_visible()
+            for control in ['[data-favorite-form] button', '[data-comment-toggle]', 'a[data-photo-download]', '[data-full-view]']:
+                button = actions.locator(control).first
+                expect(button).to_be_visible()
+                bounds = button.bounding_box()
+                self.assertGreaterEqual(bounds['width'], 44)
+                self.assertGreaterEqual(bounds['height'], 44)
+                icon = button.locator('svg').first
+                expect(icon).to_have_css('width', '18px')
+                expect(icon).to_have_css('padding-top', '0px')
+            card.locator('[data-full-view]').focus()
+            expect(actions).to_have_css('opacity', '1')
             self.page.locator('[data-client-photo] > a').first.click(position={'x': 10, 'y': 10})
             viewer = self.page.locator('.lp-viewer')
             viewer.locator('[data-viewer-favorite]').click()
