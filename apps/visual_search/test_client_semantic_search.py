@@ -1,4 +1,5 @@
 """Client search rendering, ranked authorization, and browser interaction contracts."""
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import skipUnless
@@ -94,7 +95,7 @@ with sync_playwright() as _playwright:
     HAS_CHROMIUM = Path(_playwright.chromium.executable_path).exists()
 
 
-@skipUnless(HAS_CHROMIUM, "Install Playwright Chromium for client search browser tests")
+@skipUnless(HAS_CHROMIUM or os.getenv("REQUIRE_CLIENT_SEARCH_BROWSER") == "1", "Install Playwright Chromium for client search browser tests")
 class ClientSemanticBrowserTests(SimpleTestCase):
     def setUp(self):
         self.playwright = sync_playwright().start()
@@ -169,4 +170,3 @@ class ClientSemanticBrowserTests(SimpleTestCase):
             ok: true, json: async () => ({results: [{photo_id: 99, thumbnail_url: '/stale.jpg'}]})
         })""")
         expect(self.page.locator('[data-semantic-results] li')).to_have_count(0)
-

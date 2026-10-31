@@ -23,6 +23,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DJANGO_SETTINGS_MODULE: config.settings_test
+      REQUIRE_CLIENT_SEARCH_BROWSER: '1'
       DJANGO_DEBUG: '1'
       LUMISPIXEL_TEST_SQLITE: '1'
       GALLERY_STORAGE_BACKEND: local
