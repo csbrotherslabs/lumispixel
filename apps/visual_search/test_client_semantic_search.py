@@ -18,7 +18,7 @@ from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, Galle
 from .models import GallerySemanticSearchPolicy
 
 
-@override_settings(VISUAL_SEARCH_SEMANTIC_ENABLED=True, VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED=True)
+@override_settings(VISUAL_SEARCH_SEMANTIC_ENABLED=True, VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED=True, MEDIA_SIGNING_SECRET="client-search-test-only-signing-secret")
 class ClientSemanticSearchTests(TestCase):
     def setUp(self):
         owner = get_user_model().objects.create_user(email="client-search@example.test", password="test")
