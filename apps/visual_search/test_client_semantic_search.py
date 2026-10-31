@@ -111,7 +111,7 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         import re
         html = re.sub(r'<link[^>]+>', lambda _: '<style>' + css + '</style>', html)
         html = re.sub(r'<script[^>]+></script>', lambda _: '<script>' + js + '</script>', html)
-        self.page.route("https://client.example.test/", lambda route: route.fulfill(content_type="text/html", body=html))
+        self.page.route("https://client.example.test/", lambda route: route.fulfill(content_type="text/html", body='<!doctype html><meta charset="utf-8">' + html))
         self.page.goto("https://client.example.test/")
         self.input = self.page.get_by_role("searchbox")
 
@@ -149,9 +149,14 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         expect(self.page.get_by_role("button", name="Search photos", exact=True)).to_be_enabled()
 
     def test_clear_cancels_pending_results(self):
-        # Leave the request unanswered until the user clears the search.
-        requests = []
-        self.page.route("**/api/visual-search/**", lambda route: requests.append(route))
+        # Resolve a stale response after clearing, even if a transport ignores
+        # cancellation. The UI must reject it and abort the request signal.
+        self.page.evaluate("""() => {
+            window.fetch = (url, options) => {
+                window.searchSignal = options.signal;
+                return new Promise(resolve => { window.resolveSearch = resolve; });
+            };
+        }""")
         self.input.fill("decorations")
         self.input.press("Enter")
         expect(self.page.get_by_role("button", name="Searching…", exact=True)).to_be_disabled()
@@ -159,3 +164,9 @@ class ClientSemanticBrowserTests(SimpleTestCase):
         expect(self.page.locator('[data-semantic-results]')).to_be_hidden()
         expect(self.page.get_by_role("status")).to_have_text("")
         expect(self.page.get_by_role("button", name="Search photos", exact=True)).to_be_enabled()
+        self.assertTrue(self.page.evaluate("window.searchSignal.aborted"))
+        self.page.evaluate("""() => window.resolveSearch({
+            ok: true, json: async () => ({results: [{photo_id: 99, thumbnail_url: '/stale.jpg'}]})
+        })""")
+        expect(self.page.locator('[data-semantic-results] li')).to_have_count(0)
+
