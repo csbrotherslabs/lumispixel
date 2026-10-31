@@ -139,8 +139,20 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('12')
                     expect(dialog.locator('[data-viewer-comment-count]')).to_have_text('0')
                     expect(dialog.locator('.lp-viewer__comments')).not_to_be_visible()
-                    dialog.get_by_text('Small', exact=True).click()
-                    expect(dialog.locator('[data-viewer-download]')).to_have_attribute('href', re.compile(r'size=small'))
+                    for size in ['Small', 'Medium', 'Large']:
+                        dialog.get_by_text(size, exact=True).click()
+                        expect(dialog.get_by_role('radio', name=size, exact=True)).to_be_checked()
+                        expect(dialog.locator('[data-viewer-download]')).to_have_attribute('href', re.compile('size=' + size.lower()))
+                        expect(dialog.locator('[data-viewer-download]')).to_have_text('Download ' + size)
+                    radio = dialog.get_by_role('radio', name='Large', exact=True)
+                    radio.focus()
+                    radio.press('ArrowLeft')
+                    expect(dialog.get_by_role('radio', name='Medium', exact=True)).to_be_checked()
+                    expect(dialog.locator('[data-viewer-download]')).to_have_text('Download Medium')
+                    self.assertLessEqual(dialog.locator('.lp-viewer__toolbar').evaluate('el => el.scrollWidth'), width)
+                    if width == 1440:
+                        self.assertLessEqual(dialog.locator('[data-viewer-comments]').bounding_box()['height'], 34)
+                        expect(dialog.locator('[data-viewer-comments] svg')).to_have_css('width', '14px')
                     self.page.route('**/comment/', lambda route: route.fulfill(json={
                         'comment_count': 1, 'comment': {'id': 21, 'author': 'Test client', 'body': 'Beautiful moment'}}))
                     self.page.route('**/favorite/', lambda route: route.fulfill(json={'favorited': True, 'favorite_count': 13}))

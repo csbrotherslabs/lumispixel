@@ -30,7 +30,9 @@
     const link = current.querySelector('[data-photo-download]');
     if (!link) return;
     const url = new URL(link.href);
-    url.searchParams.set('size', viewer.querySelector('[name="viewer-size"]:checked').value);
+    const selected = viewer.querySelector('[name="viewer-size"]:checked').value;
+    url.searchParams.set('size', selected);
+    viewer.querySelector('[data-viewer-download-label]').textContent = 'Download ' + selected.charAt(0).toUpperCase() + selected.slice(1);
     download.href = url.href;
   }
   function open(photo, showComments, trigger) {
@@ -45,7 +47,7 @@
     commentButton.hidden = !panel;
     favoriteButton.hidden = !photo.querySelector('[data-favorite-form]');
     const link = photo.querySelector('[data-photo-download]');
-    download.hidden = !link; viewer.querySelector('[data-viewer-sizes]').hidden = !link;
+    download.hidden = !link; viewer.querySelector('[data-viewer-download-group]').hidden = !link;
     const originalLink = photo.querySelector('[data-photo-download][href*="original"]');
     original.hidden = !originalLink; if (originalLink) original.href = originalLink.href;
     size(); counts(); aside.hidden = !(showComments && panel);
