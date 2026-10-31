@@ -38,7 +38,7 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
                 html = render_to_string(template, context)
                 title = re.search(r'<title>(.*?)</title>', html).group(1)
                 self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
-                self.assertRegex(html, r'<link rel="icon"[^>]+img/(lumispixel-favicon\.svg|lumis_favicon_v1\.png)')
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/lumis_favicon_v1\.png')
                 if template.endswith('semantic_results.html'):
                     self.assertTrue(title.startswith('Search results · '))
 
