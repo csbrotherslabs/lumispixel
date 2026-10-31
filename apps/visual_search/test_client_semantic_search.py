@@ -100,10 +100,6 @@ class ClientSemanticSearchTests(TestCase):
         ) for _ in range(100)])
         ranked = [photo.pk for photo in reversed(photos)]
         url = reverse('galleries:invited_semantic_results', args=[self.token])
-        from apps.visual_search.semantic_api import _semantic_results
-        with patch('apps.visual_search.semantic.embed_text', return_value=[0.0] * 512), patch('pgvector.psycopg.register_vector'), patch('apps.visual_search.vector_store.vector_connection') as connection:
-            connection.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = [(photo_id,) for photo_id in ranked]
-            self.assertEqual(_semantic_results(self.gallery, 'people dancing'), ranked)
         with patch('apps.visual_search.semantic_api._semantic_results', return_value=ranked):
             for design in Gallery.DesignTemplate.values:
                 Gallery.objects.filter(pk=self.gallery.pk).update(design_template=design)

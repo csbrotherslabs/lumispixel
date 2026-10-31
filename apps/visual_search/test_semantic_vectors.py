@@ -1,6 +1,9 @@
 """Actual pgvector persistence; synthetic vectors are not CLIP quality proof."""
+import os
 from types import SimpleNamespace
-from django.test import override_settings
+from unittest import skipUnless
+from unittest.mock import patch
+from django.test import TestCase, override_settings
 from . import test_integration
 
 
@@ -30,3 +33,31 @@ class SemanticVectorIntegrationTests(test_integration.VectorStoreIntegrationTest
                 self.assertEqual(self._count(), 1)
             finally:
                 purge_gallery(self.gallery_id)
+
+
+@skipUnless(os.environ.get("VISUAL_SEARCH_INTEGRATION_DATABASE_URL"),
+            "Requires the semantic integration environment with numpy and pgvector")
+class SemanticClientResultLimitTests(TestCase):
+    """Exercise the vector-client boundary separately from page-rendering tests."""
+
+    def test_client_vector_results_retain_one_hundred_matches_in_rank_order(self):
+        from django.contrib.auth import get_user_model
+        from apps.accounts.models import PhotographerProfile
+        from apps.galleries.models import Gallery, GalleryPhoto
+        from .semantic_api import _semantic_results
+
+        user = get_user_model().objects.create_user(email="semantic-rank-limit@example.test", password="test")
+        owner = PhotographerProfile.objects.create(user=user, slug="semantic-rank-limit")
+        gallery = Gallery.objects.create(photographer=owner, name="Rank limit", slug="rank-limit")
+        photos = GalleryPhoto.objects.bulk_create([GalleryPhoto(
+            gallery=gallery, photographer=owner, file="test.jpg",
+            status=GalleryPhoto.Status.COMPLETED, is_visible=True,
+        ) for _ in range(100)])
+        ranked = [photo.pk for photo in reversed(photos)]
+        with patch("apps.visual_search.semantic.embed_text", return_value=[0.0] * 512), \
+             patch("pgvector.psycopg.register_vector"), \
+             patch("apps.visual_search.vector_store.vector_connection") as connection:
+            connection.return_value.__enter__.return_value.execute.return_value.fetchall.return_value = [
+                (photo_id,) for photo_id in ranked
+            ]
+            self.assertEqual(_semantic_results(gallery, "people dancing"), ranked)
