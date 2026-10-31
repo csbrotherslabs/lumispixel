@@ -39,7 +39,7 @@
 .lp-semantic-client__results li { min-width: 0; margin: 0; padding: 0; }
 .lp-semantic-client .lp-semantic-client__result { display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid #dfe5ed; border-radius: 12px; background: #f5f7fa; color: var(--lp-search-ink); text-align: left; }
 .lp-semantic-client__result img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
-.lp-semantic-client__result span { display: block; padding: 8px 12px; font-size: 13px; }
+.lp-semantic-client__result > span:last-child { display: block; padding: 8px 12px; font-size: 13px; }
 .lp-semantic-client :is(button, input):focus-visible { outline: 3px solid var(--lp-search-brand); outline-offset: 3px; }
 .lp-semantic-client .lp-semantic-client__preview { box-sizing: border-box; width: min(900px, 94vw); max-height: 90vh; padding: 16px; border: 0; border-radius: 16px; background: #fff; color: var(--lp-search-ink); }
 .lp-semantic-client__preview::backdrop { background: rgb(10 18 32 / 80%); }

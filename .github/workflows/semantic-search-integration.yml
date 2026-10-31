@@ -40,4 +40,4 @@ jobs:
       - run: node --test scripts/tests/ai_discovery.test.cjs
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/verify_required_ci_contract.py
-      - run: python manage.py test apps.visual_search.test_semantic_policy apps.visual_search.test_semantic_journey apps.visual_search.test_semantic_vectors apps.visual_search.test_client_semantic_search --verbosity 2
+      - run: python manage.py test apps.visual_search.test_semantic_policy apps.visual_search.test_semantic_journey apps.visual_search.test_semantic_vectors apps.visual_search.test_client_semantic_search apps.galleries.test_tiled_watermarks apps.galleries.tests.ClientAdvancedAccessRuleTests --verbosity 2

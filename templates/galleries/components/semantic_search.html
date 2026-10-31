@@ -16,10 +16,11 @@
     <p id="lp-semantic-hint" class="lp-semantic-client__hint">Results appear below, with the closest matches first.</p>
   </form>
   <p class="lp-semantic-client__status" data-semantic-status role="status" aria-live="polite" aria-atomic="true"></p>
+  <template data-semantic-watermark>{% include "galleries/components/tiled_watermark.html" %}</template>
   <ol class="lp-semantic-client__results" data-semantic-results aria-label="Photos ranked by relevance" aria-busy="false" hidden></ol>
   <dialog class="lp-semantic-client__preview" data-semantic-preview aria-label="Search result preview">
     <button type="button" data-semantic-close aria-label="Close photo preview">Close</button>
-    <img data-semantic-preview-image alt="">
+    <div class="lp-gallery-watermark-media"><img data-semantic-preview-image alt="">{% include "galleries/components/tiled_watermark.html" %}</div>
     <p data-semantic-preview-caption></p>
   </dialog>
 </section>

@@ -10,7 +10,7 @@
   document.querySelectorAll('[data-favorite-form]').forEach(function (form) {
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
-      const photo = form.closest('[data-client-photo]');
+      const photo = (form.closest('[data-client-photo]') || document.getElementById(form.closest('[data-viewer-photo-id]')?.dataset.viewerPhotoId || ''));
       const button = form.querySelector('button[type="submit"]');
       const count = form.querySelector('[data-favorite-count]');
       try {
@@ -41,18 +41,27 @@
   document.querySelectorAll('[data-comment-form]').forEach(function (form) {
     form.addEventListener('submit', async function (event) {
       event.preventDefault();
-      const photo = form.closest('[data-client-photo]');
+      const photo = (form.closest('[data-client-photo]') || document.getElementById(form.closest('[data-viewer-photo-id]')?.dataset.viewerPhotoId || ''));
       const textarea = form.querySelector('textarea[name="comment"]');
       const panel = form.closest('[data-comment-panel]');
       const count = photo?.querySelector('[data-comment-count]');
       if (!textarea || !textarea.value.trim()) return;
+      const submit = form.querySelector('button[type="submit"]');
+      if (submit?.disabled) return;
+      if (submit) submit.disabled = true;
+      let feedback = form.querySelector('[data-comment-status]');
+      if (!feedback) {
+        feedback = document.createElement('p'); feedback.dataset.commentStatus = '';
+        feedback.setAttribute('role', 'status'); form.append(feedback);
+      }
+      feedback.textContent = '';
       try {
         const response = await fetch(form.action, {
           method: 'POST',
           body: new FormData(form),
           headers: {'X-Requested-With': 'XMLHttpRequest'}
         });
-        if (!response.ok) throw new Error('Comment failed');
+        if (!response.ok || response.redirected) throw new Error('Comment failed');
         const data = await response.json();
         const thread = panel?.querySelector('[data-comment-thread]');
         thread?.querySelector('[data-comments-empty]')?.remove();
@@ -101,7 +110,9 @@
         updateCount(panel?.querySelector('[data-thread-count]'), data.comment_count);
         document.dispatchEvent(new CustomEvent('lumispixel:comment-submitted', {detail: {photo: photo, panel: panel}}));
       } catch (error) {
-        form.submit();
+        feedback.textContent = 'Your comment could not be posted. Please try again.';
+      } finally {
+        if (submit) submit.disabled = false;
       }
     });
   });
@@ -129,9 +140,9 @@
       const response = await fetch(form.getAttribute('action'), {method: 'POST', credentials: 'same-origin', body: new FormData(form), headers: {'X-Requested-With': 'XMLHttpRequest'}});
       if (!response.ok || response.redirected) throw new Error('Your comment could not be deleted. Please try again.');
       const result = await response.json();
-      const photo = form.closest('[data-client-photo]') || document.getElementById('photo-' + form.dataset.photoId);
+      const photo = (form.closest('[data-client-photo]') || document.getElementById(form.closest('[data-viewer-photo-id]')?.dataset.viewerPhotoId || '')) || document.getElementById('photo-' + form.dataset.photoId);
       result.deleted_ids.forEach(id => document.querySelectorAll('[data-client-comment-id="' + Number(id) + '"]').forEach(node => node.remove()));
-      photo?.querySelectorAll('[data-comment-count], [data-thread-count]').forEach(node => updateCount(node, result.comment_count));
+      document.querySelectorAll('#' + (photo?.id || 'missing-photo') + ' [data-comment-count], [data-viewer-photo-id="' + (photo?.id || '') + '"] [data-thread-count]').forEach(node => updateCount(node, result.comment_count));
     } catch(error) { feedback.textContent = error.message; }
     finally { button.disabled = false; }
   });
