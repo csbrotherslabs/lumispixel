@@ -42,6 +42,14 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
                 html = render_to_string(f'galleries/designs/{design}.html', gallery_context('none'))
                 self.assertNotIn('data-gallery-watermark ', html)
 
+    def test_masonry_toolbar_hides_unavailable_actions(self):
+        context = gallery_context()
+        html = render_to_string('galleries/components/masonry_toolbar.html', context)
+        self.assertNotIn('data-show-favorites', html)
+        self.assertNotIn('data-qr-open', html)
+        self.assertNotIn('Download Gallery', html)
+        self.assertIn('aria-label="Grid columns"', html)
+
     def test_brand_is_escaped_and_not_repeated_for_screen_readers(self):
         context = gallery_context()
         context['gallery_brand'] = '\"><script>alert(1)</script> & Studio'
@@ -121,3 +129,41 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
         xml = overlay.evaluate('el => decodeURIComponent(el.style.backgroundImage)')
         self.assertIn('&lt;script&gt;', xml)
         self.assertNotIn('<script>', xml)
+
+    def test_masonry_toolbar_actions_and_keyboard_slider_on_desktop_and_mobile(self):
+        for width in [1440, 390]:
+            with self.subTest(width=width):
+                context = gallery_context()
+                context.update(can_favorite=True, can_download_gallery=True,
+                               can_share_gallery=True, access_token='toolbar-test-token',
+                               stable_gallery_url='https://gallery.example.test/')
+                context['photos'].append(SimpleNamespace(pk=2, delivery_url='/photo.svg',
+                    is_client_favorite=True, client_filter_categories=''))
+                self.html = render_to_string('galleries/designs/masonry.html', context)
+                self.page.set_viewport_size({'width': width, 'height': 900})
+                self.page.goto('https://gallery.example.test/')
+                toolbar = self.page.locator('.ms-toolbar--refresh')
+                grid = self.page.locator('[data-grid]')
+                slider = self.page.get_by_role('slider', name='Grid columns')
+                expect(slider).to_have_value('4' if width == 1440 else '2')
+                self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+                favorite = toolbar.get_by_role('button', name='Favorites', exact=True)
+                self.assertGreaterEqual(favorite.bounding_box()['height'], 44)
+                favorite.click()
+                expect(favorite).to_have_attribute('aria-pressed', 'true')
+                expect(self.page.locator('.ms-photo:visible')).to_have_count(1)
+                favorite.click()
+                expect(self.page.locator('.ms-photo:visible')).to_have_count(2)
+                slider.focus()
+                self.page.keyboard.press('End')
+                expect(grid).to_have_css('column-count', '6')
+                expect(slider).to_have_attribute('aria-valuetext', '6 columns')
+                self.page.keyboard.press('Home')
+                expect(grid).to_have_css('column-count', '2')
+                expect(toolbar.get_by_role('link', name='Download Gallery')).to_have_attribute(
+                    'href', '/access/toolbar-test-token/download/')
+                toolbar.get_by_role('button', name='Share', exact=True).click()
+                dialog = self.page.locator('[data-qr-dialog]')
+                expect(dialog).to_be_visible()
+                dialog.get_by_role('button', name='Close', exact=True).click()
+                expect(dialog).not_to_be_visible()

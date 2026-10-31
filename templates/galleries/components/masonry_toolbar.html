@@ -1,0 +1,13 @@
+<header class="ms-toolbar ms-toolbar--refresh">
+  <nav class="ms-filters" aria-label="Gallery albums">
+    <button type="button" class="active" data-filter="all" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>All photos</button>
+    {% for album in albums %}<button type="button" data-filter="album-{{ album.pk }}" aria-pressed="false">{{ album.name }}</button>{% endfor %}
+  </nav>
+  <div class="ms-tools" role="group" aria-label="Gallery actions">
+    {% if can_favorite %}<button type="button" class="ms-toolbar-action" data-show-favorites aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span>Favorites</span></button>{% endif %}
+    {% if can_share_gallery %}<button type="button" class="ms-toolbar-action" data-qr-open><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 3 7 7-7 7v-5C8 12 5 14 3 20c0-9 4-13 11-13Z"/></svg><span>Share</span></button>{% endif %}
+    {% if can_download_gallery and access_token %}<a class="ms-toolbar-action ms-toolbar-action--primary" href="{% url 'galleries:client_gallery_download_all' access_token %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span>Download Gallery</span></a>{% endif %}
+    {% if can_purchase_prints and access_token %}<a class="ms-toolbar-action" href="{% url 'galleries:client_gallery_print_store' access_token %}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m4 16 5-5 4 4 3-3 4 4"/></svg><span>Shop Prints</span></a>{% endif %}
+    <div class="ms-toolbar-density"><label for="ms-grid-density">Grid</label><input id="ms-grid-density" type="range" min="2" max="6" value="4" step="1" data-density aria-label="Grid columns"><output for="ms-grid-density" data-density-output aria-live="polite">4 columns</output></div>
+  </div>
+</header>
