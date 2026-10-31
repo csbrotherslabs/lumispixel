@@ -1,0 +1,53 @@
+/* Shared by every client gallery design; all selectors are component scoped. */
+.lp-semantic-client {
+  --lp-search-ink: #192337;
+  --lp-search-muted: #526077;
+  --lp-search-brand: #c51b48;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 5;
+  width: calc(100% - 32px);
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: clamp(18px, 3vw, 32px);
+  background: #fff;
+  color: var(--lp-search-ink);
+  border: 1px solid #e1e5ec;
+  border-radius: 20px;
+  font: 400 16px/1.5 system-ui, sans-serif;
+  text-align: left;
+}
+.lp-semantic-client [hidden] { display: none; }
+.lp-semantic-client__heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.lp-semantic-client .lp-semantic-client__heading h2 { color: var(--lp-search-ink); font: 650 clamp(20px, 2.5vw, 28px)/1.25 system-ui, sans-serif; margin: 0 0 8px; letter-spacing: -.02em; }
+.lp-semantic-client p { color: var(--lp-search-muted); margin: 0; }
+.lp-semantic-client__badge { background: #fff0f4; color: #a6173c; padding: 6px 12px; border-radius: 24px; font-size: 12px; white-space: nowrap; }
+.lp-semantic-client__form { margin-top: 20px; }
+.lp-semantic-client__form label { display: block; color: var(--lp-search-ink); font-weight: 600; margin-bottom: 8px; }
+.lp-semantic-client__controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.lp-semantic-client .lp-semantic-client__controls input { box-sizing: border-box; min-width: 0; flex: 1 1 280px; min-height: 48px; padding: 12px 16px; border: 1px solid #aeb8c8; border-radius: 12px; background: #fff; color: var(--lp-search-ink); font: inherit; }
+.lp-semantic-client input::placeholder { color: var(--lp-search-muted); opacity: 1; }
+.lp-semantic-client button { font: inherit; cursor: pointer; }
+.lp-semantic-client__controls button { min-height: 48px; padding: 10px 18px; border: 1px solid var(--lp-search-brand); border-radius: 12px; background: var(--lp-search-brand); color: #fff; }
+.lp-semantic-client__controls button:hover { background: #a6163c; }
+.lp-semantic-client__controls .lp-semantic-client__clear { background: #fff; color: var(--lp-search-ink); border-color: #aeb8c8; }
+.lp-semantic-client__controls .lp-semantic-client__clear:hover { background: #f0f3f7; }
+.lp-semantic-client__controls button:disabled { background: #e5e9ef; border-color: #ccd3de; color: #526077; cursor: wait; }
+.lp-semantic-client .lp-semantic-client__hint { margin-top: 8px; font-size: 13px; }
+.lp-semantic-client .lp-semantic-client__status { margin-top: 16px; }
+.lp-semantic-client__results { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 20px 0 0; }
+.lp-semantic-client__results li { min-width: 0; margin: 0; padding: 0; }
+.lp-semantic-client .lp-semantic-client__result { display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid #dfe5ed; border-radius: 12px; background: #f5f7fa; color: var(--lp-search-ink); text-align: left; }
+.lp-semantic-client__result img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.lp-semantic-client__result span { display: block; padding: 8px 12px; font-size: 13px; }
+.lp-semantic-client :is(button, input):focus-visible { outline: 3px solid var(--lp-search-brand); outline-offset: 3px; }
+.lp-semantic-client .lp-semantic-client__preview { box-sizing: border-box; width: min(900px, 94vw); max-height: 90vh; padding: 16px; border: 0; border-radius: 16px; background: #fff; color: var(--lp-search-ink); }
+.lp-semantic-client__preview::backdrop { background: rgb(10 18 32 / 80%); }
+.lp-semantic-client__preview img { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; margin: 12px auto; }
+.lp-semantic-client__preview button { display: block; margin-left: auto; min-height: 44px; padding: 8px 16px; background: #fff; color: var(--lp-search-ink); border: 1px solid #aeb8c8; border-radius: 8px; }
+@media (max-width: 540px) {
+  .lp-semantic-client__heading { flex-direction: column; }
+  .lp-semantic-client__controls input { flex-basis: 100%; }
+  .lp-semantic-client__controls button { flex: 1; }
+  .lp-semantic-client__results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
