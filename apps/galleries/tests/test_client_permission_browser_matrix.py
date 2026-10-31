@@ -6,7 +6,7 @@ from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
 from PIL import Image
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from apps.accounts.models import PhotographerProfile, User
 from apps.galleries.models import (
@@ -131,6 +131,13 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.page.wait_for_load_state("networkidle")
         return response
 
+    def _open_photo_viewer(self):
+        photo = self.page.locator(f"#photo-{self.photo.pk}")
+        photo.get_by_role("button", name="View photo full screen", exact=True).click()
+        viewer = self.page.get_by_role("dialog", name="Photo viewer", exact=True)
+        expect(viewer).to_be_visible()
+        return viewer
+
     def _api_status(self, method, path, data=None):
         url = self.live_server_url + path
         if method == "get":
@@ -148,7 +155,18 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.assertTrue(photo.locator("[data-favorite-form]").is_visible())
         self.assertTrue(photo.locator("[data-comment-toggle]").is_visible())
         self.assertTrue(photo.locator('a[href*="/download/"]').first.is_visible())
-        self.assertTrue(photo.locator('a[href*="/download-original/"]').is_visible())
+        # The compact card exposes Original downloads in the shared viewer.
+        expect(photo.locator('a[href*="/download-original/"]')).to_be_hidden()
+        viewer = self._open_photo_viewer()
+        original = viewer.locator("[data-viewer-original]")
+        expect(original).to_be_visible()
+        expect(original).to_have_attribute("href", self.live_server_url + self.original_path)
+        with self.page.expect_download() as download_info:
+            original.click()
+        self.assertEqual(download_info.value.suggested_filename, "matrix.jpg")
+        self.assertIsNone(download_info.value.failure())
+        viewer.get_by_role("button", name="Close full view", exact=True).click()
+        expect(viewer).not_to_be_visible()
         self.assertTrue(self.page.get_by_text("Download Gallery", exact=False).first.is_visible())
         self.assertTrue(self.page.locator("[data-client-qr-open]").first.is_visible())
 
@@ -171,6 +189,10 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self._open_gallery()
         self.assertEqual(self.page.locator("[data-photo-download]").count(), 0)
         self.assertEqual(self.page.get_by_text("Download Gallery", exact=False).count(), 0)
+        viewer = self._open_photo_viewer()
+        expect(viewer.locator("[data-viewer-download]")).to_be_hidden()
+        expect(viewer.locator("[data-viewer-original]")).to_be_hidden()
+        viewer.get_by_role("button", name="Close full view", exact=True).click()
         self.assertEqual(self._api_status("get", self.download_path), 403)
         self.assertEqual(self._api_status("get", self.original_path), 403)
         self.assertEqual(self._api_status("get", self.zip_path), 403)
@@ -181,6 +203,10 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         photo = self.page.locator(f"#photo-{self.photo.pk}")
         self.assertEqual(photo.locator('a[href*="/download-original/"]').count(), 0)
         self.assertTrue(photo.locator('a[href*="/download/"]').first.is_visible())
+        viewer = self._open_photo_viewer()
+        expect(viewer.locator("[data-viewer-original]")).to_be_hidden()
+        expect(viewer.locator("[data-viewer-download]")).to_be_visible()
+        viewer.get_by_role("button", name="Close full view", exact=True).click()
         self.assertEqual(self._api_status("get", self.original_path), 403)
         self.assertEqual(self._api_status("get", self.download_path), 200)
 
