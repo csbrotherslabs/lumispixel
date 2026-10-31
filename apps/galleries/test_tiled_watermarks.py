@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase
+from django.urls import reverse
 from playwright.sync_api import sync_playwright, expect
 
 DESIGNS = ['standard_filterable', 'story', 'masonry', 'cinematic']
@@ -161,7 +162,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                 self.page.keyboard.press('Home')
                 expect(grid).to_have_css('column-count', '2')
                 expect(toolbar.get_by_role('link', name='Download Gallery')).to_have_attribute(
-                    'href', '/access/toolbar-test-token/download/')
+                    'href', reverse('galleries:client_gallery_download_all', args=['toolbar-test-token']))
                 toolbar.get_by_role('button', name='Share', exact=True).click()
                 dialog = self.page.locator('[data-qr-dialog]')
                 expect(dialog).to_be_visible()
