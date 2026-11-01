@@ -251,7 +251,9 @@
   const coverInput = document.querySelector('[data-cover-input]');
   if (coverDrop && coverInput) {
     const preview = coverDrop.querySelector('[data-cover-preview]'); const prompt = coverDrop.querySelector('[data-cover-prompt]');
-    const actions = coverDrop.querySelector('[data-cover-actions]'); const remove = coverDrop.querySelector('[data-cover-remove]');
+    const coverCard = coverDrop.closest('.lp-cover-editor') || coverDrop;
+    const actions = coverCard.querySelector('[data-cover-actions]'); const remove = coverCard.querySelector('[data-cover-remove]');
+    coverCard.querySelector('[data-cover-replace]')?.addEventListener('click', () => coverInput.click());
     const coverHeading = coverDrop.querySelector('[data-cover-heading]');
     let previewUrl = null;
     function previewCover(file) {

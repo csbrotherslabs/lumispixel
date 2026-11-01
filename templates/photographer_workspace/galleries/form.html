@@ -97,15 +97,17 @@ document.addEventListener("DOMContentLoaded", function () {
         </section>
       </div>
 
-      <section class="form-section-card lp-gallery-client-experience" aria-labelledby="cover-image-title">
-        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+      <section class="form-section-card lp-gallery-client-experience lp-cover-editor" aria-labelledby="cover-image-title">
+        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div><div class="lp-cover-editor__actions" data-cover-actions hidden><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-replace><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace photo</button><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div></header>
+        <div class="lp-cover-editor__body">
         <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
           <img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>
           <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>Add a signature image</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
           {{ form.cover_image }}
-          <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
+          <span class="lp-cover-editor__guides" aria-hidden="true"></span><span class="lp-cover-editor__drag-hint" aria-hidden="true">Drag to reposition</span>
         </div>
         {% include "photographer_workspace/galleries/cover_position.html" %}
+        </div>
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
 
@@ -196,15 +198,17 @@ document.addEventListener("DOMContentLoaded", function () {
         {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
 
-      <section class="form-section-card lp-gallery-client-experience" aria-labelledby="gallery-edit-cover-title">
-        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="gallery-edit-cover-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+      <section class="form-section-card lp-gallery-client-experience lp-cover-editor" aria-labelledby="gallery-edit-cover-title">
+        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="gallery-edit-cover-title">Cover Image</h2><p>Choose the first image your client will see.</p></div><div class="lp-cover-editor__actions" data-cover-actions{% if not gallery.cover_image %} hidden{% endif %}><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-replace><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace photo</button></div></header>
+        <div class="lp-cover-editor__body">
         <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
           {% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="Current cover for {{ gallery.name }}" data-cover-preview>{% else %}<img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>{% endif %}
           <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt{% if gallery.cover_image %} hidden{% endif %}><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>{% if gallery.cover_image %}Replace the cover image{% else %}Add a signature image{% endif %}</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
           {{ form.cover_image }}
-          <div class="lp-gallery-create__cover-actions" data-cover-actions{% if not gallery.cover_image %} hidden{% endif %}><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label></div>
+          <span class="lp-cover-editor__guides" aria-hidden="true"></span><span class="lp-cover-editor__drag-hint" aria-hidden="true">Drag to reposition</span>
         </div>
         {% include "photographer_workspace/galleries/cover_position.html" %}
+        </div>
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
 
