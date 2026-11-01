@@ -55,6 +55,8 @@ class ClientGalleryDeliveryTests(TestCase):
             email="avery@example.com",
         )
         self.token_record, self.raw_token = AccessToken.issue(self.invitation)
+        self.recipient = User.objects.create_user(email=self.invitation.email, email_verified=True)
+        self.client.force_login(self.recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.owner,

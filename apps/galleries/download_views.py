@@ -41,7 +41,7 @@ def _copy_photo_to_zip(photo, bundle, archive_name):
 
 @require_GET
 def client_gallery_download_all(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     now = timezone.now()
     if not permissions.download_images:
         return HttpResponseForbidden()

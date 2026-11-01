@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 """Gallery-owner-scoped controls and text search, independent of biometric processing."""
 import json
 import logging
@@ -143,7 +144,9 @@ def invited_semantic_search(request, token):
     from django.http import Http404
     from apps.galleries.views import _client_gallery_access
     try:
-        _,_,gallery,_,_=_client_gallery_access(token)
+        _,_,gallery,_,_=_client_gallery_access(token, request)
     except Http404:
         return JsonResponse({"error":"not_found"},status=404)
+    except PermissionDenied:
+        return JsonResponse({"error":"forbidden"},status=403)
     return _client_semantic(request,gallery)

@@ -1,20 +1,20 @@
 .lp-search-page {background:#faf9f7;color:#252832}
-.lp-search-page__header {max-width:1440px;margin:auto;padding:24px 24px 0}
+.lp-search-page__header {max-width:1600px;margin:auto;padding:24px 30px 0}
 .lp-search-page__nav {display:flex;align-items:center;justify-content:space-between;gap:24px;padding:8px 0 24px}
 .lp-search-page__nav a {display:inline-block;padding:10px 0;color:#ac133b;text-decoration:none}
 .lp-search-page__nav p {margin:0;letter-spacing:.16em;text-transform:uppercase;font-size:12px;overflow-wrap:anywhere;text-align:right}
-.lp-search-hero {position:relative;isolation:isolate;overflow:hidden;border:1px solid #41404c;border-radius:20px;padding:44px;background:radial-gradient(ellipse at 100% 15%,#50172d 0,transparent 65%),#191d26;color:#fff}
+.lp-search-hero {position:relative;isolation:isolate;overflow:hidden;border:1px solid #41404c;border-radius:20px;padding:32px;background:radial-gradient(ellipse at 100% 15%,#50172d 0,transparent 65%),#191d26;color:#fff}
 .lp-search-hero__content {position:relative;z-index:1;max-width:920px}
-.lp-search-hero__eyebrow {display:flex;align-items:center;gap:12px;margin:0 0 20px;color:#ff9bb6;letter-spacing:.2em;text-transform:uppercase;font:600 12px/1.5 system-ui,sans-serif}
-.lp-search-hero__eyebrow span {font-size:26px}
-.lp-search-hero h1 {font:500 clamp(32px,4.8vw,66px)/1.12 Georgia,serif;letter-spacing:-.025em;margin:0 0 12px;color:#fff}
-.lp-search-hero__gallery {font:400 clamp(18px,2.2vw,28px)/1.4 Georgia,serif;color:#b9d0e4;margin:0;overflow-wrap:anywhere}
-.lp-search-hero form {margin-top:32px;max-width:860px}
-.lp-search-hero label {display:block;color:#c4d6e6;margin-bottom:10px;font-size:14px}
+.lp-search-hero__eyebrow {display:flex;align-items:center;gap:12px;margin:0 0 16px;color:#ff9bb6;letter-spacing:.2em;text-transform:uppercase;font:600 10px/1.5 system-ui,sans-serif}
+.lp-search-hero__eyebrow span {font-size:20px}
+.lp-search-hero h1 {font:500 clamp(26px,2.4vw,30px)/1.12 Georgia,serif;letter-spacing:-.025em;margin:0 0 12px;color:#fff}
+.lp-search-hero__gallery {font:400 16px/1.4 Georgia,serif;color:#b9d0e4;margin:0;overflow-wrap:anywhere}
+.lp-search-hero form {margin-top:28px;max-width:860px}
+.lp-search-hero label {display:block;color:#c4d6e6;margin-bottom:8px;font-size:12px}
 .lp-search-hero__field {display:flex;align-items:center;gap:12px;padding:5px 5px 5px 16px;border:1px solid #89909c;border-radius:13px;background:#191d26}
 .lp-search-hero__field>span {color:#ff9bb6;font-size:24px}
-.lp-search-hero input {flex:1;min-width:0;width:100%;padding:10px 0;border:0;background:transparent;color:#fff;font:inherit;color-scheme:dark}
-.lp-search-hero button {display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;min-height:44px;padding:10px 16px;border:1px solid transparent;border-radius:9px;background:#b6093e;color:white;font:inherit;cursor:pointer}
+.lp-search-hero input {flex:1;min-width:0;width:100%;padding:10px 0;border:0;background:transparent;color:#fff;font:400 13px/1.5 Arial,sans-serif;color-scheme:dark}
+.lp-search-hero button {display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;min-height:44px;padding:10px 16px;border:1px solid transparent;border-radius:9px;background:#b6093e;color:white;font:500 12px/1.5 Arial,sans-serif;cursor:pointer}
 .lp-search-hero button:hover {background:#970732}
 .lp-search-hero button:active {background:#7d062a}
 .lp-search-hero button:disabled {opacity:.6;cursor:not-allowed}
@@ -30,8 +30,8 @@
 .lp-search-page .sf-content {padding-top:0}
 .lp-search-rank {position:absolute;top:10px;left:10px;z-index:3;padding:5px 9px;background:white;color:#252832;border-radius:6px;font:600 12px/1.4 system-ui,sans-serif;pointer-events:none}
 @media(max-width:900px) {.lp-search-hero__art {opacity:.12}.lp-search-hero {padding:32px}}
-@media(max-width:540px) {
- .lp-search-page__header {padding:12px 14px 0}
+@media(max-width:600px) {
+ .lp-search-page__header {padding:12px 12px 0}
  .lp-search-page__nav {gap:16px;padding-bottom:16px;font-size:13px}
  .lp-search-page__nav p {max-width:45%;font-size:10px;letter-spacing:.08em}
  .lp-search-hero {padding:26px 18px;border-radius:16px}
