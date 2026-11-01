@@ -290,7 +290,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
         self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
             '<style>[data-cover-drop]{position:relative;width:100%;height:180px}body{margin:12px}</style>'
             '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
-            '<div data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
+            '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
             '<div data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
             '<script src="/static/js/gallery_cover_position.js" defer></script>')
         for width in [1000, 390]:
@@ -302,6 +302,10 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             vertical.focus(); vertical.press('End')
             expect(self.page.locator('[data-cover-preview]')).to_have_css('object-position', '0% 100%')
             expect(self.page.locator('[data-gallery-preview-cover] img')).to_have_css('object-position', '0% 100%')
+            crop = self.page.locator('[data-cover-drop]').bounding_box()
+            image_bounds = self.page.locator('[data-cover-preview]').bounding_box()
+            self.assertAlmostEqual(image_bounds['height'], crop['height'], delta=1)
+            self.assertLessEqual(image_bounds['y'] + image_bounds['height'], crop['y'] + crop['height'] + 1)
             self.page.get_by_role('button', name='Center', exact=True).click()
             self.page.get_by_role('button', name='Reposition', exact=True).click()
             image = self.page.locator('[data-cover-preview]')
