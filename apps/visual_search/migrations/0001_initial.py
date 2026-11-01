@@ -5,7 +5,7 @@ from django.db.models import Q
 
 class Migration(migrations.Migration):
     initial = True
-    dependencies = [("galleries", "__latest__")]
+    dependencies = [("galleries", "0002_galleryphoto")]
     operations = [
         migrations.CreateModel(
             name="GalleryFaceSearchPolicy",
