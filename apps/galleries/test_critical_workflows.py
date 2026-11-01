@@ -71,6 +71,10 @@ class CriticalGalleryWorkflowTests(TestCase):
             email="critical-client@example.com",
         )
         _, self.token = AccessToken.issue(self.invitation)
+        self.recipient = User.objects.create_user(
+            email=self.invitation.email, email_verified=True,
+        )
+        self.client.force_login(self.recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.owner,
@@ -87,6 +91,16 @@ class CriticalGalleryWorkflowTests(TestCase):
         for photo in GalleryPhoto.objects.filter(gallery=self.gallery):
             if photo.file:
                 photo.file.delete(save=False)
+
+    def test_logged_out_invitation_cannot_view_or_interact_with_private_gallery(self):
+        self.client.logout()
+        gallery_url = reverse("galleries:client_gallery_access", args=[self.token])
+        response = self.client.get(gallery_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("next=", response.url)
+        favorite_url = reverse("galleries:client_gallery_favorite", args=[self.token, self.photo.pk])
+        self.assertEqual(self.client.post(favorite_url).status_code, 403)
+        self.assertFalse(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery).exists())
 
     def test_published_gallery_album_and_photo_are_delivered_to_invited_client(self):
         album = Album.objects.create(

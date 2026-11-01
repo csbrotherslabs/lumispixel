@@ -84,9 +84,13 @@ class ClientPermissionBrowserMatrixTests(LiveServerTestCase):
         self.zip_path = reverse("galleries:client_gallery_download_all", args=[self.raw_token])
         self.share_path = reverse("galleries:client_gallery_share", args=[self.raw_token])
 
+        recipient = User.objects.create_user(email=self.invitation.email, email_verified=True)
+        self.client.force_login(recipient)
+        client_cookie = self.client.cookies['sessionid'].value
         self._playwright = sync_playwright().start()
         self.browser = self._playwright.chromium.launch(headless=True)
         self.context = self.browser.new_context(accept_downloads=True)
+        self.context.add_cookies([{'name': 'sessionid', 'value': client_cookie, 'url': self.live_server_url}])
         self.context.route(
             "https://media-dev.lumispixel.com/**",
             lambda route: route.fulfill(

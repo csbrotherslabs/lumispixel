@@ -230,8 +230,16 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.assertIsNotNone(match)
         client_url = match.group(0).replace("http://testserver", self.live_server_url).replace("https://testserver", self.live_server_url)
 
+        def sign_in_recipient():
+            recipient, _ = User.objects.get_or_create(email="golden-client@example.com", defaults={"email_verified": True})
+            self.client.force_login(recipient)
+            return self.client.cookies['sessionid'].value
+        client_cookie = self._db(sign_in_recipient)
         client_context = self.browser.new_context(accept_downloads=True)
         client_page = client_context.new_page()
+        client_page.goto(client_url)
+        self.assertIn('/login/', client_page.url)
+        client_context.add_cookies([{'name': 'sessionid', 'value': client_cookie, 'url': self.live_server_url}])
         client_page.goto(client_url)
         client_page.wait_for_load_state("networkidle")
         self.assertIn("Golden Delivery", client_page.content())

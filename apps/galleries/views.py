@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 import json
 from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
@@ -191,6 +192,9 @@ def stable_gallery_access(request, public_id, search_results=False):
                 return redirect(reverse("galleries:invited_semantic_results", args=[raw_token]) + "?" + urlencode({"q": request.GET.get("q", "")}))
             return redirect("galleries:client_gallery_access", token=raw_token)
     if gallery.visibility != Gallery.Visibility.PUBLIC:
+        if not request.user.is_authenticated:
+            from django.contrib.auth.views import redirect_to_login
+            return redirect_to_login(request.get_full_path())
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
     if search_results:
         photo_page, photos, error = _semantic_photo_page(request, gallery)
@@ -202,7 +206,11 @@ def stable_gallery_access(request, public_id, search_results=False):
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
     return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
-def _client_gallery_access(raw_token):
+class PrivateGalleryLoginRequired(PermissionDenied):
+    """Valid private invitation requires an authenticated recipient."""
+
+
+def _client_gallery_access(raw_token, request):
     token_hash = AccessToken.digest(raw_token)
     token = (
         AccessToken.objects.select_related("invitation__gallery__photographer")
@@ -230,6 +238,14 @@ def _client_gallery_access(raw_token):
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
+    if gallery.visibility != Gallery.Visibility.PUBLIC:
+        user = request.user
+        if not user.is_authenticated:
+            raise PrivateGalleryLoginRequired
+        if (not getattr(user, "email_verified", False)
+                or not user.email
+                or user.email.strip().casefold() != invitation.email.strip().casefold()):
+            raise PermissionDenied
     return token, invitation, gallery, permissions, settings
 
 
@@ -265,7 +281,7 @@ def _record_client_access(request, token, invitation, gallery):
 
 @require_GET
 def client_gallery_access(request, token, search_results=False):
-    token_record, invitation, gallery, permissions, settings = _client_gallery_access(token)
+    token_record, invitation, gallery, permissions, settings = _client_gallery_access(token, request)
     _record_client_access(request, token_record, invitation, gallery)
 
     if search_results:
@@ -391,7 +407,7 @@ def client_gallery_access(request, token, search_results=False):
 
 @require_GET
 def client_gallery_photo_media(request, token, photo_id):
-    _, _, gallery, _, _ = _client_gallery_access(token)
+    _, _, gallery, _, _ = _client_gallery_access(token, request)
     photo = get_object_or_404(
         GalleryPhoto,
         pk=photo_id,
@@ -413,7 +429,7 @@ def client_gallery_photo_media(request, token, photo_id):
 
 @require_POST
 def client_gallery_comment(request, token, photo_id):
-    token_record, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, invitation, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.comment:
         return HttpResponseForbidden()
     photo = get_object_or_404(
@@ -471,7 +487,7 @@ def _owns_photo_comment(request, comment, invitation):
 
 @require_POST
 def client_gallery_comment_delete(request, token, photo_id, comment_id):
-    _, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    _, invitation, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.comment:
         return HttpResponseForbidden()
     photo = get_object_or_404(GalleryPhoto, pk=photo_id, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED)
@@ -489,7 +505,7 @@ def client_gallery_comment_delete(request, token, photo_id, comment_id):
 
 @require_POST
 def client_gallery_favorite(request, token, photo_id):
-    token_record, _, gallery, permissions, settings = _client_gallery_access(token)
+    token_record, _, gallery, permissions, settings = _client_gallery_access(token, request)
     if not permissions.favorite_photos:
         return HttpResponseForbidden()
     photo = get_object_or_404(
@@ -548,7 +564,7 @@ def client_gallery_favorite(request, token, photo_id):
 
 @require_GET
 def client_gallery_download(request, token, photo_id):
-    token_record, _, gallery, permissions, settings = _client_gallery_access(token)
+    token_record, _, gallery, permissions, settings = _client_gallery_access(token, request)
     now = timezone.now()
     if not permissions.download_images:
         return HttpResponseForbidden()
@@ -606,7 +622,7 @@ def client_gallery_download(request, token, photo_id):
 
 @require_GET
 def client_gallery_download_original(request, token, photo_id):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     now = timezone.now()
     # Originals are an elevated download capability: the photographer must
     # allow downloads generally and explicitly allow original files.
@@ -656,7 +672,7 @@ def client_gallery_download_original(request, token, photo_id):
 
 @require_GET
 def client_gallery_download_all(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     now = timezone.now()
     if not permissions.download_images:
         return HttpResponseForbidden()
@@ -724,7 +740,7 @@ def client_gallery_download_all(request, token):
 
 @require_GET
 def client_gallery_print_store(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.purchase_prints:
         return HttpResponseForbidden()
     store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
@@ -759,7 +775,7 @@ def client_gallery_print_store(request, token):
 
 @require_POST
 def client_gallery_share(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.share_gallery:
         return HttpResponseForbidden()
     stable_url = request.build_absolute_uri(

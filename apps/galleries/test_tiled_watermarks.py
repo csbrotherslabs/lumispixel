@@ -28,6 +28,28 @@ def gallery_context(watermark='preview'):
 
 
 class TiledWatermarkTemplateTests(SimpleTestCase):
+    def test_watermarks_prefer_business_name_across_client_surfaces(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='Golden Light Photography', display_name='Samuel Golomeke')
+        context.update(semantic_search_available=True, search_query='portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates += ['galleries/semantic_results.html', 'galleries/components/semantic_search.html',
+                      'galleries/components/photo_viewer.html']
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                labels = re.findall(r'data-watermark-label="([^"]*)"', html)
+                self.assertTrue(labels)
+                self.assertTrue(all(label == 'Golden Light Photography' for label in labels))
+
+    def test_watermark_falls_back_to_photographer_name(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='', display_name='Samuel Golomeke')
+        html = render_to_string('galleries/components/tiled_watermark.html', context)
+        self.assertIn('data-watermark-label="Samuel Golomeke"', html)
+
     def test_client_pages_include_lumispixel_tab_branding(self):
         context = gallery_context()
         context.update(search_query='baby portraits', back_url='/gallery/')
@@ -38,7 +60,7 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
                 html = render_to_string(template, context)
                 title = re.search(r'<title>(.*?)</title>', html).group(1)
                 self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
-                self.assertRegex(html, r'<link rel="icon"[^>]+img/(lumispixel-favicon\.svg|lumis_favicon_v1\.png)')
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/lumis_favicon_v1\.png')
                 if template.endswith('semantic_results.html'):
                     self.assertTrue(title.startswith('Search results · '))
 
@@ -211,6 +233,13 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.html = render_to_string('galleries/semantic_results.html', context)
             self.page.goto('https://gallery.example.test/')
             expect(self.page.get_by_role('heading', name='Your moments, found.', exact=True)).to_be_visible()
+            hero = self.page.locator('.lp-search-hero').bounding_box()
+            grid = self.page.locator('[data-photo-grid]').bounding_box()
+            self.assertAlmostEqual(hero['x'], grid['x'], delta=1)
+            self.assertAlmostEqual(hero['x'] + hero['width'], grid['x'] + grid['width'], delta=1)
+            heading_size = self.page.locator('.lp-search-hero h1').evaluate('el => parseFloat(getComputedStyle(el).fontSize)')
+            self.assertLessEqual(heading_size, 30)
+
             query = self.page.get_by_role('searchbox', name='Refine your search')
             expect(query).to_have_value('people dancing')
             query.focus()

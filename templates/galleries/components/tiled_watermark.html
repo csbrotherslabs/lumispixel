@@ -1,1 +1,1 @@
-{% if permissions and permissions.watermark != 'none' %}<span class="lp-gallery-watermark" data-gallery-watermark data-watermark-label="{{ gallery_brand|default:gallery.photographer }}" aria-hidden="true"></span>{% endif %}
+{% if permissions and permissions.watermark != 'none' %}{% firstof gallery.photographer.business_name gallery.photographer.display_name gallery_brand gallery.photographer as watermark_label %}<span class="lp-gallery-watermark" data-gallery-watermark data-watermark-label="{{ watermark_label }}" aria-hidden="true"></span>{% endif %}
