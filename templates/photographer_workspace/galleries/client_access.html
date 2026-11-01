@@ -4,6 +4,10 @@
 <link rel="stylesheet" href="{% static 'css/photographer_gallery_client_access_refresh.css' %}">
 <link rel="stylesheet" href="{% static 'css/photographer_gallery_client_access_actions.css' %}">
 <link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}">
+<link rel="stylesheet" href="{% static 'css/photographer_gallery_permissions.css' %}">
+<link rel="stylesheet" href="{% static 'css/client_gallery_watermark.css' %}">
+<script src="{% static 'js/client_gallery_watermark.js' %}" defer></script>
+<script src="{% static 'js/photographer_gallery_permissions.js' %}" defer></script>
 <section class="lp-access lp-access-modern">
   <header class="lp-access-head">
     <div>
@@ -29,18 +33,22 @@
       </div>
 
       <div class="lp-access-panel__section">
-        <header><div><span class="lp-access-panel__icon"><i class="bi bi-sliders"></i></span><div><h3>Client Permissions</h3><p>Turn on only the actions clients need.</p></div></div></header>
-        <div class="lp-toggle-grid">{% for name,label,checked in permission_options %}<label><span>{{ label }}</span><input type="checkbox" name="{{ name }}" {% if checked %}checked{% endif %}><i></i></label>{% endfor %}</div>
+        <header><div><span class="lp-access-panel__icon"><i class="bi bi-sliders"></i></span><div><h3>Client permissions</h3><p>Choose what clients can do in this gallery.</p></div></div></header>
+        <div class="lp-permission-groups">{% for group in permission_groups %}<section class="lp-permission-group"><h4>{{ group.title }}</h4><div class="lp-toggle-grid">{% for name,label,icon,checked in group.items %}<label><span><span class="lp-permission-icon"><i class="bi bi-{{ icon }}" aria-hidden="true"></i></span><span>{{ label }}{% if name == 'download_originals' %}<small>Full-resolution originals</small>{% endif %}</span></span><input type="checkbox" name="{{ name }}" {% if checked %}checked{% endif %}><i aria-hidden="true"></i></label>{% endfor %}</div></section>{% endfor %}</div>
       </div>
 
-      <details class="lp-access-advanced">
-        <summary><span><i class="bi bi-gear"></i><span><strong>Advanced access rules</strong><small>Expiration dates, automatic locking, and watermark coverage</small></span></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+      <section class="lp-permissions-protection">
+        <h3>Protection &amp; availability</h3>
         <div class="lp-access-advanced__body">
-          <section><h3>Expiration</h3><div class="lp-access-fields"><label>Gallery access ends<input type="date" name="expiration_date" value="{{ gallery.expires_at|date:'Y-m-d' }}"></label><label>Downloads end<input type="date" name="download_expiration" value="{{ gallery_permissions.download_expires_at|date:'Y-m-d' }}"></label><label class="lp-inline-toggle"><span>Lock automatically<small>Close gallery access on the expiration date</small></span><input type="checkbox" name="automatic_gallery_lock" {% if gallery_permissions.automatic_gallery_lock %}checked{% endif %}><i></i></label></div></section>
-          <section><h3>Watermark coverage</h3><div class="lp-watermark">{% for value,label in watermark_options %}<label><input type="radio" name="watermark" value="{{ value }}" {% if gallery_permissions.watermark == value %}checked{% endif %}><span><i class="bi bi-{% if value == 'none' %}slash-circle{% elif value == 'preview' %}image{% else %}images{% endif %}"></i><b>{{ label }}</b></span></label>{% endfor %}</div></section>
+          <section><h3>Expiration</h3><div class="lp-access-fields"><label>Gallery access ends<input type="date" name="expiration_date" value="{{ gallery.expires_at|date:'Y-m-d' }}"></label><label>Downloads end<input type="date" name="download_expiration" value="{{ gallery_permissions.download_expires_at|date:'Y-m-d' }}"></label><label class="lp-inline-toggle"><span>Lock gallery at expiration<small>Automatically close access on that date.</small></span><input type="checkbox" name="automatic_gallery_lock" {% if gallery_permissions.automatic_gallery_lock %}checked{% endif %}><i aria-hidden="true"></i></label></div></section>
+          <section><h3>Watermarks</h3><div class="lp-watermark">{% for value,label in watermark_options %}<label><input type="radio" name="watermark" value="{{ value }}" {% if gallery_permissions.watermark == value %}checked{% endif %}><span><i class="bi bi-{% if value == 'none' %}slash-circle{% elif value == 'preview' %}image{% else %}images{% endif %}" aria-hidden="true"></i><b>{{ label }}</b></span></label>{% endfor %}</div>
+            <div class="lp-permission-watermark-preview" aria-label="Watermark appearance preview"><img src="{% static 'img/watermark-preview.svg' %}" alt="Illustrative landscape for watermark preview">{% firstof gallery.photographer.business_name gallery.photographer.display_name gallery.photographer.user.full_name gallery.photographer.user.display_name as preview_brand %}<span class="lp-gallery-watermark" data-gallery-watermark data-watermark-label="{{ preview_brand }}" data-watermark-density="{{ gallery_permissions.watermark_density }}" data-permission-watermark aria-hidden="true"></span></div>
+            <div class="lp-density-label"><label for="watermark-density">Watermark density</label><output id="watermark-density-value" for="watermark-density" data-density-value></output></div><input type="range" id="watermark-density" name="watermark_density" min="1" max="5" step="1" value="{{ gallery_permissions.watermark_density }}" aria-describedby="density-labels"><div id="density-labels" class="lp-density-labels"><span>Light</span><span>Balanced</span><span>Dense</span></div>
+          </section>
         </div>
-      </details>
+      </section>
     </section>
+    <div class="lp-permissions-save"><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-permissions-reset>Reset to defaults</button><span role="status" data-permissions-status>Changes apply when saved.</span><button type="submit" class="lp-button lp-button--primary lp-button--sm">Save changes</button></div>
   </form>
 
 

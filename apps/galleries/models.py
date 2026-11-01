@@ -491,6 +491,7 @@ class GalleryPermission(models.Model):
     automatic_gallery_lock = models.BooleanField(default=False)
     download_expires_at = models.DateTimeField(blank=True, null=True)
     watermark = models.CharField(max_length=12, choices=Watermark.choices, default=Watermark.PREVIEW)
+    watermark_density = models.PositiveSmallIntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
     updated_at = models.DateTimeField(auto_now=True)
 
 

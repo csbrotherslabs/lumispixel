@@ -1825,6 +1825,13 @@ def gallery_workspace(request, pk):
                 messages.success(request, "Gallery duplicated as a draft.")
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=settings")
         elif action == "save_access":
+            try:
+                density = int(request.POST.get("watermark_density", permissions.watermark_density))
+            except (ValueError, TypeError):
+                return HttpResponseBadRequest("Choose a watermark density from 1 to 5.")
+            if not 1 <= density <= 5:
+                return HttpResponseBadRequest("Choose a watermark density from 1 to 5.")
+            permissions.watermark_density = density
             visibility = request.POST.get("visibility")
             if visibility in Gallery.Visibility.values:
                 gallery.visibility = visibility
@@ -1842,7 +1849,7 @@ def gallery_workspace(request, pk):
             permissions.save()
             log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PERMISSION_CHANGED,
                                  description="Client access permissions were updated.", actor=request.user,
-                                 related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark}})
+                                 related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark, "watermark_density": permissions.watermark_density}})
             messages.success(request, "Client access settings saved.")
         elif action == "invite":
             name, email = request.POST.get("client_name", "").strip(), request.POST.get("email", "").strip().lower()
@@ -1933,6 +1940,14 @@ def gallery_workspace(request, pk):
                     "general_form": general_form, "settings_form": settings_form,
                     "gallery_permissions": permissions, "invitations": invitations,
                     "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
+                    "permission_groups": [
+                        {"title": title, "items": [(field, label, icon, getattr(permissions, field)) for field, label, icon in items]}
+                        for title, items in [
+                            ("Access & sharing", [("view_gallery", "View gallery", "eye"), ("share_gallery", "Share gallery", "share")]),
+                            ("Downloads & prints", [("download_images", "Download photos", "download"), ("download_originals", "Original files", "file-earmark"), ("purchase_prints", "Purchase prints", "printer")]),
+                            ("Client feedback", [("favorite_photos", "Favorite photos", "heart"), ("comment", "Comments", "chat")]),
+                        ]
+                    ],
                     "permission_options": [(field, label, getattr(permissions, field)) for field, label in (
                         ("view_gallery", "View Gallery"), ("download_images", "Download Images"),
                         ("download_originals", "Download Originals"), ("favorite_photos", "Favorite Photos"),
