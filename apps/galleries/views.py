@@ -171,6 +171,11 @@ def _client_gallery_brand(gallery):
     return photographer.business_name or photographer.display_name or str(photographer)
 
 
+def _is_gallery_owner(request, gallery):
+    """Ownership grants client-view access without a recipient invitation."""
+    return bool(request.user.is_authenticated and gallery.photographer.user_id == request.user.pk)
+
+
 @require_GET
 def stable_gallery_access(request, public_id, search_results=False):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
@@ -184,14 +189,14 @@ def stable_gallery_access(request, public_id, search_results=False):
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
-    if request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
+    if not _is_gallery_owner(request, gallery) and request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
         invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
         if invitation:
             _, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
             if search_results:
                 return redirect(reverse("galleries:invited_semantic_results", args=[raw_token]) + "?" + urlencode({"q": request.GET.get("q", "")}))
             return redirect("galleries:client_gallery_access", token=raw_token)
-    if gallery.visibility != Gallery.Visibility.PUBLIC:
+    if gallery.visibility != Gallery.Visibility.PUBLIC and not _is_gallery_owner(request, gallery):
         if not request.user.is_authenticated:
             return _private_gallery_login(request, gallery)
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
@@ -253,7 +258,7 @@ def _client_gallery_access(raw_token, request):
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
-    if gallery.visibility != Gallery.Visibility.PUBLIC:
+    if gallery.visibility != Gallery.Visibility.PUBLIC and not _is_gallery_owner(request, gallery):
         user = request.user
         if not user.is_authenticated:
             raise PrivateGalleryLoginRequired(gallery)
@@ -271,6 +276,8 @@ def _session_identifier(request):
 
 
 def _record_client_access(request, token, invitation, gallery):
+    if _is_gallery_owner(request, gallery):
+        return  # An owner preview is not a client visit or invitation acceptance.
     now = timezone.now()
     AccessToken.objects.filter(pk=token.pk).update(last_used_at=now)
     GalleryInvitation.objects.filter(pk=invitation.pk).update(
