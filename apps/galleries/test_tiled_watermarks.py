@@ -316,6 +316,8 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.assertLess(int(vertical.input_value()), 50)
             self.page.get_by_role('button', name='Center', exact=True).click()
             expect(image).to_have_css('object-position', '50% 50%')
+            expect(self.page.locator('[data-cover-position-x-value]')).to_have_text('50%')
+            expect(self.page.locator('[data-cover-position-y-value]')).to_have_text('50%')
             self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
 
     def test_permission_density_preview_reset_and_no_auto_save(self):

@@ -10,3 +10,28 @@
 .lp-gallery-create__cover>img[data-cover-preview]:not([hidden]) {position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 .lp-gallery-create__cover {position:relative;overflow:hidden;isolation:isolate}
+
+.lp-gallery-client-experience.lp-cover-editor>header {display:flex;align-items:center;flex-wrap:wrap;gap:var(--lp-space-3)}
+.lp-cover-editor .lp-cover-editor__actions {display:flex;gap:var(--lp-space-2);margin-left:auto;position:static}
+.lp-cover-editor .lp-cover-editor__actions[hidden] {display:none}
+.lp-cover-editor .lp-cover-editor__body {display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--lp-space-6);align-items:stretch}
+.lp-gallery-client-experience.lp-cover-editor .lp-gallery-create__cover {min-width:0;width:100%;margin:0;min-height:280px;height:auto;align-self:stretch}
+.lp-cover-editor .lp-cover-position {min-width:0;margin:0;padding-left:var(--lp-space-6);border-left:1px solid var(--lp-color-border);align-content:start;gap:var(--lp-space-4)}
+.lp-cover-position h3 {margin:0 0 var(--lp-space-2);font-size:var(--lp-type-card-title);color:var(--lp-text-primary)}
+.lp-cover-position__label,.lp-cover-position__ends {display:flex;justify-content:space-between;gap:var(--lp-space-2)}
+.lp-cover-position__label label {text-transform:none;letter-spacing:normal;color:var(--lp-text-primary)}
+.lp-cover-position__label output,.lp-cover-position__ends {font-size:var(--lp-type-caption);color:var(--lp-text-secondary)}
+.lp-cover-position .lp-cover-position__save-note {border-top:1px solid var(--lp-color-border);padding-top:var(--lp-space-3);font-size:var(--lp-type-caption)}
+.lp-cover-position button[aria-pressed=true] {background:var(--lp-color-brand);border-color:var(--lp-color-brand);color:var(--lp-text-inverse)}
+.lp-cover-position .lp-cover-position__axis input[type=range] {appearance:none;-webkit-appearance:none;display:block;min-height:44px;height:44px;width:100%;padding:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:pointer}
+.lp-cover-position input[type=range]::-webkit-slider-runnable-track {height:4px;background:var(--lp-color-border-strong);border-radius:var(--lp-radius-pill)}
+.lp-cover-position input[type=range]::-webkit-slider-thumb {appearance:none;-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border:0;border-radius:50%;background:var(--lp-color-brand)}
+.lp-cover-position input[type=range]::-moz-range-track {height:4px;background:var(--lp-color-border-strong);border-radius:var(--lp-radius-pill)}
+.lp-cover-position input[type=range]::-moz-range-progress {height:4px;background:var(--lp-color-brand)}
+.lp-cover-position input[type=range]::-moz-range-thumb {width:16px;height:16px;border:0;border-radius:50%;background:var(--lp-color-brand)}
+.lp-cover-position :disabled {opacity:.45;cursor:default}
+.lp-cover-editor__guides,.lp-cover-editor__drag-hint {display:none;position:absolute;pointer-events:none;z-index:1}
+.lp-cover-editor__guides {inset:0;background:linear-gradient(to right,transparent 33%,var(--lp-color-border) 33%,var(--lp-color-border) calc(33% + 1px),transparent calc(33% + 1px),transparent 66%,var(--lp-color-border) 66%,var(--lp-color-border) calc(66% + 1px),transparent calc(66% + 1px)),linear-gradient(to bottom,transparent 33%,var(--lp-color-border) 33%,var(--lp-color-border) calc(33% + 1px),transparent calc(33% + 1px),transparent 66%,var(--lp-color-border) 66%,var(--lp-color-border) calc(66% + 1px),transparent calc(66% + 1px));opacity:.6}
+.lp-cover-editor__drag-hint {bottom:var(--lp-space-3);left:50%;transform:translateX(-50%);padding:var(--lp-space-2) var(--lp-space-3);border-radius:var(--lp-radius-pill);background:var(--lp-color-surface);color:var(--lp-text-primary);font-size:var(--lp-type-caption);white-space:nowrap}
+.lp-cover-editor [data-cover-preview].is-repositioning~.lp-cover-editor__guides,.lp-cover-editor [data-cover-preview].is-repositioning~.lp-cover-editor__drag-hint {display:block}
+@media(max-width:900px) {.lp-cover-editor .lp-cover-editor__body {grid-template-columns:1fr;gap:var(--lp-space-4)}.lp-cover-editor .lp-cover-position {border-left:0;border-top:1px solid var(--lp-color-border);padding:var(--lp-space-4) 0 0}.lp-gallery-client-experience.lp-cover-editor .lp-gallery-create__cover {min-height:220px}}

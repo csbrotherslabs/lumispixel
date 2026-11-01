@@ -11,6 +11,10 @@
     function sync() {
       const position = `${x.value || 50}% ${y.value || 50}%`;
       image.style.objectPosition = position;
+      const xOutput = controls.querySelector('[data-cover-position-x-value]');
+      const yOutput = controls.querySelector('[data-cover-position-y-value]');
+      if (xOutput) xOutput.textContent = `${x.value}%`;
+      if (yOutput) yOutput.textContent = `${y.value}%`;
       document.querySelectorAll('[data-gallery-preview-cover] img').forEach(el => { el.style.objectPosition = position; });
       const available = !!image.getAttribute('src') && !image.hidden;
       controls.querySelectorAll('input,button').forEach(el => { el.disabled = !available; });
