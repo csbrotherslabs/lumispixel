@@ -127,7 +127,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
         if path.startswith('/static/'):
             file = settings.BASE_DIR / 'static' / path.removeprefix('/static/')
             if file.is_file():
-                mime = 'text/css' if file.suffix == '.css' else 'application/javascript'
+                mime = {'.css': 'text/css', '.svg': 'image/svg+xml'}.get(file.suffix, 'application/javascript')
                 route.fulfill(body=file.read_bytes(), content_type=mime)
             else:
                 route.abort()
@@ -281,6 +281,81 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             self.assertEqual(download.value.suggested_filename, 'medium.jpg')
             viewer.get_by_role('button', name='Close full view', exact=True).click()
             expect(self.page.locator('#photo-1 [data-comment-form]')).to_have_count(1)
+
+    def test_cover_position_keyboard_drag_and_live_preview(self):
+        from apps.accounts.models import PhotographerProfile
+        from .forms import GalleryForm
+        form = GalleryForm(photographer=PhotographerProfile(pk=999))
+        controls = render_to_string('photographer_workspace/galleries/cover_position.html', {'form': form})
+        self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<style>[data-cover-drop]{position:relative;width:100%;height:180px}body{margin:12px}</style>'
+            '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
+            '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
+            '<div data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
+            '<script src="/static/js/gallery_cover_position.js" defer></script>')
+        for width in [1000, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.page.goto('https://gallery.example.test/')
+            horizontal = self.page.get_by_label('Horizontal position')
+            vertical = self.page.get_by_label('Vertical position')
+            horizontal.focus(); horizontal.press('Home')
+            vertical.focus(); vertical.press('End')
+            expect(self.page.locator('[data-cover-preview]')).to_have_css('object-position', '0% 100%')
+            expect(self.page.locator('[data-gallery-preview-cover] img')).to_have_css('object-position', '0% 100%')
+            crop = self.page.locator('[data-cover-drop]').bounding_box()
+            image_bounds = self.page.locator('[data-cover-preview]').bounding_box()
+            self.assertAlmostEqual(image_bounds['height'], crop['height'], delta=1)
+            self.assertLessEqual(image_bounds['y'] + image_bounds['height'], crop['y'] + crop['height'] + 1)
+            self.page.get_by_role('button', name='Center', exact=True).click()
+            self.page.get_by_role('button', name='Reposition', exact=True).click()
+            image = self.page.locator('[data-cover-preview]')
+            box = image.bounding_box()
+            self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 70)
+            self.page.mouse.down(); self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 120)
+            self.page.mouse.up()
+            self.assertLess(int(vertical.input_value()), 50)
+            self.page.get_by_role('button', name='Center', exact=True).click()
+            expect(image).to_have_css('object-position', '50% 50%')
+            self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+
+    def test_permission_density_preview_reset_and_no_auto_save(self):
+        from .models import GalleryPermission
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(business_name='Golden Studio', display_name='Samuel')
+        context.update(gallery_permissions=GalleryPermission(), watermark_options=GalleryPermission.Watermark.choices,
+                       stable_gallery_url='https://gallery.example.test/', permission_groups=[])
+        # Use the same seven persisted permission names; no save occurs until submit.
+        context['permission_groups'] = [{'title': 'Access & sharing', 'items': [
+            (name, label, 'eye', default) for name, label, default in [
+                ('view_gallery', 'View gallery', True), ('share_gallery', 'Share gallery', True),
+                ('download_images', 'Download photos', True), ('download_originals', 'Original files', False),
+                ('favorite_photos', 'Favorite photos', True), ('comment', 'Comments', False), ('purchase_prints', 'Purchase prints', False)]]}]
+        html = render_to_string('photographer_workspace/galleries/client_access.html', context)
+        self.html = '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">' + html
+        posts = []
+        self.page.on('request', lambda request: posts.append(request.url) if request.method == 'POST' else None)
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.page.goto('https://gallery.example.test/')
+            form = self.page.locator('#client-access-settings')
+            slider = form.get_by_label('Watermark density', exact=True)
+            overlay = form.locator('[data-permission-watermark]')
+            slider.focus(); slider.press('Home')
+            expect(form.locator('[data-density-value]')).to_have_text('Light')
+            expect(overlay).to_have_attribute('data-watermark-density', '1')
+            expect(overlay).to_have_attribute('style', re.compile('background-size'))
+            light = overlay.evaluate('el => el.style.backgroundSize')
+            slider.press('End')
+            expect(form.locator('[data-density-value]')).to_have_text('Dense')
+            expect(overlay).not_to_have_attribute('style', re.compile(re.escape('background-size: ' + light)))
+            form.get_by_text('None', exact=True).click()
+            expect(slider).to_be_disabled(); expect(overlay).to_be_hidden()
+            form.locator('[data-permissions-reset]').click()
+            expect(slider).to_have_value('3'); expect(slider).to_be_enabled()
+            expect(form.locator('[name=view_gallery]')).to_be_checked()
+            expect(form.locator('[name=comment]')).not_to_be_checked()
+            expect(form.locator('[data-permissions-status]')).to_contain_text('Save changes')
+        self.assertEqual(posts, [])
 
     def test_dynamic_search_watermarks_are_initialized_and_brand_is_svg_text(self):
         self.html = '<!doctype html><meta charset="utf-8"><body><script src="/static/js/client_gallery_watermark.js" defer></script></body>'

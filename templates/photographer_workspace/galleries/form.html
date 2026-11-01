@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gallery_cover_position.css' %}"><script src="{% static 'js/gallery_cover_position.js' %}" defer></script><link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
 document.addEventListener("DOMContentLoaded", function () {
   const picker = document.querySelector("[data-gallery-design-picker]");
   const storyFields = document.querySelector("[data-story-fields]");
@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
           {{ form.cover_image }}
           <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
         </div>
+        {% include "photographer_workspace/galleries/cover_position.html" %}
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
 
@@ -203,6 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
           {{ form.cover_image }}
           <div class="lp-gallery-create__cover-actions" data-cover-actions{% if not gallery.cover_image %} hidden{% endif %}><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label></div>
         </div>
+        {% include "photographer_workspace/galleries/cover_position.html" %}
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
 

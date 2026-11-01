@@ -193,8 +193,7 @@ def stable_gallery_access(request, public_id, search_results=False):
             return redirect("galleries:client_gallery_access", token=raw_token)
     if gallery.visibility != Gallery.Visibility.PUBLIC:
         if not request.user.is_authenticated:
-            from django.contrib.auth.views import redirect_to_login
-            return redirect_to_login(request.get_full_path())
+            return _private_gallery_login(request, gallery)
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
     if search_results:
         photo_page, photos, error = _semantic_photo_page(request, gallery)
@@ -206,8 +205,24 @@ def stable_gallery_access(request, public_id, search_results=False):
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
     return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
+def _private_gallery_login(request, gallery):
+    from django.contrib.auth.views import redirect_to_login
+    photographer = gallery.photographer
+    user = photographer.user
+    request.session['private_gallery_notice'] = {
+        'studio': photographer.business_name or photographer.display_name or user.display_name,
+        'name': user.full_name or photographer.display_name or user.display_name,
+        'email': user.email,
+        'next': request.get_full_path(),
+    }
+    return redirect_to_login(request.get_full_path())
+
+
 class PrivateGalleryLoginRequired(PermissionDenied):
     """Valid private invitation requires an authenticated recipient."""
+    def __init__(self, gallery):
+        super().__init__()
+        self.gallery = gallery
 
 
 def _client_gallery_access(raw_token, request):
@@ -241,7 +256,7 @@ def _client_gallery_access(raw_token, request):
     if gallery.visibility != Gallery.Visibility.PUBLIC:
         user = request.user
         if not user.is_authenticated:
-            raise PrivateGalleryLoginRequired
+            raise PrivateGalleryLoginRequired(gallery)
         if (not getattr(user, "email_verified", False)
                 or not user.email
                 or user.email.strip().casefold() != invitation.email.strip().casefold()):

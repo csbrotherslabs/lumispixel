@@ -19,6 +19,15 @@
         <div class="row">
           <div class="col-12 login-auth-column">
             <div class="login-auth-card">
+            {% with notice=request.session.private_gallery_notice %}
+            {% if notice and notice.next == next %}
+            <div class="alert alert-info" role="note" aria-label="Private gallery access">
+              <strong>This is a private gallery.</strong>
+              <p>Access requires approval from <strong>{{ notice.studio }}</strong> ({{ notice.name }} · {{ notice.email }}).</p>
+              <p>Sign in with the email address approved for this gallery.</p>
+            </div>
+            {% endif %}
+            {% endwith %}
             <form data-password-visibility class="wptb-form" action="{% url 'accounts:login' %}" method="post">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ next }}">

@@ -1,26 +1,30 @@
 (() => {
   'use strict';
-  const ready = new WeakSet();
+  const ready = new WeakMap();
   const namespace = 'http://www.w3.org/2000/svg';
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   const backgrounds = new Map();
 
   function decorate(overlay) {
-    if (ready.has(overlay)) return;
+    const raw = Number(overlay.dataset.watermarkDensity || 3);
+    const density = Number.isInteger(raw) && raw >= 1 && raw <= 5 ? raw : 3;
+    const key = JSON.stringify([overlay.dataset.watermarkLabel, density]);
+    if (ready.get(overlay) === key) return;
     const label = overlay.dataset.watermarkLabel?.trim();
     if (!label) return;
-    ready.add(overlay);
-    if (!backgrounds.has(label)) {
+    ready.set(overlay, key);
+    if (!backgrounds.has(key)) {
       // Measure the actual brand so long names are not truncated within a tile.
       context.font = '600 16px Arial';
-      const width = Math.ceil(Math.max(220, context.measureText(label).width + 40));
-      const height = 112;
+      const spacing = 1 + (3 - density) * .25;
+      const width = Math.ceil(Math.max(context.measureText(label).width + 24, 220 * spacing));
+      const height = Math.round(112 * spacing);
       const svg = document.createElementNS(namespace, 'svg');
       svg.setAttribute('width', width);
       svg.setAttribute('height', height);
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      for (const [x, y] of [[20, 30], [20 - width / 2, 86], [20 + width / 2, 86]]) {
+      for (const [x, y] of [[12, height * .27], [12 - width / 2, height * .77], [12 + width / 2, height * .77]]) {
         const text = document.createElementNS(namespace, 'text');
         text.setAttribute('x', x);
         text.setAttribute('y', y);
@@ -34,9 +38,11 @@
         svg.append(text);
       }
       const xml = new XMLSerializer().serializeToString(svg);
-      backgrounds.set(label, `url("data:image/svg+xml,${encodeURIComponent(xml)}")`);
+      backgrounds.set(key, {image: `url("data:image/svg+xml,${encodeURIComponent(xml)}")`, width, height});
     }
-    overlay.style.backgroundImage = backgrounds.get(label);
+    const tile = backgrounds.get(key);
+    overlay.style.backgroundImage = tile.image;
+    overlay.style.backgroundSize = `${tile.width}px ${tile.height}px`;
   }
 
   function refresh(root) {
@@ -48,6 +54,6 @@
   // Semantic results are inserted after page load. Observe only added nodes;
   // watermark style updates do not retrigger this observer.
   new MutationObserver(records => {
-    records.forEach(record => record.addedNodes.forEach(refresh));
-  }).observe(document.body, {childList: true, subtree: true});
+    records.forEach(record => { if (record.type === 'attributes') decorate(record.target); else record.addedNodes.forEach(refresh); });
+  }).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['data-watermark-label', 'data-watermark-density']});
 })();

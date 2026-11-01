@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -82,6 +82,8 @@ class Gallery(models.Model):
     description = models.TextField(blank=True)
     event_date = models.DateField(blank=True, null=True)
     cover_image = models.ImageField(upload_to="galleries/covers/%Y/%m/", blank=True)
+    cover_position_x = models.PositiveSmallIntegerField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    cover_position_y = models.PositiveSmallIntegerField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     visibility = models.CharField(max_length=20, choices=Visibility.choices, default=Visibility.PRIVATE)
     design_template = models.CharField(max_length=48, choices=DesignTemplate.choices, default=DesignTemplate.KIMONO_STANDARD_FILTERABLE)
@@ -489,6 +491,7 @@ class GalleryPermission(models.Model):
     automatic_gallery_lock = models.BooleanField(default=False)
     download_expires_at = models.DateTimeField(blank=True, null=True)
     watermark = models.CharField(max_length=12, choices=Watermark.choices, default=Watermark.PREVIEW)
+    watermark_density = models.PositiveSmallIntegerField(default=3, validators=[MinValueValidator(1), MaxValueValidator(5)])
     updated_at = models.DateTimeField(auto_now=True)
 
 

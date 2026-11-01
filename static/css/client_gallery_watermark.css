@@ -28,3 +28,5 @@
 @media (max-width: 540px) {
   .lp-gallery-watermark { background-size: 180px 92px; }
 }
+
+.lp-gallery-watermark[hidden] {display:none}
