@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("visual_search", "0006_client_biometric_deletion_request"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("galleries", "__latest__"),
+        ("galleries", "0002_galleryphoto"),
     ]
 
     operations = [
