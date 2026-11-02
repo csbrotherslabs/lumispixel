@@ -15,7 +15,7 @@
 </head>
 <body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
   {% include "galleries/components/semantic_search.html" %}<main class="sf-gallery">
-    <section class="sf-hero"{% if gallery.cover_image %} style="background-image:url('{{ gallery.cover_image.url }}');background-position:{{ gallery.cover_position_x|default_if_none:50 }}% {{ gallery.cover_position_y|default_if_none:50 }}%"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
+    <section class="sf-hero"{% if gallery.cover_image %} data-gallery-cover-zoom="{{ gallery.cover_zoom|default:100 }}" data-cover-source="{{ gallery.cover_image.url }}" style="background-image:url('{{ gallery.cover_image.url }}');background-position:{{ gallery.cover_position_x|default_if_none:50 }}% {{ gallery.cover_position_y|default_if_none:50 }}%"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
       <div class="sf-hero__shade"></div>
       <div class="sf-hero__brand">{% if gallery_settings.studio_logo %}<img src="{{ gallery_settings.studio_logo.url }}" alt="{{ gallery_brand }}">{% else %}{{ gallery_brand }}{% endif %}</div>
       <div class="sf-hero__copy"><span>PRIVATE GALLERY</span><h1>{{ gallery.name }}</h1>{% if gallery.event_date %}<p>{{ gallery.event_date|date:"F j, Y" }}</p>{% endif %}{% if gallery.description %}<small>{{ gallery.description }}</small>{% endif %}</div>
@@ -41,4 +41,4 @@
   </main>
   {% if can_share_gallery %}<dialog class="sf-qr-modal" data-client-qr-dialog><button type="button" data-client-qr-close aria-label="Close">×</button><img src="{{ client_qr_svg }}" alt="QR code for {{ gallery.name }}"><h2>{{ gallery.name }}</h2><input value="{{ stable_gallery_url }}" readonly onclick="this.select()"><form method="post" action="{% if access_token %}{% url 'galleries:client_gallery_share' access_token %}{% endif %}" data-client-share-form>{% csrf_token %}<button type="button" data-client-copy-link data-url="{{ stable_gallery_url|escape }}">Copy Link</button></form><a href="{{ client_qr_png }}" download="{{ gallery.slug }}-qr.png">Download QR</a></dialog>{% endif %}
   {% include "galleries/components/photo_viewer.html" %}<script src="{% static 'js/client_gallery_interactions.js' %}" defer></script><script src="{% static 'js/standard_filterable_gallery.js' %}" defer></script>
-</body></html>
+<script src="{% static 'js/gallery_cover_zoom.js' %}" defer></script></body></html>

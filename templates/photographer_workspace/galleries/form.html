@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gallery_cover_position.css' %}"><script src="{% static 'js/gallery_cover_position.js' %}" defer></script><link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gallery_live_preview.css' %}"><link rel="stylesheet" href="{% static 'css/gallery_cover_position.css' %}"><script src="{% static 'js/gallery_cover_position.js' %}" defer></script><link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
 document.addEventListener("DOMContentLoaded", function () {
   const picker = document.querySelector("[data-gallery-design-picker]");
   const storyFields = document.querySelector("[data-story-fields]");
@@ -124,12 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
-      <section class="lp-gallery-create__preview lpw-gallery-preview-refresh" aria-labelledby="gallery-preview-title">
-        <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-preview-title">Gallery Preview</h2></div></header>
-        <p class="lpw-gallery-preview-refresh__intro">See your gallery details come together as you create.</p>
-        <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>
-        <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client hidden></p><h3 data-gallery-preview-name>Untitled gallery</h3><time data-gallery-preview-date hidden></time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility></span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status></span></div></div>
-      </section>
+      {% include "photographer_workspace/galleries/components/live_preview.html" with preview_title_id="gallery-preview-title" %}
       <section class="lp-gallery-create__guidance" aria-labelledby="gallery-next-title"><span class="lp-contract-eyebrow">After creation</span><h2 id="gallery-next-title">Your delivery workspace is next</h2><ul><li><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><span><strong>Upload the finished images</strong><small>Add photos directly to this gallery.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Organize the collection</strong><small>Build albums and choose the final cover.</small></span></li><li><i class="bi bi-send-check" aria-hidden="true"></i><span><strong>Review and publish</strong><small>Confirm access before sharing with your client.</small></span></li></ul></section>
     </aside>
   </div>
@@ -223,11 +218,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
-      <section class="lp-gallery-create__preview" aria-labelledby="gallery-edit-preview-title">
-        <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-edit-preview-title">Gallery Preview</h2></div></header>
-        <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover>{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span>{% endif %}</div>
-        <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client></p><h3 data-gallery-preview-name>{{ gallery.name }}</h3><time data-gallery-preview-date{% if not gallery.event_date %} hidden{% endif %}{% if gallery.event_date %} datetime="{{ gallery.event_date|date:'Y-m-d' }}"{% endif %}>{% if gallery.event_date %}{{ gallery.event_date|date:"M j, Y" }}{% endif %}</time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility>{{ gallery.get_visibility_display }}</span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status>{{ gallery.get_status_display }}</span></div></div>
-      </section>
+      {% include "photographer_workspace/galleries/components/live_preview.html" with preview_title_id="gallery-edit-preview-title" %}
       <section class="lp-gallery-create__guidance" aria-labelledby="gallery-edit-next-title"><span class="lp-contract-eyebrow">Existing gallery</span><h2 id="gallery-edit-next-title">Your delivery workspace stays connected</h2><ul><li><i class="bi bi-images" aria-hidden="true"></i><span><strong>{{ gallery.image_count }} photo{{ gallery.image_count|pluralize }} stay in place</strong><small>Editing gallery details does not remove uploaded images.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Albums and client access remain connected</strong><small>Your existing delivery setup stays with this gallery.</small></span></li><li><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span><strong>Return to the gallery workspace</strong><small>Continue uploading, organizing, or publishing after saving.</small></span></li></ul><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">Open Gallery Workspace</a></section>
     </aside>
   </div>

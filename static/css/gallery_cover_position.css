@@ -37,3 +37,12 @@
 @media(max-width:900px) {.lp-cover-editor .lp-cover-editor__body {grid-template-columns:1fr;gap:var(--lp-space-4)}.lp-cover-editor .lp-cover-position {border-left:0;border-top:1px solid var(--lp-color-border);padding:var(--lp-space-4) 0 0}}
 
 .lp-gallery-client-experience.lp-cover-editor .lp-gallery-create__cover-prompt {min-height:0;height:100%;width:100%}
+
+.lp-cover-pad {display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:var(--lp-space-2);justify-content:center}
+.lp-cover-pad button,.lp-cover-zoom button {display:grid;place-items:center;min-width:44px;min-height:44px;padding:var(--lp-space-2);border:1px solid var(--lp-color-border);border-radius:var(--lp-radius-md);background:var(--lp-color-page);color:var(--lp-text-primary)}
+.lp-cover-pad button:hover:not(:disabled),.lp-cover-zoom button:hover:not(:disabled) {background:var(--lp-color-brand-subtle);color:var(--lp-text-brand);border-color:var(--lp-color-brand)}
+.lp-cover-pad__up {grid-area:1 / 2}.lp-cover-pad__left {grid-area:2 / 1}.lp-cover-pad__center {grid-area:2 / 2;border-radius:var(--lp-radius-pill)}.lp-cover-pad__right {grid-area:2 / 3}.lp-cover-pad__down {grid-area:3 / 2}
+.lp-cover-zoom {display:flex;align-items:center;gap:var(--lp-space-2);min-width:0}.lp-cover-zoom input {flex:1;min-width:0}
+/* Keep the live thumbnail a real crop viewport, independent of image dimensions. */
+.lp-gallery-create-modern .lp-gallery-create__preview .lp-gallery-create__preview-cover {position:relative;overflow:hidden;aspect-ratio:16 / 9;min-height:0}
+.lp-gallery-create-modern .lp-gallery-create__preview-cover>img {position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}

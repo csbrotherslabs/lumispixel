@@ -48,3 +48,31 @@ class GalleryCoverPositionTests(TestCase):
         for design in DESIGNS:
             html = render_to_string(f'galleries/designs/{design}.html', context)
             self.assertIn('background-position:0% 23%', html)
+
+    def test_zoom_persists_and_omitted_value_retains_saved_zoom(self):
+        form = GalleryForm(dict(self.data, cover_zoom=175), photographer=self.owner)
+        self.assertTrue(form.is_valid(), form.errors)
+        gallery = form.save()
+        gallery.refresh_from_db()
+        self.assertEqual(gallery.cover_zoom, 175)
+        form = GalleryForm(self.data, instance=gallery, photographer=self.owner)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save(); gallery.refresh_from_db()
+        self.assertEqual(gallery.cover_zoom, 175)
+        self.assertEqual(Gallery(photographer=self.owner).cover_zoom, 100)
+
+    def test_zoom_validation_rejects_out_of_range_and_non_integer_values(self):
+        for value in [99, 301, 'invalid', '150.5']:
+            form = GalleryForm(dict(self.data, cover_zoom=value), photographer=self.owner)
+            self.assertFalse(form.is_valid())
+            self.assertIn('cover_zoom', form.errors)
+
+    def test_saved_zoom_is_passed_to_every_gallery_design(self):
+        from .test_tiled_watermarks import gallery_context, DESIGNS
+        context = gallery_context()
+        context['gallery'].cover_image = SimpleNamespace(url='/cover.jpg')
+        context['gallery'].cover_zoom = 175
+        for design in DESIGNS:
+            html = render_to_string(f'galleries/designs/{design}.html', context)
+            self.assertIn('data-gallery-cover-zoom="175"', html)
+            self.assertIn('gallery_cover_zoom.js', html)

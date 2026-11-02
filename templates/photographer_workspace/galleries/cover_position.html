@@ -1,7 +1,15 @@
 <div class="lp-cover-position" data-cover-position>
-  <div><h3>Adjust framing</h3><p id="cover-position-hint">Move the image to find the best crop.</p></div>
-  <div class="lp-cover-position__actions"><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-reposition aria-pressed="false">Reposition</button><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-center>Center</button></div>
-  <div class="lp-cover-position__axis"><div class="lp-cover-position__label"><label for="{{ form.cover_position_x.id_for_label }}">Horizontal position</label><output for="{{ form.cover_position_x.id_for_label }}" data-cover-position-x-value>{{ form.cover_position_x.value|default_if_none:50 }}%</output></div>{{ form.cover_position_x }}{{ form.cover_position_x.errors }}<div class="lp-cover-position__ends" aria-hidden="true"><span>Left</span><span>Right</span></div></div>
-  <div class="lp-cover-position__axis"><div class="lp-cover-position__label"><label for="{{ form.cover_position_y.id_for_label }}">Vertical position</label><output for="{{ form.cover_position_y.id_for_label }}" data-cover-position-y-value>{{ form.cover_position_y.value|default_if_none:50 }}%</output></div>{{ form.cover_position_y }}{{ form.cover_position_y.errors }}<div class="lp-cover-position__ends" aria-hidden="true"><span>Top</span><span>Bottom</span></div></div>
+  <h3>Adjust framing</h3>
+  {{ form.cover_position_x }}{{ form.cover_position_x.errors }}{{ form.cover_position_y }}{{ form.cover_position_y.errors }}
+  <div class="lp-cover-pad" role="group" aria-label="Move cover image">
+    <button type="button" class="lp-cover-pad__up" data-cover-move="up" aria-label="Move image up"><i class="bi bi-caret-up-fill" aria-hidden="true"></i></button>
+    <button type="button" class="lp-cover-pad__left" data-cover-move="left" aria-label="Move image left"><i class="bi bi-caret-left-fill" aria-hidden="true"></i></button>
+    <button type="button" class="lp-cover-pad__center" data-cover-center aria-label="Center image"><i class="bi bi-crosshair" aria-hidden="true"></i></button>
+    <button type="button" class="lp-cover-pad__right" data-cover-move="right" aria-label="Move image right"><i class="bi bi-caret-right-fill" aria-hidden="true"></i></button>
+    <button type="button" class="lp-cover-pad__down" data-cover-move="down" aria-label="Move image down"><i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+  </div>
+  <p id="cover-position-hint">Tap arrows to move · Center to reset position. Drag the photo to reposition.</p>
+  <div class="lp-cover-position__axis"><div class="lp-cover-position__label"><label for="{{ form.cover_zoom.id_for_label }}">Zoom</label><output for="{{ form.cover_zoom.id_for_label }}" data-cover-zoom-value>{{ form.cover_zoom.value|default_if_none:100 }}%</output></div><div class="lp-cover-zoom"><button type="button" data-cover-zoom-step="-10" aria-label="Zoom out">−</button>{{ form.cover_zoom }}<button type="button" data-cover-zoom-step="10" aria-label="Zoom in">+</button></div>{{ form.cover_zoom.errors }}</div>
+  <button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-reset>Reset framing</button>
   <p class="lp-cover-position__save-note">Framing is applied when you save the gallery.</p>
 </div>

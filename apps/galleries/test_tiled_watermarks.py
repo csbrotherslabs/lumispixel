@@ -291,34 +291,88 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             '<style>[data-cover-drop]{position:relative;width:100%;height:180px}body{margin:12px}</style>'
             '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
             '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
-            '<div data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
+            '<div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
             '<script src="/static/js/gallery_cover_position.js" defer></script>')
         for width in [1000, 390]:
             self.page.set_viewport_size({'width': width, 'height': 900})
             self.page.goto('https://gallery.example.test/')
-            horizontal = self.page.get_by_label('Horizontal position')
-            vertical = self.page.get_by_label('Vertical position')
-            horizontal.focus(); horizontal.press('Home')
-            vertical.focus(); vertical.press('End')
-            expect(self.page.locator('[data-cover-preview]')).to_have_css('object-position', '0% 100%')
-            expect(self.page.locator('[data-gallery-preview-cover] img')).to_have_css('object-position', '0% 100%')
+            zoom = self.page.get_by_role('slider', name='Zoom', exact=True)
+            zoom.focus(); zoom.press('End')
+            expect(zoom).to_have_value('300')
+            expect(self.page.locator('[data-cover-zoom-value]')).to_have_text('300%')
+            self.page.get_by_role('button', name='Move image left', exact=True).click()
+            expect(self.page.locator('[name=cover_position_x]')).to_have_value('52')
+            self.page.get_by_role('button', name='Move image up', exact=True).click()
+            expect(self.page.locator('[name=cover_position_y]')).to_have_value('52')
             crop = self.page.locator('[data-cover-drop]').bounding_box()
             image_bounds = self.page.locator('[data-cover-preview]').bounding_box()
-            self.assertAlmostEqual(image_bounds['height'], crop['height'], delta=1)
-            self.assertLessEqual(image_bounds['y'] + image_bounds['height'], crop['y'] + crop['height'] + 1)
-            self.page.get_by_role('button', name='Center', exact=True).click()
-            self.page.get_by_role('button', name='Reposition', exact=True).click()
+            self.assertAlmostEqual(image_bounds['height'], crop['height'] * 3, delta=1)
+            expect(self.page.locator('[data-cover-drop]')).to_have_css('overflow', 'hidden')
+            self.page.get_by_role('button', name='Center image', exact=True).click()
             image = self.page.locator('[data-cover-preview]')
-            box = image.bounding_box()
+            box = self.page.locator('[data-cover-drop]').bounding_box()
             self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 70)
             self.page.mouse.down(); self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 120)
             self.page.mouse.up()
-            self.assertLess(int(vertical.input_value()), 50)
-            self.page.get_by_role('button', name='Center', exact=True).click()
+            self.assertLess(int(self.page.locator('[name=cover_position_y]').input_value()), 50)
+            self.page.get_by_role('button', name='Center image', exact=True).click()
             expect(image).to_have_css('object-position', '50% 50%')
-            expect(self.page.locator('[data-cover-position-x-value]')).to_have_text('50%')
-            expect(self.page.locator('[data-cover-position-y-value]')).to_have_text('50%')
+            self.page.get_by_role('button', name='Reset framing', exact=True).click()
+            expect(zoom).to_have_value('100')
             self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+
+    def test_live_preview_crop_changes_with_position_zoom_and_replacement(self):
+        from urllib.parse import quote
+        from apps.accounts.models import PhotographerProfile
+        from .forms import GalleryForm
+        controls = render_to_string('photographer_workspace/galleries/cover_position.html',
+            {'form': GalleryForm(photographer=PhotographerProfile(pk=999))})
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="red"/><rect y="200" width="800" height="200" fill="blue"/><rect y="400" width="800" height="200" fill="green"/><rect y="600" width="800" height="200" fill="yellow"/></svg>'
+        source = 'data:image/svg+xml,' + quote(svg)
+        preview_html = render_to_string('photographer_workspace/galleries/components/live_preview.html', {
+            'preview_title_id': 'test-live-preview',
+            'form': GalleryForm(photographer=PhotographerProfile(pk=999)),
+            'gallery': SimpleNamespace(cover_image=SimpleNamespace(url=source), event_date=None,
+                get_visibility_display='Private', get_status_display='Draft'),
+        })
+        for mode in ['', 'lp-gallery-edit-modern']:
+            self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+                '<link rel="stylesheet" href="/static/css/workspace_design_system.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_workspace.css">'
+                '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_gallery_create.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_gallery_create_refine.css">'
+                '<link rel="stylesheet" href="/static/css/gallery_live_preview.css">'
+                '<style>.fixture{max-width:700px;margin:auto}.lp-gallery-create__preview{width:280px}</style>'
+                '<div class="fixture lp-gallery-create-modern ' + mode + '">'
+                '<section class="lp-cover-editor lp-gallery-client-experience"><div class="lp-cover-editor__body">'
+                '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="' + source + '"></div>'
+                + controls + '</div></section>' + preview_html + '</div>'
+                '<script src="/static/js/gallery_cover_position.js" defer></script>')
+            for width in [1440, 390]:
+                self.page.set_viewport_size({'width': width, 'height': 1100})
+                self.page.goto('https://gallery.example.test/')
+                preview = self.page.locator('[data-gallery-preview-cover]')
+                thumbnail = preview.locator('img')
+                expect(thumbnail).to_have_css('position', 'absolute')
+                bounds = preview.bounding_box()
+                self.assertAlmostEqual(bounds['width'] / bounds['height'], 16 / 9, delta=.03)
+                initial = preview.screenshot()
+                self.page.get_by_role('button', name='Move image up', exact=True).click()
+                expect(thumbnail).to_have_css('object-position', '50% 52%')
+                self.assertNotEqual(initial, preview.screenshot())
+                self.page.get_by_role('button', name='Zoom in', exact=True).click()
+                expect(thumbnail).to_have_css('transform', 'matrix(1.1, 0, 0, 1.1, 0, 0)')
+                self.assertNotEqual(initial, preview.screenshot())
+                self.page.evaluate("""source => {
+                    document.querySelector('[data-gallery-preview-cover]').replaceChildren();
+                    document.dispatchEvent(new CustomEvent('gallery:cover-preview', {detail:{url:source}}));
+                }""", source)
+                expect(preview.locator('img')).to_have_css('object-position', '50% 52%')
+                expect(preview.locator('img')).to_have_css('transform', 'matrix(1.1, 0, 0, 1.1, 0, 0)')
+                self.page.get_by_role('button', name='Reset framing', exact=True).click()
+                expect(preview.locator('img')).to_have_css('object-position', '50% 50%')
+                self.assertEqual(initial, preview.screenshot())
 
     def test_permission_density_preview_reset_and_no_auto_save(self):
         from .models import GalleryPermission

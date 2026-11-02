@@ -302,6 +302,10 @@
       } else { previewDate.textContent = ''; previewDate.removeAttribute('datetime'); previewDate.hidden = true; }
       previewVisibility.textContent = selectedLabel(visibilityInput);
       previewStatus.textContent = selectedLabel(statusInput);
+      const statusWrap = document.querySelector('[data-gallery-preview-status-wrap]');
+      if (statusWrap) statusWrap.dataset.status = statusInput.value;
+      const visibilityIcon = document.querySelector('[data-gallery-preview-visibility-icon]');
+      if (visibilityIcon) visibilityIcon.className = 'bi ' + ({private:'bi-lock', password:'bi-key', public:'bi-globe'}[visibilityInput.value] || 'bi-eye');
     }
     [nameInput, clientInput, dateInput, visibilityInput, statusInput].forEach(function (control) {
       if (control) { control.addEventListener('input', updateGalleryPreview); control.addEventListener('change', updateGalleryPreview); }
