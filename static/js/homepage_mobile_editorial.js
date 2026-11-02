@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function update() { var i = currentIndex(); prev.disabled = i === 0; next.disabled = i === cards.length - 1; }
     function move(delta) {
       var index = Math.max(0, Math.min(cards.length - 1, currentIndex() + delta));
-      cards[index].scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'nearest', inline:'start'});
+      rail.scrollTo({left: cards[index].offsetLeft - cards[0].offsetLeft, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
     }
     prev.addEventListener('click', function () { move(-1); });
     next.addEventListener('click', function () { move(1); });
