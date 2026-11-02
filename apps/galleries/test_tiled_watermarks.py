@@ -329,6 +329,12 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             {'form': GalleryForm(photographer=PhotographerProfile(pk=999))})
         svg = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="red"/><rect y="200" width="800" height="200" fill="blue"/><rect y="400" width="800" height="200" fill="green"/><rect y="600" width="800" height="200" fill="yellow"/></svg>'
         source = 'data:image/svg+xml,' + quote(svg)
+        preview_html = render_to_string('photographer_workspace/galleries/components/live_preview.html', {
+            'preview_title_id': 'test-live-preview',
+            'form': GalleryForm(photographer=PhotographerProfile(pk=999)),
+            'gallery': SimpleNamespace(cover_image=SimpleNamespace(url=source), event_date=None,
+                get_visibility_display='Private', get_status_display='Draft'),
+        })
         for mode in ['', 'lp-gallery-edit-modern']:
             self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
                 '<link rel="stylesheet" href="/static/css/workspace_design_system.css">'
@@ -336,12 +342,12 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                 '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
                 '<link rel="stylesheet" href="/static/css/photographer_gallery_create.css">'
                 '<link rel="stylesheet" href="/static/css/photographer_gallery_create_refine.css">'
+                '<link rel="stylesheet" href="/static/css/gallery_live_preview.css">'
                 '<style>.fixture{max-width:700px;margin:auto}.lp-gallery-create__preview{width:280px}</style>'
                 '<div class="fixture lp-gallery-create-modern ' + mode + '">'
                 '<section class="lp-cover-editor lp-gallery-client-experience"><div class="lp-cover-editor__body">'
                 '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="' + source + '"></div>'
-                + controls + '</div></section><section class="lp-gallery-create__preview">'
-                '<div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><img src="' + source + '"></div></section></div>'
+                + controls + '</div></section>' + preview_html + '</div>'
                 '<script src="/static/js/gallery_cover_position.js" defer></script>')
             for width in [1440, 390]:
                 self.page.set_viewport_size({'width': width, 'height': 1100})
