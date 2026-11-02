@@ -60,7 +60,7 @@ class GalleryForm(forms.ModelForm):
 
     class Meta:
         model = Gallery
-        fields = ("name", "client", "booking", "event_date", "description", "design_template", "story_title", "story_description", "story_quote", "cover_image", "cover_position_x", "cover_position_y", "status", "visibility")
+        fields = ("name", "client", "booking", "event_date", "description", "design_template", "story_title", "story_description", "story_quote", "cover_image", "cover_zoom", "cover_position_x", "cover_position_y", "status", "visibility")
         widgets = {
             "event_date": forms.DateInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 5, "placeholder": "Add a short note for your team or client…"}),
@@ -76,7 +76,9 @@ class GalleryForm(forms.ModelForm):
         for axis in ['x', 'y']:
             field = self.fields['cover_position_' + axis]
             field.required = False
-            field.widget = forms.NumberInput(attrs={'type': 'range', 'min': 0, 'max': 100, 'step': 1})
+            field.widget = forms.HiddenInput()
+        self.fields['cover_zoom'].required = False
+        self.fields['cover_zoom'].widget = forms.NumberInput(attrs={'type': 'range', 'min': 100, 'max': 300, 'step': 1})
         self.instance.photographer = photographer
         self.fields["design_template"].label = "Gallery design"
         self.fields["design_template"].required = False
@@ -99,6 +101,10 @@ class GalleryForm(forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs.setdefault("class", "lpw-form-control")
             field.widget.attrs.setdefault("id", f"gallery-{name.replace('_', '-')}")
+
+    def clean_cover_zoom(self):
+        value = self.cleaned_data.get('cover_zoom')
+        return self.instance.cover_zoom if value is None else value
 
     def clean_cover_position_x(self):
         value = self.cleaned_data.get('cover_position_x')

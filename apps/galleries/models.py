@@ -82,6 +82,7 @@ class Gallery(models.Model):
     description = models.TextField(blank=True)
     event_date = models.DateField(blank=True, null=True)
     cover_image = models.ImageField(upload_to="galleries/covers/%Y/%m/", blank=True)
+    cover_zoom = models.PositiveSmallIntegerField(default=100, validators=[MinValueValidator(100), MaxValueValidator(300)])
     cover_position_x = models.PositiveSmallIntegerField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
     cover_position_y = models.PositiveSmallIntegerField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
