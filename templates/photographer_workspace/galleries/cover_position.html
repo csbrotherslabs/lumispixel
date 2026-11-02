@@ -1,6 +1,7 @@
 <div class="lp-cover-position" data-cover-position>
-  <h3>Adjust framing</h3>
   {{ form.cover_position_x }}{{ form.cover_position_x.errors }}{{ form.cover_position_y }}{{ form.cover_position_y.errors }}
+  <div class="lp-cover-toolbar">
+  <div class="lp-cover-toolbar__position"><h3>Position</h3>
   <div class="lp-cover-pad" role="group" aria-label="Move cover image">
     <button type="button" class="lp-cover-pad__up" data-cover-move="up" aria-label="Move image up"><i class="bi bi-caret-up-fill" aria-hidden="true"></i></button>
     <button type="button" class="lp-cover-pad__left" data-cover-move="left" aria-label="Move image left"><i class="bi bi-caret-left-fill" aria-hidden="true"></i></button>
@@ -8,8 +9,9 @@
     <button type="button" class="lp-cover-pad__right" data-cover-move="right" aria-label="Move image right"><i class="bi bi-caret-right-fill" aria-hidden="true"></i></button>
     <button type="button" class="lp-cover-pad__down" data-cover-move="down" aria-label="Move image down"><i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
   </div>
-  <p id="cover-position-hint">Tap arrows to move · Center to reset position. Drag the photo to reposition.</p>
+  </div>
   <div class="lp-cover-position__axis"><div class="lp-cover-position__label"><label for="{{ form.cover_zoom.id_for_label }}">Zoom</label><output for="{{ form.cover_zoom.id_for_label }}" data-cover-zoom-value>{{ form.cover_zoom.value|default_if_none:100 }}%</output></div><div class="lp-cover-zoom"><button type="button" data-cover-zoom-step="-10" aria-label="Zoom out">−</button>{{ form.cover_zoom }}<button type="button" data-cover-zoom-step="10" aria-label="Zoom in">+</button></div>{{ form.cover_zoom.errors }}</div>
-  <button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-reset>Reset framing</button>
-  <p class="lp-cover-position__save-note">Framing is applied when you save the gallery.</p>
+  <div class="lp-cover-toolbar__reset"><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-reset>Reset framing</button></div>
+  </div>
+  <p id="cover-position-hint" class="lp-cover-position__save-note">Drag the image or use the arrows. Changes apply when you save.</p>
 </div>
