@@ -136,7 +136,11 @@ def _client_semantic(request, gallery):
 @require_http_methods(["GET"])
 def public_semantic_search(request, public_id):
     from django.shortcuts import get_object_or_404
-    gallery=get_object_or_404(Gallery,public_id=public_id,visibility=Gallery.Visibility.PUBLIC)
+    from apps.galleries.views import _is_gallery_owner
+    from django.http import Http404
+    gallery=get_object_or_404(Gallery.objects.select_related("photographer"),public_id=public_id)
+    if gallery.visibility != Gallery.Visibility.PUBLIC and not _is_gallery_owner(request, gallery):
+        raise Http404
     return _client_semantic(request,gallery)
 
 @require_http_methods(["GET"])
