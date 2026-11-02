@@ -300,6 +300,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             zoom.focus(); zoom.press('End')
             expect(zoom).to_have_value('300')
             expect(self.page.locator('[data-cover-zoom-value]')).to_have_text('300%')
+            expect(self.page.locator('[data-gallery-preview-cover]')).to_have_css('overflow', 'hidden')
             self.page.get_by_role('button', name='Move image left', exact=True).click()
             expect(self.page.locator('[name=cover_position_x]')).to_have_value('52')
             self.page.get_by_role('button', name='Move image up', exact=True).click()
@@ -372,7 +373,22 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                 expect(preview.locator('img')).to_have_css('transform', 'matrix(1.1, 0, 0, 1.1, 0, 0)')
                 self.page.get_by_role('button', name='Reset framing', exact=True).click()
                 expect(preview.locator('img')).to_have_css('object-position', '50% 50%')
-                self.assertEqual(initial, preview.screenshot())
+                expect(preview.locator('img')).to_have_css('transform', 'matrix(1, 0, 0, 1, 0, 0)')
+                expect(self.page.locator('[name=cover_position_x]')).to_have_value('50')
+                expect(self.page.locator('[name=cover_position_y]')).to_have_value('50')
+                expect(self.page.get_by_role('slider', name='Zoom', exact=True)).to_have_value('100')
+                # PNG encodings and fractional-pixel rasterization can differ after
+                # scrolling/replacing an image. Compare decoded pixels, with a
+                # small edge tolerance, alongside the exact framing assertions.
+                from io import BytesIO
+                from PIL import Image, ImageChops, ImageStat
+                before = Image.open(BytesIO(initial)).convert('RGB')
+                after = Image.open(BytesIO(preview.screenshot())).convert('RGB')
+                self.assertEqual(before.size, after.size)
+                difference = ImageChops.difference(before, after)
+                self.assertLessEqual(max(ImageStat.Stat(difference).mean), 1.0)
+                changed = sum(1 for pixel in difference.getdata() if max(pixel) > 8)
+                self.assertLessEqual(changed / (before.width * before.height), .01)
 
     def test_permission_density_preview_reset_and_no_auto_save(self):
         from .models import GalleryPermission
