@@ -1,0 +1,112 @@
+/* Premium mobile homepage: intentionally excludes the hero and desktop.
+   Section boundaries, consistent type and swipe affordances. */
+@media (max-width: 767px) {
+  .page-home {
+    --lp-mobile-heading: clamp(21px, 5.6vw, 24px);
+    --lp-mobile-body: 14px;
+    --lp-mobile-red: #c91425;
+  }
+  .page-home #main-content > section:not(.wptb-slider) {
+    position: relative;
+    isolation: isolate;
+    padding-block: 64px;
+    border-top: 1px solid rgba(24, 25, 29, .12);
+  }
+  .page-home #main-content > section:not(.wptb-slider)::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 56px;
+    height: 3px;
+    background: var(--lp-mobile-red);
+    z-index: 1;
+  }
+  /* A distinct background for every chapter, not one long white canvas. */
+  .page-home .lumis-photo-match { background: #fff !important; }
+  .page-home .lumis-photographer-workflow { background: #f4f5f7 !important; }
+  .page-home .lumis-audiences { background: #fff !important; }
+  .page-home .lp-flow { background: #f7f1f1 !important; }
+  .page-home .lumis-final-cta { background: #17191e !important; }
+  .page-home .lp-marketplace { background: #fff5f5 !important; }
+  .page-home .lumis-pricing-section { background: #171216 !important; }
+  .page-home .lp-ai { background: #f5f6f8 !important; }
+
+  .page-home .lumis-photo-match .wptb-item--title,
+  .page-home .lumis-photographer-workflow .wptb-heading .wptb-item--title,
+  .page-home .lumis-audiences .wptb-heading .wptb-item--title,
+  .page-home .lp-flow__header h2,
+  .page-home .lumis-final-cta__title,
+  .page-home .lp-marketplace h2,
+  .page-home .lumis-photographer-marketplace__title,
+  .page-home .lumis-pricing-content__title,
+  .page-home .lp-ai__content > h2 {
+    font-size: var(--lp-mobile-heading) !important;
+    line-height: 1.22 !important;
+    letter-spacing: -.028em !important;
+    text-wrap: balance;
+  }
+  .page-home .lumis-photo-match .wptb-item--subtitle,
+  .page-home .lumis-photographer-workflow .wptb-item--subtitle,
+  .page-home .lumis-audiences .wptb-item--subtitle,
+  .page-home .lp-flow__eyebrow,
+  .page-home .lp-marketplace__eyebrow,
+  .page-home .lumis-photographer-marketplace__eyebrow,
+  .page-home .lumis-pricing-content__eyebrow,
+  .page-home .lp-ai__eyebrow {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+    letter-spacing: .10em !important;
+  }
+  /* Previously suppressed on phones: restore concise descriptions where authored. */
+  .page-home .lp-discovery-intro-copy,
+  .page-home .lumis-photographer-workflow__intro,
+  .page-home .lumis-audiences__intro,
+  .page-home .lp-flow__header > p:last-child,
+  .page-home .lumis-final-cta__copy,
+  .page-home .lp-marketplace__intro,
+  .page-home .lumis-pricing-content__intro,
+  .page-home .lp-ai__intro {
+    display: block !important;
+    font-size: var(--lp-mobile-body) !important;
+    line-height: 1.6 !important;
+    max-width: 37ch;
+    margin-top: 12px;
+  }
+  .page-home .lumis-feature-card,
+  .page-home .lumis-audience-card,
+  .page-home .lumis-marketplace-panel,
+  .page-home .lumis-pricing-card {
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(14, 17, 24, .08);
+  }
+  /* Keep existing carousels and functionality; emphasize their swipe affordance. */
+  .page-home .lumis-photographer-workflow__carousel,
+  .page-home .lumis-pricing-plans {
+    scroll-padding-inline: 16px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+  .page-home .lumis-pricing-plans {
+    gap: 14px;
+    padding-bottom: 22px;
+  }
+  .page-home .lumis-pricing-plans .lumis-pricing-card {
+    flex: 0 0 84%;
+    max-width: 84%;
+    scroll-snap-align: center;
+  }
+  .page-home .lumis-photographer-workflow .wptb-heading,
+  .page-home .lumis-audiences .wptb-heading { margin-bottom: 22px; }
+  .page-home a:focus-visible,
+  .page-home button:focus-visible {
+    outline: 3px solid #e53547;
+    outline-offset: 3px;
+  }
+}
+@media (max-width: 390px) {
+  .page-home #main-content > section:not(.wptb-slider) { padding-block: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-home .lumis-pricing-plans,
+  .page-home .lumis-photographer-workflow__carousel { scroll-behavior: auto; }
+}
