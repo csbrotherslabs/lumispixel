@@ -1,0 +1,81 @@
+/* Mobile-first editorial homepage, isolated from the unchanged desktop and hero. */
+.lp-mobile-home { display:none; }
+@media (max-width:767px) {
+ .page-home .lp-mobile-home { display:block; font-family:inherit; background:#fff; }
+ .page-home .lp-mobile-home *, .page-home .lp-mobile-home *::before, .page-home .lp-mobile-home *::after { box-sizing:border-box; }
+ .page-home .wptb-slider.style3 ~ section, .page-home .wptb-slider.style3 ~ .divider-line-hr { display:none!important; }
+ .page-home .lp-mobile-home .lpm-section { display:block!important; position:relative; padding:70px 0 76px; overflow:hidden; }
+ .page-home .lp-mobile-home .lpm-section + .lpm-section { border-top:1px solid rgba(16,18,23,.1); }
+ .page-home .lp-mobile-home .lpm-wrap { width:min(calc(100% - 40px),460px); margin-inline:auto; }
+ .page-home .lp-mobile-home .lpm-kicker { display:flex; gap:12px; align-items:center; color:#b81829; font-size:10px; letter-spacing:.16em; font-weight:800; line-height:1.5; }
+ .page-home .lp-mobile-home h2 { margin:13px 0 12px; font-size:clamp(23px,6.1vw,27px); line-height:1.18; font-weight:750; letter-spacing:-.045em; color:inherit; }
+ .page-home .lp-mobile-home h2 em { font-style:normal; color:#b81829; }
+ .page-home .lp-mobile-home p { margin:0; font-size:14px; line-height:1.65; color:inherit; opacity:.77; }
+ .page-home .lpm-intro { background:#fff; color:#18191d; }
+ .page-home .lpm-feature-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:28px; }
+ .page-home .lpm-mini { display:flex; flex-direction:column; gap:8px; min-width:0; min-height:142px; padding:19px 14px; border:1px solid #ece8e7; border-radius:17px; background:#f8f7f6; text-decoration:none; color:#222!important; }
+ .page-home .lpm-mini i { display:grid; place-items:center; width:35px; height:35px; border-radius:11px; background:#ffe8e9; color:#b81829; font-size:18px; }
+ .page-home .lpm-mini strong { font-size:13px; line-height:1.2; }
+ .page-home .lpm-mini small { font-size:11px; color:#67676b; }
+ .page-home .lpm-workflow { background:#f3f4f6; color:#191a1e; }
+ .page-home .lpm-rail { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding-inline:0; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; scrollbar-width:none; margin-top:26px; padding:0 0 10px; }
+ .page-home .lpm-rail::-webkit-scrollbar { display:none; }
+ .page-home .lpm-slide { flex:0 0 86%; scroll-snap-align:start; border-radius:19px; overflow:hidden; background:#fff; box-shadow:0 8px 22px rgba(0,0,0,.08); }
+ .page-home .lpm-slide img { display:block; width:100%; height:218px; object-fit:cover; }
+ .page-home .lpm-slide > div { padding:20px; }
+ .page-home .lpm-slide span { font-size:10px; color:#b81829; letter-spacing:.14em; font-weight:800; }
+ .page-home .lpm-slide h3 { margin:9px 0 6px; font-size:19px; letter-spacing:-.025em; }
+ .page-home .lpm-rail-controls { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+ .page-home .lpm-rail-controls > span { font-size:10px; letter-spacing:.12em; font-weight:800; opacity:.55; }
+ .page-home .lpm-rail-controls > div { display:flex; gap:9px; }
+ .page-home .lpm-rail-controls button { width:40px; height:40px; display:grid; place-items:center; border:1px solid currentColor; border-radius:50%; background:transparent; color:inherit; }
+ .page-home .lpm-rail-controls button:disabled { opacity:.3; cursor:default; }
+ .page-home .lpm-ai { background:#17191e; color:#fff; }
+ .page-home .lpm-ai .lpm-kicker, .page-home .lpm-business .lpm-kicker, .page-home .lpm-pricing .lpm-kicker { color:#ff6874; }
+ .page-home .lpm-soon { padding:4px 8px; border:1px solid #62646b; border-radius:100px; color:#e5e5e5; font-size:9px; letter-spacing:.06em; }
+ .page-home .lpm-ai-photo { position:relative; overflow:hidden; border-radius:20px; margin-top:28px; }
+ .page-home .lpm-ai-photo img { display:block; width:100%; height:300px; object-fit:cover; }
+ .page-home .lpm-ai-photo > span { position:absolute; bottom:14px; left:14px; padding:9px 12px; border-radius:50px; background:rgba(16,17,20,.85); color:white; font-size:11px; }
+ .page-home .lpm-ai-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+ .page-home .lpm-ai-pills span { border:1px solid #55565d; border-radius:30px; padding:8px 12px; font-size:11px; }
+ .page-home .lpm-link { display:inline-flex; align-items:center; justify-content:space-between; gap:26px; margin-top:24px; font-size:13px; font-weight:800; color:#b81829!important; text-decoration:none; }
+ .page-home .lpm-link-light { color:#fff!important; }
+ .page-home .lpm-sites { background:#fff5f3; color:#1a1a1e; }
+ .page-home .lpm-site-visual { position:relative; margin-top:28px; padding:13px; background:#fff; border-radius:19px; box-shadow:0 20px 38px rgba(70,25,25,.1); }
+ .page-home .lpm-site-visual img { width:100%; height:235px; object-fit:cover; border-radius:12px; display:block; }
+ .page-home .lpm-site-visual > div { display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px 8px 8px; text-align:center; }
+ .page-home .lpm-site-visual small { font-size:9px; letter-spacing:.2em; }
+ .page-home .lpm-site-visual strong { font-size:20px; font-family:Georgia,serif; }
+ .page-home .lpm-site-visual span { font-size:9px; letter-spacing:.12em; color:#777; }
+ .page-home .lpm-business { background:#202126; color:white; }
+ .page-home .lpm-dashboard { padding:14px; margin-top:28px; background:#f6f6f7; border-radius:18px; color:#202126; box-shadow:0 20px 38px rgba(0,0,0,.2); }
+ .page-home .lpm-dashboard-top { display:flex; justify-content:space-between; padding:6px 5px 14px; font-size:12px; font-weight:800; }
+ .page-home .lpm-dashboard-feature { display:flex; align-items:center; gap:12px; padding:17px 12px; border-radius:12px; margin-bottom:7px; background:#fff; }
+ .page-home .lpm-dashboard-feature > i:first-child { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; background:#ffe9e9; color:#b81829; font-size:17px; }
+ .page-home .lpm-dashboard-feature > div { flex:1; display:flex; flex-direction:column; gap:4px; }
+ .page-home .lpm-dashboard-feature strong { font-size:13px; }
+ .page-home .lpm-dashboard-feature small { font-size:11px; color:#666; }
+ .page-home .lpm-market { background:#fff; color:#19191e; }
+ .page-home .lpm-market-gallery { display:grid; grid-template-columns:1.15fr .85fr; gap:10px; margin-top:26px; }
+ .page-home .lpm-market-gallery img { width:100%; height:235px; object-fit:cover; border-radius:15px; }
+ .page-home .lpm-market-gallery img + img { height:205px; margin-top:30px; }
+ .page-home .lpm-market-actions { display:flex; flex-direction:column; align-items:flex-start; gap:16px; margin-top:25px; }
+ .page-home .lpm-button { display:inline-flex; justify-content:space-between; align-items:center; gap:24px; padding:14px 18px; background:#bd1829; color:#fff!important; border-radius:10px; font-size:13px; font-weight:800; text-decoration:none; }
+ .page-home .lpm-text-link { color:#a91b2b!important; font-size:13px; font-weight:800; text-decoration:underline; text-underline-offset:4px; }
+ .page-home .lpm-pricing { background:#3c151e; color:#fff; }
+ .page-home .lpm-price-rail { margin-top:26px; }
+ .page-home .lpm-price { flex:0 0 86%; scroll-snap-align:start; display:flex; flex-direction:column; min-height:375px; padding:24px 22px; border-radius:18px; background:#fff; color:#19191d; }
+ .page-home .lpm-price > span { font-size:10px; color:#b81829; font-weight:800; letter-spacing:.13em; }
+ .page-home .lpm-price h3 { font-size:22px; margin:13px 0 8px; }
+ .page-home .lpm-amount { font-size:36px; font-weight:800; letter-spacing:-.04em; }
+ .page-home .lpm-amount small { font-size:12px; font-weight:500; letter-spacing:0; }
+ .page-home .lpm-price p { color:#626269; font-size:12px; margin:8px 0 18px; }
+ .page-home .lpm-price strong { padding:10px 0; border-top:1px solid #ececee; font-size:12px; font-weight:650; }
+ .page-home .lpm-price a { margin-top:auto; padding:13px 15px; border-radius:9px; background:#1b1b20; color:#fff!important; font-size:12px; font-weight:800; display:flex; justify-content:space-between; text-decoration:none; }
+ .page-home .lpm-price-featured { outline:3px solid #f16c78; outline-offset:-3px; }
+ .page-home .lpm-price-featured a { background:#bd1829; }
+ .page-home .lpm-close { background:#f3f4f6; color:#1b1b20; }
+ .page-home .lpm-close .lpm-button { margin-top:24px; }
+ .page-home .lp-mobile-home a:focus-visible, .page-home .lp-mobile-home button:focus-visible, .page-home .lp-mobile-home [tabindex]:focus-visible { outline:3px solid #fa5968; outline-offset:3px; }
+}
+@media (prefers-reduced-motion:reduce) { .page-home .lp-mobile-home .lpm-rail { scroll-behavior:auto!important; } }
