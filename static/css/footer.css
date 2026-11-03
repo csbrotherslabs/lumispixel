@@ -659,3 +659,36 @@
   .totop { right:14px; bottom:14px; }
   .totop a { width:42px; height:42px; line-height:42px; border-radius:12px; }
 }
+
+
+/* Mobile reading order: brand, links, newsletter, then social/copyright. */
+@media (max-width:767.9px) {
+  .footer .footer--inner .row { row-gap:0; }
+  .footer .footer-newsletter,
+  .footer .footer-newsletter > .footer-widget { display:contents; }
+  .footer .footer-newsletter .logo {
+    grid-column:1/-1;
+    grid-row:1;
+    margin:0 0 8px !important;
+  }
+  .footer .lumis-footer-mobile-tagline {
+    grid-column:1/-1;
+    grid-row:2;
+    margin:0 0 26px !important;
+  }
+  .footer .footer-links--left { grid-row:3; }
+  .footer .footer-links--right { grid-row:3; }
+  .footer .footer-newsletter .widget-title {
+    grid-column:1/-1;
+    grid-row:4;
+    margin:28px 0 6px !important;
+  }
+  .footer .lumis-footer-mobile-newsletter-copy {
+    grid-column:1/-1;
+    grid-row:5;
+  }
+  .footer .lumis-footer-newsletter {
+    grid-column:1/-1;
+    grid-row:6;
+  }
+}
