@@ -4,7 +4,7 @@
 {% block workspace_content %}
 {# The direct multipart uploader reads Django's csrftoken cookie and sends it in X-CSRFToken. Rendering csrf_token here ensures CsrfViewMiddleware issues a real cookie even though the upload queue itself has no traditional POST form. #}
 <div hidden aria-hidden="true">{% csrf_token %}</div>
-<section class="lp-workspace-page workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-multipart-init-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-multipart-base-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
+<section class="lp-workspace-page workspace-form-page lp-container lp-upload-page lp-upload-page-modern lp-clients-main-width" data-upload-page data-upload-url="{% url 'photographer_workspace:gallery_upload_queue' %}" data-multipart-init-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-multipart-base-url="{% url 'photographer_workspace:gallery_multipart_initiate' %}" data-max-upload-bytes="{{ max_upload_bytes }}" data-max-upload-mb="{{ max_upload_mb|floatformat:"-2" }}" data-storage-available="{{ storage.available_bytes }}" aria-labelledby="workspace-page-title">
   <header class="lp-workspace-hero form-page-header lp-page-header lp-upload-page-header">
     <div class="lp-upload-heading">
       <nav class="lpw-breadcrumb" aria-label="Breadcrumb"><a href="{% url 'photographer_workspace:dashboard' %}">Photographer Workspace</a><i class="bi bi-chevron-right" aria-hidden="true"></i><a href="{% url 'photographer_workspace:all_galleries' %}">Galleries</a><i class="bi bi-chevron-right" aria-hidden="true"></i><strong aria-current="page">Upload Queue</strong></nav>
@@ -42,7 +42,7 @@
       <div class="lp-upload-step-head lp-upload-step-head--files"><span>2</span><div><small>Files</small><h2>Add photos</h2><p>Choose production-ready images to add to the queue.</p></div></div>
       <div class="lp-upload-drop{% if not selected_gallery %} is-disabled{% endif %}" data-upload-drop tabindex="{% if selected_gallery %}0{% else %}-1{% endif %}" role="button" aria-disabled="{% if selected_gallery %}false{% else %}true{% endif %}" aria-describedby="upload-requirement upload-formats">
         <input type="file" multiple accept="image/jpeg,image/png,image/webp" data-upload-input {% if not selected_gallery %}disabled{% endif %}>
-        <span class="lp-upload-drop__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><h2 data-drop-title>Drop photos here</h2><p>or <span>Browse files</span></p><small id="upload-formats">JPG, PNG, WEBP • up to 25 MB per image</small>
+        <span class="lp-upload-drop__icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></span><h2 data-drop-title>Drop photos here</h2><p>or <span>Browse files</span></p><small id="upload-formats">JPG, PNG, WEBP • up to {{ max_upload_mb|floatformat:"-2" }} MB per image</small>
       </div>
       <p class="lp-upload-requirement" id="upload-requirement" data-upload-requirement {% if selected_gallery %}hidden{% endif %}><i class="bi bi-info-circle" aria-hidden="true"></i>Select a gallery to begin uploading.</p>
       <div class="lp-upload-errors" data-upload-error role="alert" aria-live="assertive"></div>
