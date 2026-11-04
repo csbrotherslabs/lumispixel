@@ -1706,6 +1706,8 @@ def gallery_upload_queue(request):
     context = _dashboard_context(request, "gallery_upload_queue", "Upload Queue")
     context.update({"gallery_choices": galleries, "uploads": uploads, "upload_counts": counts,
                     "selected_gallery": selected_gallery,
+                    "max_upload_bytes": settings.MAX_GALLERY_UPLOAD_BYTES,
+                    "max_upload_mb": settings.MAX_GALLERY_UPLOAD_BYTES / 1024**2,
                     "storage": {"used": _format_storage(storage_used),
                                 "available": storage_state["available_label"],
                                 "available_bytes": storage_state["available_bytes"],
