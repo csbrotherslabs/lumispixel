@@ -239,10 +239,10 @@ class MultipartUploadApiTests(TestCase):
         self.assertFalse(GalleryPhoto.objects.exists())
         delete_object.assert_called_once_with(key=session.object_key)
 
-    @override_settings(MAX_GALLERY_UPLOAD_BYTES=95 * 1024 * 1024)
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=150 * 1024 * 1024)
     @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
-    def test_direct_upload_accepts_95mb_and_rejects_one_byte_over(self, initiate):
-        limit = 95 * 1024 * 1024
+    def test_direct_upload_accepts_150mb_and_rejects_one_byte_over(self, initiate):
+        limit = 150 * 1024 * 1024
         for size, expected_status in ((limit, 201), (limit + 1, 400)):
             with self.subTest(size=size):
                 response = self.client.post(
@@ -256,12 +256,12 @@ class MultipartUploadApiTests(TestCase):
                 self.assertEqual(response.status_code, expected_status)
         initiate.assert_called_once()
 
-    @override_settings(MAX_GALLERY_UPLOAD_BYTES=95 * 1024 * 1024)
+    @override_settings(MAX_GALLERY_UPLOAD_BYTES=150 * 1024 * 1024)
     def test_upload_page_exposes_configured_limit_to_browser(self):
         response = self.client.get(reverse("photographer_workspace:gallery_upload_queue"))
-        self.assertContains(response, 'data-max-upload-bytes="99614720"')
-        self.assertContains(response, 'data-max-upload-mb="95"')
-        self.assertContains(response, "up to 95 MB per image")
+        self.assertContains(response, 'data-max-upload-bytes="157286400"')
+        self.assertContains(response, 'data-max-upload-mb="150"')
+        self.assertContains(response, "up to 150 MB per image")
 
     @override_settings(MAX_GALLERY_UPLOAD_BYTES=1024)
     @patch("apps.dashboard.views.initiate_multipart", return_value="b2-upload-id")
