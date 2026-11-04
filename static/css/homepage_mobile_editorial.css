@@ -79,3 +79,17 @@
  .page-home .lp-mobile-home a:focus-visible, .page-home .lp-mobile-home button:focus-visible, .page-home .lp-mobile-home [tabindex]:focus-visible { outline:3px solid #fa5968; outline-offset:3px; }
 }
 @media (prefers-reduced-motion:reduce) { .page-home .lp-mobile-home .lpm-rail { scroll-behavior:auto!important; } }
+
+
+/* Keep intentional two-line section headings separated even when theme resets <br>. */
+@media (max-width:767px) {
+  .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line {
+    display:block!important;
+    width:100%;
+    line-height:inherit;
+    white-space:normal;
+  }
+  .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line + .lpm-title-line {
+    margin-top:2px;
+  }
+}
