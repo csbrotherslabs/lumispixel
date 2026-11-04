@@ -1,5 +1,26 @@
 {% load static %}
 <div class="lp-mobile-home" aria-label="Discover LumisPixel">
+  <section class="lpm-section lpm-discovery" aria-labelledby="lpm-discovery-title">
+    <div class="lpm-wrap">
+      <div class="lpm-discovery-step"><span>01 //</span> FIND YOUR PHOTOS</div>
+      <div class="lpm-discovery-badges"><span class="lpm-discovery-badge">AI PHOTO DISCOVERY</span><span class="lpm-discovery-soon">Coming soon</span></div>
+      <h2 id="lpm-discovery-title">Your photos. <em>Found.</em></h2>
+      <p class="lpm-discovery-description">Upload a selfie to find your photos.</p>
+      <div class="lpm-discovery-upload" aria-label="Preview of a future selfie upload feature">
+        <img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="" loading="lazy" decoding="async">
+        <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+        <strong>Upload a selfie</strong>
+        <span class="lpm-discovery-choose" aria-hidden="true">Choose photo</span>
+      </div>
+      <div class="lpm-discovery-results" aria-label="Illustrative sample photo matches, not live results">
+        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="Sample photo match one" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-02.webp' %}" alt="Sample photo match two" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-03.webp' %}" alt="Sample photo match three" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+      </div>
+      <a class="lpm-discovery-cta" href="{{ find_photos_url }}">See how it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+  </section>
+
   <section class="lpm-section lpm-intro" aria-labelledby="lpm-intro-title">
     <div class="lpm-wrap">
       <span class="lpm-kicker">ONE CREATIVE WORKSPACE</span>
