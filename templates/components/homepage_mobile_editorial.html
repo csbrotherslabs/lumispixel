@@ -49,14 +49,49 @@
     </div>
   </section>
 
-  <section class="lpm-section lpm-ai" aria-labelledby="lpm-ai-title">
+  <section class="lpm-section lpm-ai lpm-ai-demo" aria-labelledby="lpm-ai-title" data-lpm-ai-demo>
     <div class="lpm-wrap">
       <span class="lpm-kicker">LUMIS AI <span class="lpm-soon">COMING SOON</span></span>
-      <h2 id="lpm-ai-title"><span class="lpm-title-line">Less sorting.</span><span class="lpm-title-line">More creating.</span></h2>
-      <p>AI-powered photo discovery, culling and editing are in development. These tools are not yet available.</p>
-      <div class="lpm-ai-photo"><img src="{% static 'img/landing/gallery/ai-workflow-portraits.webp' %}" alt="Portrait photograph illustrating future AI creative tools" loading="lazy"><span><i class="bi bi-stars" aria-hidden="true"></i> AI tools preview</span></div>
-      <div class="lpm-ai-pills"><span>AI culling</span><span>Photo discovery</span><span>Editing assistance</span></div>
-      <a class="lpm-link lpm-link-light" href="{{ homepage_ai_tools_url }}">Explore the vision <span aria-hidden="true">↗</span></a>
+      <h2 id="lpm-ai-title"><span class="lpm-title-line">Less sorting.</span><span class="lpm-title-line lpm-ai-accent">More creating.</span></h2>
+      <p>AI tools for photo discovery, culling, and editing.</p>
+      <div class="lpm-ai-demo-stage">
+        <div id="lpm-ai-panel-discovery" role="tabpanel" aria-labelledby="lpm-ai-tab-discovery" data-lpm-ai-panel="discovery">
+          <div class="lpm-ai-demo-photo-grid">
+            <img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="Illustrative matching photo one" loading="lazy">
+            <img src="{% static 'img/landing/gallery/photo-match-event-result-02.webp' %}" alt="Illustrative matching photo two" loading="lazy">
+            <img src="{% static 'img/landing/gallery/photo-match-event-result-03.webp' %}" alt="Illustrative matching photo three" loading="lazy">
+          </div>
+          <div class="lpm-ai-demo-meta"><span><i class="bi bi-search" aria-hidden="true"></i> Photo matches</span><span class="lpm-ai-demo-chip">Sample results</span></div>
+        </div>
+        <div id="lpm-ai-panel-culling" role="tabpanel" aria-labelledby="lpm-ai-tab-culling" data-lpm-ai-panel="culling" hidden>
+          <div class="lpm-ai-culling">
+            <div class="lpm-ai-culling-grid" aria-label="Illustrative photo selection">
+              <img src="{% static 'img/landing/gallery/workflow-ai-culling.webp' %}" alt="Selected portrait" loading="lazy">
+              <img src="{% static 'img/landing/gallery/creative-rainbow-portrait.webp' %}" alt="Portrait under review" loading="lazy">
+              <img src="{% static 'img/landing/gallery/executive-portrait.webp' %}" alt="Selected portrait" loading="lazy">
+              <img src="{% static 'img/landing/gallery/professional-portrait-collection.webp' %}" alt="Portrait under review" loading="lazy">
+            </div>
+            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/workflow-ai-culling.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Selected</span></div>
+          </div>
+          <div class="lpm-ai-demo-meta"><span>Photo review preview</span><span class="lpm-ai-demo-chip">Sample picks</span></div>
+        </div>
+        <div id="lpm-ai-panel-editing" role="tabpanel" aria-labelledby="lpm-ai-tab-editing" data-lpm-ai-panel="editing" hidden>
+          <div class="lpm-ai-compare" data-lpm-ai-compare>
+            <img class="lpm-ai-compare-original" src="{% static 'img/landing/gallery/workflow-ai-editing.webp' %}" alt="Original example portrait" loading="lazy">
+            <div class="lpm-ai-compare-after" aria-hidden="true"><img src="{% static 'img/landing/gallery/workflow-ai-editing.webp' %}" alt="" loading="lazy"></div>
+            <span class="lpm-ai-compare-label lpm-ai-compare-label-before">Original</span><span class="lpm-ai-compare-label lpm-ai-compare-label-after">Preview edit</span>
+            <div class="lpm-ai-compare-line" aria-hidden="true"><span><i class="bi bi-arrows-expand" aria-hidden="true"></i></span></div>
+            <input class="lpm-ai-compare-range" type="range" min="0" max="100" value="50" aria-label="Compare original and illustrative edited photo">
+          </div>
+          <div class="lpm-ai-demo-meta"><span>Color &amp; tone preview</span><span class="lpm-ai-demo-chip">Illustrative edit</span></div>
+        </div>
+      </div>
+      <div class="lpm-ai-demo-tabs" role="tablist" aria-label="AI tools preview">
+        <button type="button" role="tab" id="lpm-ai-tab-discovery" aria-controls="lpm-ai-panel-discovery" aria-selected="true" tabindex="0" data-lpm-ai-tab="discovery"><i class="bi bi-images" aria-hidden="true"></i><span>Photo<br>Discovery</span></button>
+        <button type="button" role="tab" id="lpm-ai-tab-culling" aria-controls="lpm-ai-panel-culling" aria-selected="false" tabindex="-1" data-lpm-ai-tab="culling"><i class="bi bi-layers" aria-hidden="true"></i><span>AI Culling</span></button>
+        <button type="button" role="tab" id="lpm-ai-tab-editing" aria-controls="lpm-ai-panel-editing" aria-selected="false" tabindex="-1" data-lpm-ai-tab="editing"><i class="bi bi-magic" aria-hidden="true"></i><span>Editing<br>Assistance</span></button>
+      </div>
+      <a class="lpm-ai-demo-cta" href="{{ homepage_ai_tools_url }}">Explore AI Tools <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
     </div>
   </section>
 
