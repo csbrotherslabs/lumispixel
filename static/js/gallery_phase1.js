@@ -27,6 +27,7 @@
     let active = 0;
     let availableStorage = Number(page.dataset.storageAvailable);
     const concurrency = 3;
+    const maxUploadBytes = Number(page.dataset.maxUploadBytes);
 
     function setDestination() {
       const option = gallery.selectedOptions[0], hasGallery = Boolean(gallery.value);
@@ -256,7 +257,7 @@
       const option = gallery.selectedOptions[0], accepted = ['image/jpeg', 'image/png', 'image/webp'];
       Array.from(files).forEach(function (file) {
         if (!accepted.includes(file.type)) { error.textContent = file.name + ': Unsupported format.'; return; }
-        if (file.size > 25 * 1024 * 1024) { error.textContent = file.name + ': File exceeds the 25 MB limit.'; return; }
+        if (file.size > maxUploadBytes) { error.textContent = file.name + ': File exceeds the ' + page.dataset.maxUploadMb + ' MB limit.'; return; }
         if (file.size > availableStorage) { error.textContent = file.name + ': Not enough storage remaining.'; return; }
         availableStorage -= file.size;
         const row = createRow(file, option.dataset.name); row.dataset.galleryId = galleryId; list.querySelector('[data-queue-empty]')?.remove(); list.append(row); pending.push({file: file, row: row, galleryId: galleryId}); counts();
