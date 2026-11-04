@@ -191,3 +191,9 @@
   .page-home .lp-mobile-home .lpm-mini { padding: 15px 11px; }
   .page-home .lp-mobile-home .lpm-section h2 { font-size: 22px !important; }
 }
+
+/* Ensure every intended mobile heading line is visibly separated. */
+@media (max-width:767px) {
+ .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line {display:block!important;width:100%;line-height:inherit;white-space:normal}
+ .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line + .lpm-title-line {margin-top:2px}
+}
