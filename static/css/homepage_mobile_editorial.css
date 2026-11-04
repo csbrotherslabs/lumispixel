@@ -81,15 +81,113 @@
 @media (prefers-reduced-motion:reduce) { .page-home .lp-mobile-home .lpm-rail { scroll-behavior:auto!important; } }
 
 
-/* Keep intentional two-line section headings separated even when theme resets <br>. */
-@media (max-width:767px) {
-  .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line {
-    display:block!important;
-    width:100%;
-    line-height:inherit;
-    white-space:normal;
+/* V2 refinement: prevent theme typography from collapsing or overlapping text. */
+@media (max-width: 767px) {
+  .page-home .lp-mobile-home .lpm-wrap,
+  .page-home .lp-mobile-home .lpm-mini,
+  .page-home .lp-mobile-home .lpm-slide,
+  .page-home .lp-mobile-home .lpm-price,
+  .page-home .lp-mobile-home .lpm-dashboard-feature { min-width: 0; }
+  .page-home .lp-mobile-home .lpm-section .lpm-kicker {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 0 14px !important;
+    line-height: 1.55 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
-  .page-home .lp-mobile-home .lpm-section h2 .lpm-title-line + .lpm-title-line {
-    margin-top:2px;
+  .page-home .lp-mobile-home .lpm-section h2 {
+    display: block;
+    height: auto !important;
+    min-height: 0;
+    max-height: none !important;
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+    font-size: clamp(23px, 6vw, 27px) !important;
+    line-height: 1.3 !important;
+    letter-spacing: -.025em !important;
+    font-weight: 750 !important;
+    overflow-wrap: normal;
+    word-break: normal;
+    text-transform: none;
   }
+  .page-home .lp-mobile-home .lpm-section h2 em { display: inline; }
+  .page-home .lp-mobile-home .lpm-section .lpm-wrap > p,
+  .page-home .lp-mobile-home .lpm-section .lpm-slide p,
+  .page-home .lp-mobile-home .lpm-section .lpm-price p {
+    display: block;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0;
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+    letter-spacing: normal !important;
+    overflow-wrap: break-word;
+  }
+  .page-home .lp-mobile-home .lpm-feature-grid,
+  .page-home .lp-mobile-home .lpm-rail,
+  .page-home .lp-mobile-home .lpm-ai-photo,
+  .page-home .lp-mobile-home .lpm-site-visual,
+  .page-home .lp-mobile-home .lpm-dashboard,
+  .page-home .lp-mobile-home .lpm-market-gallery { margin-top: 28px !important; }
+  .page-home .lp-mobile-home .lpm-mini { gap: 7px; min-height: 150px; }
+  .page-home .lp-mobile-home .lpm-mini strong,
+  .page-home .lp-mobile-home .lpm-dashboard-feature strong {
+    display: block;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    overflow-wrap: break-word;
+  }
+  .page-home .lp-mobile-home .lpm-mini small,
+  .page-home .lp-mobile-home .lpm-dashboard-feature small {
+    display: block;
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+    overflow-wrap: break-word;
+  }
+  .page-home .lp-mobile-home .lpm-slide h3 {
+    margin: 10px 0 8px !important;
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+    letter-spacing: -.02em !important;
+  }
+  .page-home .lp-mobile-home .lpm-slide > div { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+  .page-home .lp-mobile-home .lpm-slide p { margin-top: 2px !important; }
+  .page-home .lp-mobile-home .lpm-price h3 {
+    margin: 12px 0 10px !important;
+    font-size: 23px !important;
+    line-height: 1.3 !important;
+  }
+  .page-home .lp-mobile-home .lpm-price p { margin: 12px 0 18px !important; font-size: 12px !important; }
+  .page-home .lp-mobile-home .lpm-price strong { display: block; line-height: 1.5 !important; }
+  .page-home .lp-mobile-home .lpm-dashboard-feature { min-height: 72px; }
+  .page-home .lp-mobile-home .lpm-dashboard-feature > div { min-width: 0; }
+  .page-home .lp-mobile-home .lpm-site-visual strong {
+    display: block;
+    line-height: 1.35 !important;
+    overflow-wrap: break-word;
+  }
+  .page-home .lp-mobile-home .lpm-site-visual span { line-height: 1.5 !important; }
+  .page-home .lp-mobile-home .lpm-ai-photo img,
+  .page-home .lp-mobile-home .lpm-slide img,
+  .page-home .lp-mobile-home .lpm-market-gallery img,
+  .page-home .lp-mobile-home .lpm-site-visual img {
+    display: block !important;
+    max-width: 100%;
+    object-fit: cover;
+  }
+  .page-home .lp-mobile-home .lpm-link,
+  .page-home .lp-mobile-home .lpm-button,
+  .page-home .lp-mobile-home .lpm-text-link {
+    line-height: 1.5 !important;
+    white-space: normal;
+  }
+}
+@media (max-width: 359px) {
+  .page-home .lp-mobile-home .lpm-wrap { width: calc(100% - 32px); }
+  .page-home .lp-mobile-home .lpm-feature-grid { gap: 9px; }
+  .page-home .lp-mobile-home .lpm-mini { padding: 15px 11px; }
+  .page-home .lp-mobile-home .lpm-section h2 { font-size: 22px !important; }
 }
