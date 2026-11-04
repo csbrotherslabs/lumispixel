@@ -1868,7 +1868,3123 @@ def gallery_workspace(request, pk):
                 messages.success(request, "Invitation prepared. Email delivery can be connected later.")
             else:
                 messages.error(request, "Enter a client name and email address.")
-        elif action in {"resend", "disable",…48421 tokens truncated…                errors["owner"] = "Owner access can only be changed through an ownership transfer."
+        elif action in {"resend", "disable", "remove"}:
+            invitation = get_object_or_404(gallery.invitations, pk=request.POST.get("invitation_id"))
+            if action == "remove":
+                invitation.delete()
+                messages.success(request, "Invitation removed.")
+            elif action == "disable":
+                invitation.status = GalleryInvitation.Status.DISABLED
+                invitation.save(update_fields=["status"])
+                invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+                messages.success(request, "Client access disabled.")
+            else:
+                invitation.resent_at = timezone.now()
+                invitation.status = GalleryInvitation.Status.PENDING
+                invitation.save(update_fields=["resent_at", "status"])
+                invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+                AccessToken.issue(invitation, expires_at=gallery.expires_at)
+                messages.success(request, "A fresh invitation is ready for future email delivery.")
+        if action not in {"save_settings", "save_store", "add_discount"}:
+            return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
+    photos = gallery.photos.annotate(
+        client_favorite_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.FAVORITE),
+            distinct=True,
+        ),
+        client_download_count=Count(
+            "analytics_events",
+            filter=Q(analytics_events__event_type=GalleryAnalyticsEvent.EventType.DOWNLOAD),
+            distinct=True,
+        ),
+        client_comment_count=Count("client_comments", distinct=True),
+    )
+    query = request.GET.get("q", "").strip()
+    if query:
+        photos = photos.filter(original_name__icontains=query)
+    photos = photos.order_by("original_name" if request.GET.get("sort") == "name" else "-created_at")
+    albums = gallery.albums.annotate(photo_count=Count("photos"))
+    invitations = gallery.invitations.all()
+    paid_orders = store.orders.filter(payment_status__in=[GalleryOrder.Status.PAID, GalleryOrder.Status.COMPLETED])
+    revenue = paid_orders.aggregate(value=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField(max_digits=10, decimal_places=2)))["value"]
+    orders_page = Paginator(store.orders.prefetch_related("items"), 10).get_page(request.GET.get("orders_page"))
+    products_page = Paginator(store.products.prefetch_related("variants"), 8).get_page(request.GET.get("products_page"))
+    all_activity = _accessible_gallery_activity(request).filter(gallery=gallery)
+    activity = all_activity.select_related("actor")
+    activity_query, activity_type = request.GET.get("activity_q", "").strip(), request.GET.get("activity_type", "")
+    activity_user, activity_source = request.GET.get("activity_user", ""), request.GET.get("activity_source", "")
+    activity_start, activity_end = request.GET.get("activity_start", ""), request.GET.get("activity_end", "")
+    if activity_query: activity = activity.filter(Q(title__icontains=activity_query) | Q(description__icontains=activity_query) | Q(related_object_type__icontains=activity_query))
+    if activity_type in GalleryActivity.EventType.values: activity = activity.filter(event_type=activity_type)
+    if activity_user == "system": activity = activity.filter(actor_type=GalleryActivity.ActorType.SYSTEM)
+    elif activity_user.isdigit(): activity = activity.filter(actor_id=activity_user)
+    if activity_source: activity = activity.filter(related_object_type__iexact=activity_source)
+    if activity_start: activity = activity.filter(created_at__date__gte=activity_start)
+    if activity_end: activity = activity.filter(created_at__date__lte=activity_end)
+    if tab == "activity" and request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-activity.csv"'
+        writer = csv.writer(response); writer.writerow(["Date", "Event", "Description", "Actor", "Source", "Related record"])
+        for event in activity.iterator(): writer.writerow([event.created_at.isoformat(), event.title, event.description, event.actor.full_name if event.actor else "System", event.actor_type, f"{event.related_object_type} {event.related_object_id}"])
+        return response
+    activity_page = Paginator(activity, 12).get_page(request.GET.get("activity_page"))
+    today, grouped_activity = timezone.localdate(), []
+    for event in activity_page:
+        event_date = timezone.localtime(event.created_at).date()
+        label = "Today" if event_date == today else "Yesterday" if event_date == today - timezone.timedelta(days=1) else "Earlier this week" if (today - event_date).days < 7 else event_date.strftime("%B %d, %Y").replace(" 0", " ")
+        if not grouped_activity or grouped_activity[-1][0] != label: grouped_activity.append([label, []])
+        grouped_activity[-1][1].append(event)
+    stable_gallery_url = request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id]))
+    context.update({"gallery": gallery, "active_tab": tab, "photos": photos, "albums": albums, "stable_gallery_url": stable_gallery_url,
+                    "store": store, "store_form": store_form, "discount_form": discount_form, "products": products_page, "orders": orders_page,
+                    "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
+                    "general_form": general_form, "settings_form": settings_form,
+                    "gallery_permissions": permissions, "invitations": invitations,
+                    "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
+                    "permission_groups": [
+                        {"title": title, "items": [(field, label, icon, getattr(permissions, field)) for field, label, icon in items]}
+                        for title, items in [
+                            ("Access & sharing", [("view_gallery", "View gallery", "eye"), ("share_gallery", "Share gallery", "share")]),
+                            ("Downloads & prints", [("download_images", "Download photos", "download"), ("download_originals", "Original files", "file-earmark"), ("purchase_prints", "Purchase prints", "printer")]),
+                            ("Client feedback", [("favorite_photos", "Favorite photos", "heart"), ("comment", "Comments", "chat")]),
+                        ]
+                    ],
+                    "permission_options": [(field, label, getattr(permissions, field)) for field, label in (
+                        ("view_gallery", "View Gallery"), ("download_images", "Download Images"),
+                        ("download_originals", "Download Originals"), ("favorite_photos", "Favorite Photos"),
+                        ("comment", "Comment"), ("share_gallery", "Share Gallery"),
+                        ("purchase_prints", "Purchase Prints"),
+                    )], "watermark_options": GalleryPermission.Watermark.choices,
+                    "album_summary": [
+                        {"label": "Total Albums", "value": albums.count(), "icon": "bi-collection"},
+                        {"label": "Public Albums", "value": albums.filter(visibility=Album.Visibility.PUBLIC).count(), "icon": "bi-globe2"},
+                        {"label": "Private Albums", "value": albums.filter(visibility=Album.Visibility.CLIENT_ONLY).count(), "icon": "bi-people"},
+                        {"label": "Hidden Albums", "value": albums.filter(visibility=Album.Visibility.HIDDEN).count(), "icon": "bi-eye-slash"},
+                    ], "storage_display": _format_storage(gallery.storage_used), "upload_percent": 100 if gallery.image_count else 0,
+                    "activity_page": activity_page, "grouped_activity": grouped_activity, "activity_types": GalleryActivity.EventType.choices,
+                    "activity_actors": all_activity.filter(actor__isnull=False).values("actor_id", "actor__first_name", "actor__last_name", "actor__email").distinct(),
+                    "activity_sources": all_activity.exclude(related_object_type="").values_list("related_object_type", flat=True).distinct().order_by("related_object_type"),
+                    "activity_summary": {"total": all_activity.count(), "clients": all_activity.filter(actor_type=GalleryActivity.ActorType.CLIENT).count(), "downloads": all_activity.filter(event_type__in=[GalleryActivity.EventType.PHOTO_DOWNLOADED, GalleryActivity.EventType.GALLERY_DOWNLOADED]).count(), "store": all_activity.filter(event_type__in=[GalleryActivity.EventType.STORE_ORDER_CREATED, GalleryActivity.EventType.PAYMENT_CHANGED]).count()},
+                    "activity_has_filters": any([activity_query, activity_type, activity_user, activity_source, activity_start, activity_end])})
+    return render(request, "photographer_workspace/galleries/workspace.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def standard_filterable_design_preview(request):
+    """Preview the Standard Filterable client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/standard_filterable_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
+def story_design_preview(request):
+    """Preview the Story client experience with representative demo content."""
+    return render(
+        request,
+        "photographer_workspace/galleries/designs/story_preview.html",
+    )
+
+
+@photographer_workspace_required
+@require_GET
+def masonry_design_preview(request):
+    """Preview the Masonry client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/masonry_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
+def cinematic_design_preview(request):
+    """Preview the Cinematic client experience with representative demo content."""
+    return render(request, "photographer_workspace/galleries/designs/cinematic_preview.html")
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_preview(request, pk):
+    gallery = get_object_or_404(
+        _accessible_galleries(request).active().select_related("client", "photographer"),
+        pk=pk,
+    )
+    # Photographer Preview must use the same presentation resolver and prepared
+    # content as client delivery. Access is intentionally simulated here; this
+    # route remains private and does not publish the gallery or issue a token.
+    from apps.galleries.views import _client_gallery_brand, _client_gallery_template, _prepare_client_gallery_content
+
+    photos = list(
+        gallery.photos.filter(is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+        .order_by("created_at", "pk")
+    )
+    albums = list(
+        gallery.albums.exclude(visibility=Album.Visibility.HIDDEN)
+        .order_by("display_order", "pk")
+    )
+    photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+    gallery_settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(
+        gallery=gallery, gallery_url=gallery.slug
+    )
+    store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
+    context = {
+        "gallery": gallery,
+        "invitation": None,
+        "photos": photos,
+        "albums": albums,
+        "permissions": permissions,
+        "gallery_settings": gallery_settings,
+        "access_token": None,
+        "can_favorite": permissions.favorite_photos,
+        "can_download": permissions.download_images,
+        "can_download_gallery": False,
+        "can_download_originals": False,
+        "can_comment": permissions.comment,
+        "can_purchase_prints": bool(permissions.purchase_prints and store),
+        "stable_gallery_url": request.build_absolute_uri(
+            reverse("galleries:stable_gallery_access", args=[gallery.public_id])
+        ),
+        "can_share_gallery": permissions.share_gallery,
+        "gallery_brand": _client_gallery_brand(gallery),
+        "is_photographer_preview": True,
+    }
+    return render(request, _client_gallery_template(gallery), context)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_analytics(request, pk):
+    profile = request.studio
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    def parsed_date(name):
+        try:
+            return timezone.datetime.fromisoformat(request.GET.get(name, "")).date()
+        except ValueError:
+            return None
+    report = gallery_analytics_report(
+        gallery=gallery, start=parsed_date("start"), end=parsed_date("end"),
+        album_id=request.GET.get("album") if request.GET.get("album", "").isdigit() else None,
+        device=request.GET.get("device", ""), visitor_type=request.GET.get("visitor_type", "all"),
+    )
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-analytics.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Date", "Gallery views", "Unique visitors", "Downloads", "Favorites"])
+        for day in report["days"]:
+            writer.writerow([day["date"], day["views"], day["visitors"], day["downloads"], day["favorites"]])
+        return response
+    context = _dashboard_context(request, "all_galleries", "Gallery Analytics")
+    context.update({"gallery": gallery, "report": report, "albums": gallery.albums.only("id", "name"),
+                    "device_choices": GalleryAnalyticsEvent.Device.choices})
+    return render(request, "photographer_workspace/galleries/analytics.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def store_product_form(request, gallery_pk, pk=None):
+    profile = request.studio
+    gallery = get_object_or_404(_accessible_galleries(request), pk=gallery_pk)
+    store, _ = GalleryStore.objects.get_or_create(gallery=gallery, defaults={"photographer": profile, "name": f"{gallery.name} Store"})
+    product = get_object_or_404(StoreProduct.objects.filter(photographer=profile, gallery=gallery), pk=pk) if pk else None
+    form = StoreProductForm(request.POST or None, request.FILES or None, instance=product)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            product = form.save(commit=False); product.store=store; product.gallery=gallery; product.photographer=profile; product.full_clean(); product.save()
+            product.variants.all().delete()
+            ProductVariant.objects.bulk_create([ProductVariant(product=product, name=name.strip(), display_order=i) for i, name in enumerate(form.cleaned_data["variants"].splitlines()) if name.strip()])
+        messages.success(request, "Product saved.")
+        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=store")
+    context = _dashboard_context(request, "all_galleries", "Edit Product" if product else "Add Product")
+    context.update({"gallery":gallery, "product":product, "form":form})
+    return render(request, "photographer_workspace/galleries/product_form.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def store_product_action(request, pk):
+    product = get_object_or_404(StoreProduct.objects.filter(photographer=request.studio, gallery__in=_accessible_galleries(request)), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete": product.delete(); messages.success(request, "Product deleted.")
+    elif action == "toggle": product.active=not product.active; product.save(update_fields=["active", "updated_at"])
+    elif action == "duplicate":
+        variants=list(product.variants.all()); product.pk=None; product.name += " Copy"; product.active=False; product.save()
+        ProductVariant.objects.bulk_create([ProductVariant(product=product,name=v.name,price_adjustment=v.price_adjustment,display_order=v.display_order) for v in variants])
+    return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[product.gallery_id])}?tab=store")
+
+
+@photographer_workspace_required
+def gallery_order_detail(request, pk):
+    order = get_object_or_404(GalleryOrder.objects.filter(photographer=request.studio, gallery__in=_accessible_galleries(request)).select_related("gallery").prefetch_related("items__selected_photos"), pk=pk)
+    context=_dashboard_context(request,"all_galleries",order.order_number); context["order"]=order
+    return render(request,"photographer_workspace/galleries/order_detail.html",context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def create_album(request, gallery_pk):
+    gallery = get_object_or_404(_accessible_galleries(request), pk=gallery_pk)
+    form = AlbumForm(request.POST or None, request.FILES or None, gallery=gallery)
+    if request.method == "POST" and form.is_valid():
+        album = form.save(commit=False)
+        album.gallery = gallery
+        album.full_clean()
+        album.save()
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.ALBUM_CREATED,
+                             description=f"The album {album.name} was created.", actor=request.user, related_object=album)
+        messages.success(request, "Album created. Add photos when you're ready.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", "Create Album")
+    context.update({"form": form, "gallery": gallery, "form_title": "Create Album", "submit_label": "Create Album"})
+    return render(request, "photographer_workspace/galleries/album_form.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_album(request, pk):
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
+    form = AlbumForm(request.POST or None, request.FILES or None, instance=album, gallery=album.gallery)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        log_gallery_activity(gallery=album.gallery, event_type=GalleryActivity.EventType.ALBUM_UPDATED,
+                             description=f"The album {album.name} was updated.", actor=request.user, related_object=album)
+        messages.success(request, "Album updated.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", "Edit Album")
+    context.update({"form": form, "gallery": album.gallery, "album": album, "form_title": "Edit Album", "submit_label": "Save Changes"})
+    return render(request, "photographer_workspace/galleries/album_form.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def album_workspace(request, pk):
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery", "cover_photo"), pk=pk)
+    memberships = album.album_photos.select_related("photo")
+    query = request.GET.get("q", "").strip()
+    if query:
+        memberships = memberships.filter(photo__original_name__icontains=query)
+    ordering = {"newest": "-photo__created_at", "name": "photo__original_name", "order": "position"}
+    memberships = memberships.order_by(ordering.get(request.GET.get("sort"), "position"))
+    other_albums = album.gallery.albums.exclude(pk=album.pk)
+    context = _dashboard_context(request, "all_galleries", album.name)
+    context.update({"album": album, "gallery": album.gallery, "memberships": memberships, "other_albums": other_albums})
+    return render(request, "photographer_workspace/galleries/album_workspace.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def album_action(request, pk):
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete":
+        gallery_pk = album.gallery_id
+        album.delete()
+        messages.success(request, "Album deleted. Your gallery photos were not removed.")
+        return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery_pk])}?tab=albums")
+    if action == "duplicate":
+        source_memberships = list(album.album_photos.all())
+        original_name = album.name
+        album.pk = None
+        album.name = f"{original_name} Copy"
+        album.cover_image = ""
+        album.save()
+        AlbumPhoto.objects.bulk_create([AlbumPhoto(album=album, photo_id=item.photo_id, position=item.position) for item in source_memberships])
+        messages.success(request, "Album duplicated.")
+        return redirect("photographer_workspace:album_workspace", pk=album.pk)
+    return JsonResponse({"error": "Unsupported action."}, status=400)
+
+
+@photographer_workspace_required
+@require_POST
+def album_photo_action(request, pk):
+    album = get_object_or_404(_accessible_albums(request).select_related("gallery"), pk=pk)
+    photo_ids = request.POST.getlist("photo_ids")
+    photos = GalleryPhoto.objects.filter(gallery=album.gallery, pk__in=photo_ids)
+    action = request.POST.get("action")
+    if action == "remove":
+        album.album_photos.filter(photo__in=photos).delete()
+    elif action == "cover" and photos.count() == 1:
+        album.cover_photo = photos.first()
+        album.save(update_fields=["cover_photo", "updated_at"])
+    elif action == "move":
+        target = get_object_or_404(album.gallery.albums, pk=request.POST.get("target_album"))
+        with transaction.atomic():
+            existing = set(target.photos.filter(pk__in=photo_ids).values_list("pk", flat=True))
+            start = target.album_photos.aggregate(Max("position"))["position__max"] or 0
+            AlbumPhoto.objects.bulk_create([AlbumPhoto(album=target, photo=photo, position=start + index) for index, photo in enumerate(photos, 1) if photo.pk not in existing])
+            album.album_photos.filter(photo__in=photos).delete()
+    else:
+        return JsonResponse({"error": "Choose valid photos and an action."}, status=400)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True})
+    messages.success(request, "Album photos updated.")
+    return redirect("photographer_workspace:album_workspace", pk=album.pk)
+
+
+
+def _photo_comments_response(request, photo):
+    comments = GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).select_related("invitation", "author").annotate(
+        like_count=Count("reactions", filter=Q(reactions__value=1)),
+        dislike_count=Count("reactions", filter=Q(reactions__value=-1)),
+    ).prefetch_related(Prefetch("reactions", queryset=GalleryPhotoCommentReaction.objects.filter(user=request.user), to_attr="viewer_reactions"))
+    sort = request.GET.get("sort", "newest")
+    if sort not in {"newest", "oldest"}:
+        return JsonResponse({"error": "Choose newest or oldest first."}, status=400)
+    ordering = ("created_at", "pk") if sort == "oldest" else ("-created_at", "-pk")
+    roots = comments.filter(parent__isnull=True).order_by(*ordering).prefetch_related(
+        Prefetch("replies", queryset=comments.filter(parent__isnull=False).order_by("created_at", "pk"))
+    )
+    page = Paginator(roots, 20).get_page(request.GET.get("page"))
+    return render(request, "photographer_workspace/galleries/components/photo_comments.html", {
+        "photo": photo, "comment_page": page, "comment_sort": sort, "viewer_id": request.user.pk,
+        "comment_count": GalleryPhotoComment.objects.filter(photo=photo, gallery=photo.gallery).count(),
+    })
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_photo_comments(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    response = _photo_comments_response(request, photo)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_comment_create(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    body = (request.POST.get("body") or "").strip()
+    if not body or len(body) > 2000:
+        return JsonResponse({"error": "Enter a comment between 1 and 2,000 characters."}, status=400)
+    GalleryPhotoComment.objects.create(gallery=photo.gallery, photo=photo, author=request.user, body=body)
+    return _photo_comments_response(request, photo)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_comment_action(request, pk, comment_pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    with transaction.atomic():
+        # Serialize toggles for this comment; one reaction per user is also enforced in the database.
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), pk=comment_pk, photo=photo, gallery=photo.gallery)
+        action = request.POST.get("action")
+        if action == "reply":
+            body = (request.POST.get("body") or "").strip()
+            if not body or len(body) > 2000:
+                return JsonResponse({"error": "Enter a reply between 1 and 2,000 characters."}, status=400)
+            parent = comment.parent or comment
+            GalleryPhotoComment.objects.create(
+                gallery=photo.gallery, photo=photo, invitation=parent.invitation,
+                author=request.user, parent=parent, body=body,
+            )
+        elif action == "delete":
+            if comment.author_id != request.user.pk:
+                return JsonResponse({"error": "You can only delete your own comments."}, status=403)
+            comment.delete()
+        elif action in {"like", "dislike"}:
+            value = 1 if action == "like" else -1
+            reaction = GalleryPhotoCommentReaction.objects.filter(comment=comment, user=request.user).first()
+            if reaction and reaction.value == value:
+                reaction.delete()
+            else:
+                GalleryPhotoCommentReaction.objects.update_or_create(comment=comment, user=request.user, defaults={"value": value})
+        else:
+            return JsonResponse({"error": "Unsupported comment action."}, status=400)
+    return _photo_comments_response(request, photo)
+
+
+@photographer_workspace_required
+@require_GET
+def gallery_photo_media(request, pk):
+    photo = get_object_or_404(_accessible_photos(request), pk=pk)
+    content_type = mimetypes.guess_type(photo.original_name)[0] or "application/octet-stream"
+    response = FileResponse(photo.file.open("rb"), content_type=content_type)
+    response["Content-Disposition"] = f'inline; filename="{photo.original_name.replace(chr(34), "")}"'
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_action(request, pk):
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request."}, status=400)
+
+    photo_ids = payload.get("photo_ids") or []
+    if not isinstance(photo_ids, list):
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+    try:
+        photo_ids = list(dict.fromkeys(int(photo_id) for photo_id in photo_ids))
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Invalid photo selection."}, status=400)
+    if not photo_ids:
+        return JsonResponse({"error": "Select one or more photos."}, status=400)
+
+    photos = list(_accessible_photos(request).filter(gallery=gallery, pk__in=photo_ids))
+    if len(photos) != len(photo_ids):
+        return JsonResponse({"error": "One or more selected photos are unavailable."}, status=400)
+
+    action = payload.get("action")
+    if action == "delete":
+        total_size = sum(photo.file_size for photo in photos)
+        deleted_ids = [photo.pk for photo in photos]
+        deletion_items = [
+            {
+                "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+                "object_key": photo.file.name,
+                "photographer_id": photo.photographer_id,
+                "gallery_id": photo.gallery_id,
+            }
+            for photo in photos if photo.file
+        ]
+        # Persist cleanup intent in the same transaction as record deletion. Storage
+        # cleanup can then fail/retry without orphaning an untracked object.
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            GalleryPhoto.objects.filter(pk__in=deleted_ids).delete()
+            gallery.image_count = max(gallery.image_count - len(deleted_ids), 0)
+            gallery.storage_used = max(gallery.storage_used - total_size, 0)
+            gallery.save(update_fields=["image_count", "storage_used", "updated_at"])
+        process_storage_deletions()
+        return JsonResponse({"ok": True, "deleted": deleted_ids})
+
+    if action == "visibility":
+        visible = payload.get("visible")
+        if not isinstance(visible, bool):
+            return JsonResponse({"error": "Choose visible or hidden."}, status=400)
+        GalleryPhoto.objects.filter(pk__in=photo_ids).update(is_visible=visible)
+        return JsonResponse({"ok": True, "updated": photo_ids, "visible": visible})
+
+    if action == "move":
+        album_id = payload.get("album_id")
+        album = get_object_or_404(Album.objects.filter(gallery=gallery), pk=album_id)
+        AlbumPhoto.objects.filter(photo_id__in=photo_ids).exclude(album=album).delete()
+        existing = set(AlbumPhoto.objects.filter(album=album, photo_id__in=photo_ids).values_list("photo_id", flat=True))
+        next_position = (AlbumPhoto.objects.filter(album=album).aggregate(value=Max("position"))["value"] or 0) + 1
+        AlbumPhoto.objects.bulk_create([
+            AlbumPhoto(album=album, photo=photo, position=next_position + index)
+            for index, photo in enumerate(photos) if photo.pk not in existing
+        ])
+        return JsonResponse({"ok": True, "moved": photo_ids, "album": album.pk})
+
+    return JsonResponse({"error": "Unsupported bulk action."}, status=400)
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_bulk_download(request, pk):
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    photo_ids = request.POST.getlist("photo_ids")
+    photos = _accessible_photos(request).filter(gallery=gallery, pk__in=photo_ids)
+    if not photos.exists():
+        return HttpResponseBadRequest("Select one or more photos.")
+    archive = io.BytesIO()
+    used_names = set()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+        for photo in photos:
+            base_name = photo.original_name or f"photo-{photo.pk}"
+            name, suffix = base_name.rsplit(".", 1) if "." in base_name else (base_name, "")
+            candidate, counter = base_name, 2
+            while candidate in used_names:
+                candidate = f"{name}-{counter}{'.' + suffix if suffix else ''}"
+                counter += 1
+            used_names.add(candidate)
+            with photo.file.open("rb") as source:
+                bundle.writestr(candidate, source.read())
+    archive.seek(0)
+    response = HttpResponse(archive.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="{gallery.slug}-photos.zip"'
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def gallery_photo_action(request, pk):
+    photo = get_object_or_404(_accessible_photos(request).select_related("gallery"), pk=pk)
+    action = request.POST.get("action")
+    if action == "delete":
+        deletion_items = [{
+            "storage_backend": "b2" if settings.GALLERY_STORAGE_BACKEND == "b2" else "default",
+            "object_key": photo.file.name,
+            "photographer_id": photo.photographer_id,
+            "gallery_id": photo.gallery_id,
+        }] if photo.file else []
+        with transaction.atomic():
+            enqueue_storage_deletions(deletion_items)
+            Gallery.objects.filter(pk=photo.gallery_id).update(
+                image_count=F("image_count") - 1,
+                storage_used=F("storage_used") - photo.file_size,
+            )
+            photo.delete()
+        process_storage_deletions()
+    elif action == "cover":
+        GalleryPhoto.objects.filter(gallery=photo.gallery).update(is_cover=False)
+        photo.is_cover = True
+        photo.save(update_fields=["is_cover", "updated_at"])
+    elif action == "remove":
+        # Persist only transfer-manager dismissal; preserve GalleryPhoto and B2 original.
+        photo.upload_queue_dismissed = True
+        photo.save(update_fields=["upload_queue_dismissed", "updated_at"])
+    elif action == "retry" and photo.status == GalleryPhoto.Status.FAILED:
+        photo.status, photo.error_message = GalleryPhoto.Status.QUEUED, ""
+        photo.save(update_fields=["status", "error_message", "updated_at"])
+    else:
+        return JsonResponse({"error": "Unsupported action."}, status=400)
+    return JsonResponse({"ok": True})
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def edit_client(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
+    form = CrmClientForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=client,
+        photographer=profile,
+    )
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            current = get_object_or_404(
+                scope_assigned(Client.objects.select_for_update(), request.studio_access),
+                pk=pk,
+            )
+            locked_form = CrmClientForm(
+                request.POST,
+                request.FILES or None,
+                instance=current,
+                photographer=profile,
+            )
+            if not locked_form.is_valid():
+                form = locked_form
+            else:
+                changed_fields = list(locked_form.changed_data)
+                notes = locked_form.cleaned_data.get("notes", "").strip()
+                model_fields = set(CrmClientForm._meta.fields)
+                changes = {
+                    field: {
+                        "old": str(locked_form.initial.get(field) or ""),
+                        "new": str(locked_form.cleaned_data.get(field) or ""),
+                    }
+                    for field in changed_fields
+                    if field in model_fields or field in {"tags_input", "lead_source", "city", "state_province", "postal_code", "country"}
+                }
+                updated = locked_form.save(commit=False)
+                # Ownership and system-managed relationships always come from the
+                # locked row/authenticated workspace, never submitted data.
+                updated.photographer = current.photographer
+                updated.full_clean()
+                if changes:
+                    updated.save()
+                note_created = False
+                if notes and not current.notes.filter(content=notes).exists():
+                    create_client_note(client=updated, content=notes, actor=request.user)
+                    note_created = True
+                    changes["notes"] = {"old": "", "new": notes}
+                if changes:
+                    labels = [
+                        locked_form.fields[field].label or field.replace("_", " ").title()
+                        for field in changed_fields
+                        if field in locked_form.fields and field != "notes"
+                    ]
+                    if note_created:
+                        labels.append("Notes")
+                    ClientActivity.objects.create(
+                        photographer=profile,
+                        client=updated,
+                        actor=request.user,
+                        event_type=ClientActivity.EventType.CLIENT_UPDATED,
+                        description=f"Client {updated} was updated: {', '.join(labels)}.",
+                        metadata={"changes": changes},
+                    )
+                messages.success(request, "Client updated successfully.")
+                return redirect("photographer_workspace:client_detail", pk=updated.pk)
+    context = _dashboard_context(request, "clients", "Edit Client")
+    context.update({
+        "form": form, "form_title": "Edit Client", "is_client_form": True,
+        "editing_client": True, "client_record": client,
+        "client_detail_url": reverse("photographer_workspace:client_detail", args=[client.pk]),
+        "hide_topbar_heading": True,
+    })
+    return render(request, "photographer_workspace/crm_form.html", context)
+
+
+CLIENT_DETAIL_TABS = ("overview", "sessions", "galleries", "invoices", "activity")
+
+
+@photographer_workspace_required
+@require_GET
+def client_detail(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
+    now, today = timezone.now(), timezone.localdate()
+    sessions = scope_assigned(ClientSession.objects.all(), request.studio_access).filter(client=client)
+    galleries = scope_assigned(Gallery.objects.all(), request.studio_access).filter(
+        client=client, deleted_at__isnull=True
+    )
+    can_view_financials = request.studio_access.allows("financials")
+    invoices = ClientInvoice.objects.for_photographer(profile).filter(client=client) if can_view_financials else ClientInvoice.objects.none()
+    open_invoices = invoices.exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
+    outstanding = sum((invoice.balance for invoice in open_invoices), Decimal("0.00"))
+    upcoming = sessions.filter(starts_at__gte=now).exclude(status=ClientSession.Status.CANCELLED).first()
+    overdue = open_invoices.filter(due_date__lt=today)
+    soon = sessions.filter(starts_at__gte=now, starts_at__lte=now + timezone.timedelta(days=7)).exclude(status=ClientSession.Status.CANCELLED)
+    detail_tabs = tuple(
+        tab_name for tab_name in CLIENT_DETAIL_TABS
+        if tab_name != "invoices" or can_view_financials
+    )
+    tab = request.GET.get("tab", "overview")
+    if tab not in detail_tabs:
+        tab = "overview"
+    notes = ClientNote.objects.for_photographer(profile).filter(client=client).select_related("author")
+    activities = ClientActivity.objects.for_photographer(profile).filter(client=client).select_related("actor")
+    tasks = client.tasks.exclude(status__in=[ClientTask.Status.COMPLETED, ClientTask.Status.CANCELLED])
+    galleries_awaiting_delivery = galleries.filter(status=Gallery.Status.READY).count()
+    operational_alerts = ([
+        {"label": "Overdue invoices", "count": overdue.count(), "icon": "bi-receipt", "urgent": True},
+    ] if can_view_financials and overdue.exists() else []) + ([
+        {"label": "Sessions in 7 days", "count": soon.count(), "icon": "bi-calendar-event", "urgent": False},
+    ] if soon.exists() else []) + ([
+        {"label": "Galleries awaiting delivery", "count": galleries_awaiting_delivery, "icon": "bi-images", "urgent": False},
+    ] if galleries_awaiting_delivery else [])
+    context = _dashboard_context(request, "clients", str(client))
+    context.update({
+        "client_record": client, "detail_tabs": detail_tabs, "active_tab": tab,
+        "sessions": sessions, "galleries": galleries, "invoices": invoices, "upcoming_session": upcoming,
+        "outstanding_balance": outstanding, "recent_notes": notes[:5],
+        "client_tasks": tasks,
+        "activities": activities[:30],
+        "can_view_financials": can_view_financials,
+        "operational_alerts": operational_alerts,
+        "total_sessions": sessions.count(), "total_galleries": galleries.count(),
+        "open_invoice_count": open_invoices.count(), "open_task_count": tasks.count(),
+        "galleries_awaiting_delivery": galleries_awaiting_delivery,
+        "has_relationship_data": sessions.exists() or galleries.exists() or invoices.exists() or tasks.exists(),
+        "client_status_variant": {
+            Client.Status.ACTIVE: "success", Client.Status.INACTIVE: "warning", Client.Status.ARCHIVED: "neutral",
+        }[client.status],
+        "edit_client_url": reverse("photographer_workspace:edit_client", args=[client.pk]),
+        "client_email_url": f"mailto:{client.email}" if client.email else "",
+        "client_phone_url": f"tel:{client.phone}" if client.phone else "",
+        "bookings_url": reverse("photographer_workspace:bookings"),
+        "create_gallery_url": reverse("photographer_workspace:create_gallery"),
+        "create_invoice_url": reverse("photographer_workspace:invoice_create"),
+        "hide_topbar_heading": True,
+    })
+    return render(request, "photographer_workspace/client_detail.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def client_archive_restore(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    action = request.POST.get("action")
+    if action not in {"archive", "restore"}:
+        return HttpResponseBadRequest("Choose archive or restore.")
+
+    # The client status is the existing retention boundary: related business
+    # records remain attached. Locking plus an explicit desired state makes a
+    # retried/double-submitted request idempotent rather than toggling it back.
+    with transaction.atomic():
+        client = get_object_or_404(
+            scope_assigned(Client.objects.select_for_update(), request.studio_access),
+            pk=pk,
+        )
+        target_status = Client.Status.ARCHIVED if action == "archive" else Client.Status.ACTIVE
+        if client.status == target_status:
+            verb = "already archived" if action == "archive" else "already active"
+            messages.info(request, f"Client is {verb}.")
+            return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+        client.status = target_status
+        client.save(update_fields=["status", "updated_at"])
+        event = (
+            ClientActivity.EventType.CLIENT_ARCHIVED
+            if action == "archive"
+            else ClientActivity.EventType.CLIENT_RESTORED
+        )
+        verb = "archived" if action == "archive" else "restored"
+        ClientActivity.objects.create(
+            photographer=profile,
+            client=client,
+            actor=request.user,
+            event_type=event,
+            description=f"Client {client} was {verb}.",
+        )
+    messages.success(request, f"Client {verb}.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+
+@photographer_workspace_required
+@require_POST
+def add_client_note(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
+    content = request.POST.get("content", "").strip()
+    if not content:
+        messages.error(request, "Enter a note before saving.")
+    elif len(content) > 5000:
+        messages.error(request, "Notes must be 5,000 characters or fewer.")
+    else:
+        try:
+            create_client_note(client=client, content=content, actor=request.user)
+        except ValidationError as error:
+            messages.error(request, "; ".join(error.messages))
+        else:
+            messages.success(request, "Note added.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+
+@photographer_workspace_required
+@require_POST
+def add_client_task(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    client = get_object_or_404(scope_assigned(Client.objects.all(), request.studio_access), pk=pk)
+    data = request.POST.copy()
+    data["client"] = client.pk
+    data.pop("lead", None)
+    form = ClientTaskForm(data, photographer=profile, instance=ClientTask(photographer=profile))
+    if form.is_valid():
+        task = form.save(commit=False)
+        task.photographer = profile
+        task.full_clean()
+        task.save()
+        ClientActivity.objects.create(photographer=profile, client=client, actor=request.user, event_type=ClientActivity.EventType.FOLLOW_UP_CREATED, description=f"Task created: {task.title}.")
+        messages.success(request, "Task created.")
+    else:
+        messages.error(request, "Enter valid task details.")
+    return redirect("photographer_workspace:client_detail", pk=client.pk)
+
+
+@photographer_workspace_required
+@require_POST
+def bulk_update_leads(request):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    leads = Lead.objects.for_photographer(profile).filter(pk__in=request.POST.getlist("lead_ids"), archived_at__isnull=True)
+    action = request.POST.get("action")
+    if action in (Lead.Status.LOST, Lead.Status.BOOKED):
+        messages.error(request, "Book or mark leads lost individually so the required client or loss details are recorded.")
+    elif action in Lead.Status.values:
+        updated = 0
+        with transaction.atomic():
+            for lead in leads.select_for_update():
+                if hasattr(lead, "converted_client") and action != Lead.Status.BOOKED:
+                    continue
+                if lead.status == action:
+                    continue
+                previous_status = lead.status
+                lead.status = action
+                lead.save(update_fields=["status", "updated_at"])
+                _record_stage_change(profile, lead, previous_status, actor=request.user)
+                updated += 1
+        messages.success(request, f"Updated {updated} lead{'s' if updated != 1 else ''}.")
+    else:
+        messages.error(request, "Choose a valid bulk action.")
+    return redirect("photographer_workspace:leads")
+
+
+@photographer_workspace_required
+@require_POST
+def archive_lead(request, pk):
+    profile = request.studio
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    lead.archived_at = timezone.now()
+    lead.save(update_fields=["archived_at", "updated_at"])
+    _log_lead(profile, lead, ClientActivity.EventType.LEAD_ARCHIVED, f"Lead {lead} was archived.")
+    messages.success(request, "Lead archived.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def create_lead_follow_up(request, pk):
+    profile = request.studio
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    title = request.POST.get("title", "").strip()
+    due_date = request.POST.get("due_date", "").strip()
+    if not title or not due_date:
+        messages.error(request, "Enter a follow-up title and due date.")
+    else:
+        form = ClientTaskForm(
+            {"title": title, "due_date": due_date, "priority": request.POST.get("priority", "medium"), "lead": lead.pk},
+            photographer=profile, instance=ClientTask(photographer=profile),
+        )
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.photographer = profile
+            task.full_clean()
+            task.save()
+            lead.next_follow_up = task.due_date
+            lead.save(update_fields=["next_follow_up", "updated_at"])
+            _log_lead(profile, lead, ClientActivity.EventType.FOLLOW_UP_CREATED, f"Follow-up task created: {task.title}.", {"task_id": task.pk})
+            messages.success(request, "Follow-up task created.")
+        else:
+            messages.error(request, "Check the follow-up details and try again.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def mark_lead_booked(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    try:
+        client, created = convert_lead_to_client(lead=lead, actor=request.user)
+    except DuplicateClientError as error:
+        messages.error(request, error.messages[0])
+    else:
+        if created:
+            messages.success(request, "Lead booked and converted to a client.")
+        else:
+            messages.info(request, "This booked lead is already linked to a client.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def mark_lead_lost(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Provide a reason before marking this lead lost.")
+    elif len(reason) > 255:
+        messages.error(request, "Lost reason must be 255 characters or fewer.")
+    elif lead.status == Lead.Status.LOST and lead.lost_reason == reason:
+        messages.info(request, "This lead is already marked lost.")
+    else:
+        previous_status = lead.status
+        lead.status, lead.lost_reason = Lead.Status.LOST, reason
+        lead.save(update_fields=["status", "lost_reason", "updated_at"])
+        _record_stage_change(
+            profile, lead, previous_status, actor=request.user,
+            event_type=ClientActivity.EventType.LEAD_LOST, metadata={"reason": reason},
+        )
+        messages.success(request, "Lead marked lost.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def add_lead_note(request, pk):
+    profile = request.studio
+    lead = get_object_or_404(Lead.objects.for_photographer(profile), pk=pk, archived_at__isnull=True)
+    note = request.POST.get("note", "").strip()
+    if not note:
+        messages.error(request, "Enter a note before saving.")
+    elif len(note) > 2000:
+        messages.error(request, "Notes must be 2,000 characters or fewer.")
+    else:
+        lead.notes = f"{lead.notes}\n\n{note}".strip()
+        lead.save(update_fields=["notes", "updated_at"])
+        _log_lead(profile, lead, ClientActivity.EventType.NOTE_ADDED, note)
+        messages.success(request, "Note added.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_POST
+def convert_lead(request, pk):
+    profile = request.studio
+    if not request.studio_access.allows("clients"):
+        raise PermissionDenied
+    with transaction.atomic():
+        lead = get_object_or_404(Lead.objects.select_for_update().for_photographer(profile), pk=pk)
+        if Client.objects.filter(converted_lead=lead).exists():
+            messages.error(request, "This lead has already been converted.")
+            return redirect(_lead_destination(request))
+        try:
+            _client, created = convert_lead_to_client(lead=lead, actor=request.user)
+        except DuplicateClientError as error:
+            messages.error(request, error.messages[0])
+            return redirect(_lead_destination(request))
+        if not created:
+            messages.error(request, "This lead has already been converted.")
+            return redirect(_lead_destination(request))
+    messages.success(request, "Lead converted to a client.")
+    return redirect(_lead_destination(request))
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def bookings_dashboard(request):
+    """Render the tenant-scoped booking operations overview."""
+    profile = request.studio
+    if request.method == "POST":
+        if request.POST.get("action") in {"create_mini", "edit_mini"}:
+            if not request.studio_access.allows("schedule"):
+                raise PermissionDenied
+            is_edit = request.POST["action"] == "edit_mini"
+            mini_queryset = MiniSession.objects.for_photographer(profile)
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                mini_queryset = mini_queryset.filter(assigned_members=request.studio_access.membership)
+            mini = get_object_or_404(mini_queryset, pk=request.POST.get("mini_id")) if is_edit else None
+            errors = {}
+            name = request.POST.get("mini_name", "").strip()
+            location = request.POST.get("mini_location", "").strip()
+            if not name:
+                errors["mini_name"] = "Enter a mini-session name."
+            if not location:
+                errors["mini_location"] = "Enter a location."
+            try:
+                starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                slot_duration = int(request.POST.get("slot_duration", "20"))
+                slot_count = int(request.POST.get("slot_count", "6"))
+                buffer_minutes = int(request.POST.get("buffer", "0"))
+                capacity = int(request.POST.get("capacity", "1"))
+                if min(slot_duration, slot_count, capacity) < 1 or buffer_minutes < 0 or slot_count > 100:
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors["slot_count"] = "Enter valid positive slot settings (up to 100 slots)."
+            member_ids = {int(value) for value in request.POST.getlist("team") if value.isdigit()}
+            valid_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids
+            ).values_list("pk", flat=True))
+            if valid_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                if member_ids != {own_id}:
+                    raise PermissionDenied
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            duration = slot_count * slot_duration + max(0, slot_count - 1) * buffer_minutes
+            with transaction.atomic():
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                changing_grid = mini is None
+                if mini:
+                    mini = MiniSession.objects.select_for_update().get(pk=mini.pk, photographer=profile)
+                    changing_grid = (mini.starts_at != starts_at or mini.slot_duration_minutes != slot_duration or
+                                     mini.slot_count != slot_count or mini.buffer_minutes != buffer_minutes)
+                    if changing_grid and mini.slots.filter(bookings__cancelled_at__isnull=True).exists():
+                        return JsonResponse({"ok": False, "errors": {"start_time":
+                            "Booked slots exist. Cancel or move those bookings before changing the slot grid."}}, status=409)
+                    if mini.slots.annotate(active_count=Count(
+                            "bookings", filter=Q(bookings__cancelled_at__isnull=True)
+                        )).filter(active_count__gt=capacity).exists():
+                        return JsonResponse({"ok": False, "errors": {"capacity":
+                            "Capacity cannot be lower than an existing slot's active bookings."}}, status=409)
+                available = availability_for(
+                    studio=profile, starts_at=starts_at, duration_minutes=duration, member_ids=member_ids,
+                    exclude_mini_pk=mini.pk if mini else None, lock=True,
+                )
+                if not available["available"]:
+                    return JsonResponse({"ok": False, "errors": {"start_time": "This photographer is unavailable during the mini-session block."}}, status=409)
+                values = {"name": name, "starts_at": starts_at, "slot_duration_minutes": slot_duration,
+                          "slot_count": slot_count, "buffer_minutes": buffer_minutes,
+                          "capacity_per_slot": capacity, "location": location,
+                          "service": request.POST.get("mini_package", "").strip(),
+                          "notes": request.POST.get("notes", "").strip()}
+                if mini:
+                    for field, value in values.items():
+                        setattr(mini, field, value)
+                    mini.save()
+                else:
+                    mini = MiniSession.objects.create(photographer=profile, **values)
+                mini.assigned_members.set(member_ids)
+                if changing_grid:
+                    # Idempotent regeneration: only an unbooked changed grid is replaced.
+                    mini.slots.all().delete()
+                    step = slot_duration + buffer_minutes
+                    MiniSessionSlot.objects.bulk_create([
+                        MiniSessionSlot(mini_session=mini, position=index,
+                                        starts_at=starts_at + timedelta(minutes=index * step),
+                                        duration_minutes=slot_duration)
+                        for index in range(slot_count)
+                    ])
+            return JsonResponse({"ok": True, "schedule_url": reverse("photographer_workspace:schedule")}, status=200 if is_edit else 201)
+        if request.POST.get("action") in {"create_constraint", "edit_constraint"}:
+            if not request.studio_access.allows("schedule"):
+                raise PermissionDenied
+            kind = request.POST.get("event_type")
+            errors = {}
+            if kind not in ScheduleConstraint.Kind.values:
+                errors["event_type"] = "Choose a supported schedule event."
+            title = request.POST.get("title", "").strip()
+            reason = request.POST.get("reason", "").strip()
+            if not title:
+                errors["title"] = "Enter an event title."
+            if kind in {ScheduleConstraint.Kind.BLOCKED, ScheduleConstraint.Kind.VACATION} and not reason:
+                errors["reason"] = "Enter why this time is unavailable."
+            all_day = request.POST.get("all_day") == "on"
+            try:
+                if all_day:
+                    start_date = date.fromisoformat(request.POST.get("start_date", ""))
+                    end_date = date.fromisoformat(request.POST.get("end_date", ""))
+                    starts_at = parse_local_datetime(profile, start_date.isoformat(), "00:00")
+                    ends_at = parse_local_datetime(profile, (end_date + timedelta(days=1)).isoformat(), "00:00")
+                else:
+                    starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                    ends_at = parse_local_datetime(profile, request.POST.get("end_date", ""), request.POST.get("end_time", ""))
+                if ends_at <= starts_at:
+                    errors["end_date"] = "The end must be after the start."
+            except (TypeError, ValueError):
+                starts_at = ends_at = None
+                errors["start_date"] = "Enter a valid start and end date and time."
+            member_ids = set()
+            for raw_id in request.POST.getlist("team"):
+                try:
+                    member_ids.add(int(raw_id))
+                except (TypeError, ValueError):
+                    errors["team"] = "Select active photographers from this workspace."
+            valid_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids,
+            ).values_list("pk", flat=True))
+            entire_team = request.POST.get("availability_scope") == "entire_team"
+            if valid_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                if entire_team or member_ids != {own_id}:
+                    raise PermissionDenied
+            constraint = None
+            if request.POST["action"] == "edit_constraint":
+                constraint = get_object_or_404(ScheduleConstraint, studio=profile,
+                                               pk=request.POST.get("constraint_id"))
+                if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER and not constraint.assigned_members.filter(pk=request.studio_access.membership.pk).exists():
+                    raise PermissionDenied
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            values = {
+                "kind": kind, "title": title, "reason": reason,
+                "notes": request.POST.get("notes", "").strip(), "starts_at": starts_at,
+                "ends_at": ends_at, "all_day": all_day, "entire_team": entire_team,
+                # Editing time is deliberately informational under the existing design.
+                "blocks_booking": kind in {ScheduleConstraint.Kind.BLOCKED, ScheduleConstraint.Kind.VACATION}
+                                  and request.POST.get("prevent_booking") == "on",
+            }
+            with transaction.atomic():
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                if constraint:
+                    for field, value in values.items():
+                        setattr(constraint, field, value)
+                    constraint.save()
+                else:
+                    constraint = ScheduleConstraint.objects.create(studio=profile, created_by=request.user, **values)
+                constraint.assigned_members.set(member_ids)
+            return JsonResponse({"ok": True, "schedule_url": reverse("photographer_workspace:schedule")},
+                                status=200 if request.POST["action"] == "edit_constraint" else 201)
+        if request.POST.get("action") in {"create_booking", "edit_booking", "create_consultation", "edit_consultation"}:
+            is_consultation = request.POST["action"].endswith("consultation")
+            is_edit = request.POST["action"].startswith("edit_")
+            session = None
+            if is_edit:
+                editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
+                session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
+            errors = {}
+            client = scope_assigned(Client.objects.all(), request.studio_access).filter(
+                pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
+            ).first()
+            if client is None:
+                errors["client"] = "Select a client from this workspace."
+            session_type = (request.POST.get("meeting_type", "").strip() if is_consultation
+                            else request.POST.get("session_type", "").strip())
+            if not session_type:
+                errors["session_type"] = "Enter a session type."
+            try:
+                starts_at = parse_local_datetime(profile, request.POST.get("start_date", ""), request.POST.get("start_time", ""))
+                ends_at = parse_local_datetime(profile, request.POST.get("end_date", ""), request.POST.get("end_time", ""))
+                if ends_at <= starts_at:
+                    errors["end_date"] = "The end must be after the start."
+            except (TypeError, ValueError):
+                starts_at = ends_at = None
+                errors["start_date"] = "Enter a valid start and end date and time."
+            status = request.POST.get("booking_status", ClientSession.Status.TENTATIVE)
+            if status not in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
+                errors["booking_status"] = "Select a valid booking status."
+            try:
+                booking_value = Decimal(request.POST.get("price") or "0")
+                if booking_value < 0:
+                    raise ValueError
+            except (ValueError, ArithmeticError):
+                errors["price"] = "Enter a valid non-negative price."
+            member_ids = set()
+            for raw_id in request.POST.getlist("team"):
+                try:
+                    member_ids.add(int(raw_id))
+                except (TypeError, ValueError):
+                    errors["team"] = "Select active photographers from this workspace."
+            valid_member_ids = set(StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk__in=member_ids
+            ).values_list("pk", flat=True))
+            if valid_member_ids != member_ids:
+                errors["team"] = "Select active photographers from this workspace."
+            if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+                own_id = request.studio_access.membership.pk if request.studio_access.membership else None
+                # A photographer's assignment is trusted workspace context, not
+                # a value the browser must remember to submit.  The shared form
+                # intentionally permits an empty selection for its default
+                # resource, so resolve that resource to the authenticated member.
+                if not member_ids and own_id is not None:
+                    member_ids = {own_id}
+                elif member_ids != {own_id}:
+                    errors["team"] = "You can only assign bookings to yourself."
+            if errors:
+                return JsonResponse({"ok": False, "errors": errors}, status=400)
+            values = {
+                "client": client, "session_type": session_type, "starts_at": starts_at,
+                "event_kind": ClientSession.EventKind.CONSULTATION if is_consultation else ClientSession.EventKind.BOOKING,
+                "duration_minutes": max(1, round((ends_at - starts_at).total_seconds() / 60)),
+                "location": ((request.POST.get("meeting_format", "") + ": " + request.POST.get("meeting_location", "")).strip(": ")
+                             if is_consultation else request.POST.get("location", "").strip()), "status": status,
+                "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
+            }
+            with transaction.atomic():
+                # Serialize scheduling writes per studio. This closes the usual
+                # empty-slot check/create race where there is no booking row to lock.
+                PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+                availability = availability_for(
+                    studio=profile, starts_at=starts_at,
+                    duration_minutes=values["duration_minutes"], member_ids=member_ids,
+                    exclude_pk=session.pk if session else None, lock=True,
+                )
+                if not availability["available"]:
+                    conflict_error = (
+                        "This photographer already has a booking during that time."
+                        if availability["conflicts"] else
+                        "This time is blocked by a schedule constraint."
+                        if availability["constraint_conflicts"] else
+                        "This time is outside the assigned photographer's working hours."
+                    )
+                    return JsonResponse({"ok": False, "errors": {"start_time": conflict_error}}, status=409)
+                if is_edit:
+                    before = {
+                        "client_id": session.client_id, "session_type": session.session_type,
+                        "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
+                        "location": session.location, "status": session.status,
+                        "booking_value": str(session.booking_value.quantize(Decimal("0.01"))), "notes": session.notes,
+                        "member_ids": sorted(session.assigned_members.values_list("pk", flat=True)),
+                    }
+                    for field, value in values.items():
+                        setattr(session, field, value)
+                    session.save()
+                    session.assigned_members.set(member_ids)
+                    after = before | {
+                        "client_id": session.client_id, "session_type": session.session_type,
+                        "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
+                        "location": session.location, "status": session.status,
+                        "booking_value": str(session.booking_value.quantize(Decimal("0.01"))), "notes": session.notes,
+                        "member_ids": sorted(member_ids),
+                    }
+                    changes = {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}
+                    if changes:
+                        event_type = (ClientActivity.EventType.BOOKING_RESCHEDULED
+                                      if {"starts_at", "duration_minutes"} & changes.keys()
+                                      else ClientActivity.EventType.BOOKING_UPDATED)
+                        ClientActivity.objects.create(
+                            photographer=profile, actor=request.user, client=session.client,
+                            booking=session, event_type=event_type, metadata={"changes": changes},
+                            description=f"{session.session_type} was {event_type.removeprefix('booking_')}.",
+                        )
+                else:
+                    session = ClientSession.objects.create(photographer=profile, **values)
+                    session.assigned_members.set(member_ids)
+                    ClientActivity.objects.create(
+                        photographer=profile, actor=request.user, client=client, booking=session,
+                        event_type=(ClientActivity.EventType.CONSULTATION_SCHEDULED
+                                    if is_consultation else ClientActivity.EventType.BOOKING_CREATED),
+                        description=f"{session.session_type} was created.",
+                    )
+            return JsonResponse({
+                "ok": True,
+                "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
+            }, status=200 if is_edit else 201)
+        if request.POST.get("action") == "mark_complete":
+            session = get_object_or_404(
+                scope_assigned(ClientSession.objects.all(), request.studio_access).exclude(
+                    status=ClientSession.Status.CANCELLED
+                ),
+                pk=request.POST.get("session_id"),
+            )
+            session.status = ClientSession.Status.COMPLETED
+            session.save(update_fields=["status"])
+            messages.success(request, f"{session.session_type} for {session.client} marked complete.")
+        return redirect("photographer_workspace:bookings")
+
+    now = timezone.now()
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    all_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access).select_related("client")
+    upcoming = all_sessions.filter(starts_at__gte=now).exclude(status__in=[ClientSession.Status.CANCELLED, ClientSession.Status.COMPLETED]).order_by("starts_at")
+    today_sessions = list(all_sessions.filter(starts_at__date=today).exclude(status=ClientSession.Status.CANCELLED).order_by("starts_at")[:5])
+
+    open_invoices = ClientInvoice.objects.filter(photographer=profile).exclude(status__in=[ClientInvoice.Status.PAID, ClientInvoice.Status.VOID])
+    overdue_invoices = open_invoices.filter(due_date__lt=today)
+    tentative = upcoming.filter(status=ClientSession.Status.TENTATIVE)
+
+    focus = []
+    if today_sessions:
+        focus.append({"icon": "bi-camera", "tone": "info", "title": f"{len(today_sessions)} session{'s' if len(today_sessions) != 1 else ''} happening today", "detail": "Review locations and client details before each session.", "action": "View schedule", "url": reverse("photographer_workspace:calendar")})
+    if overdue_invoices.exists():
+        focus.append({"icon": "bi-credit-card", "tone": "danger", "title": f"{overdue_invoices.count()} overdue payment{'s' if overdue_invoices.count() != 1 else ''}", "detail": "Follow up on invoice balances that are past due.", "action": "Review payments", "url": reverse("photographer_workspace:payments")})
+    if tentative.exists():
+        focus.append({"icon": "bi-calendar-exclamation", "tone": "warning", "title": f"{tentative.count()} unconfirmed booking{'s' if tentative.count() != 1 else ''}", "detail": "Confirm tentative sessions so the calendar stays accurate.", "action": "Review bookings", "url": reverse("photographer_workspace:calendar")})
+
+    revenue_periods = {"30": "30 days", "90": "90 days", "180": "6 months", "365": "12 months"}
+    revenue_period = request.GET.get("period", "30")
+    if revenue_period not in revenue_periods:
+        revenue_period = "30"
+    period_days = int(revenue_period)
+    period_start = today - timedelta(days=period_days - 1)
+    previous_start = period_start - timedelta(days=period_days)
+    invoices = ClientInvoice.objects.filter(photographer=profile, created_at__date__range=(period_start, today)).exclude(status=ClientInvoice.Status.VOID)
+    previous_total = ClientInvoice.objects.filter(photographer=profile, created_at__date__range=(previous_start, period_start - timedelta(days=1))).exclude(status=ClientInvoice.Status.VOID).aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    revenue_total = invoices.aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    collected = invoices.aggregate(total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    confirmed = invoices.exclude(status=ClientInvoice.Status.DRAFT).aggregate(total=Coalesce(Sum("total"), Value(Decimal("0.00")), output_field=DecimalField()))["total"]
+    change = ((revenue_total - previous_total) / previous_total * 100) if previous_total else None
+
+    stage_counts = {row["status"]: row["count"] for row in all_sessions.values("status").annotate(count=Count("id"))}
+    stage_total = sum(stage_counts.values())
+    booking_stages = [{"key": key, "label": label, "count": stage_counts.get(key, 0), "percent": round(stage_counts.get(key, 0) / stage_total * 100) if stage_total else 0} for key, label in ClientSession.Status.choices]
+
+    for session in list(upcoming[:5]) + today_sessions:
+        session.badge_variant = "success" if session.status == ClientSession.Status.CONFIRMED else "warning" if session.status == ClientSession.Status.TENTATIVE else "neutral"
+    upcoming_bookings = list(upcoming[:5])
+    for session in upcoming_bookings:
+        invoice = open_invoices.filter(booking=session).order_by("due_date").first()
+        session.needs_attention = session.status == ClientSession.Status.TENTATIVE or bool(invoice and invoice.balance > 0)
+        session.attention_label = "Confirmation needed" if session.status == ClientSession.Status.TENTATIVE else "Payment due"
+
+    activity_styles = {
+        ClientActivity.EventType.LEAD_BOOKED: "bi-calendar2-check",
+        ClientActivity.EventType.BOOKING_CREATED: "bi-calendar2-check",
+        ClientActivity.EventType.BOOKING_UPDATED: "bi-pencil-square",
+        ClientActivity.EventType.BOOKING_RESCHEDULED: "bi-calendar3",
+        ClientActivity.EventType.BOOKING_CANCELLED: "bi-calendar2-x",
+        ClientActivity.EventType.CONTRACT_SIGNED: "bi-pen",
+        ClientActivity.EventType.PAYMENT_RECEIVED: "bi-credit-card",
+        ClientActivity.EventType.CONSULTATION_SCHEDULED: "bi-calendar-event",
+    }
+    supported_events = list(activity_styles)
+    recent_activity = [{"icon": activity_styles[activity.event_type], "description": activity.description or activity.get_event_type_display(), "related": str(activity.client or activity.lead or "Booking workspace"), "occurred_at": activity.occurred_at} for activity in ClientActivity.objects.filter(photographer=profile, event_type__in=supported_events).select_related("lead", "client")[:5]]
+
+    context = _dashboard_context(request, "bookings", "Overview")
+    context.update({
+        "booking_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
+        "booking_metrics": [
+            {"label": "Upcoming Bookings", "value": upcoming.count(), "icon": "bi-calendar2-check", "context": "Tentative and confirmed sessions"},
+            {"label": "Bookings This Month", "value": all_sessions.filter(starts_at__date__gte=month_start, starts_at__date__lt=next_month).exclude(status=ClientSession.Status.CANCELLED).count(), "icon": "bi-calendar3", "context": today.strftime("%B %Y")},
+            {"label": "Pending Confirmations", "value": tentative.count(), "icon": "bi-clock-history", "context": "Tentative upcoming sessions"},
+            {"label": "Booking Revenue", "value": f"{profile.default_currency} {revenue_total:,.2f}", "icon": "bi-graph-up-arrow", "context": revenue_periods[revenue_period]},
+        ],
+        "today_focus": focus[:5], "today_sessions": today_sessions, "upcoming_bookings": upcoming_bookings,
+        "booking_stages": booking_stages, "revenue_period": revenue_period, "revenue_periods": revenue_periods.items(),
+        "revenue_summary": {"has_data": invoices.exists(), "total": revenue_total, "confirmed": confirmed, "pending": revenue_total - collected, "collected": collected, "change": change, "change_abs": abs(change) if change is not None else None},
+        "recent_booking_activity": recent_activity,
+        "booking_clients": Client.objects.filter(photographer=profile).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
+        # Keep booking creation on the shared schedule drawer rather than
+        # introducing an overview-specific form or client-side workflow.
+        "selected_date": today,
+        "event_form_types": [
+            ("booking", "Booking", "bi-camera"),
+            ("consultation", "Consultation", "bi-chat-square-text"),
+            ("editing", "Editing Time", "bi-magic"),
+            ("blocked", "Blocked Time", "bi-slash-circle"),
+            ("vacation", "Vacation", "bi-sun"),
+            ("mini", "Mini Session", "bi-people"),
+        ],
+        "booking_quick_actions": [
+            {"label": "New Booking", "icon": "bi-calendar-plus", "event_type": "booking", "help": "Start a client booking"},
+            {"label": "Block Time", "icon": "bi-calendar-x", "event_type": "blocked", "help": "Reserve unavailable time"},
+            {"label": "Schedule Consultation", "icon": "bi-chat-square-text", "event_type": "consultation", "help": "Plan a client consultation"},
+        ],
+    })
+    return render(request, "photographer_workspace/bookings/dashboard.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def booking_detail(request, pk):
+    """Keep booking-specific documents within the booking workspace."""
+    profile = request.studio
+    booking = get_object_or_404(
+        scope_assigned(
+            ClientSession.objects.select_related("client").prefetch_related("assigned_members__user"),
+            request.studio_access,
+        ), pk=pk,
+    )
+    if request.method == "POST":
+        return HttpResponseBadRequest("Unsupported booking action.")
+
+    tab = request.GET.get("tab", "overview")
+    if tab not in {"overview", "contract"}:
+        tab = "overview"
+    local_start = timezone.localtime(booking.starts_at, studio_timezone(profile))
+    local_end = local_start + timedelta(minutes=booking.duration_minutes)
+    booking_event_id = f"booking-detail-{booking.pk}"
+    booking_schedule_event = {
+        "id": booking.pk,
+        "drawer_id": booking_event_id,
+        "starts_at": local_start,
+        "ends_at": local_end,
+        "name": str(booking.client),
+        "session_type": booking.session_type,
+        "location": booking.location or "",
+        "notes": booking.notes,
+        "client_id": booking.client_id,
+        "status_key": booking.status,
+        "booking_value": str(booking.booking_value),
+        "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
+        "all_day": False,
+    }
+    contracts = list(
+        booking.contracts.select_related(
+            "template", "created_by", "photographer_signature",
+        ).all()
+    )
+    contract_status_variants = {
+        Contract.Status.DRAFT: "neutral",
+        Contract.Status.READY: "info",
+        Contract.Status.SENT: "warning",
+        Contract.Status.VIEWED: "info",
+        Contract.Status.SIGNED: "success",
+        Contract.Status.VOIDED: "danger",
+    }
+    for contract in contracts:
+        contract.status_variant = contract_status_variants[contract.status]
+    current_contract = contracts[0] if contracts else None
+    contract_progress_steps = []
+    if current_contract and current_contract.status != Contract.Status.VOIDED:
+        progress_rank = {
+            Contract.Status.DRAFT: 0,
+            Contract.Status.READY: 0,
+            Contract.Status.SENT: 1,
+            Contract.Status.VIEWED: 2,
+            Contract.Status.SIGNED: 3,
+        }[current_contract.status]
+        contract_progress_steps = [
+            {
+                "label": label,
+                "complete": index < progress_rank or current_contract.status == Contract.Status.SIGNED,
+                "current": index == progress_rank and current_contract.status != Contract.Status.SIGNED,
+            }
+            for index, label in enumerate(("Draft", "Sent", "Viewed", "Signed"))
+        ]
+    context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
+    context.update({
+        "booking": booking,
+        "booking_end": booking.starts_at + timedelta(minutes=booking.duration_minutes),
+        "booking_duration": (
+            f"{booking.duration_minutes // 60} hour{'s' if booking.duration_minutes // 60 != 1 else ''}"
+            + (f" {booking.duration_minutes % 60} minutes" if booking.duration_minutes % 60 else "")
+        ) if booking.duration_minutes >= 60 else f"{booking.duration_minutes} minutes",
+        "booking_value_display": format_currency(booking.booking_value, profile.default_currency),
+        "booking_event_id": booking_event_id,
+        "booking_schedule_events": [booking_schedule_event],
+        "booking_clients": scope_assigned(Client.objects.all(), request.studio_access).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
+        "selected_date": local_start.date(),
+        "event_form_types": [
+            ("booking", "Booking", "bi-camera"),
+            ("consultation", "Consultation", "bi-chat-square-text"),
+            ("editing", "Editing Time", "bi-magic"),
+            ("blocked", "Blocked Time", "bi-slash-circle"),
+            ("vacation", "Vacation", "bi-sun"),
+            ("mini", "Mini Session", "bi-people"),
+        ],
+        "booking_status_variant": {
+            ClientSession.Status.TENTATIVE: "warning",
+            ClientSession.Status.CONFIRMED: "success",
+            ClientSession.Status.COMPLETED: "success",
+            ClientSession.Status.CANCELLED: "danger",
+        }[booking.status],
+        "booking_status_description": {
+            ClientSession.Status.TENTATIVE: "This booking is pending confirmation.",
+            ClientSession.Status.CONFIRMED: "This session is confirmed with the client.",
+            ClientSession.Status.COMPLETED: "This photography session has been completed.",
+            ClientSession.Status.CANCELLED: "This booking has been cancelled.",
+        }[booking.status],
+        "booking_tab": tab,
+        "booking_activity": booking.activities.select_related("actor").all()[:20],
+        "contracts": contracts,
+        "current_contract": current_contract,
+        "contract_progress_steps": contract_progress_steps,
+        "signed_contract_count": sum(
+            contract.status == Contract.Status.SIGNED for contract in contracts
+        ),
+        "contract_create_url": reverse("photographer_workspace:contract_create", args=[booking.pk]),
+        "can_manage_contract_templates": request.studio_access.allows("settings"),
+        "contract_templates_url": reverse("photographer_workspace:contract_templates"),
+    })
+    return render(request, "photographer_workspace/bookings/detail.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_create(request, booking_pk):
+    """Create a draft only from a template visible in the active studio."""
+    booking = get_object_or_404(
+        scope_assigned(ClientSession.objects.select_related("client"), request.studio_access),
+        pk=booking_pk,
+    )
+    form = ContractCreateForm(request.POST or None, studio=request.studio)
+    if request.method == "POST" and form.is_valid():
+        contract = create_contract_from_template(
+            booking=booking, template=form.cleaned_data["template"], actor=request.user,
+        )
+        messages.success(request, "Draft contract created.")
+        return redirect("photographer_workspace:contract_detail", pk=contract.pk)
+    context = _dashboard_context(request, "bookings", "Create Contract")
+    context.update({
+        "booking": booking,
+        "booking_end": booking.starts_at + timedelta(minutes=booking.duration_minutes),
+        "booking_value_display": format_currency(booking.booking_value, request.studio.default_currency),
+        "can_manage_contract_templates": request.studio_access.allows("settings"),
+        "form": form,
+        "contract_templates_url": reverse("photographer_workspace:contract_templates"),
+        "contract_template_create_url": reverse("photographer_workspace:contract_template_create"),
+    })
+    return render(request, "photographer_workspace/contracts/create.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_detail(request, pk):
+    """Display a contract only when its booking is accessible in this studio."""
+    accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    contract = get_object_or_404(
+        Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
+        .select_related("booking", "client", "template", "created_by"),
+        pk=pk,
+    )
+    form = ContractCustomizeForm(request.POST or None, instance=contract)
+    is_editable = contract.status == Contract.Status.DRAFT
+    if request.method == "POST":
+        if not is_editable:
+            raise PermissionDenied
+        if form.is_valid():
+            form.save()
+            ContractEvent.objects.create(
+                contract=contract, actor=request.user,
+                event_type=ContractEvent.EventType.CUSTOMIZED,
+                metadata={"contract_version": contract.version},
+            )
+            if request.POST.get("action") == "preview":
+                return redirect("photographer_workspace:contract_preview", pk=contract.pk)
+            messages.success(request, "Contract draft saved.")
+            return redirect("photographer_workspace:contract_customize", pk=contract.pk)
+    context = _dashboard_context(request, "bookings", contract.title)
+    context.update({"contract": contract, "form": form, "is_editable": is_editable,
+                    "merge_fields": MERGE_FIELDS.items(),
+                    "contract_status_variant": {
+                        Contract.Status.DRAFT: "neutral", Contract.Status.READY: "info",
+                        Contract.Status.SENT: "warning", Contract.Status.VIEWED: "info",
+                        Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
+                    }[contract.status]})
+    return render(request, "photographer_workspace/contracts/detail.html", context)
+
+
+def _accessible_contract(request, pk):
+    accessible_bookings = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    return get_object_or_404(
+        Contract.objects.filter(photographer=request.studio, booking__in=accessible_bookings)
+        .select_related("booking", "client", "photographer", "photographer__user",
+                        "photographer_signature"), pk=pk,
+    )
+
+
+@photographer_workspace_required
+@require_GET
+def signed_contract_pdf(request, pk, disposition="inline"):
+    contract = _accessible_contract(request, pk)
+    document = get_object_or_404(SignedContractDocument, contract=contract,
+                                 status=SignedContractDocument.Status.READY)
+    response = FileResponse(document.file.open("rb"), content_type=document.content_type)
+    response["Content-Disposition"] = f'{disposition}; filename="signed-contract-{contract.pk}.pdf"'
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def signed_contract_pdf_retry(request, pk):
+    contract = _accessible_contract(request, pk)
+    if contract.status != Contract.Status.SIGNED:
+        raise Http404
+    document = generate_signed_contract_pdf(contract.pk)
+    if document.status == SignedContractDocument.Status.READY:
+        messages.success(request, "The signed PDF is ready.")
+    else:
+        messages.error(request, "The signed PDF could not be generated. You can retry safely.")
+    return redirect("photographer_workspace:contract_detail", pk=contract.pk)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_preview(request, pk):
+    contract = _accessible_contract(request, pk)
+    signature_form = PhotographerSignatureForm(request.POST or None)
+    if request.method == "POST" and signature_form.is_valid():
+        try:
+            sign_contract_as_photographer(
+                contract=contract, actor=request.user,
+                ip_address=request.META.get("REMOTE_ADDR") or None,
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                **signature_form.cleaned_data,
+            )
+        except ValidationError as exc:
+            if hasattr(exc, "message_dict"):
+                for field, errors in exc.message_dict.items():
+                    for error in errors:
+                        signature_form.add_error(field if field in signature_form.fields else None, error)
+            else:
+                signature_form.add_error(None, exc.messages[0])
+        else:
+            messages.success(request, "Photographer signature recorded. The contract is ready to send.")
+            return redirect("photographer_workspace:contract_preview", pk=contract.pk)
+    try:
+        validate_contract_for_email(contract)
+        send_errors = []
+    except ValidationError as exc:
+        send_errors = exc.messages
+    context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
+    context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
+                    "send_errors": send_errors, "signature_form": signature_form,
+                    "signature_consent_text": DEFAULT_SIGNATURE_CONSENT,
+                    "contract_status_variant": {
+                        Contract.Status.DRAFT: "neutral", Contract.Status.READY: "info",
+                        Contract.Status.SENT: "warning", Contract.Status.VIEWED: "info",
+                        Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
+                    }[contract.status]})
+    return render(request, "photographer_workspace/contracts/preview.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_send(request, pk):
+    contract = _accessible_contract(request, pk)
+    try:
+        send_contract_for_review(contract=contract, actor=request.user,
+                                 build_absolute_uri=request.build_absolute_uri)
+    except ValidationError as exc:
+        for error in exc.messages:
+            messages.error(request, error)
+    except ContractDeliveryError:
+        messages.error(request, "The email could not be delivered. The contract was not marked as sent.")
+    else:
+        messages.success(request, "Contract review link sent to the client.")
+    return redirect("photographer_workspace:contract_preview", pk=contract.pk)
+
+
+@photographer_workspace_required
+@require_GET
+def contract_templates(request):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    templates = list(
+        ContractTemplate.objects.filter(photographer=request.studio)
+        .select_related("created_by")
+        .order_by("-is_active", "name", "pk")
+    )
+    context = _dashboard_context(request, "settings", "Contract Templates")
+    context.update({
+        "templates": templates,
+        "template_count": len(templates),
+        "active_template_count": sum(item.is_active for item in templates),
+        "archived_template_count": sum(not item.is_active for item in templates),
+        "create_url": reverse("photographer_workspace:contract_template_create"),
+    })
+    return render(request, "photographer_workspace/contracts/templates.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def contract_template_form(request, pk=None):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    template = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk) if pk else None
+    form = ContractTemplateForm(request.POST or None, instance=template)
+    if request.method == "POST" and form.is_valid():
+        item = form.save(commit=False)
+        item.photographer = request.studio
+        item.created_by = item.created_by or request.user
+        if template and form.has_changed():
+            item.version += 1
+        item.full_clean()
+        item.save()
+        messages.success(request, "Contract template saved.")
+        return redirect("photographer_workspace:contract_templates")
+    context = _dashboard_context(request, "settings", "Edit Contract Template" if template else "Create Contract Template")
+    context.update({
+        "form": form,
+        "template_object": template,
+        "merge_fields": MERGE_FIELDS.items(),
+        "contract_starters": serialized_contract_starters() if template is None else {},
+    })
+    return render(request, "photographer_workspace/contracts/template_form.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_template_action(request, pk):
+    if not request.studio_access.allows("settings"):
+        raise PermissionDenied
+    source = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk)
+    action = request.POST.get("action")
+    if action == "duplicate":
+        source.pk = None
+        source.name = f"{source.name} (copy)"
+        source.created_by = request.user
+        source.version = 1
+        source.save()
+        messages.success(request, "Contract template duplicated.")
+    elif action == "toggle_active":
+        source.is_active = not source.is_active
+        source.save(update_fields=["is_active", "updated_at"])
+        messages.success(request, "Contract template status updated.")
+    else:
+        return HttpResponseBadRequest("Unsupported template action.")
+    return redirect("photographer_workspace:contract_templates")
+
+
+@photographer_workspace_required
+@require_GET
+def schedule(request):
+    """Render the responsive schedule with booking data and an illustrative empty state."""
+    profile = request.studio
+    today = timezone.localdate()
+    try:
+        selected_date = date.fromisoformat(request.GET.get("date", ""))
+    except ValueError:
+        selected_date = today
+
+    view = request.GET.get("view", "month")
+    view_labels = {"month": "Month", "week": "Week", "day": "Day", "agenda": "Agenda", "list": "Booking List"}
+    if view not in view_labels:
+        view = "month"
+
+    month_start = selected_date.replace(day=1)
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    previous_month = (month_start - timedelta(days=1)).replace(day=1)
+    week_start = selected_date - timedelta(days=selected_date.weekday())
+    if view == "month":
+        range_start, range_end = month_start, next_month
+        previous_date, next_date = previous_month, next_month
+        date_range_label = selected_date.strftime("%B %Y")
+    elif view == "week":
+        range_start, range_end = week_start, week_start + timedelta(days=7)
+        previous_date, next_date = selected_date - timedelta(days=7), selected_date + timedelta(days=7)
+        range_last_day = range_end - timedelta(days=1)
+        date_range_label = f"{week_start:%b} {week_start.day} – {range_last_day:%b} {range_last_day.day}, {range_last_day.year}"
+    elif view == "day":
+        range_start, range_end = selected_date, selected_date + timedelta(days=1)
+        previous_date, next_date = selected_date - timedelta(days=1), selected_date + timedelta(days=1)
+        date_range_label = f"{selected_date:%A, %B} {selected_date.day}, {selected_date.year}"
+    else:
+        range_start, range_end = selected_date, selected_date + timedelta(days=30)
+        previous_date, next_date = selected_date - timedelta(days=30), selected_date + timedelta(days=30)
+        range_last_day = range_end - timedelta(days=1)
+        date_range_label = f"{selected_date:%b} {selected_date.day} – {range_last_day:%b} {range_last_day.day}, {range_last_day.year}"
+
+    filter_values = {
+        "q": request.GET.get("q", "").strip(),
+        "member": request.GET.get("member", ""),
+        "session_type": request.GET.get("session_type", ""),
+        "status": request.GET.get("status", ""),
+        "event_type": request.GET.get("event_type", ""),
+        "location": request.GET.get("location", ""),
+        "scope": request.GET.get("scope", "studio"),
+        "availability": request.GET.get("availability", ""),
+        "show_completed": request.GET.get("show_completed", ""),
+        "show_cancelled": request.GET.get("show_cancelled", ""),
+    }
+    filter_query = urlencode([(key, value) for key, value in filter_values.items() if value])
+    sessions_queryset = scope_assigned(ClientSession.objects.all(), request.studio_access).filter(
+        starts_at__date__gte=range_start,
+        starts_at__date__lt=range_end,
+    )
+    visible_statuses = [ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED]
+    if filter_values["show_completed"]:
+        visible_statuses.append(ClientSession.Status.COMPLETED)
+    if filter_values["show_cancelled"]:
+        visible_statuses.append(ClientSession.Status.CANCELLED)
+    if filter_values["status"]:
+        visible_statuses = ([filter_values["status"]]
+                            if filter_values["status"] in ClientSession.Status.values else [])
+    sessions_queryset = sessions_queryset.filter(status__in=visible_statuses)
+    if filter_values["q"]:
+        term = filter_values["q"]
+        booking_number = term.upper().removeprefix("LP-").removeprefix("#")
+        query = (Q(client__first_name__icontains=term) | Q(client__last_name__icontains=term) |
+                 Q(session_type__icontains=term) | Q(location__icontains=term))
+        if booking_number.isdigit():
+            query |= Q(pk=int(booking_number))
+        sessions_queryset = sessions_queryset.filter(query)
+    if filter_values["session_type"]:
+        sessions_queryset = sessions_queryset.filter(session_type=filter_values["session_type"])
+    if filter_values["location"]:
+        sessions_queryset = sessions_queryset.filter(location=filter_values["location"])
+    if filter_values["scope"] == "me":
+        # Owners do not have a StudioMembership row, so their personal schedule
+        # is represented by the bookings with no explicit team assignment.
+        if request.studio_access.membership:
+            sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
+        else:
+            sessions_queryset = sessions_queryset.filter(assigned_members__isnull=True)
+    elif filter_values["scope"] not in ("", "studio"):
+        sessions_queryset = sessions_queryset.none()
+    if filter_values["member"].isdigit():
+        member_id = int(filter_values["member"])
+        if StudioMembership.objects.filter(
+                studio=profile, status=StudioMembership.Status.ACTIVE, pk=member_id).exists():
+            sessions_queryset = sessions_queryset.filter(assigned_members__pk=member_id)
+        else:
+            sessions_queryset = sessions_queryset.none()
+    elif filter_values["member"] == "me" and request.studio_access.membership:
+        sessions_queryset = sessions_queryset.filter(assigned_members=request.studio_access.membership)
+    elif filter_values["member"]:
+        sessions_queryset = sessions_queryset.none()
+    if filter_values["event_type"] in ClientSession.EventKind.values:
+        sessions_queryset = sessions_queryset.filter(event_kind=filter_values["event_type"])
+    elif filter_values["event_type"]:
+        sessions_queryset = sessions_queryset.none()
+    all_profile_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
+    locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
+    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user").order_by("starts_at"))
+    owner = request.user.full_name or "Studio photographer"
+    events = [{
+        "id": session.pk,
+        "starts_at": timezone.localtime(session.starts_at),
+        "ends_at": timezone.localtime(session.starts_at) + timedelta(minutes=session.duration_minutes),
+        "name": str(session.client), "session_type": session.session_type,
+        "booking_number": f"LP-{session.pk:04d}", "location": session.location or "Location not set",
+        "photographer": ", ".join(
+            membership.user.full_name or membership.user.email
+            for membership in session.assigned_members.all()
+        ) or owner, "status": session.get_status_display(), "status_key": session.status,
+        "kind": session.event_kind,
+        "icon": "bi-chat-square-text" if session.event_kind == ClientSession.EventKind.CONSULTATION else "bi-camera",
+        "warning": session.status == ClientSession.Status.TENTATIVE,
+        "persisted": True, "move_url": reverse("photographer_workspace:reschedule_session", args=[session.pk]),
+        "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
+        "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
+        "contact_email": session.client.email, "contact_phone": session.client.phone,
+        "package": "Not assigned", "contract_status": "Not tracked",
+        "payment_status": (
+            "Not invoiced" if not session.invoices.all()
+            else "Paid" if all(invoice.status in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all())
+            else "Payment due"
+        ), "questionnaire_status": "Not tracked",
+        "notes": session.notes,
+        "client_id": session.client_id, "booking_value": str(session.booking_value),
+        "member_ids": [membership.pk for membership in session.assigned_members.all()],
+        "warnings": (
+            (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])
+            + (["Payment requires attention"] if session.invoices.all() and any(invoice.status not in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all()) else [])
+        ),
+    } for session in sessions]
+
+    if not filter_values["event_type"] or filter_values["event_type"] == "mini":
+        minis = MiniSession.objects.for_photographer(profile).filter(
+            starts_at__date__gte=range_start, starts_at__date__lt=range_end,
+        )
+        if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+            minis = minis.filter(assigned_members=request.studio_access.membership)
+        if not filter_values["show_cancelled"]:
+            minis = minis.exclude(status=MiniSession.Status.CANCELLED)
+        for mini in minis.prefetch_related("assigned_members__user", "slots__bookings"):
+            members = list(mini.assigned_members.all())
+            events.append({
+                "id": f"mini-{mini.pk}", "mini_id": mini.pk,
+                "starts_at": timezone.localtime(mini.starts_at, studio_timezone(profile)),
+                "ends_at": timezone.localtime(mini.starts_at, studio_timezone(profile)) + timedelta(minutes=mini.duration_minutes),
+                "name": mini.name, "session_type": mini.service or "Mini session",
+                "booking_number": "", "location": mini.location,
+                "photographer": ", ".join(member.user.full_name or member.user.email for member in members) or owner,
+                "status": mini.get_status_display(), "status_key": mini.status, "kind": "mini", "icon": "bi-people",
+                "warning": False, "persisted": True, "move_url": "", "all_day": False, "url": "",
+                "contact": f"{mini.slots.count()} slots · capacity {mini.capacity_per_slot} each",
+                "contact_email": "", "contact_phone": "", "package": mini.service or "Not assigned",
+                "contract_status": "Not tracked", "payment_status": "Not tracked", "questionnaire_status": "Not tracked",
+                "notes": mini.notes, "client_id": "", "booking_value": "0",
+                "member_ids": [member.pk for member in members], "warnings": [],
+                "slot_duration": mini.slot_duration_minutes, "slot_count": mini.slot_count,
+                "buffer": mini.buffer_minutes, "capacity": mini.capacity_per_slot,
+            })
+
+    range_starts_at = parse_local_datetime(profile, range_start.isoformat(), "00:00")
+    range_ends_at = parse_local_datetime(profile, range_end.isoformat(), "00:00")
+    constraints_queryset = ScheduleConstraint.objects.filter(
+        studio=profile, starts_at__lt=range_ends_at, ends_at__gt=range_starts_at,
+    ).prefetch_related("assigned_members__user")
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        constraints_queryset = constraints_queryset.filter(
+            Q(entire_team=True) | Q(assigned_members=request.studio_access.membership)
+        ).distinct()
+    if filter_values["event_type"] == "booking":
+        constraints_queryset = constraints_queryset.none()
+    elif filter_values["event_type"]:
+        constraints_queryset = constraints_queryset.filter(kind=filter_values["event_type"])
+    constraint_icons = {"blocked": "bi-slash-circle", "editing": "bi-magic", "vacation": "bi-sun"}
+    for constraint in constraints_queryset:
+        local_start = timezone.localtime(constraint.starts_at, studio_timezone(profile))
+        local_end = timezone.localtime(constraint.ends_at, studio_timezone(profile))
+        members = list(constraint.assigned_members.all())
+        events.append({
+            "id": f"constraint-{constraint.pk}", "constraint_id": constraint.pk,
+            "starts_at": local_start, "ends_at": local_end,
+            "name": constraint.title, "session_type": constraint.get_kind_display(),
+            "booking_number": "", "location": "Away" if constraint.kind == "vacation" else "",
+            "photographer": "Entire team" if constraint.entire_team else ", ".join(
+                member.user.full_name or member.email for member in members
+            ) or owner,
+            "status": "Blocks bookings" if constraint.blocks_booking else "Informational",
+            "status_key": "blocking" if constraint.blocks_booking else "informational",
+            "kind": constraint.kind, "icon": constraint_icons[constraint.kind], "warning": False,
+            "persisted": True, "all_day": constraint.all_day, "url": "",
+            "contact": "", "contact_email": "", "contact_phone": "", "package": "",
+            "contract_status": "", "payment_status": "", "questionnaire_status": "",
+            "notes": constraint.notes, "reason": constraint.reason, "client_id": None,
+            "booking_value": "", "member_ids": [member.pk for member in members], "warnings": [],
+        })
+
+    action_labels = {
+        "booking": ["Open Full Booking", "Contact Client", "Edit Booking", "Reschedule", "Mark Complete", "Create Gallery", "Cancel Booking"],
+        "consultation": ["Contact Client", "Edit Consultation", "Reschedule", "Convert to Booking", "Cancel Consultation"],
+        "editing": ["Open Gallery", "Edit Time", "Reschedule", "Mark Complete"],
+        "blocked": ["Edit Block", "Reschedule", "Remove Block"],
+        "vacation": ["Edit Vacation", "Change Dates", "Remove Vacation"],
+        "mini": ["Manage Mini Session", "View Registrations", "Edit Session", "Reschedule", "Contact Attendees", "Cancel Session"],
+    }
+    for index, event in enumerate(events):
+        event["drawer_id"] = f"schedule-event-{index}"
+        minutes = round((event["ends_at"] - event["starts_at"]).total_seconds() / 60)
+        hours, remaining_minutes = divmod(minutes, 60)
+        event["duration"] = " ".join(part for part in (
+            f"{hours} hr" if hours else "", f"{remaining_minutes} min" if remaining_minutes else "",
+        ) if part)
+        if event["kind"] in ("booking", "consultation"):
+            noun = "Consultation" if event["kind"] == "consultation" else "Booking"
+            event["actions"] = [
+                *([{"label": "Open Full Booking", "type": "link", "url": event["url"], "priority": "primary", "icon": "bi-arrow-right"}] if event["kind"] == "booking" else []),
+                *([{"label": "Contact Client", "type": "link", "url": f'mailto:{event["contact_email"]}', "priority": "workflow", "icon": "bi-envelope"}] if event["contact_email"] else []),
+                {"label": f"Edit {noun}", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                *([{"label": "Reschedule", "type": "reschedule", "priority": "secondary", "icon": "bi-calendar3"}] if event["status_key"] not in (ClientSession.Status.COMPLETED, ClientSession.Status.CANCELLED) else []),
+                *([{"label": "Mark Complete", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "mark_complete", "priority": "workflow", "icon": "bi-check2-circle"}] if event["status_key"] in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) else []),
+                *([{"label": "Create Gallery", "type": "link", "url": reverse("photographer_workspace:create_gallery"), "priority": "workflow", "icon": "bi-images"}] if event["status_key"] == ClientSession.Status.COMPLETED else []),
+                *([{"label": f"Cancel {noun}", "type": "post", "url": reverse("photographer_workspace:booking_action", args=[event["id"]]), "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}] if event["status_key"] != ClientSession.Status.CANCELLED else []),
+            ]
+        elif event["kind"] == "mini":
+            event["actions"] = [
+                {"label": "Edit Mini Session", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                *([{"label": "Cancel Mini Session", "type": "post",
+                   "url": reverse("photographer_workspace:mini_session_action", args=[event["mini_id"]]),
+                   "value": "cancel", "priority": "destructive", "icon": "bi-x-circle"}]
+                  if event["status_key"] != MiniSession.Status.CANCELLED else []),
+            ]
+        else:
+            event["actions"] = [
+                {"label": f"Edit {event['session_type']}", "type": "edit", "priority": "secondary", "icon": "bi-pencil"},
+                {"label": "Remove", "type": "post",
+                 "url": reverse("photographer_workspace:constraint_action", args=[event["constraint_id"]]),
+                 "value": "delete", "priority": "destructive", "icon": "bi-trash"},
+            ]
+
+    # Keep the schedule's operational summary intentionally narrow: what is next
+    # today, the next confirmed shoots, and only issues that need intervention.
+    now = timezone.localtime()
+    todays_schedule = sorted(
+        (event for event in events if event["starts_at"].date() == today and event["ends_at"] >= now),
+        key=lambda event: event["starts_at"],
+    )[:5]
+    if todays_schedule:
+        todays_schedule[0]["is_next"] = True
+
+    upcoming_shoots = sorted(
+        (
+            event for event in events
+            if event["kind"] in ("booking", "mini")
+            and event["status"].casefold() == "confirmed"
+            and event["starts_at"] >= now
+        ),
+        key=lambda event: event["starts_at"],
+    )[:5]
+    for event in upcoming_shoots:
+        event["preparation_incomplete"] = any((
+            event["contract_status"] != "Signed",
+            event["payment_status"] != "Paid",
+            event["questionnaire_status"] != "Complete",
+            event["location"] in ("", "Location not set"),
+            not event["photographer"],
+        ))
+
+    alert_icons = {
+        "Scheduling conflict": "bi-calendar2-x",
+        "Travel time may be insufficient": "bi-car-front",
+        "Contract not signed": "bi-file-earmark-x",
+        "Retainer unpaid": "bi-credit-card",
+        "Questionnaire incomplete": "bi-clipboard-x",
+    }
+    scheduling_alerts = []
+    for event in events:
+        for warning in event["warnings"]:
+            if len(scheduling_alerts) == 5:
+                break
+            scheduling_alerts.append({
+                "title": warning,
+                "event": event["name"],
+                "when": event["starts_at"],
+                "icon": alert_icons.get(warning, "bi-exclamation-triangle"),
+                "drawer_id": event["drawer_id"],
+            })
+
+    events_by_date = {}
+    for event in events:
+        event_day = event["starts_at"].date()
+        final_day = (event["ends_at"] - timedelta(microseconds=1)).date()
+        while event_day <= final_day:
+            events_by_date.setdefault(event_day, []).append(event)
+            event_day += timedelta(days=1)
+
+    agenda_groups = []
+    for event_date in sorted(events_by_date):
+        if event_date == today:
+            relative_label = "Today"
+        elif event_date == today + timedelta(days=1):
+            relative_label = "Tomorrow"
+        else:
+            relative_label = "Upcoming"
+        agenda_groups.append({
+            "date": event_date,
+            "relative_label": relative_label,
+            "events": events_by_date[event_date],
+        })
+
+    sort = request.GET.get("sort", "date")
+    sort_options = {
+        "date": lambda event: event["starts_at"],
+        "date_desc": lambda event: event["starts_at"],
+        "client": lambda event: event["name"].casefold(),
+        "status": lambda event: event["status"].casefold(),
+        "booking": lambda event: event["booking_number"],
+    }
+    if sort not in sort_options:
+        sort = "date"
+    booking_events = [event for event in events if event["kind"] == "booking" and event["status"].casefold() in ("confirmed", "tentative")]
+    booking_events.sort(key=sort_options[sort], reverse=sort == "date_desc")
+    booking_page = Paginator(booking_events, 10).get_page(request.GET.get("page", 1))
+    list_query_values = [(key, value) for key, value in filter_values.items() if value]
+    list_query_values.extend((("view", "list"), ("date", selected_date.isoformat()), ("sort", sort)))
+    list_query = urlencode(list_query_values)
+
+    calendar_weeks = []
+    for week in Calendar(firstweekday=0).monthdatescalendar(selected_date.year, selected_date.month):
+        calendar_weeks.append([
+            {
+                "date": day,
+                "in_month": day.month == selected_date.month,
+                "is_today": day == today,
+                "events": events_by_date.get(day, []),
+            }
+            for day in week
+        ])
+
+    context = _dashboard_context(request, "calendar", "Schedule")
+    context.update({
+        "schedule_view": view,
+        "schedule_view_label": view_labels[view],
+        "schedule_views": view_labels.items(),
+        "selected_date": selected_date,
+        "today": today,
+        "date_range_label": date_range_label,
+        "previous_date": previous_date,
+        "next_date": next_date,
+        "calendar_weeks": calendar_weeks,
+        "schedule_events": events,
+        "week_days": [{"date": range_start + timedelta(days=offset), "events": events_by_date.get(range_start + timedelta(days=offset), [])} for offset in range((range_end - range_start).days)],
+        "agenda_groups": agenda_groups,
+        "booking_page": booking_page,
+        "booking_sort": sort,
+        "list_query": list_query,
+        "filter_values": filter_values,
+        "session_type_options": session_types,
+        "location_options": locations,
+        "event_type_options": [("booking", "Bookings"), ("consultation", "Consultations"), ("editing", "Editing"), ("blocked", "Blocked Time"), ("vacation", "Vacation"), ("mini", "Mini Sessions")],
+        "event_form_types": [("booking", "Booking", "bi-camera"), ("consultation", "Consultation", "bi-chat-square-text"), ("editing", "Editing Time", "bi-magic"), ("blocked", "Blocked Time", "bi-slash-circle"), ("vacation", "Vacation", "bi-sun"), ("mini", "Mini Session", "bi-people")],
+        "booking_clients": scope_assigned(Client.objects.all(), request.studio_access).order_by("first_name", "last_name"),
+        "schedule_members": StudioMembership.objects.filter(
+            studio=profile, status=StudioMembership.Status.ACTIVE
+        ).select_related("user").order_by("user__first_name", "user__last_name", "invitation_first_name"),
+        "studio_timezone": str(studio_timezone(profile)),
+        "booking_status_options": ClientSession.Status.choices,
+        "active_filter_count": sum(bool(value) for key, value in filter_values.items() if key not in ("scope",)) + (filter_values["scope"] == "me"),
+        "filter_panel_count": sum(bool(filter_values[key]) for key in (
+            "member", "session_type", "status", "event_type", "location",
+            "availability", "show_completed", "show_cancelled",
+        )),
+        "filter_query": filter_query,
+        "todays_schedule": todays_schedule,
+        "upcoming_shoots": upcoming_shoots,
+        "scheduling_alerts": scheduling_alerts,
+        "schedule_state": request.GET.get("state") if request.GET.get("state") in {"loading", "error"} else "ready",
+    })
+    return render(request, "photographer_workspace/bookings/schedule.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def reschedule_session(request, pk):
+    """Validate and atomically move one studio-owned booking."""
+    import json
+
+    profile = request.studio
+    session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
+    try:
+        payload = json.loads(request.body or "{}")
+        starts_at = datetime.fromisoformat(payload["starts_at"].replace("Z", "+00:00"))
+        if timezone.is_naive(starts_at):
+            starts_at = timezone.make_aware(starts_at)
+        duration = int(payload.get("duration_minutes", session.duration_minutes))
+        if duration < 30 or duration > 1440 or duration % 15:
+            raise ValueError
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return JsonResponse({"error": "Enter a valid start time and a duration in 15-minute increments."}, status=400)
+
+    local_start = timezone.localtime(starts_at, studio_timezone(profile))
+    end = starts_at + timedelta(minutes=duration)
+    member_ids = set(session.assigned_members.values_list("pk", flat=True))
+    result = availability_for(studio=profile, starts_at=starts_at, duration_minutes=duration,
+                              member_ids=member_ids, exclude_pk=session.pk)
+    conflicts = []
+    for other in result["conflicts"]:
+        conflict_start = timezone.localtime(other.starts_at)
+        conflict_time = conflict_start.strftime("%I:%M %p").lstrip("0")
+        conflicts.append(f"{other.client} · {conflict_start:%b} {conflict_start.day}, {conflict_time}")
+    checks = [
+        {"key": "conflict", "label": "Booking conflicts", "ok": not conflicts, "detail": "No overlapping bookings" if not conflicts else ", ".join(conflicts)},
+        {"key": "availability", "label": "Photographer availability", "ok": result["working_hours_ok"], "detail": "Within configured working hours" if result["working_hours_ok"] else "Outside the photographer's configured working hours"},
+    ]
+    blocking = not result["available"]
+    response = {"starts_at": local_start.isoformat(), "ends_at": timezone.localtime(end).isoformat(),
+                "checks": checks, "blocking": blocking}
+    if payload.get("preview", True):
+        return JsonResponse(response)
+    if blocking:
+        return JsonResponse(response | {"error": "Resolve booking conflicts or working hours before saving."}, status=409)
+    with transaction.atomic():
+        PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+        locked = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+        locked_members = set(locked.assigned_members.values_list("pk", flat=True))
+        locked_result = availability_for(
+            studio=profile, starts_at=starts_at, duration_minutes=duration,
+            member_ids=locked_members, exclude_pk=locked.pk, lock=True,
+        )
+        if not locked_result["available"]:
+            return JsonResponse(response | {"blocking": True, "error": "The slot became unavailable. Refresh and choose another time."}, status=409)
+        before = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
+        locked.starts_at, locked.duration_minutes = starts_at, duration
+        locked.save(update_fields=("starts_at", "duration_minutes", "updated_at"))
+        after = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
+        if before != after:
+            ClientActivity.objects.create(
+                photographer=profile, actor=request.user, client=locked.client, booking=locked,
+                event_type=ClientActivity.EventType.BOOKING_RESCHEDULED,
+                description=f"{locked.session_type} was rescheduled.",
+                metadata={"changes": {key: {"before": before[key], "after": after[key]} for key in before if before[key] != after[key]}},
+            )
+    # No booking-notification delivery service is wired to this endpoint.
+    return JsonResponse(response | {"saved": True, "notified": False})
+
+
+@photographer_workspace_required
+@require_POST
+def booking_action(request, pk):
+    """Apply the state transitions supported by the schedule inspector."""
+    session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
+    action = request.POST.get("action")
+    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
+        session.status = ClientSession.Status.COMPLETED
+        session.save(update_fields=("status", "updated_at"))
+        messages.success(request, f"{session.session_type} for {session.client} marked complete.")
+    elif action == "cancel" and session.status != ClientSession.Status.CANCELLED:
+        session.status = ClientSession.Status.CANCELLED
+        session.cancelled_at = timezone.now()
+        session.cancellation_reason = request.POST.get("reason", "").strip()[:500]
+        session.save(update_fields=("status", "cancelled_at", "cancellation_reason", "updated_at"))
+        ClientActivity.objects.create(
+            photographer=request.studio, actor=request.user, client=session.client, booking=session,
+            event_type=ClientActivity.EventType.BOOKING_CANCELLED,
+            description=f"{session.session_type} was cancelled.",
+            metadata={"reason": session.cancellation_reason},
+        )
+        messages.success(request, f"{session.session_type} for {session.client} cancelled.")
+    else:
+        messages.error(request, "That booking action is not available in its current state.")
+    return redirect("photographer_workspace:schedule")
+
+
+@photographer_workspace_required
+@require_POST
+def mini_slot_book(request, pk):
+    """Atomically assign a workspace client without exceeding persisted slot capacity."""
+    profile = request.studio
+    client = get_object_or_404(Client.objects.for_photographer(profile), pk=request.POST.get("client"))
+    with transaction.atomic():
+        PhotographerProfile.objects.select_for_update().get(pk=profile.pk)
+        slot = get_object_or_404(
+            MiniSessionSlot.objects.select_for_update().select_related("mini_session"),
+            pk=pk, mini_session__photographer=profile, mini_session__status=MiniSession.Status.ACTIVE,
+            cancelled_at__isnull=True,
+        )
+        if (request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER and
+                not slot.mini_session.assigned_members.filter(pk=request.studio_access.membership.pk).exists()):
+            raise PermissionDenied
+        if slot.bookings.filter(cancelled_at__isnull=True).count() >= slot.mini_session.capacity_per_slot:
+            return JsonResponse({"ok": False, "error": "This mini-session slot is full."}, status=409)
+        booking, created = MiniSessionSlotBooking.objects.get_or_create(
+            photographer=profile, slot=slot, client=client,
+        )
+        if not created and booking.cancelled_at is None:
+            return JsonResponse({"ok": False, "error": "This client is already booked into the slot."}, status=409)
+        if not created:
+            booking.cancelled_at = None
+            booking.save(update_fields=("cancelled_at",))
+    return JsonResponse({"ok": True}, status=201)
+
+
+@photographer_workspace_required
+@require_POST
+def mini_session_action(request, pk):
+    minis = MiniSession.objects.for_photographer(request.studio)
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        minis = minis.filter(assigned_members=request.studio_access.membership)
+    mini = get_object_or_404(minis, pk=pk)
+    action = request.POST.get("action")
+    if action == "cancel":
+        now = timezone.now()
+        with transaction.atomic():
+            mini.status = MiniSession.Status.CANCELLED
+            mini.cancelled_at = now
+            mini.save(update_fields=("status", "cancelled_at", "updated_at"))
+            MiniSessionSlotBooking.objects.filter(
+                photographer=request.studio, slot__mini_session=mini, cancelled_at__isnull=True,
+            ).update(cancelled_at=now)
+        messages.success(request, "Mini session and its active slot bookings cancelled.")
+    else:
+        return HttpResponseBadRequest("Unsupported mini-session action.")
+    return redirect("photographer_workspace:schedule")
+
+
+@photographer_workspace_required
+@require_POST
+def constraint_action(request, pk):
+    """Delete a studio-scoped schedule constraint with role/resource enforcement."""
+    if not request.studio_access.allows("schedule"):
+        raise PermissionDenied
+    constraint = get_object_or_404(ScheduleConstraint, pk=pk, studio=request.studio)
+    if request.studio_access.role == StudioMembership.Role.PHOTOGRAPHER:
+        membership = request.studio_access.membership
+        if constraint.entire_team or not constraint.assigned_members.filter(pk=membership.pk).exists():
+            raise PermissionDenied
+    if request.POST.get("action") != "delete":
+        return HttpResponseBadRequest("Unsupported schedule action.")
+    constraint.delete()
+    messages.success(request, "Schedule event removed. The time is available again.")
+    return redirect("photographer_workspace:schedule")
+
+
+@photographer_workspace_required
+@require_GET
+def analytics_overview(request):
+    """Render owner-scoped analytics directly from operational records."""
+    context = _dashboard_context(request, "analytics", "Analytics")
+    context.update(build_analytics_overview(request.studio, request.GET, request.path))
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="lumispixel-analytics.csv"'
+        response.write("\ufeff")
+        writer = csv.writer(response)
+        writer.writerow(("LumisPixel analytics report", context["start"], context["end"]))
+        writer.writerow(("Metric", "Selected period", "Comparison", "Change", "Definition", "Source workspace"))
+        for metric in context["analytics_metrics"]:
+            writer.writerow((metric["label"], metric["value"], metric["previous_value"], metric["change"], metric["tooltip"], metric["url"]))
+        return response
+    context["analytics_state"] = request.GET.get("state") if request.GET.get("state") in {"loading", "error", "permission", "empty"} else "ready"
+    return render(request, "photographer_workspace/analytics/overview.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def financial_overview(request):
+    """Render date-scoped financial metrics from the reporting selector."""
+    range_options = [
+        ("this_month", "This month"),
+        ("last_month", "Last month"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "this_month")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "this_month"
+    page_state = request.GET.get("state", "empty")
+    if page_state not in {"loading", "empty", "error"}:
+        page_state = "empty"
+    context = _dashboard_context(request, "financial_overview", "Financial Overview")
+    profile = request.studio
+    summary = financial_summary(profile, range_key, getattr(profile, "default_currency", "USD"))
+    analytics = financial_analytics(profile, range_key, getattr(profile, "default_currency", "USD"))
+    operations_state = request.GET.get("operations_state", "ready")
+    if operations_state not in {"ready", "loading", "error"}:
+        operations_state = "ready"
+    operations = financial_operations(profile, getattr(profile, "default_currency", "USD"))
+    activity_type = request.GET.get("activity_type", "")
+    if activity_type not in TYPE_MAP:
+        activity_type = ""
+    activity_state = request.GET.get("activity_state", "ready")
+    if activity_state not in {"ready", "loading", "error", "permission"}:
+        activity_state = "ready"
+    activity = financial_activity(profile, range_key, request.GET.get("page", 1), activity_type,
+                                  getattr(profile, "default_currency", "USD"))
+    context.update({"financial_state": page_state, "range_key": range_key, "range_options": range_options,
+                    "financial_metrics": summary["cards"], "financial_has_activity": summary["has_activity"],
+                    "financial_analytics": analytics, "financial_operations": operations,
+                    "financial_operations_state": operations_state, "financial_activity": activity,
+                    "financial_activity_state": activity_state})
+    return render(request, "photographer_workspace/financial/overview.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def growth_overview(request):
+    """Render the responsive Growth workspace shell and its page-level states."""
+    range_options = [
+        ("last_30_days", "Last 30 days"),
+        ("last_90_days", "Last 90 days"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "last_30_days")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "last_30_days"
+    page_state = request.GET.get("state", "ready")
+    if page_state not in {"ready", "loading", "empty", "permission", "error"}:
+        page_state = "ready"
+    context = _dashboard_context(request, "growth", "Growth Overview")
+    metrics = growth_summary(request.studio, range_key,
+                             getattr(request.studio, "default_currency", "USD"))
+    for card in metrics["cards"]:
+        card["url"] = f'{card["url"]}?range={range_key}'
+    source_sort = request.GET.get("source_sort", "leads")
+    currency = getattr(request.studio, "default_currency", "USD")
+    source_metric = request.GET.get("source_metric", "booking_value")
+    show_all_sources = request.GET.get("show_all_sources") == "1"
+    section_states = {}
+    for section in ("funnel", "sources", "services", "reviews", "activity"):
+        state = request.GET.get(f"{section}_state", "ready")
+        section_states[section] = state if state in {"ready", "loading", "empty", "error", "permission"} else "ready"
+    context.update({
+        "growth_state": page_state,
+        "range_key": range_key,
+        "range_options": range_options,
+        "compare_previous": request.GET.get("compare") == "1",
+        "growth_metrics": metrics["cards"],
+        "funnel_stages": [stage | {"url": f'{stage["url"]}&range={range_key}'}
+                          for stage in lead_funnel(request.studio, range_key, currency)],
+        "source_rows": lead_source_performance(request.studio, range_key, currency, source_sort),
+        "source_sort": source_sort,
+        "source_chart": booking_value_by_source(request.studio, range_key, source_metric,
+                                                 show_all_sources, currency),
+        "show_all_sources": show_all_sources,
+        "service_rows": service_performance(request.studio, range_key, currency),
+        "section_states": section_states,
+        "reviews": reputation_summary(request.studio, range_key),
+        "referrals": referral_summary(request.studio, range_key, currency),
+        "retention": retention_summary(request.studio, range_key, currency),
+        "opportunities": growth_opportunities(request.studio,
+                                                request.GET.get("show_all_opportunities") == "1"),
+        "recent_growth_activity": recent_growth_activity(request.studio),
+        "recent_campaigns": GrowthCampaign.objects.for_photographer(request.studio)[:5],
+    })
+    return render(request, "photographer_workspace/growth/overview.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def growth_action(request):
+    """Create deliberately small, studio-scoped growth records."""
+    profile = request.studio
+    action = request.GET.get("action") or request.POST.get("action")
+    allowed = {"reviews", "referral", "import", "campaign"}
+    if action not in allowed:
+        return redirect("photographer_workspace:growth")
+    completed_bookings = (ClientSession.objects.for_photographer(profile)
+                          .filter(status=ClientSession.Status.COMPLETED)
+                          .select_related("client").order_by("-starts_at"))
+    if request.method == "POST":
+        if action == "reviews":
+            booking_ids = {value for value in request.POST.getlist("bookings") if value.isdigit()}
+            bookings = completed_bookings.filter(pk__in=booking_ids)
+            created = 0
+            with transaction.atomic():
+                for booking in bookings:
+                    review_request, was_created = ReviewRequest.objects.get_or_create(
+                        photographer=profile, booking=booking,
+                        defaults={"client": booking.client, "message": request.POST.get("message", "")[:500],
+                                  "status": ReviewRequest.Status.SENT, "sent_at": timezone.now()})
+                    if was_created:
+                        created += 1
+                        ClientActivity.objects.create(
+                            photographer=profile, client=booking.client,
+                            event_type=ClientActivity.EventType.EMAIL_SENT,
+                            description="Review request sent.",
+                            metadata={"growth_event": "review_request", "review_request_id": review_request.pk,
+                                      "booking_id": booking.pk})
+            if not booking_ids:
+                messages.error(request, "Select at least one completed booking.")
+            elif not created:
+                messages.info(request, "Those bookings already have review requests; no duplicates were sent.")
+            else:
+                messages.success(request, f"Created {created} review request{'s' if created != 1 else ''}.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#reviews')
+        elif action == "referral":
+            referral_type = request.POST.get("referral_type")
+            if referral_type not in ReferralLink.ReferralType.values:
+                messages.error(request, "Select a valid referral type.")
+            else:
+                client = Client.objects.for_photographer(profile).filter(pk=request.POST.get("client")).first()
+                campaign = GrowthCampaign.objects.for_photographer(profile).filter(pk=request.POST.get("campaign")).first()
+                code = secrets.token_urlsafe(9).replace("_", "").replace("-", "")
+                link = ReferralLink.objects.create(
+                    photographer=profile, label=request.POST.get("label", "Referral link")[:150], code=code,
+                    referral_type=referral_type, referrer_name=request.POST.get("referrer_name", "")[:150],
+                    client=client, campaign=campaign, status=request.POST.get("status")
+                    if request.POST.get("status") in ReferralLink.Status.values else ReferralLink.Status.ACTIVE)
+                messages.success(request, "Referral link created. Copy it from the referrals section.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#referrals')
+        elif action == "campaign":
+            name = request.POST.get("name", "").strip()
+            if not name:
+                messages.error(request, "Campaign name is required.")
+            else:
+                GrowthCampaign.objects.create(
+                    photographer=profile, name=name[:150], campaign_type=request.POST.get("campaign_type", "")[:80],
+                    status=request.POST.get("status") if request.POST.get("status") in GrowthCampaign.Status.values else GrowthCampaign.Status.DRAFT,
+                    start_date=request.POST.get("start_date") or None, end_date=request.POST.get("end_date") or None,
+                    target_audience=request.POST.get("target_audience", "")[:200], channel=request.POST.get("channel", "")[:80],
+                    tracking_link=request.POST.get("tracking_link", ""), spend=request.POST.get("spend") or None,
+                    notes=request.POST.get("notes", ""))
+                messages.success(request, "Campaign record created.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#campaigns')
+        else:
+            upload = request.FILES.get("file")
+            if not upload:
+                messages.error(request, "Choose a CSV file to import.")
+            else:
+                rows = csv.DictReader(io.StringIO(upload.read().decode("utf-8-sig")))
+                leads = [Lead(photographer=profile, first_name=(row.get("first_name") or "").strip(),
+                              last_name=(row.get("last_name") or "").strip(), email=(row.get("email") or "").strip(),
+                              phone=(row.get("phone") or "").strip(), lead_source=(row.get("lead_source") or "Import").strip())
+                         for row in rows if (row.get("first_name") or row.get("email"))]
+                Lead.objects.bulk_create(leads, batch_size=500)
+                messages.success(request, f"Imported {len(leads)} lead{'s' if len(leads) != 1 else ''}.")
+                return redirect(f'{reverse("photographer_workspace:growth")}?range={request.POST.get("range", "last_30_days")}#lead-funnel')
+    range_key = request.GET.get("range") or request.POST.get("range") or "last_30_days"
+    context = _dashboard_context(request, "growth", "Promote your business")
+    context.update({"growth_action": action, "range_key": range_key,
+                    "eligible_bookings": completed_bookings.exclude(review_requests__isnull=False),
+                    "selected_booking_ids": request.POST.getlist("bookings"),
+                    "review_message": request.POST.get("message", "Thank you for choosing our studio. We’d appreciate a quick review of your experience."),
+                    "clients": Client.objects.for_photographer(profile).order_by("first_name", "last_name"),
+                    "campaigns": GrowthCampaign.objects.for_photographer(profile),
+                    "referral_types": ReferralLink.ReferralType.choices, "referral_statuses": ReferralLink.Status.choices,
+                    "campaign_statuses": GrowthCampaign.Status.choices})
+    return render(request, "photographer_workspace/growth/action.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def growth_export(request):
+    """Export all date-scoped growth sections as a portable CSV report."""
+    profile, range_key = request.studio, request.GET.get("range", "last_30_days")
+    if range_key not in {"last_30_days", "last_90_days", "this_quarter", "this_year", "all_time"}:
+        range_key = "last_30_days"
+    currency = getattr(profile, "default_currency", "USD")
+    output = io.StringIO(); writer = csv.writer(output)
+    writer.writerow(["LumisPixel growth report", range_key]); writer.writerow([])
+    writer.writerow(["Key metric", "Value"])
+    for card in growth_summary(profile, range_key, currency)["cards"]:
+        writer.writerow([card["title"], card["formatted_value"]])
+    sections = [("Funnel stages", lead_funnel(profile, range_key, currency), ["label", "count", "overall_rate", "formatted_value"]),
+                ("Source performance", lead_source_performance(profile, range_key, currency), ["source", "leads", "bookings", "conversion_rate", "formatted_booking_value"]),
+                ("Service performance", service_performance(profile, range_key, currency), ["service", "leads", "bookings", "conversion_rate", "formatted_value"])]
+    for title, rows, fields in sections:
+        writer.writerow([]); writer.writerow([title]); writer.writerow(fields)
+        for row in rows: writer.writerow([row.get(field, "") for field in fields])
+    for title, data in (("Reviews", reputation_summary(profile, range_key)), ("Referrals", referral_summary(profile, range_key, currency)), ("Retention", retention_summary(profile, range_key, currency))):
+        writer.writerow([]); writer.writerow([title]);
+        for key, value in data.items():
+            if not isinstance(value, (list, dict)): writer.writerow([key, value])
+    response = HttpResponse(output.getvalue(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="lumispixel-growth-{range_key}.csv"'
+    return response
+
+
+@photographer_workspace_required
+@require_GET
+def financial_transactions(request):
+    """Render the unified, date-scoped financial transactions workspace shell."""
+    range_options = [
+        ("this_month", "This month"),
+        ("last_month", "Last month"),
+        ("this_quarter", "This quarter"),
+        ("this_year", "This year"),
+        ("all_time", "All time"),
+    ]
+    range_key = request.GET.get("range", "this_month")
+    if range_key not in {value for value, _ in range_options}:
+        range_key = "this_month"
+    page_state = request.GET.get("state", "ready")
+    if page_state not in {"ready", "loading", "empty", "permission", "error", "export_error", "action_error"}:
+        page_state = "ready"
+
+    view_options = [
+        ("all", "All activity"), ("invoices", "Invoices"), ("payments", "Payments"),
+        ("refunds", "Refunds"), ("credits", "Credits"), ("overdue", "Overdue"),
+    ]
+    view_key = request.GET.get("view", "all")
+    if view_key not in {value for value, _ in view_options}:
+        view_key = "all"
+    filter_definitions = [
+        ("q", "Search"), ("range", "Date"), ("status", "Status"), ("record_type", "Type"),
+        ("client", "Client"), ("booking", "Booking"), ("payment_method", "Payment method"),
+        ("amount_min", "Minimum"), ("amount_max", "Maximum"), ("currency", "Currency"),
+        ("created_by", "Created by"), ("source", "Source"), ("due_from", "Due from"),
+        ("due_to", "Due to"), ("paid_from", "Paid from"), ("paid_to", "Paid to"),
+    ]
+    selected_filters = {key: request.GET.get(key, "").strip() for key, _ in filter_definitions}
+    # The default date window is useful context, but is not presented as an active filter.
+    active_filters = []
+    for key, label in filter_definitions:
+        value = selected_filters[key]
+        if not value or (key == "range" and value == "this_month"):
+            continue
+        query = request.GET.copy()
+        query.pop(key, None)
+        active_filters.append({"key": key, "label": label, "value": dict(range_options).get(value, value),
+                               "remove_url": f"?{query.urlencode()}" if query else "?"})
+    preserved_query = request.GET.copy()
+    preserved_query.pop("view", None)
+    views = []
+    for value, label in view_options:
+        query = preserved_query.copy()
+        if value != "all":
+            query["view"] = value
+        views.append({"value": value, "label": label, "active": value == view_key,
+                      "url": f"?{query.urlencode()}" if query else "?"})
+
+    profile = request.studio
+    currency = getattr(profile, "default_currency", "USD")
+    summary = financial_summary(profile, range_key, currency)
+    values = summary["values"]
+    summary_items = [
+        {"label": "Total Revenue", "value": format_currency(values["net_revenue"], currency), "icon": "bi-graph-up-arrow"},
+        {"label": "Payments Received", "value": format_currency(values["collected"], currency), "icon": "bi-cash-coin"},
+        {"label": "Outstanding Balance", "value": format_currency(values["outstanding"], currency), "icon": "bi-hourglass-split"},
+        {"label": "Refunded", "value": format_currency(values["refunds"], currency), "icon": "bi-arrow-counterclockwise"},
+    ]
+    records = transaction_records(profile, selected_filters, view_key, request.GET.get("page", 1),
+                                  request.GET.get("page_size", 25), request.GET.get("sort", "date"),
+                                  request.GET.get("direction", "desc"), currency)
+    if page_state == "ready" and not records["total"]:
+        page_state = "empty"
+    context = _dashboard_context(request, "transactions", "Transactions")
+    clear_query = request.GET.copy()
+    for key, _ in filter_definitions:
+        clear_query.pop(key, None)
+    sort_links = {}
+    for key in ("date", "amount", "client", "reference", "status"):
+        query = request.GET.copy()
+        query["sort"] = key
+        query["direction"] = "asc" if records["sort"] == key and records["direction"] == "desc" else "desc"
+        query.pop("page", None)
+        sort_links[key] = f"?{query.urlencode()}"
+    page_query = request.GET.copy()
+    page_query.pop("page", None)
+    context.update({
+        "range_key": range_key,
+        "range_options": range_options,
+        "transaction_state": page_state,
+        "transaction_summary": summary_items,
+        "transaction_has_activity": summary["has_activity"],
+        "transaction_views": views,
+        "transaction_view": view_key,
+        "selected_filters": selected_filters,
+        "active_filters": active_filters,
+        "active_filter_count": len(active_filters),
+        "clear_filters_url": f"?{clear_query.urlencode()}" if clear_query else "?",
+        "transaction_records": records,
+        "sort_links": sort_links,
+        "page_query": page_query.urlencode(),
+        "financial_clients": Client.objects.for_photographer(profile).filter(status=Client.Status.ACTIVE),
+        "financial_invoices": ClientInvoice.objects.for_photographer(profile).select_related("client").exclude(status__in=[ClientInvoice.Status.DRAFT, ClientInvoice.Status.VOID, ClientInvoice.Status.PAID]),
+        "refundable_payments": [
+            {"payment": payment, "remaining": payment.amount - (payment.refunds.filter(status=PaymentRefund.Status.COMPLETED).aggregate(total=Sum("amount"))["total"] or Decimal("0.00"))}
+            for payment in InvoicePayment.objects.for_photographer(profile).filter(status=InvoicePayment.Status.COMPLETED).select_related("invoice__client")
+        ],
+        "payment_methods": InvoicePayment.Method.choices,
+        "today": timezone.localdate(),
+        "export_columns": EXPORT_COLUMNS,
+    })
+    return render(request, "photographer_workspace/financial/transactions.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def financial_transaction_export(request):
+    """Export the current owner-scoped view or an explicit owner-scoped selection."""
+    profile = request.studio
+    filter_keys = ("q", "range", "status", "record_type", "client", "booking", "payment_method",
+                   "amount_min", "amount_max", "currency", "created_by", "source", "due_from",
+                   "due_to", "paid_from", "paid_to")
+    filters = {key: request.GET.get(key, "").strip() for key in filter_keys}
+    records = transaction_records(profile, filters, request.GET.get("view", "all"), 1, 25,
+                                  request.GET.get("sort", "date"), request.GET.get("direction", "desc"),
+                                  getattr(profile, "default_currency", "USD"), paginate=False)["rows"]
+    try:
+        selected = request.POST.getlist("records") if request.method == "POST" else []
+        if selected:
+            # Resolve first to enforce studio isolation even if an id is outside the current view.
+            selected_objects(profile, selected)
+            by_id = {row["id"]: row for row in transaction_records(
+                profile, {"range": "all_time"}, "all", 1, 25, "date", "desc",
+                getattr(profile, "default_currency", "USD"), paginate=False)["rows"]}
+            records = [by_id[value] for value in selected if value in by_id]
+        payload = csv_bytes(records, request.POST.getlist("columns") or request.GET.getlist("columns"))
+    except ValidationError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    response = HttpResponse(payload, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="lumispixel-financial-records.csv"'
+    return response
+
+
+@photographer_workspace_required
+@require_POST
+def financial_transaction_bulk(request):
+    """Validate the complete selection before performing a bulk mutation or download."""
+    values, action = request.POST.getlist("records"), request.POST.get("action", "")
+    try:
+        rows = selected_objects(request.studio, values)
+        if action == "capabilities":
+            return JsonResponse({"actions": available_actions(rows)})
+        if action == "download":
+            payload = invoice_zip(request.studio, values, lambda invoice:
+                render_to_string("photographer_workspace/invoices/print.html", {"invoice": invoice}))
+            response = HttpResponse(payload, content_type="application/zip")
+            response["Content-Disposition"] = 'attachment; filename="lumispixel-invoices.zip"'
+            return response
+        count = run_bulk_action(request.studio, values, action, request.POST.get("note", ""))
+        return JsonResponse({"ok": True, "count": count})
+    except ValidationError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+
+
+def _action_errors(exc):
+    if hasattr(exc, "message_dict"):
+        return {key: values[0] for key, values in exc.message_dict.items()}
+    return {"form": str(exc)}
+
+
+@photographer_workspace_required
+@require_POST
+def financial_action(request, action):
+    """Run a confirmed financial mutation and return refresh targets to the client."""
+    handlers = {"payment": record_payment, "refund": issue_refund, "credit": add_credit}
+    if action not in handlers:
+        return JsonResponse({"error": "Unknown financial action."}, status=404)
+    if request.POST.get("confirmed") != "yes":
+        return JsonResponse({"errors": {"confirmation": "Confirm this financial action before continuing."}}, status=400)
+    try:
+        record, duplicate = handlers[action](request.studio, request.POST)
+    except ValidationError as exc:
+        return JsonResponse({"errors": _action_errors(exc)}, status=400)
+    invoice = record.payment.invoice if isinstance(record, PaymentRefund) else record.invoice
+    return JsonResponse({
+        "ok": True, "duplicate": duplicate, "record_type": record.__class__.__name__, "record_id": record.pk,
+        "invoice_id": invoice.pk, "detail_url": reverse("photographer_workspace:financial_record_detail", args=[action, record.pk]),
+        "message": {"payment": "Payment recorded.", "refund": "Refund completed.", "credit": "Credit added."}[action],
+    })
+
+
+@photographer_workspace_required
+@require_GET
+def financial_record_detail_view(request, record_type, pk):
+    """Return drawer markup for one owner-scoped financial record."""
+    detail = financial_record_detail(request.studio, record_type, pk,
+                                     getattr(request.studio, "default_currency", "USD"))
+    if detail is None:
+        return JsonResponse({"error": "This financial record was not found."}, status=404)
+    html = render_to_string("photographer_workspace/financial/_record_detail.html", {"record": detail}, request=request)
+    return JsonResponse({"html": html, "reference": detail["reference"]})
+
+
+def _invoice_context(request, invoice=None, errors=None):
+    profile = request.studio
+    context = _dashboard_context(request, "invoices", "Create Invoice" if invoice is None else f"Invoice {invoice.invoice_number}")
+    context.update({"invoice": invoice, "invoice_number": invoice.invoice_number if invoice else next_invoice_number(profile),
+                    "clients": Client.objects.for_photographer(profile).filter(status=Client.Status.ACTIVE),
+                    "bookings": ClientSession.objects.for_photographer(profile).exclude(status=ClientSession.Status.CANCELLED).select_related("client"),
+                    "item_types": InvoiceLineItem.ItemType.choices,
+                    "today": timezone.localdate(), "errors": errors or {}})
+    return context
+
+
+@photographer_workspace_required
+@require_GET
+def invoices_workspace(request):
+    profile = request.studio
+    today = timezone.localdate()
+    invoices = ClientInvoice.objects.for_photographer(profile).select_related("client", "booking")
+    total_count = invoices.count()
+    overdue_query = Q(due_date__lt=today, status__in=[ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID])
+    summary = {
+        "draft": invoices.filter(status=ClientInvoice.Status.DRAFT).count(),
+        "sent": invoices.filter(status=ClientInvoice.Status.SENT).exclude(overdue_query).count(),
+        "outstanding": invoices.filter(status__in=[ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID]).count(),
+        "overdue": invoices.filter(overdue_query).count(),
+        "paid": invoices.filter(status=ClientInvoice.Status.PAID).count(),
+    }
+    selected = {key: request.GET.get(key, "").strip() for key in ("q", "status", "client", "due_from", "due_to")}
+    if selected["q"]:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=selected["q"]) | Q(client__first_name__icontains=selected["q"]) |
+            Q(client__last_name__icontains=selected["q"]) | Q(client__company__icontains=selected["q"]) |
+            Q(booking__session_type__icontains=selected["q"])
+        )
+    if selected["status"] == "overdue":
+        invoices = invoices.filter(overdue_query)
+    elif selected["status"] in ClientInvoice.Status.values:
+        invoices = invoices.filter(status=selected["status"])
+    if selected["client"].isdigit():
+        invoices = invoices.filter(client_id=selected["client"])
+    for key, lookup in (("due_from", "due_date__gte"), ("due_to", "due_date__lte")):
+        if selected[key]:
+            try:
+                invoices = invoices.filter(**{lookup: date.fromisoformat(selected[key])})
+            except ValueError:
+                selected[key] = ""
+    active_filters = any(selected.values())
+    page = Paginator(invoices.order_by("due_date", "-created_at"), 15).get_page(request.GET.get("page"))
+    for invoice in page:
+        invoice.is_overdue = invoice.due_date and invoice.due_date < today and invoice.status in {
+            ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID}
+    context = _dashboard_context(request, "invoices", "Invoices")
+    context.update({"invoices": page, "invoice_total_count": total_count, "invoice_summary": summary,
+                    "invoice_filters": selected, "invoice_filters_active": active_filters,
+                    "invoice_filters_query": urlencode({key: value for key, value in selected.items() if value}),
+                    "invoice_clients": Client.objects.for_photographer(profile).filter(invoices__isnull=False).distinct().order_by("first_name", "last_name")})
+    return render(request, "photographer_workspace/invoices/list.html", context)
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def invoice_create(request):
+    if request.method == "POST":
+        try:
+            invoice = save_invoice(request.studio, request.POST, send=request.POST.get("intent") == "send")
+            messages.success(request, f"{invoice.invoice_number} was {'sent' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
+            return redirect("photographer_workspace:invoice_view", pk=invoice.pk)
+        except ValidationError as exc:
+            return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, errors=exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
+    return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request))
+
+
+@photographer_workspace_required
+@require_http_methods(["GET", "POST"])
+def invoice_edit(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.studio).prefetch_related("line_items", "payment_schedule"), pk=pk)
+    if invoice.status != ClientInvoice.Status.DRAFT:
+        messages.error(request, "Only draft invoices can be edited.")
+        return redirect("photographer_workspace:invoice_view", pk=pk)
+    if request.method == "POST":
+        try:
+            invoice = save_invoice(request.studio, request.POST, invoice, request.POST.get("intent") == "send")
+            messages.success(request, "Invoice updated.")
+            return redirect("photographer_workspace:invoice_view", pk=pk)
+        except ValidationError as exc:
+            return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, invoice, exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
+    return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, invoice))
+
+
+@photographer_workspace_required
+@require_GET
+def invoice_view(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.studio).select_related("client", "booking").prefetch_related("line_items", "payment_schedule", "activity"), pk=pk)
+    return render(request, "photographer_workspace/invoices/detail.html", _invoice_context(request, invoice))
+
+
+@photographer_workspace_required
+@require_POST
+def invoice_action(request, pk, action):
+    profile = request.studio
+    with transaction.atomic():
+        invoice = get_object_or_404(ClientInvoice.objects.select_for_update().filter(photographer=profile), pk=pk)
+        if action == "duplicate":
+            source = ClientInvoice.objects.prefetch_related("line_items", "payment_schedule").get(pk=invoice.pk)
+            duplicate = ClientInvoice.objects.create(photographer=profile, client=source.client, booking=source.booking,
+                invoice_number=next_invoice_number(profile), issue_date=timezone.localdate(), due_date=timezone.localdate() + timedelta(days=source.payment_terms),
+                payment_terms=source.payment_terms, currency=source.currency, subtotal=source.subtotal, discount_total=source.discount_total,
+                tax_total=source.tax_total, total=source.total, client_notes=source.client_notes, internal_notes=source.internal_notes, terms=source.terms)
+            for item in source.line_items.all(): item.pk = None; item.invoice = duplicate; item.save()
+            InvoiceActivity.objects.create(photographer=profile, invoice=duplicate, action="duplicated", description=f"Duplicated from {source.invoice_number}.")
+            messages.success(request, "Draft duplicate created.")
+            return redirect("photographer_workspace:invoice_edit", pk=duplicate.pk)
+        if action in {"send", "resend"}:
+            if invoice.status not in {ClientInvoice.Status.DRAFT, ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.client.email:
+                messages.error(request, "This invoice cannot be sent in its current state, or the client has no email address.")
+            else:
+                invoice.status, invoice.sent_at = ClientInvoice.Status.SENT if invoice.status == ClientInvoice.Status.DRAFT else invoice.status, timezone.now()
+                invoice.save(update_fields=["status", "sent_at"])
+                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action=action, description="Invoice emailed to client.")
+                messages.success(request, "Invoice sent.")
+        elif action == "void":
+            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID} or invoice.amount_paid > 0:
+                messages.error(request, "Paid, partially paid, or already void invoices cannot be voided.")
+            else:
+                invoice.status = ClientInvoice.Status.VOID; invoice.save(update_fields=["status"])
+                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="voided", description="Invoice voided.")
+                messages.success(request, "Invoice voided.")
+        elif action == "payment":
+            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID, ClientInvoice.Status.DRAFT}:
+                messages.error(request, "A payment cannot be recorded for this invoice.")
+            else:
+                try: amount = Decimal(request.POST.get("amount", "0")).quantize(Decimal("0.01"))
+                except Exception: amount = Decimal("0")
+                if amount <= 0 or amount > invoice.balance:
+                    messages.error(request, "Payment must be greater than zero and no more than the balance.")
+                else:
+                    InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=amount)
+                    invoice.amount_paid += amount; invoice.status = ClientInvoice.Status.PAID if invoice.amount_paid == invoice.total else ClientInvoice.Status.PARTIALLY_PAID
+                    invoice.save(update_fields=["amount_paid", "status"])
+                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment", description=f"Payment of {amount} recorded.")
+                    messages.success(request, "Payment recorded.")
+    return redirect("photographer_workspace:invoice_view", pk=pk)
+
+
+@photographer_workspace_required
+@require_GET
+def invoice_download(request, pk):
+    invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.studio).select_related("client").prefetch_related("line_items"), pk=pk)
+    html = render_to_string("photographer_workspace/invoices/print.html", {"invoice": invoice})
+    response = HttpResponse(html, content_type="text/html")
+    response["Content-Disposition"] = f'attachment; filename="{invoice.invoice_number}.html"'
+    return response
+
+
+@photographer_workspace_required
+@require_GET
+def module_placeholder(request, module_key):
+    module = MODULE_BY_KEY[module_key]
+    context = _dashboard_context(request, module_key, module["title"])
+    context["module"] = module | {"url": _reverse_module(module)}
+    return render(request, "photographer_workspace/placeholder.html", context)
+
+
+TEAM_PAGES = {
+    "team_overview": ("Overview", "Monitor team workload, availability, assignments, capacity, and recent activity.", "bi-grid-1x2"),
+    "team_members": ("Members", "Manage team members, invitations, profiles, roles, permissions, locations, working hours, and time off.", "bi-person-badge"),
+    "team_performance": ("Performance", "Review productivity, booking contribution, revenue contribution, turnaround times, client experience, workload trends, and team activity.", "bi-graph-up-arrow"),
+}
+
+
+@photographer_workspace_required
+@require_GET
+def team_placeholder(request, page_key):
+    if page_key == "team_overview":
+        return team_overview(request)
+    if page_key == "team_members":
+        return team_members(request)
+    if page_key == "team_performance":
+        return team_performance(request)
+    title, subtitle, icon = TEAM_PAGES[page_key]
+    context = _dashboard_context(request, page_key, title)
+    context["team_page"] = {"title": title, "subtitle": subtitle, "icon": icon}
+    return render(request, "photographer_workspace/team/temporary_page.html", context)
+
+
+def team_performance(request):
+    can_view_financials = request.studio_access.allows("financials")
+    report = team_performance_report(authorized_studio(request.user), request.GET,
+                                     can_view_financials=can_view_financials)
+    preserved = request.GET.copy()
+    preserved.pop("page", None)
+    preserved.pop("export", None)
+    report["filter_query"] = preserved.urlencode()
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="team-performance-{report["start"]}-{report["end"]}.csv"'
+        writer = csv.writer(response)
+        headers = ["Team member", "Role", "Location", "Bookings", "Completed", "Completion rate", "Hours", "Galleries delivered", "Average turnaround days"]
+        if can_view_financials:
+            headers.append("Revenue contribution")
+        writer.writerow(headers)
+        # Export the complete filtered comparison, not merely the visible page.
+        for row in report["export_rows"]:
+            values = [row["name"], row["role"], row["location"], row["bookings"], row["completed"], row["completion_rate"] if row["completion_rate"] is not None else "", row["hours"], row["galleries"], row["turnaround"] if row["turnaround"] is not None else ""]
+            if can_view_financials:
+                values.append(row["revenue"])
+            writer.writerow(values)
+        return response
+    context = _dashboard_context(request, "team_performance", "Team Performance")
+    context.update(report)
+    return render(request, "photographer_workspace/team/performance.html", context)
+
+
+@photographer_workspace_required
+@require_GET
+def team_performance_member(request, pk):
+    """Read-only performance drill-down; source tools remain the place for edits."""
+    studio = authorized_studio(request.user)
+    membership = get_object_or_404(StudioMembership.objects.select_related("user"), studio=studio, pk=pk)
+    can_view_financials = request.studio_access.allows("financials")
+    report = team_performance_report(studio, {**request.GET.dict(), "member": str(pk), "status": membership.status},
+                                     can_view_financials=can_view_financials)
+    start, end = report["start"], report["end"]
+    prior_start, prior_end = _comparison_dates(start, end, "previous")
+    current = calculate_period_metrics(studio, [membership], start, end, include_financials=can_view_financials)
+    previous = calculate_period_metrics(studio, [membership], prior_start, prior_end,
+                                        include_financials=can_view_financials)
+    active_team = list(StudioMembership.objects.filter(studio=studio, status=StudioMembership.Status.ACTIVE))
+    team = calculate_period_metrics(studio, active_team, start, end, include_financials=can_view_financials)
+    member_query = urlencode({"member": pk})
+    urls = {"bookings": f'{reverse("photographer_workspace:bookings")}?{member_query}',
+            "galleries": f'{reverse("photographer_workspace:galleries")}?{member_query}',
+            "schedule": f'{reverse("photographer_workspace:schedule")}?{member_query}',
+            "profile": reverse("photographer_workspace:team_member_detail", args=[pk]), "activity": "#activity"}
+    upcoming = list(ClientSession.objects.for_photographer(studio).filter(
+        assigned_members=membership, starts_at__gte=timezone.now()).exclude(
+        status=ClientSession.Status.CANCELLED).select_related("client").order_by("starts_at")[:6])
+    period_sessions = sorted(current["sessions"], key=lambda item: item.starts_at, reverse=True)
+    completed = [item for item in period_sessions if item.status == ClientSession.Status.COMPLETED]
+    activity = [{"title": event.action.replace("_", " ").title(), "detail": "Member profile update",
+                 "at": event.occurred_at, "icon": "bi-person-gear"} for event in membership.change_events.all()[:8]]
+    activity += [{"title": session.get_status_display(), "detail": session.session_type or "Assigned booking",
+                  "at": session.starts_at, "icon": "bi-calendar-check"} for session in period_sessions[:5]]
+    activity.sort(key=lambda item: item["at"], reverse=True)
+    name = membership.user.full_name if membership.user_id else membership.email
+    context = _dashboard_context(request, "team_performance", f"{name} Performance")
+    context.update(report)
+    context.update({"membership": membership, "member_name": name,
+                    "member_initials": "".join(part[0] for part in name.split()[:2]).upper() or "TM",
+                    "current": current, "previous": previous, "upcoming": upcoming,
+                    "completed_assignments": completed[:6], "member_activity": activity[:10], "source_urls": urls,
+                    "insights": build_member_insights(current, previous, team, urls), "insight_rules": INSIGHT_RULES,
+                    "prior_start": prior_start, "prior_end": prior_end})
+    return render(request, "photographer_workspace/team/performance_member.html", context)
+
+
+def team_members(request):
+    """Paginated, owner-scoped directory backed by memberships and user records."""
+    profile = authorized_studio(request.user)
+    StudioMembership.objects.filter(studio=profile, status=StudioMembership.Status.INVITED,
+                                    invitation_expires_at__lte=timezone.now()).update(
+        status=StudioMembership.Status.EXPIRED, invitation_token_digest="", updated_at=timezone.now())
+    query = (request.GET.get("q", "") or "").strip()[:150]
+    role = request.GET.get("role", "")
+    status = request.GET.get("status", "")
+    location_filter = (request.GET.get("location", "") or "").strip()[:150]
+    availability = request.GET.get("availability", "")
+    specialty = request.GET.get("specialty", "")
+    sort = request.GET.get("sort", "name")
+    valid_roles = {"", "owner", *(choice[0] for choice in StudioMembership.Role.choices)}
+    valid_statuses = {"", *(choice[0] for choice in StudioMembership.Status.choices)}
+    if role not in valid_roles: role = ""
+    if status not in valid_statuses: status = ""
+    if availability not in {"", *(choice[0] for choice in StudioMembership.Availability.choices)}: availability = ""
+    if sort not in {"name", "role", "status", "location", "recent"}: sort = "name"
+
+    name = request.user.full_name or profile.display_name or request.user.email
+    location = ", ".join(part for part in (profile.city, profile.state, profile.country) if part)
+    # Keep directory locations concise while retaining the persisted value for filtering and tooltips.
+    us_states = {"Kansas": "KS", "Oregon": "OR"}
+    compact_state = us_states.get(profile.state, profile.state)
+    compact_location = ", ".join(part for part in (profile.city, compact_state) if part) or "Not configured"
+    owner = {
+        "name": name,
+        "email": request.user.email,
+        "initials": "".join(part[0] for part in name.split()[:2]).upper() or "LP",
+        "role": "Owner",
+        "permission_summary": ACCESS_SUMMARIES[StudioMembership.Role.OWNER],
+        "status": "Active" if request.user.can_login else "Inactive",
+        "location": compact_location,
+        "full_location": location or "Not configured",
+        "availability": "Not configured",
+        "availability_code": "not_configured",
+        "status_code": "active" if request.user.can_login else "inactive",
+        "specialties": list(profile.specialties.values_list("name", flat=True)),
+        "assignment": "No assignment recorded",
+        "last_active": request.user.last_login,
+        "is_owner": True,
+        "can_manage": True,
+    }
+    owner_matches = (
+        (not query or query.casefold() in f"{name} {request.user.email}".casefold())
+        and (not role or role == "owner")
+        and (not status or status == owner["status"].casefold())
+        and (not location_filter or location_filter == (location or "Not configured"))
+        and (not availability or availability == "not_configured")
+        and (not specialty or specialty in {str(pk) for pk in profile.specialties.values_list("pk", flat=True)})
+    )
+    memberships = StudioMembership.objects.filter(studio=profile).exclude(
+        status=StudioMembership.Status.INVITED
+    ).select_related("user").prefetch_related("specialties")
+    if query:
+        memberships = memberships.filter(Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) |
+                                         Q(user__email__icontains=query) | Q(invitation_email__icontains=query))
+    if role and role != "owner": memberships = memberships.filter(role=role)
+    elif role == "owner": memberships = memberships.none()
+    if status: memberships = memberships.filter(status=status)
+    if location_filter: memberships = memberships.filter(primary_location=location_filter)
+    if availability: memberships = memberships.filter(availability=availability)
+    if specialty: memberships = memberships.filter(specialties__pk=specialty)
+    ordering = {"name": ("user__first_name", "user__last_name", "invitation_email"), "role": ("role",),
+                "status": ("status",), "location": ("primary_location",), "recent": ("-created_at",)}[sort]
+    memberships = memberships.order_by(*ordering).distinct()
+    paginator = Paginator(memberships, 23 if owner_matches else 24)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    members = [owner] if owner_matches and page_obj.number == 1 else []
+    for membership in page_obj.object_list:
+        member_user = membership.user
+        member_name = (member_user.full_name or member_user.email) if member_user else membership.invitation_email
+        members.append({
+            "id": membership.pk,
+            "name": member_name, "email": membership.email,
+            "initials": "".join(part[0] for part in member_name.split()[:2]).upper() or "LP",
+            "role": membership.get_role_display(), "status": membership.get_status_display(),
+            "permission_summary": ACCESS_SUMMARIES[membership.role],
+            "location": (membership.primary_location or "Not configured").replace(", Kansas, United States", ", KS").replace(", Oregon, United States", ", OR"),
+            "full_location": membership.primary_location or "Not configured",
+            "availability": {
+                StudioMembership.Availability.LIMITED: "Unavailable",
+                StudioMembership.Availability.AWAY: "On leave",
+            }.get(membership.availability, membership.get_availability_display()),
+            "availability_code": membership.availability,
+            "status_code": membership.status,
+            "specialties": [item.name for item in membership.specialties.all()],
+            "assignment": membership.current_assignment or "No assignment recorded",
+            "last_active": member_user.last_login if member_user else None,
+            "is_owner": False, "can_manage": True,
+        })
+    locations = list(StudioMembership.objects.filter(studio=profile).exclude(primary_location="")
+                     .order_by("primary_location").values_list("primary_location", flat=True).distinct())
+    owner_location = location or "Not configured"
+    if owner_location not in locations: locations.insert(0, owner_location)
+    base_params = request.GET.copy(); base_params.pop("page", None)
+    active_filters = []
+    labels = {"q": query, "role": dict(StudioMembership.Role.choices).get(role, "Owner" if role == "owner" else ""),
+              "status": dict(StudioMembership.Status.choices).get(status, ""), "location": location_filter,
+              "availability": dict(StudioMembership.Availability.choices).get(availability, "")}
+    for key, label in labels.items():
+        if label:
+            params = base_params.copy(); params.pop(key, None)
+            active_filters.append({"label": label, "url": f"?{params.urlencode()}" if params else request.path})
+    context = _dashboard_context(request, "team_members", "Team Members")
+    pending_invitations = StudioMembership.objects.filter(
+        studio=profile, status=StudioMembership.Status.INVITED
+    ).select_related("invited_by").order_by("-invitation_sent_at")
+    context.update({
+        "members": members,
+        "owner": owner,
+        "query": query,
+        "selected_role": role,
+        "selected_status": status,
+        "selected_location": location_filter, "selected_availability": availability,
+        "selected_specialty": specialty, "selected_sort": sort,
+        "role_choices": [choice for choice in StudioMembership.Role.choices if choice[0] != StudioMembership.Role.OWNER],
+        "status_choices": StudioMembership.Status.choices,
+        "availability_choices": [
+            (value, {StudioMembership.Availability.LIMITED: "Unavailable",
+                     StudioMembership.Availability.AWAY: "On leave"}.get(value, label))
+            for value, label in StudioMembership.Availability.choices
+        ], "locations": locations,
+        "specialty_choices": profile.specialties.model.objects.all().order_by("name"),
+        "active_filters": active_filters, "page_obj": page_obj,
+        "pagination_query": base_params.urlencode(), "total_members": paginator.count + (1 if owner_matches else 0),
+        "is_solo": not StudioMembership.objects.filter(studio=profile).exists(), "can_invite": True,
+        "invitation_form": InvitationForm(studio=profile),
+        "role_summaries": ROLE_SUMMARIES,
+        "pending_invitations": pending_invitations,
+        "summary": {
+            "total": StudioMembership.objects.filter(studio=profile).exclude(status="invited").count() + 1,
+            "active": StudioMembership.objects.filter(studio=profile, status="active").count() + (1 if request.user.can_login else 0),
+            "managers": StudioMembership.objects.filter(studio=profile, role="studio_manager").count(),
+            "photographers": StudioMembership.objects.filter(studio=profile, role="photographer").count(),
+            "pending": StudioMembership.objects.filter(studio=profile, status="invited").count(),
+            "inactive": StudioMembership.objects.filter(studio=profile, status__in=("inactive", "access_suspended")).count() + (0 if request.user.can_login else 1),
+        },
+    })
+    return render(request, "photographer_workspace/team/members.html", context)
+
+
+@photographer_workspace_required
+def team_member_detail(request, pk):
+    """Show and update studio-owned member metadata without touching account credentials."""
+    profile = authorized_studio(request.user)
+    actor_access = access_for(request.user, studio=profile, require="manage_members")
+    membership = get_object_or_404(
+        StudioMembership.objects.select_related("user").prefetch_related("specialties", "change_events__actor"),
+        pk=pk, studio=profile,
+    )
+    errors = {}
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        before = {
+            "role": membership.role, "status": membership.status,
+            "primary_location": membership.primary_location,
+            "additional_locations": membership.additional_locations,
+            "specialties": list(membership.specialties.values_list("name", flat=True)),
+            "internal_title": membership.internal_title, "internal_notes": membership.internal_notes,
+            "working_days": membership.working_days, "working_hours_start": str(membership.working_hours_start or ""),
+            "working_hours_end": str(membership.working_hours_end or ""), "time_zone": membership.time_zone,
+            "availability": membership.availability,
+        }
+        if action in {"activate", "deactivate", "suspend", "reactivate"}:
+            if membership.user_id == request.user.id:
+                errors["access"] = "You cannot change your own access or role."
+            if request.POST.get("confirm") != "yes":
+                errors["confirm"] = "Confirm this sensitive access change to continue."
+            target_status = {
+                "activate": StudioMembership.Status.ACTIVE,
+                "reactivate": StudioMembership.Status.ACTIVE,
+                "deactivate": StudioMembership.Status.INACTIVE,
+                "suspend": StudioMembership.Status.SUSPENDED,
+            }[action]
+            if membership.role == StudioMembership.Role.OWNER and target_status != StudioMembership.Status.ACTIVE:
+                errors["owner"] = "Owner access can only be changed through an ownership transfer."
             if not errors:
                 membership.status = target_status
                 membership.save(update_fields=["status", "updated_at"])
