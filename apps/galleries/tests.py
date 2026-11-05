@@ -199,6 +199,8 @@ class ClientDownloadPermissionTests(TestCase):
             gallery=self.gallery, client_name="Client", email="client@example.com"
         )
         _, self.raw_token = AccessToken.issue(self.invitation)
+        recipient, _ = User.objects.get_or_create(email=self.invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.owner,
@@ -287,6 +289,8 @@ class ClientOriginalDownloadPermissionTests(TestCase):
             gallery=self.gallery, client_name="Client", email="original-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(invitation)
+        recipient, _ = User.objects.get_or_create(email=invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.owner,
@@ -374,6 +378,8 @@ class ClientFavoritePermissionTests(TestCase):
             gallery=self.gallery, client_name="Client", email="favorite-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(invitation)
+        recipient, _ = User.objects.get_or_create(email=invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.owner,
@@ -464,6 +470,8 @@ class ClientCommentPermissionTests(TestCase):
             gallery=self.gallery, client_name="Comment Client", email="comment-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(self.invitation)
+        recipient, _ = User.objects.get_or_create(email=self.invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery, photographer=self.owner,
             file=SimpleUploadedFile("comment.jpg", b"comment-file", content_type="image/jpeg"),
@@ -530,6 +538,8 @@ class ClientSharePermissionTests(TestCase):
             gallery=self.gallery, client_name="Share Client", email="share-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(invitation)
+        recipient, _ = User.objects.get_or_create(email=invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
         self.share_url = reverse("galleries:client_gallery_share", args=[self.raw_token])
         self.stable_path = reverse("galleries:stable_gallery_access", args=[self.gallery.public_id])
@@ -566,8 +576,12 @@ class ClientSharePermissionTests(TestCase):
 
     def test_stable_share_url_preserves_private_gallery_access_rules(self):
         response = self.client.get(self.stable_path)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "galleries/stable_gallery_gate.html")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/access/', response.url)
+        self.client.logout()
+        anonymous = self.client.get(self.stable_path)
+        self.assertEqual(anonymous.status_code, 302)
+        self.assertIn('next=', anonymous.url)
 
 
 @override_settings(GALLERY_STORAGE_BACKEND="local")
@@ -594,6 +608,8 @@ class ClientPurchasePrintsPermissionTests(TestCase):
             gallery=self.gallery, client_name="Print Client", email="print-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(invitation)
+        recipient, _ = User.objects.get_or_create(email=invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
         self.store_url = reverse("galleries:client_gallery_print_store", args=[self.raw_token])
 
@@ -702,6 +718,8 @@ class ClientAdvancedAccessRuleTests(TestCase):
             gallery=self.gallery, client_name="Advanced Client", email="advanced-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(invitation)
+        recipient, _ = User.objects.get_or_create(email=invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.gallery_url = reverse("galleries:client_gallery_access", args=[self.raw_token])
         self.stable_url = reverse("galleries:stable_gallery_access", args=[self.gallery.public_id])
         self.photo = GalleryPhoto.objects.create(
@@ -715,6 +733,32 @@ class ClientAdvancedAccessRuleTests(TestCase):
     def tearDown(self):
         if self.photo.file:
             self.photo.file.delete(save=False)
+
+    def test_sized_downloads_are_bounded_and_do_not_require_original_permission(self):
+        from io import BytesIO
+        from PIL import Image
+        content = BytesIO()
+        Image.new("RGB", (4000, 2000), "navy").save(content, format="JPEG")
+        self.photo.file.save("sizes.jpg", SimpleUploadedFile("sizes.jpg", content.getvalue()))
+        for size, edge in [("small", 1280), ("medium", 2048), ("large", 3840)]:
+            response = self.client.get(self.download_url, {"size": size})
+            self.assertEqual(response.status_code, 200)
+            with Image.open(BytesIO(b"".join(response.streaming_content))) as image:
+                self.assertEqual(image.size, (edge, edge // 2))
+                self.assertFalse(image.getexif())
+            # Consuming streaming_content closes the response via Django's test
+            # client wrapper. A second close emits request_finished again and
+            # can close PostgreSQL inside this TestCase's atomic transaction.
+        self.assertEqual(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery, event_type="download").count(), 3)
+        original = reverse("galleries:client_gallery_download_original", args=[self.raw_token, self.photo.pk])
+        self.assertEqual(self.client.get(original).status_code, 403)
+
+    def test_sized_download_rejects_unknown_size_and_enforces_permissions(self):
+        self.assertEqual(self.client.get(self.download_url, {"size": "original"}).status_code, 400)
+        self.permissions.download_images = False
+        self.permissions.save()
+        for size in ["small", "medium", "large"]:
+            self.assertEqual(self.client.get(self.download_url, {"size": size}).status_code, 403)
 
     def test_download_expiration_hides_downloads_and_blocks_direct_endpoint(self):
         self.permissions.download_expires_at = timezone.now() - timezone.timedelta(minutes=1)
@@ -735,9 +779,9 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.assertEqual(self.client.get(self.gallery_url).status_code, 404)
         self.assertEqual(self.client.get(self.stable_url).status_code, 404)
 
-    def test_preview_watermark_is_rendered_centered_for_client_delivery(self):
+    def test_preview_watermark_is_tiled_for_client_delivery(self):
         page = self.client.get(self.gallery_url)
-        self.assertContains(page, "lp-client-photo__watermark")
+        self.assertContains(page, "data-gallery-watermark")
         self.assertContains(page, "has-watermark")
         self.assertNotContains(page, "is-watermark-bottom_right")
 
@@ -745,7 +789,7 @@ class ClientAdvancedAccessRuleTests(TestCase):
         self.permissions.watermark = GalleryPermission.Watermark.NONE
         self.permissions.save(update_fields=["watermark", "updated_at"])
         page = self.client.get(self.gallery_url)
-        self.assertNotContains(page, 'class="lp-client-photo__watermark"')
+        self.assertNotContains(page, "data-gallery-watermark")
 
 
 @override_settings(GALLERY_STORAGE_BACKEND="local", **TEST_MEDIA_DELIVERY_SETTINGS)
@@ -778,6 +822,8 @@ class ClientPermissionMatrixTests(TestCase):
             gallery=self.gallery, client_name="Matrix Client", email="matrix-client@example.com"
         )
         _, self.raw_token = AccessToken.issue(self.invitation)
+        recipient, _ = User.objects.get_or_create(email=self.invitation.email, defaults={"email_verified": True})
+        self.client.force_login(recipient)
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery, photographer=self.owner,
             file=SimpleUploadedFile("matrix.jpg", b"matrix-file", content_type="image/jpeg"),
@@ -892,6 +938,62 @@ class ClientGalleryDesignInteractionContractTests(TestCase):
         design_dir = Path(settings.BASE_DIR) / "templates" / "galleries" / "designs"
         for template_name in templates:
             source = (design_dir / template_name).read_text(encoding="utf-8")
+            if 'client_photo_card.html' in source:
+                source += (design_dir.parent / "components" / "client_photo_card.html").read_text(encoding="utf-8")
             for marker in required:
                 with self.subTest(template=template_name, marker=marker):
                     self.assertIn(marker, source)
+
+
+class PrivateGalleryAuthenticationTests(ClientAdvancedAccessRuleTests):
+    def test_logged_out_private_pages_redirect_to_login_and_preserve_next(self):
+        self.client.logout()
+        urls = [self.gallery_url, self.stable_url,
+                reverse('galleries:invited_semantic_results', args=[self.raw_token]) + '?q=people+dancing']
+        from urllib.parse import parse_qs, urlsplit
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(parse_qs(urlsplit(response.url).query)['next'], [url])
+        self.assertFalse(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery).exists())
+
+    def test_private_resources_reject_anonymous_wrong_and_unverified_accounts(self):
+        from unittest.mock import patch
+        urls = [
+            reverse('galleries:client_gallery_photo_media', args=[self.raw_token, self.photo.pk]),
+            self.download_url,
+            reverse('galleries:client_gallery_download_original', args=[self.raw_token, self.photo.pk]),
+            reverse('galleries:client_gallery_download_all', args=[self.raw_token]),
+            reverse('galleries:client_gallery_print_store', args=[self.raw_token]),
+            reverse('visual_search:invited-semantic-search', args=[self.raw_token]),
+        ]
+        wrong = User.objects.create_user(email='wrong-private@example.com', email_verified=True)
+        recipient = User.objects.get(email='advanced-client@example.com')
+        recipient.email_verified = False
+        recipient.save(update_fields=['email_verified'])
+        for user in [None, wrong, recipient]:
+            self.client.logout()
+            if user:
+                self.client.force_login(user)
+            with patch('apps.visual_search.semantic_api._semantic_results') as search:
+                for url in urls:
+                    self.assertEqual(self.client.get(url, {'q': 'people dancing'}).status_code, 403, url)
+                for name in ['client_gallery_favorite', 'client_gallery_comment', 'client_gallery_share']:
+                    args = [self.raw_token] if name == 'client_gallery_share' else [self.raw_token, self.photo.pk]
+                    url = reverse('galleries:' + name, args=args)
+                    self.assertEqual(self.client.post(url, {'comment': 'Blocked'}).status_code, 403)
+                search.assert_not_called()
+        self.assertFalse(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery).exists())
+        self.assertFalse(GalleryPhotoComment.objects.filter(gallery=self.gallery).exists())
+
+    def test_invited_verified_client_can_access_private_page_but_logout_revokes_session(self):
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 200)
+        self.client.logout()
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 302)
+        self.assertEqual(self.client.get(self.download_url).status_code, 403)
+
+    def test_public_invitation_still_allows_logged_out_access(self):
+        self.gallery.visibility = Gallery.Visibility.PUBLIC
+        self.gallery.save(update_fields=['visibility'])
+        self.client.logout()
+        self.assertEqual(self.client.get(self.gallery_url).status_code, 200)

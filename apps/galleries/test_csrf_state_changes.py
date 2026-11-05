@@ -40,6 +40,7 @@ class CsrfStateChangingEndpointTests(TestCase):
             gallery=self.gallery, client_name="CSRF Client", email="client@example.com",
         )
         _, self.token = AccessToken.issue(self.invitation)
+        self.recipient = User.objects.create_user(email=self.invitation.email, email_verified=True)
         self.csrf_client = TestClient(enforce_csrf_checks=True)
         self.csrf_client.force_login(self.user)
 
@@ -83,26 +84,28 @@ class CsrfStateChangingEndpointTests(TestCase):
             (reverse("galleries:client_gallery_favorite", args=[self.token, self.photo.pk]), {}),
             (reverse("galleries:client_gallery_comment", args=[self.token, self.photo.pk]), {"comment": "forged"}),
         ]
-        anonymous = TestClient(enforce_csrf_checks=True)
+        recipient_client = TestClient(enforce_csrf_checks=True)
+        recipient_client.force_login(self.recipient)
         for url, data in cases:
             with self.subTest(url=url):
-                response = anonymous.post(
+                response = recipient_client.post(
                     url, data=data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
                 )
                 self.assertEqual(response.status_code, 403)
 
     def test_ajax_formdata_with_valid_csrf_is_accepted(self):
-        anonymous = TestClient(enforce_csrf_checks=True)
-        page = anonymous.get(reverse("galleries:client_gallery_access", args=[self.token]))
+        recipient_client = TestClient(enforce_csrf_checks=True)
+        recipient_client.force_login(self.recipient)
+        page = recipient_client.get(reverse("galleries:client_gallery_access", args=[self.token]))
         self.assertEqual(page.status_code, 200)
-        csrf = anonymous.cookies["csrftoken"].value
-        response = anonymous.post(
+        csrf = recipient_client.cookies["csrftoken"].value
+        response = recipient_client.post(
             reverse("galleries:client_gallery_favorite", args=[self.token, self.photo.pk]),
             data={"csrfmiddlewaretoken": csrf},
             HTTP_X_CSRFTOKEN=csrf,
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        self.assertNotEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_state_changing_routes_do_not_accept_get(self):
         urls = [

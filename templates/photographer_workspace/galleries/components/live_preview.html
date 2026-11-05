@@ -1,0 +1,9 @@
+<section class="lp-gallery-create__preview lp-gallery-live-preview" aria-labelledby="{{ preview_title_id }}">
+  <header class="lp-gallery-live-preview__header"><div><span class="lp-gallery-live-preview__eyebrow"><span aria-hidden="true"></span>Live Preview</span><h2 id="{{ preview_title_id }}">Gallery Preview</h2><p>Your client’s first impression.</p></div><span class="lp-gallery-live-preview__eye" aria-hidden="true"><i class="bi bi-eye"></i></span></header>
+  <div class="lp-gallery-live-preview__media">
+    <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover>{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span>{% endif %}</div>
+    <span class="lp-gallery-live-preview__visibility"><i class="bi bi-lock" data-gallery-preview-visibility-icon aria-hidden="true"></i><span data-gallery-preview-visibility>{{ gallery.get_visibility_display }}</span></span>
+  </div>
+  <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client{% if not form.client.value %} hidden{% endif %}></p><h3 data-gallery-preview-name>{{ form.name.value|default:'Untitled gallery' }}</h3><time data-gallery-preview-date{% if not gallery.event_date %} hidden{% endif %}{% if gallery.event_date %} datetime="{{ gallery.event_date|date:'Y-m-d' }}"{% endif %}>{% if gallery.event_date %}{{ gallery.event_date|date:'M j, Y' }}{% endif %}</time></div>
+  <footer class="lp-gallery-live-preview__footer"><span class="lp-gallery-live-preview__status" data-gallery-preview-status-wrap data-status="{{ form.status.value }}"><span aria-hidden="true"></span><span data-gallery-preview-status>{{ gallery.get_status_display }}</span></span><span class="lp-gallery-live-preview__sync"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Updates as you edit</span></footer>
+</section>

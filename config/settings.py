@@ -28,8 +28,28 @@ INSTALLED_APPS = [
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
     "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
-    "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig",
+    "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
+# Semantic discovery is independently approved and always opt-in per gallery.
+VISUAL_SEARCH_SEMANTIC_ENABLED = env_bool("VISUAL_SEARCH_SEMANTIC_ENABLED", False)
+VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED = env_bool("VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False)
+VISUAL_SEARCH_SEMANTIC_MODEL_PATH = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_PATH", "")
+VISUAL_SEARCH_SEMANTIC_MODEL_VERSION = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_VERSION", "clip-v1")
+CELERY_IMPORTS = ("apps.visual_search.semantic_tasks",)
+from config.ai_task_routing import ai_task_routes
+
+# Enable on every producer only after the dedicated consumer is ready.
+CELERY_AI_QUEUES_ENABLED = env_bool("CELERY_AI_QUEUES_ENABLED", False)
+CELERY_TASK_ROUTES = ai_task_routes(CELERY_AI_QUEUES_ENABLED)
+
+VISUAL_SEARCH_FACE_INDEXING_ENABLED = env_bool("VISUAL_SEARCH_FACE_INDEXING_ENABLED", False)
+VISUAL_SEARCH_SELFIE_API_ENABLED = env_bool("VISUAL_SEARCH_SELFIE_API_ENABLED", False)
+VISUAL_SEARCH_FACE_MODEL_VERSION = os.getenv("VISUAL_SEARCH_FACE_MODEL_VERSION", "arcface-buffalo-l-v1")
+VISUAL_SEARCH_DATABASE_URL = os.getenv("VISUAL_SEARCH_DATABASE_URL", "")
+VISUAL_SEARCH_MODEL_PATH = os.getenv("VISUAL_SEARCH_MODEL_PATH", "")
+VISUAL_SEARCH_MODEL_PACK = os.getenv("VISUAL_SEARCH_MODEL_PACK", "buffalo_l")
+VISUAL_SEARCH_MAX_IMAGE_PIXELS = int(os.getenv("VISUAL_SEARCH_MAX_IMAGE_PIXELS", "50000000"))
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware",
     "apps.core.observability.RequestIDMiddleware", "django.contrib.sessions.middleware.SessionMiddleware",
@@ -194,6 +214,8 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
+    "reconcile-vector-purges": {"task": "apps.visual_search.tasks.reconcile_vector_purges", "schedule": 300.0},
+    "reconcile-face-index": {"task": "apps.visual_search.tasks.reconcile_face_index", "schedule": 3600.0},
     "scan-inbox-notification-reminders": {"task": "apps.notifications.tasks.scan_notification_reminders", "schedule": 3600.0},
     "scan-scheduled-workflow-automations": {"task": "apps.workflows.tasks.scan_scheduled_automations", "schedule": 3600.0},
     "cleanup-stale-gallery-multipart-uploads": {"task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads", "schedule": 3600.0},

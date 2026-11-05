@@ -5,6 +5,8 @@ from . import access_views, account_views, download_views, invitation_views, vie
 app_name = "galleries"
 
 urlpatterns = [
+    path("g/<uuid:public_id>/search/", access_views.public_semantic_results, name="public_semantic_results"),
+    path("access/<str:token>/search/", access_views.invited_semantic_results, name="invited_semantic_results"),
     path("g/<uuid:public_id>/", access_views.stable_gallery_access, name="stable_gallery_access"),
     path("client-galleries/", views.client_galleries, name="client_galleries"),
     path("access/<str:token>/", access_views.client_gallery_access, name="client_gallery_access"),

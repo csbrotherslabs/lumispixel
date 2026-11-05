@@ -51,6 +51,7 @@ from apps.galleries.multipart_uploads import (ALLOWED_CONTENT_TYPES, abort as ab
     complete as complete_multipart, delete_object as delete_multipart_object,
     get_object_stream as get_multipart_object_stream, initiate as initiate_multipart,
     multipart_object_key, sign_part, list_parts as list_multipart_parts)
+from apps.visual_search.services import schedule_face_indexing
 from apps.ai_engine.models import AIJob, AIProcessingStatus
 from apps.dashboard.financial import financial_summary, format_currency
 from apps.dashboard.financial_analytics import financial_analytics
@@ -164,6 +165,8 @@ def _workspace_nav(active_key):
         for key, title, icon in group["items"]:
             module = MODULE_BY_KEY[key]
             items.append({"key": key, "title": title, "icon": icon, "url": _reverse_module(module), "active": key == active_key})
+        if group["title"] == "Galleries" and getattr(settings, "VISUAL_SEARCH_PRIVATE_ACCESS_REQUESTS_ENABLED", False):
+            items.append({"key": "private_gallery_requests", "title": "Access requests", "icon": "bi-person-check", "url": reverse("photographer_workspace:private_gallery_requests"), "active": active_key == "private_gallery_requests"})
         groups.append({"title": group["title"], "icon": group["icon"], "id": f"nav-group-{index}", "items": items, "expanded": not group["title"] or any(item["active"] for item in items), "active": any(item["active"] for item in items)})
     return groups
 
@@ -1252,6 +1255,14 @@ def create_gallery(request):
         gallery.slug = _unique_gallery_slug(profile, gallery.name)
         gallery.full_clean()
         gallery.save()
+        # Semantic authorization is separate and gated; facial search remains off.
+        if request.POST.get("semantic_search_enabled") == "on":
+            from apps.visual_search.models import GallerySemanticSearchPolicy
+            from apps.visual_search.semantic import semantic_enabled
+            if semantic_enabled() and getattr(settings, "VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False):
+                GallerySemanticSearchPolicy.objects.update_or_create(
+                    gallery=gallery, defaults={"processing_authorized": True}
+                )
         log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_CREATED,
                              description=f"{gallery.name} was created and its workspace is ready.", actor=request.user)
         messages.success(request, "Gallery created. Your workspace is ready.")
@@ -1263,6 +1274,7 @@ def create_gallery(request):
                 field.widget.attrs["aria-invalid"] = "true"
                 field.widget.attrs["aria-describedby"] = f"{field.widget.attrs.get('id', f'id_{field_name}')}-error"
     context = _dashboard_context(request, "all_galleries", "Create Gallery")
+    context["semantic_create_available"] = bool(getattr(settings, "VISUAL_SEARCH_SEMANTIC_ENABLED", False) and getattr(settings, "VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False))
     context.update({"form": form, "form_title": "Create Gallery", "form_subtitle": "Set up the gallery now. Add photos and delivery settings next.", "submit_label": "Create Gallery", "is_create_gallery": True, "hide_topbar_heading": True})
     return render(request, "photographer_workspace/galleries/form.html", context)
 
@@ -1602,6 +1614,7 @@ def gallery_multipart_complete(request, upload_uuid):
             original_name=locked_session.original_name, file_size=locked_session.file_size,
             status=GalleryPhoto.Status.COMPLETED,
         )
+        schedule_face_indexing(photo.pk)
         Gallery.objects.filter(pk=locked_session.gallery_id).update(
             image_count=F("image_count") + 1, storage_used=F("storage_used") + locked_session.file_size
         )
@@ -1672,6 +1685,7 @@ def gallery_upload_queue(request):
             except Exception:
                 errors.append({"name": upload.name, "error": "The image could not be validated."})
                 continue
+            schedule_face_indexing(photo.pk)
             created.append({"id": photo.pk, "name": photo.original_name, "size": photo.file_size, "status": photo.status})
             if storage_remaining is not None:
                 storage_remaining -= upload.size
@@ -1813,6 +1827,13 @@ def gallery_workspace(request, pk):
                 messages.success(request, "Gallery duplicated as a draft.")
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=settings")
         elif action == "save_access":
+            try:
+                density = int(request.POST.get("watermark_density", permissions.watermark_density))
+            except (ValueError, TypeError):
+                return HttpResponseBadRequest("Choose a watermark density from 1 to 5.")
+            if not 1 <= density <= 5:
+                return HttpResponseBadRequest("Choose a watermark density from 1 to 5.")
+            permissions.watermark_density = density
             visibility = request.POST.get("visibility")
             if visibility in Gallery.Visibility.values:
                 gallery.visibility = visibility
@@ -1830,7 +1851,7 @@ def gallery_workspace(request, pk):
             permissions.save()
             log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.PERMISSION_CHANGED,
                                  description="Client access permissions were updated.", actor=request.user,
-                                 related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark}})
+                                 related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark, "watermark_density": permissions.watermark_density}})
             messages.success(request, "Client access settings saved.")
         elif action == "invite":
             name, email = request.POST.get("client_name", "").strip(), request.POST.get("email", "").strip().lower()
@@ -1921,6 +1942,14 @@ def gallery_workspace(request, pk):
                     "general_form": general_form, "settings_form": settings_form,
                     "gallery_permissions": permissions, "invitations": invitations,
                     "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
+                    "permission_groups": [
+                        {"title": title, "items": [(field, label, icon, getattr(permissions, field)) for field, label, icon in items]}
+                        for title, items in [
+                            ("Access & sharing", [("view_gallery", "View gallery", "eye"), ("share_gallery", "Share gallery", "share")]),
+                            ("Downloads & prints", [("download_images", "Download photos", "download"), ("download_originals", "Original files", "file-earmark"), ("purchase_prints", "Purchase prints", "printer")]),
+                            ("Client feedback", [("favorite_photos", "Favorite photos", "heart"), ("comment", "Comments", "chat")]),
+                        ]
+                    ],
                     "permission_options": [(field, label, getattr(permissions, field)) for field, label in (
                         ("view_gallery", "View Gallery"), ("download_images", "Download Images"),
                         ("download_originals", "Download Originals"), ("favorite_photos", "Favorite Photos"),

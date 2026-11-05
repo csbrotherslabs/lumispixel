@@ -43,6 +43,8 @@ class ClientGalleryTokenIsolationTests(TestCase):
         )
         self.token_a_record, self.token_a = AccessToken.issue(self.invitation_a)
         self.token_b_record, self.token_b = AccessToken.issue(self.invitation_b)
+        self.recipient = User.objects.create_user(email=self.invitation_a.email, email_verified=True)
+        self.client.force_login(self.recipient)
 
     def tearDown(self):
         for photo in (self.photo_a, self.photo_b):
@@ -154,3 +156,8 @@ class ClientGalleryTokenIsolationTests(TestCase):
             {"comment": "must not persist"},
         ))
         self.assertFalse(GalleryPhotoComment.objects.filter(body="must not persist").exists())
+
+    def test_recipient_a_cannot_use_forwarded_private_token_b(self):
+        response = self.client.get(reverse('galleries:client_gallery_access', args=[self.token_b]))
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(GalleryAnalyticsEvent.objects.filter(gallery=self.gallery_b).exists())

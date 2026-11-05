@@ -1,0 +1,89 @@
+name: Selfie Search Isolated E2E
+
+on:
+  pull_request:
+    paths:
+      - "apps/visual_search/**"
+      - ".github/workflows/selfie-search-e2e.yml"
+      - "config/settings_test.py"
+      - "requirements-visual-search.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-pgvector:
+    name: Synthetic HTTP and real pgvector verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: lumispixel_visual_search_test_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d lumispixel_visual_search_test_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: "isolated-ci-only-not-for-production"
+      LUMISPIXEL_TEST_SQLITE: "true"
+      VISUAL_SEARCH_FACE_INDEXING_ENABLED: "false"
+      VISUAL_SEARCH_SELFIE_API_ENABLED: "false"
+      VISUAL_SEARCH_INTEGRATION_DATABASE_URL: "postgresql://testuser:testpass@127.0.0.1:5432/lumispixel_visual_search_test_ci"
+      VISUAL_SEARCH_DATABASE_URL: "postgresql://testuser:testpass@127.0.0.1:5432/lumispixel_visual_search_test_ci"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Django and vector test dependencies (no model weights)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt "numpy>=1.26,<3" "pgvector>=0.4,<1"
+      - name: Confirm disposable database and pgvector extension
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg
+          from pgvector.psycopg import register_vector
+          url = os.environ["VISUAL_SEARCH_INTEGRATION_DATABASE_URL"]
+          with psycopg.connect(url) as conn:
+              db = conn.execute("SELECT current_database()").fetchone()[0]
+              assert db == "lumispixel_visual_search_test_ci", f"Unsafe database: {db}"
+              conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+              register_vector(conn)
+              print("Disposable pgvector database ready:", db)
+          PY
+      - name: Run synthetic HTTP-to-authorization and real pgvector suites
+        run: |
+          python - <<'PY'
+          import os
+          import unittest
+          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings_test")
+          import django
+          django.setup()
+          from django.test.runner import DiscoverRunner
+          class NoSkippedTestsRunner(DiscoverRunner):
+              def run_suite(self, suite, **kwargs):
+                  result = super().run_suite(suite, **kwargs)
+                  if result.skipped:
+                      print("Unexpected skipped tests:", result.skipped)
+                      result.failures.append((None, "E2E verification cannot pass with skipped tests"))
+                  return result
+          runner = NoSkippedTestsRunner(verbosity=2)
+          failures = runner.run_tests([
+              "apps.visual_search.test_selfie_isolated_journey",
+              "apps.visual_search.test_selfie_pgvector_e2e",
+          ])
+          if failures:
+              raise SystemExit(1)
+          PY

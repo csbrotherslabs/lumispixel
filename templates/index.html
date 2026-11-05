@@ -10,6 +10,10 @@
 <link rel="stylesheet" href="{% static 'css/homepage_photo_discovery.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_marketplace_preview.css' %}">
 <link rel="stylesheet" href="{% static 'css/homepage_final_cta.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_mobile_editorial.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_mobile_discovery.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_mobile_premium.css' %}">
+<link rel="stylesheet" href="{% static 'css/homepage_mobile_ai_demo.css' %}">
 <style>
     .page-home .lumis-photographer-marketplace__intro,
     .page-home .lumis-photographer-marketplace__reassurance,
@@ -234,6 +238,8 @@
         </div>
 
     </section>
+
+    {% include 'components/homepage_mobile_editorial.html' %}
 
     <!-- Photo Matching Preview -->
     <section class="wptb-services-one lumis-photo-match" aria-labelledby="photo-match-title">
@@ -668,4 +674,4 @@
 
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/homepage_workflow_preview.js' %}" defer></script><script src="{% static 'js/homepage_ai_preview.js' %}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/homepage_workflow_preview.js' %}" defer></script><script src="{% static 'js/homepage_ai_preview.js' %}" defer></script><script src="{% static 'js/homepage_mobile_editorial.js' %}" defer></script><script src="{% static 'js/homepage_mobile_ai_demo.js' %}" defer></script>{% endblock %}

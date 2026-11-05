@@ -2,6 +2,7 @@ from django.test import TransactionTestCase
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.billing.models import Plan
 from apps.dashboard.invoices import next_invoice_number
 
 
@@ -9,6 +10,13 @@ class InvoiceNumberTests(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
+        # TransactionTestCase flushes the test database between tests.
+        # Ensure the active free plan exists before the profile post_save
+        # signal provisions its default subscription.
+        Plan.objects.get_or_create(
+            code="free",
+            defaults={"name": "Free", "is_active": True},
+        )
         self.user = User.objects.create_user(
             email="invoice-owner@example.com",
             password="TestPass123!",

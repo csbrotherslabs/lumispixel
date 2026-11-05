@@ -249,3 +249,14 @@ body.lp-gallery-design-modal-open{overflow:hidden}
   font-weight: 700;
   line-height: 1;
 }
+
+/* Keep the live preview hierarchy aligned with the Gallery Design section. */
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-design-step h2,
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create__preview h2,
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create__preview-copy h3 {
+  font-size: 18px;
+}
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-design-step header small,
+.lp-gallery-create-modern:not(.lp-gallery-edit-modern) .lp-gallery-create__preview header small {
+  font-size: 10px;
+}

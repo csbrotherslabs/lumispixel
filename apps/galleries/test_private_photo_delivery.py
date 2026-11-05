@@ -44,6 +44,8 @@ class PrivatePhotoDeliveryTests(TestCase):
             gallery=self.gallery, client_name="Client", email="client@example.com",
         )
         self.token_record, self.token = AccessToken.issue(self.invitation)
+        self.recipient = User.objects.create_user(email=self.invitation.email, email_verified=True)
+        self.client.force_login(self.recipient)
 
     def tearDown(self):
         if self.photo.file:

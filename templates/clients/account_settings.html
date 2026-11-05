@@ -21,6 +21,7 @@
         <a href="#profile"><i class="bi bi-person" aria-hidden="true"></i><span>Profile<small>Name, location, and photo</small></span></a>
         <a href="#preferences"><i class="bi bi-sliders" aria-hidden="true"></i><span>Preferences<small>Product communication</small></span></a>
         <a href="#security"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security<small>Email and password</small></span></a>
+        <a href="#biometric-privacy"><i class="bi bi-eye-slash" aria-hidden="true"></i><span>Selfie search privacy<small>Permissions and deletion</small></span></a>
       </nav>
 
       <form class="client-settings__form client-profile-form" method="post" enctype="multipart/form-data" novalidate>
@@ -56,6 +57,10 @@
           <div class="client-settings__security-row"><div><span>Password</span><strong>••••••••••••</strong></div><a href="{% url 'accounts:password-reset' %}">Change password <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
         </section>
 
+        <section class="client-settings__panel" id="biometric-privacy" aria-labelledby="biometric-privacy-heading">
+          <header><span class="client-settings__panel-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span><div><h2 id="biometric-privacy-heading">Selfie search privacy</h2><p>Manage biometric search permissions and request deletion of applicable biometric data.</p></div></header>
+          <p><a href="{% url 'visual_search:selfie-privacy' %}">Manage selfie search privacy and deletion <i class="bi bi-arrow-right" aria-hidden="true"></i></a></p>
+        </section>
         <div class="client-settings__actions"><a href="{% url 'clients:dashboard' %}">Cancel</a><button type="submit">Save changes <i class="bi bi-check2" aria-hidden="true"></i></button></div>
       </form>
     </div>

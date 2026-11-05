@@ -251,7 +251,9 @@
   const coverInput = document.querySelector('[data-cover-input]');
   if (coverDrop && coverInput) {
     const preview = coverDrop.querySelector('[data-cover-preview]'); const prompt = coverDrop.querySelector('[data-cover-prompt]');
-    const actions = coverDrop.querySelector('[data-cover-actions]'); const remove = coverDrop.querySelector('[data-cover-remove]');
+    const coverCard = coverDrop.closest('.lp-cover-editor') || coverDrop;
+    const actions = coverCard.querySelector('[data-cover-actions]'); const remove = coverCard.querySelector('[data-cover-remove]');
+    coverCard.querySelector('[data-cover-replace]')?.addEventListener('click', () => coverInput.click());
     const coverHeading = coverDrop.querySelector('[data-cover-heading]');
     let previewUrl = null;
     function previewCover(file) {
@@ -300,6 +302,10 @@
       } else { previewDate.textContent = ''; previewDate.removeAttribute('datetime'); previewDate.hidden = true; }
       previewVisibility.textContent = selectedLabel(visibilityInput);
       previewStatus.textContent = selectedLabel(statusInput);
+      const statusWrap = document.querySelector('[data-gallery-preview-status-wrap]');
+      if (statusWrap) statusWrap.dataset.status = statusInput.value;
+      const visibilityIcon = document.querySelector('[data-gallery-preview-visibility-icon]');
+      if (visibilityIcon) visibilityIcon.className = 'bi ' + ({private:'bi-lock', password:'bi-key', public:'bi-globe'}[visibilityInput.value] || 'bi-eye');
     }
     [nameInput, clientInput, dateInput, visibilityInput, statusInput].forEach(function (control) {
       if (control) { control.addEventListener('input', updateGalleryPreview); control.addEventListener('change', updateGalleryPreview); }

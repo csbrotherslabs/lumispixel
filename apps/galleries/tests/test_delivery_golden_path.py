@@ -135,7 +135,12 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.page.locator('input[name="name"]').fill("Golden Delivery")
         self.page.locator('select[name="status"]').select_option("draft")
         self.page.locator('select[name="visibility"]').select_option("private")
-        self.page.get_by_role("button", name="Create Gallery").click()
+        expect(self.page.get_by_role("button", name="Create Gallery", exact=True)).to_have_count(2)
+        # Both controls submit the same form. Exercise the bottom action without
+        # relying on document order or an ambiguous page-wide locator.
+        self.page.get_by_role("group", name="Create gallery actions").get_by_role(
+            "button", name="Create Gallery", exact=True,
+        ).click()
         self.page.wait_for_load_state("networkidle")
         gallery_id = self._db(
             lambda: Gallery.objects.values_list("pk", flat=True).get(
@@ -225,28 +230,53 @@ class PhotographerClientDeliveryGoldenPathTests(LiveServerTestCase):
         self.assertIsNotNone(match)
         client_url = match.group(0).replace("http://testserver", self.live_server_url).replace("https://testserver", self.live_server_url)
 
+        def sign_in_recipient():
+            recipient, _ = User.objects.get_or_create(email="golden-client@example.com", defaults={"email_verified": True})
+            self.client.force_login(recipient)
+            return self.client.cookies['sessionid'].value
+        client_cookie = self._db(sign_in_recipient)
         client_context = self.browser.new_context(accept_downloads=True)
         client_page = client_context.new_page()
+        client_page.goto(client_url)
+        self.assertIn('/login/', client_page.url)
+        client_context.add_cookies([{'name': 'sessionid', 'value': client_cookie, 'url': self.live_server_url}])
         client_page.goto(client_url)
         client_page.wait_for_load_state("networkidle")
         self.assertIn("Golden Delivery", client_page.content())
         client_page.locator(f'form[action*="/photos/{photo_id}/favorite/"] button').first.click()
-        client_page.wait_for_timeout(250)
+        expect(client_page.locator(f"#photo-{photo_id} [data-favorite-count]")).to_have_text("1")
 
         photo = client_page.locator(f"#photo-{photo_id}")
         comment_toggle = photo.locator("[data-comment-toggle]")
         comment_panel = photo.locator("[data-comment-panel]")
         expect(comment_panel).to_be_hidden()
         comment_toggle.click()
+        viewer = client_page.get_by_role("dialog", name="Photo viewer", exact=True)
+        expect(viewer).to_be_visible()
+        comment_panel = viewer.locator("[data-comment-panel]")
         expect(comment_panel).to_be_visible()
+        expect(viewer.locator("[data-viewer-comments]")).to_have_attribute("aria-expanded", "true")
         comment_form = comment_panel.locator("[data-comment-form]")
         comment_form.locator('textarea[name="comment"]').fill("This one is perfect.")
         comment_form.locator('button[type="submit"]').click()
-        client_page.wait_for_timeout(250)
+        expect(comment_panel.locator("[data-comment-thread]")).to_contain_text("This one is perfect.")
+        expect(viewer.locator("[data-viewer-comment-count]")).to_have_text("1")
 
+        viewer.get_by_text("Medium", exact=True).click()
+        expect(viewer.locator("[data-viewer-download]")).to_have_attribute("href", re.compile(r"size=medium"))
         with client_page.expect_download() as download_info:
-            client_page.locator(f'a[href*="/photos/{photo_id}/download/"]').first.click()
-        self.assertTrue(download_info.value.suggested_filename)
+            viewer.locator("[data-viewer-download]").click()
+        download = download_info.value
+        self.assertEqual(download.suggested_filename, f"photo-{photo_id}-medium.jpg")
+        self.assertIsNone(download.failure())
+        with Image.open(download.path()) as downloaded_image:
+            self.assertEqual(downloaded_image.size, (2048, 2048))
+        viewer.get_by_role("button", name="Close full view", exact=True).click()
+        expect(viewer).not_to_be_visible()
+        restored_panel = photo.locator("[data-comment-panel]")
+        expect(restored_panel).to_have_count(1)
+        expect(restored_panel).to_be_hidden()
+        expect(photo.locator("[data-comment-count]")).to_have_text("1")
         client_context.close()
 
         self.assertTrue(self._db(lambda: GalleryAnalyticsEvent.objects.filter(

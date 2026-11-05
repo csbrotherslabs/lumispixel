@@ -1,0 +1,483 @@
+"""Tiled display-watermark contracts for all four gallery designs."""
+import os
+import re
+from pathlib import Path
+from types import SimpleNamespace
+from unittest import skipUnless
+from uuid import uuid4
+from urllib.parse import urlparse
+
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.test import SimpleTestCase
+from django.urls import reverse
+from playwright.sync_api import sync_playwright, expect
+
+DESIGNS = ['standard_filterable', 'story', 'masonry', 'cinematic']
+
+
+def gallery_context(watermark='preview'):
+    return {
+        'gallery': SimpleNamespace(pk=1, name='Watermark test', public_id=uuid4(), photographer='Studio', description='', cover_image=None, event_date=None, story_title='Our story'),
+        'gallery_brand': 'Magdalene Golomeke',
+        'gallery_settings': SimpleNamespace(accent_color='#c51b48', watermark_position='bottom_right'),
+        'permissions': SimpleNamespace(watermark=watermark),
+        'photos': [SimpleNamespace(pk=1, delivery_url='/photo.svg', is_client_favorite=False, client_filter_categories='')],
+        'albums': [],
+    }
+
+
+class TiledWatermarkTemplateTests(SimpleTestCase):
+    def test_watermarks_prefer_business_name_across_client_surfaces(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='Golden Light Photography', display_name='Samuel Golomeke')
+        context.update(semantic_search_available=True, search_query='portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates += ['galleries/semantic_results.html', 'galleries/components/semantic_search.html',
+                      'galleries/components/photo_viewer.html']
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                labels = re.findall(r'data-watermark-label="([^"]*)"', html)
+                self.assertTrue(labels)
+                self.assertTrue(all(label == 'Golden Light Photography' for label in labels))
+
+    def test_watermark_falls_back_to_photographer_name(self):
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(
+            business_name='', display_name='Samuel Golomeke')
+        html = render_to_string('galleries/components/tiled_watermark.html', context)
+        self.assertIn('data-watermark-label="Samuel Golomeke"', html)
+
+    def test_client_pages_include_lumispixel_tab_branding(self):
+        context = gallery_context()
+        context.update(search_query='baby portraits', back_url='/gallery/')
+        templates = [f'galleries/designs/{design}.html' for design in DESIGNS]
+        templates.append('galleries/semantic_results.html')
+        for template in templates:
+            with self.subTest(template=template):
+                html = render_to_string(template, context)
+                title = re.search(r'<title>(.*?)</title>', html).group(1)
+                self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/lumis_favicon_v1\.png')
+                if template.endswith('semantic_results.html'):
+                    self.assertTrue(title.startswith('Search results · '))
+
+    def test_all_designs_share_grid_and_lightbox_watermarks(self):
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                html = render_to_string(f'galleries/designs/{design}.html', gallery_context())
+                self.assertIn('client_gallery_watermark.js', html)
+                self.assertIn('client_gallery_watermark.css', html)
+                self.assertEqual(html.count('data-gallery-watermark '), 2)
+                self.assertNotIn('class="lp-client-photo__watermark"', html)
+
+    def test_all_four_designs_share_top_ten_search_controls(self):
+        context = gallery_context()
+        context['semantic_search_available'] = True
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                html = render_to_string(f'galleries/designs/{design}.html', context)
+                self.assertEqual(html.count('data-semantic-view-all'), 1)
+                self.assertIn('data-semantic-results', html)
+                self.assertIn('data-semantic-client-form', html)
+
+    def test_watermark_none_removes_all_overlays(self):
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                html = render_to_string(f'galleries/designs/{design}.html', gallery_context('none'))
+                self.assertNotIn('data-gallery-watermark ', html)
+
+    def test_masonry_toolbar_hides_unavailable_actions(self):
+        context = gallery_context()
+        html = render_to_string('galleries/components/masonry_toolbar.html', context)
+        self.assertNotIn('data-show-favorites', html)
+        self.assertNotIn('data-qr-open', html)
+        self.assertNotIn('Download Gallery', html)
+        self.assertIn('aria-label="Grid columns"', html)
+
+    def test_brand_is_escaped_and_not_repeated_for_screen_readers(self):
+        context = gallery_context()
+        context['gallery_brand'] = '\"><script>alert(1)</script> & Studio'
+        html = render_to_string('galleries/components/tiled_watermark.html', context)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+        self.assertIn('aria-hidden="true"', html)
+
+
+with sync_playwright() as _playwright:
+    HAS_CHROMIUM = Path(_playwright.chromium.executable_path).exists()
+
+
+@skipUnless(HAS_CHROMIUM or os.getenv('REQUIRE_CLIENT_SEARCH_BROWSER') == '1', 'Requires Playwright Chromium')
+class TiledWatermarkBrowserTests(SimpleTestCase):
+    def setUp(self):
+        self.playwright = sync_playwright().start()
+        self.addCleanup(self.playwright.stop)
+        self.browser = self.playwright.chromium.launch()
+        self.addCleanup(self.browser.close)
+        self.page = self.browser.new_page()
+        self.page.set_default_timeout(7000)
+        self.html = ''
+        self.page.route('https://gallery.example.test/**', self.serve)
+
+    def serve(self, route):
+        path = urlparse(route.request.url).path
+        if path.startswith('/static/'):
+            file = settings.BASE_DIR / 'static' / path.removeprefix('/static/')
+            if file.is_file():
+                mime = {'.css': 'text/css', '.svg': 'image/svg+xml'}.get(file.suffix, 'application/javascript')
+                route.fulfill(body=file.read_bytes(), content_type=mime)
+            else:
+                route.abort()
+        elif path == '/photo.svg':
+            route.fulfill(content_type='image/svg+xml', body='<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="#526477"/></svg>')
+        else:
+            route.fulfill(body=self.html, content_type='text/html; charset=utf-8')
+
+    def test_tiles_cover_each_photo_without_blocking_preview(self):
+        for design in DESIGNS:
+            for width in [1440, 390]:
+                with self.subTest(design=design, width=width):
+                    self.html = render_to_string(f'galleries/designs/{design}.html', gallery_context())
+                    self.page.set_viewport_size({'width': width, 'height': 900})
+                    self.page.goto('https://gallery.example.test/')
+                    if design == 'cinematic':
+                        self.page.locator('[data-open-gallery][data-filter="all"]:not([data-favorites-only])').first.click()
+                    media = self.page.locator('[data-client-photo] a').first
+                    overlay = media.locator('[data-gallery-watermark]')
+                    expect(overlay).to_have_css('pointer-events', 'none')
+                    expect(overlay).to_have_css('background-repeat', 'repeat')
+                    self.assertIn('data:image/svg+xml', overlay.evaluate('el => el.style.backgroundImage'))
+                    # The repeated background must fill its media parent, not the page.
+                    expect(overlay).to_be_visible()
+                    bounds = overlay.bounding_box()
+                    parent = media.bounding_box()
+                    self.assertAlmostEqual(bounds['width'], parent['width'], delta=1)
+                    self.assertAlmostEqual(bounds['height'], parent['height'], delta=1)
+                    self.page.get_by_role('button', name='View photo full screen', exact=True).click()
+                    dialog = self.page.locator('[data-photo-lightbox]')
+                    expect(dialog).to_be_visible()
+                    expect(dialog.locator('[data-gallery-watermark]')).to_be_visible()
+                    self.page.get_by_role('button', name='Close full view', exact=True).click()
+                    expect(dialog).not_to_be_visible()
+
+    def test_photo_viewer_sizes_comments_and_restored_forms(self):
+        for design in DESIGNS:
+            for width in [1440, 390]:
+                with self.subTest(design=design, width=width):
+                    context = gallery_context()
+                    context.update(can_favorite=True, can_comment=True, can_download=True,
+                                   access_token='viewer-test-token')
+                    photo = context['photos'][0]
+                    photo.client_favorite_count = 12
+                    photo.client_download_count = 8
+                    photo.client_comment_list = []
+                    self.html = render_to_string(f'galleries/designs/{design}.html', context)
+                    self.page.set_viewport_size({'width': width, 'height': 900})
+                    self.page.goto('https://gallery.example.test/')
+                    if design == 'cinematic':
+                        self.page.locator('[data-open-gallery][data-filter="all"]:not([data-favorites-only])').first.click()
+                    self.page.locator('[data-client-photo] > a').click(position={'x': 10, 'y': 10})
+                    dialog = self.page.locator('.lp-viewer')
+                    expect(dialog).to_be_visible()
+                    expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('12')
+                    expect(dialog.locator('[data-viewer-comment-count]')).to_have_text('0')
+                    expect(dialog.locator('.lp-viewer__comments')).not_to_be_visible()
+                    for size in ['Small', 'Medium', 'Large']:
+                        dialog.get_by_text(size, exact=True).click()
+                        expect(dialog.get_by_role('radio', name=size, exact=True)).to_be_checked()
+                        expect(dialog.locator('[data-viewer-download]')).to_have_attribute('href', re.compile('size=' + size.lower()))
+                        expect(dialog.locator('[data-viewer-download]')).to_have_text('Download ' + size)
+                    radio = dialog.get_by_role('radio', name='Large', exact=True)
+                    radio.focus()
+                    radio.press('ArrowLeft')
+                    expect(dialog.get_by_role('radio', name='Medium', exact=True)).to_be_checked()
+                    expect(dialog.locator('[data-viewer-download]')).to_have_text('Download Medium')
+                    self.assertLessEqual(dialog.locator('.lp-viewer__toolbar').evaluate('el => el.scrollWidth'), width)
+                    if width == 1440:
+                        self.assertLessEqual(dialog.locator('[data-viewer-comments]').bounding_box()['height'], 34)
+                        expect(dialog.locator('[data-viewer-comments] svg')).to_have_css('width', '14px')
+                    self.page.route('**/comment/', lambda route: route.fulfill(json={
+                        'comment_count': 1, 'comment': {'id': 21, 'author': 'Test client', 'body': 'Beautiful moment'}}))
+                    self.page.route('**/favorite/', lambda route: route.fulfill(json={'favorited': True, 'favorite_count': 13}))
+                    dialog.locator('[data-viewer-favorite]').click()
+                    expect(dialog.locator('[data-viewer-favorite-count]')).to_have_text('13')
+                    dialog.locator('[data-viewer-comments]').click()
+                    expect(dialog.locator('textarea')).to_be_focused()
+                    self.assertEqual(dialog.locator('[data-comment-form]').count(), 1)
+                    dialog.locator('textarea').fill('Beautiful moment')
+                    dialog.locator('[data-comment-form] button[type="submit"]').click()
+                    expect(dialog.locator('[data-viewer-comment-count]')).to_have_text('1')
+                    expect(dialog.locator('[data-comment-thread]')).to_contain_text('Beautiful moment')
+                    dialog.get_by_role('button', name='Close comments', exact=True).click()
+                    expect(dialog.locator('.lp-viewer__comments')).not_to_be_visible()
+                    dialog.get_by_role('button', name='Close full view', exact=True).click()
+                    self.assertEqual(self.page.locator('[data-client-photo] [data-comment-form]').count(), 1)
+
+    def test_dedicated_results_page_reuses_photo_interactions(self):
+        context = gallery_context()
+        context.update(can_favorite=True, can_comment=True, can_download=True,
+                       access_token='results-test-token', search_query='people dancing', back_url='/original-gallery/')
+        context['photos'].append(SimpleNamespace(pk=2, delivery_url='/photo.svg', is_client_favorite=False, client_filter_categories=''))
+        for photo in context['photos']:
+            photo.client_favorite_count = 0
+            photo.client_download_count = 0
+            photo.client_comment_list = []
+        self.page.route('**/favorite/', lambda route: route.fulfill(json={'favorited': True, 'favorite_count': 1}))
+        self.page.route('**/comment/', lambda route: route.fulfill(json={'comment_count': 1, 'comment': {'id': 1, 'author': 'Test client', 'body': 'A great moment'}}))
+        self.page.route('**/download/**', lambda route: route.fulfill(headers={'Content-Disposition': 'attachment; filename="medium.jpg"'}, body='download fixture'))
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.html = render_to_string('galleries/semantic_results.html', context)
+            self.page.goto('https://gallery.example.test/')
+            expect(self.page.get_by_role('heading', name='Your moments, found.', exact=True)).to_be_visible()
+            hero = self.page.locator('.lp-search-hero').bounding_box()
+            grid = self.page.locator('[data-photo-grid]').bounding_box()
+            self.assertAlmostEqual(hero['x'], grid['x'], delta=1)
+            self.assertAlmostEqual(hero['x'] + hero['width'], grid['x'] + grid['width'], delta=1)
+            heading_size = self.page.locator('.lp-search-hero h1').evaluate('el => parseFloat(getComputedStyle(el).fontSize)')
+            self.assertLessEqual(heading_size, 30)
+
+            query = self.page.get_by_role('searchbox', name='Refine your search')
+            expect(query).to_have_value('people dancing')
+            query.focus()
+            query.press('Tab')
+            expect(self.page.get_by_role('button', name='Search photos', exact=True)).to_be_focused()
+            self.assertEqual(self.page.locator('.lp-search-hero__art').get_attribute('aria-hidden'), 'true')
+            query.fill('birthday cake')
+            query.press('Enter')
+            self.page.wait_for_url('**/?q=birthday+cake')
+            self.page.goto('https://gallery.example.test/')
+            self.assertEqual(self.page.locator('[data-result-rank]').evaluate_all('cards => cards.map(card => card.dataset.resultRank)'), ['1', '2'])
+            self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+            card = self.page.locator('[data-result-rank]').first
+            card.hover()
+            actions = card.locator('.sf-photo__actions')
+            expect(actions).to_be_visible()
+            for control in ['[data-favorite-form] button', '[data-comment-toggle]', 'a[data-photo-download]', '[data-full-view]']:
+                button = actions.locator(control).first
+                expect(button).to_be_visible()
+                bounds = button.bounding_box()
+                self.assertGreaterEqual(bounds['width'], 44)
+                self.assertGreaterEqual(bounds['height'], 44)
+                icon = button.locator('svg').first
+                expect(icon).to_have_css('width', '18px')
+                expect(icon).to_have_css('padding-top', '0px')
+            card.locator('[data-full-view]').focus()
+            expect(actions).to_have_css('opacity', '1')
+            self.page.locator('[data-client-photo] > a').first.click(position={'x': 10, 'y': 10})
+            viewer = self.page.locator('.lp-viewer')
+            viewer.locator('[data-viewer-favorite]').click()
+            expect(viewer.locator('[data-viewer-favorite-count]')).to_have_text('1')
+            viewer.locator('[data-viewer-comments]').click()
+            viewer.locator('textarea').fill('A great moment')
+            viewer.locator('[data-comment-form] button[type="submit"]').click()
+            expect(viewer.locator('[data-viewer-comment-count]')).to_have_text('1')
+            viewer.get_by_text('Medium', exact=True).click()
+            with self.page.expect_download() as download:
+                viewer.locator('[data-viewer-download]').click()
+            self.assertEqual(download.value.suggested_filename, 'medium.jpg')
+            viewer.get_by_role('button', name='Close full view', exact=True).click()
+            expect(self.page.locator('#photo-1 [data-comment-form]')).to_have_count(1)
+
+    def test_cover_position_keyboard_drag_and_live_preview(self):
+        from apps.accounts.models import PhotographerProfile
+        from .forms import GalleryForm
+        form = GalleryForm(photographer=PhotographerProfile(pk=999))
+        controls = render_to_string('photographer_workspace/galleries/cover_position.html', {'form': form})
+        self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<style>[data-cover-drop]{position:relative;width:100%;height:180px}body{margin:12px}</style>'
+            '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
+            '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="/photo.svg"></div>' + controls +
+            '<div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><img src="/photo.svg" width="160" height="100"></div>'
+            '<script src="/static/js/gallery_cover_position.js" defer></script>')
+        for width in [1000, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.page.goto('https://gallery.example.test/')
+            zoom = self.page.get_by_role('slider', name='Zoom', exact=True)
+            zoom.focus(); zoom.press('End')
+            expect(zoom).to_have_value('300')
+            expect(self.page.locator('[data-cover-zoom-value]')).to_have_text('300%')
+            expect(self.page.locator('[data-gallery-preview-cover]')).to_have_css('overflow', 'hidden')
+            self.page.get_by_role('button', name='Move image left', exact=True).click()
+            expect(self.page.locator('[name=cover_position_x]')).to_have_value('52')
+            self.page.get_by_role('button', name='Move image up', exact=True).click()
+            expect(self.page.locator('[name=cover_position_y]')).to_have_value('52')
+            crop = self.page.locator('[data-cover-drop]').bounding_box()
+            image_bounds = self.page.locator('[data-cover-preview]').bounding_box()
+            self.assertAlmostEqual(image_bounds['height'], crop['height'] * 3, delta=1)
+            expect(self.page.locator('[data-cover-drop]')).to_have_css('overflow', 'hidden')
+            self.page.get_by_role('button', name='Center image', exact=True).click()
+            image = self.page.locator('[data-cover-preview]')
+            box = self.page.locator('[data-cover-drop]').bounding_box()
+            self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 70)
+            self.page.mouse.down(); self.page.mouse.move(box['x'] + box['width']/2, box['y'] + 120)
+            self.page.mouse.up()
+            self.assertLess(int(self.page.locator('[name=cover_position_y]').input_value()), 50)
+            self.page.get_by_role('button', name='Center image', exact=True).click()
+            expect(image).to_have_css('object-position', '50% 50%')
+            self.page.get_by_role('button', name='Reset framing', exact=True).click()
+            expect(zoom).to_have_value('100')
+            self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+
+    def test_live_preview_crop_changes_with_position_zoom_and_replacement(self):
+        from urllib.parse import quote
+        from apps.accounts.models import PhotographerProfile
+        from .forms import GalleryForm
+        controls = render_to_string('photographer_workspace/galleries/cover_position.html',
+            {'form': GalleryForm(photographer=PhotographerProfile(pk=999))})
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="red"/><rect y="200" width="800" height="200" fill="blue"/><rect y="400" width="800" height="200" fill="green"/><rect y="600" width="800" height="200" fill="yellow"/></svg>'
+        source = 'data:image/svg+xml,' + quote(svg)
+        preview_html = render_to_string('photographer_workspace/galleries/components/live_preview.html', {
+            'preview_title_id': 'test-live-preview',
+            'form': GalleryForm(photographer=PhotographerProfile(pk=999)),
+            'gallery': SimpleNamespace(cover_image=SimpleNamespace(url=source), event_date=None,
+                get_visibility_display='Private', get_status_display='Draft'),
+        })
+        for mode in ['', 'lp-gallery-edit-modern']:
+            self.html = ('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+                '<link rel="stylesheet" href="/static/css/workspace_design_system.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_workspace.css">'
+                '<link rel="stylesheet" href="/static/css/gallery_cover_position.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_gallery_create.css">'
+                '<link rel="stylesheet" href="/static/css/photographer_gallery_create_refine.css">'
+                '<link rel="stylesheet" href="/static/css/gallery_live_preview.css">'
+                '<style>.fixture{max-width:700px;margin:auto}.lp-gallery-create__preview{width:280px}</style>'
+                '<div class="fixture lp-gallery-create-modern ' + mode + '">'
+                '<section class="lp-cover-editor lp-gallery-client-experience"><div class="lp-cover-editor__body">'
+                '<div class="lp-gallery-create__cover" data-cover-drop><img data-cover-preview src="' + source + '"></div>'
+                + controls + '</div></section>' + preview_html + '</div>'
+                '<script src="/static/js/gallery_cover_position.js" defer></script>')
+            for width in [1440, 390]:
+                self.page.set_viewport_size({'width': width, 'height': 1100})
+                self.page.goto('https://gallery.example.test/')
+                preview = self.page.locator('[data-gallery-preview-cover]')
+                thumbnail = preview.locator('img')
+                expect(thumbnail).to_have_css('position', 'absolute')
+                bounds = preview.bounding_box()
+                self.assertAlmostEqual(bounds['width'] / bounds['height'], 16 / 9, delta=.03)
+                initial = preview.screenshot()
+                self.page.get_by_role('button', name='Move image up', exact=True).click()
+                expect(thumbnail).to_have_css('object-position', '50% 52%')
+                self.assertNotEqual(initial, preview.screenshot())
+                self.page.get_by_role('button', name='Zoom in', exact=True).click()
+                expect(thumbnail).to_have_css('transform', 'matrix(1.1, 0, 0, 1.1, 0, 0)')
+                self.assertNotEqual(initial, preview.screenshot())
+                self.page.evaluate("""source => {
+                    document.querySelector('[data-gallery-preview-cover]').replaceChildren();
+                    document.dispatchEvent(new CustomEvent('gallery:cover-preview', {detail:{url:source}}));
+                }""", source)
+                expect(preview.locator('img')).to_have_css('object-position', '50% 52%')
+                expect(preview.locator('img')).to_have_css('transform', 'matrix(1.1, 0, 0, 1.1, 0, 0)')
+                self.page.get_by_role('button', name='Reset framing', exact=True).click()
+                expect(preview.locator('img')).to_have_css('object-position', '50% 50%')
+                expect(preview.locator('img')).to_have_css('transform', 'matrix(1, 0, 0, 1, 0, 0)')
+                expect(self.page.locator('[name=cover_position_x]')).to_have_value('50')
+                expect(self.page.locator('[name=cover_position_y]')).to_have_value('50')
+                expect(self.page.get_by_role('slider', name='Zoom', exact=True)).to_have_value('100')
+                # PNG encodings and fractional-pixel rasterization can differ after
+                # scrolling/replacing an image. Compare decoded pixels, with a
+                # small edge tolerance, alongside the exact framing assertions.
+                from io import BytesIO
+                from PIL import Image, ImageChops, ImageStat
+                before = Image.open(BytesIO(initial)).convert('RGB')
+                after = Image.open(BytesIO(preview.screenshot())).convert('RGB')
+                self.assertEqual(before.size, after.size)
+                difference = ImageChops.difference(before, after)
+                self.assertLessEqual(max(ImageStat.Stat(difference).mean), 1.0)
+                changed = sum(1 for pixel in difference.getdata() if max(pixel) > 8)
+                self.assertLessEqual(changed / (before.width * before.height), .01)
+
+    def test_permission_density_preview_reset_and_no_auto_save(self):
+        from .models import GalleryPermission
+        context = gallery_context()
+        context['gallery'].photographer = SimpleNamespace(business_name='Golden Studio', display_name='Samuel')
+        context.update(gallery_permissions=GalleryPermission(), watermark_options=GalleryPermission.Watermark.choices,
+                       stable_gallery_url='https://gallery.example.test/', permission_groups=[])
+        # Use the same seven persisted permission names; no save occurs until submit.
+        context['permission_groups'] = [{'title': 'Access & sharing', 'items': [
+            (name, label, 'eye', default) for name, label, default in [
+                ('view_gallery', 'View gallery', True), ('share_gallery', 'Share gallery', True),
+                ('download_images', 'Download photos', True), ('download_originals', 'Original files', False),
+                ('favorite_photos', 'Favorite photos', True), ('comment', 'Comments', False), ('purchase_prints', 'Purchase prints', False)]]}]
+        html = render_to_string('photographer_workspace/galleries/client_access.html', context)
+        self.html = '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">' + html
+        posts = []
+        self.page.on('request', lambda request: posts.append(request.url) if request.method == 'POST' else None)
+        for width in [1440, 390]:
+            self.page.set_viewport_size({'width': width, 'height': 900})
+            self.page.goto('https://gallery.example.test/')
+            form = self.page.locator('#client-access-settings')
+            slider = form.get_by_label('Watermark density', exact=True)
+            overlay = form.locator('[data-permission-watermark]')
+            slider.focus(); slider.press('Home')
+            expect(form.locator('[data-density-value]')).to_have_text('Light')
+            expect(overlay).to_have_attribute('data-watermark-density', '1')
+            expect(overlay).to_have_attribute('style', re.compile('background-size'))
+            light = overlay.evaluate('el => el.style.backgroundSize')
+            slider.press('End')
+            expect(form.locator('[data-density-value]')).to_have_text('Dense')
+            expect(overlay).not_to_have_attribute('style', re.compile(re.escape('background-size: ' + light)))
+            form.get_by_text('None', exact=True).click()
+            expect(slider).to_be_disabled(); expect(overlay).to_be_hidden()
+            form.locator('[data-permissions-reset]').click()
+            expect(slider).to_have_value('3'); expect(slider).to_be_enabled()
+            expect(form.locator('[name=view_gallery]')).to_be_checked()
+            expect(form.locator('[name=comment]')).not_to_be_checked()
+            expect(form.locator('[data-permissions-status]')).to_contain_text('Save changes')
+        self.assertEqual(posts, [])
+
+    def test_dynamic_search_watermarks_are_initialized_and_brand_is_svg_text(self):
+        self.html = '<!doctype html><meta charset="utf-8"><body><script src="/static/js/client_gallery_watermark.js" defer></script></body>'
+        self.page.goto('https://gallery.example.test/')
+        self.page.evaluate('''() => {
+            const overlay = document.createElement('span');
+            overlay.dataset.galleryWatermark = '';
+            overlay.dataset.watermarkLabel = '<script>alert(1)</script> & Studio';
+            document.body.append(overlay);
+        }''')
+        overlay = self.page.locator('[data-gallery-watermark]')
+        expect(overlay).to_have_attribute('style', re.compile('data:image/svg'))
+        xml = overlay.evaluate('el => decodeURIComponent(el.style.backgroundImage)')
+        self.assertIn('&lt;script&gt;', xml)
+        self.assertNotIn('<script>', xml)
+
+    def test_masonry_toolbar_actions_and_keyboard_slider_on_desktop_and_mobile(self):
+        for width in [1440, 390]:
+            with self.subTest(width=width):
+                context = gallery_context()
+                context.update(can_favorite=True, can_download_gallery=True,
+                               can_share_gallery=True, access_token='toolbar-test-token',
+                               stable_gallery_url='https://gallery.example.test/')
+                context['photos'].append(SimpleNamespace(pk=2, delivery_url='/photo.svg',
+                    is_client_favorite=True, client_filter_categories=''))
+                self.html = render_to_string('galleries/designs/masonry.html', context)
+                self.page.set_viewport_size({'width': width, 'height': 900})
+                self.page.goto('https://gallery.example.test/')
+                toolbar = self.page.locator('.ms-toolbar--refresh')
+                grid = self.page.locator('[data-grid]')
+                slider = self.page.get_by_role('slider', name='Grid columns')
+                expect(slider).to_have_value('4' if width == 1440 else '2')
+                self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
+                favorite = toolbar.get_by_role('button', name='Favorites', exact=True)
+                self.assertGreaterEqual(favorite.bounding_box()['height'], 44)
+                favorite.click()
+                expect(favorite).to_have_attribute('aria-pressed', 'true')
+                expect(self.page.locator('.ms-photo:visible')).to_have_count(1)
+                favorite.click()
+                expect(self.page.locator('.ms-photo:visible')).to_have_count(2)
+                slider.focus()
+                self.page.keyboard.press('End')
+                expect(grid).to_have_css('column-count', '6')
+                expect(slider).to_have_attribute('aria-valuetext', '6 columns')
+                self.page.keyboard.press('Home')
+                expect(grid).to_have_css('column-count', '2')
+                expect(toolbar.get_by_role('link', name='Download Gallery')).to_have_attribute(
+                    'href', reverse('galleries:client_gallery_download_all', args=['toolbar-test-token']))
+                toolbar.get_by_role('button', name='Share', exact=True).click()
+                dialog = self.page.locator('[data-qr-dialog]')
+                expect(dialog).to_be_visible()
+                dialog.get_by_role('button', name='Close', exact=True).click()
+                expect(dialog).not_to_be_visible()

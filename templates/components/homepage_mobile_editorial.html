@@ -1,0 +1,159 @@
+{% load static %}
+<div class="lp-mobile-home" aria-label="Discover LumisPixel">
+  <section class="lpm-section lpm-discovery" aria-labelledby="lpm-discovery-title">
+    <div class="lpm-wrap">
+      <div class="lpm-discovery-step"><span>01 //</span> FIND YOUR PHOTOS</div>
+      <div class="lpm-discovery-badges"><span class="lpm-discovery-badge">AI PHOTO DISCOVERY</span><span class="lpm-discovery-soon">Coming soon</span></div>
+      <h2 id="lpm-discovery-title">Your photos. <em>Found.</em></h2>
+      <p class="lpm-discovery-description">Upload a selfie to find your photos.</p>
+      <div class="lpm-discovery-upload" aria-label="Preview of a future selfie upload feature">
+        <img src="{% static 'img/landing/gallery/selfie.webp' %}" alt="" loading="lazy" decoding="async">
+        <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+        <strong>Upload a selfie</strong>
+        <span class="lpm-discovery-choose" aria-hidden="true">Choose photo</span>
+      </div>
+      <div class="lpm-discovery-results" aria-label="Illustrative sample photo matches, not live results">
+        <div><img src="{% static 'img/landing/gallery/couple_1.webp' %}" alt="Sample photo match one" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/couple_2.webp' %}" alt="Sample photo match two" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/couple_3.webp' %}" alt="Sample photo match three" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+      </div>
+      <a class="lpm-discovery-cta" href="{{ find_photos_url }}">See how it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-intro" aria-labelledby="lpm-intro-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">ONE CREATIVE WORKSPACE</span>
+      <h2 id="lpm-intro-title"><span class="lpm-title-line">Your photography business.</span><span class="lpm-title-line"><em>All in one place.</em></span></h2>
+      <p>Store photos, deliver galleries, manage clients and showcase your work from one platform.</p>
+      <div class="lpm-feature-grid">
+        <a href="{{ homepage_workspace_url }}" class="lpm-mini"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><strong>Secure storage</strong><small>Store and organize photos</small></a>
+        <a href="{% url 'core:for_photographers' %}" class="lpm-mini"><i class="bi bi-images" aria-hidden="true"></i><strong>Client galleries</strong><small>Share beautiful galleries</small></a>
+        <a href="{{ homepage_ai_tools_url }}" class="lpm-mini"><i class="bi bi-stars" aria-hidden="true"></i><strong>AI tools</strong><small>In development</small></a>
+        <a href="{{ homepage_workspace_url }}" class="lpm-mini"><i class="bi bi-window" aria-hidden="true"></i><strong>Photographer sites</strong><small>Showcase your portfolio</small></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-workflow" aria-labelledby="lpm-workflow-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">THE CREATIVE WORKFLOW</span>
+      <h2 id="lpm-workflow-title">From shoot to share.</h2>
+      <p>Organize your photos and deliver beautiful galleries without juggling multiple tools.</p>
+      <div class="lpm-rail" data-lpm-rail aria-label="Photography workflow cards" tabindex="0">
+        <article class="lpm-slide"><img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer capturing a moment" loading="lazy"><div><span>01 / CAPTURE</span><h3>Capture the moments.</h3><p>Focus on the images that matter.</p></div></article>
+        <article class="lpm-slide"><img src="{% static 'img/landing/gallery/edit_before.webp' %}" alt="Photographer reviewing images on a computer" loading="lazy"><div><span>02 / ORGANIZE</span><h3>Organize your photos.</h3><p>Manage your shoots and collections.</p></div></article>
+        <article class="lpm-slide"><img src="{% static 'img/landing/gallery/workflow-client-gallery.webp' %}" alt="Client photo gallery presentation" loading="lazy"><div><span>03 / DELIVER</span><h3>Deliver galleries.</h3><p>Give clients a gallery to remember.</p></div></article>
+      </div>
+      <div class="lpm-rail-controls"><span>SWIPE TO EXPLORE</span><div><button type="button" data-lpm-prev aria-label="Previous workflow card"><i class="bi bi-arrow-left" aria-hidden="true"></i></button><button type="button" data-lpm-next aria-label="Next workflow card"><i class="bi bi-arrow-right" aria-hidden="true"></i></button></div></div>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-ai lpm-ai-demo" aria-labelledby="lpm-ai-title" data-lpm-ai-demo>
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">LUMIS AI <span class="lpm-soon">COMING SOON</span></span>
+      <h2 id="lpm-ai-title"><span class="lpm-title-line">Less sorting.</span><span class="lpm-title-line lpm-ai-accent">More creating.</span></h2>
+      <p>AI tools for photo discovery, culling, and editing.</p>
+      <div class="lpm-ai-demo-stage">
+        <div id="lpm-ai-panel-discovery" role="tabpanel" aria-labelledby="lpm-ai-tab-discovery" data-lpm-ai-panel="discovery">
+          <div class="lpm-ai-demo-photo-grid">
+            <img src="{% static 'img/landing/gallery/couple_1.webp' %}" alt="Illustrative matching photo one" loading="lazy">
+            <img src="{% static 'img/landing/gallery/couple_2.webp' %}" alt="Illustrative matching photo two" loading="lazy">
+            <img src="{% static 'img/landing/gallery/couple_3.webp' %}" alt="Illustrative matching photo three" loading="lazy">
+          </div>
+          <div class="lpm-ai-demo-meta"><span><i class="bi bi-search" aria-hidden="true"></i> Photo matches</span><span class="lpm-ai-demo-chip">Sample results</span></div>
+        </div>
+        <div id="lpm-ai-panel-culling" role="tabpanel" aria-labelledby="lpm-ai-tab-culling" data-lpm-ai-panel="culling" hidden>
+          <div class="lpm-ai-culling">
+            <div class="lpm-ai-culling-grid" aria-label="Illustrative photo selection">
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Sample portrait 1, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Sample portrait 2" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_03.webp' %}" alt="Sample portrait 3, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_04.webp' %}" alt="Sample portrait 4" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_05.webp' %}" alt="Sample portrait 5, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_07.webp' %}" alt="Sample portrait 6" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_08.webp' %}" alt="Sample portrait 7" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_09.webp' %}" alt="Sample portrait 8, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+            <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Additional sample portrait" loading="lazy"><i class="bi bi-circle" aria-hidden="true"></i></div>
+            </div>
+            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> AI Selected</span></div>
+          </div>
+          <div class="lpm-ai-demo-meta lpm-ai-culling-meta"><span><i class="bi bi-images" aria-hidden="true"></i> 36 photos</span><span><i class="bi bi-stars" aria-hidden="true"></i> AI Culling</span><span class="lpm-ai-demo-chip"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> 6 best shots</span></div>
+        </div>
+        <div id="lpm-ai-panel-editing" role="tabpanel" aria-labelledby="lpm-ai-tab-editing" data-lpm-ai-panel="editing" hidden>
+          <div class="lpm-ai-compare" data-lpm-ai-compare>
+            <img class="lpm-ai-compare-original" src="{% static 'img/landing/gallery/edit_before.webp' %}" alt="Original example portrait" loading="lazy">
+            <div class="lpm-ai-compare-after" aria-hidden="true"><img src="{% static 'img/landing/gallery/edit_after.webp' %}" alt="" loading="lazy"></div>
+            <span class="lpm-ai-compare-label lpm-ai-compare-label-before">Original</span><span class="lpm-ai-compare-label lpm-ai-compare-label-after">AI Enhanced</span>
+            <div class="lpm-ai-compare-line" aria-hidden="true"><span><i class="bi bi-chevron-left" aria-hidden="true"></i><i class="bi bi-chevron-right" aria-hidden="true"></i></span></div>
+            <input class="lpm-ai-compare-range" type="range" min="0" max="100" value="50" aria-label="Compare original and illustrative edited photo">
+          </div>
+          <div class="lpm-ai-demo-meta lpm-ai-edit-meta"><span><i class="bi bi-sun" aria-hidden="true"></i> Auto Enhance</span><span><i class="bi bi-palette" aria-hidden="true"></i> Color &amp; Tone</span><span><i class="bi bi-person-bounding-box" aria-hidden="true"></i> Retouch</span><span><i class="bi bi-crop" aria-hidden="true"></i> Crop &amp; Align</span></div>
+        </div>
+      </div>
+      <div class="lpm-ai-demo-tabs" role="tablist" aria-label="AI tools preview">
+        <button type="button" role="tab" id="lpm-ai-tab-discovery" aria-controls="lpm-ai-panel-discovery" aria-selected="true" tabindex="0" data-lpm-ai-tab="discovery"><i class="bi bi-images" aria-hidden="true"></i><span>Photo<br>Discovery</span></button>
+        <button type="button" role="tab" id="lpm-ai-tab-culling" aria-controls="lpm-ai-panel-culling" aria-selected="false" tabindex="-1" data-lpm-ai-tab="culling"><i class="bi bi-layers" aria-hidden="true"></i><span>AI Culling</span></button>
+        <button type="button" role="tab" id="lpm-ai-tab-editing" aria-controls="lpm-ai-panel-editing" aria-selected="false" tabindex="-1" data-lpm-ai-tab="editing"><i class="bi bi-magic" aria-hidden="true"></i><span>Editing<br>Assistance</span></button>
+      </div>
+      <a class="lpm-ai-demo-cta" href="{{ homepage_ai_tools_url }}">Explore AI Tools <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-sites" aria-labelledby="lpm-sites-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">YOUR ONLINE PRESENCE</span>
+      <h2 id="lpm-sites-title"><span class="lpm-title-line">Showcase your work.</span><span class="lpm-title-line">Build your brand.</span></h2>
+      <p>Give potential clients a professional place to explore your portfolio and get in touch.</p>
+      <div class="lpm-site-visual"><img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Portrait photography portfolio preview" loading="lazy"><div><small>YOUR PHOTOGRAPHY</small><strong>Your work. Your story.</strong><span>PORTFOLIO &nbsp; / &nbsp; ABOUT &nbsp; / &nbsp; CONTACT</span></div></div>
+      <a class="lpm-link" href="{{ homepage_get_started_url }}">Create your profile <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-business" aria-labelledby="lpm-business-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">BEHIND THE SCENES</span>
+      <h2 id="lpm-business-title"><span class="lpm-title-line">Manage clients.</span><span class="lpm-title-line">Stay organized.</span></h2>
+      <p>Keep client details, inquiries and gallery delivery organized in your workspace.</p>
+      <div class="lpm-dashboard">
+        <div class="lpm-dashboard-top"><span><i class="bi bi-grid" aria-hidden="true"></i> Workspace preview</span><i class="bi bi-three-dots" aria-hidden="true"></i></div>
+        <div class="lpm-dashboard-feature"><i class="bi bi-people" aria-hidden="true"></i><div><strong>Client relationships</strong><small>From inquiry to delivery</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></div>
+        <div class="lpm-dashboard-feature"><i class="bi bi-images" aria-hidden="true"></i><div><strong>Gallery management</strong><small>Organized in one place</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></div>
+        <div class="lpm-dashboard-feature"><i class="bi bi-calendar-check" aria-hidden="true"></i><div><strong>Bookings &amp; projects</strong><small>Keep work moving</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></div>
+      </div>
+      <a class="lpm-link lpm-link-light" href="{{ homepage_workspace_url }}">Explore the workspace <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-market" aria-labelledby="lpm-market-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">THE PHOTOGRAPHER MARKETPLACE</span>
+      <h2 id="lpm-market-title"><span class="lpm-title-line">Find the right</span><span class="lpm-title-line">photographer.</span></h2>
+      <p>Browse portfolios and connect with photographers for weddings, portraits and events.</p>
+      <div class="lpm-market-gallery">
+        <img src="{% static 'img/landing/gallery/audience-hire-photographer.webp' %}" alt="Wedding photography example" loading="lazy">
+        <img src="{% static 'img/landing/gallery/marketplace-sample-portraits.webp' %}" alt="Portrait photography examples" loading="lazy">
+      </div>
+      <div class="lpm-market-actions"><a class="lpm-button" href="{{ find_photographer_url }}">Find a photographer <span aria-hidden="true">↗</span></a><a class="lpm-text-link" href="{{ homepage_get_started_url }}">Join as a photographer</a></div>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-pricing" aria-labelledby="lpm-pricing-title">
+    <div class="lpm-wrap">
+      <span class="lpm-kicker">SIMPLE PRICING</span>
+      <h2 id="lpm-pricing-title"><span class="lpm-title-line">Start free.</span><span class="lpm-title-line">Grow your way.</span></h2>
+      <p>Start with 5 GB of free storage. Pro and Studio upgrades are planned.</p>
+      <div class="lpm-rail lpm-price-rail" data-lpm-rail aria-label="Pricing plans" tabindex="0">
+        <article class="lpm-price"><span>GET STARTED</span><h3>Free</h3><div class="lpm-amount">$0<small> / month</small></div><p>Everything you need to get started.</p><strong>5 GB storage</strong><strong>Client galleries</strong><strong>Essential client tools</strong><a href="{{ homepage_get_started_url }}">Start free <span aria-hidden="true">→</span></a></article>
+        <article class="lpm-price lpm-price-featured"><span>PLANNED UPGRADE</span><h3>Pro</h3><div class="lpm-amount">$20<small> / month</small></div><p>For active photographers.</p><strong>1 TB storage</strong><strong>Unlimited galleries</strong><strong>AI features in development</strong><a href="{{ homepage_pricing_url }}">View Pro <span aria-hidden="true">→</span></a></article>
+        <article class="lpm-price"><span>PLANNED UPGRADE</span><h3>Studio</h3><div class="lpm-amount">$38<small> / month</small></div><p>For growing photography teams.</p><strong>4 TB storage</strong><strong>Team features planned</strong><strong>Advanced workflows planned</strong><a href="{{ homepage_pricing_url }}">View Studio <span aria-hidden="true">→</span></a></article>
+      </div>
+      <div class="lpm-rail-controls"><span>SWIPE TO COMPARE</span><div><button type="button" data-lpm-prev aria-label="Previous pricing plan"><i class="bi bi-arrow-left" aria-hidden="true"></i></button><button type="button" data-lpm-next aria-label="Next pricing plan"><i class="bi bi-arrow-right" aria-hidden="true"></i></button></div></div>
+      <a class="lpm-link lpm-link-light" href="{{ homepage_pricing_url }}">Compare all features <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+
+  <section class="lpm-section lpm-close" aria-labelledby="lpm-close-title">
+    <div class="lpm-wrap"><span class="lpm-kicker">YOUR NEXT CHAPTER</span><h2 id="lpm-close-title"><span class="lpm-title-line">Your next great shoot</span><span class="lpm-title-line">starts here.</span></h2><p>Create a free account and bring your galleries and clients together.</p><a class="lpm-button" href="{{ homepage_get_started_url }}">Start free <span aria-hidden="true">↗</span></a></div>
+  </section>
+</div>

@@ -1,10 +1,13 @@
+from django.core.exceptions import PermissionDenied
+import json
+from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, F
 import tempfile
 import zipfile
 from django.core.paginator import Paginator
-from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
+from django.http import FileResponse, Http404, HttpResponseForbidden, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -80,6 +83,16 @@ def client_galleries(request):
 
 
 
+def _semantic_search_available(gallery):
+    from django.conf import settings as django_settings
+    from apps.visual_search.models import GallerySemanticSearchPolicy
+    return bool(
+        getattr(django_settings,"VISUAL_SEARCH_SEMANTIC_ENABLED",False)
+        and getattr(django_settings,"VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED",False)
+        and GallerySemanticSearchPolicy.objects.filter(gallery=gallery,processing_authorized=True).exists()
+    )
+
+
 def _client_gallery_template(gallery):
     """Resolve presentation independently from gallery content and permissions."""
     templates = {
@@ -102,6 +115,25 @@ def _paginate_client_gallery_photos(request, gallery):
     ).order_by("created_at", "pk")
     page = Paginator(queryset, CLIENT_GALLERY_PAGE_SIZE).get_page(request.GET.get("page"))
     return page, list(page.object_list)
+
+
+def _semantic_photo_page(request, gallery):
+    """Reuse client search validation and repeat the photo visibility boundary."""
+    from apps.visual_search.semantic_api import _client_semantic
+    response = _client_semantic(request, gallery)
+    if response.status_code != 200:
+        return None, None, render(request, "galleries/semantic_results_unavailable.html", {
+            "gallery": gallery,
+            "back_url": request.path.removesuffix("search/"),
+            "search_query": request.GET.get("q", "")[:200],
+        }, status=response.status_code)
+    ids = [item["photo_id"] for item in json.loads(response.content)["results"]][:100]
+    allowed = {photo.pk: photo for photo in GalleryPhoto.objects.filter(
+        pk__in=ids, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED,
+    )}
+    photos = [allowed[photo_id] for photo_id in dict.fromkeys(ids) if photo_id in allowed]
+    page = Paginator(photos, 100).get_page(1)
+    return page, photos, None
 
 
 def _prepare_client_gallery_content(gallery, photos, albums):
@@ -139,8 +171,13 @@ def _client_gallery_brand(gallery):
     return photographer.business_name or photographer.display_name or str(photographer)
 
 
+def _is_gallery_owner(request, gallery):
+    """Ownership grants client-view access without a recipient invitation."""
+    return bool(request.user.is_authenticated and gallery.photographer.user_id == request.user.pk)
+
+
 @require_GET
-def stable_gallery_access(request, public_id):
+def stable_gallery_access(request, public_id, search_results=False):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
     now = timezone.now()
     permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
@@ -152,19 +189,48 @@ def stable_gallery_access(request, public_id):
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
-    if request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
+    if not _is_gallery_owner(request, gallery) and request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
         invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
         if invitation:
             _, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
+            if search_results:
+                return redirect(reverse("galleries:invited_semantic_results", args=[raw_token]) + "?" + urlencode({"q": request.GET.get("q", "")}))
             return redirect("galleries:client_gallery_access", token=raw_token)
-    if gallery.visibility != Gallery.Visibility.PUBLIC:
+    if gallery.visibility != Gallery.Visibility.PUBLIC and not _is_gallery_owner(request, gallery):
+        if not request.user.is_authenticated:
+            return _private_gallery_login(request, gallery)
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
-    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
+    if search_results:
+        photo_page, photos, error = _semantic_photo_page(request, gallery)
+        if error is not None:
+            return error
+    else:
+        photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
-    return render(request, _client_gallery_template(gallery), {"gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "gallery_brand": _client_gallery_brand(gallery)})
+    return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
-def _client_gallery_access(raw_token):
+def _private_gallery_login(request, gallery):
+    from django.contrib.auth.views import redirect_to_login
+    photographer = gallery.photographer
+    user = photographer.user
+    request.session['private_gallery_notice'] = {
+        'studio': photographer.business_name or photographer.display_name or user.display_name,
+        'name': user.full_name or photographer.display_name or user.display_name,
+        'email': user.email,
+        'next': request.get_full_path(),
+    }
+    return redirect_to_login(request.get_full_path())
+
+
+class PrivateGalleryLoginRequired(PermissionDenied):
+    """Valid private invitation requires an authenticated recipient."""
+    def __init__(self, gallery):
+        super().__init__()
+        self.gallery = gallery
+
+
+def _client_gallery_access(raw_token, request):
     token_hash = AccessToken.digest(raw_token)
     token = (
         AccessToken.objects.select_related("invitation__gallery__photographer")
@@ -192,6 +258,14 @@ def _client_gallery_access(raw_token):
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
     if not permissions.view_gallery:
         raise Http404
+    if gallery.visibility != Gallery.Visibility.PUBLIC and not _is_gallery_owner(request, gallery):
+        user = request.user
+        if not user.is_authenticated:
+            raise PrivateGalleryLoginRequired(gallery)
+        if (not getattr(user, "email_verified", False)
+                or not user.email
+                or user.email.strip().casefold() != invitation.email.strip().casefold()):
+            raise PermissionDenied
     return token, invitation, gallery, permissions, settings
 
 
@@ -202,6 +276,8 @@ def _session_identifier(request):
 
 
 def _record_client_access(request, token, invitation, gallery):
+    if _is_gallery_owner(request, gallery):
+        return  # An owner preview is not a client visit or invitation acceptance.
     now = timezone.now()
     AccessToken.objects.filter(pk=token.pk).update(last_used_at=now)
     GalleryInvitation.objects.filter(pk=invitation.pk).update(
@@ -226,11 +302,16 @@ def _record_client_access(request, token, invitation, gallery):
 
 
 @require_GET
-def client_gallery_access(request, token):
-    token_record, invitation, gallery, permissions, settings = _client_gallery_access(token)
+def client_gallery_access(request, token, search_results=False):
+    token_record, invitation, gallery, permissions, settings = _client_gallery_access(token, request)
     _record_client_access(request, token_record, invitation, gallery)
 
-    photo_page, photos = _paginate_client_gallery_photos(request, gallery)
+    if search_results:
+        photo_page, photos, error = _semantic_photo_page(request, gallery)
+        if error is not None:
+            return error
+    else:
+        photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(
         Album.objects.filter(gallery=gallery)
         .exclude(visibility=Album.Visibility.HIDDEN)
@@ -317,8 +398,10 @@ def client_gallery_access(request, token):
 
     return render(
         request,
-        _client_gallery_template(gallery),
+        "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery),
         {
+            "search_query": request.GET.get("q", "").strip(),
+            "back_url": reverse("galleries:client_gallery_access", args=[token]),
             "gallery": gallery,
             "invitation": invitation,
             "photos": photos,
@@ -327,6 +410,7 @@ def client_gallery_access(request, token):
             "permissions": permissions,
             "gallery_settings": settings,
             "access_token": token,
+            "semantic_search_available": _semantic_search_available(gallery),
             "can_favorite": permissions.favorite_photos,
             "can_download": can_download,
             "can_download_gallery": can_download_gallery,
@@ -345,7 +429,7 @@ def client_gallery_access(request, token):
 
 @require_GET
 def client_gallery_photo_media(request, token, photo_id):
-    _, _, gallery, _, _ = _client_gallery_access(token)
+    _, _, gallery, _, _ = _client_gallery_access(token, request)
     photo = get_object_or_404(
         GalleryPhoto,
         pk=photo_id,
@@ -367,7 +451,7 @@ def client_gallery_photo_media(request, token, photo_id):
 
 @require_POST
 def client_gallery_comment(request, token, photo_id):
-    token_record, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, invitation, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.comment:
         return HttpResponseForbidden()
     photo = get_object_or_404(
@@ -425,7 +509,7 @@ def _owns_photo_comment(request, comment, invitation):
 
 @require_POST
 def client_gallery_comment_delete(request, token, photo_id, comment_id):
-    _, invitation, gallery, permissions, _ = _client_gallery_access(token)
+    _, invitation, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.comment:
         return HttpResponseForbidden()
     photo = get_object_or_404(GalleryPhoto, pk=photo_id, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED)
@@ -443,7 +527,7 @@ def client_gallery_comment_delete(request, token, photo_id, comment_id):
 
 @require_POST
 def client_gallery_favorite(request, token, photo_id):
-    token_record, _, gallery, permissions, settings = _client_gallery_access(token)
+    token_record, _, gallery, permissions, settings = _client_gallery_access(token, request)
     if not permissions.favorite_photos:
         return HttpResponseForbidden()
     photo = get_object_or_404(
@@ -502,7 +586,7 @@ def client_gallery_favorite(request, token, photo_id):
 
 @require_GET
 def client_gallery_download(request, token, photo_id):
-    token_record, _, gallery, permissions, settings = _client_gallery_access(token)
+    token_record, _, gallery, permissions, settings = _client_gallery_access(token, request)
     now = timezone.now()
     if not permissions.download_images:
         return HttpResponseForbidden()
@@ -516,6 +600,13 @@ def client_gallery_download(request, token, photo_id):
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
     )
+    requested_size = request.GET.get("size")
+    if requested_size and requested_size not in {"small", "medium", "large"}:
+        return HttpResponseBadRequest("Choose small, medium, or large.")
+    resized = None
+    if requested_size:
+        from .photo_downloads import resized_download
+        resized = resized_download(photo, requested_size)
     with transaction.atomic():
         # Lock the gallery while enforcing the per-client quota. Without this,
         # simultaneous requests can both observe the same remaining slot.
@@ -546,12 +637,14 @@ def client_gallery_download(request, token, photo_id):
         actor_type=GalleryActivity.ActorType.CLIENT,
         related_object=photo,
     )
+    if resized is not None:
+        return FileResponse(resized, as_attachment=True, filename=f"photo-{photo.pk}-{requested_size}.jpg", content_type="image/jpeg")
     return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
 
 
 @require_GET
 def client_gallery_download_original(request, token, photo_id):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     now = timezone.now()
     # Originals are an elevated download capability: the photographer must
     # allow downloads generally and explicitly allow original files.
@@ -601,7 +694,7 @@ def client_gallery_download_original(request, token, photo_id):
 
 @require_GET
 def client_gallery_download_all(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     now = timezone.now()
     if not permissions.download_images:
         return HttpResponseForbidden()
@@ -669,7 +762,7 @@ def client_gallery_download_all(request, token):
 
 @require_GET
 def client_gallery_print_store(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.purchase_prints:
         return HttpResponseForbidden()
     store = GalleryStore.objects.filter(gallery=gallery, enabled=True).first()
@@ -704,7 +797,7 @@ def client_gallery_print_store(request, token):
 
 @require_POST
 def client_gallery_share(request, token):
-    token_record, _, gallery, permissions, _ = _client_gallery_access(token)
+    token_record, _, gallery, permissions, _ = _client_gallery_access(token, request)
     if not permissions.share_gallery:
         return HttpResponseForbidden()
     stable_url = request.build_absolute_uri(

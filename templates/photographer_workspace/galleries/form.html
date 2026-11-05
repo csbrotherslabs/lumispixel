@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gallery_live_preview.css' %}"><link rel="stylesheet" href="{% static 'css/gallery_cover_position.css' %}"><script src="{% static 'js/gallery_cover_position.js' %}" defer></script><link rel="stylesheet" href="{% static 'css/photographer_ai_photo_discovery.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_create_refine.css' %}"><script>
 document.addEventListener("DOMContentLoaded", function () {
   const picker = document.querySelector("[data-gallery-design-picker]");
   const storyFields = document.querySelector("[data-story-fields]");
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'js/gallery_design_picker.js' %}" defer></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/gallery_design_picker.js' %}" defer></script><script src="{% static 'js/photographer_gallery_ai_discovery_create.js' %}" defer></script>{% endblock %}
 {% block workspace_content %}
 {% if is_create_gallery %}
 <form class="lp-workspace-page workspace-form-page lp-container lp-add-lead lp-add-gallery lp-gallery-create-modern lp-clients-main-width" method="post" enctype="multipart/form-data" id="gallery-form" data-gallery-create-form novalidate>{% csrf_token %}
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
       <section class="form-section-card" aria-labelledby="gallery-details-title">
         <header><i class="bi bi-images" aria-hidden="true"></i><div><h2 id="gallery-details-title">Gallery Details</h2><p>Name the collection and connect it to your client and booking.</p></div></header>
         <div class="form-grid">
-          {% include "photographer_workspace/components/form_field.html" with field=form.name %}
+          {% include "photographer_workspace/components/form_field.html" with field=form.name label="GALLERY TITLE" %}
           {% include "photographer_workspace/components/form_field.html" with field=form.client %}
           {% include "photographer_workspace/components/form_field.html" with field=form.booking %}
           {% include "photographer_workspace/components/form_field.html" with field=form.event_date %}
@@ -97,13 +97,16 @@ document.addEventListener("DOMContentLoaded", function () {
         </section>
       </div>
 
-      <section class="form-section-card lp-gallery-client-experience" aria-labelledby="cover-image-title">
-        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+      <section class="form-section-card lp-gallery-client-experience lp-cover-editor" aria-labelledby="cover-image-title">
+        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="cover-image-title">Cover Image</h2><p>Choose the first image your client will see.</p></div><div class="lp-cover-editor__actions" data-cover-actions hidden><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-replace><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace photo</button><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div></header>
+        <div class="lp-cover-editor__body">
         <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
           <img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>
           <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>Add a signature image</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
           {{ form.cover_image }}
-          <div class="lp-gallery-create__cover-actions" data-cover-actions hidden><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label><button class="lp-button lp-button--secondary lp-button--sm" type="button" data-cover-remove><i class="bi bi-trash3" aria-hidden="true"></i>Remove</button></div>
+          <span class="lp-cover-editor__guides" aria-hidden="true"></span><span class="lp-cover-editor__drag-hint" aria-hidden="true">Drag to reposition</span>
+        </div>
+        {% include "photographer_workspace/galleries/cover_position.html" %}
         </div>
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
@@ -116,16 +119,17 @@ document.addEventListener("DOMContentLoaded", function () {
           {% include "photographer_workspace/components/form_field.html" with field=form.expiration_date %}
         </div>
       </section>
+      {% include "photographer_workspace/galleries/components/ai_photo_discovery.html" with ai_discovery_create=True %}
+
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
-      <section class="lp-gallery-create__preview" aria-labelledby="gallery-preview-title">
-        <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-preview-title">Gallery Preview</h2></div></header>
-        <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover><i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span></div>
-        <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client hidden></p><h3 data-gallery-preview-name>Untitled gallery</h3><time data-gallery-preview-date hidden></time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility></span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status></span></div></div>
-      </section>
+      {% include "photographer_workspace/galleries/components/live_preview.html" with preview_title_id="gallery-preview-title" %}
       <section class="lp-gallery-create__guidance" aria-labelledby="gallery-next-title"><span class="lp-contract-eyebrow">After creation</span><h2 id="gallery-next-title">Your delivery workspace is next</h2><ul><li><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><span><strong>Upload the finished images</strong><small>Add photos directly to this gallery.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Organize the collection</strong><small>Build albums and choose the final cover.</small></span></li><li><i class="bi bi-send-check" aria-hidden="true"></i><span><strong>Review and publish</strong><small>Confirm access before sharing with your client.</small></span></li></ul></section>
     </aside>
+  </div>
+  <div class="sticky-form-actions" role="group" aria-label="Create gallery actions">
+    <button class="lp-button lp-button--primary lp-button--md" type="submit" data-gallery-submit><i class="bi bi-check2" aria-hidden="true"></i><span>Create Gallery</span></button>
   </div>
 </form>
 {% else %}
@@ -189,13 +193,16 @@ document.addEventListener("DOMContentLoaded", function () {
         {% if form.design_template.errors %}<p class="field-error" role="alert"><i class="bi bi-exclamation-circle"></i>{{ form.design_template.errors|striptags }}</p>{% endif %}
       </section>
 
-      <section class="form-section-card lp-gallery-client-experience" aria-labelledby="gallery-edit-cover-title">
-        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="gallery-edit-cover-title">Cover Image</h2><p>Choose the first image your client will see.</p></div></header>
+      <section class="form-section-card lp-gallery-client-experience lp-cover-editor" aria-labelledby="gallery-edit-cover-title">
+        <header><i class="bi bi-image" aria-hidden="true"></i><div><small>Client experience</small><h2 id="gallery-edit-cover-title">Cover Image</h2><p>Choose the first image your client will see.</p></div><div class="lp-cover-editor__actions" data-cover-actions{% if not gallery.cover_image %} hidden{% endif %}><button type="button" class="lp-button lp-button--secondary lp-button--sm" data-cover-replace><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace photo</button></div></header>
+        <div class="lp-cover-editor__body">
         <div class="lp-gallery-create__cover{% if form.cover_image.errors %} has-error{% endif %}" data-cover-drop>
           {% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="Current cover for {{ gallery.name }}" data-cover-preview>{% else %}<img src="" alt="Preview of selected gallery cover" data-cover-preview hidden>{% endif %}
           <label class="lp-gallery-create__cover-prompt" for="{{ form.cover_image.id_for_label }}" data-cover-prompt{% if gallery.cover_image %} hidden{% endif %}><span class="lp-gallery-create__upload-icon"><i class="bi bi-image" aria-hidden="true"></i></span><strong data-cover-heading>{% if gallery.cover_image %}Replace the cover image{% else %}Add a signature image{% endif %}</strong><span>Drag and drop or <u>choose a file</u></span><small>JPG, PNG, or WEBP</small></label>
           {{ form.cover_image }}
-          <div class="lp-gallery-create__cover-actions" data-cover-actions{% if not gallery.cover_image %} hidden{% endif %}><label class="lp-button lp-button--secondary lp-button--sm" for="{{ form.cover_image.id_for_label }}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Replace</label></div>
+          <span class="lp-cover-editor__guides" aria-hidden="true"></span><span class="lp-cover-editor__drag-hint" aria-hidden="true">Drag to reposition</span>
+        </div>
+        {% include "photographer_workspace/galleries/cover_position.html" %}
         </div>
         {% if form.cover_image.errors %}<p class="field-error" id="{{ form.cover_image.id_for_label }}-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>{{ form.cover_image.errors|striptags }}</p>{% endif %}
       </section>
@@ -211,11 +218,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <aside class="contextual-panel lp-gallery-create-side" aria-label="Live gallery preview">
-      <section class="lp-gallery-create__preview" aria-labelledby="gallery-edit-preview-title">
-        <header><i class="bi bi-stars" aria-hidden="true"></i><div><small>Live profile</small><h2 id="gallery-edit-preview-title">Gallery Preview</h2></div></header>
-        <div class="lp-gallery-create__preview-cover" data-gallery-preview-cover>{% if gallery.cover_image %}<img src="{{ gallery.cover_image.url }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i><span>Your cover will appear here</span>{% endif %}</div>
-        <div class="lp-gallery-create__preview-copy"><p data-gallery-preview-client></p><h3 data-gallery-preview-name>{{ gallery.name }}</h3><time data-gallery-preview-date{% if not gallery.event_date %} hidden{% endif %}{% if gallery.event_date %} datetime="{{ gallery.event_date|date:'Y-m-d' }}"{% endif %}>{% if gallery.event_date %}{{ gallery.event_date|date:"M j, Y" }}{% endif %}</time><div><span class="lp-badge lp-badge--neutral" data-gallery-preview-visibility>{{ gallery.get_visibility_display }}</span><span class="lp-badge lp-badge--neutral" data-gallery-preview-status>{{ gallery.get_status_display }}</span></div></div>
-      </section>
+      {% include "photographer_workspace/galleries/components/live_preview.html" with preview_title_id="gallery-edit-preview-title" %}
       <section class="lp-gallery-create__guidance" aria-labelledby="gallery-edit-next-title"><span class="lp-contract-eyebrow">Existing gallery</span><h2 id="gallery-edit-next-title">Your delivery workspace stays connected</h2><ul><li><i class="bi bi-images" aria-hidden="true"></i><span><strong>{{ gallery.image_count }} photo{{ gallery.image_count|pluralize }} stay in place</strong><small>Editing gallery details does not remove uploaded images.</small></span></li><li><i class="bi bi-collection" aria-hidden="true"></i><span><strong>Albums and client access remain connected</strong><small>Your existing delivery setup stays with this gallery.</small></span></li><li><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span><strong>Return to the gallery workspace</strong><small>Continue uploading, organizing, or publishing after saving.</small></span></li></ul><a class="lp-button lp-button--secondary lp-button--md" href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}">Open Gallery Workspace</a></section>
     </aside>
   </div>
