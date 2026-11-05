@@ -66,28 +66,29 @@
         <div id="lpm-ai-panel-culling" role="tabpanel" aria-labelledby="lpm-ai-tab-culling" data-lpm-ai-panel="culling" hidden>
           <div class="lpm-ai-culling">
             <div class="lpm-ai-culling-grid" aria-label="Illustrative photo selection">
-              <img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Sample culling portrait 1" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Sample culling portrait 2" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_03.webp' %}" alt="Sample culling portrait 3" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_04.webp' %}" alt="Sample culling portrait 4" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_05.webp' %}" alt="Sample culling portrait 5" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_07.webp' %}" alt="Sample culling portrait 6" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_08.webp' %}" alt="Sample culling portrait 7" loading="lazy" decoding="async">
-              <img src="{% static 'img/landing/gallery/culling_09.webp' %}" alt="Sample culling portrait 8" loading="lazy" decoding="async">
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Sample portrait 1, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Sample portrait 2" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_03.webp' %}" alt="Sample portrait 3, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_04.webp' %}" alt="Sample portrait 4" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_05.webp' %}" alt="Sample portrait 5, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_07.webp' %}" alt="Sample portrait 6" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_08.webp' %}" alt="Sample portrait 7" loading="lazy" decoding="async"><i class="bi bi-circle" aria-hidden="true"></i></div>
+              <div class="lpm-ai-culling-thumb is-selected"><img src="{% static 'img/landing/gallery/culling_09.webp' %}" alt="Sample portrait 8, selected" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+            <div class="lpm-ai-culling-thumb is-rejected"><img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Additional sample portrait" loading="lazy"><i class="bi bi-circle" aria-hidden="true"></i></div>
             </div>
-            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Selected</span></div>
+            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> AI Selected</span></div>
           </div>
-          <div class="lpm-ai-demo-meta"><span>Photo review preview</span><span class="lpm-ai-demo-chip">Sample picks</span></div>
+          <div class="lpm-ai-demo-meta lpm-ai-culling-meta"><span><i class="bi bi-images" aria-hidden="true"></i> 36 photos</span><span><i class="bi bi-stars" aria-hidden="true"></i> AI Culling</span><span class="lpm-ai-demo-chip"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> 6 best shots</span></div>
         </div>
         <div id="lpm-ai-panel-editing" role="tabpanel" aria-labelledby="lpm-ai-tab-editing" data-lpm-ai-panel="editing" hidden>
           <div class="lpm-ai-compare" data-lpm-ai-compare>
             <img class="lpm-ai-compare-original" src="{% static 'img/landing/gallery/edit_before.webp' %}" alt="Original example portrait" loading="lazy">
             <div class="lpm-ai-compare-after" aria-hidden="true"><img src="{% static 'img/landing/gallery/edit_after.webp' %}" alt="" loading="lazy"></div>
-            <span class="lpm-ai-compare-label lpm-ai-compare-label-before">Original</span><span class="lpm-ai-compare-label lpm-ai-compare-label-after">Preview edit</span>
+            <span class="lpm-ai-compare-label lpm-ai-compare-label-before">Original</span><span class="lpm-ai-compare-label lpm-ai-compare-label-after">AI Enhanced</span>
             <div class="lpm-ai-compare-line" aria-hidden="true"><span><i class="bi bi-arrows-expand" aria-hidden="true"></i></span></div>
             <input class="lpm-ai-compare-range" type="range" min="0" max="100" value="50" aria-label="Compare original and illustrative edited photo">
           </div>
-          <div class="lpm-ai-demo-meta"><span>Color &amp; tone preview</span><span class="lpm-ai-demo-chip">Illustrative edit</span></div>
+          <div class="lpm-ai-demo-meta lpm-ai-edit-meta"><span><i class="bi bi-sun" aria-hidden="true"></i> Auto Enhance</span><span><i class="bi bi-palette" aria-hidden="true"></i> Color &amp; Tone</span><span><i class="bi bi-person-bounding-box" aria-hidden="true"></i> Retouch</span><span><i class="bi bi-crop" aria-hidden="true"></i> Crop &amp; Align</span></div>
         </div>
       </div>
       <div class="lpm-ai-demo-tabs" role="tablist" aria-label="AI tools preview">
