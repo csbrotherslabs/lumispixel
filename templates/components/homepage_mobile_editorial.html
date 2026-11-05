@@ -7,15 +7,15 @@
       <h2 id="lpm-discovery-title">Your photos. <em>Found.</em></h2>
       <p class="lpm-discovery-description">Upload a selfie to find your photos.</p>
       <div class="lpm-discovery-upload" aria-label="Preview of a future selfie upload feature">
-        <img src="{% static 'img/landing/gallery/photo-match-portrait-triptych.webp' %}" alt="" loading="lazy" decoding="async">
+        <img src="{% static 'img/landing/gallery/selfie.webp' %}" alt="" loading="lazy" decoding="async">
         <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
         <strong>Upload a selfie</strong>
         <span class="lpm-discovery-choose" aria-hidden="true">Choose photo</span>
       </div>
       <div class="lpm-discovery-results" aria-label="Illustrative sample photo matches, not live results">
-        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="Sample photo match one" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-02.webp' %}" alt="Sample photo match two" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-        <div><img src="{% static 'img/landing/gallery/photo-match-event-result-03.webp' %}" alt="Sample photo match three" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/couple_1.webp' %}" alt="Sample photo match one" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/couple_2.webp' %}" alt="Sample photo match two" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+        <div><img src="{% static 'img/landing/gallery/couple_3.webp' %}" alt="Sample photo match three" loading="lazy" decoding="async"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
       </div>
       <a class="lpm-discovery-cta" href="{{ find_photos_url }}">See how it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
     </div>
@@ -42,7 +42,7 @@
       <p>Organize your photos and deliver beautiful galleries without juggling multiple tools.</p>
       <div class="lpm-rail" data-lpm-rail aria-label="Photography workflow cards" tabindex="0">
         <article class="lpm-slide"><img src="{% static 'img/landing/gallery/audience-photographers.webp' %}" alt="Photographer capturing a moment" loading="lazy"><div><span>01 / CAPTURE</span><h3>Capture the moments.</h3><p>Focus on the images that matter.</p></div></article>
-        <article class="lpm-slide"><img src="{% static 'img/landing/gallery/workflow-ai-editing.webp' %}" alt="Photographer reviewing images on a computer" loading="lazy"><div><span>02 / ORGANIZE</span><h3>Organize your photos.</h3><p>Manage your shoots and collections.</p></div></article>
+        <article class="lpm-slide"><img src="{% static 'img/landing/gallery/edit_before.webp' %}" alt="Photographer reviewing images on a computer" loading="lazy"><div><span>02 / ORGANIZE</span><h3>Organize your photos.</h3><p>Manage your shoots and collections.</p></div></article>
         <article class="lpm-slide"><img src="{% static 'img/landing/gallery/workflow-client-gallery.webp' %}" alt="Client photo gallery presentation" loading="lazy"><div><span>03 / DELIVER</span><h3>Deliver galleries.</h3><p>Give clients a gallery to remember.</p></div></article>
       </div>
       <div class="lpm-rail-controls"><span>SWIPE TO EXPLORE</span><div><button type="button" data-lpm-prev aria-label="Previous workflow card"><i class="bi bi-arrow-left" aria-hidden="true"></i></button><button type="button" data-lpm-next aria-label="Next workflow card"><i class="bi bi-arrow-right" aria-hidden="true"></i></button></div></div>
@@ -57,28 +57,32 @@
       <div class="lpm-ai-demo-stage">
         <div id="lpm-ai-panel-discovery" role="tabpanel" aria-labelledby="lpm-ai-tab-discovery" data-lpm-ai-panel="discovery">
           <div class="lpm-ai-demo-photo-grid">
-            <img src="{% static 'img/landing/gallery/photo-match-event-result-01.webp' %}" alt="Illustrative matching photo one" loading="lazy">
-            <img src="{% static 'img/landing/gallery/photo-match-event-result-02.webp' %}" alt="Illustrative matching photo two" loading="lazy">
-            <img src="{% static 'img/landing/gallery/photo-match-event-result-03.webp' %}" alt="Illustrative matching photo three" loading="lazy">
+            <img src="{% static 'img/landing/gallery/couple_1.webp' %}" alt="Illustrative matching photo one" loading="lazy">
+            <img src="{% static 'img/landing/gallery/couple_2.webp' %}" alt="Illustrative matching photo two" loading="lazy">
+            <img src="{% static 'img/landing/gallery/couple_3.webp' %}" alt="Illustrative matching photo three" loading="lazy">
           </div>
           <div class="lpm-ai-demo-meta"><span><i class="bi bi-search" aria-hidden="true"></i> Photo matches</span><span class="lpm-ai-demo-chip">Sample results</span></div>
         </div>
         <div id="lpm-ai-panel-culling" role="tabpanel" aria-labelledby="lpm-ai-tab-culling" data-lpm-ai-panel="culling" hidden>
           <div class="lpm-ai-culling">
             <div class="lpm-ai-culling-grid" aria-label="Illustrative photo selection">
-              <img src="{% static 'img/landing/gallery/workflow-ai-culling.webp' %}" alt="Selected portrait" loading="lazy">
-              <img src="{% static 'img/landing/gallery/creative-rainbow-portrait.webp' %}" alt="Portrait under review" loading="lazy">
-              <img src="{% static 'img/landing/gallery/executive-portrait.webp' %}" alt="Selected portrait" loading="lazy">
-              <img src="{% static 'img/landing/gallery/professional-portrait-collection.webp' %}" alt="Portrait under review" loading="lazy">
+              <img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Sample culling portrait 1" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_02.webp' %}" alt="Sample culling portrait 2" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_03.webp' %}" alt="Sample culling portrait 3" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_04.webp' %}" alt="Sample culling portrait 4" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_05.webp' %}" alt="Sample culling portrait 5" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_07.webp' %}" alt="Sample culling portrait 6" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_08.webp' %}" alt="Sample culling portrait 7" loading="lazy" decoding="async">
+              <img src="{% static 'img/landing/gallery/culling_09.webp' %}" alt="Sample culling portrait 8" loading="lazy" decoding="async">
             </div>
-            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/workflow-ai-culling.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Selected</span></div>
+            <div class="lpm-ai-culling-feature"><img src="{% static 'img/landing/gallery/culling_01.webp' %}" alt="Example AI-selected photograph" loading="lazy"><span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Selected</span></div>
           </div>
           <div class="lpm-ai-demo-meta"><span>Photo review preview</span><span class="lpm-ai-demo-chip">Sample picks</span></div>
         </div>
         <div id="lpm-ai-panel-editing" role="tabpanel" aria-labelledby="lpm-ai-tab-editing" data-lpm-ai-panel="editing" hidden>
           <div class="lpm-ai-compare" data-lpm-ai-compare>
-            <img class="lpm-ai-compare-original" src="{% static 'img/landing/gallery/workflow-ai-editing.webp' %}" alt="Original example portrait" loading="lazy">
-            <div class="lpm-ai-compare-after" aria-hidden="true"><img src="{% static 'img/landing/gallery/workflow-ai-editing.webp' %}" alt="" loading="lazy"></div>
+            <img class="lpm-ai-compare-original" src="{% static 'img/landing/gallery/edit_before.webp' %}" alt="Original example portrait" loading="lazy">
+            <div class="lpm-ai-compare-after" aria-hidden="true"><img src="{% static 'img/landing/gallery/edit_after.webp' %}" alt="" loading="lazy"></div>
             <span class="lpm-ai-compare-label lpm-ai-compare-label-before">Original</span><span class="lpm-ai-compare-label lpm-ai-compare-label-after">Preview edit</span>
             <div class="lpm-ai-compare-line" aria-hidden="true"><span><i class="bi bi-arrows-expand" aria-hidden="true"></i></span></div>
             <input class="lpm-ai-compare-range" type="range" min="0" max="100" value="50" aria-label="Compare original and illustrative edited photo">
