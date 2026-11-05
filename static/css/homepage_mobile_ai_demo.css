@@ -39,3 +39,19 @@
 .page-home .lp-mobile-home .lpm-ai-demo-cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
 }
 @media(max-width:350px){.page-home .lp-mobile-home .lpm-ai-demo-tabs{gap:5px}.page-home .lp-mobile-home .lpm-ai-demo-tabs button{font-size:10px}.page-home .lp-mobile-home .lpm-ai-demo-photo-grid img{height:140px}}
+
+
+/* Eight real sample frames in the culling preview; 4 columns by 2 rows. */
+@media (max-width:767px) {
+ .page-home .lp-mobile-home .lpm-ai-culling-grid {
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   grid-template-rows:repeat(2,minmax(0,1fr));
+ }
+ .page-home .lp-mobile-home .lpm-ai-culling-grid img {
+   min-width:0; min-height:0; object-position:center;
+ }
+ .page-home .lp-mobile-home .lpm-ai-compare-original,
+ .page-home .lp-mobile-home .lpm-ai-compare-after img {
+   filter:none;
+ }
+}
