@@ -906,3 +906,33 @@
  .footer form.lumis-footer-newsletter input.form-control::placeholder{font-size:10px}
  .footer form.lumis-footer-newsletter .lumis-footer-newsletter__icon{left:7px!important}
 }
+
+/* Explicit mobile wordmark avoids transparent padding in legacy logo bitmap. */
+.footer .lumis-footer-mobile-wordmark{display:none}
+@media(max-width:767.9px){
+ .footer .footer-newsletter .logo{
+   display:flex!important;align-items:center!important;
+   justify-content:flex-start!important;min-height:0!important;
+   margin:0 0 15px!important;text-align:left!important;
+ }
+ .footer .footer-newsletter .logo .lumis-footer-brand-link{
+   display:inline-flex!important;align-items:center!important;
+   width:max-content;max-width:100%;min-height:0!important;
+   gap:0;text-decoration:none!important;color:#fff!important;
+ }
+ .footer .footer-newsletter .logo img.lumis-company-logo{display:none!important}
+ .footer .lumis-footer-mobile-wordmark{
+   display:inline-flex;align-items:center;gap:10px;
+   color:#fff;font-size:clamp(23px,7.1vw,30px);
+   font-weight:800;letter-spacing:-.045em;line-height:1.15;
+   white-space:nowrap;
+ }
+ .footer .lumis-footer-mobile-brand-icon{
+   display:inline-flex;align-items:center;justify-content:center;
+   width:39px;height:39px;flex:0 0 39px;
+   border-radius:50%;background:#df0025;color:white;
+ }
+ .footer .lumis-footer-mobile-brand-icon i{
+   display:block;font-size:23px;line-height:1;margin-left:2px;
+ }
+}
