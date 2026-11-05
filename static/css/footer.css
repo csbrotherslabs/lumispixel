@@ -936,3 +936,11 @@
    display:block;font-size:23px;line-height:1;margin-left:2px;
  }
 }
+
+/* Restore authentic LumisPixel footer branding on mobile. */
+@media(max-width:767.9px){
+ .footer .footer-newsletter .logo{display:flex!important;align-items:center!important;justify-content:flex-start!important;min-height:0!important;margin:0 0 12px!important;overflow:visible!important}
+ .footer .footer-newsletter .logo .lumis-footer-brand-link{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;min-height:0!important;max-width:100%;overflow:visible!important}
+ .footer .footer-newsletter .logo img.lumis-company-logo{display:block!important;width:auto!important;height:116px!important;max-width:min(90vw,340px)!important;max-height:none!important;object-fit:contain!important;object-position:left center!important}
+ .footer .lumis-footer-mobile-wordmark{display:none!important}
+}
