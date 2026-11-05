@@ -77,3 +77,14 @@
 .page-home .lp-mobile-home .lpm-ai-culling-thumb i{width:14px;height:14px;font-size:9px}
 .page-home .lp-mobile-home .lpm-ai-edit-meta span{font-size:8px}
 }
+
+/* Outward-facing comparison handle, mobile only. */
+@media (max-width:767px) {
+ .page-home .lp-mobile-home .lpm-ai-compare-line > span {
+   display:flex;align-items:center;justify-content:center;gap:1px;
+   width:34px;height:34px;
+ }
+ .page-home .lp-mobile-home .lpm-ai-compare-line > span > i {
+   font-size:13px;line-height:1;font-weight:800;
+ }
+}
