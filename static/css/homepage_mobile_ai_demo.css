@@ -39,3 +39,41 @@
 .page-home .lp-mobile-home .lpm-ai-demo-cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
 }
 @media(max-width:350px){.page-home .lp-mobile-home .lpm-ai-demo-tabs{gap:5px}.page-home .lp-mobile-home .lpm-ai-demo-tabs button{font-size:10px}.page-home .lp-mobile-home .lpm-ai-demo-photo-grid img{height:140px}}
+
+/* Reference-matched premium mobile AI showcase, scoped away from desktop. */
+@media(max-width:767px){
+.page-home .lp-mobile-home .lpm-ai-demo{background:radial-gradient(ellipse at 100% 85%,#370d1a 0%,#141319 46%,#0e0e12 100%);padding-bottom:65px}
+.page-home .lp-mobile-home .lpm-ai-demo .lpm-wrap{max-width:460px}
+.page-home .lp-mobile-home .lpm-ai-demo h2{font-weight:850!important;letter-spacing:-.045em!important;line-height:1.15!important;margin-top:20px!important}
+.page-home .lp-mobile-home .lpm-ai-demo .lpm-ai-accent{color:#ff4057;text-shadow:0 4px 18px #c9002444}
+.page-home .lp-mobile-home .lpm-ai-demo-stage{border-color:#85818b;border-radius:22px;background:linear-gradient(145deg,#35333a,#19191f);box-shadow:0 20px 45px #0008}
+.page-home .lp-mobile-home .lpm-ai-culling{grid-template-columns:1fr 1.12fr;gap:9px;height:236px;padding:11px 11px 0}
+.page-home .lp-mobile-home .lpm-ai-culling-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:5px}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb{position:relative;min-width:0;min-height:0;overflow:hidden;border-radius:8px;background:#28262a}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb img{width:100%;height:100%;display:block;object-fit:cover;border-radius:8px}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb.is-rejected img{filter:brightness(.55) saturate(.65)}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb i{position:absolute;right:4px;top:4px;width:18px;height:18px;border:1.5px solid white;border-radius:50%;display:grid;place-items:center;font-size:11px;background:#ffffff19;color:white}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb.is-selected i{background:#d60025;border-color:white;color:white;font-weight:800}
+.page-home .lp-mobile-home .lpm-ai-culling-feature img{object-position:center center}
+.page-home .lp-mobile-home .lpm-ai-culling-feature span{background:linear-gradient(135deg,#ef2444,#bc001d);font-size:10px;padding:7px 9px}
+.page-home .lp-mobile-home .lpm-ai-culling-meta{gap:5px;flex-wrap:wrap}
+.page-home .lp-mobile-home .lpm-ai-culling-meta>span{white-space:nowrap;font-size:10px}
+.page-home .lp-mobile-home .lpm-ai-culling-meta .lpm-ai-demo-chip{border-color:#a9a6af}
+.page-home .lp-mobile-home .lpm-ai-compare{aspect-ratio:1.62}
+.page-home .lp-mobile-home .lpm-ai-compare-label{border-radius:99px;font-weight:650;padding:7px 10px}
+.page-home .lp-mobile-home .lpm-ai-compare-label-after{background:linear-gradient(135deg,#f32848,#c40021)}
+.page-home .lp-mobile-home .lpm-ai-edit-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:12px 5px}
+.page-home .lp-mobile-home .lpm-ai-edit-meta span{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px;min-width:0;padding:4px 3px;text-align:center;font-size:9px;line-height:1.3}
+.page-home .lp-mobile-home .lpm-ai-edit-meta span+span{border-left:1px solid #66636c}
+.page-home .lp-mobile-home .lpm-ai-edit-meta i{font-size:14px;color:white;margin:0 3px 0 0}
+.page-home .lp-mobile-home .lpm-ai-demo-tabs{gap:9px;margin-top:19px}
+.page-home .lp-mobile-home .lpm-ai-demo-tabs button{min-height:90px;border-radius:19px;background:linear-gradient(150deg,#242329,#17171d);border-color:#4b4954;font-size:11px;font-weight:650}
+.page-home .lp-mobile-home .lpm-ai-demo-tabs button[aria-selected=true]{background:linear-gradient(155deg,#40212b,#1c191e);border-color:#ff6b80;box-shadow:0 0 0 1px #ff637b88,0 0 22px #d51a3b30}
+.page-home .lp-mobile-home .lpm-ai-demo-cta{border-radius:30px;background:linear-gradient(140deg,#ff2849,#c8001e);box-shadow:0 12px 30px #c4002340;font-weight:800;margin-top:24px}
+}
+@media(max-width:360px){
+.page-home .lp-mobile-home .lpm-ai-culling{height:200px;gap:6px;padding:7px 7px 0}
+.page-home .lp-mobile-home .lpm-ai-culling-grid{gap:3px}
+.page-home .lp-mobile-home .lpm-ai-culling-thumb i{width:14px;height:14px;font-size:9px}
+.page-home .lp-mobile-home .lpm-ai-edit-meta span{font-size:8px}
+}
