@@ -822,3 +822,87 @@
     padding-left:30px;
   }
 }
+
+
+/* Mobile footer polish: cohesive newsletter row, clear heading, readable logo. */
+@media(max-width:767.9px){
+ .footer .footer--inner{padding-top:32px;padding-bottom:26px}
+ .footer .footer-newsletter .logo{display:block;line-height:1;min-height:58px;margin-bottom:10px!important}
+ .footer .footer-newsletter .logo a{display:inline-flex;align-items:center;min-height:58px}
+ .footer .footer-newsletter .logo img.lumis-company-logo{
+   display:block!important;width:auto!important;height:58px!important;
+   min-width:0!important;max-width:min(78vw,280px)!important;
+   max-height:none!important;object-fit:contain!important;object-position:left center
+ }
+ .footer .lumis-footer-mobile-tagline{font-size:12px;line-height:1.45;margin:0 0 25px!important}
+ .footer .footer-nav li+li{margin-top:11px}
+ .footer .footer-newsletter .widget-title{
+   display:block!important;position:relative;min-height:25px;
+   margin:24px 0 4px!important;padding:18px 0 0 31px!important;
+   border-top:1px solid rgba(255,255,255,.32);
+   font-size:18px!important;line-height:1.35!important;font-weight:750;
+ }
+ .footer .footer-newsletter .widget-title::before{
+   position:absolute;left:0;top:18px;width:21px;height:21px;
+   margin:0;flex:none;
+ }
+ .footer .lumis-footer-mobile-newsletter-copy{
+   padding-left:31px!important;margin:0!important;
+   font-size:11px;line-height:1.5;color:#d5d2d2;
+ }
+ .footer form.lumis-footer-newsletter{
+   display:flex!important;flex-direction:row!important;align-items:center!important;
+   flex-wrap:nowrap!important;gap:3px!important;box-sizing:border-box;
+   width:100%!important;max-width:100%!important;min-width:0;
+   min-height:51px!important;margin:14px 0 0!important;
+   padding:4px!important;border:1px solid rgba(255,255,255,.44)!important;
+   border-radius:14px!important;background:rgba(16,16,19,.88)!important;
+ }
+ .footer form.lumis-footer-newsletter .lumis-footer-newsletter__field{
+   position:relative;display:block;flex:1 1 0!important;
+   width:0!important;min-width:0!important;margin:0!important;padding:0!important;
+   background:transparent!important;border:0!important;box-shadow:none!important;
+ }
+ .footer form.lumis-footer-newsletter .lumis-footer-newsletter__icon{
+   position:absolute;left:9px!important;top:50%;transform:translateY(-50%);
+   font-size:15px;z-index:1;pointer-events:none;
+ }
+ .footer form.lumis-footer-newsletter input.form-control{
+   display:block;box-sizing:border-box;width:100%!important;min-width:0!important;
+   height:40px!important;margin:0!important;padding:0 4px 0 32px!important;
+   background:transparent!important;border:0!important;box-shadow:none!important;
+   font-size:11px!important;line-height:40px!important;letter-spacing:0!important;
+   color:white!important;text-overflow:ellipsis;
+ }
+ .footer form.lumis-footer-newsletter input.form-control::placeholder{
+   color:#bcbcc2;opacity:1;font-size:11px;letter-spacing:0;
+ }
+ .footer form.lumis-footer-newsletter button.btn.lumis-footer-newsletter__button{
+   display:flex!important;align-items:center;justify-content:center;
+   flex:0 0 auto!important;width:auto!important;min-width:101px!important;
+   max-width:125px;height:41px!important;margin:0!important;padding:0 9px!important;
+   border-radius:10px!important;background:#d20b24!important;
+   font-size:10px!important;letter-spacing:0!important;line-height:1!important;
+   white-space:nowrap;
+ }
+ .footer form.lumis-footer-newsletter button .btn-wrap{
+   display:flex!important;align-items:center;justify-content:center;
+   gap:0!important;width:auto!important;white-space:nowrap;
+ }
+ .footer form.lumis-footer-newsletter button .text-first{
+   display:inline!important;position:static!important;transform:none!important;
+   opacity:1!important;visibility:visible!important;
+   font-size:10px!important;line-height:1!important;
+ }
+ .footer form.lumis-footer-newsletter button .text-first::after{content:" ↗";font-size:12px}
+ .footer form.lumis-footer-newsletter button .text-second{display:none!important}
+ .footer .footer-bottom{margin-top:0;border-top:1px solid rgba(255,255,255,.28);padding-top:20px}
+}
+@media(max-width:350px){
+ .footer form.lumis-footer-newsletter button.btn.lumis-footer-newsletter__button{
+   min-width:87px!important;padding:0 5px!important;font-size:9px!important
+ }
+ .footer form.lumis-footer-newsletter input.form-control{padding-left:27px!important;font-size:10px!important}
+ .footer form.lumis-footer-newsletter input.form-control::placeholder{font-size:10px}
+ .footer form.lumis-footer-newsletter .lumis-footer-newsletter__icon{left:7px!important}
+}
