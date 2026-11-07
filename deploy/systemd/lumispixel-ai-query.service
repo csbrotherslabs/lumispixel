@@ -1,0 +1,20 @@
+[Unit]
+Description=LumisPixel AI Query Worker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=lumispixel
+Group=lumispixel
+WorkingDirectory=/srv/lumispixel/app
+EnvironmentFile=/srv/lumispixel/.env
+Environment=OMP_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+ExecStart=/srv/lumispixel/venv/bin/celery -A config worker --loglevel=INFO --hostname=ai-query@%%h --queues=ai.query --concurrency=1 --prefetch-multiplier=1
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

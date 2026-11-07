@@ -41,6 +41,13 @@ def embed_image(stream):
 
 
 def embed_text(query):
+    if getattr(settings, "VISUAL_SEARCH_QUERY_BACKEND", "local") == "celery":
+        from .query_inference import remote_embed_text
+        return remote_embed_text(query)
+    return embed_text_local(query)
+
+
+def embed_text_local(query):
     if not semantic_enabled():
         raise RuntimeError("Semantic search is disabled")
     import torch

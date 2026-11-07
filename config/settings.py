@@ -35,7 +35,13 @@ VISUAL_SEARCH_SEMANTIC_ENABLED = env_bool("VISUAL_SEARCH_SEMANTIC_ENABLED", Fals
 VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED = env_bool("VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False)
 VISUAL_SEARCH_SEMANTIC_MODEL_PATH = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_PATH", "")
 VISUAL_SEARCH_SEMANTIC_MODEL_VERSION = os.getenv("VISUAL_SEARCH_SEMANTIC_MODEL_VERSION", "clip-v1")
-CELERY_IMPORTS = ("apps.visual_search.semantic_tasks",)
+CELERY_IMPORTS = ("apps.visual_search.semantic_tasks", "apps.visual_search.query_tasks")
+VISUAL_SEARCH_QUERY_BACKEND = os.getenv("VISUAL_SEARCH_QUERY_BACKEND", "local" if DEBUG else "celery")
+if VISUAL_SEARCH_QUERY_BACKEND not in {"local", "celery"}:
+    raise RuntimeError("VISUAL_SEARCH_QUERY_BACKEND must be local or celery.")
+VISUAL_SEARCH_QUERY_TIMEOUT = float(os.getenv("VISUAL_SEARCH_QUERY_TIMEOUT", "10"))
+if not 0 < VISUAL_SEARCH_QUERY_TIMEOUT <= 20:
+    raise RuntimeError("VISUAL_SEARCH_QUERY_TIMEOUT must be between 0 and 20 seconds.")
 from config.ai_task_routing import ai_task_routes
 
 # Enable on every producer only after the dedicated consumer is ready.

@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import GallerySemanticSearchPolicy, GalleryFaceSearchPolicy
+from .query_inference import validated_vector
 from .semantic import semantic_enabled
 
 logger = logging.getLogger(__name__)
@@ -71,33 +72,29 @@ def semantic_search(request, gallery_id):
     if not 2 <= len(query) <= 200:
         return JsonResponse({"error":"invalid_query"},status=400)
     try:
-        import numpy as np
-        from pgvector.psycopg import register_vector
         from .semantic import embed_text
-        vector=np.asarray(embed_text(query),dtype=np.float32)
+        vector=json.dumps(validated_vector(list(embed_text(query))))
         with __import__("apps.visual_search.vector_store",fromlist=["vector_connection"]).vector_connection() as conn:
-            register_vector(conn)
             rows=conn.execute("""SELECT photo_id FROM visual_search.app_semantic_embeddings
-              WHERE gallery_id=%s AND model_version=%s ORDER BY embedding <=> %s LIMIT 100""",
+              WHERE gallery_id=%s AND model_version=%s ORDER BY embedding <=> %s::vector LIMIT 100""",
               (gallery.pk,getattr(settings,"VISUAL_SEARCH_SEMANTIC_MODEL_VERSION","clip-v1"),vector)).fetchall()
         ids=[r[0] for r in rows]
         allowed=set(GalleryPhoto.objects.filter(pk__in=ids,gallery=gallery,status=GalleryPhoto.Status.COMPLETED).values_list("pk",flat=True))
+        if not GallerySemanticSearchPolicy.objects.filter(gallery=gallery,processing_authorized=True).exists():
+            return JsonResponse({"error":"disabled"},status=403)
         return JsonResponse({"photo_ids":[i for i in ids if i in allowed]})
     except Exception:
         logger.exception("Semantic search unavailable")
         return JsonResponse({"error":"unavailable"},status=503)
 
 def _semantic_results(gallery, query):
-    import numpy as np
-    from pgvector.psycopg import register_vector
     from .semantic import embed_text
     from .vector_store import vector_connection
-    vector=np.asarray(embed_text(query),dtype=np.float32)
+    vector=json.dumps(validated_vector(list(embed_text(query))))
     with vector_connection() as conn:
-        register_vector(conn)
         rows=conn.execute("""SELECT photo_id FROM visual_search.app_semantic_embeddings
             WHERE gallery_id=%s AND model_version=%s
-            ORDER BY embedding <=> %s LIMIT 100""",
+            ORDER BY embedding <=> %s::vector LIMIT 100""",
             (gallery.pk,getattr(settings,"VISUAL_SEARCH_SEMANTIC_MODEL_VERSION","clip-v1"),vector)).fetchall()
     ids=[r[0] for r in rows]
     allowed=set(GalleryPhoto.objects.filter(
