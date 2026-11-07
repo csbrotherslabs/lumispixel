@@ -1,0 +1,30 @@
+{% if can_favorite and access_token %}
+<form method="post" action="{% url 'galleries:client_gallery_favorite' access_token photo.pk %}" data-favorite-form>
+  {% csrf_token %}
+  <button class="lp-photo-control" type="submit" aria-label="{% if photo.is_client_favorite %}Remove favorite{% else %}Favorite photo{% endif %}" aria-pressed="{% if photo.is_client_favorite %}true{% else %}false{% endif %}">
+    <span class="lp-photo-control__circle"><svg class="lp-photo-action__icon{% if photo.is_client_favorite %} is-filled{% endif %}" data-favorite-icon viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></span>
+    <span class="lp-photo-control__label">Favorite</span>
+    <span class="lp-photo-control__count" data-favorite-count>{{ photo.client_favorite_count|default:0 }}</span>
+  </button>
+</form>
+{% endif %}
+{% if can_download and access_token %}
+<a class="lp-photo-control" href="{% url 'galleries:client_gallery_download' access_token photo.pk %}" aria-label="Download photo" data-photo-download>
+  <span class="lp-photo-control__circle"><svg class="lp-photo-action__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg></span>
+  <span class="lp-photo-control__label">Download</span>
+  <span class="lp-photo-control__count" data-download-count>{{ photo.client_download_count|default:0 }}</span>
+</a>
+{% if can_download_originals %}<a href="{% url 'galleries:client_gallery_download_original' access_token photo.pk %}" aria-label="Download original photo" data-photo-download hidden>Download Original</a>{% endif %}
+{% endif %}
+{% if can_comment and access_token %}
+<button class="lp-photo-control" type="button" data-comment-toggle aria-label="Comment on photo">
+  <span class="lp-photo-control__circle"><svg class="lp-photo-action__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.4 9.4 0 0 1-4-.9L3 21l1.7-4.6A8.5 8.5 0 1 1 21 11.5Z"/></svg></span>
+  <span class="lp-photo-control__label">Comment</span>
+  <span class="lp-photo-control__count" data-comment-count>{{ photo.client_comment_list|length }}</span>
+</button>
+{% endif %}
+<button class="lp-photo-control lp-photo-action--expand" type="button" data-full-view data-src="{{ photo.delivery_url }}" aria-label="View photo full screen" title="Full view">
+  <span class="lp-photo-control__circle"><svg class="lp-photo-action__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+  <span class="lp-photo-control__label">View</span>
+  <span class="lp-photo-control__count" aria-hidden="true"></span>
+</button>
