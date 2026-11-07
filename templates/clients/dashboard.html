@@ -32,11 +32,16 @@
         {% for invitation in invited_galleries %}
         <article class="client-hub__gallery-card">
           <div class="client-hub__gallery-cover">
-            {% if invitation.gallery.cover_image %}
-              <img src="{{ invitation.gallery.cover_image.url }}" alt="">
-            {% else %}
-              <span aria-hidden="true"><i class="bi bi-images"></i></span>
-            {% endif %}
+            {% with cover_url=invitation.gallery.cover_delivery_url %}
+              {% if cover_url %}
+              <img src="{{ cover_url }}" alt="" loading="lazy" decoding="async"
+                   data-client-gallery-image
+                   data-cover-x="{{ invitation.gallery.cover_position_x|default_if_none:50 }}"
+                   data-cover-y="{{ invitation.gallery.cover_position_y|default_if_none:50 }}"
+                   data-cover-zoom="{{ invitation.gallery.cover_zoom|default:100 }}">
+              {% endif %}
+              <span class="client-hub__gallery-placeholder"{% if cover_url %} hidden{% endif %}><i class="bi bi-images" aria-hidden="true"></i><span>Cover unavailable</span></span>
+            {% endwith %}
             <span class="client-hub__gallery-badge"><i class="bi bi-shield-lock" aria-hidden="true"></i> Private</span>
           </div>
           <div class="client-hub__gallery-body">
@@ -49,7 +54,7 @@
               <div><dt>Invited</dt><dd>{{ invitation.invited_at|date:"M j, Y" }}</dd></div>
               <div><dt>Access</dt><dd>{% if invitation.gallery.expires_at %}Until {{ invitation.gallery.expires_at|date:"M j, Y" }}{% else %}No expiration{% endif %}</dd></div>
             </dl>
-            <a class="client-hub__gallery-open" href="{{ invitation.account_access_url }}">Open gallery <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a class="client-hub__gallery-open" href="{{ invitation.account_access_url }}" aria-label="Open gallery: {{ invitation.gallery.name }}">Open gallery <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </div>
         </article>
         {% endfor %}
@@ -105,3 +110,5 @@
   </div>
 </section>
 {% endblock %}
+
+{% block extra_js %}<script src="{% static 'js/client_dashboard.js' %}" defer></script>{% endblock %}
