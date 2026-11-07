@@ -245,7 +245,7 @@ def _client_gallery_access(raw_token, request):
 
     invitation = token.invitation
     gallery = invitation.gallery
-    if invitation.status == GalleryInvitation.Status.DISABLED:
+    if invitation.status not in {GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE}:
         raise Http404
     if gallery.deleted_at or gallery.archived_at:
         raise Http404
@@ -837,7 +837,7 @@ def issue_client_gallery_share_link(request, gallery_id, invitation_id):
     gallery = invitation.gallery
     if gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
         return HttpResponseForbidden("Publish the gallery before creating a client link.")
-    if invitation.status == GalleryInvitation.Status.DISABLED:
+    if invitation.status not in {GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE}:
         return HttpResponseForbidden("This invitation is disabled.")
 
     invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())

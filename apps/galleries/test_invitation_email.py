@@ -112,7 +112,9 @@ class GalleryInvitationEmailTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertFalse(GalleryInvitation.objects.filter(gallery=self.gallery).exists())
+        invitation = GalleryInvitation.objects.get(gallery=self.gallery)
+        self.assertEqual(invitation.status, GalleryInvitation.Status.NOT_SENT)
+        self.assertFalse(invitation.access_tokens.exists())
         self.assertEqual(len(mail.outbox), 0)
 
     def test_other_photographer_cannot_send_gallery_invitation(self):
