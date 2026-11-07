@@ -1,5 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -21,12 +24,14 @@ def _owned_gallery(request, gallery_id):
     profile = PhotographerProfile.objects.filter(user=request.user).first()
     if not profile:
         raise Http404
-    return get_object_or_404(Gallery, pk=gallery_id, photographer=profile)
+    return get_object_or_404(Gallery.objects.select_for_update(), pk=gallery_id, photographer=profile)
 
 
 def _issue_and_email(request, invitation):
     """Issue a replacement token without invalidating the current link unless delivery succeeds."""
     gallery = invitation.gallery
+    if gallery.deleted_at or gallery.archived_at or gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
+        raise GalleryInvitationDeliveryError("Gallery is not available for delivery")
     token_record, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
     try:
         gallery_url = send_gallery_invitation_email(
@@ -47,28 +52,36 @@ def _issue_and_email(request, invitation):
 
 @login_required
 @require_POST
+@transaction.atomic
 def prepare_client_gallery_invitation(request, gallery_id):
     gallery = _owned_gallery(request, gallery_id)
     redirect_url = _client_access_url(gallery)
-    if gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
-        messages.error(request, "Publish the gallery before sending a client invitation.")
+    if gallery.deleted_at or gallery.archived_at or gallery.status not in {Gallery.Status.DRAFT, Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
+        messages.error(request, "Restore this gallery before adding clients.")
         return redirect(redirect_url)
 
     name = request.POST.get("client_name", "").strip()
     email = request.POST.get("email", "").strip().lower()
-    if not name or not email:
+    try:
+        validate_email(email)
+        if not name or len(name) > 160:
+            raise ValidationError("Invalid client name")
+    except ValidationError:
         messages.error(request, "Enter a client name and email address.")
         return redirect(redirect_url)
 
-    invitation, created = GalleryInvitation.objects.get_or_create(
+    invitation, created = GalleryInvitation.objects.select_for_update().get_or_create(
         gallery=gallery,
-        email=email,
-        defaults={"client_name": name},
+        email__iexact=email,
+        defaults={"client_name": name, "email": email, "status": GalleryInvitation.Status.NOT_SENT},
     )
     if not created:
         invitation.client_name = name
-        invitation.status = GalleryInvitation.Status.PENDING
-        invitation.save(update_fields=["client_name", "status"])
+        invitation.save(update_fields=["client_name"])
+
+    if gallery.status == Gallery.Status.DRAFT:
+        messages.success(request, f"{name} added. No email sent; publish the gallery, then send invitations.")
+        return redirect(redirect_url)
 
     try:
         _issue_and_email(request, invitation)
@@ -79,6 +92,8 @@ def prepare_client_gallery_invitation(request, gallery_id):
         )
         return redirect(redirect_url)
 
+    invitation.status = GalleryInvitation.Status.PENDING
+    invitation.save(update_fields=["status"])
     if not created:
         invitation.resent_at = timezone.now()
         invitation.save(update_fields=["resent_at"])
@@ -96,10 +111,11 @@ def prepare_client_gallery_invitation(request, gallery_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def resend_client_gallery_invitation(request, gallery_id, invitation_id):
     gallery = _owned_gallery(request, gallery_id)
     redirect_url = _client_access_url(gallery)
-    invitation = get_object_or_404(GalleryInvitation, pk=invitation_id, gallery=gallery)
+    invitation = get_object_or_404(GalleryInvitation.objects.select_for_update(), pk=invitation_id, gallery=gallery)
 
     if gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
         messages.error(request, "Publish the gallery before resending a client invitation.")
@@ -108,10 +124,11 @@ def resend_client_gallery_invitation(request, gallery_id, invitation_id):
         messages.error(request, "Enable this invitation before resending it.")
         return redirect(redirect_url)
 
+    first_send = invitation.status == GalleryInvitation.Status.NOT_SENT
     try:
         _issue_and_email(request, invitation)
     except GalleryInvitationDeliveryError:
-        messages.error(request, "The invitation email could not be resent. The previous secure link is still valid.")
+        messages.error(request, "The email could not be sent. Saved invitees remain unsent; existing secure links remain valid.")
         return redirect(redirect_url)
 
     invitation.status = GalleryInvitation.Status.PENDING
@@ -125,5 +142,36 @@ def resend_client_gallery_invitation(request, gallery_id, invitation_id):
         related_object=invitation,
         metadata={"client": invitation.client_name, "delivery": "email", "resent": True},
     )
-    messages.success(request, f"Gallery invitation resent to {invitation.email}.")
+    messages.success(request, f"Gallery invitation {'sent' if first_send else 'resent'} to {invitation.email}.")
     return redirect(redirect_url)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def send_saved_gallery_invitations(request, gallery_id):
+    gallery = _owned_gallery(request, gallery_id)
+    if gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED} or gallery.deleted_at or gallery.archived_at:
+        messages.error(request, "Publish the gallery before sending saved invitations.")
+        return redirect(_client_access_url(gallery))
+    sent = failed = 0
+    for invitation in gallery.invitations.select_for_update().filter(status=GalleryInvitation.Status.NOT_SENT).order_by("pk"):
+        try:
+            _issue_and_email(request, invitation)
+        except GalleryInvitationDeliveryError:
+            failed += 1
+            continue
+        invitation.status = GalleryInvitation.Status.PENDING
+        invitation.save(update_fields=["status"])
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.CLIENT_INVITED,
+            description=f"A secure gallery invitation was emailed to {invitation.client_name}.",
+            actor=request.user, related_object=invitation,
+            metadata={"client": invitation.client_name, "delivery": "email"})
+        sent += 1
+    if sent:
+        messages.success(request, f"Sent {sent} gallery invitation(s).")
+    if failed:
+        messages.error(request, f"{failed} invitation(s) could not be sent. They remain saved for retry.")
+    if not sent and not failed:
+        messages.info(request, "No unsent invitations remain.")
+    return redirect(_client_access_url(gallery))

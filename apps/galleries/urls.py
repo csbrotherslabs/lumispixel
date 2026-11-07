@@ -21,6 +21,7 @@ urlpatterns = [
     path("access/<str:token>/prints/", views.client_gallery_print_store, name="client_gallery_print_store"),
     path("my/invitations/<int:invitation_id>/open/", account_views.client_account_gallery_access, name="client_account_gallery_access"),
     path("share-link/<int:gallery_id>/<int:invitation_id>/", views.issue_client_gallery_share_link, name="issue_client_gallery_share_link"),
+    path("invite/<int:gallery_id>/send-saved/", invitation_views.send_saved_gallery_invitations, name="send_saved_gallery_invitations"),
     path("invite/<int:gallery_id>/", invitation_views.prepare_client_gallery_invitation, name="prepare_client_gallery_invitation"),
     path("invite/<int:gallery_id>/<int:invitation_id>/resend/", invitation_views.resend_client_gallery_invitation, name="resend_client_gallery_invitation"),
 ]

@@ -71,7 +71,7 @@
     actionInput.value=action||'';
     title.textContent=actionLabel;
     copy.textContent=`Are you sure you want to ${actionLabel.toLowerCase()} for ${clientName}?`;
-    submit.textContent=action==='remove'?'Remove':action==='disable'?'Disable':'Resend';
+    submit.textContent=actionButton.dataset.submitLabel||(action==='remove'?'Remove':action==='disable'?'Disable':'Resend');
     modal.classList.toggle('is-danger',action==='remove');
     modal.hidden=false;
     document.body.classList.add('lp-invite-modal-open');

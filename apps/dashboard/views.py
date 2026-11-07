@@ -1766,7 +1766,7 @@ def gallery_workspace(request, pk):
                         description="Gallery published from its workspace.",
                         actor=request.user,
                     )
-                messages.success(request, "Gallery published and ready for client access.")
+                messages.success(request, "Gallery published and ready for client access. Saved invitations are not sent automatically; send them from Client Access.")
             return redirect("photographer_workspace:gallery_workspace", pk=gallery.pk)
         if action == "save_store":
             if store_form.is_valid():
@@ -1854,20 +1854,8 @@ def gallery_workspace(request, pk):
                                  related_object=permissions, metadata={"new_value": {"visibility": gallery.visibility, "watermark": permissions.watermark, "watermark_density": permissions.watermark_density}})
             messages.success(request, "Client access settings saved.")
         elif action == "invite":
-            name, email = request.POST.get("client_name", "").strip(), request.POST.get("email", "").strip().lower()
-            if name and email:
-                invitation, created = GalleryInvitation.objects.get_or_create(gallery=gallery, email=email, defaults={"client_name": name})
-                if not created:
-                    invitation.client_name, invitation.status, invitation.resent_at = name, GalleryInvitation.Status.PENDING, timezone.now()
-                    invitation.save(update_fields=["client_name", "status", "resent_at"])
-                AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).update(revoked_at=timezone.now())
-                AccessToken.issue(invitation, expires_at=gallery.expires_at)
-                log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.CLIENT_INVITED,
-                                     description=f"An invitation was prepared for {name}.", actor=request.user,
-                                     related_object=invitation, metadata={"client": name})
-                messages.success(request, "Invitation prepared. Email delivery can be connected later.")
-            else:
-                messages.error(request, "Enter a client name and email address.")
+            from apps.galleries.invitation_views import prepare_client_gallery_invitation
+            return prepare_client_gallery_invitation(request, gallery.pk)
         elif action in {"resend", "disable", "remove"}:
             invitation = get_object_or_404(gallery.invitations, pk=request.POST.get("invitation_id"))
             if action == "remove":
@@ -1879,12 +1867,8 @@ def gallery_workspace(request, pk):
                 invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
                 messages.success(request, "Client access disabled.")
             else:
-                invitation.resent_at = timezone.now()
-                invitation.status = GalleryInvitation.Status.PENDING
-                invitation.save(update_fields=["resent_at", "status"])
-                invitation.access_tokens.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
-                AccessToken.issue(invitation, expires_at=gallery.expires_at)
-                messages.success(request, "A fresh invitation is ready for future email delivery.")
+                from apps.galleries.invitation_views import resend_client_gallery_invitation
+                return resend_client_gallery_invitation(request, gallery.pk, invitation.pk)
         if action not in {"save_settings", "save_store", "add_discount"}:
             return redirect(f"{reverse('photographer_workspace:gallery_workspace', args=[gallery.pk])}?tab=client-access")
     photos = gallery.photos.annotate(
@@ -1941,7 +1925,9 @@ def gallery_workspace(request, pk):
                     "discounts": gallery.discount_codes.all(), "store_summary": {"revenue": revenue, "orders": store.orders.count(), "average": revenue / paid_orders.count() if paid_orders.count() else Decimal("0.00"), "products": store.products.filter(active=True).count()},
                     "general_form": general_form, "settings_form": settings_form,
                     "gallery_permissions": permissions, "invitations": invitations,
-                    "access_summary": {"invited": invitations.count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
+                    "unsent_invitation_count": invitations.filter(status=GalleryInvitation.Status.NOT_SENT).count(),
+                    "can_send_invitations": gallery.status in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED} and not gallery.deleted_at and not gallery.archived_at,
+                    "access_summary": {"invited": invitations.exclude(status=GalleryInvitation.Status.NOT_SENT).count(), "sessions": invitations.filter(status=GalleryInvitation.Status.ACTIVE).count(), "downloads": gallery.download_count, "shares": 0},
                     "permission_groups": [
                         {"title": title, "items": [(field, label, icon, getattr(permissions, field)) for field, label, icon in items]}
                         for title, items in [

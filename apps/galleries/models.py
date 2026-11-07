@@ -721,11 +721,12 @@ class DiscountCode(models.Model):
 
 
 class GalleryInvitation(models.Model):
-    """An email-address invitation; delivery can be attached by a future mail service."""
+    """An email invitee that may be saved before secure access is sent."""
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        ACTIVE = "active", "Active"
+        NOT_SENT = "not_sent", "Not sent"
+        PENDING = "pending", "Sent"
+        ACTIVE = "active", "Accepted"
         DISABLED = "disabled", "Disabled"
 
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name="invitations")
