@@ -32,6 +32,9 @@ class AIQueueRoutingTests(unittest.TestCase):
             with self.subTest(task=task):
                 self.assertEqual(self.route("apps.visual_search.tasks." + task), "ai.face")
 
+    def test_interactive_query_has_its_own_queue(self):
+        self.assertEqual(self.route("apps.visual_search.query_tasks.encode_query"), "ai.query")
+
     def test_ordinary_jobs_keep_default_queue(self):
         self.assertEqual(self.route("apps.notifications.tasks.send_email"), "celery")
 
