@@ -62,3 +62,37 @@ provide priority between semantic and face work on this single-process worker.
 Split consumers later if interactive latency requires it. After tasks have been
 routed to AI queues, do not disable routing or stop their consumers until those
 queues have drained; existing messages retain their destinations.
+
+## Remote semantic query release
+
+Production now defaults VISUAL_SEARCH_QUERY_BACKEND=celery (development remains
+local). No local model fallback occurs on worker timeout. The web host needs
+only the ordinary requirements.txt; SQL passes a validated 512-value vector as a
+bound string cast to vector. All existing gallery access checks remain on web.
+
+Deploy the same code to both hosts with semantic flags off. On the AI droplet,
+install lumispixel-ai-query.service alongside the indexing worker. It consumes
+only ai.query with one process so indexing cannot queue ahead of interactive
+inference. This loads a second CLIP model on the same 4 GB machine: measure memory
+with both models loaded before pilot traffic, and stop/resize if memory is tight.
+
+Both hosts need CELERY_AI_QUEUES_ENABLED=True and the production
+VISUAL_SEARCH_DATABASE_URL (same production DB, visual_search schema). Web must
+use VISUAL_SEARCH_QUERY_BACKEND=celery; query worker calls the local encoder
+directly regardless of backend. Default response wait is 10 seconds, maximum 20;
+queued inference expires after 30 seconds. Errors return existing 503 behavior.
+Broker publication has no retry; retain normal short broker connect/socket
+timeouts. Query text is redacted from task argument representations, but travels
+through the trusted TLS broker. Results contain only version and vector, and
+are forgotten after consumption; late results use normal backend expiry.
+
+Start both workers, verify queue subscriptions and a controlled query round
+trip, then enable VISUAL_SEARCH_SEMANTIC_ENABLED=True and
+VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED=True on the AI host and web host. These are
+operational gates; each gallery still requires explicit owner opt-in. Do not bulk
+enable existing galleries. Verify one authorized gallery indexes B2 photos,
+searches correctly, rejects unauthorized access, and purges deleted photos before
+wider rollout. Keep face/selfie flags False. Query inference cold-start may time
+out: warm the query worker before web traffic. No application migrations added.
+Rollback: disable semantic flags on web first; stop incoming searches before
+stopping query consumer. Do not disable AI routing while queued cleanup remains.

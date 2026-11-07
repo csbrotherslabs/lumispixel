@@ -32,6 +32,33 @@ class ClientSemanticSearchTests(TestCase):
         self.public_url = reverse("visual_search:public-semantic-search", args=[self.gallery.public_id])
         self.invited_url = reverse("visual_search:invited-semantic-search", args=[self.token])
 
+    @override_settings(VISUAL_SEARCH_QUERY_BACKEND="celery", CELERY_AI_QUEUES_ENABLED=True)
+    def test_remote_timeout_returns_503_without_model_fallback(self):
+        from celery.exceptions import TimeoutError
+        with patch("apps.visual_search.query_tasks.encode_query.apply_async") as send, \
+             patch("apps.visual_search.semantic._load_model", side_effect=AssertionError("web model load")):
+            send.return_value.get.side_effect = TimeoutError()
+            self.assertEqual(self.client.get(self.public_url, {"q":"family portrait"}).status_code, 503)
+            send.return_value.forget.assert_called_once()
+
+    @override_settings(VISUAL_SEARCH_QUERY_BACKEND="celery", CELERY_AI_QUEUES_ENABLED=True)
+    def test_remote_results_filter_other_galleries_and_hidden_photos(self):
+        photo = GalleryPhoto.objects.create(gallery=self.gallery, photographer=self.profile, file="test.jpg", status=GalleryPhoto.Status.COMPLETED, is_visible=True)
+        hidden = GalleryPhoto.objects.create(gallery=self.gallery, photographer=self.profile, file="hidden.jpg", status=GalleryPhoto.Status.COMPLETED, is_visible=False)
+        with patch("apps.visual_search.query_tasks.encode_query.apply_async") as send, \
+             patch("apps.visual_search.vector_store.vector_connection") as connection, \
+             patch("apps.visual_search.semantic._load_model", side_effect=AssertionError("web model load")):
+            send.return_value.get.return_value = {"model_version":"clip-v1", "vector":[0.1]*512}
+            conn = connection.return_value.__enter__.return_value
+            conn.execute.return_value.fetchall.return_value = [(hidden.pk,), (photo.pk,), (999999,)]
+            response = self.client.get(self.public_url, {"q":"family portrait"})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual([r["photo_id"] for r in response.json()["results"]], [photo.pk])
+            sql, params = conn.execute.call_args.args
+            self.assertIn("gallery_id=%s", sql)
+            self.assertIn("%s::vector", sql)
+            self.assertEqual(params[0], self.gallery.pk)
+
     def test_search_shows_on_every_invited_design_and_uses_token_endpoint(self):
         for design in [*Gallery.DesignTemplate.values, "legacy"]:
             with self.subTest(design=design):

@@ -5,6 +5,7 @@ def ai_task_routes(enabled):
     if not enabled:
         return {}
     return {
+        "apps.visual_search.query_tasks.*": {"queue": "ai.query"},
         "apps.visual_search.semantic_tasks.*": {"queue": "ai.semantic"},
         "apps.visual_search.tasks.*": {"queue": "ai.face"},
     }
