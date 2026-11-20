@@ -14,14 +14,26 @@ def semantic_enabled():
 
 @lru_cache(maxsize=1)
 def _load_model(path):
+    import torch
     from transformers import CLIPModel, CLIPProcessor
     if not path:
         raise RuntimeError("Approved semantic model is not configured")
     model = CLIPModel.from_pretrained(path, local_files_only=True)
     if model.config.projection_dim != DIMENSION:
         raise RuntimeError("Semantic model must produce 512-dimensional embeddings")
+    # The web app can remain CPU-only; CUDA is used only when available.
+    # Allow operators to force CPU for production or compatibility testing.
+    preference = getattr(settings, "VISUAL_SEARCH_SEMANTIC_DEVICE", "auto").strip().lower()
+    if preference not in {"auto", "cpu", "cuda"}:
+        raise RuntimeError("VISUAL_SEARCH_SEMANTIC_DEVICE must be auto, cpu or cuda")
+    if preference == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("Semantic CUDA device requested but unavailable")
+    device = torch.device("cuda" if preference != "cpu" and torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     model.eval()
-    return model, CLIPProcessor.from_pretrained(path, local_files_only=True)
+    # Preserve legacy clip-v1 preprocessing across Transformers upgrades.
+    processor = CLIPProcessor.from_pretrained(path, local_files_only=True, use_fast=False)
+    return model, processor
 
 
 def embed_image(stream):
@@ -33,7 +45,7 @@ def embed_image(stream):
     with Image.open(stream) as img:
         img = ImageOps.exif_transpose(img).convert("RGB")
         img.thumbnail((2048, 2048))
-        inputs = processor(images=img, return_tensors="pt")
+        inputs = processor(images=img, return_tensors="pt").to(next(model.parameters()).device)
     with torch.inference_mode():
         vector = model.get_image_features(**inputs)[0]
         vector = torch.nn.functional.normalize(vector, dim=0)
@@ -45,7 +57,7 @@ def embed_text(query):
         raise RuntimeError("Semantic search is disabled")
     import torch
     model, processor = _load_model(settings.VISUAL_SEARCH_SEMANTIC_MODEL_PATH)
-    inputs = processor(text=[query], return_tensors="pt", padding=True, truncation=True)
+    inputs = processor(text=[query], return_tensors="pt", padding=True, truncation=True).to(next(model.parameters()).device)
     with torch.inference_mode():
         vector = model.get_text_features(**inputs)[0]
         vector = torch.nn.functional.normalize(vector, dim=0)
