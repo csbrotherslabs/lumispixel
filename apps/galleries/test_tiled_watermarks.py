@@ -60,7 +60,7 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
                 html = render_to_string(template, context)
                 title = re.search(r'<title>(.*?)</title>', html).group(1)
                 self.assertIn('Watermark test | Magdalene Golomeke | LumisPixel', title)
-                self.assertRegex(html, r'<link rel="icon"[^>]+img/lumis_favicon_v1\.png')
+                self.assertRegex(html, r'<link rel="icon"[^>]+img/lumis_favicon_v1(?:\.[0-9a-f]{12})?\.png')
                 if template.endswith('semantic_results.html'):
                     self.assertTrue(title.startswith('Search results · '))
 
@@ -68,8 +68,8 @@ class TiledWatermarkTemplateTests(SimpleTestCase):
         for design in DESIGNS:
             with self.subTest(design=design):
                 html = render_to_string(f'galleries/designs/{design}.html', gallery_context())
-                self.assertIn('client_gallery_watermark.js', html)
-                self.assertIn('client_gallery_watermark.css', html)
+                self.assertRegex(html, r'client_gallery_watermark(?:\.[0-9a-f]{12})?\.js')
+                self.assertRegex(html, r'client_gallery_watermark(?:\.[0-9a-f]{12})?\.css')
                 self.assertEqual(html.count('data-gallery-watermark '), 2)
                 self.assertNotIn('class="lp-client-photo__watermark"', html)
 
