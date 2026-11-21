@@ -113,6 +113,32 @@ class SemanticJourneyTests(TestCase):
             purge.assert_called_once_with(pk)
         self.assertFalse(SemanticIndexJob.objects.filter(photo_id=pk).exists())
 
+    def test_reconciliation_recovers_only_aged_authorized_jobs(self):
+        from datetime import timedelta
+        from django.core.management import call_command
+        from django.utils import timezone
+
+        job = SemanticIndexJob.objects.get(photo=self.photo)
+        with patch("apps.visual_search.management.commands.reconcile_semantic_index.dispatch_semantic_job") as dispatch:
+            call_command("reconcile_semantic_index")
+            dispatch.assert_not_called()  # Fresh jobs are not redispatched.
+            SemanticIndexJob.objects.filter(pk=job.pk).update(
+                created_at=timezone.now() - timedelta(minutes=30)
+            )
+            call_command("reconcile_semantic_index", dry_run=True)
+            dispatch.assert_not_called()
+            call_command("reconcile_semantic_index")
+            dispatch.assert_called_once_with(job.pk)
+            dispatch.reset_mock()
+            SemanticIndexJob.objects.filter(pk=job.pk).update(status="processing")
+            call_command("reconcile_semantic_index")
+            dispatch.assert_not_called()
+            SemanticIndexJob.objects.filter(pk=job.pk).update(status="pending")
+            self.policy.processing_authorized = False
+            self.policy.save()
+            call_command("reconcile_semantic_index")
+            dispatch.assert_not_called()
+
     def test_worker_registers_semantic_tasks(self):
         from config.celery import app
         app.loader.import_default_modules()
