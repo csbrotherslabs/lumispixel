@@ -125,9 +125,18 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
     def serve(self, route):
         path = urlparse(route.request.url).path
         if path.startswith('/static/'):
-            file = settings.BASE_DIR / 'static' / path.removeprefix('/static/')
+            # Manifest storage fingerprints asset URLs, while the browser tests
+            # serve checked-in source files without running collectstatic.
+            relative = path.removeprefix('/static/')
+            file = settings.BASE_DIR / 'static' / relative
+            if not file.is_file():
+                unhashed = re.sub(r'\\.[0-9a-f]{12}(?=\\.[^.]+$)', '', relative)
+                file = settings.BASE_DIR / 'static' / unhashed
             if file.is_file():
-                mime = {'.css': 'text/css', '.svg': 'image/svg+xml'}.get(file.suffix, 'application/javascript')
+                mime = {'.css': 'text/css', '.svg': 'image/svg+xml',
+                        '.png': 'image/png', '.jpg': 'image/jpeg',
+                        '.webp': 'image/webp', '.woff2': 'font/woff2',
+                        '.js': 'application/javascript'}.get(file.suffix, 'application/octet-stream')
                 route.fulfill(body=file.read_bytes(), content_type=mime)
             else:
                 route.abort()
