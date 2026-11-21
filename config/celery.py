@@ -37,3 +37,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 app = Celery("lumispixel")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
+
+# Opt-in periodic repair; requires exactly one Celery Beat scheduler per deployment.
+# Do not enable until a Beat process is configured and monitored.
+if _env_bool("SEMANTIC_INDEX_RECONCILIATION_ENABLED", False):
+    app.conf.beat_schedule = {
+        **(app.conf.beat_schedule or {}),
+        "recover-missed-semantic-index-jobs": {
+            "task": "apps.visual_search.semantic_tasks.reconcile_semantic_jobs",
+            "schedule": 600.0,
+        },
+    }
