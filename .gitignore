@@ -4,6 +4,8 @@
 !.env.example
 
 # Python
+env_lumispixel/
+env_lumispixel_old/
 venv/
 .venv/
 __pycache__/
