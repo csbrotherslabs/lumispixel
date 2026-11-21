@@ -19,7 +19,7 @@
 /* Narrow Story tiles cannot fit four 44px controls in one row. Keep the
    wrapped controls on the right so the photo's top-left remains tappable. */
 @media(max-width:600px){
-  [data-client-photo] .story-photo__actions.lp-photo-actions{inset:4px 4px auto auto;display:grid;grid-template-columns:repeat(2,44px);width:92px;max-width:none;transform:none}
+  [data-client-photo] .story-photo__actions.lp-photo-actions{position:absolute;z-index:10;top:4px;right:4px;bottom:auto;left:auto;display:grid;grid-template-columns:repeat(2,44px);width:92px;max-width:none;transform:none;pointer-events:auto}
   [data-client-photo]:hover .story-photo__actions.lp-photo-actions,
   [data-client-photo]:focus-within .story-photo__actions.lp-photo-actions{transform:none}
 }
