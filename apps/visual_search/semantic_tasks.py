@@ -116,3 +116,16 @@ def purge_semantic_photo(self, photo_id):
         return "purged"
     except Exception as exc:
         raise self.retry(exc=exc, countdown=min(60 * 2 ** self.request.retries, 3600))
+
+@shared_task
+def reconcile_semantic_jobs():
+    """Periodic repair for jobs whose Celery message was lost.
+
+    The management command only requeues aged pending/failed jobs. It never
+    retries in-flight processing jobs or bypasses gallery authorization.
+    """
+    from django.core.management import call_command
+    if not semantic_enabled() or not getattr(settings, "VISUAL_SEARCH_SEMANTIC_POLICY_APPROVED", False):
+        return "disabled"
+    call_command("reconcile_semantic_index", limit=100, min_age_minutes=10)
+    return "dispatched"
