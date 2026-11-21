@@ -7,7 +7,7 @@
 .lp-photo-actions .lp-photo-control::before,.lp-photo-actions .lp-photo-control::after{content:none}
 .lp-photo-actions .lp-photo-control__circle{display:grid;place-items:center;width:28px;height:28px;border:1px solid #ffffff66;border-radius:50%;background:#18181880;transition:background-color .18s ease}
 .lp-photo-actions .lp-photo-control:hover .lp-photo-control__circle{background:#181818c0}
-.lp-photo-actions .lp-photo-action__icon{display:block;box-sizing:border-box;width:16px;height:16px;margin:0;padding:0;border:0;border-radius:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lp-photo-actions .lp-photo-action__icon{display:block;box-sizing:border-box;width:18px;height:18px;margin:0;padding:0;border:0;border-radius:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .lp-photo-actions .lp-photo-action__icon.is-filled{fill:currentColor;color:#ff7387}
 .lp-photo-actions .lp-photo-control__label{display:block;position:static;width:auto;height:auto;margin:0;padding:0;overflow:visible;clip:auto;white-space:nowrap;color:#fff;font:inherit}
 .lp-photo-actions .lp-photo-control__count,.lp-photo-actions .lp-photo-control__count.is-empty{display:block;position:static;min-width:0;width:auto;height:12px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#fff;font-size:11px;font-weight:700;line-height:12px;box-shadow:none}
@@ -15,3 +15,6 @@
 @media(hover:none),(max-width:900px){[data-client-photo] .lp-photo-actions{opacity:1}}
 @media(max-width:600px){.lp-photo-actions .lp-photo-control{width:44px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){[data-client-photo] .lp-photo-actions,.lp-photo-actions .lp-photo-control__circle{transition:none}}
+
+/* Keep the Story photo's upper area tappable on narrow screens. */
+@media(max-width:600px){[data-client-photo] .story-photo__actions.lp-photo-actions{top:auto;bottom:6px;transform:translateX(-50%)}[data-client-photo]:hover .story-photo__actions.lp-photo-actions,[data-client-photo]:focus-within .story-photo__actions.lp-photo-actions{transform:translateX(-50%)}}
