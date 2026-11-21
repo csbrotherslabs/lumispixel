@@ -54,7 +54,7 @@
               <div><dt>Invited</dt><dd>{{ invitation.invited_at|date:"M j, Y" }}</dd></div>
               <div><dt>Access</dt><dd>{% if invitation.gallery.expires_at %}Until {{ invitation.gallery.expires_at|date:"M j, Y" }}{% else %}No expiration{% endif %}</dd></div>
             </dl>
-            <a class="client-hub__gallery-open" href="{{ invitation.account_access_url }}" aria-label="Open gallery: {{ invitation.gallery.name }}">Open gallery <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+            <a class="client-hub__gallery-open" href="{{ invitation.account_access_url }}" target="_blank" rel="noopener noreferrer" aria-label="Open gallery: {{ invitation.gallery.name }} (opens in a new tab)">Open gallery <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
           </div>
         </article>
         {% endfor %}
