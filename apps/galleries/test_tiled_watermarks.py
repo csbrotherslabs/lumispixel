@@ -119,8 +119,42 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
         self.addCleanup(self.browser.close)
         self.page = self.browser.new_page()
         self.page.set_default_timeout(7000)
+        self.asset_events = []
+        self.page.on('requestfailed', lambda request: self.asset_events.append(
+            f'FAILED REQUEST {request.url}: {request.failure}'))
+        self.page.on('response', lambda response: self.asset_events.append(
+            f'HTTP {response.status} {response.url}')
+            if '/static/' in response.url and response.status >= 400 else None)
+        self.page.on('pageerror', lambda error: self.asset_events.append(
+            f'PAGE ERROR {error}'))
+        self.page.on('console', lambda message: self.asset_events.append(
+            f'CONSOLE ERROR {message.text}') if message.type == 'error' else None)
         self.html = ''
         self.page.route('https://gallery.example.test/**', self.serve)
+
+        self.addCleanup(self.report_asset_diagnostics)
+
+    def report_asset_diagnostics(self):
+        if self.asset_events:
+            print('\\nPLAYWRIGHT ASSET DIAGNOSTICS:')
+            for event in self.asset_events[:60]:
+                print('  ' + event)
+        else:
+            print('\\nPLAYWRIGHT ASSET DIAGNOSTICS: no failed requests or browser errors')
+        if self.page and not self.page.is_closed():
+            try:
+                state = self.page.evaluate("""() => ({
+                    stylesheets: [...document.querySelectorAll('link[rel="stylesheet"]')].map(
+                        el => ({url: el.href, loaded: !!el.sheet})),
+                    scripts: [...document.querySelectorAll('script[src]')].map(el => el.src),
+                    watermarkPointerEvents: getComputedStyle(
+                        document.querySelector('[data-gallery-watermark]') || document.body
+                    ).pointerEvents
+                })""")
+                print('  Browser state:', state)
+            except Exception as exc:
+                print('  Browser state unavailable:', exc)
+
 
     def serve(self, route):
         path = urlparse(route.request.url).path
