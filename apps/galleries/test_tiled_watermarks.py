@@ -164,7 +164,7 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
             relative = path.removeprefix('/static/')
             file = settings.BASE_DIR / 'static' / relative
             if not file.is_file():
-                unhashed = re.sub(r'\\.[0-9a-f]{12}(?=\\.[^.]+$)', '', relative)
+                unhashed = re.sub(r'\.[0-9a-f]{12}(?=\.[^.]+$)', '', relative)
                 file = settings.BASE_DIR / 'static' / unhashed
             if file.is_file():
                 mime = {'.css': 'text/css', '.svg': 'image/svg+xml',
