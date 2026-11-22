@@ -187,12 +187,30 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                         page.locator('[data-open-gallery][data-filter="all"]').first.click()
 
                     photo_card = page.locator(f"#photo-{photo_id}")
+                    if design == Gallery.DesignTemplate.CINEMATIC and not photo_card.is_visible():
+                        self.fail(
+                            f"{design} photo hidden after opening browser: "
+                            f"photo_count={photo_card.count()}; "
+                            f"photo_state={photo_card.evaluate('node => ({outerHTML: node.outerHTML.slice(0, 600), hidden: node.hidden, rect: node.getBoundingClientRect().toJSON(), display: getComputedStyle(node).display, visibility: getComputedStyle(node).visibility})') if photo_card.count() else 'missing'}; "
+                            f"browser_state={page.locator('.cp-browser').evaluate_all('nodes => nodes.map(node => ({hidden: node.hidden, className: node.className, display: getComputedStyle(node).display, rect: node.getBoundingClientRect().toJSON()}))')}; "
+                            f"{self._diagnostic_summary(page, design, console_messages, page_errors, requests, responses)}"
+                        )
                     self.assertTrue(photo_card.is_visible())
 
                     self._assert_lightbox_contract(page, design)
                     url_before_full_view = page.url
                     full_view = photo_card.locator("[data-full-view]")
                     full_view.scroll_into_view_if_needed()
+                    if design == Gallery.DesignTemplate.KIMONO_MASONRY:
+                        self.assertTrue(
+                            full_view.evaluate("""button => {
+                                const r = button.getBoundingClientRect();
+                                const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                                return hit === button || button.contains(hit);
+                            }"""),
+                            f"{design} full-view control overlapped: "
+                            f"{full_view.evaluate('button => { const r = button.getBoundingClientRect(); const x = r.left + r.width/2, y = r.top + r.height/2; return {button: r.toJSON(), stack: document.elementsFromPoint(x,y).slice(0,8).map(n => ({tag: n.tagName, className: String(n.className?.baseVal || n.className), rect: n.getBoundingClientRect().toJSON(), pointerEvents: getComputedStyle(n).pointerEvents}))}; }')}",
+                        )
                     full_view.click()
                     page.wait_for_timeout(150)
                     full_view_diag = self._diagnostic_summary(
