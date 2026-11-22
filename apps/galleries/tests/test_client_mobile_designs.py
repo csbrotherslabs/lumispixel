@@ -201,7 +201,7 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                     url_before_full_view = page.url
                     full_view = photo_card.locator("[data-full-view]")
                     full_view.scroll_into_view_if_needed()
-                    if design == Gallery.DesignTemplate.KIMONO_MASONRY:
+                    if design in (Gallery.DesignTemplate.KIMONO_MASONRY, Gallery.DesignTemplate.KIMONO_STORY):
                         self.assertTrue(
                             full_view.evaluate("""button => {
                                 const r = button.getBoundingClientRect();
