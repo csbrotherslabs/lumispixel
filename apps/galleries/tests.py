@@ -426,7 +426,8 @@ class ClientFavoritePermissionTests(TestCase):
         )
 
         page = self.client.get(self.gallery_url)
-        self.assertContains(page, "Remove Favorite")
+        self.assertContains(page, 'aria-label="Remove favorite"')
+        self.assertContains(page, 'aria-pressed="true"')
 
         second = self.client.post(self.favorite_url)
         self.assertEqual(second.status_code, 200)
@@ -444,7 +445,8 @@ class ClientFavoritePermissionTests(TestCase):
 
         page = self.client.get(self.gallery_url)
         self.assertContains(page, "Favorite")
-        self.assertNotContains(page, "Remove Favorite")
+        self.assertContains(page, 'aria-label="Favorite photo"')
+        self.assertContains(page, 'aria-pressed="false"')
 
     def test_duplicate_favorite_posts_do_not_inflate_gallery_count(self):
         self.client.post(self.favorite_url)

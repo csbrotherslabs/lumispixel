@@ -16,10 +16,26 @@
 @media(max-width:600px){.lp-photo-actions .lp-photo-control{width:44px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){[data-client-photo] .lp-photo-actions,.lp-photo-actions .lp-photo-control__circle{transition:none}}
 
-/* Narrow Story tiles cannot fit four 44px controls in one row. Keep the
-   wrapped controls on the right so the photo's top-left remains tappable. */
+/* Story mobile tiles are only ~128px tall at 390px viewport width.
+   Use a compact, top-anchored two-column grid rather than the shared
+   centered/wrapping overlay, which can extend outside the clipped tile. */
 @media(max-width:600px){
-  [data-client-photo] .story-photo__actions.lp-photo-actions{inset:4px 4px auto auto;display:grid;grid-template-columns:repeat(2,44px);width:92px;max-width:none;transform:none}
+  [data-client-photo] .story-photo__actions.lp-photo-actions{
+    position:absolute;z-index:10;inset:4px 4px auto auto;
+    display:grid;grid-template-columns:repeat(2,44px);
+    grid-auto-rows:52px;align-content:start;justify-content:end;
+    gap:4px;width:92px;max-width:none;height:auto;min-height:0;
+    margin:0;padding:0;transform:none;pointer-events:auto;
+  }
+  [data-client-photo] .story-photo__actions.lp-photo-actions form{
+    width:44px;height:52px;
+  }
+  [data-client-photo] .story-photo__actions.lp-photo-actions .lp-photo-control{
+    width:44px;height:52px;min-height:0;
+    grid-template-rows:24px 10px 10px;gap:2px;
+  }
   [data-client-photo]:hover .story-photo__actions.lp-photo-actions,
-  [data-client-photo]:focus-within .story-photo__actions.lp-photo-actions{transform:none}
+  [data-client-photo]:focus-within .story-photo__actions.lp-photo-actions{
+    transform:none;
+  }
 }

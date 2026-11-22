@@ -216,6 +216,43 @@ class ClientGalleryMobileBrowserTests(StaticLiveServerTestCase):
                     request_count_before = len(requests)
                     response_count_before = len(responses)
                     favorite.scroll_into_view_if_needed()
+                    if design == Gallery.DesignTemplate.KIMONO_STORY:
+                        hit_test = favorite.evaluate("""button => {
+                            const rect = button.getBoundingClientRect();
+                            const center = {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
+                            const hit = document.elementFromPoint(center.x, center.y);
+                            const describe = element => {
+                                if (!element) return null;
+                                const style = getComputedStyle(element);
+                                const box = element.getBoundingClientRect();
+                                return {
+                                    tag: element.tagName, className: String(element.className),
+                                    id: element.id, pointerEvents: style.pointerEvents,
+                                    position: style.position, zIndex: style.zIndex,
+                                    overflow: style.overflow, opacity: style.opacity,
+                                    rect: {x: box.x, y: box.y, width: box.width, height: box.height}
+                                };
+                            };
+                            return {
+                                viewport: {width: innerWidth, height: innerHeight, scrollY},
+                                center, button: describe(button), hit: describe(hit),
+                                hitStack: document.elementsFromPoint(center.x, center.y).slice(0, 8).map(describe),
+                                ancestors: (() => {
+                                    const result = [];
+                                    for (let node = button; node && result.length < 8; node = node.parentElement)
+                                        result.push(describe(node));
+                                    return result;
+                                })()
+                            };
+                        }""")
+                        self.assertTrue(
+                            favorite.evaluate(
+                                "button => { const r = button.getBoundingClientRect(); "
+                                "const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2); "
+                                "return hit === button || button.contains(hit); }"
+                            ),
+                            f"{design} favorite center is not hit-testable: {hit_test}",
+                        )
                     favorite.click()
                     try:
                         page.wait_for_function(
