@@ -16,24 +16,72 @@
 @media(max-width:600px){.lp-photo-actions .lp-photo-control{width:44px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){[data-client-photo] .lp-photo-actions,.lp-photo-actions .lp-photo-control__circle{transition:none}}
 
-/* Story mobile tiles are only ~128px tall at 390px viewport width.
-   Use a compact, top-anchored two-column grid rather than the shared
-   centered/wrapping overlay, which can extend outside the clipped tile. */
-@media(max-width:600px){
-  [data-client-photo] .story-photo__actions.lp-photo-actions{
-    position:absolute;z-index:10;inset:4px 4px auto auto;
-    display:grid;grid-template-columns:repeat(3,44px);
-    grid-auto-rows:52px;align-content:start;justify-content:end;
-    gap:4px;width:140px;max-width:none;height:auto;min-height:0;
-    margin:0;padding:0;transform:none;pointer-events:auto;
+/* Story cards are narrow on mobile. Keep every action inside the card's
+   clipping box, and override the Story theme's circular-button layout. */
+@media (max-width:600px){
+  [data-client-photo].story-photo{
+    position:relative;
+    overflow:hidden;
   }
-  [data-client-photo] .story-photo__actions.lp-photo-actions form{
-    width:44px;height:52px;
+  [data-client-photo] .story-photo__actions.lp-photo-actions{
+    position:absolute;
+    z-index:10;
+    inset:4px 4px auto auto;
+    display:flex;
+    flex-flow:row wrap;
+    align-content:flex-start;
+    align-items:flex-start;
+    justify-content:flex-start;
+    gap:4px;
+    box-sizing:border-box;
+    width:140px;
+    max-width:calc(100% - 8px);
+    height:auto;
+    min-height:0;
+    margin:0;
+    padding:0;
+    transform:none;
+    opacity:1;
+    pointer-events:auto;
+  }
+  [data-client-photo] .story-photo__actions.lp-photo-actions > form,
+  [data-client-photo] .story-photo__actions.lp-photo-actions > .lp-photo-control{
+    display:flex;
+    flex:0 0 44px;
+    width:44px;
+    max-width:44px;
+    min-width:0;
+    height:52px;
+    min-height:0;
+    margin:0;
+    padding:0;
+  }
+  [data-client-photo] .story-photo__actions.lp-photo-actions > form{
+    align-items:stretch;
   }
   [data-client-photo] .story-photo__actions.lp-photo-actions .lp-photo-control{
-    width:44px;height:52px;min-height:0;
-    grid-template-rows:24px 10px 10px;gap:2px;
+    display:grid;
+    flex:0 0 44px;
+    place-items:center;
+    grid-template-rows:24px 10px 10px;
+    gap:2px;
+    box-sizing:border-box;
+    width:44px;
+    max-width:44px;
+    min-width:0;
+    height:52px;
+    min-height:0;
+    margin:0;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    color:#fff;
+    transform:none;
+    pointer-events:auto;
   }
+  [data-client-photo] .story-photo__actions.lp-photo-actions .lp-photo-control:hover,
+  [data-client-photo] .story-photo__actions.lp-photo-actions .lp-photo-control:focus-visible,
   [data-client-photo]:hover .story-photo__actions.lp-photo-actions,
   [data-client-photo]:focus-within .story-photo__actions.lp-photo-actions{
     transform:none;
