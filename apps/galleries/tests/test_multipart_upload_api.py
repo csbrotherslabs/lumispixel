@@ -171,7 +171,7 @@ class MultipartUploadApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["url"], "https://b2.example/presigned")
 
-    @patch("apps.dashboard.views.get_multipart_object_bytes")
+    @patch("apps.dashboard.views.get_multipart_object_stream")
     @patch("apps.dashboard.views.complete_multipart")
     def test_complete_creates_gallery_photo_only_after_b2_completion(self, complete, get_object):
         session = GalleryMultipartUpload.objects.create(
@@ -183,7 +183,7 @@ class MultipartUploadApiTests(TestCase):
         image_bytes = self._image_bytes()
         session.file_size = len(image_bytes)
         session.save(update_fields=["file_size"])
-        get_object.return_value = image_bytes
+        get_object.return_value = io.BytesIO(image_bytes)
         response = self.client.post(
             reverse("photographer_workspace:gallery_multipart_complete", args=[session.pk]),
             data=json.dumps({"parts": [{"part_number": 1, "etag": '"etag-1"'}]}),
@@ -198,7 +198,7 @@ class MultipartUploadApiTests(TestCase):
 
 
     @patch("apps.dashboard.views.delete_multipart_object")
-    @patch("apps.dashboard.views.get_multipart_object_bytes", return_value=b"not-an-image")
+    @patch("apps.dashboard.views.get_multipart_object_stream", side_effect=lambda **kwargs: io.BytesIO(b"not-an-image"))
     @patch("apps.dashboard.views.complete_multipart")
     def test_complete_rejects_non_image_bytes_and_deletes_object(self, complete, get_object, delete_object):
         session = GalleryMultipartUpload.objects.create(
@@ -219,11 +219,11 @@ class MultipartUploadApiTests(TestCase):
         delete_object.assert_called_once_with(key=session.object_key)
 
     @patch("apps.dashboard.views.delete_multipart_object")
-    @patch("apps.dashboard.views.get_multipart_object_bytes")
+    @patch("apps.dashboard.views.get_multipart_object_stream")
     @patch("apps.dashboard.views.complete_multipart")
     def test_complete_rejects_mime_format_mismatch(self, complete, get_object, delete_object):
         png_bytes = self._image_bytes("PNG")
-        get_object.return_value = png_bytes
+        get_object.return_value = io.BytesIO(png_bytes)
         session = GalleryMultipartUpload.objects.create(
             gallery=self.gallery, photographer=self.profile,
             object_key=f"private/dev/galleries/{self.profile.pk}/{self.gallery.pk}/originals/id.jpg",
