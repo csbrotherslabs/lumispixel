@@ -29,7 +29,7 @@ function constantTimeEqual(left, right) {
   return mismatch === 0;
 }
 
-async function expectedSignature(secret, pathname, expires) {
+async function expectedSignature(secret, pathname, expires, variant) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -40,7 +40,7 @@ async function expectedSignature(secret, pathname, expires) {
   const signed = await crypto.subtle.sign(
     "HMAC",
     key,
-    new TextEncoder().encode(`${pathname}\n${expires}`),
+    new TextEncoder().encode(`${pathname}\n${expires}\n${variant}`),
   );
   return base64Url(new Uint8Array(signed));
 }
@@ -69,10 +69,15 @@ async function authorize(requestUrl, env) {
     return { ok: false, response: textResponse("Forbidden", 403) };
   }
 
+  const variant = requestUrl.searchParams.get("variant") || "original";
+  if (!["thumbnail", "preview", "original"].includes(variant)) {
+    return { ok: false, response: textResponse("Invalid media variant", 400) };
+  }
   const expected = await expectedSignature(
     env.MEDIA_SIGNING_SECRET,
     requestUrl.pathname,
     expiresRaw,
+    variant,
   );
 
   if (!constantTimeEqual(expected, signature)) {
@@ -121,8 +126,7 @@ export default {
       return textResponse("Not found", 404);
     }
 
-    // The variant is not part of the HMAC contract, so it must be strictly
-    // allowlisted before it influences transformations or cache keys.
+    // The requested variant is bound to the HMAC; changing it invalidates the URL.
     const variant = requestUrl.searchParams.get("variant") || "original";
     const imageOptions = {
       thumbnail: { width: 640, fit: "scale-down", quality: 82, format: "webp" },
@@ -160,12 +164,26 @@ export default {
       }
     }
 
-    const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\/+$/, "");
+    // Display media is served exclusively from pre-generated B2 objects.
+    // Never transform large originals during a request or silently serve originals.
+    let fetchKey = objectKey;
+    if (variant !== "original") {
+      const parts = objectKey.split("/");
+      const index = parts.lastIndexOf("originals");
+      if (index < 0 || index !== parts.length - 2) {
+        return textResponse("Invalid original media path", 400);
+      }
+      const basename = parts[parts.length - 1];
+      const dot = basename.lastIndexOf(".");
+      if (dot <= 0) return textResponse("Invalid original media filename", 400);
+      const stem = basename.slice(0, dot);
+      parts[index] = "variants";
+      fetchKey = [...parts.slice(0, -1), variant, stem + ".webp"].join("/");
+    }
+
+    const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\\/+$/, "");
     const bucket = encodeURIComponent(env.B2_BUCKET_NAME);
-    const encodedKey = objectKey
-      .split("/")
-      .map((segment) => encodeURIComponent(segment))
-      .join("/");
+    const encodedKey = fetchKey.split("/").map(encodeURIComponent).join("/");
     const originUrl = `${endpoint}/${bucket}/${encodedKey}`;
 
     const aws = new AwsClient({
@@ -184,41 +202,28 @@ export default {
 
     let originResponse;
     try {
-      // Transform only display variants. Never transform an original download.
-      // Cloudflare Image Resizing must be enabled on this zone/account.
-      originResponse = await fetch(
-        originRequest,
-        imageOptions[variant] && request.method === "GET"
-          ? { cf: { image: imageOptions[variant] } }
-          : undefined,
-      );
+      originResponse = await fetch(originRequest);
     } catch (error) {
-      console.error("B2 media origin request failed", {
-        key: objectKey,
-        error: String(error),
-      });
+      console.error("B2 transport failure", { key: fetchKey, error: String(error) });
       return textResponse("Media origin unavailable", 502);
     }
 
     if (originResponse.status === 404) {
-      return textResponse("Not found", 404);
+      console.warn("B2 object missing", { key: fetchKey, variant });
+      return textResponse("Media variant not ready", 404);
     }
-
     if (!originResponse.ok && originResponse.status !== 206) {
-      console.error("B2 media origin error", {
-        status: originResponse.status,
-        key: objectKey,
+      console.error("B2 origin rejected request", {
+        status: originResponse.status, key: fetchKey,
+        requestId: originResponse.headers.get("x-amz-request-id"),
       });
       return textResponse("Media origin error", 502);
     }
-
-    // Fail closed if image resizing is unavailable or ignored: otherwise a
-    // 20+ MB original would silently be served as a gallery thumbnail.
-    if (imageOptions[variant] && request.method === "GET") {
-      const contentType = originResponse.headers.get("content-type") || "";
-      if (!contentType.toLowerCase().startsWith("image/webp")) {
-        console.error("Media transformation unavailable", { variant, contentType });
-        return textResponse("Media preview transformation unavailable", 502);
+    if (variant !== "original" && request.method === "GET") {
+      const contentType = (originResponse.headers.get("content-type") || "").toLowerCase();
+      if (!contentType.startsWith("image/webp")) {
+        console.error("Invalid derivative content type", { key: fetchKey, contentType });
+        return textResponse("Invalid media variant", 502);
       }
     }
 

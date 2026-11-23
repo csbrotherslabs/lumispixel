@@ -18,12 +18,12 @@ def _media_path(file_name):
     return "/" + "/".join(quote(part, safe="") for part in relative.split("/"))
 
 
-def sign_media_path(path, expires):
+def sign_media_path(path, expires, variant="original"):
     secret = settings.MEDIA_SIGNING_SECRET
     if not secret:
         raise ImproperlyConfigured("MEDIA_SIGNING_SECRET is required for signed media delivery.")
 
-    payload = f"{path}\n{expires}".encode("utf-8")
+    payload = f"{path}\n{expires}\n{variant}".encode("utf-8")
     digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
@@ -42,6 +42,6 @@ def signed_media_url(file_name, *, ttl=None, now=None, variant="original"):
     now = int(time.time()) if now is None else int(now)
     expires = now + ttl
     path = _media_path(file_name)
-    signature = sign_media_path(path, expires)
+    signature = sign_media_path(path, expires, variant)
     query = urlencode({"expires": expires, "signature": signature, "variant": variant})
     return f"{base_url}{path}?{query}"
