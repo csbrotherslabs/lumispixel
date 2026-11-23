@@ -3,6 +3,7 @@
   "name": "lumispixel-media-dev",
   "main": "src/index.js",
   "compatibility_date": "2026-09-19",
+  "images": { "binding": "IMAGES" },
   "vars": {
     "B2_BUCKET_NAME": "lumispixel-production-media",
     "B2_REGION": "us-east-005",
