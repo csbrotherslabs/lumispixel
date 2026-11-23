@@ -54,3 +54,30 @@ def cleanup_stale_gallery_multipart_uploads():
 @shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def cleanup_gallery_storage_objects():
     return process_storage_deletions()
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True,
+             retry_backoff_max=600, retry_jitter=True, max_retries=5)
+def generate_gallery_photo_derivatives(self, photo_id):
+    """Idempotent background generation for an uploaded gallery photograph."""
+    from .models import GalleryPhoto
+    from .derivatives import generate_photo_derivatives
+    photo = GalleryPhoto.objects.filter(pk=photo_id, status=GalleryPhoto.Status.COMPLETED).first()
+    if photo is None:
+        return {"skipped": True}
+    return {"generated": generate_photo_derivatives(photo)}
+
+
+@shared_task
+def backfill_gallery_photo_derivatives(*, batch_size=100):
+    """Manually enqueue batches of completed photographs, including old galleries.
+
+    This intentionally does not run automatically: schedule repeated batches
+    only after monitoring memory, CPU, queue throughput and B2 storage.
+    """
+    from .models import GalleryPhoto
+    ids = list(GalleryPhoto.objects.filter(status=GalleryPhoto.Status.COMPLETED)
+               .order_by("pk").values_list("pk", flat=True)[:batch_size])
+    for photo_id in ids:
+        generate_gallery_photo_derivatives.delay(photo_id)
+    return {"queued": len(ids)}
