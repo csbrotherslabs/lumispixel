@@ -23,7 +23,7 @@ def sign_media_path(path, expires, variant="original"):
     if not secret:
         raise ImproperlyConfigured("MEDIA_SIGNING_SECRET is required for signed media delivery.")
 
-    payload = f"{path}\n{expires}".encode("utf-8")
+    payload = f"{path}\n{expires}\n{variant}".encode("utf-8")
     digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).digest()
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
