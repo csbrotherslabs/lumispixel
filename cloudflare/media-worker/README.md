@@ -84,3 +84,36 @@ deploys with `wrangler deploy --env production`.
 A B2 network exception is converted to a 502 response and is never cached.
 Only complete HTTP 200 GET responses enter the edge cache. Authorization still
 runs before every cache lookup.
+
+## Gallery image variants (v2)
+
+Authenticated requests accept `variant=thumbnail`, `variant=preview`, or
+`variant=original` (default). The Worker requests Cloudflare Image Resizing
+for thumbnail (maximum width 640 px, WebP quality 82) and preview (maximum
+width 2560 px, WebP quality 85); original bytes are never transformed.
+`scale-down` avoids upscaling small source images.
+
+**Deployment prerequisite:** Cloudflare Image Resizing must be enabled and
+supported for the Worker account/zone, including authenticated B2 origin fetches.
+The Worker returns HTTP 502 if a transformed response is not WebP instead of
+silently returning a multi-megabyte original. Verify with a real signed image
+before switching client traffic. Check Cloudflare transformation billing/limits.
+
+The internal edge cache uses a versioned pathname + variant key (`delivery=v2`)
+so cached originals from the previous path-only implementation cannot be
+reused as thumbnails. Signatures and expiry are still validated before cache
+lookup; they are not part of the cache key. Range requests are permitted only
+for original images. Gallery grids use thumbnails; full-screen viewers use
+previews. Photographer originals remain in B2 without new stored variants.
+
+### Manual verification before deployment
+
+1. Confirm the Image Resizing entitlement and Worker origin compatibility.
+2. In dev, load a gallery with DevTools Network open and disable browser cache.
+3. Confirm thumbnail and preview requests return `image/webp`, with thumbnail
+   bytes significantly smaller than the original, and full-screen preview crisp.
+4. Confirm `original` still returns the original file bytes, and different
+   variants never share the same cached response.
+5. Confirm invalid/expired signatures return 403 even after a cache hit.
+6. Compare image transfer sizes and page load on desktop/mobile across all
+   four designs. Do not deploy to production before this passes.

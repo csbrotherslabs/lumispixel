@@ -42,7 +42,7 @@
       {% for photo in photos %}
         <article class="lp-client-photo" id="photo-{{ photo.pk }}">
           <a class="lp-client-photo__image{% if permissions.watermark != 'none' %} has-watermark{% endif %}" href="{{ photo.delivery_url }}">
-            <img loading="lazy" src="{{ photo.delivery_url }}" alt="{{ photo.original_name }}">
+            <img loading="lazy" decoding="async" src="{{ photo.thumbnail_url }}" alt="{{ photo.original_name }}">
             {% include "galleries/components/tiled_watermark.html" %}
           </a>
           <div class="lp-client-photo__actions" aria-label="Photo actions">

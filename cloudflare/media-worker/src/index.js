@@ -121,10 +121,28 @@ export default {
       return textResponse("Not found", 404);
     }
 
+    // The variant is not part of the HMAC contract, so it must be strictly
+    // allowlisted before it influences transformations or cache keys.
+    const variant = requestUrl.searchParams.get("variant") || "original";
+    const imageOptions = {
+      thumbnail: { width: 640, fit: "scale-down", quality: 82, format: "webp" },
+      preview: { width: 2560, fit: "scale-down", quality: 85, format: "webp" },
+    };
+    if (!["thumbnail", "preview", "original"].includes(variant)) {
+      return textResponse("Invalid media variant", 400);
+    }
+
     const cache = caches.default;
+    // Versioned key prevents existing path-only original caches from being
+    // mistaken for resized previews after deployment.
     const cacheUrl = new URL(requestUrl.origin + requestUrl.pathname);
+    cacheUrl.searchParams.set("delivery", "v2");
+    cacheUrl.searchParams.set("variant", variant);
     const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
     const isRangeRequest = request.headers.has("range");
+    if (isRangeRequest && variant !== "original") {
+      return textResponse("Range requests require original variant", 400);
+    }
 
     // Authorization always runs before cache access. Query-string credentials are
     // deliberately excluded from the cache key so authorized viewers share one
@@ -159,14 +177,21 @@ export default {
 
     const originRequest = await aws.sign(originUrl, {
       method: request.method,
-      headers: request.headers.has("range")
+      headers: isRangeRequest
         ? { range: request.headers.get("range") }
         : {},
     });
 
     let originResponse;
     try {
-      originResponse = await fetch(originRequest);
+      // Transform only display variants. Never transform an original download.
+      // Cloudflare Image Resizing must be enabled on this zone/account.
+      originResponse = await fetch(
+        originRequest,
+        imageOptions[variant] && request.method === "GET"
+          ? { cf: { image: imageOptions[variant] } }
+          : undefined,
+      );
     } catch (error) {
       console.error("B2 media origin request failed", {
         key: objectKey,
@@ -185,6 +210,16 @@ export default {
         key: objectKey,
       });
       return textResponse("Media origin error", 502);
+    }
+
+    // Fail closed if image resizing is unavailable or ignored: otherwise a
+    // 20+ MB original would silently be served as a gallery thumbnail.
+    if (imageOptions[variant] && request.method === "GET") {
+      const contentType = originResponse.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().startsWith("image/webp")) {
+        console.error("Media transformation unavailable", { variant, contentType });
+        return textResponse("Media preview transformation unavailable", 502);
+      }
     }
 
     const headers = new Headers(originResponse.headers);
