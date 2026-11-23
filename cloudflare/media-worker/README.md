@@ -85,35 +85,33 @@ A B2 network exception is converted to a 502 response and is never cached.
 Only complete HTTP 200 GET responses enter the edge cache. Authorization still
 runs before every cache lookup.
 
-## Gallery image variants (v2)
+## Gallery image variants (v2): private B2 + Images binding
 
-Authenticated requests accept `variant=thumbnail`, `variant=preview`, or
-`variant=original` (default). The Worker requests Cloudflare Image Resizing
-for thumbnail (maximum width 640 px, WebP quality 82) and preview (maximum
-width 2560 px, WebP quality 85); original bytes are never transformed.
-`scale-down` avoids upscaling small source images.
+The Worker first retrieves the original from private B2 with AWS Signature V4,
+then passes the authenticated response body to Cloudflare's `IMAGES` binding.
+Do not use `cf.image` on the signed B2 fetch: the resizing subrequest may fail
+with HTTP 401. The binding is configured as `images.binding=IMAGES` in
+`wrangler.jsonc` and must be available on the Cloudflare account.
 
-**Deployment prerequisite:** Cloudflare Image Resizing must be enabled and
-supported for the Worker account/zone, including authenticated B2 origin fetches.
-The Worker returns HTTP 502 if a transformed response is not WebP instead of
-silently returning a multi-megabyte original. Verify with a real signed image
-before switching client traffic. Check Cloudflare transformation billing/limits.
+Supported variants: thumbnail (640px maximum width, WebP quality 82), preview
+(2560px maximum width, WebP quality 85), and original (untouched bytes).
+Authorized cache keys include the variant and version, preventing original/
+thumbnail cache collisions. Every request is authorized before cache lookup.
 
-The internal edge cache uses a versioned pathname + variant key (`delivery=v2`)
-so cached originals from the previous path-only implementation cannot be
-reused as thumbnails. Signatures and expiry are still validated before cache
-lookup; they are not part of the cache key. Range requests are permitted only
-for original images. Gallery grids use thumbnails; full-screen viewers use
-previews. Photographer originals remain in B2 without new stored variants.
+**Important limitation:** Cloudflare's Images binding accepts source images
+up to 20 MB. For an image with `Content-Length > 20,000,000`, transformed
+requests return HTTP 413 with a clear error; an unknown-length oversized input
+may fail with 502. Original downloads still work. Since LumisPixel accepts
+images over 20 MB, this is a *partial fix*, not a complete gallery-performance
+solution. Before rollout, implement an oversized-image derivative pipeline
+(e.g. generate a small preview/thumbnail once using Celery/Pillow and store it
+in B2) or choose a resizing service that accepts the largest allowed uploads.
+Do not merge or deploy this as a complete fix until large images render.
 
-### Manual verification before deployment
+The Images binding may incur charges for unique transformations. Confirm
+account entitlement and pricing before enabling in dev.
 
-1. Confirm the Image Resizing entitlement and Worker origin compatibility.
-2. In dev, load a gallery with DevTools Network open and disable browser cache.
-3. Confirm thumbnail and preview requests return `image/webp`, with thumbnail
-   bytes significantly smaller than the original, and full-screen preview crisp.
-4. Confirm `original` still returns the original file bytes, and different
-   variants never share the same cached response.
-5. Confirm invalid/expired signatures return 403 even after a cache hit.
-6. Compare image transfer sizes and page load on desktop/mobile across all
-   four designs. Do not deploy to production before this passes.
+Manual verification: original still returns original bytes; thumbnail and
+preview return WebP for inputs <=20 MB; oversized images return 413 for
+variants; invalid/expired signed URLs return 403; variants have distinct
+cache keys; test all gallery designs on desktop and mobile. No CI run requested.
