@@ -186,12 +186,7 @@ export default {
     try {
       // Transform only display variants. Never transform an original download.
       // Cloudflare Image Resizing must be enabled on this zone/account.
-      originResponse = await fetch(
-        originRequest,
-        imageOptions[variant] && request.method === "GET"
-          ? { cf: { image: imageOptions[variant] } }
-          : undefined,
-      );
+      originResponse = await fetch(originRequest);
     } catch (error) {
       console.error("B2 media origin request failed", {
         key: objectKey,
@@ -212,13 +207,27 @@ export default {
       return textResponse("Media origin error", 502);
     }
 
-    // Fail closed if image resizing is unavailable or ignored: otherwise a
-    // 20+ MB original would silently be served as a gallery thumbnail.
+    // Image binding consumes bytes after the authenticated B2 fetch. Passing
+    // cf.image to the signed origin request can cause an upstream 401.
     if (imageOptions[variant] && request.method === "GET") {
-      const contentType = originResponse.headers.get("content-type") || "";
-      if (!contentType.toLowerCase().startsWith("image/webp")) {
-        console.error("Media transformation unavailable", { variant, contentType });
-        return textResponse("Media preview transformation unavailable", 502);
+      if (!env.IMAGES) {
+        return textResponse("Image transformations are not configured", 503);
+      }
+      // Cloudflare Images binding has a 20 MB input limit. Do not silently
+      // return the original multi-megabyte file for a thumbnail request.
+      const length = Number(originResponse.headers.get("content-length"));
+      if (Number.isFinite(length) && length > 20_000_000) {
+        console.error("Image exceeds transformation limit", { key: objectKey, length });
+        return textResponse("Image exceeds transformation limit", 413);
+      }
+      try {
+        const transformed = await env.IMAGES.input(originResponse.body)
+          .transform({ width: imageOptions[variant].width, fit: "scale-down" })
+          .output({ format: "image/webp", quality: imageOptions[variant].quality });
+        originResponse = transformed.response();
+      } catch (error) {
+        console.error("Image transformation failed", { key: objectKey, variant, error: String(error) });
+        return textResponse("Image transformation failed", 502);
       }
     }
 
