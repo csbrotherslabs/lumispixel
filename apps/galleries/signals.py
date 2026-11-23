@@ -10,6 +10,9 @@ from .models import GalleryPhoto
 def queue_gallery_derivatives(sender, instance, **kwargs):
     if instance.status != GalleryPhoto.Status.COMPLETED or not instance.file:
         return
+    update_fields = kwargs.get("update_fields")
+    if not kwargs.get("created") and update_fields is not None and "status" not in update_fields and "file" not in update_fields:
+        return
     from .tasks import generate_gallery_photo_derivatives
     photo_id = instance.pk
     transaction.on_commit(lambda: generate_gallery_photo_derivatives.delay(photo_id))
