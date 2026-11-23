@@ -21,7 +21,7 @@
    centered/wrapping overlay, which can extend outside the clipped tile. */
 @media(max-width:600px){
   [data-client-photo] .story-photo__actions.lp-photo-actions{
-    position:absolute;z-index:10;inset:4px 4px auto auto;
+    position:absolute;z-index:10;top:4px;right:4px;bottom:auto;left:auto;
     display:grid;grid-template-columns:repeat(2,44px);
     grid-auto-rows:52px;align-content:start;justify-content:end;
     gap:4px;width:92px;max-width:none;height:auto;min-height:0;
