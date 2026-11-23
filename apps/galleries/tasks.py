@@ -67,17 +67,3 @@ def generate_gallery_photo_derivatives(self, photo_id):
         return {"skipped": True}
     return {"generated": generate_photo_derivatives(photo)}
 
-
-@shared_task
-def backfill_gallery_photo_derivatives(*, batch_size=100):
-    """Manually enqueue batches of completed photographs, including old galleries.
-
-    This intentionally does not run automatically: schedule repeated batches
-    only after monitoring memory, CPU, queue throughput and B2 storage.
-    """
-    from .models import GalleryPhoto
-    ids = list(GalleryPhoto.objects.filter(status=GalleryPhoto.Status.COMPLETED)
-               .order_by("pk").values_list("pk", flat=True)[:batch_size])
-    for photo_id in ids:
-        generate_gallery_photo_derivatives.delay(photo_id)
-    return {"queued": len(ids)}
