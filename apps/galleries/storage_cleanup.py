@@ -24,6 +24,28 @@ def enqueue_storage_deletions(items):
             photographer_id=item.get("photographer_id"),
             gallery_id=item.get("gallery_id"),
         ))
+    # Derivatives share the original's lifecycle. Queue their deletion with
+    # the original; missing objects are harmless to the S3 delete operation.
+    extra = []
+    for row in rows:
+        if row.storage_backend != GalleryStorageDeletion.Backend.B2:
+            continue
+        if "/originals/" not in row.object_key:
+            continue
+        stem = row.object_key.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        prefix = row.object_key.rsplit("/originals/", 1)[0]
+        for variant in ("thumbnail", "preview"):
+            derivative_key = f"{prefix}/variants/{variant}/{stem}.webp"
+            key = (row.storage_backend, derivative_key)
+            if key not in seen:
+                seen.add(key)
+                extra.append(GalleryStorageDeletion(
+                    storage_backend=row.storage_backend,
+                    object_key=derivative_key,
+                    photographer_id=row.photographer_id,
+                    gallery_id=row.gallery_id,
+                ))
+    rows.extend(extra)
     if rows:
         GalleryStorageDeletion.objects.bulk_create(rows, ignore_conflicts=True)
     return rows
