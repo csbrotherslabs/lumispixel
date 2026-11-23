@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
+import { existsSync } from "node:fs";
 import worker from "../src/index.js";
 
 const repoRoot = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
@@ -27,7 +28,9 @@ const env = {
   MEDIA_EDGE_CACHE_TTL: "0",
 };
 test("Django signatures are accepted by the JavaScript Worker for each variant", async () => {
-  const python = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
+  const windowsVenv = resolve(repoRoot, "env_lumispixel", "Scripts", "python.exe");
+  const unixVenv = resolve(repoRoot, "env_lumispixel", "bin", "python");
+  const python = process.env.PYTHON || (existsSync(windowsVenv) ? windowsVenv : existsSync(unixVenv) ? unixVenv : (process.platform === "win32" ? "python" : "python3"));
   const result = spawnSync(python, ["-c", pythonCode], { cwd: repoRoot, encoding: "utf8" });
   assert.equal(result.status, 0, `Python signing failed: ${result.stderr}`);
   const urls = JSON.parse(result.stdout.trim());
