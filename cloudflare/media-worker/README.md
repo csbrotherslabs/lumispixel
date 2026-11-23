@@ -115,3 +115,36 @@ Manual verification: original still returns original bytes; thumbnail and
 preview return WebP for inputs <=20 MB; oversized images return 413 for
 variants; invalid/expired signed URLs return 403; variants have distinct
 cache keys; test all gallery designs on desktop and mobile. No CI run requested.
+
+
+## Pre-generated derivatives (Celery + Pillow)
+
+Gallery originals remain private and unchanged in B2. When a completed
+`GalleryPhoto` is saved, a post-save hook schedules
+`generate_gallery_photo_derivatives` on transaction commit. The task
+generates two deterministic private objects:
+- `galleries/<photographer>/<gallery>/variants/thumbnail/<stem>.webp`
+- `galleries/<photographer>/<gallery>/variants/preview/<stem>.webp`
+
+The Worker first fetches the variant object directly with authenticated B2
+requests. If the derivative is not present yet, it falls back to the existing
+Cloudflare Images binding for small originals. Large originals without a
+generated derivative still return 413 until the background job finishes.
+
+Backfill existing photos in bounded batches, after deploying Django and
+confirming Celery is running:
+
+```bash
+python manage.py backfill_gallery_derivatives --gallery-id 1 --limit 100
+```
+
+For additional batches, use the reported `--after-id` value. Monitor
+worker CPU/RAM, B2 requests and storage before raising concurrency.
+The upload-completion path must be verified to call `GalleryPhoto.save()`;
+bulk queryset updates bypass Django post-save signals. If uploads use bulk
+updates, explicitly enqueue the task in that completion path before rollout.
+
+Storage cleanup now schedules derivative deletion alongside originals.
+Do not deploy this as a complete production fix until end-to-end validation
+covers upload completion, backfill, large photos, deletion, privacy and all
+four gallery designs. No CI or production deployment was requested.
