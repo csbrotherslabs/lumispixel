@@ -160,9 +160,25 @@ export default {
       }
     }
 
+    // Prefer private, pre-generated derivatives. The original remains the
+    // authenticated URL's identity; derivative keys are derived server-side.
+    let fetchKey = objectKey;
+    let preGenerated = false;
+    if (imageOptions[variant]) {
+      const parts = objectKey.split("/");
+      const originalsIndex = parts.indexOf("originals");
+      if (originalsIndex >= 0) {
+        const basename = parts[parts.length - 1];
+        const stem = basename.replace(/\\.[^.]+$/, "");
+        parts[originalsIndex] = "variants";
+        fetchKey = [...parts.slice(0, -1), variant, stem + ".webp"].join("/");
+        preGenerated = true;
+      }
+    }
+
     const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\/+$/, "");
     const bucket = encodeURIComponent(env.B2_BUCKET_NAME);
-    const encodedKey = objectKey
+    const encodedKey = fetchKey
       .split("/")
       .map((segment) => encodeURIComponent(segment))
       .join("/");
@@ -195,6 +211,20 @@ export default {
       return textResponse("Media origin unavailable", 502);
     }
 
+    if (originResponse.status === 404 && preGenerated) {
+      // Background generation may not have finished yet. Fall back to the
+      // Images binding only for originals within its 20 MB source limit.
+      const originalEncodedKey = objectKey.split("/").map(encodeURIComponent).join("/");
+      const originalRequest = await aws.sign(`${endpoint}/${bucket}/${originalEncodedKey}`, { method: request.method });
+      try {
+        originResponse = await fetch(originalRequest);
+        preGenerated = false;
+      } catch (error) {
+        console.error("B2 fallback origin failed", { key: objectKey, error: String(error) });
+        return textResponse("Media origin unavailable", 502);
+      }
+    }
+
     if (originResponse.status === 404) {
       return textResponse("Not found", 404);
     }
@@ -209,7 +239,7 @@ export default {
 
     // Image binding consumes bytes after the authenticated B2 fetch. Passing
     // cf.image to the signed origin request can cause an upstream 401.
-    if (imageOptions[variant] && request.method === "GET") {
+    if (imageOptions[variant] && !preGenerated && request.method === "GET") {
       if (!env.IMAGES) {
         return textResponse("Image transformations are not configured", 503);
       }
