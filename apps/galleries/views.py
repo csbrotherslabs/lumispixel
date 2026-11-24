@@ -232,10 +232,13 @@ def stable_gallery_access(request, public_id, search_results=False):
         photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    owner = _is_gallery_owner(request, gallery)
+    if owner:
+        _prepare_owner_interactions(request, gallery, photos)
     view_counts = dict(GalleryAnalyticsEvent.objects.filter(gallery=gallery, related_photo_id__in=[p.pk for p in photos], event_type=GalleryAnalyticsEvent.EventType.PHOTO_VIEW).values("related_photo_id").annotate(total=Count("id")).values_list("related_photo_id", "total"))
     for photo in photos:
         photo.client_view_count = view_counts.get(photo.pk, 0)
-    return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
+    return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "is_gallery_owner": owner, "can_favorite": owner, "can_download": owner, "can_download_gallery": False, "can_download_originals": owner, "can_comment": owner, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(reverse("galleries:stable_gallery_access", args=[gallery.public_id])), "can_share_gallery": owner or permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
 def _private_gallery_login(request, gallery):
     from django.contrib.auth.views import redirect_to_login
@@ -331,6 +334,8 @@ def _record_client_access(request, token, invitation, gallery):
 @require_GET
 def client_gallery_access(request, token, search_results=False):
     token_record, invitation, gallery, permissions, settings = _client_gallery_access(token, request)
+    if _is_gallery_owner(request, gallery):
+        return redirect("galleries:stable_gallery_access", public_id=gallery.public_id)
     if request.GET.get("thumbnail_refresh") == "1":
         return _client_thumbnail_refresh(request, gallery)
     _record_client_access(request, token_record, invitation, gallery)
@@ -558,7 +563,7 @@ def client_gallery_comment(request, token, photo_id):
 def _owns_photo_comment(request, comment, invitation):
     if comment.author_id:
         return request.user.is_authenticated and comment.author_id == request.user.pk
-    return comment.invitation_id == invitation.pk
+    return invitation is not None and comment.invitation_id == invitation.pk
 
 
 @require_POST
@@ -930,3 +935,108 @@ def issue_client_gallery_share_link(request, gallery_id, invitation_id):
         "galleries/share_link_ready.html",
         {"gallery": gallery, "invitation": invitation, "share_url": share_url},
     )
+
+
+def _owner_gallery(request, public_id):
+    if not request.user.is_authenticated:
+        raise Http404
+    return get_object_or_404(Gallery, public_id=public_id, photographer__user=request.user,
+        archived_at__isnull=True, deleted_at__isnull=True,
+        status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
+
+
+def _owner_photo(request, public_id, photo_id):
+    gallery = _owner_gallery(request, public_id)
+    return gallery, get_object_or_404(GalleryPhoto, gallery=gallery, pk=photo_id,
+        is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+
+
+def _owner_favorites(gallery):
+    # Separate event type: never increment client favorite counters.
+    return GalleryAnalyticsEvent.objects.filter(gallery=gallery, event_type="owner_favorite")
+
+
+def _prepare_owner_interactions(request, gallery, photos):
+    ids = [p.pk for p in photos]
+    favorites = set(_owner_favorites(gallery).filter(related_photo_id__in=ids).values_list("related_photo_id", flat=True))
+    counts = dict(GalleryAnalyticsEvent.objects.filter(gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.FAVORITE, related_photo_id__in=ids).values("related_photo_id").annotate(total=Count("pk")).values_list("related_photo_id", "total"))
+    threads = {}
+    for comment in GalleryPhotoComment.objects.filter(gallery=gallery, photo_id__in=ids).select_related("author", "invitation").prefetch_related("reactions"):
+        reactions = list(comment.reactions.all())
+        comment.like_count = sum(r.value == 1 for r in reactions)
+        comment.liked_by_viewer = any(r.value == 1 and r.user_id == request.user.pk for r in reactions)
+        comment.can_delete_for_viewer = comment.author_id == request.user.pk
+        threads.setdefault(comment.photo_id, []).append(comment)
+    for photo in photos:
+        photo.is_client_favorite = photo.pk in favorites
+        photo.client_favorite_count = counts.get(photo.pk, 0) + int(photo.is_client_favorite)
+        photo.client_comment_list = threads.get(photo.pk, [])
+
+
+@require_POST
+def owner_gallery_favorite(request, public_id, photo_id):
+    gallery, photo = _owner_photo(request, public_id, photo_id)
+    with transaction.atomic():
+        Gallery.objects.select_for_update().get(pk=gallery.pk)
+        events = _owner_favorites(gallery).filter(related_photo=photo)
+        favorited = not events.exists()
+        if favorited:
+            events.create(photographer=gallery.photographer, authenticated_user=request.user, related_photo=photo, source="owner_gallery")
+        else:
+            events.delete()
+        count = GalleryAnalyticsEvent.objects.filter(gallery=gallery, related_photo=photo, event_type=GalleryAnalyticsEvent.EventType.FAVORITE).count() + int(favorited)
+    return JsonResponse({"favorited": favorited, "favorite_count": count})
+
+
+@require_POST
+def owner_gallery_comment(request, public_id, photo_id):
+    gallery, photo = _owner_photo(request, public_id, photo_id)
+    body = (request.POST.get("comment") or "").strip()
+    if not body or len(body) > 2000:
+        return HttpResponseBadRequest("Enter a comment between 1 and 2,000 characters.")
+    comment = GalleryPhotoComment.objects.create(gallery=gallery, photo=photo, author=request.user, body=body)
+    return JsonResponse({"comment_count": photo.client_comments.count(), "comment": {
+        "id": comment.pk, "author": comment.display_author, "body": body,
+        "created_at": comment.created_at.isoformat(), "is_photographer": True,
+        "delete_url": reverse("galleries:owner_gallery_comment_delete", args=[public_id, photo.pk, comment.pk])}})
+
+
+@require_POST
+def owner_gallery_comment_like(request, public_id, photo_id):
+    gallery, photo = _owner_photo(request, public_id, photo_id)
+    try:
+        comment_id = int(request.POST.get("comment_id", ""))
+        if not 0 < comment_id <= 9223372036854775807:
+            raise ValueError
+    except ValueError:
+        return HttpResponseBadRequest("Invalid comment.")
+    with transaction.atomic():
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), gallery=gallery, photo=photo, pk=comment_id)
+        liked = request.POST.get("liked") == "true"
+        if liked:
+            GalleryPhotoCommentReaction.objects.update_or_create(comment=comment, user=request.user, defaults={"value": 1})
+        else:
+            comment.reactions.filter(user=request.user, value=1).delete()
+        return JsonResponse({"liked": liked, "count": comment.reactions.filter(value=1).count()})
+
+
+@require_POST
+def owner_gallery_comment_delete(request, public_id, photo_id, comment_id):
+    gallery, photo = _owner_photo(request, public_id, photo_id)
+    with transaction.atomic():
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), gallery=gallery, photo=photo, pk=comment_id, author=request.user)
+        ids = [comment.pk] + list(comment.replies.values_list("pk", flat=True))
+        comment.delete()
+    return JsonResponse({"deleted_ids": ids, "comment_count": photo.client_comments.count()})
+
+
+@require_GET
+def owner_gallery_download(request, public_id, photo_id, original=False):
+    gallery, photo = _owner_photo(request, public_id, photo_id)
+    size = request.GET.get("size")
+    if not original and size:
+        if size not in {"small", "medium", "large"}:
+            return HttpResponseBadRequest("Choose small, medium, or large.")
+        from .photo_downloads import resized_download
+        return FileResponse(resized_download(photo, size), as_attachment=True, filename=f"photo-{photo.pk}-{size}.jpg", content_type="image/jpeg")
+    return FileResponse(photo.file.open("rb"), as_attachment=True, filename=photo.original_name)
