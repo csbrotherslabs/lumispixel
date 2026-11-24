@@ -19,6 +19,14 @@
     viewer.querySelector('[data-viewer-favorite-count]').textContent = current?.querySelector('[data-favorite-count]')?.textContent || '0';
     favoriteButton.setAttribute('aria-pressed', String(current?.dataset.favorite === 'true'));
   }
+  function renderCommentLike(button, liked, count) {
+    button.setAttribute('aria-pressed', String(liked));
+    button.setAttribute('aria-label', liked ? 'Unlike comment' : 'Like comment');
+    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-7c2 0 3 1 3 3l-1 4h5a2 2 0 0 1 2 2l-2 7a2 2 0 0 1-2 2H7"/></svg>';
+    const label=document.createElement('span');
+    label.textContent=String(count);
+    button.append(label);
+  }
   function decorateComments() {
     if (!panel) return;
     const composer = panel.querySelector('[data-comment-form]');
@@ -58,12 +66,18 @@
           row.replaceChildren(avatar,content);
         }
       }
+      const deleteControl = row.querySelector('[data-client-comment-delete]');
+      const deleteButton = deleteControl?.matches('button') ? deleteControl : deleteControl?.querySelector('button');
+      if(deleteButton && !deleteButton.classList.contains('lp-comment-trash')) {
+        deleteButton.classList.add('lp-comment-trash');
+        deleteButton.setAttribute('aria-label','Delete comment');
+        deleteButton.title='Delete comment';
+        deleteButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>';
+      }
       if(row.querySelector('[data-comment-like]') || !viewer.hasAttribute('data-can-like-comments')) return;
       const button=document.createElement('button');
       button.type='button'; button.dataset.commentLike='';
-      button.setAttribute('aria-pressed',row.dataset.liked==='true'?'true':'false');
-      button.textContent=(row.dataset.liked==='true'?'♥ ':'♡ ')+(row.dataset.likes||'0');
-      button.setAttribute('aria-label','Like comment');
+      renderCommentLike(button,row.dataset.liked==='true',row.dataset.likes||'0');
       (row.querySelector('.lp-comment-actions') || row).prepend(button);
     });
   }
@@ -80,8 +94,9 @@
       const response=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':viewer.querySelector('[name=csrfmiddlewaretoken]').value},body:new URLSearchParams({comment_id:row.dataset.clientCommentId,liked:String(button.getAttribute('aria-pressed')!=='true')})});
       if(!response.ok) throw Error();
       const data=await response.json();
-      button.setAttribute('aria-pressed',String(data.liked));
-      button.textContent=(data.liked?'♥ ':'♡ ')+data.count;
+      row.dataset.liked=String(data.liked);
+      row.dataset.likes=String(data.count);
+      renderCommentLike(button,data.liked,data.count);
     } catch { status.textContent='Unable to update comment like'; }
     finally {button.disabled=false;}
   });
