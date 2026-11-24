@@ -231,6 +231,9 @@ def stable_gallery_access(request, public_id, search_results=False):
         photo_page, photos = _paginate_client_gallery_photos(request, gallery)
     albums = list(Album.objects.filter(gallery=gallery).exclude(visibility=Album.Visibility.HIDDEN).select_related("cover_photo").order_by("display_order", "pk"))
     photos, albums = _prepare_client_gallery_content(gallery, photos, albums)
+    view_counts = dict(GalleryAnalyticsEvent.objects.filter(gallery=gallery, related_photo_id__in=[p.pk for p in photos], event_type=GalleryAnalyticsEvent.EventType.PHOTO_VIEW).values("related_photo_id").annotate(total=Count("id")).values_list("related_photo_id", "total"))
+    for photo in photos:
+        photo.client_view_count = view_counts.get(photo.pk, 0)
     return render(request, "galleries/semantic_results.html" if search_results else _client_gallery_template(gallery), {"search_query": request.GET.get("q", "").strip(), "back_url": reverse("galleries:stable_gallery_access", args=[gallery.public_id]), "gallery": gallery, "invitation": None, "photos": photos, "photo_page": photo_page, "albums": albums, "permissions": permissions, "gallery_settings": settings, "access_token": None, "can_favorite": False, "can_download": False, "can_download_gallery": False, "can_download_originals": False, "can_comment": False, "can_purchase_prints": False, "stable_gallery_url": request.build_absolute_uri(), "can_share_gallery": permissions.share_gallery, "semantic_search_available": _semantic_search_available(gallery), "gallery_brand": _client_gallery_brand(gallery)})
 
 def _private_gallery_login(request, gallery):
@@ -369,6 +372,7 @@ def client_gallery_access(request, token, search_results=False):
             event_type__in=[
                 GalleryAnalyticsEvent.EventType.FAVORITE,
                 GalleryAnalyticsEvent.EventType.DOWNLOAD,
+                GalleryAnalyticsEvent.EventType.PHOTO_VIEW,
             ],
         )
         .values("related_photo_id", "event_type")
@@ -382,6 +386,7 @@ def client_gallery_access(request, token, search_results=False):
         counts = interaction_counts.get(photo.pk, {})
         photo.client_favorite_count = counts.get(GalleryAnalyticsEvent.EventType.FAVORITE, 0)
         photo.client_download_count = counts.get(GalleryAnalyticsEvent.EventType.DOWNLOAD, 0)
+        photo.client_view_count = counts.get(GalleryAnalyticsEvent.EventType.PHOTO_VIEW, 0)
 
     store = GalleryStore.objects.filter(
         gallery=gallery,
@@ -452,6 +457,35 @@ def client_gallery_access(request, token, search_results=False):
     )
 
 
+@require_POST
+def record_photo_view(request, photo_id, token=None, public_id=None):
+    if token is not None:
+        token_record, _, gallery, _, _ = _client_gallery_access(token, request)
+        visitor = token_record.token_hash
+    else:
+        gallery = get_object_or_404(Gallery, public_id=public_id, visibility=Gallery.Visibility.PUBLIC,
+                                    deleted_at__isnull=True, archived_at__isnull=True,
+                                    status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
+        permissions = GalleryPermission.objects.filter(gallery=gallery).first() or GalleryPermission(gallery=gallery)
+        if not permissions.view_gallery or (gallery.expires_at and gallery.expires_at <= timezone.now() and permissions.automatic_gallery_lock):
+            raise Http404
+        visitor = ""
+    with transaction.atomic():
+        photo = get_object_or_404(GalleryPhoto.objects.select_for_update(), pk=photo_id, gallery=gallery,
+                                  is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+        events = GalleryAnalyticsEvent.objects.filter(gallery=gallery, related_photo=photo,
+                                                       event_type=GalleryAnalyticsEvent.EventType.PHOTO_VIEW)
+        if not _is_gallery_owner(request, gallery):
+            session = _session_identifier(request)
+            if not events.filter(session_identifier=session).exists():
+                track_gallery_event(gallery=gallery, event_type=GalleryAnalyticsEvent.EventType.PHOTO_VIEW,
+                                    visitor_identifier=visitor or session, session_identifier=session,
+                                    user=request.user, photo=photo, source="photo_preview")
+        response = JsonResponse({"view_count": events.count()})
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
 @require_GET
 def client_gallery_photo_media(request, token, photo_id):
     _, _, gallery, _, _ = _client_gallery_access(token, request)
@@ -461,15 +495,6 @@ def client_gallery_photo_media(request, token, photo_id):
         gallery=gallery,
         is_visible=True,
         status=GalleryPhoto.Status.COMPLETED,
-    )
-    track_gallery_event(
-        gallery=gallery,
-        event_type=GalleryAnalyticsEvent.EventType.PHOTO_VIEW,
-        visitor_identifier=AccessToken.digest(token),
-        session_identifier=_session_identifier(request),
-        user=request.user,
-        photo=photo,
-        source="invite_link",
     )
     return FileResponse(photo.file.open("rb"), as_attachment=False, filename=photo.original_name)
 
