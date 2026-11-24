@@ -35,6 +35,19 @@
     viewer.querySelector('[data-viewer-download-label]').textContent = 'Download ' + selected.charAt(0).toUpperCase() + selected.slice(1);
     download.href = url.href;
   }
+  const viewed = new Set();
+  function recordView(photo) {
+    const url = photo.querySelector('[data-view-url]')?.dataset.viewUrl;
+    if (!url || viewed.has(url)) return;
+    const csrf = viewer.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+      document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrf) return;
+    viewed.add(url);
+    fetch(url, {method:'POST', credentials:'same-origin', headers:{'X-CSRFToken':csrf}})
+      .then(response => { if (!response.ok) throw new Error('View tracking unavailable'); return response.json(); })
+      .then(data => { const count = photo.querySelector('[data-view-count]'); if (count) count.textContent = data.view_count; })
+      .catch(() => viewed.delete(url));
+  }
   function open(photo, showComments, trigger) {
     restore(); current = photo; opener = trigger || opener;
     image.src = photo.querySelector('[data-full-view]')?.dataset.src || photo.querySelector('img').src;
@@ -53,6 +66,7 @@
     size(); counts(); aside.hidden = !(showComments && panel);
     commentButton.setAttribute('aria-expanded', String(!aside.hidden));
     if (!viewer.open) viewer.showModal();
+    recordView(photo);
     if (showComments) panel?.querySelector('textarea')?.focus();
   }
   // Capture before design-specific legacy lightbox/comment handlers.
