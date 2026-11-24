@@ -77,9 +77,18 @@
 .lp-viewer-download-menu:not([open]) .lp-viewer-download-options{display:none}
 .lp-viewer-download-options select{color:white;background:#25282d;padding:8px}
 .lp-viewer__toolbar .lp-viewer__download-group{width:auto;margin-right:auto}
-.lp-viewer-scroll{width:100%;height:100%;overflow:auto;display:block}
-.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media{width:calc(100% * var(--viewer-zoom,1));height:calc(100% * var(--viewer-zoom,1));max-width:none;max-height:none;display:grid;place-items:center}
-.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.lp-viewer.lp-photo-lightbox[open]{position:fixed;inset:0;box-sizing:border-box;margin:auto}
+.lp-viewer .lp-viewer__body{overflow:hidden;min-width:0}
+.lp-viewer .lp-viewer__stage{box-sizing:border-box;min-height:0;overflow:hidden}
+.lp-viewer .lp-viewer-scroll{width:100%;height:100%;min-width:0;min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:flex-start;overscroll-behavior:contain;touch-action:pan-x pan-y}
+.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media{flex:none;width:var(--viewer-width,0px);height:var(--viewer-height,0px);max-width:none;max-height:none;display:block;margin:auto;position:relative;overflow:hidden}
+.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;margin:0}
+.lp-viewer .lp-viewer-scroll[data-zoomed]{cursor:grab}
+.lp-viewer .lp-viewer-scroll[data-dragging]{cursor:grabbing;user-select:none}
+.lp-viewer .lp-viewer-scroll img{user-select:none;-webkit-user-drag:none}
+.lp-viewer .lp-viewer__toolbar{position:relative;flex:none;z-index:5;box-sizing:border-box}
+.lp-viewer .lp-viewer__footer{z-index:4}
+.lp-viewer .lp-viewer__toolbar button:disabled{opacity:.45;cursor:default}
 
 .lp-viewer__toolbar .lp-viewer-download-menu summary,.lp-viewer__toolbar [data-zoom-level]{font:500 12px/1.4 Arial,sans-serif}
 .lp-viewer__comments:not([hidden]){display:flex;flex-direction:column;overflow:hidden;padding:16px}
