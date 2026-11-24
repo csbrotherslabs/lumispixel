@@ -156,7 +156,7 @@
   scroll.addEventListener('touchcancel', () => {pinch=null;});
   viewer.querySelector('[data-viewer-share]')?.addEventListener('click', async () => {
     try {
-      const url = new URL(location.href); url.hash = '';
+      const url = new URL(viewer.dataset.shareUrl || location.pathname, location.origin); url.hash = '';
       if(navigator.share) await navigator.share({title:document.title,url:url.href});
       else { await navigator.clipboard.writeText(url.href); status.textContent='Gallery link copied'; }
     } catch(e) { if(e.name !== 'AbortError') status.textContent='Unable to share gallery'; }
