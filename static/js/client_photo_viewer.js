@@ -20,15 +20,51 @@
     favoriteButton.setAttribute('aria-pressed', String(current?.dataset.favorite === 'true'));
   }
   function decorateComments() {
-    if (!panel || !viewer.hasAttribute('data-can-like-comments')) return;
+    if (!panel) return;
+    const composer = panel.querySelector('[data-comment-form]');
+    if (composer && !composer.classList.contains('lp-comment-composer')) {
+      composer.classList.add('lp-comment-composer');
+      const input = composer.querySelector('textarea');
+      const submit = composer.querySelector('button[type=submit]');
+      if(input) {input.placeholder='Write a comment…';input.rows=1;}
+      if(submit) {
+        submit.setAttribute('aria-label','Send comment');
+        submit.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg>';
+        composer.append(submit);
+      }
+    }
     panel.querySelectorAll('[data-client-comment-id]').forEach(row => {
-      if(row.querySelector('[data-comment-like]')) return;
+      if (!row.querySelector('.lp-comment-avatar')) {
+        const author = row.querySelector('strong');
+        const paragraph = row.querySelector('p');
+        if (author && paragraph) {
+          const name = author.textContent.trim();
+          const avatar = document.createElement('span');
+          avatar.className = 'lp-comment-avatar';
+          avatar.setAttribute('aria-hidden','true');
+          avatar.textContent = name.split(/\s+/).slice(0,2).map(word=>word[0]||'').join('').toUpperCase() || 'G';
+          const content = document.createElement('div');
+          content.className = 'lp-comment-content';
+          const meta = document.createElement('div');
+          meta.className = 'lp-comment-meta';
+          meta.append(author);
+          const time = row.querySelector('time');
+          if(time) meta.append(time);
+          const actions = document.createElement('div');
+          actions.className = 'lp-comment-actions';
+          const deletion = row.querySelector('[data-client-comment-delete]');
+          if(deletion) actions.append(deletion);
+          content.append(meta, paragraph, actions);
+          row.replaceChildren(avatar,content);
+        }
+      }
+      if(row.querySelector('[data-comment-like]') || !viewer.hasAttribute('data-can-like-comments')) return;
       const button=document.createElement('button');
       button.type='button'; button.dataset.commentLike='';
       button.setAttribute('aria-pressed',row.dataset.liked==='true'?'true':'false');
       button.textContent=(row.dataset.liked==='true'?'♥ ':'♡ ')+(row.dataset.likes||'0');
       button.setAttribute('aria-label','Like comment');
-      row.append(button);
+      (row.querySelector('.lp-comment-actions') || row).prepend(button);
     });
   }
   viewer.addEventListener('click', async event => {
@@ -162,5 +198,6 @@
   viewer.addEventListener('close', () => { restore(); opener?.focus(); });
   document.addEventListener('lumispixel:favorite-changed', counts);
   document.addEventListener('lumispixel:comment-submitted', () => {counts();decorateComments();});
+  new MutationObserver(() => {if(panel) decorateComments();}).observe(aside,{childList:true,subtree:true});
   new MutationObserver(counts).observe(document.querySelector('main'), {subtree: true, characterData: true, childList: true});
 })();
