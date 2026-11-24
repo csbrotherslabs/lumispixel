@@ -17,6 +17,7 @@
   function counts() {
     viewer.querySelector('[data-viewer-comment-count]').textContent = current?.querySelector('[data-comment-count]')?.textContent || '0';
     viewer.querySelector('[data-viewer-favorite-count]').textContent = current?.querySelector('[data-favorite-count]')?.textContent || '0';
+    viewer.querySelector('[data-viewer-thread-count]').textContent = viewer.querySelector('[data-viewer-comment-count]').textContent;
     favoriteButton.setAttribute('aria-pressed', String(current?.dataset.favorite === 'true'));
   }
   function renderCommentLike(button, liked, count) {
@@ -50,14 +51,31 @@
           const avatar = document.createElement('span');
           avatar.className = 'lp-comment-avatar';
           avatar.setAttribute('aria-hidden','true');
+          avatar.dataset.tone = String(Array.from(name).reduce((sum,ch)=>sum+ch.charCodeAt(0),0)%4);
           avatar.textContent = name.split(/\s+/).slice(0,2).map(word=>word[0]||'').join('').toUpperCase() || 'G';
           const content = document.createElement('div');
           content.className = 'lp-comment-content';
           const meta = document.createElement('div');
           meta.className = 'lp-comment-meta';
-          meta.append(author);
-          const time = row.querySelector('time');
-          if(time) meta.append(time);
+          const nameLine = document.createElement('div');
+          nameLine.className = 'lp-comment-name';
+          nameLine.append(author);
+          if(row.dataset.photographer === 'true') {
+            const tag = document.createElement('span');
+            tag.className = 'lp-comment-role'; tag.textContent = 'Photographer';
+            nameLine.append(tag);
+          }
+          meta.append(nameLine);
+          const time = row.querySelector('time') || document.createElement('time');
+          const date = new Date(row.dataset.createdAt || '');
+          if(!Number.isNaN(date.getTime())) {
+            time.dateTime = date.toISOString();
+            const today = new Date(), yesterday = new Date();
+            yesterday.setDate(today.getDate()-1);
+            const clock = date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+            time.textContent = date.toDateString() === today.toDateString() ? 'Today at '+clock : date.toDateString() === yesterday.toDateString() ? 'Yesterday at '+clock : date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · '+clock;
+          }
+          if(time.textContent) meta.append(time);
           const actions = document.createElement('div');
           actions.className = 'lp-comment-actions';
           const deletion = row.querySelector('[data-client-comment-delete]');
