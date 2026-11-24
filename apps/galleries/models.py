@@ -138,11 +138,25 @@ class Gallery(models.Model):
 
     @property
     def cover_delivery_url(self):
-        """Prefer the selected gallery photo, using its signed delivery URL."""
+        """Compact workspace cover, retaining selected-photo precedence."""
         photo = self.photos.filter(is_cover=True).exclude(file="").first()
         if photo:
-            return photo.delivery_url
-        return self.cover_image.url if self.cover_image else ""
+            return photo.thumbnail_url
+        return self.cover_mobile_url
+
+    @property
+    def cover_mobile_url(self):
+        if not self.cover_image:
+            return ""
+        from .cover_derivatives import cover_media_name
+        return signed_media_url(cover_media_name(self), variant="thumbnail")
+
+    @property
+    def cover_desktop_url(self):
+        if not self.cover_image:
+            return ""
+        from .cover_derivatives import cover_media_name
+        return signed_media_url(cover_media_name(self), variant="preview")
 
     def __str__(self):
         return self.name
