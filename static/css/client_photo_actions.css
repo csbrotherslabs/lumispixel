@@ -42,3 +42,23 @@
  .lp-photo-actions .lp-photo-control__count{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){[data-client-photo] .lp-photo-actions{transition:none}}
+
+/* Anchor to the lower right, overriding legacy design-specific centering. */
+[data-client-photo] .lp-photo-actions,
+[data-client-photo]:hover .lp-photo-actions,
+[data-client-photo]:focus-within .lp-photo-actions {
+ position:absolute!important;
+ top:auto!important;left:auto!important;right:6px!important;bottom:6px!important;
+ width:34px!important;height:auto!important;max-height:calc(100% - 12px);
+ transform:none!important;translate:none!important;
+ align-items:center!important;justify-content:flex-start!important;
+ margin:0!important;
+}
+@media(max-width:600px){
+ [data-client-photo] .lp-photo-actions,
+ [data-client-photo]:hover .lp-photo-actions,
+ [data-client-photo]:focus-within .lp-photo-actions {
+  right:4px!important;bottom:4px!important;width:30px!important;
+  max-height:calc(100% - 8px);
+ }
+}
