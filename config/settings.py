@@ -189,6 +189,17 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 if not DEBUG:
     for setting_name, redis_url in {"CELERY_BROKER_URL": CELERY_BROKER_URL, "CELERY_RESULT_BACKEND": CELERY_RESULT_BACKEND}.items():
         if not redis_url.startswith("rediss://"): raise RuntimeError(f"{setting_name} must use rediss:// in production.")
+# Opt-in routing permits a coordinated rollout with dedicated consumers.
+CELERY_DEDICATED_QUEUES_ENABLED = env_bool("CELERY_DEDICATED_QUEUES_ENABLED", False)
+CELERY_TASK_DEFAULT_QUEUE = "celery"
+CELERY_TASK_ROUTES = {
+    "apps.galleries.tasks.generate_gallery_photo_derivatives": {"queue": "media"},
+    "apps.galleries.tasks.generate_gallery_cover_derivatives": {"queue": "media"},
+    "apps.visual_search.tasks.process_face_index_job": {"queue": "visual_index"},
+    "apps.visual_search.semantic_tasks.index_semantic_photo": {"queue": "visual_index"},
+    "apps.visual_search.semantic_tasks.index_semantic_gallery": {"queue": "visual_index"},
+} if CELERY_DEDICATED_QUEUES_ENABLED else {}
+
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
