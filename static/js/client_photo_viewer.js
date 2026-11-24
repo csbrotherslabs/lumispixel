@@ -30,11 +30,38 @@
     const link = current.querySelector('[data-photo-download]');
     if (!link) return;
     const url = new URL(link.href);
-    const selected = viewer.querySelector('[name="viewer-size"]:checked').value;
+    const selected = viewer.querySelector('[name="viewer-size"]').value;
     url.searchParams.set('size', selected);
     viewer.querySelector('[data-viewer-download-label]').textContent = 'Download ' + selected.charAt(0).toUpperCase() + selected.slice(1);
     download.href = url.href;
   }
+  const status = viewer.querySelector('[data-viewer-status]');
+  const scroll = viewer.querySelector('.lp-viewer-scroll');
+  const media = image.parentElement;
+  let zoom = 1, pinch = null;
+  function setZoom(value) {
+    zoom = Math.max(1, Math.min(4, value));
+    media.style.setProperty('--viewer-zoom', zoom);
+    viewer.querySelector('[data-zoom-level]').textContent = Math.round(zoom * 100) + '%';
+    if (zoom === 1) { scroll.scrollLeft = 0; scroll.scrollTop = 0; }
+  }
+  viewer.querySelector('[data-zoom-in]').onclick = () => setZoom(zoom + .25);
+  viewer.querySelector('[data-zoom-out]').onclick = () => setZoom(zoom - .25);
+  viewer.querySelector('[data-zoom-fit]').onclick = () => setZoom(1);
+  image.addEventListener('load', () => { status.textContent = ''; if (current && viewer.open) recordView(current); });
+  image.addEventListener('error', () => { status.textContent = 'High-resolution preview unavailable. Reopen to retry.'; });
+  const distance = touches => Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+  scroll.addEventListener('touchstart', e => { if(e.touches.length===2) pinch={distance:distance(e.touches),zoom}; }, {passive:true});
+  scroll.addEventListener('touchmove', e => { if(pinch && e.touches.length===2){e.preventDefault();setZoom(pinch.zoom*distance(e.touches)/Math.max(1,pinch.distance));} }, {passive:false});
+  scroll.addEventListener('touchend', () => {pinch=null;});
+  scroll.addEventListener('touchcancel', () => {pinch=null;});
+  viewer.querySelector('[data-viewer-share]')?.addEventListener('click', async () => {
+    try {
+      const url = new URL(location.href); url.hash = '';
+      if(navigator.share) await navigator.share({title:document.title,url:url.href});
+      else { await navigator.clipboard.writeText(url.href); status.textContent='Gallery link copied'; }
+    } catch(e) { if(e.name !== 'AbortError') status.textContent='Unable to share gallery'; }
+  });
   const viewed = new Set();
   function recordView(photo) {
     const url = photo.querySelector('[data-view-url]')?.dataset.viewUrl;
@@ -50,7 +77,11 @@
   }
   function open(photo, showComments, trigger) {
     restore(); current = photo; opener = trigger || opener;
-    image.src = photo.querySelector('[data-full-view]')?.dataset.src || photo.querySelector('img').src;
+    setZoom(1);
+    const preview = photo.querySelector('[data-full-view]')?.dataset.src;
+    image.removeAttribute('src');
+    status.textContent = preview ? 'Loading preview…' : 'Preview unavailable';
+    if (preview) image.src = preview;
     panel = photo.querySelector('[data-comment-panel]');
     if (panel) {
       home = document.createComment('comment panel home'); panel.before(home);
@@ -63,10 +94,10 @@
     download.hidden = !link; viewer.querySelector('[data-viewer-download-group]').hidden = !link;
     const originalLink = photo.querySelector('[data-photo-download][href*="original"]');
     original.hidden = !originalLink; if (originalLink) original.href = originalLink.href;
+    viewer.querySelector('.lp-viewer-download-menu').open = false;
     size(); counts(); aside.hidden = !(showComments && panel);
     commentButton.setAttribute('aria-expanded', String(!aside.hidden));
     if (!viewer.open) viewer.showModal();
-    recordView(photo);
     if (showComments) panel?.querySelector('textarea')?.focus();
   }
   // Capture before design-specific legacy lightbox/comment handlers.
@@ -81,14 +112,6 @@
   viewer.querySelector('[data-viewer-comments-close]').addEventListener('click', () => comments(false));
   favoriteButton.addEventListener('click', () => current?.querySelector('[data-favorite-form]')?.requestSubmit());
   viewer.querySelectorAll('[name="viewer-size"]').forEach(input => input.addEventListener('change', size));
-  [download, original].forEach(link => link.addEventListener('click', () => {
-    // Reuse the existing counter handler on the card, without a second navigation.
-    const source = current?.querySelector('[data-photo-download]');
-    if (source) {
-      const cancel = event => event.preventDefault();
-      source.addEventListener('click', cancel, {once: true}); source.click();
-    }
-  }));
   function step(delta) {
     const photos = Array.from(document.querySelectorAll('[data-client-photo]')).filter(photo => !photo.hidden);
     const index = photos.indexOf(current), next = photos[index + delta];
