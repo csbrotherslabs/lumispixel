@@ -90,3 +90,23 @@
  .cp-stage .cp-nav nav,.cp-browser .cp-browser-actions{flex-wrap:nowrap;max-width:100%;overflow-x:auto;gap:6px}
  .cp-stage .cp-nav nav :is(button,a),.cp-browser .cp-browser-actions :is(button,a){min-height:40px;padding:8px 10px;white-space:nowrap;font-size:12px}
 }
+
+/* Option A: consistent action alignment and restrained icon accents. */
+:is(.sf-actions,.story-tools,.ms-tools,.cp-nav nav,.cp-browser-actions) :is(button,a):has(>.lp-action-icon){
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2;
+}
+:is(.sf-actions,.story-tools,.ms-tools,.cp-nav nav,.cp-browser-actions) :is(button,a)>.lp-action-icon{
+ display:block;width:17px;height:17px;flex:0 0 17px;align-self:center;
+ margin:0;padding:0;position:static;transform:none;vertical-align:middle;
+ fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+:is(.sf-actions,.story-tools,.ms-tools,.cp-nav nav,.cp-browser-actions) :is(button,a):has(>.lp-action-icon)>span{
+ align-self:center;line-height:1.2;margin:0;padding:0;position:static;transform:none;
+}
+.lp-action-icon.lp-action-icon--favorite{color:#e34b72!important}
+.lp-action-icon.lp-action-icon--share{color:#3979d5!important}
+.lp-action-icon.lp-action-icon--download{color:#6ee7b7!important}
+:is(.sf-actions,.story-tools,.ms-tools) a:has(>.lp-action-icon--download){background:#202735;color:#fff;border-color:#202735}
+@media(max-width:767px){
+ :is(.sf-actions,.story-tools,.ms-tools,.cp-nav nav,.cp-browser-actions) :is(button,a):has(>.lp-action-icon){gap:6px;align-items:center;justify-content:center}
+}
