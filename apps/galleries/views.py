@@ -549,7 +549,7 @@ def client_gallery_comment(request, token, photo_id):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
             "comment_count": comment_count,
-            "comment": {"id": comment.pk, "author": invitation.client_name, "body": body, "delete_url": reverse("galleries:client_gallery_comment_delete", args=[token, photo.pk, comment.pk])},
+            "comment": {"id": comment.pk, "author": comment.display_author, "created_at": comment.created_at.isoformat(), "is_photographer": comment.is_studio_comment, "body": body, "delete_url": reverse("galleries:client_gallery_comment_delete", args=[token, photo.pk, comment.pk])},
         })
     return redirect(f"{reverse('galleries:client_gallery_access', args=[token])}#photo-{photo.pk}")
 
@@ -577,7 +577,7 @@ def client_comment_like(request, token, photo_id):
         comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), pk=comment_id, gallery=gallery, photo=photo)
         reactions = GalleryPhotoCommentReaction.objects.filter(comment=comment)
         if request.POST.get("liked") == "true":
-            reactions.update_or_create(user=request.user, defaults={"value": 1})
+            GalleryPhotoCommentReaction.objects.update_or_create(comment=comment, user=request.user, defaults={"value": 1})
         else:
             reactions.filter(user=request.user, value=1).delete()
         return JsonResponse({"liked": reactions.filter(user=request.user, value=1).exists(), "count": reactions.filter(value=1).count()})
