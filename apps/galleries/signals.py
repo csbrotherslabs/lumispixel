@@ -8,6 +8,8 @@ from .models import GalleryPhoto
 
 @receiver(post_save, sender=GalleryPhoto)
 def queue_gallery_derivatives(sender, instance, **kwargs):
+    if kwargs.get("raw"):
+        return
     if instance.status != GalleryPhoto.Status.COMPLETED or not instance.file:
         return
     update_fields = kwargs.get("update_fields")
@@ -15,4 +17,8 @@ def queue_gallery_derivatives(sender, instance, **kwargs):
         return
     from .tasks import generate_gallery_photo_derivatives
     photo_id = instance.pk
-    transaction.on_commit(lambda: generate_gallery_photo_derivatives.delay(photo_id))
+    # A broker outage must not turn an already committed upload into a failed
+    # HTTP response. Missing derivatives can be recovered by the backfill command.
+    transaction.on_commit(
+        lambda: generate_gallery_photo_derivatives.delay(photo_id), robust=True
+    )
