@@ -66,3 +66,11 @@ def generate_gallery_photo_derivatives(self, photo_id):
     if photo is None:
         return {"skipped": True}
     return {"generated": generate_photo_derivatives(photo)}
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True,
+             retry_backoff_max=600, retry_jitter=True, max_retries=5)
+def generate_gallery_cover_derivatives(self, gallery_id):
+    from .models import Gallery
+    from .cover_derivatives import generate_cover_derivatives
+    gallery = Gallery.objects.filter(pk=gallery_id).exclude(cover_image="").first()
+    return {"generated": generate_cover_derivatives(gallery) if gallery else False}
