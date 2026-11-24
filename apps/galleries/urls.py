@@ -15,6 +15,7 @@ urlpatterns = [
     path("access/<str:token>/photos/<int:photo_id>/media/", views.client_gallery_photo_media, name="client_gallery_photo_media"),
     path("access/<str:token>/photos/<int:photo_id>/favorite/", views.client_gallery_favorite, name="client_gallery_favorite"),
     path("access/<str:token>/photos/<int:photo_id>/comments/<int:comment_id>/delete/", views.client_gallery_comment_delete, name="client_gallery_comment_delete"),
+    path("access/<str:token>/photos/<int:photo_id>/comment-like/", views.client_comment_like, name="client_comment_like"),
     path("access/<str:token>/photos/<int:photo_id>/comment/", views.client_gallery_comment, name="client_gallery_comment"),
     path("access/<str:token>/photos/<int:photo_id>/download/", views.client_gallery_download, name="client_gallery_download"),
     path("access/<str:token>/photos/<int:photo_id>/download-original/", views.client_gallery_download_original, name="client_gallery_download_original"),
