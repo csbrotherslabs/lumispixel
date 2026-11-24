@@ -53,3 +53,5 @@ Notes
 # Cloudflare worker dependencies and build output
 cloudflare/**/node_modules/
 cloudflare/**/.wrangler/
+.dev.vars
+.dev.vars.*
