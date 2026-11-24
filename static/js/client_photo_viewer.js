@@ -138,16 +138,55 @@
   const scroll = viewer.querySelector('.lp-viewer-scroll');
   const media = image.parentElement;
   let zoom = 1, pinch = null;
-  function setZoom(value) {
+  function setZoom(value, anchor) {
     zoom = Math.max(1, Math.min(4, value));
-    media.style.setProperty('--viewer-zoom', zoom);
+    const width = scroll.clientWidth, height = scroll.clientHeight;
+    if (width && height && image.naturalWidth && image.naturalHeight) {
+      const rect = scroll.getBoundingClientRect();
+      const x = anchor ? anchor.clientX - rect.left : width / 2;
+      const y = anchor ? anchor.clientY - rect.top : height / 2;
+      const oldWidth = media.offsetWidth, oldHeight = media.offsetHeight;
+      const fx = oldWidth ? (scroll.scrollLeft + x - Math.max(0, (width-oldWidth)/2))/oldWidth : .5;
+      const fy = oldHeight ? (scroll.scrollTop + y - Math.max(0, (height-oldHeight)/2))/oldHeight : .5;
+      const fit = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const w = image.naturalWidth * fit * zoom, h = image.naturalHeight * fit * zoom;
+      media.style.setProperty('--viewer-width', Math.floor(w) + 'px');
+      media.style.setProperty('--viewer-height', Math.floor(h) + 'px');
+      scroll.scrollLeft = zoom === 1 ? 0 : Math.max(0, fx*w-x+Math.max(0,(width-w)/2));
+      scroll.scrollTop = zoom === 1 ? 0 : Math.max(0, fy*h-y+Math.max(0,(height-h)/2));
+    }
+    scroll.toggleAttribute('data-zoomed', zoom > 1);
     viewer.querySelector('[data-zoom-level]').textContent = Math.round(zoom * 100) + '%';
-    if (zoom === 1) { scroll.scrollLeft = 0; scroll.scrollTop = 0; }
+    viewer.querySelector('[data-zoom-out]').disabled = zoom <= 1;
+    viewer.querySelector('[data-zoom-in]').disabled = zoom >= 4;
+  }
+  new ResizeObserver(() => { if (viewer.open) setZoom(zoom); }).observe(scroll);
+  scroll.addEventListener('wheel', e => {
+    if (!viewer.open) return;
+    e.preventDefault();
+    setZoom(zoom * Math.exp(-e.deltaY * .002), e);
+  }, {passive:false});
+  scroll.addEventListener('dblclick', e => setZoom(zoom > 1 ? 1 : 2, e));
+  let drag = null;
+  scroll.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || zoom <= 1) return;
+    drag = {x:e.clientX,y:e.clientY,left:scroll.scrollLeft,top:scroll.scrollTop};
+    scroll.setPointerCapture(e.pointerId);
+    scroll.setAttribute('data-dragging','');
+    e.preventDefault();
+  });
+  scroll.addEventListener('pointermove', e => {
+    if (!drag) return;
+    scroll.scrollLeft = drag.left + drag.x - e.clientX;
+    scroll.scrollTop = drag.top + drag.y - e.clientY;
+  });
+  for (const event of ['pointerup','pointercancel','lostpointercapture']) {
+    scroll.addEventListener(event, () => {drag=null;scroll.removeAttribute('data-dragging');});
   }
   viewer.querySelector('[data-zoom-in]').onclick = () => setZoom(zoom + .25);
   viewer.querySelector('[data-zoom-out]').onclick = () => setZoom(zoom - .25);
   viewer.querySelector('[data-zoom-fit]').onclick = () => setZoom(1);
-  image.addEventListener('load', () => { status.textContent = ''; if (current && viewer.open) recordView(current); });
+  image.addEventListener('load', () => { setZoom(zoom); status.textContent = ''; if (current && viewer.open) recordView(current); });
   image.addEventListener('error', () => { status.textContent = 'High-resolution preview unavailable. Reopen to retry.'; });
   const distance = touches => Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
   scroll.addEventListener('touchstart', e => { if(e.touches.length===2) pinch={distance:distance(e.touches),zoom}; }, {passive:true});
@@ -179,6 +218,8 @@
     setZoom(1);
     const preview = photo.querySelector('[data-full-view]')?.dataset.src;
     image.removeAttribute('src');
+    media.style.setProperty('--viewer-width','0px');
+    media.style.setProperty('--viewer-height','0px');
     status.textContent = preview ? 'Loading preview…' : 'Preview unavailable';
     if (preview) image.src = preview;
     panel = photo.querySelector('[data-comment-panel]');
@@ -198,6 +239,7 @@
     size(); counts(); aside.hidden = !(showComments && panel);
     commentButton.setAttribute('aria-expanded', String(!aside.hidden));
     if (!viewer.open) viewer.showModal();
+    requestAnimationFrame(() => setZoom(zoom));
     if (showComments) panel?.querySelector('textarea')?.focus();
   }
   // Capture before design-specific legacy lightbox/comment handlers.
