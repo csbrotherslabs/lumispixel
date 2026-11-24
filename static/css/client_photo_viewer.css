@@ -92,3 +92,27 @@
 .lp-viewer__comments [data-client-comment-id]{padding:12px 0;border-bottom:1px solid #eef0f3}
 .lp-viewer__comments [data-comment-like]{min-height:32px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;color:#64748b;font-size:13px}
 .lp-viewer__comments [data-comment-like][aria-pressed=true]{color:#e34b72;background:#fff1f4}
+
+/* Shared editorial conversation, independent of gallery-specific form styles. */
+.lp-viewer .lp-viewer__comments:not([hidden]){padding:0;background:#fff;color:#202735}
+.lp-viewer .lp-viewer__comments>header{padding:16px;border-bottom:1px solid #e8e9ed;margin:0}
+.lp-viewer .lp-viewer__comments h2{font:600 18px/1.3 system-ui,sans-serif;margin:0}
+.lp-viewer .lp-viewer__comments [data-viewer-comments-close]{background:transparent;color:#64748b;border:0;width:36px;height:36px;min-height:36px;padding:0;font-size:22px}
+.lp-viewer .lp-viewer__comments [data-comment-thread]{padding:4px 16px;display:block}
+.lp-viewer .lp-viewer__comments [data-client-comment-id]{display:flex!important;align-items:flex-start;gap:10px;padding:14px 0;margin:0;border-bottom:1px solid #eef0f3;background:transparent;box-shadow:none}
+.lp-viewer .lp-comment-avatar{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:#eee4f7;color:#654b79;display:grid;place-items:center;font:600 11px/1 system-ui,sans-serif}
+.lp-viewer .lp-comment-content{flex:1;min-width:0}
+.lp-viewer .lp-comment-meta{display:flex;flex-direction:column;gap:2px;font:600 13px/1.4 system-ui,sans-serif}
+.lp-viewer .lp-comment-meta time{font:400 11px/1.4 system-ui,sans-serif;color:#78818e}
+.lp-viewer .lp-comment-content p{margin:5px 0 7px;font:400 13px/1.5 system-ui,sans-serif;color:#303846;overflow-wrap:anywhere}
+.lp-viewer .lp-comment-actions{display:flex;align-items:center;gap:12px}
+.lp-viewer .lp-comment-actions form{display:flex;align-items:center;margin:0;padding:0;border:0;background:none}
+.lp-viewer .lp-comment-actions :is(button,[data-comment-like]){display:inline-flex;align-items:center;gap:4px;min-height:30px;height:auto;width:auto;margin:0;padding:4px 2px;border:0;border-radius:4px;background:transparent;color:#64748b;font:500 12px/1.3 system-ui,sans-serif;box-shadow:none}
+.lp-viewer .lp-comment-actions [data-comment-like][aria-pressed=true]{color:#e34b72;background:transparent}
+.lp-viewer .lp-comment-actions [data-client-comment-delete] button{color:#78818e;background:transparent}
+.lp-viewer .lp-comment-composer[data-comment-form]{display:flex!important;align-items:center;gap:8px;padding:12px 14px;margin:0;border-top:1px solid #e8e9ed;background:#fff}
+.lp-viewer .lp-comment-composer textarea{flex:1;min-width:0;width:auto;min-height:42px;max-height:96px;margin:0;padding:11px 14px;border:1px solid #e6e8ec;border-radius:22px;background:#f5f6f8;font:400 13px/1.4 system-ui,sans-serif;resize:none}
+.lp-viewer .lp-comment-composer>div{display:none}
+.lp-viewer .lp-comment-composer>button[type=submit]{flex:0 0 40px;width:40px;height:40px;min-height:40px;padding:10px;margin:0;border:0;border-radius:50%;background:#202735;color:white;display:grid;place-items:center}
+.lp-viewer .lp-comment-composer>button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+@media(max-width:600px){.lp-viewer .lp-viewer__comments:not([hidden]){width:100%;max-width:100%}}
