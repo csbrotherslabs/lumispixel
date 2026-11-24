@@ -3,16 +3,14 @@
 Paths are derived from immutable original object keys; no schema migration.
 Never resize inside a web request. Celery performs work after upload.
 """
-import logging
 from io import BytesIO
 from pathlib import PurePosixPath
 
-from PIL import Image, ImageOps, UnidentifiedImageError
-from django.conf import settings
+from PIL import Image, ImageOps
+from django.core.files.base import ContentFile
 
 from .storage import gallery_photo_storage
 
-logger = logging.getLogger(__name__)
 VARIANTS = {"thumbnail": (640, 82), "preview": (2560, 85)}
 
 
@@ -20,7 +18,9 @@ def derivative_name(original_name, variant):
     if variant not in VARIANTS:
         raise ValueError("Unsupported derivative variant")
     original = PurePosixPath(str(original_name))
-    if "originals" not in original.parts:
+    if (len(original.parts) != 5 or original.parts[0] != "galleries"
+            or original.parts[3] != "originals" or ".." in original.parts
+            or not original.suffix or "\\" in str(original_name)):
         raise ValueError("Not a gallery original path")
     parts = list(original.parts)
     parts[parts.index("originals")] = "variants"
@@ -48,7 +48,6 @@ def generate_photo_derivatives(photo):
             for kind, target in missing.items():
                 width, quality = VARIANTS[kind]
                 frame = ImageOps.exif_transpose(image)
-                # frame.thumbnail((width, width * 100), Image.Resampling.LANCZOS)
                 frame.thumbnail(
                     (width, int(width * 1.5)),
                     Image.Resampling.LANCZOS,
@@ -62,11 +61,9 @@ def generate_photo_derivatives(photo):
                 output = BytesIO()
                 frame.save(output, format="WEBP", quality=quality, method=4)
                 output.seek(0)
-                from django.core.files.base import ContentFile
                 # S3Storage.save may uniquify names; use overwrite-enabled
                 # storage instance so deterministic URL paths remain valid.
                 storage.file_overwrite = True
-                # storage.save(target, ContentFile(output.getvalue()))
                 content = ContentFile(output.getvalue())
                 content.content_type = "image/webp"
                 saved_name = storage.save(target, content)
