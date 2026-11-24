@@ -19,6 +19,36 @@
     viewer.querySelector('[data-viewer-favorite-count]').textContent = current?.querySelector('[data-favorite-count]')?.textContent || '0';
     favoriteButton.setAttribute('aria-pressed', String(current?.dataset.favorite === 'true'));
   }
+  function decorateComments() {
+    if (!panel || !viewer.hasAttribute('data-can-like-comments')) return;
+    panel.querySelectorAll('[data-client-comment-id]').forEach(row => {
+      if(row.querySelector('[data-comment-like]')) return;
+      const button=document.createElement('button');
+      button.type='button'; button.dataset.commentLike='';
+      button.setAttribute('aria-pressed',row.dataset.liked==='true'?'true':'false');
+      button.textContent=(row.dataset.liked==='true'?'♥ ':'♡ ')+(row.dataset.likes||'0');
+      button.setAttribute('aria-label','Like comment');
+      row.append(button);
+    });
+  }
+  viewer.addEventListener('click', async event => {
+    const button=event.target.closest('[data-comment-like]');
+    if(!button || button.disabled || !panel) return;
+    const row=button.closest('[data-client-comment-id]');
+    const form=panel.querySelector('[data-comment-form]');
+    if(!form) return;
+    const url=new URL(form.action);
+    url.pathname=url.pathname.replace(/comment\/$/,'comment-like/');
+    button.disabled=true;
+    try {
+      const response=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':viewer.querySelector('[name=csrfmiddlewaretoken]').value},body:new URLSearchParams({comment_id:row.dataset.clientCommentId,liked:String(button.getAttribute('aria-pressed')!=='true')})});
+      if(!response.ok) throw Error();
+      const data=await response.json();
+      button.setAttribute('aria-pressed',String(data.liked));
+      button.textContent=(data.liked?'♥ ':'♡ ')+data.count;
+    } catch { status.textContent='Unable to update comment like'; }
+    finally {button.disabled=false;}
+  });
   function comments(show) {
     aside.hidden = !show;
     commentButton.setAttribute('aria-expanded', String(show));
@@ -87,6 +117,7 @@
       home = document.createComment('comment panel home'); panel.before(home);
       panel.dataset.viewerPhotoId = photo.id; panel.hidden = false;
       viewer.querySelector('[data-viewer-thread]').append(panel);
+      decorateComments();
     }
     commentButton.hidden = !panel;
     favoriteButton.hidden = !photo.querySelector('[data-favorite-form]');
@@ -130,6 +161,6 @@
   viewer.addEventListener('cancel', restore);
   viewer.addEventListener('close', () => { restore(); opener?.focus(); });
   document.addEventListener('lumispixel:favorite-changed', counts);
-  document.addEventListener('lumispixel:comment-submitted', counts);
+  document.addEventListener('lumispixel:comment-submitted', () => {counts();decorateComments();});
   new MutationObserver(counts).observe(document.querySelector('main'), {subtree: true, characterData: true, childList: true});
 })();
