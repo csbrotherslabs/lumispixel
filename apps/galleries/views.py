@@ -206,10 +206,10 @@ def stable_gallery_access(request, public_id, search_results=False):
     if gallery.expires_at and gallery.expires_at <= now:
         # Automatic lock makes gallery expiration an access-control boundary.
         # Without it, the date remains informational/scheduling metadata.
-        if permissions.automatic_gallery_lock:
+        if permissions.automatic_gallery_lock and not _is_gallery_owner(request, gallery):
             raise Http404
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
-    if not permissions.view_gallery:
+    if not permissions.view_gallery and not _is_gallery_owner(request, gallery):
         raise Http404
     if not _is_gallery_owner(request, gallery) and request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
         invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
@@ -981,7 +981,7 @@ def owner_gallery_favorite(request, public_id, photo_id):
         events = _owner_favorites(gallery).filter(related_photo=photo)
         favorited = not events.exists()
         if favorited:
-            events.create(photographer=gallery.photographer, authenticated_user=request.user, related_photo=photo, source="owner_gallery")
+            events.create(gallery=gallery, event_type="owner_favorite", photographer=gallery.photographer, authenticated_user=request.user, related_photo=photo, source="owner_gallery")
         else:
             events.delete()
         count = GalleryAnalyticsEvent.objects.filter(gallery=gallery, related_photo=photo, event_type=GalleryAnalyticsEvent.EventType.FAVORITE).count() + int(favorited)
