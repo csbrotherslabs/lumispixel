@@ -1,6 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/photographer_gallery_albums_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_v2.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_actions.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gallery_thumbnail_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_albums_refresh.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_v2.css' %}"><link rel="stylesheet" href="{% static 'css/photographer_gallery_workspace_actions.css' %}">{% endblock %}
 {% block workspace_content %}
 {% if active_tab == "photos" %}<script defer src="{% static 'js/gallery_thumbnail_refresh.js' %}"></script>{% endif %}
 <div class="lp-workspace-page lp-gallery-workspace lp-gallery-workspace-modern lp-gallery-workspace-v2">
