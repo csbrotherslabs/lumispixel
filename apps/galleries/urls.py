@@ -5,6 +5,12 @@ from . import access_views, account_views, download_views, invitation_views, vie
 app_name = "galleries"
 
 urlpatterns = [
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/favorite/", views.owner_gallery_favorite, name="owner_gallery_favorite"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comment/", views.owner_gallery_comment, name="owner_gallery_comment"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comment-like/", views.owner_gallery_comment_like, name="owner_gallery_comment_like"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comments/<int:comment_id>/delete/", views.owner_gallery_comment_delete, name="owner_gallery_comment_delete"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/download/", views.owner_gallery_download, name="owner_gallery_download"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/download-original/", views.owner_gallery_download, {"original": True}, name="owner_gallery_download_original"),
     path("g/<uuid:public_id>/search/", access_views.public_semantic_results, name="public_semantic_results"),
     path("access/<str:token>/search/", access_views.invited_semantic_results, name="invited_semantic_results"),
     path("g/<uuid:public_id>/", access_views.stable_gallery_access, name="stable_gallery_access"),
