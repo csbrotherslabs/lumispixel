@@ -1,6 +1,7 @@
 <article class="lp-photo-card">
   <div class="lp-photo-card__media">
-    <img src="{{ photo.delivery_url }}" alt="{{ photo.original_name }}" loading="lazy">
+    <img src="{{ photo.thumbnail_url }}" alt="{{ photo.original_name }}" loading="lazy" decoding="async" data-gallery-thumbnail="{{ photo.pk }}">
+    <span class="lp-thumbnail-status" data-thumbnail-status hidden role="status">Preparing photo…</span>
     <input class="lp-photo-card__check" type="checkbox" data-photo-check value="{{ photo.pk }}" aria-label="Select {{ photo.original_name }}">
     {% if photo.is_cover %}<span class="lp-photo-card__cover"><i class="bi bi-star-fill" aria-hidden="true"></i>Cover</span>{% endif %}
     <div class="lp-photo-hover lp-photo-card__tools" id="photo-tools-{{ photo.pk }}" role="group" aria-label="Photo actions">
