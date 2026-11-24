@@ -29,6 +29,7 @@ from .models import (
     GalleryPermission,
     GalleryPhoto,
     GalleryPhotoComment,
+    GalleryPhotoCommentReaction,
     GallerySettings,
     GalleryStore,
     StoreProduct,
@@ -360,7 +361,10 @@ def client_gallery_access(request, token, search_results=False):
         for comment in GalleryPhotoComment.objects.filter(
             gallery=gallery,
             photo_id__in=page_photo_ids,
-        ).select_related("invitation", "author"):
+        ).select_related("invitation", "author").prefetch_related("reactions"):
+            reactions = list(comment.reactions.all())
+            comment.like_count = sum(r.value == 1 for r in reactions)
+            comment.liked_by_viewer = any(r.value == 1 and r.user_id == request.user.pk for r in reactions)
             comment.can_delete_for_viewer = _owns_photo_comment(request, comment, invitation)
             comments_by_photo.setdefault(comment.photo_id, []).append(comment)
 
@@ -555,6 +559,28 @@ def _owns_photo_comment(request, comment, invitation):
     if comment.author_id:
         return request.user.is_authenticated and comment.author_id == request.user.pk
     return comment.invitation_id == invitation.pk
+
+
+@require_POST
+def client_comment_like(request, token, photo_id):
+    _, _, gallery, permissions, _ = _client_gallery_access(token, request)
+    if not permissions.comment or not request.user.is_authenticated:
+        return HttpResponseForbidden("Sign in to like comments.")
+    photo = get_object_or_404(GalleryPhoto, pk=photo_id, gallery=gallery, is_visible=True, status=GalleryPhoto.Status.COMPLETED)
+    try:
+        comment_id = int(request.POST.get("comment_id", ""))
+        if not 0 < comment_id <= 9223372036854775807:
+            raise ValueError
+    except ValueError:
+        return HttpResponseBadRequest("Invalid comment.")
+    with transaction.atomic():
+        comment = get_object_or_404(GalleryPhotoComment.objects.select_for_update(), pk=comment_id, gallery=gallery, photo=photo)
+        reactions = GalleryPhotoCommentReaction.objects.filter(comment=comment)
+        if request.POST.get("liked") == "true":
+            reactions.update_or_create(user=request.user, defaults={"value": 1})
+        else:
+            reactions.filter(user=request.user, value=1).delete()
+        return JsonResponse({"liked": reactions.filter(user=request.user, value=1).exists(), "count": reactions.filter(value=1).count()})
 
 
 @require_POST
