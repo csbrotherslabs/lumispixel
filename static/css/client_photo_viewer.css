@@ -65,3 +65,18 @@
 [data-client-photo] :is(.sf-photo__actions,.story-photo__actions,.ms-photo__overlay,.cp-photo__actions) :is(button,a) {pointer-events:auto}
 
 @media(pointer:coarse) {.lp-viewer__toolbar :is(button,a,label),.lp-viewer__stage>button {min-height:44px;min-width:44px}}
+
+.lp-viewer__footer{justify-content:flex-end;border-bottom:0;border-top:1px solid #ffffff24}
+.lp-viewer__footer [data-viewer-favorite]{margin-left:0;color:#fb7185}
+.lp-viewer__footer [data-viewer-comments]{color:#d8b4fe}
+.lp-viewer__footer [data-viewer-share]{color:#7dd3fc}
+.lp-viewer__footer [data-viewer-status]{font-size:12px;order:-1;margin-right:auto}
+.lp-viewer-download-menu{position:relative;z-index:12}
+.lp-viewer-download-menu summary{cursor:pointer;padding:8px;border:1px solid #ffffff44;border-radius:6px}
+.lp-viewer-download-options{position:absolute;top:100%;left:0;display:grid;gap:8px;background:#25282d;padding:12px;border-radius:8px;min-width:150px}
+.lp-viewer-download-menu:not([open]) .lp-viewer-download-options{display:none}
+.lp-viewer-download-options select{color:white;background:#25282d;padding:8px}
+.lp-viewer__toolbar .lp-viewer__download-group{width:auto;margin-right:auto}
+.lp-viewer-scroll{width:100%;height:100%;overflow:auto;display:block}
+.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media{width:calc(100% * var(--viewer-zoom,1));height:calc(100% * var(--viewer-zoom,1));max-width:none;max-height:none;display:grid;place-items:center}
+.lp-viewer .lp-viewer-scroll .lp-gallery-watermark-media img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
