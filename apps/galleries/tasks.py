@@ -54,3 +54,23 @@ def cleanup_stale_gallery_multipart_uploads():
 @shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)
 def cleanup_gallery_storage_objects():
     return process_storage_deletions()
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True,
+             retry_backoff_max=600, retry_jitter=True, max_retries=5)
+def generate_gallery_photo_derivatives(self, photo_id):
+    """Idempotent background generation for an uploaded gallery photograph."""
+    from .models import GalleryPhoto
+    from .derivatives import generate_photo_derivatives
+    photo = GalleryPhoto.objects.filter(pk=photo_id, status=GalleryPhoto.Status.COMPLETED).first()
+    if photo is None:
+        return {"skipped": True}
+    return {"generated": generate_photo_derivatives(photo)}
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True,
+             retry_backoff_max=600, retry_jitter=True, max_retries=5)
+def generate_gallery_cover_derivatives(self, gallery_id):
+    from .models import Gallery
+    from .cover_derivatives import generate_cover_derivatives
+    gallery = Gallery.objects.filter(pk=gallery_id).exclude(cover_image="").first()
+    return {"generated": generate_cover_derivatives(gallery) if gallery else False}

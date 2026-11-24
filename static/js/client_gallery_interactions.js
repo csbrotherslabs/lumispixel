@@ -70,6 +70,8 @@
           const article = document.createElement('article');
           article.className = 'sf-comment';
           article.dataset.clientCommentId = data.comment.id;
+          article.dataset.createdAt = data.comment.created_at || "";
+          article.dataset.photographer = String(data.comment.is_photographer === true);
 
           const avatar = document.createElement('div');
           avatar.className = 'sf-comment__avatar';

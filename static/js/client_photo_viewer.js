@@ -17,8 +17,107 @@
   function counts() {
     viewer.querySelector('[data-viewer-comment-count]').textContent = current?.querySelector('[data-comment-count]')?.textContent || '0';
     viewer.querySelector('[data-viewer-favorite-count]').textContent = current?.querySelector('[data-favorite-count]')?.textContent || '0';
+    viewer.querySelector('[data-viewer-thread-count]').textContent = viewer.querySelector('[data-viewer-comment-count]').textContent;
     favoriteButton.setAttribute('aria-pressed', String(current?.dataset.favorite === 'true'));
   }
+  function renderCommentLike(button, liked, count) {
+    button.setAttribute('aria-pressed', String(liked));
+    button.setAttribute('aria-label', liked ? 'Unlike comment' : 'Like comment');
+    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-7c2 0 3 1 3 3l-1 4h5a2 2 0 0 1 2 2l-2 7a2 2 0 0 1-2 2H7"/></svg>';
+    const label=document.createElement('span');
+    label.textContent=String(count);
+    button.append(label);
+  }
+  function decorateComments() {
+    if (!panel) return;
+    const composer = panel.querySelector('[data-comment-form]');
+    if (composer && !composer.classList.contains('lp-comment-composer')) {
+      composer.classList.add('lp-comment-composer');
+      const input = composer.querySelector('textarea');
+      const submit = composer.querySelector('button[type=submit]');
+      if(input) {input.placeholder='Write a comment…';input.rows=1;}
+      if(submit) {
+        submit.setAttribute('aria-label','Send comment');
+        submit.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg>';
+        composer.append(submit);
+      }
+    }
+    panel.querySelectorAll('[data-client-comment-id]').forEach(row => {
+      if (!row.querySelector('.lp-comment-avatar')) {
+        const author = row.querySelector('strong');
+        const paragraph = row.querySelector('p');
+        if (author && paragraph) {
+          const name = author.textContent.trim();
+          const avatar = document.createElement('span');
+          avatar.className = 'lp-comment-avatar';
+          avatar.setAttribute('aria-hidden','true');
+          avatar.dataset.tone = String(Array.from(name).reduce((sum,ch)=>sum+ch.charCodeAt(0),0)%4);
+          avatar.textContent = name.split(/\s+/).slice(0,2).map(word=>word[0]||'').join('').toUpperCase() || 'G';
+          const content = document.createElement('div');
+          content.className = 'lp-comment-content';
+          const meta = document.createElement('div');
+          meta.className = 'lp-comment-meta';
+          const nameLine = document.createElement('div');
+          nameLine.className = 'lp-comment-name';
+          nameLine.append(author);
+          if(row.dataset.photographer === 'true') {
+            const tag = document.createElement('span');
+            tag.className = 'lp-comment-role'; tag.textContent = 'Photographer';
+            nameLine.append(tag);
+          }
+          meta.append(nameLine);
+          const time = row.querySelector('time') || document.createElement('time');
+          const date = new Date(row.dataset.createdAt || '');
+          if(!Number.isNaN(date.getTime())) {
+            time.dateTime = date.toISOString();
+            const today = new Date(), yesterday = new Date();
+            yesterday.setDate(today.getDate()-1);
+            const clock = date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+            time.textContent = date.toDateString() === today.toDateString() ? 'Today at '+clock : date.toDateString() === yesterday.toDateString() ? 'Yesterday at '+clock : date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · '+clock;
+          }
+          if(time.textContent) meta.append(time);
+          const actions = document.createElement('div');
+          actions.className = 'lp-comment-actions';
+          const deletion = row.querySelector('[data-client-comment-delete]');
+          if(deletion) actions.append(deletion);
+          content.append(meta, paragraph, actions);
+          row.replaceChildren(avatar,content);
+        }
+      }
+      const deleteControl = row.querySelector('[data-client-comment-delete]');
+      const deleteButton = deleteControl?.matches('button') ? deleteControl : deleteControl?.querySelector('button');
+      if(deleteButton && !deleteButton.classList.contains('lp-comment-trash')) {
+        deleteButton.classList.add('lp-comment-trash');
+        deleteButton.setAttribute('aria-label','Delete comment');
+        deleteButton.title='Delete comment';
+        deleteButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>';
+      }
+      if(row.querySelector('[data-comment-like]') || !viewer.hasAttribute('data-can-like-comments')) return;
+      const button=document.createElement('button');
+      button.type='button'; button.dataset.commentLike='';
+      renderCommentLike(button,row.dataset.liked==='true',row.dataset.likes||'0');
+      (row.querySelector('.lp-comment-actions') || row).prepend(button);
+    });
+  }
+  viewer.addEventListener('click', async event => {
+    const button=event.target.closest('[data-comment-like]');
+    if(!button || button.disabled || !panel) return;
+    const row=button.closest('[data-client-comment-id]');
+    const form=panel.querySelector('[data-comment-form]');
+    if(!form) return;
+    const url=new URL(form.action);
+    url.pathname=url.pathname.replace(/comment\/$/,'comment-like/');
+    button.disabled=true;
+    try {
+      const response=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':viewer.querySelector('[name=csrfmiddlewaretoken]').value},body:new URLSearchParams({comment_id:row.dataset.clientCommentId,liked:String(button.getAttribute('aria-pressed')!=='true')})});
+      if(!response.ok) throw Error();
+      const data=await response.json();
+      row.dataset.liked=String(data.liked);
+      row.dataset.likes=String(data.count);
+      renderCommentLike(button,data.liked,data.count);
+    } catch { status.textContent='Unable to update comment like'; }
+    finally {button.disabled=false;}
+  });
   function comments(show) {
     aside.hidden = !show;
     commentButton.setAttribute('aria-expanded', String(show));
@@ -30,19 +129,105 @@
     const link = current.querySelector('[data-photo-download]');
     if (!link) return;
     const url = new URL(link.href);
-    const selected = viewer.querySelector('[name="viewer-size"]:checked').value;
+    const selected = viewer.querySelector('[name="viewer-size"]').value;
     url.searchParams.set('size', selected);
     viewer.querySelector('[data-viewer-download-label]').textContent = 'Download ' + selected.charAt(0).toUpperCase() + selected.slice(1);
     download.href = url.href;
   }
+  const status = viewer.querySelector('[data-viewer-status]');
+  const scroll = viewer.querySelector('.lp-viewer-scroll');
+  const media = image.parentElement;
+  let zoom = 1, pinch = null;
+  function setZoom(value, anchor) {
+    zoom = Math.max(1, Math.min(4, value));
+    const width = scroll.clientWidth, height = scroll.clientHeight;
+    if (width && height && image.naturalWidth && image.naturalHeight) {
+      const rect = scroll.getBoundingClientRect();
+      const x = anchor ? anchor.clientX - rect.left : width / 2;
+      const y = anchor ? anchor.clientY - rect.top : height / 2;
+      const oldWidth = media.offsetWidth, oldHeight = media.offsetHeight;
+      const fx = oldWidth ? (scroll.scrollLeft + x - Math.max(0, (width-oldWidth)/2))/oldWidth : .5;
+      const fy = oldHeight ? (scroll.scrollTop + y - Math.max(0, (height-oldHeight)/2))/oldHeight : .5;
+      const fit = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const w = image.naturalWidth * fit * zoom, h = image.naturalHeight * fit * zoom;
+      media.style.setProperty('--viewer-width', Math.floor(w) + 'px');
+      media.style.setProperty('--viewer-height', Math.floor(h) + 'px');
+      scroll.scrollLeft = zoom === 1 ? 0 : Math.max(0, fx*w-x+Math.max(0,(width-w)/2));
+      scroll.scrollTop = zoom === 1 ? 0 : Math.max(0, fy*h-y+Math.max(0,(height-h)/2));
+    }
+    scroll.toggleAttribute('data-zoomed', zoom > 1);
+    viewer.querySelector('[data-zoom-level]').textContent = Math.round(zoom * 100) + '%';
+    viewer.querySelector('[data-zoom-out]').disabled = zoom <= 1;
+    viewer.querySelector('[data-zoom-in]').disabled = zoom >= 4;
+  }
+  new ResizeObserver(() => { if (viewer.open) setZoom(zoom); }).observe(scroll);
+  scroll.addEventListener('wheel', e => {
+    if (!viewer.open) return;
+    e.preventDefault();
+    setZoom(zoom * Math.exp(-e.deltaY * .002), e);
+  }, {passive:false});
+  scroll.addEventListener('dblclick', e => setZoom(zoom > 1 ? 1 : 2, e));
+  let drag = null;
+  scroll.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || zoom <= 1) return;
+    drag = {x:e.clientX,y:e.clientY,left:scroll.scrollLeft,top:scroll.scrollTop};
+    scroll.setPointerCapture(e.pointerId);
+    scroll.setAttribute('data-dragging','');
+    e.preventDefault();
+  });
+  scroll.addEventListener('pointermove', e => {
+    if (!drag) return;
+    scroll.scrollLeft = drag.left + drag.x - e.clientX;
+    scroll.scrollTop = drag.top + drag.y - e.clientY;
+  });
+  for (const event of ['pointerup','pointercancel','lostpointercapture']) {
+    scroll.addEventListener(event, () => {drag=null;scroll.removeAttribute('data-dragging');});
+  }
+  viewer.querySelector('[data-zoom-in]').onclick = () => setZoom(zoom + .25);
+  viewer.querySelector('[data-zoom-out]').onclick = () => setZoom(zoom - .25);
+  viewer.querySelector('[data-zoom-fit]').onclick = () => setZoom(1);
+  image.addEventListener('load', () => { setZoom(zoom); status.textContent = ''; if (current && viewer.open) recordView(current); });
+  image.addEventListener('error', () => { status.textContent = 'High-resolution preview unavailable. Reopen to retry.'; });
+  const distance = touches => Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+  scroll.addEventListener('touchstart', e => { if(e.touches.length===2) pinch={distance:distance(e.touches),zoom}; }, {passive:true});
+  scroll.addEventListener('touchmove', e => { if(pinch && e.touches.length===2){e.preventDefault();setZoom(pinch.zoom*distance(e.touches)/Math.max(1,pinch.distance));} }, {passive:false});
+  scroll.addEventListener('touchend', () => {pinch=null;});
+  scroll.addEventListener('touchcancel', () => {pinch=null;});
+  viewer.querySelector('[data-viewer-share]')?.addEventListener('click', async () => {
+    try {
+      const url = new URL(viewer.dataset.shareUrl || location.pathname, location.origin); url.hash = '';
+      if(navigator.share) await navigator.share({title:document.title,url:url.href});
+      else { await navigator.clipboard.writeText(url.href); status.textContent='Gallery link copied'; }
+    } catch(e) { if(e.name !== 'AbortError') status.textContent='Unable to share gallery'; }
+  });
+  const viewed = new Set();
+  function recordView(photo) {
+    const url = photo.querySelector('[data-view-url]')?.dataset.viewUrl;
+    if (!url || viewed.has(url)) return;
+    const csrf = viewer.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+      document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrf) return;
+    viewed.add(url);
+    fetch(url, {method:'POST', credentials:'same-origin', headers:{'X-CSRFToken':csrf}})
+      .then(response => { if (!response.ok) throw new Error('View tracking unavailable'); return response.json(); })
+      .then(data => { const count = photo.querySelector('[data-view-count]'); if (count) count.textContent = data.view_count; })
+      .catch(() => viewed.delete(url));
+  }
   function open(photo, showComments, trigger) {
     restore(); current = photo; opener = trigger || opener;
-    image.src = photo.querySelector('[data-full-view]')?.dataset.src || photo.querySelector('img').src;
+    setZoom(1);
+    const preview = photo.querySelector('[data-full-view]')?.dataset.src;
+    image.removeAttribute('src');
+    media.style.setProperty('--viewer-width','0px');
+    media.style.setProperty('--viewer-height','0px');
+    status.textContent = preview ? 'Loading preview…' : 'Preview unavailable';
+    if (preview) image.src = preview;
     panel = photo.querySelector('[data-comment-panel]');
     if (panel) {
       home = document.createComment('comment panel home'); panel.before(home);
       panel.dataset.viewerPhotoId = photo.id; panel.hidden = false;
       viewer.querySelector('[data-viewer-thread]').append(panel);
+      decorateComments();
     }
     commentButton.hidden = !panel;
     favoriteButton.hidden = !photo.querySelector('[data-favorite-form]');
@@ -50,9 +235,11 @@
     download.hidden = !link; viewer.querySelector('[data-viewer-download-group]').hidden = !link;
     const originalLink = photo.querySelector('[data-photo-download][href*="original"]');
     original.hidden = !originalLink; if (originalLink) original.href = originalLink.href;
+    viewer.querySelector('.lp-viewer-download-menu').open = false;
     size(); counts(); aside.hidden = !(showComments && panel);
     commentButton.setAttribute('aria-expanded', String(!aside.hidden));
     if (!viewer.open) viewer.showModal();
+    requestAnimationFrame(() => setZoom(zoom));
     if (showComments) panel?.querySelector('textarea')?.focus();
   }
   // Capture before design-specific legacy lightbox/comment handlers.
@@ -67,14 +254,6 @@
   viewer.querySelector('[data-viewer-comments-close]').addEventListener('click', () => comments(false));
   favoriteButton.addEventListener('click', () => current?.querySelector('[data-favorite-form]')?.requestSubmit());
   viewer.querySelectorAll('[name="viewer-size"]').forEach(input => input.addEventListener('change', size));
-  [download, original].forEach(link => link.addEventListener('click', () => {
-    // Reuse the existing counter handler on the card, without a second navigation.
-    const source = current?.querySelector('[data-photo-download]');
-    if (source) {
-      const cancel = event => event.preventDefault();
-      source.addEventListener('click', cancel, {once: true}); source.click();
-    }
-  }));
   function step(delta) {
     const photos = Array.from(document.querySelectorAll('[data-client-photo]')).filter(photo => !photo.hidden);
     const index = photos.indexOf(current), next = photos[index + delta];
@@ -93,6 +272,7 @@
   viewer.addEventListener('cancel', restore);
   viewer.addEventListener('close', () => { restore(); opener?.focus(); });
   document.addEventListener('lumispixel:favorite-changed', counts);
-  document.addEventListener('lumispixel:comment-submitted', counts);
+  document.addEventListener('lumispixel:comment-submitted', () => {counts();decorateComments();});
+  new MutationObserver(() => {if(panel) decorateComments();}).observe(aside,{childList:true,subtree:true});
   new MutationObserver(counts).observe(document.querySelector('main'), {subtree: true, characterData: true, childList: true});
 })();

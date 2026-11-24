@@ -26,6 +26,13 @@ class PrivateGalleryObjectStorage(S3Storage):
 class PrivateGalleryB2Storage(PrivateGalleryObjectStorage):
     """Private Backblaze B2 storage using B2's S3-compatible API."""
 
+    def _get_write_parameters(self, name, content=None):
+        params = super()._get_write_parameters(name, content)
+        parts = PurePosixPath(name).parts
+        if len(parts) >= 6 and parts[-3] == "variants" and parts[-2] in {"thumbnail", "preview"} and parts[-1].endswith(".webp"):
+            params["ContentType"] = "image/webp"
+        return params
+
     def __init__(self, *args, **kwargs):
         required = {
             "B2_ACCESS_KEY_ID": settings.B2_ACCESS_KEY_ID,

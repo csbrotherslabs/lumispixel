@@ -2282,6 +2282,30 @@ def gallery_photo_comment_action(request, pk, comment_pk):
 
 @photographer_workspace_required
 @require_GET
+def gallery_thumbnail_refresh(request, pk):
+    """Refresh a bounded batch of signed thumbnail URLs for accessible photos."""
+    gallery = get_object_or_404(_accessible_galleries(request), pk=pk)
+    raw_ids = request.GET.getlist("id")
+    if not raw_ids or len(raw_ids) > 50:
+        return JsonResponse({"error": "Provide 1 to 50 photo IDs."}, status=400)
+    try:
+        ids = {int(value) for value in raw_ids}
+        if any(value <= 0 or value > 9223372036854775807 for value in ids):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid photo IDs."}, status=400)
+    photos = _accessible_photos(request).filter(
+        gallery=gallery, pk__in=ids, status=GalleryPhoto.Status.COMPLETED
+    )
+    response = JsonResponse({"photos": {
+        str(photo.pk): photo.thumbnail_url for photo in photos if photo.file
+    }})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@photographer_workspace_required
+@require_GET
 def gallery_photo_media(request, pk):
     photo = get_object_or_404(_accessible_photos(request), pk=pk)
     content_type = mimetypes.guess_type(photo.original_name)[0] or "application/octet-stream"

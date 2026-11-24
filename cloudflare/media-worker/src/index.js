@@ -181,7 +181,7 @@ export default {
       fetchKey = [...parts.slice(0, -1), variant, stem + ".webp"].join("/");
     }
 
-    const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\\/+$/, "");
+    const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\/+$/, "");
     const bucket = encodeURIComponent(env.B2_BUCKET_NAME);
     const encodedKey = fetchKey.split("/").map(encodeURIComponent).join("/");
     const originUrl = `${endpoint}/${bucket}/${encodedKey}`;

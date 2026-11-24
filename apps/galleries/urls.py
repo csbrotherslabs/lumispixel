@@ -5,14 +5,23 @@ from . import access_views, account_views, download_views, invitation_views, vie
 app_name = "galleries"
 
 urlpatterns = [
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/favorite/", views.owner_gallery_favorite, name="owner_gallery_favorite"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comment/", views.owner_gallery_comment, name="owner_gallery_comment"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comment-like/", views.owner_gallery_comment_like, name="owner_gallery_comment_like"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/comments/<int:comment_id>/delete/", views.owner_gallery_comment_delete, name="owner_gallery_comment_delete"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/download/", views.owner_gallery_download, name="owner_gallery_download"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/owner/download-original/", views.owner_gallery_download, {"original": True}, name="owner_gallery_download_original"),
     path("g/<uuid:public_id>/search/", access_views.public_semantic_results, name="public_semantic_results"),
     path("access/<str:token>/search/", access_views.invited_semantic_results, name="invited_semantic_results"),
     path("g/<uuid:public_id>/", access_views.stable_gallery_access, name="stable_gallery_access"),
     path("client-galleries/", views.client_galleries, name="client_galleries"),
     path("access/<str:token>/", access_views.client_gallery_access, name="client_gallery_access"),
+    path("access/<str:token>/photos/<int:photo_id>/view/", views.record_photo_view, name="invited_photo_view"),
+    path("g/<uuid:public_id>/photos/<int:photo_id>/view/", views.record_photo_view, name="public_photo_view"),
     path("access/<str:token>/photos/<int:photo_id>/media/", views.client_gallery_photo_media, name="client_gallery_photo_media"),
     path("access/<str:token>/photos/<int:photo_id>/favorite/", views.client_gallery_favorite, name="client_gallery_favorite"),
     path("access/<str:token>/photos/<int:photo_id>/comments/<int:comment_id>/delete/", views.client_gallery_comment_delete, name="client_gallery_comment_delete"),
+    path("access/<str:token>/photos/<int:photo_id>/comment-like/", views.client_comment_like, name="client_comment_like"),
     path("access/<str:token>/photos/<int:photo_id>/comment/", views.client_gallery_comment, name="client_gallery_comment"),
     path("access/<str:token>/photos/<int:photo_id>/download/", views.client_gallery_download, name="client_gallery_download"),
     path("access/<str:token>/photos/<int:photo_id>/download-original/", views.client_gallery_download_original, name="client_gallery_download_original"),
