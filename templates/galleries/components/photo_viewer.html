@@ -1,4 +1,4 @@
-<dialog class="lp-photo-lightbox lp-viewer" data-photo-lightbox {% if request.user.is_authenticated %}data-can-like-comments{% endif %} aria-label="Photo viewer">{% csrf_token %}
+<dialog class="lp-photo-lightbox lp-viewer" data-photo-lightbox data-share-url="{{ stable_gallery_url }}" {% if request.user.is_authenticated %}data-can-like-comments{% endif %} aria-label="Photo viewer">{% csrf_token %}
   <header class="lp-viewer__toolbar">
     <div class="lp-viewer__download-group" data-viewer-download-group hidden>
     <details class="lp-viewer-download-menu"><summary>Download ▾</summary><div class="lp-viewer-download-options">
