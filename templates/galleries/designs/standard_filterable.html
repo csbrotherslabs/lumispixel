@@ -10,12 +10,14 @@
 {% include "partials/gallery_social_preview.html" %}<link rel="stylesheet" href="{% static 'css/client_comment_delete.css' %}">
 <link rel="stylesheet" href="{% static 'css/client_gallery_watermark.css' %}">
 <script src="{% static 'js/client_gallery_watermark.js' %}" defer></script>
+<script src="{% static 'js/gallery_thumbnail_refresh.js' %}" defer></script>
+<link rel="stylesheet" href="{% static 'css/gallery_thumbnail_refresh.css' %}">
 <link rel="stylesheet" href="{% static 'css/client_photo_viewer.css' %}">
 <link rel="stylesheet" href="{% static 'css/client_photo_actions.css' %}">
 <script src="{% static 'js/client_photo_viewer.js' %}" defer></script>
 </head>
 <body class="sf-client-gallery" style="--gallery-accent:{{ gallery_settings.accent_color }}">
-  {% include "galleries/components/semantic_search.html" %}<main class="sf-gallery">
+  {% include "galleries/components/semantic_search.html" %}<main data-thumbnail-refresh-url="?thumbnail_refresh=1" class="sf-gallery">
     <section class="sf-hero"{% if gallery.cover_image %} data-gallery-cover-zoom="{{ gallery.cover_zoom|default:100 }}" data-cover-source="{{ gallery.cover_image.url }}" style="background-image:url('{{ gallery.cover_image.url }}');background-position:{{ gallery.cover_position_x|default_if_none:50 }}% {{ gallery.cover_position_y|default_if_none:50 }}%"{% elif photos %} style="background-image:url('{{ photos.0.delivery_url }}')"{% endif %}>
       <div class="sf-hero__shade"></div>
       <div class="sf-hero__brand">{% if gallery_settings.studio_logo %}<img src="{{ gallery_settings.studio_logo.url }}" alt="{{ gallery_brand }}">{% else %}{{ gallery_brand }}{% endif %}</div>
