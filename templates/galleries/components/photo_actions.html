@@ -23,8 +23,8 @@
   <span class="lp-photo-control__count" data-comment-count>{{ photo.client_comment_list|length }}</span>
 </button>
 {% endif %}
-<button class="lp-photo-control lp-photo-action--expand" type="button" data-full-view data-src="{{ photo.delivery_url }}" aria-label="View photo full screen" title="Full view">
+<button class="lp-photo-control lp-photo-action--expand" type="button" data-full-view {% if access_token %}data-view-url="{% url 'galleries:invited_photo_view' access_token photo.pk %}"{% elif gallery.visibility == 'public' %}data-view-url="{% url 'galleries:public_photo_view' gallery.public_id photo.pk %}"{% endif %} data-src="{{ photo.delivery_url }}" aria-label="View photo full screen" title="Full view">
   <span class="lp-photo-control__circle"><svg class="lp-photo-action__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
   <span class="lp-photo-control__label">View</span>
-  <span class="lp-photo-control__count" aria-hidden="true"></span>
+  <span class="lp-photo-control__count" data-view-count>{{ photo.client_view_count|default:0 }}</span>
 </button>
