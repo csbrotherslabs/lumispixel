@@ -22,3 +22,17 @@ def queue_gallery_derivatives(sender, instance, **kwargs):
     transaction.on_commit(
         lambda: generate_gallery_photo_derivatives.delay(photo_id), robust=True
     )
+
+from .models import Gallery
+
+
+@receiver(post_save, sender=Gallery)
+def queue_gallery_cover_derivatives(sender, instance, **kwargs):
+    if kwargs.get("raw") or not instance.cover_image:
+        return
+    fields = kwargs.get("update_fields")
+    if fields is not None and "cover_image" not in fields:
+        return
+    from .tasks import generate_gallery_cover_derivatives
+    gallery_id = instance.pk
+    transaction.on_commit(lambda: generate_gallery_cover_derivatives.delay(gallery_id), robust=True)
