@@ -116,3 +116,17 @@
 .lp-viewer .lp-comment-composer>button[type=submit]{flex:0 0 40px;width:40px;height:40px;min-height:40px;padding:10px;margin:0;border:0;border-radius:50%;background:#202735;color:white;display:grid;place-items:center}
 .lp-viewer .lp-comment-composer>button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
 @media(max-width:600px){.lp-viewer .lp-viewer__comments:not([hidden]){width:100%;max-width:100%}}
+
+/* Mobile comments: a rounded bottom sheet that leaves the photo visible. */
+@media(max-width:600px){
+ .lp-viewer .lp-viewer__comments:not([hidden]){
+  position:absolute;top:auto;bottom:0;left:0;right:0;
+  width:100%;max-width:100%;height:66.667%;max-height:66.667%;
+  box-sizing:border-box;border-radius:20px 20px 0 0;
+  overflow:hidden;box-shadow:0 -8px 28px #0003;
+ }
+ .lp-viewer .lp-viewer__comments [data-viewer-thread],
+ .lp-viewer .lp-viewer__comments [data-comment-panel]{min-height:0;flex:1}
+ .lp-viewer .lp-viewer__comments [data-comment-thread]{min-height:0;overflow-y:auto}
+ .lp-viewer .lp-viewer__comments [data-comment-form]{flex-shrink:0}
+}
