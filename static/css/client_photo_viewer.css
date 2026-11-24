@@ -130,3 +130,16 @@
  .lp-viewer .lp-viewer__comments [data-comment-thread]{min-height:0;overflow-y:auto}
  .lp-viewer .lp-viewer__comments [data-comment-form]{flex-shrink:0}
 }
+
+.lp-viewer .lp-comment-actions :is([data-comment-like],.lp-comment-trash){
+ display:inline-flex;align-items:center;justify-content:center;gap:5px;
+ min-height:32px;min-width:34px;padding:6px 9px;border:0;border-radius:8px;
+ background:#eaf2ff;color:#2864b8;box-shadow:none;
+}
+.lp-viewer .lp-comment-actions [data-comment-like][aria-pressed=true]{background:#cfe2ff;color:#174c9b}
+.lp-viewer .lp-comment-actions .lp-comment-trash{background:#fff0f2;color:#c93650}
+.lp-viewer .lp-comment-actions :is([data-comment-like],.lp-comment-trash) svg{
+ width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;
+ stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+}
+.lp-viewer .lp-comment-actions :is([data-comment-like],.lp-comment-trash):focus-visible{outline:2px solid currentColor;outline-offset:2px}
