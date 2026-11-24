@@ -37,6 +37,7 @@ urlpatterns = [
     path("galleries/photos/<int:pk>/comments/<int:comment_pk>/action/", views.gallery_photo_comment_action, name="gallery_photo_comment_action"),
     path("galleries/photos/<int:pk>/media/", views.gallery_photo_media, name="gallery_photo_media"),
     path("galleries/photos/<int:pk>/action/", views.gallery_photo_action, name="gallery_photo_action"),
+    path("galleries/<int:pk>/photos/thumbnail-refresh/", views.gallery_thumbnail_refresh, name="gallery_thumbnail_refresh"),
     path("galleries/<int:pk>/photos/bulk/", views.gallery_photo_bulk_action, name="gallery_photo_bulk_action"),
     path("galleries/<int:pk>/photos/bulk-download/", views.gallery_photo_bulk_download, name="gallery_photo_bulk_download"),
     path("galleries/<int:pk>/edit/", views.edit_gallery, name="edit_gallery"),
