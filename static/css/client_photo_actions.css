@@ -62,3 +62,13 @@
   max-height:calc(100% - 8px);
  }
 }
+
+/* Keep icon and count visually separated without enlarging the overlay. */
+[data-client-photo] .lp-photo-actions .lp-photo-control {
+ gap:3px!important;
+}
+@media(max-width:600px){
+ [data-client-photo] .lp-photo-actions .lp-photo-control {
+  gap:3px!important;height:32px;min-height:32px;
+ }
+}
