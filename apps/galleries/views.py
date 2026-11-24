@@ -177,6 +177,27 @@ def _is_gallery_owner(request, gallery):
 
 
 @require_GET
+def _client_thumbnail_refresh(request, gallery):
+    raw_ids = request.GET.getlist("id")
+    if not raw_ids or len(raw_ids) > 50:
+        return JsonResponse({"error": "Provide 1 to 50 photo IDs."}, status=400)
+    try:
+        ids = {int(value) for value in raw_ids}
+        if any(value <= 0 or value > 9223372036854775807 for value in ids):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid photo IDs."}, status=400)
+    photos = GalleryPhoto.objects.filter(
+        gallery=gallery, pk__in=ids, is_visible=True,
+        status=GalleryPhoto.Status.COMPLETED,
+    )
+    response = JsonResponse({"photos": {
+        str(photo.pk): photo.thumbnail_url for photo in photos if photo.file
+    }})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
 def stable_gallery_access(request, public_id, search_results=False):
     gallery = get_object_or_404(Gallery.objects.select_related("photographer"), public_id=public_id, archived_at__isnull=True, deleted_at__isnull=True, status__in=[Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED])
     now = timezone.now()
@@ -200,6 +221,8 @@ def stable_gallery_access(request, public_id, search_results=False):
         if not request.user.is_authenticated:
             return _private_gallery_login(request, gallery)
         return render(request, "galleries/stable_gallery_gate.html", {"gallery": gallery})
+    if request.GET.get("thumbnail_refresh") == "1":
+        return _client_thumbnail_refresh(request, gallery)
     if search_results:
         photo_page, photos, error = _semantic_photo_page(request, gallery)
         if error is not None:
@@ -304,6 +327,8 @@ def _record_client_access(request, token, invitation, gallery):
 @require_GET
 def client_gallery_access(request, token, search_results=False):
     token_record, invitation, gallery, permissions, settings = _client_gallery_access(token, request)
+    if request.GET.get("thumbnail_refresh") == "1":
+        return _client_thumbnail_refresh(request, gallery)
     _record_client_access(request, token_record, invitation, gallery)
 
     if search_results:
