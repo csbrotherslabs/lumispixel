@@ -207,7 +207,7 @@ MAX_IMAGE_SIZE = 50 * 1024 * 1024
 
 THEME_FIELD_CONFIG = {
     PhotographerProfile.WebsiteTheme.BASIC: {"required": [], "optional": []},
-    PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": ["testimonial_quote", "testimonial_name"]},
+    PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": []},
     PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "consultation_call_to_action"], "optional": ["services_intro", "featured_project_title", "featured_project_description"]},
     PhotographerProfile.WebsiteTheme.CINEMATIC: {"required": ["hero_media_type", "hero_heading", "hero_subheading", "story_heading", "story_text", "contact_call_to_action"], "optional": ["hero_video", "featured_video_url"]},
     PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL: {"required": ["editorial_heading", "artist_statement", "project_section_heading", "contact_statement"], "optional": []},
@@ -237,7 +237,7 @@ SECTION_REQUIRED_FIELDS = {
     "services": (),
     "portfolio": ("featured_gallery_title",),
     "films": ("featured_video_url",),
-    "reviews": ("testimonial_quote", "testimonial_name"),
+    "reviews": (),
     "stats": (),
     "team": (),
     "contact": ("booking_call_to_action", "contact_email"),
@@ -329,7 +329,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                 self.fields["hero_image"].help_text = f"Current image: {website_profile.hero_image.name}"
             existing_sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
             theme = self.instance.website_theme or PhotographerProfile.WebsiteTheme.BASIC
-            selected_sections = existing_sections or THEME_DEFINITIONS[theme]["sections"]
+            selected_sections = [key for key in (existing_sections or THEME_DEFINITIONS[theme]["sections"]) if key != "reviews"] + ["reviews"]
             self.fields["website_sections"].initial = selected_sections
             self.fields["section_order"].initial = ",".join(selected_sections)
 
@@ -364,7 +364,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         if self.content_only:
             return cleaned
         sections = cleaned.get("website_sections") or (THEME_DEFINITIONS[theme]["sections"] if "website_sections" not in self.data else [])
-        cleaned["website_sections"] = sections
+        cleaned["website_sections"] = [key for key in sections if key != "reviews"] + ["reviews"]
         for required_section in ("hero", "contact"):
             if required_section not in sections:
                 self.add_error("website_sections", f"{SECTION_LIBRARY[required_section]['name']} is required for every photographer website.")
@@ -405,7 +405,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
     def _save_sections(self, website, theme):
         selected = list(self.cleaned_data.get("website_sections") or THEME_DEFINITIONS[theme]["sections"])
         requested_order = [key for key in (self.cleaned_data.get("section_order") or "").split(",") if key in selected]
-        order = requested_order + [key for key in selected if key not in requested_order]
+        order = [key for key in requested_order + [key for key in selected if key not in requested_order] if key != "reviews"] + ["reviews"]
         existing = {section.section_type: section for section in website.sections.all()}
         for index, section_type in enumerate(order):
             section = existing.get(section_type) or PhotographerWebsiteSection(photographer_website=website, section_type=section_type)
