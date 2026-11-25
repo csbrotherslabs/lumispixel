@@ -2843,6 +2843,26 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
+        if request.POST.get("action") == "update_booking_value":
+            if not request.studio_access.allows("schedule") or not request.studio_access.allows("financials"):
+                raise PermissionDenied
+            try:
+                value = Decimal(request.POST.get("price", ""))
+                if not value.is_finite() or value < 0 or value >= Decimal("10000000000") or value != value.quantize(Decimal("0.01")):
+                    raise ValueError
+            except (ValueError, ArithmeticError):
+                return JsonResponse({"ok": False, "error": "Enter a valid non-negative booking value with up to two decimal places."}, status=400)
+            with transaction.atomic():
+                session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access).select_for_update(), pk=request.POST.get("booking_id"))
+                if session.status == ClientSession.Status.CANCELLED or session.contracts.exclude(status=Contract.Status.VOIDED).exclude(status=Contract.Status.DRAFT).exists():
+                    return JsonResponse({"ok": False, "error": "Discard any unsent signed agreement or arrange an amendment before changing the fee."}, status=409)
+                old = session.booking_value
+                if old != value:
+                    session.booking_value = value
+                    session.save(update_fields=["booking_value", "updated_at"])
+                    ClientActivity.objects.create(photographer=profile, actor=request.user, client=session.client, booking=session, event_type=ClientActivity.EventType.BOOKING_UPDATED, description="Booking value updated.", metadata={"changes": {"booking_value": {"before": str(old), "after": str(value)}}})
+            return JsonResponse({"ok": True, "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk])})
+
         if request.POST.get("action") in {"create_mini", "edit_mini"}:
             if not request.studio_access.allows("schedule"):
                 raise PermissionDenied
@@ -3521,6 +3541,23 @@ def contract_preview(request, pk):
                         Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
                     }[contract.status]})
     return render(request, "photographer_workspace/contracts/preview.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_discard(request, pk):
+    accessible = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    with transaction.atomic():
+        contract = get_object_or_404(Contract.objects.select_for_update().filter(photographer=request.studio, booking__in=accessible), pk=pk)
+        booking_id = contract.booking_id
+        if contract.status not in (Contract.Status.DRAFT, Contract.Status.READY) or contract.send_count or contract.sent_at or contract.last_sent_at or contract.viewed_at or contract.signed_at:
+            messages.error(request, "Only unsent agreements can be discarded.")
+        else:
+            contract.status = Contract.Status.VOIDED
+            contract.review_token_revoked_at = timezone.now()
+            contract.save(update_fields=["status", "review_token_revoked_at", "updated_at"])
+            messages.success(request, "Unsent agreement discarded. Its audit history is preserved.")
+    return redirect(reverse("photographer_workspace:booking_detail", args=[booking_id]) + "?tab=contract")
 
 
 @photographer_workspace_required

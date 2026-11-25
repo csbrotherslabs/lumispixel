@@ -86,7 +86,7 @@ def merge_context(booking):
         "booking.date": formats.date_format(local_start, "DATE_FORMAT"),
         "booking.start_time": formats.time_format(local_start, "TIME_FORMAT"),
         "booking.location": booking.location,
-        "booking.value": formats.number_format(booking.booking_value, decimal_pos=2),
+        "booking.value": (f"{booking.photographer.default_currency} {booking.booking_value:,.2f}" if booking.booking_value > 0 else "Not yet agreed"),
         "workspace.name": studio_name,
         "photographer.name": studio_name,
     }

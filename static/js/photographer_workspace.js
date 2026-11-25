@@ -1010,6 +1010,24 @@
     }
   }
 
+  const saveValueButton = layer.querySelector('[data-save-booking-value]');
+  if (saveValueButton) saveValueButton.addEventListener('click', async function () {
+    if (!activeContractEvent || !editing) return;
+    if (!window.confirm('Save only the agreed booking value? Other unsaved changes will not be saved. Existing draft agreements must be reviewed or recreated.')) return;
+    const data = new FormData();
+    data.set('csrfmiddlewaretoken', form.elements.csrfmiddlewaretoken.value);
+    data.set('action', 'update_booking_value');
+    data.set('booking_id', activeContractEvent.id);
+    data.set('price', form.elements.price.value);
+    saveValueButton.disabled = true;
+    try {
+      const response = await fetch(form.action, {method:'POST', body:data, credentials:'same-origin'});
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to save booking value.');
+      dirty = false;
+      window.location.assign(result.booking_url);
+    } catch (error) { window.alert(error.message); saveValueButton.disabled = false; }
+  });
   function currentType() { return form.elements.event_type.value; }
   function syncType() {
     const type = currentType();
@@ -1022,6 +1040,7 @@
     });
     const selectedType = form.querySelector('input[name="event_type"]:checked');
     renderEditContract();
+    if (saveValueButton) saveValueButton.hidden = !editing || type !== "booking";
     if (!editing && selectedType) title.textContent = 'Create ' + selectedType.nextElementSibling.textContent.trim();
     checkConflict();
   }

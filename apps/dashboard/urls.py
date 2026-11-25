@@ -93,6 +93,7 @@ urlpatterns = [
     path("contracts/<int:pk>/", views.contract_detail, name="contract_detail"),
     path("contracts/<int:pk>/customize/", views.contract_detail, name="contract_customize"),
     path("contracts/<int:pk>/preview/", views.contract_preview, name="contract_preview"),
+    path("contracts/<int:pk>/discard/", views.contract_discard, name="contract_discard"),
     path("contracts/<int:pk>/send/", views.contract_send, name="contract_send"),
     path("contracts/<int:pk>/signed-pdf/", views.signed_contract_pdf, name="signed_contract_pdf"),
     path("contracts/<int:pk>/signed-pdf/download/", views.signed_contract_pdf, {"disposition": "attachment"}, name="signed_contract_pdf_download"),
