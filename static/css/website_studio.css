@@ -110,3 +110,5 @@
  #studio-form [data-experience-group=history] .studio-experience-fields label:is([data-experience-field=start],[data-experience-field=end]){grid-column:auto}
 }
 @media(prefers-reduced-motion:reduce){#studio-form .lumis-content-section :is(input,textarea,select){transition:none}}
+
+#studio-form [data-team-editor]{container-type:inline-size;min-width:0}#studio-form [data-team-items]{display:grid;gap:12px;min-width:0}#studio-form .studio-team-photo{aspect-ratio:3/4;height:auto;max-height:220px}#studio-form .studio-team-photo img{width:100%;height:100%;object-fit:cover}#studio-form [data-team-add]{border:1px dashed #bbb;background:white;border-radius:8px;padding:12px;color:#a31818;font-size:13px;cursor:pointer}#studio-form [data-team-row] .studio-client-header strong{overflow-wrap:anywhere;min-width:0}#studio-form [data-team-row] .studio-client-fields textarea{width:100%;min-width:0}
