@@ -17,7 +17,27 @@ from .models import BookingReview, PlatformBooking
 
 
 class BookingRequestForm(forms.Form):
-    session_type = forms.CharField(max_length=120, label="Photography service")
+    session_type = forms.ChoiceField(label="Photography service")
+    duration_minutes = forms.TypedChoiceField(label="Estimated duration", choices=[(n, f"{n} minutes") for n in (30,60,120,180,240,360,480,720)], coerce=int)
+    location = forms.CharField(max_length=255, label="Event location")
+    guests = forms.IntegerField(min_value=1, max_value=100000, required=False, label="Number of guests")
+    budget = forms.ChoiceField(required=False, choices=[("", "Not sure yet")]+[(v,v) for v in ("Under $500","$500–$1,000","$1,000–$2,500","$2,500–$5,000","$5,000+")], label="Estimated budget (USD)")
+    description = forms.CharField(max_length=3000, widget=forms.Textarea(attrs={"rows":4}), label="Tell us about your project")
+    first_name = forms.CharField(max_length=100)
+    last_name = forms.CharField(max_length=100)
+    phone = forms.CharField(max_length=40, required=False)
+    contact_method = forms.ChoiceField(choices=[("email","Email"),("phone","Phone")], label="Preferred contact method")
+    acknowledge = forms.BooleanField(label="I understand this is a request, not a confirmed booking or payment.")
+
+    def __init__(self, *args, specialties=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["session_type"].choices = [(name, name) for name in specialties] or [("Other photography","Other photography")]
+
+    def clean(self):
+        data = super().clean()
+        if data.get("contact_method") == "phone" and not data.get("phone"):
+            self.add_error("phone", "Enter a phone number for phone contact.")
+        return data
     starts_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}), label="Requested date and time")
 
     def clean_starts_at(self):
@@ -78,20 +98,34 @@ def request_booking(request, slug):
     photographer = website.photographer_profile
     if not customer_allowed(request.user, photographer):
         return HttpResponseForbidden("A verified customer account is required.")
-    form = BookingRequestForm(request.POST if request.method == "POST" else None)
+    published = website.theme_content["_published_website"]
+    form = BookingRequestForm(request.POST if request.method == "POST" else None,
+        specialties=published.get("specialties", []),
+        initial={"first_name": request.user.first_name, "last_name": request.user.last_name})
+    context = {"form": form, "slug": slug, "brand": published.get("brand") or photographer.display_name,
+               "email": request.user.email, "booking_timezone": timezone.get_current_timezone_name()}
+    if request.method == "GET" and request.GET.get("sent"):
+        token = request.GET["sent"]
+        context["success"] = token.isascii() and token.isdigit() and len(token) < 19 and PlatformBooking.objects.filter(pk=int(token), customer=request.user, photographer=photographer).exists()
     if request.method == "POST" and form.is_valid():
         with transaction.atomic():
             # Never attach an account to a CRM record merely by matching email.
             client = Client.objects.filter(photographer=photographer, user=request.user).order_by("pk").first()
             if client is None:
                 client = Client.objects.create(photographer=photographer, user=request.user,
-                    first_name=request.user.first_name or "Client", last_name=request.user.last_name, email=request.user.email)
+                    first_name=form.cleaned_data["first_name"], last_name=form.cleaned_data["last_name"], email=request.user.email)
             session = ClientSession.objects.create(photographer=photographer, client=client,
                 session_type=form.cleaned_data["session_type"], starts_at=form.cleaned_data["starts_at"],
+                duration_minutes=form.cleaned_data["duration_minutes"], location=form.cleaned_data["location"],
+                notes="\n".join([f"Requested by: {form.cleaned_data['first_name']} {form.cleaned_data['last_name']}",
+                    f"Verified email: {request.user.email}", f"Phone: {form.cleaned_data['phone']}",
+                    f"Preferred contact: {form.cleaned_data['contact_method']}",
+                    f"Guests: {form.cleaned_data['guests'] or 'Not specified'}", f"Budget (USD): {form.cleaned_data['budget'] or 'Not specified'}",
+                    "", form.cleaned_data["description"]]),
                 status=ClientSession.Status.TENTATIVE, event_kind=ClientSession.EventKind.BOOKING)
-            PlatformBooking.objects.create(session=session, customer=request.user, photographer=photographer)
-        return render(request, "marketplace/verified_booking_form.html", {"heading": "Booking request sent", "success": True, "slug": slug})
-    return render(request, "marketplace/verified_booking_form.html", {"heading": "Request a photography booking", "form": form, "slug": slug})
+            booking = PlatformBooking.objects.create(session=session, customer=request.user, photographer=photographer)
+        return redirect(reverse("public-photographer-booking", kwargs={"slug": slug}) + f"?sent={booking.pk}")
+    return render(request, "marketplace/booking_request.html", context)
 
 
 @login_required
