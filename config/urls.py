@@ -9,8 +9,11 @@ from apps.dashboard.client_contracts import client_contracts
 from apps.dashboard.workspace_settings import workspace_settings
 
 from apps.photographers.publishing import public_website
+from apps.marketplace.verified_reviews import request_booking, submit_review
 
 urlpatterns = [
+    path("p/<slug:slug>/book/", request_booking, name="public-photographer-booking"),
+    path("p/<slug:slug>/reviews/<int:booking_id>/", submit_review, name="public-photographer-review"),
     path("p/<slug:slug>/", public_website, name="public-photographer-website"),
     path("health/live/", live, name="health_live"),
     path("health/ready/", ready, name="health_ready"),

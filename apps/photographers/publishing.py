@@ -250,6 +250,9 @@ def render_website(request, website, data, draft_preview=False):
         supported.add("equipment")
     supported.add("reviews")
     sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported or draft_preview]
+    from apps.marketplace.verified_reviews import review_context
     return render(request, "photographers/public_website.html", {
+        **review_context(request, website.photographer_profile, draft_preview),
+        "photographer_slug": website.photographer_profile.slug,
         "public_site": True, "draft_preview": draft_preview, "demo": demo, "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
     })
