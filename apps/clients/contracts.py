@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.utils import formats, timezone
 
 from .models import (Contract, ContractEvent, ContractPhotographerSignature,
-                     ContractSignature, ContractTemplate)
+                     ContractSignature, ContractTemplate, ClientSession, ClientActivity)
 from .payment_terms import payment_clause, validate_saved_payment_terms
 from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
@@ -330,6 +330,21 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
                       "signer": signer_name, "signed_at": now.isoformat(), "content_hash": digest,
                       "client_id": contract.client_id, "workspace_id": contract.photographer_id},
         )
+        # Confirm only active tentative reservations with both signatures.
+        # A conditional update prevents resurrecting cancelled/completed bookings.
+        if ContractPhotographerSignature.objects.filter(contract=contract, content_hash=digest).exists():
+            updated = ClientSession.objects.filter(
+                pk=contract.booking_id, photographer_id=contract.photographer_id,
+                client_id=contract.client_id, status=ClientSession.Status.TENTATIVE,
+                event_kind=ClientSession.EventKind.BOOKING,
+            ).update(status=ClientSession.Status.CONFIRMED, updated_at=now)
+            if updated:
+                ClientActivity.objects.create(
+                    photographer_id=contract.photographer_id, client_id=contract.client_id,
+                    booking_id=contract.booking_id, event_type=ClientActivity.EventType.BOOKING_UPDATED,
+                    description="Booking automatically confirmed after both parties signed the agreement.",
+                    metadata={"contract_id": contract.pk, "before": "tentative", "after": "confirmed"},
+                )
     generate_signed_contract_pdf(contract.pk)
     return signature
 
