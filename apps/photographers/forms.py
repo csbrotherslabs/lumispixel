@@ -208,7 +208,7 @@ MAX_IMAGE_SIZE = 50 * 1024 * 1024
 THEME_FIELD_CONFIG = {
     PhotographerProfile.WebsiteTheme.BASIC: {"required": [], "optional": []},
     PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": ["testimonial_quote", "testimonial_name"]},
-    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "services_intro", "consultation_call_to_action"], "optional": ["client_list", "featured_project_title", "featured_project_description"]},
+    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "consultation_call_to_action"], "optional": ["services_intro", "featured_project_title", "featured_project_description"]},
     PhotographerProfile.WebsiteTheme.CINEMATIC: {"required": ["hero_media_type", "hero_heading", "hero_subheading", "story_heading", "story_text", "contact_call_to_action"], "optional": ["hero_video", "featured_video_url"]},
     PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL: {"required": ["editorial_heading", "artist_statement", "project_section_heading", "contact_statement"], "optional": []},
     PhotographerProfile.WebsiteTheme.SPORTS_EVENTS: {"required": ["hero_heading", "hero_subheading", "find_photos_heading", "recent_events_heading", "booking_call_to_action"], "optional": ["highlight_video", "featured_event_title", "featured_event_description"]},
@@ -234,7 +234,7 @@ FIELD_SECTION_MAP = {
 SECTION_REQUIRED_FIELDS = {
     "hero": ("hero_heading", "hero_subheading"),
     "about": ("about_heading", "about_text"),
-    "services": ("services_intro",),
+    "services": (),
     "portfolio": ("featured_gallery_title",),
     "films": ("featured_video_url",),
     "reviews": ("testimonial_quote", "testimonial_name"),
@@ -383,7 +383,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         selected_sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
         allowed.update(section_required_fields(profile.website_theme, selected_sections))
-        allowed.update(("availability_window_months", "availability_call_to_action"))
+        allowed.update(("availability_window_months", "availability_call_to_action", "services_intro"))
         allowed = {name for name in allowed if FIELD_SECTION_MAP.get(name) in selected_sections}
         content = dict(website.theme_content or {})
         for name in allowed:
