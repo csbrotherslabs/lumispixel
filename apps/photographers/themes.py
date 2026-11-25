@@ -17,6 +17,11 @@ SECTION_LIBRARY = {
         "description": "Photography specialties and client offerings.",
         "image": "img/photographers/theme-previews/Atelier/atelier-studio-fashion-shoot.webp",
     },
+    "notable_clients": {
+        "name": "Notable Clients",
+        "description": "Showcase organizations you have worked with.",
+        "image": "img/photographers/theme-previews/Panorama/panorama-commercial-campaign.webp",
+    },
     "portfolio": {
         "name": "Selected work",
         "description": "A curated project and portfolio presentation.",
