@@ -17,7 +17,7 @@ def snapshot(profile, website):
     sections = list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
     theme = profile.website_theme
     config = THEME_FIELD_CONFIG[theme]
-    allowed = set(config["required"] + config["optional"])
+    allowed = set(config["required"] + config["optional"]) | {"availability_window_months", "availability_call_to_action"}
     content = {key: value for key, value in website.theme_content.items()
                if key in allowed and FIELD_SECTION_MAP.get(key) in sections}
     return {
@@ -26,6 +26,7 @@ def snapshot(profile, website):
         "sections": sections,
         "content": content,
         "hero_image": website.hero_image.name if website.hero_image else "",
+        "portrait": profile.profile_photo.name if profile.profile_photo else "",
         "specialties": list(profile.specialties.values_list("name", flat=True)),
         "biography": profile.biography,
         "phone": profile.phone_number,
@@ -82,12 +83,44 @@ def public_website(request, slug):
                               ("equipment", PhotographerWebsiteEquipment, "image")):
         data[key] = [dict(item, image_url=media_url(model._meta.get_field(field), item["image"]))
                      for item in data.get(key, [])]
-    supported = {"hero", "about", "services", "portfolio", "contact"}
+    data["portrait_url"] = media_url(PhotographerProfile._meta.get_field("profile_photo"), data.get("portrait"))
+    content = data["content"]
+    def first(*keys):
+        return next((content.get(key) for key in keys if content.get(key)), "")
+    data["headline"] = first("hero_heading", "editorial_heading") or data["brand"]
+    data["intro"] = first("hero_subheading")
+    data["about_heading"] = first("about_heading", "story_heading") or "About the studio"
+    data["about"] = first("about_text", "studio_intro", "story_text", "artist_statement") or data.get("biography")
+    data["portfolio_heading"] = first("featured_gallery_title", "project_section_heading", "recent_events_heading", "featured_project_title", "featured_event_title") or "Selected work"
+    data["portfolio_description"] = first("featured_project_description", "featured_event_description")
+    data["contact_heading"] = first("booking_call_to_action", "consultation_call_to_action", "contact_call_to_action", "contact_statement") or "Let's create something together."
+    data["film_url"] = first("featured_video_url", "highlight_video", "hero_video")
+    from urllib.parse import urlsplit
+    try:
+        if urlsplit(data["film_url"]).scheme not in ("https", "http") or not urlsplit(data["film_url"]).hostname:
+            data["film_url"] = ""
+    except ValueError:
+        data["film_url"] = ""
+    supported = {"hero", "contact"}
+    if data["about"]:
+        supported.add("about")
+    if data.get("specialties") or content.get("services_intro"):
+        supported.add("services")
+    if data["projects"] or data["portfolio_description"]:
+        supported.add("portfolio")
+    if data["film_url"]:
+        supported.add("films")
+    demo = {}
+    if "availability" in data["sections"]:
+        from .website_content import public_availability
+        demo["availability"] = public_availability(website.photographer_profile, content.get("availability_window_months") or 2)
+        demo["availability_call_to_action"] = content.get("availability_call_to_action") or "Request this date"
+        supported.add("availability")
     if data["equipment"]:
         supported.add("equipment")
     if data["content"].get("testimonial_quote"):
         supported.add("reviews")
     sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported]
     return render(request, "photographers/public_website.html", {
-        "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
+        "public_site": True, "demo": demo, "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
     })
