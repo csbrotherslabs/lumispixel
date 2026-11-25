@@ -22,7 +22,7 @@ from .models import BookingReview, PlatformBooking
 
 
 class BookingRequestForm(forms.Form):
-    session_type = forms.ChoiceField(label="Photography service")
+    session_type = forms.ChoiceField(label="Photography service", widget=forms.RadioSelect)
     duration_minutes = forms.TypedChoiceField(label="Estimated duration", choices=[(n, f"{n} minutes") for n in (30,60,120,180,240,360,480,720)], coerce=int)
     location = forms.CharField(max_length=255, label="Event location")
     guests = forms.IntegerField(min_value=1, max_value=100000, required=False, label="Number of guests")
@@ -119,6 +119,8 @@ def request_booking(request, slug):
         initial={"first_name": user.first_name, "last_name": user.last_name} if direct else {})
     context = {"form": form, "slug": slug, "brand": published.get("brand") or photographer.display_name,
                "assisted": assisted, "direct": direct, "booking_timezone": timezone.get_current_timezone_name()}
+    context["booking_cover"] = website.hero_image.storage.url(published["hero_image"]) if published.get("hero_image") else ""
+    context["booking_portrait"] = photographer.profile_photo.storage.url(published["portrait"]) if published.get("portrait") else ""
     if request.method == "GET" and request.session.pop("booking_sent_" + slug, False):
         context["success"] = True
         context["pending"] = not direct
