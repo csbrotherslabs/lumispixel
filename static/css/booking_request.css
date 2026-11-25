@@ -99,3 +99,13 @@
 .booking-shell .booking-control [aria-invalid=true]{border-color:#b33c43}
 .booking-shell .booking-field .errorlist{margin:0;font-size:13px}
 @media(max-width:767px){.booking-shell .fields{grid-template-columns:minmax(0,1fr);gap:16px}.booking-shell .booking-field--description{margin-top:16px}.booking-shell .booking-control :is(input,select,textarea){font-size:16px}}
+
+/* Required indicators and contact form layout override shared marketing form rules. */
+.booking-shell .booking-required{color:#b91c1c;font-size:15px;font-weight:700;display:inline;line-height:1}
+.booking-shell form[data-booking-form] .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px}
+.booking-shell form[data-booking-form] .booking-field{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;min-width:0}
+.booking-shell form[data-booking-form] .booking-field>label{display:block;position:static;width:100%;margin:0;text-align:left;text-transform:none;font-size:13px;font-weight:650}
+.booking-shell .booking-field-hint{font-size:12px;color:#6d6253;line-height:1.4}
+.booking-shell .booking-acknowledge label{display:flex;align-items:flex-start;gap:10px;text-transform:none;line-height:1.5}
+.booking-shell .booking-acknowledge input{flex:0 0 18px;margin-top:3px}
+@media(max-width:767px){.booking-shell form[data-booking-form] .fields{grid-template-columns:minmax(0,1fr);gap:16px}}
