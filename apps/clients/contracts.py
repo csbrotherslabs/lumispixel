@@ -337,7 +337,7 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
                 pk=contract.booking_id, photographer_id=contract.photographer_id,
                 client_id=contract.client_id, status=ClientSession.Status.TENTATIVE,
                 event_kind=ClientSession.EventKind.BOOKING,
-            ).update(status=ClientSession.Status.CONFIRMED, updated_at=now)
+            ).update(status=ClientSession.Status.CONFIRMED, confirmed_at=now, updated_at=now)
             if updated:
                 ClientActivity.objects.create(
                     photographer_id=contract.photographer_id, client_id=contract.client_id,
