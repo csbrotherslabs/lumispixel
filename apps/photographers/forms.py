@@ -423,7 +423,8 @@ for _theme_field_name in PhotographerWebsiteThemeForm.field_names:
     PhotographerWebsiteThemeForm.base_fields[_theme_field_name] = forms.CharField(required=False, widget=_widget)
 PhotographerWebsiteThemeForm.base_fields["contact_email"] = forms.EmailField(required=False, widget=forms.EmailInput(attrs={"class": "form-control"}))
 for _name in ("experience_highlights", "team_members"):
-    PhotographerWebsiteThemeForm.base_fields[_name].widget = forms.Textarea(attrs={"class": "form-control", "rows": 4})
+    if _name in PhotographerWebsiteThemeForm.base_fields:
+        PhotographerWebsiteThemeForm.base_fields[_name].widget = forms.Textarea(attrs={"class": "form-control", "rows": 4})
 
 
 for _video_name in ("hero_video", "featured_video_url", "highlight_video"):
