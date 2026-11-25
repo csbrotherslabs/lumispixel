@@ -3264,7 +3264,12 @@ def booking_detail(request, pk):
         return HttpResponseBadRequest("Unsupported booking action.")
 
     tab = request.GET.get("tab", "overview")
-    if tab not in {"overview", "contract"}:
+    can_view_financials = request.studio_access.allows("financials")
+    booking_tabs = [("overview", "Overview"), ("contract", "Contracts")]
+    if can_view_financials:
+        booking_tabs.append(("payments", "Payments"))
+    booking_tabs.extend([("galleries", "Galleries"), ("questionnaires", "Questionnaires"), ("tasks", "Tasks & Notes"), ("activity", "Activity")])
+    if tab not in dict(booking_tabs):
         tab = "overview"
     local_start = timezone.localtime(booking.starts_at, studio_timezone(profile))
     local_end = local_start + timedelta(minutes=booking.duration_minutes)
@@ -3303,21 +3308,26 @@ def booking_detail(request, pk):
     current_contract = next((item for item in contracts if item.status != Contract.Status.VOIDED), None)
     contract_progress_steps = []
     if current_contract and current_contract.status != Contract.Status.VOIDED:
-        progress_rank = {
-            Contract.Status.DRAFT: 0,
-            Contract.Status.READY: 0,
-            Contract.Status.SENT: 1,
-            Contract.Status.VIEWED: 2,
-            Contract.Status.SIGNED: 3,
-        }[current_contract.status]
+        completed = [True, hasattr(current_contract, "photographer_signature"), bool(current_contract.sent_at), current_contract.status in (Contract.Status.VIEWED, Contract.Status.SIGNED), current_contract.status == Contract.Status.SIGNED]
+        next_step = next((index for index, done in enumerate(completed) if not done), None)
         contract_progress_steps = [
-            {
-                "label": label,
-                "complete": index < progress_rank or current_contract.status == Contract.Status.SIGNED,
-                "current": index == progress_rank and current_contract.status != Contract.Status.SIGNED,
-            }
-            for index, label in enumerate(("Draft", "Sent", "Viewed", "Signed"))
+            {"label": label, "complete": completed[index], "current": index == next_step}
+            for index, label in enumerate(("Draft created", "Photographer signed", "Sent to client", "Client viewed", "Client signed"))
         ]
+    invoices = list(ClientInvoice.objects.for_photographer(profile).filter(booking=booking)) if can_view_financials else []
+    currency_totals = {}
+    for invoice in invoices:
+        if invoice.status in (ClientInvoice.Status.DRAFT, ClientInvoice.Status.VOID):
+            continue
+        totals = currency_totals.setdefault(invoice.currency, [Decimal("0"), Decimal("0"), Decimal("0")])
+        totals[0] += invoice.total
+        totals[1] += invoice.amount_paid
+        totals[2] += invoice.balance
+    payment_totals = [{"currency": currency, "total": format_currency(values[0], currency), "paid": format_currency(values[1], currency), "balance": format_currency(values[2], currency)} for currency, values in sorted(currency_totals.items())]
+    galleries = scope_assigned(Gallery.objects.all(), request.studio_access).filter(client=booking.client, deleted_at__isnull=True)
+    activity = [{"label": event.get_event_type_display(), "description": event.description, "date": event.occurred_at} for event in booking.activities.all()[:50]]
+    activity += [{"label": event.get_event_type_display(), "description": event.contract.title, "date": event.occurred_at} for event in ContractEvent.objects.filter(contract__in=contracts).select_related("contract")[:50]]
+    activity.sort(key=lambda event: event["date"], reverse=True)
     context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
     context.update({
         "booking": booking,
@@ -3355,7 +3365,9 @@ def booking_detail(request, pk):
             ClientSession.Status.COMPLETED: "This photography session has been completed.",
             ClientSession.Status.CANCELLED: "This booking has been cancelled.",
         }[booking.status],
-        "booking_tab": tab,
+        "booking_tab": tab, "booking_tabs": booking_tabs, "can_view_financials": can_view_financials,
+        "booking_invoices": invoices, "payment_totals": payment_totals, "related_client_galleries": galleries,
+        "hub_activity": activity[:50],
         "booking_activity": booking.activities.select_related("actor").all()[:20],
         "contracts": contracts,
         "current_contract": current_contract,
