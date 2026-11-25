@@ -112,6 +112,50 @@ def public_website(request, slug):
     if not data or data.get("theme") not in THEME_DEFINITIONS:
         from django.http import Http404
         raise Http404
+    return render_website(request, website, data)
+
+
+@login_required
+@require_POST
+@never_cache
+def studio_preview(request):
+    website = get_object_or_404(PhotographerWebsiteProfile.objects.select_related("photographer_profile"),
+                                photographer_profile__user=request.user)
+    data = snapshot(website.photographer_profile, website)
+    allowed = set(THEME_FIELD_CONFIG[data["theme"]]["required"] + THEME_FIELD_CONFIG[data["theme"]]["optional"]) | section_required_fields(data["theme"], data["sections"]) | {"availability_window_months", "availability_call_to_action"}
+    for key in allowed:
+        if FIELD_SECTION_MAP.get(key) in data["sections"] and key in request.POST:
+            data["content"][key] = request.POST[key][:10000]
+    if "availability_window_months" in data["content"]:
+        value = str(data["content"]["availability_window_months"])
+        data["content"]["availability_window_months"] = int(value) if value in {"1", "2", "3", "6"} else 2
+    data["projects"] = []
+    data["equipment"] = []
+    projects = {p.display_order: p for p in website.projects.all()}
+    equipment = {p.display_order: p for p in website.equipment_items.all()}
+    for index in range(3):
+        prefix = f"project_{index}_"
+        item = projects.get(index)
+        title = request.POST.get(prefix + "title", "")[:500]
+        description = request.POST.get(prefix + "description", "")[:10000]
+        if title or description or request.POST.get(prefix + "pending"):
+            data["projects"].append({"title": title, "description": description, "image": item.cover_image.name if item and item.cover_image else "", "preview_index": index})
+    for value in request.POST.get("equipment_indices", "").split(",")[:200]:
+        if not value.isdigit() or len(value) > 8:
+            continue
+        index = int(value)
+        prefix = f"equipment_{index}_"
+        if request.POST.get(prefix + "remove"):
+            continue
+        item = equipment.get(index)
+        name = request.POST.get(prefix + "name", "")[:500]
+        description = request.POST.get(prefix + "description", "")[:10000]
+        if name or description or request.POST.get(prefix + "pending"):
+            data["equipment"].append({"name": name, "description": description, "image": item.image.name if item and item.image else "", "preview_index": index})
+    return render_website(request, website, data, draft_preview=True)
+
+
+def render_website(request, website, data, draft_preview=False):
     data = dict(data)
     data["content"] = {**{key: "" for cfg in THEME_FIELD_CONFIG.values() for key in cfg["required"] + cfg["optional"]}, **data["content"]}
     def media_url(field, name):
@@ -162,7 +206,7 @@ def public_website(request, slug):
         supported.add("equipment")
     if data["content"].get("testimonial_quote"):
         supported.add("reviews")
-    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported]
+    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported or draft_preview]
     return render(request, "photographers/public_website.html", {
-        "public_site": True, "demo": demo, "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
+        "public_site": True, "draft_preview": draft_preview, "demo": demo, "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
     })
