@@ -51,3 +51,18 @@ def payment_clause(booking):
     if deposit == total:
         return f"{opening} {advance} No further service fee balance is payable."
     return f"{opening} {advance} The remaining balance of {money(total-deposit)} is payable on or before {booking.balance_due_date:%B %d, %Y}."
+
+def payment_snapshot(booking):
+    return {"pricing_confirmed": booking.pricing_confirmed, "currency": booking.payment_currency,
+            "total": str(booking.booking_value), "deposit": str(booking.deposit_amount),
+            "balance": str(booking.booking_value - booking.deposit_amount),
+            "deposit_due": str(booking.deposit_due_date or ""), "balance_due": str(booking.balance_due_date or "")}
+
+def validate_saved_payment_terms(booking):
+    if not booking.pricing_confirmed or not booking.payment_currency:
+        raise ValidationError("Save agreed pricing and payment terms before signing.")
+    total, deposit = booking.booking_value, booking.deposit_amount
+    if total < 0 or deposit < 0 or deposit > total or (deposit and not booking.deposit_due_date) or (total > deposit and not booking.balance_due_date):
+        raise ValidationError("The saved payment schedule is incomplete or invalid.")
+    if booking.deposit_due_date and booking.balance_due_date and booking.deposit_due_date > booking.balance_due_date:
+        raise ValidationError("The down payment deadline must precede or equal the balance deadline.")

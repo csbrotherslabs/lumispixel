@@ -69,7 +69,8 @@ from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
 from apps.dashboard.contract_starters import serialized_contract_starters
 from apps.clients.contracts import MERGE_FIELDS
-from apps.clients.payment_terms import parse_payment_terms, payment_clause
+from apps.clients.payment_terms import parse_payment_terms, payment_clause, payment_snapshot, validate_saved_payment_terms
+from apps.clients.contracts import _content_hash
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
@@ -2861,7 +2862,8 @@ def bookings_dashboard(request):
                     setattr(session, field, value)
                 session.save(update_fields=[*terms, "updated_at"])
                 ClientActivity.objects.create(photographer=profile, actor=request.user, client=session.client, booking=session, event_type=ClientActivity.EventType.BOOKING_UPDATED, description="Agreed payment terms updated.")
-            return JsonResponse({"ok": True, "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk])})
+            session.refresh_from_db()
+            return JsonResponse({"ok": True, "payment_terms": payment_snapshot(session), "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk])})
 
         if request.POST.get("action") in {"create_mini", "edit_mini"}:
             if not request.studio_access.allows("schedule"):
@@ -3026,7 +3028,7 @@ def bookings_dashboard(request):
                 editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
                 session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
             terms = {}
-            if not is_consultation and request.POST.get("payment_currency"):
+            if not is_consultation:
                 if not request.studio_access.allows("financials"):
                     raise PermissionDenied
                 try:
@@ -3153,8 +3155,10 @@ def bookings_dashboard(request):
                                     if is_consultation else ClientActivity.EventType.BOOKING_CREATED),
                         description=f"{session.session_type} was created.",
                     )
+            session.refresh_from_db()
             return JsonResponse({
                 "ok": True,
+                "payment_terms": payment_snapshot(session) if not is_consultation else None,
                 "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
             }, status=200 if is_edit else 201)
         if request.POST.get("action") == "mark_complete":
@@ -3525,6 +3529,7 @@ def contract_preview(request, pk):
                 contract=contract, actor=request.user,
                 ip_address=request.META.get("REMOTE_ADDR") or None,
                 user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                expected_content_hash=request.POST.get("preview_hash", ""),
                 **signature_form.cleaned_data,
             )
         except ValidationError as exc:
@@ -3542,8 +3547,15 @@ def contract_preview(request, pk):
         send_errors = []
     except ValidationError as exc:
         send_errors = exc.messages
+    rendered = contract_preview_content(contract)
+    payment_errors = []
+    if not contract.locked_at:
+        try:
+            validate_saved_payment_terms(contract.booking)
+        except ValidationError as exc:
+            payment_errors = exc.messages
     context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
-    context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
+    context.update({"contract": contract, "rendered_content": rendered, "preview_hash": _content_hash(rendered), "payment_errors": payment_errors, "payment_summary": payment_snapshot(contract.booking) if not contract.locked_at else None,
                     "send_errors": send_errors, "signature_form": signature_form,
                     "signature_consent_text": DEFAULT_SIGNATURE_CONSENT,
                     "contract_status_variant": {

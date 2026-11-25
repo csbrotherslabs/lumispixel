@@ -16,7 +16,7 @@ from django.utils import formats, timezone
 
 from .models import (Contract, ContractEvent, ContractPhotographerSignature,
                      ContractSignature, ContractTemplate)
-from .payment_terms import payment_clause
+from .payment_terms import payment_clause, validate_saved_payment_terms
 from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
 
@@ -119,6 +119,8 @@ def contract_preview_content(contract, content=None):
     # Upgrade the exact legacy starter paragraph, without rewriting custom legal terms.
     legacy = "Service fee: {{ booking.value }}. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing."
     source = (source or "").replace(legacy, "{{ booking.payment_terms }}")
+    source = re.sub(r"(?m)^Service fee: [^\n]*?\. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing\.", "{{ booking.payment_terms }}", source)
+    source = source.replace("The parties will confirm the service fee, deposit, payment schedule and applicable taxes in writing before signing.", "{{ booking.payment_terms }}")
     has_payment_clause = any(match.group(1) == "booking.payment_terms" for match in MERGE_PATTERN.finditer(source))
     body = render_merge_fields(source, contract.booking)
     if not has_payment_clause:
@@ -161,6 +163,9 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     if not ContractPhotographerSignature.objects.filter(contract=contract).exists():
         raise ValidationError("The photographer must sign before sending.")
     recipient = validate_contract_for_email(contract)
+    signature = ContractPhotographerSignature.objects.get(contract=contract)
+    if not contract.locked_at or not contract.rendered_content or signature.content_hash != _content_hash(contract.rendered_content):
+        raise ValidationError("The signed document does not match the recorded signature. Prepare a replacement agreement.")
     raw_token = secrets.token_urlsafe(32)
     review_url = build_absolute_uri(reverse("clients:contract-review", kwargs={"token": raw_token}))
     rendered_content = contract_preview_content(contract)
@@ -236,7 +241,7 @@ def _content_hash(content):
 
 @transaction.atomic
 def sign_contract_as_photographer(*, contract, actor, signer_name, signature_value,
-                                  consent_accepted, ip_address=None, user_agent=""):
+                                  consent_accepted, ip_address=None, user_agent="", expected_content_hash=None):
     """Countersign and lock the exact workspace-side contract snapshot."""
     contract = Contract.objects.select_for_update().select_related(
         "booking", "client", "photographer"
@@ -253,11 +258,12 @@ def sign_contract_as_photographer(*, contract, actor, signer_name, signature_val
         raise ValidationError({"signature_value": "Type your signature."})
     if consent_accepted is not True:
         raise ValidationError({"consent_accepted": "You must agree before signing."})
-    if not contract.booking.pricing_confirmed:
-        raise ValidationError("Save agreed pricing and payment terms before signing.")
+    validate_saved_payment_terms(contract.booking)
     now = timezone.now()
     rendered_content = contract_preview_content(contract)
     digest = _content_hash(rendered_content)
+    if expected_content_hash is not None and expected_content_hash != digest:
+        raise ValidationError("The agreement changed since you opened it. Review the updated document before signing.")
     consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
     signature = ContractPhotographerSignature.objects.create(
         contract=contract, signer_name=signer_name, signature_value=signature_value,
