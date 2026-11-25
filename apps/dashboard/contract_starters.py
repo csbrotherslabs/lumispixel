@@ -101,7 +101,7 @@ def agreement_content(key):
         "Client email: {{ client.email }}\n"
         "Service: {{ booking.service }}\nDate: {{ booking.date }} at {{ booking.start_time }}\nLocation: {{ booking.location }}\n\n"
         "1. Scope and deliverables\n" + SCOPES[key] + "\n\n"
-        "2. Agreed fee and payment\nService fee: {{ booking.value }}. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing. Additional services or expenses require mutual approval.\n\n"
+        "2. Agreed fee and payment\n{{ booking.payment_terms }} Additional services or expenses require mutual approval.\n\n"
         "3. Cancellation and rescheduling\nEither party will promptly notify the other of a requested cancellation or date change. Rescheduling is subject to availability. Refunds, deposits and cancellation charges will follow the separately agreed written terms and applicable law.\n\n"
         "4. Image delivery\nThe Photographer will deliver selected, professionally edited images in the agreed format and timeframe through a secure gallery or other agreed method. RAW files are excluded unless agreed in writing. The Client will download and back up delivered files within the agreed retention period.\n\n"
         "5. Copyright, usage and releases\n" + LICENSES.get(key, PERSONAL_LICENSE) + " Each party will obtain permissions within its responsibility. Portfolio or promotional publication requires any necessary consent and releases.\n\n"

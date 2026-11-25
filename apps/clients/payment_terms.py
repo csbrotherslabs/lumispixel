@@ -36,15 +36,18 @@ def parse_payment_terms(data, currency):
 
 def payment_clause(booking):
     if not booking.pricing_confirmed:
-        return "Payment terms not yet confirmed."
+        return "Payment terms have not yet been confirmed. This draft is not ready for signature."
     currency = booking.payment_currency
     total = booking.booking_value
     deposit = booking.deposit_amount
-    lines = [f"Total agreed service fee: {currency} {total:,.2f}."]
-    if deposit:
-        lines.append(f"Down payment: {currency} {deposit:,.2f}, due {booking.deposit_due_date:%B %d, %Y}.")
-    else:
-        lines.append("No down payment is required.")
-    if total > deposit:
-        lines.append(f"Remaining balance: {currency} {total-deposit:,.2f}, due {booking.balance_due_date:%B %d, %Y}.")
-    return "\n".join(lines)
+    def money(value):
+        return f"{currency} {value:,.2f}"
+    if total == 0:
+        return "The photography session is complimentary. No service fee, down payment or remaining balance is payable."
+    opening = f"The Client agrees to pay the Photographer a total service fee of {money(total)}."
+    if not deposit:
+        return f"{opening} No down payment is required. The full fee is payable on or before {booking.balance_due_date:%B %d, %Y}."
+    advance = f"A down payment of {money(deposit)} is payable on or before {booking.deposit_due_date:%B %d, %Y} and will be credited toward the total service fee."
+    if deposit == total:
+        return f"{opening} {advance} No further service fee balance is payable."
+    return f"{opening} {advance} The remaining balance of {money(total-deposit)} is payable on or before {booking.balance_due_date:%B %d, %Y}."

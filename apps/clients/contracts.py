@@ -115,8 +115,15 @@ def contract_preview_content(contract, content=None):
     """Render the contract snapshot with current persisted merge values."""
     if content is None and contract.locked_at and contract.rendered_content:
         return contract.rendered_content
-    body = render_merge_fields(contract.content if content is None else content, contract.booking)
-    return body + "\n\nAgreed payment schedule\n" + payment_clause(contract.booking)
+    source = contract.content if content is None else content
+    # Upgrade the exact legacy starter paragraph, without rewriting custom legal terms.
+    legacy = "Service fee: {{ booking.value }}. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing."
+    source = (source or "").replace(legacy, "{{ booking.payment_terms }}")
+    has_payment_clause = any(match.group(1) == "booking.payment_terms" for match in MERGE_PATTERN.finditer(source))
+    body = render_merge_fields(source, contract.booking)
+    if not has_payment_clause:
+        body += "\n\nAgreed payment terms\n" + payment_clause(contract.booking)
+    return body
 
 
 def validate_contract_for_email(contract):
