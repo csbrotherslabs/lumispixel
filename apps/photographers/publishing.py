@@ -73,6 +73,7 @@ def public_website(request, slug):
         from django.http import Http404
         raise Http404
     data = dict(data)
+    data["content"] = {**{key: "" for cfg in THEME_FIELD_CONFIG.values() for key in cfg["required"] + cfg["optional"]}, **data["content"]}
     def media_url(field, name):
         return field.storage.url(name) if name else ""
     data["hero_url"] = media_url(website.hero_image, data.get("hero_image"))
@@ -81,7 +82,12 @@ def public_website(request, slug):
                               ("equipment", PhotographerWebsiteEquipment, "image")):
         data[key] = [dict(item, image_url=media_url(model._meta.get_field(field), item["image"]))
                      for item in data.get(key, [])]
-    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in SECTION_LIBRARY]
+    supported = {"hero", "about", "services", "portfolio", "contact"}
+    if data["equipment"]:
+        supported.add("equipment")
+    if data["content"].get("testimonial_quote"):
+        supported.add("reviews")
+    sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported]
     return render(request, "photographers/public_website.html", {
         "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
     })
