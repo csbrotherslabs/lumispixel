@@ -230,6 +230,38 @@ FIELD_SECTION_MAP = {
     "availability_window_months": "availability", "availability_call_to_action": "availability",
 }
 
+# Every enabled section has real content requirements, regardless of theme.
+SECTION_REQUIRED_FIELDS = {
+    "hero": ("hero_heading", "hero_subheading"),
+    "about": ("about_heading", "about_text"),
+    "services": ("services_intro",),
+    "portfolio": ("featured_gallery_title",),
+    "films": ("featured_video_url",),
+    "reviews": ("testimonial_quote", "testimonial_name"),
+    "stats": ("experience_highlights",),
+    "team": ("team_members",),
+    "contact": ("booking_call_to_action", "contact_email"),
+    "availability": ("availability_window_months", "availability_call_to_action"),
+}
+FIELD_SECTION_MAP.update({"experience_highlights": "stats", "team_members": "team", "contact_email": "contact"})
+# Prefer the selected theme's own equivalent fields over generic alternatives.
+def section_required_fields(theme, sections):
+    config = THEME_FIELD_CONFIG[theme]
+    required = set(config["required"])
+    result = set()
+    for section in sections:
+        specific = {name for name in required if FIELD_SECTION_MAP.get(name) == section}
+        defaults = set(SECTION_REQUIRED_FIELDS.get(section, ()))
+        if section == "hero":
+            specific.discard("hero_media_type")
+            defaults = {"hero_subheading"} if specific & {"hero_heading", "editorial_heading"} else defaults
+        elif section == "contact":
+            defaults = {"contact_email"} if specific else defaults
+        elif specific and section in {"about", "portfolio", "services"}:
+            defaults = set()
+        result.update(specific | defaults)
+    return result
+
 class PhotographerWebsiteThemeForm(forms.ModelForm):
     action = forms.CharField(required=False)
     website_sections = forms.MultipleChoiceField(
@@ -239,7 +271,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
     )
     section_order = forms.CharField(required=False, widget=forms.HiddenInput(attrs={"data-section-order-input": ""}))
     hero_image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={"class":"form-control","accept":"image/jpeg,image/png,image/webp,image/gif"}))
-    field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]})
+    field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]} | {f for fields in SECTION_REQUIRED_FIELDS.values() for f in fields} - {"availability_window_months", "availability_call_to_action"})
     hero_media_type = forms.ChoiceField(choices=(("image","Image"),("video","Video")), required=False, widget=forms.Select(attrs={"class":"form-control"}))
     availability_window_months = forms.TypedChoiceField(
         choices=((1, "1 month"), (2, "2 months"), (3, "3 months"), (6, "6 months")),
@@ -266,7 +298,10 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         self.content_only = content_only
         super().__init__(*args, **kwargs)
         theme = self.data.get("website_theme") if self.is_bound else self.instance.website_theme
-        required_content = THEME_FIELD_CONFIG.get(theme, {}).get("required", [])
+        sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
+        required_content = section_required_fields(theme, sections) if theme in THEME_FIELD_CONFIG else set()
+        if content_only:
+            self.fields["hero_image"].required_for_completion = True
         for name in required_content:
             self.fields[name].required_for_completion = True
         content = (website_profile.theme_content if website_profile else {}) or {}
@@ -299,8 +334,12 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         if theme not in THEME_FIELD_CONFIG:
             return cleaned
         selected_sections = set(self.website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if self.website_profile else set()
-        required = [name for name in THEME_FIELD_CONFIG[theme]["required"] if not self.content_only or FIELD_SECTION_MAP.get(name) in selected_sections]
+        required = section_required_fields(theme, selected_sections) if self.content_only else []
+        if self.content_only and theme != self.instance.website_theme:
+            self.add_error("website_theme", "Save your selected theme in the structure editor first.")
         if not self.draft:
+            if self.content_only and not (cleaned.get("hero_image") or (self.website_profile and self.website_profile.hero_image)):
+                self.add_error("hero_image", "Upload your own hero photograph.")
             for name in required:
                 if not str(cleaned.get(name) or "").strip():
                     self.add_error(name, "This field is required for the selected theme.")
@@ -329,6 +368,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
         selected_sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
+        allowed.update(section_required_fields(profile.website_theme, selected_sections))
         allowed.update(("availability_window_months", "availability_call_to_action"))
         allowed = {name for name in allowed if FIELD_SECTION_MAP.get(name) in selected_sections}
         content = dict(website.theme_content or {})
@@ -361,7 +401,11 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
 
 
 for _theme_field_name in PhotographerWebsiteThemeForm.field_names:
-    if _theme_field_name == "hero_media_type":
+    if _theme_field_name in {"hero_media_type", "availability_window_months", "availability_call_to_action"}:
         continue
     _widget = forms.Textarea(attrs={"class":"form-control","rows":3}) if any(part in _theme_field_name for part in ("text", "intro", "statement", "description", "list")) else forms.TextInput(attrs={"class":"form-control"})
     PhotographerWebsiteThemeForm.base_fields[_theme_field_name] = forms.CharField(required=False, widget=_widget)
+PhotographerWebsiteThemeForm.base_fields["contact_email"] = forms.EmailField(required=False, widget=forms.EmailInput(attrs={"class": "form-control"}))
+for _name in ("experience_highlights", "team_members"):
+    PhotographerWebsiteThemeForm.base_fields[_name].widget = forms.Textarea(attrs={"class": "form-control", "rows": 4})
+
