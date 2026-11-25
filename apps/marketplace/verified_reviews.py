@@ -2,6 +2,7 @@ from datetime import timedelta
 import hashlib
 import secrets
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.db.models import Q
 
@@ -163,9 +164,13 @@ def request_booking(request, slug):
                 if not direct:
                     link = request.build_absolute_uri(reverse("public-booking-verify", kwargs={"slug":slug,"token":token}))
                     try:
+                        email_context = {"client_name": data["first_name"], "studio_name": context["brand"],
+                            "session": session, "verification_url": link,
+                            "booking_timezone": context["booking_timezone"]}
                         sent = send_mail("Acknowledge your LumisPixel booking request",
-                            "A photography booking request was entered for you. Review and acknowledge it here: "+link+"\nThis link expires in 48 hours. Ignore this email if you did not request the service.",
-                            None, [email], fail_silently=False)
+                            render_to_string("marketplace/email/booking_acknowledgment.txt", email_context),
+                            None, [email], fail_silently=False,
+                            html_message=render_to_string("marketplace/email/booking_acknowledgment.html", email_context))
                         if not sent:
                             raise RuntimeError("Email not sent")
                     except Exception:
