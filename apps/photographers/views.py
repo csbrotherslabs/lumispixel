@@ -452,3 +452,16 @@ def skip_onboarding(request):
         return redirect("accounts:post-login-redirect")
     _photographer_profile(request.user)
     return redirect("photographers:setup-dashboard")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def website_specialties(request):
+    if not request.user.has_photographer_profile:
+        return redirect("accounts:post-login-redirect")
+    profile = _photographer_profile(request.user)
+    form = PhotographerSpecialtiesForm(request.POST or None, instance=profile)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("photographers:website-specialties")
+    return render(request, "photographers/website_specialties.html", {"form": form, "profile": profile})
