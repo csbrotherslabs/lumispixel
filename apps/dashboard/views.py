@@ -3285,7 +3285,7 @@ def booking_detail(request, pk):
     }
     for contract in contracts:
         contract.status_variant = contract_status_variants[contract.status]
-    current_contract = contracts[0] if contracts else None
+    current_contract = next((item for item in contracts if item.status != Contract.Status.VOIDED), None)
     contract_progress_steps = []
     if current_contract and current_contract.status != Contract.Status.VOIDED:
         progress_rank = {
@@ -3731,8 +3731,19 @@ def schedule(request):
     all_profile_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
     session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
     locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
-    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user").order_by("starts_at"))
+    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user", "contracts__photographer_signature").order_by("starts_at"))
     owner = request.user.full_name or "Studio photographer"
+    def contract_summary(session):
+        items = [item for item in session.contracts.all() if item.status != Contract.Status.VOIDED]
+        item = items[0] if items else None
+        url = reverse("photographer_workspace:booking_detail", args=[session.pk]) + "?tab=contract#contract"
+        if not item:
+            return {"contract_status": "No contract", "contract_title": "", "contract_url": url, "contract_action": "Create Contract", "photographer_signed": False, "client_signed": False}
+        signed = item.status == Contract.Status.SIGNED
+        photographer_signed = hasattr(item, "photographer_signature")
+        label = "View signed contract" if signed else "Re-send Contract" if item.status in (Contract.Status.SENT, Contract.Status.VIEWED) else "Send to Client" if photographer_signed else "Review & Sign Contract"
+        return {"contract_status": item.get_status_display(), "contract_title": item.title, "contract_url": url, "contract_action": label, "contract_action_url": reverse("photographer_workspace:contract_detail" if signed else "photographer_workspace:contract_preview", args=[item.pk]), "photographer_signed": photographer_signed, "client_signed": signed}
+
     events = [{
         "id": session.pk,
         "starts_at": timezone.localtime(session.starts_at),
@@ -3750,7 +3761,7 @@ def schedule(request):
         "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
         "contact_email": session.client.email, "contact_phone": session.client.phone,
-        "package": "Not assigned", "contract_status": "Not tracked",
+        "package": "Not assigned", **contract_summary(session),
         "payment_status": (
             "Not invoiced" if not session.invoices.all()
             else "Paid" if all(invoice.status in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all())

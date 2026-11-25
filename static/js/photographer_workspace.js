@@ -862,6 +862,12 @@
       event.kind !== 'vacation' && event.kind !== 'blocked' ? detail('Assigned to', event.photographer) : '', detail('Status', event.status)
     ]);
     layer.querySelector('[data-event-details]').innerHTML = details;
+    if (bookingOnly && event.contract_url) {
+      const panel = document.createElement('section');
+      panel.className = 'lpw-drawer-contract';
+      panel.innerHTML = '<h3><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Contracts</h3><div class="lpw-drawer-contract-card"><strong>' + escapeHtml(event.contract_title || 'No contract yet') + '</strong><span>' + escapeHtml(event.contract_status) + '</span><p>Photographer signature: ' + (event.photographer_signed ? 'Completed' : 'Pending') + '</p><p>Client signature: ' + (event.client_signed ? 'Completed' : 'Pending') + '</p><a class="lp-button lp-button--primary" href="' + escapeHtml(event.contract_action_url || event.contract_url) + '">' + escapeHtml(event.contract_action) + '</a><a class="lp-button lp-button--outline" href="' + escapeHtml(event.contract_url) + '">Manage all contracts</a></div>';
+      layer.querySelector('[data-event-details]').prepend(panel);
+    }
     const warnings = layer.querySelector('[data-event-warnings]');
     warnings.innerHTML = (event.warnings || []).length ? (event.warnings || []).map(function (warning) { return '<p><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>' + escapeHtml(warning) + '</span></p>'; }).join('') : (bookingOnly ? '<p class="is-ready"><i class="bi bi-check-circle" aria-hidden="true"></i><span>No active scheduling alerts</span></p>' : '');
     warnings.hidden = !bookingOnly && (!event.warnings || !event.warnings.length);
