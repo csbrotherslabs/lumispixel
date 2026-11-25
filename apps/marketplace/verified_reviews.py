@@ -1,4 +1,9 @@
 from datetime import timedelta
+import hashlib
+import secrets
+from django.core.mail import send_mail
+from django.core.cache import cache
+from django.db.models import Q
 
 from django import forms
 from django.contrib.auth.decorators import login_required
@@ -25,12 +30,16 @@ class BookingRequestForm(forms.Form):
     description = forms.CharField(max_length=3000, widget=forms.Textarea(attrs={"rows":4}), label="Tell us about your project")
     first_name = forms.CharField(max_length=100)
     last_name = forms.CharField(max_length=100)
-    phone = forms.CharField(max_length=40, required=False)
+    email = forms.EmailField(label="Client email address")
+    phone = forms.CharField(max_length=32, required=False)
     contact_method = forms.ChoiceField(choices=[("email","Email"),("phone","Phone")], label="Preferred contact method")
     acknowledge = forms.BooleanField(label="I understand this is a request, not a confirmed booking or payment.")
 
-    def __init__(self, *args, specialties=(), **kwargs):
+    def __init__(self, *args, specialties=(), verified_email=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if verified_email:
+            self.fields["email"].disabled = True
+            self.initial["email"] = verified_email
         self.fields["session_type"].choices = [(name, name) for name in specialties] or [("Other photography","Other photography")]
 
     def clean(self):
@@ -70,7 +79,7 @@ def eligible_bookings(user, photographer):
             session__status=ClientSession.Status.COMPLETED,
             session__starts_at__lte=timezone.now(),
             review__isnull=True,
-        )
+        ).filter(Q(origin="client") | Q(acknowledged_at__isnull=False, client_email__iexact=user.email))
     return qs.select_related("session")
 
 
@@ -91,41 +100,105 @@ def published_website(slug):
     return website
 
 
-@login_required
+def digest(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 @require_http_methods(["GET", "POST"])
 def request_booking(request, slug):
     website = published_website(slug)
     photographer = website.photographer_profile
-    if not customer_allowed(request.user, photographer):
-        return HttpResponseForbidden("A verified customer account is required.")
+    user = request.user
+    assisted = user.is_authenticated and user.pk == photographer.user_id
+    if assisted and not (user.is_active and user.email_verified and user.account_status == user.AccountStatus.ACTIVE):
+        return HttpResponseForbidden("An active verified photographer account is required.")
+    direct = customer_allowed(user, photographer)
     published = website.theme_content["_published_website"]
     form = BookingRequestForm(request.POST if request.method == "POST" else None,
-        specialties=published.get("specialties", []),
-        initial={"first_name": request.user.first_name, "last_name": request.user.last_name})
+        specialties=published.get("specialties", []), verified_email=user.email if direct else None,
+        initial={"first_name": user.first_name, "last_name": user.last_name} if direct else {})
     context = {"form": form, "slug": slug, "brand": published.get("brand") or photographer.display_name,
-               "email": request.user.email, "booking_timezone": timezone.get_current_timezone_name()}
-    if request.method == "GET" and request.GET.get("sent"):
-        token = request.GET["sent"]
-        context["success"] = token.isascii() and token.isdigit() and len(token) < 19 and PlatformBooking.objects.filter(pk=int(token), customer=request.user, photographer=photographer).exists()
+               "assisted": assisted, "direct": direct, "booking_timezone": timezone.get_current_timezone_name()}
+    if request.method == "GET" and request.session.pop("booking_sent_" + slug, False):
+        context["success"] = True
+        context["pending"] = not direct
     if request.method == "POST" and form.is_valid():
-        with transaction.atomic():
-            # Never attach an account to a CRM record merely by matching email.
-            client = Client.objects.filter(photographer=photographer, user=request.user).order_by("pk").first()
-            if client is None:
-                client = Client.objects.create(photographer=photographer, user=request.user,
-                    first_name=form.cleaned_data["first_name"], last_name=form.cleaned_data["last_name"], email=request.user.email)
-            session = ClientSession.objects.create(photographer=photographer, client=client,
-                session_type=form.cleaned_data["session_type"], starts_at=form.cleaned_data["starts_at"],
-                duration_minutes=form.cleaned_data["duration_minutes"], location=form.cleaned_data["location"],
-                notes="\n".join([f"Requested by: {form.cleaned_data['first_name']} {form.cleaned_data['last_name']}",
-                    f"Verified email: {request.user.email}", f"Phone: {form.cleaned_data['phone']}",
-                    f"Preferred contact: {form.cleaned_data['contact_method']}",
-                    f"Guests: {form.cleaned_data['guests'] or 'Not specified'}", f"Budget (USD): {form.cleaned_data['budget'] or 'Not specified'}",
-                    "", form.cleaned_data["description"]]),
-                status=ClientSession.Status.TENTATIVE, event_kind=ClientSession.EventKind.BOOKING)
-            booking = PlatformBooking.objects.create(session=session, customer=request.user, photographer=photographer)
-        return redirect(reverse("public-photographer-booking", kwargs={"slug": slug}) + f"?sent={booking.pk}")
+        data = form.cleaned_data
+        email = data["email"].strip().lower()
+        if email == photographer.user.email.lower():
+            form.add_error("email", "Enter your client's email, not the photographer's email.")
+        else:
+            if not direct:
+                key = "booking-email:" + digest(email)
+                if not cache.add(key, 1, timeout=60):
+                    form.add_error(None, "Please wait a minute before requesting another verification email.")
+                    return render(request, "marketplace/booking_request.html", context)
+            token = secrets.token_urlsafe(32)
+            with transaction.atomic():
+                client = Client.objects.filter(photographer=photographer, user=user).first() if direct else None
+                if client is None:
+                    client = Client.objects.create(photographer=photographer, user=user if direct else None,
+                        first_name=data["first_name"], last_name=data["last_name"], email=email,
+                        phone=data["phone"], preferred_contact_method=data["contact_method"])
+                session = ClientSession.objects.create(photographer=photographer, client=client,
+                    session_type=data["session_type"], starts_at=data["starts_at"],
+                    duration_minutes=data["duration_minutes"], location=data["location"],
+                    notes="\n".join([("Verified client request" if direct else "Pending client verification"),
+                        f"Guests: {data['guests'] or 'Not specified'}", f"Budget (USD): {data['budget'] or 'Not specified'}", data["description"]]),
+                    status=ClientSession.Status.TENTATIVE, event_kind=ClientSession.EventKind.BOOKING)
+                booking = PlatformBooking.objects.create(session=session, customer=user if direct else None,
+                    photographer=photographer, created_by=user if user.is_authenticated else None,
+                    origin="client" if direct else ("photographer" if assisted else "guest"), client_email=email,
+                    acknowledged_at=timezone.now() if direct else None,
+                    verification_digest="" if direct else digest(token),
+                    verification_expires_at=None if direct else timezone.now()+timedelta(hours=48))
+                if not direct:
+                    link = request.build_absolute_uri(reverse("public-booking-verify", kwargs={"slug":slug,"token":token}))
+                    try:
+                        sent = send_mail("Acknowledge your LumisPixel booking request",
+                            "A photography booking request was entered for you. Review and acknowledge it here: "+link+"\nThis link expires in 48 hours. Ignore this email if you did not request the service.",
+                            None, [email], fail_silently=False)
+                        if not sent:
+                            raise RuntimeError("Email not sent")
+                    except Exception:
+                        transaction.set_rollback(True)
+                        form.add_error(None, "Verification email could not be sent. Please try again later.")
+                        return render(request, "marketplace/booking_request.html", context)
+            request.session["booking_sent_" + slug] = True
+            return redirect("public-photographer-booking", slug=slug)
     return render(request, "marketplace/booking_request.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def verify_booking(request, slug, token):
+    website = published_website(slug)
+    photographer = website.photographer_profile
+    if not customer_allowed(request.user, photographer):
+        return HttpResponseForbidden("Sign in with your own verified client account to acknowledge this request.")
+    with transaction.atomic():
+        booking = get_object_or_404(PlatformBooking.objects.select_for_update(), photographer=photographer,
+            verification_digest=digest(token), verification_expires_at__gt=timezone.now(),
+            acknowledged_at__isnull=True, customer__isnull=True, client_email__iexact=request.user.email)
+        session = ClientSession.objects.select_for_update().get(pk=booking.session_id)
+        client = Client.objects.select_for_update().get(pk=session.client_id)
+        if (session.photographer_id != photographer.pk or client.photographer_id != photographer.pk
+            or client.user_id is not None or client.email.lower() != booking.client_email.lower()
+            or session.status != ClientSession.Status.TENTATIVE):
+            return HttpResponseForbidden("This request is no longer eligible for verification.")
+        if request.method == "POST":
+            if request.POST.get("acknowledge") != "yes":
+                return HttpResponseForbidden("Please acknowledge the booking details.")
+            client.user = request.user
+            client.save(update_fields=["user"])
+            booking.customer = request.user
+            booking.acknowledged_at = timezone.now()
+            booking.verification_digest = ""
+            booking.save(update_fields=["customer","acknowledged_at","verification_digest"])
+            session.notes = session.notes.replace("Pending client verification", "Client verified and acknowledged", 1)
+            session.save(update_fields=["notes"])
+            return render(request, "marketplace/booking_verify.html", {"success":True,"slug":slug})
+    return render(request, "marketplace/booking_verify.html", {"booking":booking,"session":session,"slug":slug})
 
 
 @login_required
