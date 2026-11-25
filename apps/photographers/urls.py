@@ -18,6 +18,7 @@ urlpatterns = [
     path("onboarding/theme/", views.onboarding_theme, name="onboarding-theme"),
     path("onboarding/website-content/", views.website_content, name="onboarding-website-content"),
     path("website/builder/", views.onboarding_theme, name="website-builder"),
+    path("website/specialties/", views.website_specialties, name="website-specialties"),
     path("website/content/", views.website_content, name="website-content"),
     path("onboarding/theme-preview/selection/", views.selected_theme_preview, name="selected-theme-preview"),
     path("onboarding/theme-preview/<slug:theme_slug>/", views.theme_preview, name="theme-preview"),
