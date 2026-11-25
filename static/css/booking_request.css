@@ -1,1 +1,35 @@
-*{box-sizing:border-box}body{margin:0;background:#f5f2ed;color:#24211e;font:16px/1.55 system-ui,sans-serif}header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 5vw;background:#fff;border-bottom:1px solid #ded9d0}a{color:inherit}header strong{font-size:22px}header span,header a,small{font-size:13px}main{max-width:1100px;margin:48px auto;display:grid;grid-template-columns:1fr 2fr;gap:24px;padding:0 20px}aside,section{border-radius:16px;padding:clamp(20px,4vw,40px)}aside{background:#25221e;color:#fff;align-self:start}aside small{color:#e8c98f;letter-spacing:.12em}section{background:white;border:1px solid #e1dcd3}h1{font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0}h2{line-height:1.2}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0;list-style:none;font-size:13px;margin:28px 0}.steps li{border-bottom:3px solid #ddd;padding-bottom:8px}.steps li[aria-current=step]{border-color:#96703d;font-weight:700}fieldset{border:0;padding:0;margin:20px 0;min-width:0}legend{font-weight:700;font-size:21px;margin-bottom:18px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:block;font-weight:600;font-size:14px;margin:12px 0 6px}input:not([type=checkbox]),select,textarea{width:100%;padding:12px;border:1px solid #bdb7ae;border-radius:8px;font:inherit;background:white;color:#24211e}textarea{resize:vertical}.actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}button{border:1px solid #25221e;background:#25221e;color:white;padding:13px 22px;border-radius:8px;font:inherit;cursor:pointer}button[data-back]{background:white;color:#25221e}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #96703d;outline-offset:3px}.errorlist{color:#a31524;padding-left:20px}dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}dt{font-weight:600}dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}footer{text-align:center;padding:20px;font-size:13px}[hidden]{display:none!important}@media(max-width:700px){main{grid-template-columns:1fr;margin:20px auto}.fields{grid-template-columns:1fr}header{flex-wrap:wrap}.steps{font-size:11px}}
+/* Booking styles are scoped to avoid altering shared navigation and footer. */
+.booking-shell{box-sizing:border-box;background:#f5f2ed;color:#24211e;padding:clamp(24px,5vw,64px) 20px;font:16px/1.55 system-ui,sans-serif}
+.booking-shell *{box-sizing:border-box}
+.booking-shell .booking-topline{max-width:1100px;margin:0 auto 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px}
+.booking-shell a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.booking-shell .booking-layout{max-width:1100px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px}
+.booking-shell .booking-layout--verify{grid-template-columns:minmax(0,760px);justify-content:center}
+.booking-shell .booking-aside,.booking-shell .booking-card{border-radius:16px;padding:clamp(20px,4vw,40px);min-width:0;margin:0}
+.booking-shell .booking-aside{background:#25221e;color:#fff;align-self:start}
+.booking-shell .booking-aside small{color:#e8c98f;letter-spacing:.12em;font-size:13px}
+.booking-shell .booking-aside h2,.booking-shell .booking-aside p{color:#fff}
+.booking-shell .booking-card{background:white;border:1px solid #e1dcd3;color:#24211e}
+.booking-shell h1{font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0 0 12px;color:#24211e;overflow-wrap:anywhere}
+.booking-shell h2{line-height:1.2;font-size:clamp(23px,3vw,32px);overflow-wrap:anywhere}
+.booking-shell p{color:inherit;overflow-wrap:anywhere}
+.booking-shell .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0;list-style:none;font-size:13px;margin:28px 0}
+.booking-shell .steps li{border-bottom:3px solid #ddd;padding-bottom:8px;line-height:1.4}
+.booking-shell .steps li[aria-current=step]{border-color:#96703d;font-weight:700}
+.booking-shell fieldset{border:0;padding:0;margin:20px 0;min-width:0}
+.booking-shell legend{font-weight:700;font-size:21px;margin-bottom:18px;color:#24211e}
+.booking-shell .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.booking-shell label{display:block;font-weight:600;font-size:14px;margin:12px 0 6px;color:#24211e}
+.booking-shell input:not([type=checkbox]),.booking-shell select,.booking-shell textarea{width:100%;min-width:0;max-width:100%;height:auto;min-height:48px;padding:12px;border:1px solid #bdb7ae;border-radius:8px;font:inherit;background:white;color:#24211e}
+.booking-shell textarea{resize:vertical}
+.booking-shell input[type=checkbox]{appearance:auto;width:18px;height:18px;vertical-align:middle;margin-right:8px}
+.booking-shell .actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;flex-wrap:wrap}
+.booking-shell button{border:1px solid #25221e;background:#25221e;color:white;padding:13px 22px;border-radius:8px;font:inherit;cursor:pointer;min-height:48px}
+.booking-shell button[data-back]{background:white;color:#25221e}
+.booking-shell :is(button,a,input,select,textarea):focus-visible{outline:3px solid #96703d;outline-offset:3px}
+.booking-shell .errorlist{color:#a31524;padding-left:20px}
+.booking-shell dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.booking-shell dt{font-weight:600}
+.booking-shell dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.booking-shell [hidden]{display:none!important}
+@media(max-width:767px){.booking-shell{padding:24px 14px}.booking-shell .booking-layout{grid-template-columns:minmax(0,1fr);gap:16px}.booking-shell .fields{grid-template-columns:minmax(0,1fr);gap:8px}.booking-shell .steps{font-size:12px;gap:5px}.booking-shell .actions button{flex:1 1 auto}.booking-shell .booking-aside,.booking-shell .booking-card{padding:20px}.booking-shell dl{grid-template-columns:minmax(0,1fr);gap:4px}.booking-shell dd{margin-bottom:12px}}
