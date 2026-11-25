@@ -7,7 +7,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, PhotographerWebsiteProfile
-from .forms import FIELD_SECTION_MAP, THEME_FIELD_CONFIG, section_required_fields
+from .forms import FIELD_SECTION_MAP, THEME_FIELD_CONFIG, section_required_fields, actual_hero_image, is_sample_hero
 from django.core.validators import validate_email, URLValidator
 from django.core.exceptions import ValidationError
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
@@ -24,7 +24,7 @@ def publication_errors(profile, website):
     for key in sorted(section_required_fields(profile.website_theme, sections)):
         if not str(content.get(key) or "").strip():
             errors.append(f"Complete {key.replace('_', ' ')} before publishing.")
-    if not website.hero_image:
+    if not actual_hero_image(website):
         errors.append("Upload your own hero photograph.")
     if "portfolio" in sections:
         projects = list(website.projects.filter(is_featured=True))
@@ -59,7 +59,7 @@ def snapshot(profile, website):
         "brand": profile.business_name or profile.display_name,
         "sections": sections,
         "content": content,
-        "hero_image": website.hero_image.name if website.hero_image else "",
+        "hero_image": website.hero_image.name if actual_hero_image(website) else "",
         "portrait": profile.profile_photo.name if profile.profile_photo else "",
         "specialties": list(profile.specialties.values_list("name", flat=True)),
         "biography": profile.biography,
@@ -160,7 +160,7 @@ def render_website(request, website, data, draft_preview=False):
     data["content"] = {**{key: "" for cfg in THEME_FIELD_CONFIG.values() for key in cfg["required"] + cfg["optional"]}, **data["content"]}
     def media_url(field, name):
         return field.storage.url(name) if name else ""
-    data["hero_url"] = media_url(website.hero_image, data.get("hero_image"))
+    data["hero_url"] = media_url(website.hero_image, data.get("hero_image")) if not is_sample_hero(data.get("hero_image")) else ""
     from apps.accounts.models import PhotographerWebsiteProject, PhotographerWebsiteEquipment
     for key, model, field in (("projects", PhotographerWebsiteProject, "cover_image"),
                               ("equipment", PhotographerWebsiteEquipment, "image")):
