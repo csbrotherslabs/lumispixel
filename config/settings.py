@@ -56,8 +56,24 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIR
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+DB_TRANSACTION_POOLING = env_bool("DB_TRANSACTION_POOLING", False)
+if DB_TRANSACTION_POOLING:
+    if not DATABASE_URL or not os.getenv("DB_POOL_URL"):
+        raise RuntimeError("Transaction pooling requires DATABASE_URL and DB_POOL_URL.")
+    DATABASE_URL = os.environ["DB_POOL_URL"]
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "0" if DEBUG else "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES["default"]["OPTIONS"].setdefault(
+            "application_name", os.getenv("DB_APPLICATION_NAME") or ("lumispixel-dev" if DEBUG else "lumispixel-prod")
+        )
+    if DB_TRANSACTION_POOLING:
+        db = DATABASES["default"]
+        if db["ENGINE"] != "django.db.backends.postgresql":
+            raise RuntimeError("Transaction pooling requires PostgreSQL.")
+        db["CONN_MAX_AGE"] = 0
+        db["DISABLE_SERVER_SIDE_CURSORS"] = True
+        db["OPTIONS"]["prepare_threshold"] = None
 elif DEBUG:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:

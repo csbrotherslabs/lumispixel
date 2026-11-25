@@ -3,6 +3,7 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
+from .connection_lifecycle import release_inference_connection
 from apps.galleries.models import Gallery, GalleryPhoto
 from .models import GallerySemanticSearchPolicy, SemanticIndexJob
 from .semantic import semantic_enabled, embed_image, replace_photo, purge_gallery, purge_photo
@@ -55,6 +56,8 @@ def index_semantic_photo(self, job_id):
         job.status = "processing"
         job.save(update_fields=["status"])
     try:
+        # The photo and gallery are already loaded; reconnect for the final locked write.
+        release_inference_connection(job._state.db or "default")
         with job.photo.file.open("rb") as stream:
             vector = embed_image(stream)
         # Serialize authorization changes and vector writes with the policy row.
