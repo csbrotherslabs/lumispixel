@@ -3281,7 +3281,7 @@ def _booking_contract_summary(session):
     signed = item.status == Contract.Status.SIGNED
     photographer_signed = hasattr(item, "photographer_signature")
     label = "View signed contract" if signed else "Re-send Contract" if item.status in (Contract.Status.SENT, Contract.Status.VIEWED) else "Send to Client" if photographer_signed else "Review & Sign Contract"
-    return {"contract_status": item.get_status_display(), "contract_title": item.title, "contract_url": url, "contract_action": label, "contract_action_url": reverse("photographer_workspace:contract_detail" if signed else "photographer_workspace:contract_preview", args=[item.pk]), "contract_customize_url": reverse("photographer_workspace:contract_customize", args=[item.pk]) if item.status == Contract.Status.DRAFT else "", "contract_preview_url": reverse("photographer_workspace:contract_preview", args=[item.pk]), "photographer_signed": photographer_signed, "client_signed": signed}
+    return {"contract_status": item.get_status_display(), "contract_title": item.title, "contract_url": url, "contract_action": label, "contract_action_url": reverse("photographer_workspace:signed_contract_pdf" if signed and getattr(getattr(item, "signed_document", None), "status", None) == "ready" else "photographer_workspace:contract_preview", args=[item.pk]), "contract_customize_url": reverse("photographer_workspace:contract_customize", args=[item.pk]) if item.status == Contract.Status.DRAFT else "", "contract_preview_url": reverse("photographer_workspace:contract_preview", args=[item.pk]), "photographer_signed": photographer_signed, "client_signed": signed}
 
 
 @photographer_workspace_required
@@ -3515,7 +3515,7 @@ def signed_contract_pdf_retry(request, pk):
         messages.success(request, "The signed PDF is ready.")
     else:
         messages.error(request, "The signed PDF could not be generated. You can retry safely.")
-    return redirect("photographer_workspace:contract_detail", pk=contract.pk)
+    return redirect("photographer_workspace:contract_preview", pk=contract.pk)
 
 
 @photographer_workspace_required
