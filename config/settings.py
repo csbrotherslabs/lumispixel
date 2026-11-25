@@ -57,7 +57,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "0" if DEBUG else "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES["default"]["OPTIONS"].setdefault(
+            "application_name", os.getenv("DB_APPLICATION_NAME") or ("lumispixel-dev" if DEBUG else "lumispixel-prod")
+        )
 elif DEBUG:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:
