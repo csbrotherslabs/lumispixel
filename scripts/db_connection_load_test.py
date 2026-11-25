@@ -21,8 +21,15 @@ def main():
     p.add_argument("--output", default="db-load-baseline.csv")
     a = p.parse_args()
     db = connections["default"]
-    if not settings.DEBUG or db.vendor != "postgresql" or db.settings_dict["NAME"] != "lumispixel_dev":
+    if not settings.DEBUG or db.vendor != "postgresql":
         p.error("Requires DEBUG and PostgreSQL database lumispixel_dev; never run on production.")
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT current_database()")
+            if cur.fetchone()[0] != "lumispixel_dev":
+                p.error("Refusing workload outside lumispixel_dev.")
+    finally:
+        db.close()
     deadline = time.monotonic() + a.seconds
     def worker(i):
         rows = []
