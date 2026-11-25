@@ -181,8 +181,9 @@ def website_content(request):
     )
     if request.method == "POST" and form.is_valid():
         equipment_error = _equipment_upload_error(request, website) if "equipment" in selected_sections else None
-        if equipment_error:
-            form.add_error(None, equipment_error)
+        project_error = next((f"Project {index + 1} cover image must be 50 MB or smaller." for index in range(3) if request.FILES.get(f"project_{index}_cover_image") and request.FILES[f"project_{index}_cover_image"].size > MAX_IMAGE_SIZE), None) if "portfolio" in selected_sections else None
+        if equipment_error or project_error:
+            form.add_error(None, equipment_error or project_error)
         else:
             profile, website = form.save_content()
             if "portfolio" in selected_sections:
