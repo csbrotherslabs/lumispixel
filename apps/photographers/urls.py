@@ -1,10 +1,12 @@
 from django.urls import path
 
 from . import views
+from .publishing import publish_website
 
 app_name = "photographers"
 
 urlpatterns = [
+    path("website/publish/", publish_website, name="website-publish"),
     path("setup-dashboard/", views.setup_dashboard, name="setup-dashboard"),
     path("setup-dashboard/", views.setup_dashboard, name="photographer_setup_dashboard"),
     path("onboarding/skip/", views.skip_onboarding, name="onboarding-skip"),
