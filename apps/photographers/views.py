@@ -295,7 +295,7 @@ def _equipment_upload_error(request, website):
         if image and image.content_type not in IMAGE_TYPES:
             return f"Equipment item {position} must use a JPG, PNG, GIF, or WebP image."
         if image and image.size > MAX_IMAGE_SIZE:
-            return f"Equipment item {position} must be 5 MB or smaller."
+            return f"Equipment item {position} must be 50 MB or smaller."
     return None
 
 
