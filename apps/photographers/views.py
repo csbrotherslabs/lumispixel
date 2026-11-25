@@ -182,6 +182,10 @@ def website_content(request):
         draft=action in {"save_draft", "save_content", "studio_publish"},
         content_only=True,
     )
+    specialties_form = PhotographerSpecialtiesForm(
+        request.POST if request.method == "POST" and "services" in selected_sections and "studio_specialties" in request.POST else None,
+        instance=profile,
+    )
     if request.method == "POST" and form.is_valid():
         equipment_error = _equipment_upload_error(request, website) if "equipment" in selected_sections else None
         project_error = next((f"Project {index + 1} cover image must be 50 MB or smaller." for index in range(3) if request.FILES.get(f"project_{index}_cover_image") and request.FILES[f"project_{index}_cover_image"].size > MAX_IMAGE_SIZE), None) if "portfolio" in selected_sections else None
@@ -198,10 +202,14 @@ def website_content(request):
                 experience = parse_experience(request)
             except ValidationError as exc:
                 client_error = exc.messages[0]
+        if specialties_form.is_bound and not specialties_form.is_valid():
+            client_error = "Select valid photography specialties."
         if equipment_error or project_error or client_error:
             form.add_error(None, equipment_error or project_error or client_error)
         else:
             profile, website = form.save_content()
+            if specialties_form.is_bound:
+                profile.specialties.set(specialties_form.cleaned_data["specialties"])
             if rows is not None:
                 save_clients(website, rows)
             if experience is not None:
@@ -250,6 +258,7 @@ def website_content(request):
         website=website,
         projects=[{"index": i, "item": next((p for p in website.projects.all() if p.display_order == i), None)} for i in range(3)],
         panels=panels,
+        specialties_field=specialties_form["specialties"],
         experience_data=existing(website),
         empty_client={"index": "__index__"},
         notable_clients=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_clients(website))],
@@ -453,15 +462,3 @@ def skip_onboarding(request):
     _photographer_profile(request.user)
     return redirect("photographers:setup-dashboard")
 
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def website_specialties(request):
-    if not request.user.has_photographer_profile:
-        return redirect("accounts:post-login-redirect")
-    profile = _photographer_profile(request.user)
-    form = PhotographerSpecialtiesForm(request.POST or None, instance=profile)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        return redirect("photographers:website-specialties")
-    return render(request, "photographers/website_specialties.html", {"form": form, "profile": profile})
