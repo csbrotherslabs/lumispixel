@@ -67,7 +67,7 @@
             <small>This template is available when creating contracts.</small>
             {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
           </div>
-          {{ form.description.as_hidden }}
+          <div class="lp-contract-template-field"><label for="assign-specialty">Assign as default (optional)</label><select id="assign-specialty" name="assign_specialty"><option value="">Do not change assignments</option>{% for specialty in assignment_specialties %}<option value="{{ specialty }}">{{ specialty }}</option>{% endfor %}</select><small>Replaces the existing default for the selected specialty if this template is active.</small></div>{{ form.description.as_hidden }}
         </div>
       </section>
 

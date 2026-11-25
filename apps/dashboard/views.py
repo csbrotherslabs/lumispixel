@@ -3520,6 +3520,11 @@ def contract_templates(request):
         raise PermissionDenied
     specialties = list(request.studio.specialties.values_list("name", flat=True))
     if request.method == "POST":
+        if request.POST.get("action") == "generate_missing":
+            from apps.marketplace.booking_approval import generate_missing_drafts
+            count = generate_missing_drafts(request.studio, request.user)
+            messages.success(request, f"{count} missing contract draft(s) generated.")
+            return redirect("photographer_workspace:contract_templates")
         with transaction.atomic():
             PhotographerProfile.objects.select_for_update().get(pk=request.studio.pk)
             items = list(ContractTemplate.objects.select_for_update().filter(photographer=request.studio))
@@ -3540,6 +3545,7 @@ def contract_templates(request):
     context = _dashboard_context(request, "settings", "Contract Templates")
     context.update({
         "templates": templates,
+        "starter_library": list(serialized_contract_starters().values()),
         "specialty_defaults": [{"name": name, "index": i, "selected": next((item.pk for item in templates if item.is_active and name in item.default_specialties), None)} for i, name in enumerate(specialties)],
         "template_count": len(templates),
         "active_template_count": sum(item.is_active for item in templates),
@@ -3555,7 +3561,9 @@ def contract_template_form(request, pk=None):
     if not request.studio_access.allows("settings"):
         raise PermissionDenied
     template = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk) if pk else None
-    form = ContractTemplateForm(request.POST or None, instance=template)
+    starter = serialized_contract_starters().get(request.GET.get("starter", "")) if template is None else None
+    initial = {**{key: starter[key] for key in ("name", "category", "title", "content")}, "start_from": starter["key"]} if starter else None
+    form = ContractTemplateForm(request.POST or None, instance=template, initial=initial)
     if request.method == "POST" and form.is_valid():
         item = form.save(commit=False)
         item.photographer = request.studio
@@ -3563,13 +3571,23 @@ def contract_template_form(request, pk=None):
         if template and form.has_changed():
             item.version += 1
         item.full_clean()
-        item.save()
+        with transaction.atomic():
+            PhotographerProfile.objects.select_for_update().get(pk=request.studio.pk)
+            assigned = request.POST.get("assign_specialty", "")
+            if assigned and item.is_active and assigned in request.studio.specialties.values_list("name", flat=True):
+                for other in ContractTemplate.objects.select_for_update().filter(photographer=request.studio).exclude(pk=item.pk):
+                    if assigned in other.default_specialties:
+                        other.default_specialties = [name for name in other.default_specialties if name != assigned]
+                        other.save(update_fields=["default_specialties"])
+                item.default_specialties = list(set(item.default_specialties + [assigned]))
+            item.save()
         messages.success(request, "Contract template saved.")
         return redirect("photographer_workspace:contract_templates")
     context = _dashboard_context(request, "settings", "Edit Contract Template" if template else "Create Contract Template")
     context.update({
         "form": form,
         "template_object": template,
+        "assignment_specialties": request.studio.specialties.values_list("name", flat=True),
         "merge_fields": MERGE_FIELDS.items(),
         "contract_starters": serialized_contract_starters() if template is None else {},
     })
@@ -3588,6 +3606,7 @@ def contract_template_action(request, pk):
         source.name = f"{source.name} (copy)"
         source.created_by = request.user
         source.version = 1
+        source.default_specialties = []
         source.save()
         messages.success(request, "Contract template duplicated.")
     elif action == "toggle_active":

@@ -3,7 +3,7 @@
 Starter values are copied into a workspace-owned ``ContractTemplate`` by the
 authoring UI. They are never persisted as a relationship to that template.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 
 from apps.clients.models import ContractTemplate
 
@@ -18,10 +18,7 @@ class ContractStarter:
     content: str = ""
 
 
-# TODO: Add attorney-reviewed contract content to each ``content`` value before
-# presenting these starters as complete agreements. Until then, the entries
-# intentionally provide authoring metadata only; no production legal terms are
-# fabricated here.
+# Editable authoring outlines, not attorney-approved agreements.
 CONTRACT_STARTERS = (
     ContractStarter(
         "wedding", "Wedding Photography Agreement", "Wedding Photography Agreement",
@@ -53,6 +50,31 @@ CONTRACT_STARTERS = (
         "Second Shooter / Associate Photographer Agreement",
     ),
 )
+
+CONTRACT_STARTERS += tuple(
+    ContractStarter(key, name, name, ContractTemplate.Category.GENERAL, name)
+    for key, name in (("fashion", "Fashion Photography Agreement"), ("product", "Product Photography Agreement"), ("general", "General Photography Agreement"))
+)
+SCOPES = {
+    "wedding": "Coverage hours, ceremony and reception, shot list and second photographer",
+    "real-estate": "Property access, rooms, listing usage and turnaround",
+    "commercial": "Campaign deliverables, usage channels and licensing period",
+    "fashion": "Models, wardrobe, releases and campaign usage",
+    "product": "Product count, styling, backgrounds and retouching",
+    "portrait": "Participants, location, session length and selected images",
+    "event": "Event schedule, coverage and delivery",
+}
+CONTRACT_STARTERS = tuple(replace(starter, content=(
+    "Parties: {{ workspace.name }} and {{ client.full_name }}\\n"
+    "Service: {{ booking.service }}\\nDate: {{ booking.date }} at {{ booking.start_time }}\\nLocation: {{ booking.location }}\\n\\n"
+    "1. Scope and deliverables\\n[Specify " + SCOPES.get(starter.key, "coverage, deliverables and responsibilities") + ".]\\n\\n"
+    "2. Agreed fee and payment\\n[Enter agreed fee, deposit, due dates and taxes.]\\n\\n"
+    "3. Cancellation and rescheduling\\n[Specify notice, refunds and rescheduling terms.]\\n\\n"
+    "4. Image delivery\\n[Specify format, turnaround and retention.]\\n\\n"
+    "5. Copyright, usage and releases\\n[Specify ownership, licenses, permissions and privacy.]\\n\\n"
+    "6. Responsibilities and other terms\\n[Specify access, safety, contingencies and applicable terms.]\\n\\n"
+    "7. Signatures\\n[Review all terms before electronic signature.]"
+).replace("\\n", "\n")) for starter in CONTRACT_STARTERS)
 
 CONTRACT_STARTER_CHOICES = (("", "Blank Template"),) + tuple(
     (starter.key, starter.label) for starter in CONTRACT_STARTERS

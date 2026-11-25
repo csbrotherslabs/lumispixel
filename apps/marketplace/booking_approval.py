@@ -49,3 +49,16 @@ def confirm_booking(session, *, actor, client_acknowledgment=False):
     transaction.on_commit(lambda: notify_photographer(session.pk, "Booking confirmed. " + notice))
     transaction.on_commit(lambda: deliver(booking.client_email or session.client.email,
         "Your LumisPixel booking is confirmed", "Your booking is confirmed. Your photographer will share the contract after review.", session))
+
+@transaction.atomic
+def generate_missing_drafts(studio, actor):
+    templates = list(ContractTemplate.objects.filter(photographer=studio, is_active=True).order_by("pk"))
+    count = 0
+    for session in ClientSession.objects.select_for_update().filter(photographer=studio, status=ClientSession.Status.CONFIRMED).order_by("pk"):
+        if session.contracts.exists():
+            continue
+        template = next((item for item in templates if session.session_type in item.default_specialties), None)
+        if template:
+            create_contract_from_template(booking=session, template=template, actor=actor)
+            count += 1
+    return count
