@@ -1,0 +1,29 @@
+.lp-contract-template-library .lp-starter-card{display:flex;flex-direction:column;gap:8px;padding:20px}
+.lp-contract-template-library .lp-starter-card h3{font-size:var(--lp-type-body,14px);font-weight:600;line-height:1.5;margin:4px 0 0}
+.lp-starter-card>p{font-size:var(--lp-type-caption,12px);color:var(--lp-color-text-secondary,#687181);margin:0 0 12px}
+.lp-starter-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:#fff0f1;color:#c90015;font-size:18px}
+.lp-starter-actions{display:grid;gap:8px;margin-top:auto}
+.lp-contract-template-library .lp-starter-preview,.lp-contract-template-library .lp-starter-use{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 14px;border-radius:8px;font-family:inherit;font-size:var(--lp-type-body-small,13px);font-weight:600;line-height:1.4;text-decoration:none;cursor:pointer;box-sizing:border-box}
+.lp-contract-template-library .lp-starter-preview{border:1px solid #d9dce1;background:#fff;color:#343842}
+.lp-contract-template-library .lp-starter-use{border:1px solid #d70006;background:#d70006;color:#fff}
+.lp-contract-template-library .lp-starter-use:hover{background:#b90010;color:#fff}
+.lp-contract-template-library .lp-starter-preview:hover{background:#f5f5f6}
+.lp-starter-dialog{width:min(760px,calc(100% - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #dedfe3;border-radius:16px;background:#fff;color:#252831;box-shadow:0 24px 80px #0004;overflow:hidden;margin:auto}
+.lp-starter-dialog[open]{display:flex;flex-direction:column}
+.lp-starter-dialog::backdrop{background:#171c27a6}
+.lp-starter-dialog-head,.lp-starter-dialog-foot{display:flex;align-items:center;gap:14px;padding:20px 24px;flex-shrink:0;background:#fff}
+.lp-starter-dialog-head{border-bottom:1px solid #e3e4e8}
+.lp-starter-dialog-head>div{flex:1;min-width:0}
+.lp-starter-dialog-head small{font-size:10px;font-weight:700;letter-spacing:.1em;color:#c90015}
+.lp-contract-template-library .lp-starter-dialog-head h2{font-size:var(--lp-type-section-title,18px);line-height:1.4;margin:4px 0 0}
+.lp-starter-close{display:grid;place-items:center;width:36px;height:36px;border:1px solid #dedfe3;border-radius:8px;background:#fff;color:#343842;cursor:pointer}
+.lp-starter-dialog-body{overflow:auto;min-height:0;padding:24px;background:#f5f5f6;overscroll-behavior:contain}
+.lp-starter-notice{display:flex;align-items:start;gap:8px;font-size:12px;line-height:1.5;margin-bottom:16px;color:#665b48;background:#f7f2e8;border-radius:8px;padding:12px}
+.lp-starter-paper{background:#fff;border:1px solid #e3e4e8;border-radius:6px;padding:32px;overflow-wrap:anywhere}
+.lp-contract-template-library .lp-starter-paper h3{font-size:18px;text-align:center;border-bottom:1px solid #e3e4e8;padding-bottom:18px;margin:0 0 22px}
+.lp-starter-document{font-size:13px;line-height:1.8;color:#343842}
+.lp-starter-document p{margin:0 0 18px}
+.lp-starter-document p:last-child{margin-bottom:0}
+.lp-starter-dialog-foot{justify-content:flex-end;border-top:1px solid #e3e4e8}
+.lp-starter-dialog button:focus-visible,.lp-starter-actions button:focus-visible,.lp-starter-use:focus-visible{outline:2px solid #d70006;outline-offset:3px}
+@media(max-width:600px){.lp-starter-dialog{width:calc(100% - 20px);max-height:calc(100dvh - 20px)}.lp-starter-dialog-head,.lp-starter-dialog-foot,.lp-starter-dialog-body{padding:14px}.lp-starter-paper{padding:18px}.lp-starter-dialog-foot .lp-starter-use{flex:1}}

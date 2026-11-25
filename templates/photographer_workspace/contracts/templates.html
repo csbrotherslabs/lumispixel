@@ -1,4 +1,6 @@
 {% extends "photographer_workspace/base.html" %}
+{% load static %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/contract_starter_preview.css' %}">{% endblock %}
 {% block workspace_content %}
 <div class="lp-workspace-page lp-container lp-container--wide lp-contract-template-library">
   <nav class="lpw-breadcrumb" aria-label="Breadcrumb">
@@ -33,7 +35,15 @@
 .lp-contract-template-library .lp-default-warning{color:#925400;font-size:12px;display:block;margin-top:8px}
 </style>
 <section class="lp-contract-library-panel"><header><div><h2>Default contract templates</h2><p>Assign an active agreement to each specialty. Drafts require review and signature.</p></div></header><form method="post">{% csrf_token %}<div class="lp-default-grid">{% for row in specialty_defaults %}<div class="lp-default-row"><label for="specialty_{{ row.index }}"><i class="bi bi-camera" aria-hidden="true"></i> {{ row.name }}</label><select id="specialty_{{ row.index }}" name="specialty_{{ row.index }}"><option value="">No default</option>{% for item in templates %}{% if item.is_active %}<option value="{{ item.pk }}"{% if item.pk == row.selected %} selected{% endif %}>{{ item.name }}</option>{% endif %}{% endfor %}</select>{% if not row.selected %}<small class="lp-default-warning">No default assigned</small>{% endif %}</div>{% empty %}<p>Add photography specialties to configure defaults.</p>{% endfor %}</div><div class="lp-default-footer"><button class="lp-button lp-button--primary" type="submit">Save configuration</button></div></form><form method="post" class="lp-default-footer">{% csrf_token %}<button class="lp-button lp-button--secondary" name="action" value="generate_missing">Generate missing drafts for confirmed bookings</button></form></section>
-<section class="lp-contract-library-panel"><header><div><h2>Starter agreement library</h2><p>Editable outlines, not legal-approved agreements. Complete all terms and obtain legal review where appropriate.</p></div></header><div class="lp-starter-grid">{% for starter in starter_library %}<article class="lp-starter-card"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><h3>{{ starter.label }}</h3><details><summary>Preview template</summary><pre>{{ starter.content }}</pre></details><a class="lp-button lp-button--primary" href="{{ create_url }}?starter={{ starter.key|urlencode }}">Use template</a></article>{% endfor %}</div></section>
+<section class="lp-contract-library-panel"><header><div><h2>Starter agreement library</h2><p>Editable outlines, not legal-approved agreements. Complete all terms and obtain legal review where appropriate.</p></div></header><div class="lp-starter-grid">{% for starter in starter_library %}<article class="lp-starter-card">
+<span class="lp-starter-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span>
+<h3>{{ starter.label }}</h3><p>Editable service agreement</p>
+<div class="lp-starter-actions"><button type="button" class="lp-starter-preview" data-starter-preview aria-haspopup="dialog" aria-controls="starter-preview-{{ forloop.counter }}"><i class="bi bi-eye" aria-hidden="true"></i> Preview template</button>
+<a class="lp-starter-use" href="{{ create_url }}?starter={{ starter.key|urlencode }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Use template <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+<dialog class="lp-starter-dialog" id="starter-preview-{{ forloop.counter }}" aria-labelledby="starter-title-{{ forloop.counter }}">
+<header class="lp-starter-dialog-head"><span class="lp-starter-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span><div><small>AGREEMENT PREVIEW</small><h2 id="starter-title-{{ forloop.counter }}">{{ starter.label }}</h2></div><form method="dialog"><button class="lp-starter-close" aria-label="Close preview" autofocus><i class="bi bi-x-lg" aria-hidden="true"></i></button></form></header>
+<div class="lp-starter-dialog-body"><div class="lp-starter-notice"><i class="bi bi-info-circle" aria-hidden="true"></i> Editable starter outline. Complete all terms and review before signing.</div><article class="lp-starter-paper"><h3>{{ starter.title }}</h3><div class="lp-starter-document">{{ starter.content|linebreaks }}</div></article></div>
+<footer class="lp-starter-dialog-foot"><form method="dialog"><button class="lp-starter-preview">Close</button></form><a class="lp-starter-use" href="{{ create_url }}?starter={{ starter.key|urlencode }}">Use this template <i class="bi bi-arrow-right" aria-hidden="true"></i></a></footer></dialog></article>{% endfor %}</div></section>
   {% if templates %}
     <section class="lp-contract-library-summary" aria-label="Template summary">
       <article><span class="lp-contract-library-summary__icon"><i class="bi bi-files" aria-hidden="true"></i></span><div><strong>{{ template_count }}</strong><span>Total templates</span></div></article>
@@ -79,3 +89,5 @@
   {% endif %}
 </div>
 {% endblock %}
+
+{% block extra_js %}{{ block.super }}<script src="{% static 'js/contract_starter_preview.js' %}" defer></script>{% endblock %}
