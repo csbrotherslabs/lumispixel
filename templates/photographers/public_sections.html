@@ -18,6 +18,10 @@
 {% include "photographers/theme_previews/sections/availability.html" %}
 {% elif section.key == 'films' %}
 <section id="films" class="showcase-films"><div class="showcase-films__heading"><div><span class="showcase-section-label">Motion</span><h2>Featured film</h2></div><a href="{{ site.film_url }}" target="_blank" rel="noopener noreferrer">Watch film <i class="bi bi-arrow-up-right"></i></a></div></section>
+{% elif section.key == 'stats' %}
+<section id="stats" class="showcase-stats"><div><span>Experience</span><h2>Studio highlights</h2></div><div>{{ site.content.experience_highlights|linebreaks }}</div></section>
+{% elif section.key == 'team' %}
+<section id="team" class="showcase-team"><span class="showcase-section-label">Our team</span><h2>Meet the people behind the work.</h2><div>{{ site.content.team_members|linebreaks }}</div></section>
 {% elif section.key == 'contact' %}
-<section id="contact" class="showcase-contact"><span>Begin a conversation</span><h2>{{ site.contact_heading }}</h2>{% if site.phone %}<p>Get in touch to discuss your next session.</p><a href="tel:{{ site.phone }}">{{ site.phone }} <i class="bi bi-arrow-up-right"></i></a>{% endif %}</section>
+<section id="contact" class="showcase-contact"><span>Begin a conversation</span><h2>{{ site.contact_heading }}</h2>{% if site.content.contact_email %}<p><a href="mailto:{{ site.content.contact_email }}">{{ site.content.contact_email }}</a></p>{% endif %}{% if site.phone %}<p>Get in touch to discuss your next session.</p><a href="tel:{{ site.phone }}">{{ site.phone }} <i class="bi bi-arrow-up-right"></i></a>{% endif %}</section>
 {% endif %}
