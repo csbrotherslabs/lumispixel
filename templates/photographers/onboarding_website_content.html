@@ -6,6 +6,17 @@
   <h1 class="wptb-item--title" id="photographer-onboarding-content-title">Bring Your Website to Life</h1>
   <p class="wptb-item--description mx-auto">Add the information for the sections you selected. Panels follow the same order as your website.</p>
 </div>
+{% if builder_mode %}
+<section class="lumis-theme-config">
+  <h2>Website publication</h2>
+  {% if profile.gallery_website_url %}<p>Published · <a href="{{ profile.gallery_website_url }}" target="_blank" rel="noopener noreferrer">View live website</a></p>{% else %}<p>Draft — not publicly accessible.</p>{% endif %}
+  <p>Save your content below before publishing. Publishing makes your selected business content and contact phone public.</p>
+  <form method="post" action="{% url 'photographers:website-publish' %}">{% csrf_token %}
+    <button class="btn lumis-auth-primary" name="action" value="publish">{% if profile.gallery_website_url %}Publish updates{% else %}Publish website{% endif %}</button>
+    {% if profile.gallery_website_url %}<button class="btn lumis-auth-secondary" name="action" value="unpublish">Unpublish website</button>{% endif %}
+  </form>
+</section>
+{% endif %}
 <form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   <input type="hidden" name="website_theme" value="{{ profile.website_theme }}">
