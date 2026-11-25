@@ -6,6 +6,7 @@ from datetime import timedelta
 from celery import shared_task
 from django.conf import settings
 from django.db import transaction
+from .connection_lifecycle import release_inference_connection
 from django.utils import timezone
 
 from apps.galleries.models import GalleryPhoto
@@ -53,6 +54,8 @@ def process_face_index_job(self, job_id):
         from .inference import extract_face_embeddings
         from .vector_store import replace_embeddings
 
+        # The photo and gallery are already loaded; reconnect for the final locked write.
+        release_inference_connection(job._state.db or "default")
         with job.photo.file.open("rb") as stream:
             vectors = extract_face_embeddings(stream)
 
