@@ -240,6 +240,7 @@ def website_content(request):
         website=website,
         projects=[{"index": i, "item": next((p for p in website.projects.all() if p.display_order == i), None)} for i in range(3)],
         panels=panels,
+        empty_client={"index": "__index__"},
         notable_clients=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_clients(website))],
         equipment_slots=equipment_slots,
         equipment_indices=",".join(str(slot["index"]) for slot in equipment_slots),
