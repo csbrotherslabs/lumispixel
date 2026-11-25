@@ -8,7 +8,10 @@ from apps.core.support_views import help_center, support_attachment_download, su
 from apps.dashboard.client_contracts import client_contracts
 from apps.dashboard.workspace_settings import workspace_settings
 
+from apps.photographers.publishing import public_website
+
 urlpatterns = [
+    path("p/<slug:slug>/", public_website, name="public-photographer-website"),
     path("health/live/", live, name="health_live"),
     path("health/ready/", ready, name="health_ready"),
     path("admin/", admin.site.urls),
