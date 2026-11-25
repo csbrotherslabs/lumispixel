@@ -14,6 +14,7 @@ from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
 from .video_links import video_details
 from .experience import existing, parse_experience, visible
+from .team import existing_team, team_rows
 
 PUBLISHED_KEY = "_published_website"
 
@@ -31,6 +32,8 @@ def publication_errors(profile, website):
         errors.append("Upload your own hero photograph.")
     if "services" in sections and not profile.specialties.exists():
         errors.append("Select at least one photography specialty before publishing Services.")
+    if "team" in sections and not existing_team(website) and not content.get("team_members"):
+        errors.append("Add at least one team member before publishing Team.")
     if "stats" in sections and not visible(existing(website)) and not content.get("experience_highlights"):
         errors.append("Add at least one visible experience highlight or professional engagement.")
     if "portfolio" in sections:
@@ -59,7 +62,10 @@ def snapshot(profile, website):
     allowed = set(config["required"] + config["optional"]) | section_required_fields(theme, sections) | {"availability_window_months", "availability_call_to_action", "services_intro"}
     content = {key: value for key, value in website.theme_content.items()
                if key in allowed and FIELD_SECTION_MAP.get(key) in sections}
+    if "team" in sections and website.theme_content.get("team_members"):
+        content["team_members"] = website.theme_content["team_members"]
     return {
+        "team_profiles": existing_team(website),
         "theme": theme,
         "brand": profile.business_name or profile.display_name,
         "sections": sections,
@@ -147,6 +153,11 @@ def studio_preview(request):
             data["notable_clients"] = client_rows(request, website, preview=True)
         except ValidationError:
             pass
+    if "team" in data["sections"] and "team_indices" in request.POST:
+        try:
+            data["team_profiles"] = team_rows(request, website, preview=True)
+        except ValidationError:
+            pass
     if "stats" in data["sections"] and "experience_data" in request.POST:
         try:
             data["experience"] = parse_experience(request)
@@ -191,6 +202,7 @@ def render_website(request, website, data, draft_preview=False):
                      for item in data.get(key, [])]
     data["notable_clients"] = [dict(item, image_url=media_url(website.hero_image, item.get("image")))
                                for item in data.get("notable_clients", []) if item.get("name")]
+    data["team_profiles"] = [dict(item, image_url=media_url(website.hero_image, item.get("image"))) for item in data.get("team_profiles", []) if item.get("name") or draft_preview]
     data["portrait_url"] = media_url(PhotographerProfile._meta.get_field("profile_photo"), data.get("portrait"))
     content = data["content"]
     def first(*keys):
@@ -221,9 +233,8 @@ def render_website(request, website, data, draft_preview=False):
         supported.add("films")
     if visible(data.get("experience", {})) or content.get("experience_highlights"):
         supported.add("stats")
-    for key, field in (("team", "team_members"),):
-        if content.get(field):
-            supported.add(key)
+    if data["team_profiles"] or content.get("team_members"):
+        supported.add("team")
     demo = {}
     if "availability" in data["sections"]:
         from .website_content import public_availability
