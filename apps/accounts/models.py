@@ -304,16 +304,12 @@ class PhotographerProfile(models.Model):
 
     @property
     def gallery_website_url(self):
-        """Only expose an explicitly configured public HTTP(S) website."""
-        if not self.public_profile_enabled or not self.website:
-            return ""
+        from django.urls import reverse
         try:
-            url = urlsplit(self.website)
-            if url.scheme in ("http", "https") and url.hostname and not url.username and not url.password:
-                return self.website
-        except ValueError:
-            pass
-        return ""
+            published = (self.website_profile.theme_content or {}).get("_published_website")
+        except PhotographerWebsiteProfile.DoesNotExist:
+            return ""
+        return reverse("public-photographer-website", kwargs={"slug": self.slug}) if published else ""
 
     @property
     def can_publish_marketplace_listing(self):
