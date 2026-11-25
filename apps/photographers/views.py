@@ -160,6 +160,7 @@ def onboarding_theme(request):
 def website_content(request):
     from .notable_clients import client_rows, save_clients, existing_clients
     from .experience import existing, parse_experience
+    from .team import existing_team, team_rows, save_team
     from django.core.exceptions import ValidationError
     builder_mode = request.resolver_match.url_name == "website-content"
     if not request.user.has_photographer_profile:
@@ -196,6 +197,12 @@ def website_content(request):
                 rows = client_rows(request, website)
             except ValidationError as exc:
                 client_error = exc.messages[0]
+        team = None
+        if "team" in selected_sections and "team_indices" in request.POST:
+            try:
+                team = team_rows(request, website)
+            except ValidationError as exc:
+                client_error = exc.messages[0]
         experience = None
         if "stats" in selected_sections and "experience_data" in request.POST:
             try:
@@ -210,6 +217,8 @@ def website_content(request):
             profile, website = form.save_content()
             if specialties_form.is_bound:
                 profile.specialties.set(specialties_form.cleaned_data["specialties"])
+            if team is not None:
+                save_team(website, team)
             if rows is not None:
                 save_clients(website, rows)
             if experience is not None:
@@ -260,6 +269,9 @@ def website_content(request):
         panels=panels,
         specialties_field=specialties_form["specialties"],
         experience_data=existing(website),
+        legacy_team=(website.theme_content or {}).get("team_members", ""),
+        empty_team={"index": "__index__"},
+        team_profiles=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_team(website))],
         empty_client={"index": "__index__"},
         notable_clients=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_clients(website))],
         equipment_slots=equipment_slots,
