@@ -46,6 +46,7 @@
     <a class="btn lumis-auth-secondary" href="{% if builder_mode %}{% url 'photographers:website-builder' %}{% else %}{% url 'photographers:onboarding-theme' %}{% endif %}"><span class="btn-wrap"><span class="text-first">Back to Structure</span></span></a>
     {% if not builder_mode %}<button class="btn lumis-auth-secondary" type="submit" name="action" value="save_draft"><span class="btn-wrap"><span class="text-first">Save Draft &amp; Finish Later</span></span></button>{% endif %}
     <button class="btn lumis-auth-primary" type="submit" name="action" value="{% if builder_mode %}save_content{% else %}finish_setup{% endif %}"><span class="btn-wrap"><span class="text-first">{% if builder_mode %}Save Website Content{% else %}Finish Setup{% endif %}</span></span></button>
+    {% if not builder_mode %}<button class="btn lumis-auth-primary" type="submit" name="action" value="finish_and_publish">Finish &amp; Publish Website</button><p>Publishing makes your selected website content and contact phone public.</p>{% endif %}
   </div>
 </form>
 {% endblock %}
