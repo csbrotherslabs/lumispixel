@@ -238,7 +238,7 @@ SECTION_REQUIRED_FIELDS = {
     "portfolio": ("featured_gallery_title",),
     "films": ("featured_video_url",),
     "reviews": ("testimonial_quote", "testimonial_name"),
-    "stats": ("experience_highlights",),
+    "stats": (),
     "team": ("team_members",),
     "contact": ("booking_call_to_action", "contact_email"),
     "availability": ("availability_window_months", "availability_call_to_action"),
