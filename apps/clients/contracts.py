@@ -16,6 +16,7 @@ from django.utils import formats, timezone
 
 from .models import (Contract, ContractEvent, ContractPhotographerSignature,
                      ContractSignature, ContractTemplate)
+from .payment_terms import payment_clause
 from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
 
@@ -28,7 +29,13 @@ MERGE_FIELDS = {
     "booking.date": "Booking date",
     "booking.start_time": "Booking start time",
     "booking.location": "Booking location",
-    "booking.value": "Booking value",
+    "booking.value": "Agreed booking value",
+    "booking.payment_terms": "Agreed payment schedule",
+    "booking.currency": "Currency",
+    "booking.deposit_amount": "Down payment",
+    "booking.deposit_due_date": "Down payment due date",
+    "booking.balance_due": "Remaining balance",
+    "booking.balance_due_date": "Balance due date",
     "workspace.name": "Workspace/business name",
     "photographer.name": "Photographer/studio name",
 }
@@ -86,7 +93,13 @@ def merge_context(booking):
         "booking.date": formats.date_format(local_start, "DATE_FORMAT"),
         "booking.start_time": formats.time_format(local_start, "TIME_FORMAT"),
         "booking.location": booking.location,
-        "booking.value": (f"{booking.photographer.default_currency} {booking.booking_value:,.2f}" if booking.booking_value > 0 else "Not yet agreed"),
+        "booking.value": (f"{booking.photographer.default_currency} {booking.booking_value:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
+        "booking.payment_terms": payment_clause(booking),
+        "booking.currency": booking.payment_currency,
+        "booking.deposit_amount": str(booking.deposit_amount),
+        "booking.deposit_due_date": str(booking.deposit_due_date or ""),
+        "booking.balance_due": str(booking.booking_value - booking.deposit_amount),
+        "booking.balance_due_date": str(booking.balance_due_date or ""),
         "workspace.name": studio_name,
         "photographer.name": studio_name,
     }
@@ -100,7 +113,10 @@ def render_merge_fields(content, booking):
 
 def contract_preview_content(contract, content=None):
     """Render the contract snapshot with current persisted merge values."""
-    return render_merge_fields(contract.content if content is None else content, contract.booking)
+    if content is None and contract.locked_at and contract.rendered_content:
+        return contract.rendered_content
+    body = render_merge_fields(contract.content if content is None else content, contract.booking)
+    return body + "\n\nAgreed payment schedule\n" + payment_clause(contract.booking)
 
 
 def validate_contract_for_email(contract):
@@ -135,6 +151,8 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     contract = Contract.objects.select_for_update().select_related(
         "client", "booking", "photographer", "photographer__user"
     ).get(pk=contract.pk, photographer=contract.photographer)
+    if not ContractPhotographerSignature.objects.filter(contract=contract).exists():
+        raise ValidationError("The photographer must sign before sending.")
     recipient = validate_contract_for_email(contract)
     raw_token = secrets.token_urlsafe(32)
     review_url = build_absolute_uri(reverse("clients:contract-review", kwargs={"token": raw_token}))
@@ -228,6 +246,8 @@ def sign_contract_as_photographer(*, contract, actor, signer_name, signature_val
         raise ValidationError({"signature_value": "Type your signature."})
     if consent_accepted is not True:
         raise ValidationError({"consent_accepted": "You must agree before signing."})
+    if not contract.booking.pricing_confirmed:
+        raise ValidationError("Save agreed pricing and payment terms before signing.")
     now = timezone.now()
     rendered_content = contract_preview_content(contract)
     digest = _content_hash(rendered_content)
@@ -333,7 +353,7 @@ def create_contract_from_template(*, booking, template, actor):
         client=booking.client,
         template=template,
         title=template.title,
-        content=render_merge_fields(template.content, booking),
+        content=template.content,
         version=template.version,
         status=Contract.Status.DRAFT,
         created_by=actor,

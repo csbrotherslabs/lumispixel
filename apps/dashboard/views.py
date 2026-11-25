@@ -69,6 +69,7 @@ from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
 from apps.dashboard.contract_starters import serialized_contract_starters
 from apps.clients.contracts import MERGE_FIELDS
+from apps.clients.payment_terms import parse_payment_terms, payment_clause
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
@@ -2847,20 +2848,17 @@ def bookings_dashboard(request):
             if not request.studio_access.allows("schedule") or not request.studio_access.allows("financials"):
                 raise PermissionDenied
             try:
-                value = Decimal(request.POST.get("price", ""))
-                if not value.is_finite() or value < 0 or value >= Decimal("10000000000") or value != value.quantize(Decimal("0.01")):
-                    raise ValueError
-            except (ValueError, ArithmeticError):
-                return JsonResponse({"ok": False, "error": "Enter a valid non-negative booking value with up to two decimal places."}, status=400)
+                terms = parse_payment_terms(request.POST, profile.default_currency)
+            except ValidationError as exc:
+                return JsonResponse({"ok": False, "error": exc.messages[0]}, status=400)
             with transaction.atomic():
                 session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access).select_for_update(), pk=request.POST.get("booking_id"))
                 if session.status == ClientSession.Status.CANCELLED or session.contracts.exclude(status=Contract.Status.VOIDED).exclude(status=Contract.Status.DRAFT).exists():
-                    return JsonResponse({"ok": False, "error": "Discard any unsent signed agreement or arrange an amendment before changing the fee."}, status=409)
-                old = session.booking_value
-                if old != value:
-                    session.booking_value = value
-                    session.save(update_fields=["booking_value", "updated_at"])
-                    ClientActivity.objects.create(photographer=profile, actor=request.user, client=session.client, booking=session, event_type=ClientActivity.EventType.BOOKING_UPDATED, description="Booking value updated.", metadata={"changes": {"booking_value": {"before": str(old), "after": str(value)}}})
+                    return JsonResponse({"ok": False, "error": "Discard any unsent signed agreement or arrange an amendment before changing pricing."}, status=409)
+                for field, value in terms.items():
+                    setattr(session, field, value)
+                session.save(update_fields=[*terms, "updated_at"])
+                ClientActivity.objects.create(photographer=profile, actor=request.user, client=session.client, booking=session, event_type=ClientActivity.EventType.BOOKING_UPDATED, description="Agreed payment terms updated.")
             return JsonResponse({"ok": True, "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk])})
 
         if request.POST.get("action") in {"create_mini", "edit_mini"}:
@@ -2928,6 +2926,8 @@ def bookings_dashboard(request):
                           "service": request.POST.get("mini_package", "").strip(),
                           "notes": request.POST.get("notes", "").strip()}
                 if mini:
+                    if session.pricing_confirmed and values["booking_value"] != session.booking_value:
+                        return JsonResponse({"ok": False, "error": "Use Save Pricing & Payment Terms to change the agreed fee."}, status=409)
                     for field, value in values.items():
                         setattr(mini, field, value)
                     mini.save()
@@ -3306,7 +3306,7 @@ def booking_detail(request, pk):
         "notes": booking.notes,
         "client_id": booking.client_id,
         "status_key": booking.status,
-        "booking_value": str(booking.booking_value),
+        "booking_value": str(booking.booking_value), "pricing_confirmed": booking.pricing_confirmed, "deposit_amount": str(booking.deposit_amount), "deposit_due_date": booking.deposit_due_date.isoformat() if booking.deposit_due_date else "", "balance_due_date": booking.balance_due_date.isoformat() if booking.balance_due_date else "",
         "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
         "all_day": False,
     }
@@ -3385,7 +3385,7 @@ def booking_detail(request, pk):
             ClientSession.Status.COMPLETED: "This photography session has been completed.",
             ClientSession.Status.CANCELLED: "This booking has been cancelled.",
         }[booking.status],
-        "booking_tab": tab, "booking_tabs": booking_tabs, "can_view_financials": can_view_financials,
+        "booking_payment_terms": payment_clause(booking) if can_view_financials else "", "booking_tab": tab, "booking_tabs": booking_tabs, "can_view_financials": can_view_financials,
         "booking_invoices": invoices, "payment_totals": payment_totals, "related_client_galleries": galleries,
         "hub_activity": activity[:50],
         "booking_activity": booking.activities.select_related("actor").all()[:20],
@@ -3822,7 +3822,7 @@ def schedule(request):
             else "Payment due"
         ), "questionnaire_status": "Not tracked",
         "notes": session.notes,
-        "client_id": session.client_id, "booking_value": str(session.booking_value),
+        "client_id": session.client_id, "booking_value": str(session.booking_value), "pricing_confirmed": session.pricing_confirmed, "deposit_amount": str(session.deposit_amount), "deposit_due_date": session.deposit_due_date.isoformat() if session.deposit_due_date else "", "balance_due_date": session.balance_due_date.isoformat() if session.balance_due_date else "",
         "member_ids": [membership.pk for membership in session.assigned_members.all()],
         "warnings": (
             (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])

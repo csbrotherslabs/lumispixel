@@ -435,6 +435,11 @@ class ClientSession(PhotographerOwnedModel):
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
     booking_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    pricing_confirmed = models.BooleanField(default=False)
+    payment_currency = models.CharField(max_length=3, blank=True)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deposit_due_date = models.DateField(null=True, blank=True)
+    balance_due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     # Reporting uses the business event date, not the row creation date.  Keeping
     # this separate also means a tentative request confirmed later lands in the

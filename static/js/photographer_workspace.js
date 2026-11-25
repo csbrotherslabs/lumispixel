@@ -1014,20 +1014,29 @@
   if (saveValueButton) saveValueButton.addEventListener('click', async function () {
     if (!activeContractEvent || !editing) return;
     if (!window.confirm('Save only the agreed booking value? Other unsaved changes will not be saved. Existing draft agreements must be reviewed or recreated.')) return;
-    const data = new FormData();
+    const data = new FormData(form);
     data.set('csrfmiddlewaretoken', form.elements.csrfmiddlewaretoken.value);
     data.set('action', 'update_booking_value');
     data.set('booking_id', activeContractEvent.id);
     data.set('price', form.elements.price.value);
     saveValueButton.disabled = true;
     try {
-      const response = await fetch(form.action, {method:'POST', body:data, credentials:'same-origin'});
+      const response = await fetch(form.getAttribute('action'), {method:'POST', body:data, credentials:'same-origin'});
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to save booking value.');
       dirty = false;
       window.location.assign(result.booking_url);
     } catch (error) { window.alert(error.message); saveValueButton.disabled = false; }
   });
+  function updatePaymentSummary() {
+    const total = Number(form.elements.price.value || 0);
+    const raw = Number(form.elements.deposit_input.value || 0);
+    const deposit = form.elements.deposit_required.checked ? (form.elements.deposit_type.value === 'percentage' ? Math.round(total * raw) / 100 : raw) : 0;
+    const summary = layer.querySelector('[data-payment-summary]');
+    if (summary) summary.textContent = deposit > total ? 'Down payment cannot exceed agreed fee.' : 'Down payment: ' + deposit.toFixed(2) + ' · Remaining balance: ' + (total - deposit).toFixed(2);
+  }
+  form.addEventListener('input', updatePaymentSummary);
+  form.addEventListener('change', updatePaymentSummary);
   function currentType() { return form.elements.event_type.value; }
   function syncType() {
     const type = currentType();
@@ -1096,6 +1105,12 @@
       setValue('client', event.client_id);
       setValue('booking_status', event.status_key);
       setValue('price', event.booking_value);
+      form.elements.complimentary.checked = Boolean(event.pricing_confirmed && Number(event.booking_value) === 0);
+      form.elements.deposit_required.checked = Number(event.deposit_amount) > 0;
+      setValue('deposit_type', 'fixed');
+      setValue('deposit_input', event.deposit_amount);
+      setValue('deposit_due_date', event.deposit_due_date);
+      setValue('balance_due_date', event.balance_due_date);
       Array.from(form.elements.team.options).forEach(function (option) {
         option.selected = (event.member_ids || []).includes(Number(option.value));
       });
@@ -1122,7 +1137,7 @@
       setValue('constraint_id', '');
       setValue('mini_id', '');
     }
-    syncType(); syncAllDay();
+    syncType(); syncAllDay(); updatePaymentSummary();
     layer.hidden = false;
     window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
     document.body.classList.add('lpw-drawer-open');
