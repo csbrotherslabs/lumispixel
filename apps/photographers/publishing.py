@@ -28,6 +28,8 @@ def publication_errors(profile, website):
             errors.append(f"Complete {key.replace('_', ' ')} before publishing.")
     if not actual_hero_image(website):
         errors.append("Upload your own hero photograph.")
+    if "services" in sections and not profile.specialties.exists():
+        errors.append("Select at least one photography specialty before publishing Services.")
     if "portfolio" in sections:
         projects = list(website.projects.filter(is_featured=True))
         if not projects or any(not (p.title.strip() and p.description.strip() and p.cover_image) for p in projects):
@@ -51,7 +53,7 @@ def snapshot(profile, website):
     sections = list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
     theme = profile.website_theme
     config = THEME_FIELD_CONFIG[theme]
-    allowed = set(config["required"] + config["optional"]) | section_required_fields(theme, sections) | {"availability_window_months", "availability_call_to_action"}
+    allowed = set(config["required"] + config["optional"]) | section_required_fields(theme, sections) | {"availability_window_months", "availability_call_to_action", "services_intro"}
     content = {key: value for key, value in website.theme_content.items()
                if key in allowed and FIELD_SECTION_MAP.get(key) in sections}
     return {
@@ -64,6 +66,7 @@ def snapshot(profile, website):
         "specialties": list(profile.specialties.values_list("name", flat=True)),
         "biography": profile.biography,
         "phone": profile.phone_number,
+        "notable_clients": (website.theme_content or {}).get("notable_clients", []),
         "projects": [{"title": p.title, "description": p.description,
                       "image": p.cover_image.name if p.cover_image else ""}
                      for p in website.projects.filter(is_featured=True)],
@@ -122,13 +125,19 @@ def studio_preview(request):
     website = get_object_or_404(PhotographerWebsiteProfile.objects.select_related("photographer_profile"),
                                 photographer_profile__user=request.user)
     data = snapshot(website.photographer_profile, website)
-    allowed = set(THEME_FIELD_CONFIG[data["theme"]]["required"] + THEME_FIELD_CONFIG[data["theme"]]["optional"]) | section_required_fields(data["theme"], data["sections"]) | {"availability_window_months", "availability_call_to_action"}
+    allowed = set(THEME_FIELD_CONFIG[data["theme"]]["required"] + THEME_FIELD_CONFIG[data["theme"]]["optional"]) | section_required_fields(data["theme"], data["sections"]) | {"availability_window_months", "availability_call_to_action", "services_intro"}
     for key in allowed:
         if FIELD_SECTION_MAP.get(key) in data["sections"] and key in request.POST:
             data["content"][key] = request.POST[key][:10000]
     if "availability_window_months" in data["content"]:
         value = str(data["content"]["availability_window_months"])
         data["content"]["availability_window_months"] = int(value) if value in {"1", "2", "3", "6"} else 2
+    if "notable_clients" in data["sections"] and "client_indices" in request.POST:
+        from .notable_clients import client_rows
+        try:
+            data["notable_clients"] = client_rows(request, website, preview=True)
+        except ValidationError:
+            pass
     data["projects"] = []
     data["equipment"] = []
     projects = {p.display_order: p for p in website.projects.all()}
@@ -166,6 +175,8 @@ def render_website(request, website, data, draft_preview=False):
                               ("equipment", PhotographerWebsiteEquipment, "image")):
         data[key] = [dict(item, image_url=media_url(model._meta.get_field(field), item["image"]))
                      for item in data.get(key, [])]
+    data["notable_clients"] = [dict(item, image_url=media_url(website.hero_image, item.get("image")))
+                               for item in data.get("notable_clients", []) if item.get("name")]
     data["portrait_url"] = media_url(PhotographerProfile._meta.get_field("profile_photo"), data.get("portrait"))
     content = data["content"]
     def first(*keys):
@@ -203,6 +214,8 @@ def render_website(request, website, data, draft_preview=False):
         demo["availability"] = public_availability(website.photographer_profile, content.get("availability_window_months") or 2)
         demo["availability_call_to_action"] = content.get("availability_call_to_action") or "Request this date"
         supported.add("availability")
+    if data["notable_clients"]:
+        supported.add("notable_clients")
     if data["equipment"]:
         supported.add("equipment")
     if data["content"].get("testimonial_quote"):
