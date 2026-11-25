@@ -125,6 +125,8 @@ def contract_preview_content(contract, content=None):
     body = render_merge_fields(source, contract.booking)
     if not has_payment_clause:
         body += "\n\nAgreed payment terms\n" + payment_clause(contract.booking)
+    if contract.booking.pricing_confirmed:
+        body += "\n\nThe agreed payment terms generated from the booking govern the service fee, down payment and payment deadlines and supersede any inconsistent amounts or payment dates elsewhere in this agreement."
     return body
 
 
