@@ -262,6 +262,18 @@ def section_required_fields(theme, sections):
         result.update(specific | defaults)
     return result
 
+LEGACY_SAMPLE_HERO = "499aa3683f4e40d796c7039a01486595.png"
+
+
+def is_sample_hero(image):
+    return str(image or "").rsplit("/", 1)[-1] == LEGACY_SAMPLE_HERO
+
+
+def actual_hero_image(website):
+    image = website.hero_image if website else None
+    return image if image and not is_sample_hero(image) else None
+
+
 class PhotographerWebsiteThemeForm(forms.ModelForm):
     action = forms.CharField(required=False)
     website_sections = forms.MultipleChoiceField(
@@ -311,7 +323,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                     self.fields[name].initial = content[name]
             for name in self.field_names:
                 self.fields[name].initial = content.get(name, "")
-            if website_profile and website_profile.hero_image:
+            if actual_hero_image(website_profile):
                 self.fields["hero_image"].help_text = f"Current image: {website_profile.hero_image.name}"
             existing_sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
             theme = self.instance.website_theme or PhotographerProfile.WebsiteTheme.BASIC
@@ -338,7 +350,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         if self.content_only and theme != self.instance.website_theme:
             self.add_error("website_theme", "Save your selected theme in the structure editor first.")
         if not self.draft:
-            if self.content_only and not (cleaned.get("hero_image") or (self.website_profile and self.website_profile.hero_image)):
+            if self.content_only and not (cleaned.get("hero_image") or actual_hero_image(self.website_profile)):
                 self.add_error("hero_image", "Upload your own hero photograph.")
             for name in required:
                 if not str(cleaned.get(name) or "").strip():
@@ -377,6 +389,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         website.theme_content = content
         if self.cleaned_data.get("hero_image"):
             website.hero_image = self.cleaned_data["hero_image"]
+        elif is_sample_hero(website.hero_image):
+            website.hero_image = ""
         profile.save()
         website.save()
         return profile, website
