@@ -159,6 +159,7 @@ def onboarding_theme(request):
 @require_http_methods(["GET", "POST"])
 def website_content(request):
     from .notable_clients import client_rows, save_clients, existing_clients
+    from .experience import existing, parse_experience
     from django.core.exceptions import ValidationError
     builder_mode = request.resolver_match.url_name == "website-content"
     if not request.user.has_photographer_profile:
@@ -191,12 +192,21 @@ def website_content(request):
                 rows = client_rows(request, website)
             except ValidationError as exc:
                 client_error = exc.messages[0]
+        experience = None
+        if "stats" in selected_sections and "experience_data" in request.POST:
+            try:
+                experience = parse_experience(request)
+            except ValidationError as exc:
+                client_error = exc.messages[0]
         if equipment_error or project_error or client_error:
             form.add_error(None, equipment_error or project_error or client_error)
         else:
             profile, website = form.save_content()
             if rows is not None:
                 save_clients(website, rows)
+            if experience is not None:
+                website.theme_content = dict(website.theme_content or {}, experience=experience)
+                website.save(update_fields=["theme_content", "updated_at"])
             if "portfolio" in selected_sections:
                 _save_project_drafts(request, website)
             if "equipment" in selected_sections:
@@ -240,6 +250,7 @@ def website_content(request):
         website=website,
         projects=[{"index": i, "item": next((p for p in website.projects.all() if p.display_order == i), None)} for i in range(3)],
         panels=panels,
+        experience_data=existing(website),
         empty_client={"index": "__index__"},
         notable_clients=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_clients(website))],
         equipment_slots=equipment_slots,
