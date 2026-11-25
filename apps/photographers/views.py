@@ -176,7 +176,7 @@ def website_content(request):
         request.FILES or None,
         instance=profile,
         website_profile=website,
-        draft=action in {"save_draft", "save_content"},
+        draft=action in {"save_draft", "save_content", "studio_publish"},
         content_only=True,
     )
     if request.method == "POST" and form.is_valid():
@@ -190,6 +190,16 @@ def website_content(request):
             if "equipment" in selected_sections:
                 _save_equipment_drafts(request, website)
             if builder_mode:
+                if action == "studio_publish":
+                    errors = publication_errors(profile, website)
+                    if errors:
+                        for error in errors:
+                            messages.error(request, error)
+                    else:
+                        website.theme_content = dict(website.theme_content or {}, **{PUBLISHED_KEY: snapshot(profile, website)})
+                        website.save(update_fields=["theme_content", "updated_at"])
+                        messages.success(request, "Website published.")
+                    return redirect("photographers:website-content")
                 messages.success(request, "Your website content has been saved.")
                 return redirect("photographers:website-content")
             if action == "save_draft":
@@ -223,6 +233,8 @@ def website_content(request):
         next_equipment_index=_next_equipment_index(website),
         selected_sections=selected_sections,
         builder_mode=builder_mode,
+        website_studio=True,
+        studio_theme=THEME_DEFINITIONS[profile.website_theme],
     ))
 
 
