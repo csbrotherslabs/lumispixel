@@ -8,6 +8,9 @@ def parse_payment_terms(data, currency):
         if not value.is_finite() or value < 0 or value >= Decimal("10000000000") or value != value.quantize(Decimal(".01")):
             raise ValueError
         return value
+    currency = data.get("payment_currency") or currency
+    if currency not in {"USD", "CAD", "GBP", "EUR", "AUD", "NZD", "CHF", "GHS", "NGN", "ZAR", "INR", "AED"}:
+        raise ValidationError("Select a supported currency.")
     try:
         total = amount(data.get("price", ""))
         if total == 0 and data.get("complimentary") != "on":

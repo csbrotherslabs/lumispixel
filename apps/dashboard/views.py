@@ -2844,7 +2844,7 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
-        if request.POST.get("action") == "update_booking_value":
+        if request.POST.get("action") == "edit_booking" and request.POST.get("pricing_only") == "1":
             if not request.studio_access.allows("schedule") or not request.studio_access.allows("financials"):
                 raise PermissionDenied
             try:
@@ -2853,6 +2853,8 @@ def bookings_dashboard(request):
                 return JsonResponse({"ok": False, "error": exc.messages[0]}, status=400)
             with transaction.atomic():
                 session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access).select_for_update(), pk=request.POST.get("booking_id"))
+                if not hasattr(session, "platform_booking"):
+                    return JsonResponse({"ok": False, "error": "Invalid pricing-only request."}, status=400)
                 if session.status == ClientSession.Status.CANCELLED or session.contracts.exclude(status=Contract.Status.VOIDED).exclude(status=Contract.Status.DRAFT).exists():
                     return JsonResponse({"ok": False, "error": "Discard any unsent signed agreement or arrange an amendment before changing pricing."}, status=409)
                 for field, value in terms.items():
@@ -3023,6 +3025,14 @@ def bookings_dashboard(request):
             if is_edit:
                 editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
                 session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
+            terms = {}
+            if not is_consultation and request.POST.get("payment_currency"):
+                if not request.studio_access.allows("financials"):
+                    raise PermissionDenied
+                try:
+                    terms = parse_payment_terms(request.POST, profile.default_currency)
+                except ValidationError as exc:
+                    return JsonResponse({"ok": False, "error": exc.messages[0]}, status=400)
             errors = {}
             client = scope_assigned(Client.objects.all(), request.studio_access).filter(
                 pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
@@ -3081,6 +3091,7 @@ def bookings_dashboard(request):
                              if is_consultation else request.POST.get("location", "").strip()), "status": status,
                 "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
             }
+            values.update(terms)
             with transaction.atomic():
                 # Serialize scheduling writes per studio. This closes the usual
                 # empty-slot check/create race where there is no booking row to lock.
@@ -3103,7 +3114,7 @@ def bookings_dashboard(request):
                     session = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
                     if hasattr(session, "platform_booking"):
                         return JsonResponse({"ok": False, "errors": {"booking_status": "Marketplace bookings cannot be edited here. Cancel and request a new booking if details change."}}, status=409)
-                    if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "booking_value", "event_kind")):
+                    if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "booking_value", "event_kind", *terms.keys())):
                         return JsonResponse({"ok": False, "error": "This booking has a signed or issued agreement. Material changes require a replacement agreement or amendment."}, status=409)
                     before = {
                         "client_id": session.client_id, "session_type": session.session_type,
@@ -3306,7 +3317,7 @@ def booking_detail(request, pk):
         "notes": booking.notes,
         "client_id": booking.client_id,
         "status_key": booking.status,
-        "booking_value": str(booking.booking_value), "pricing_confirmed": booking.pricing_confirmed, "deposit_amount": str(booking.deposit_amount), "deposit_due_date": booking.deposit_due_date.isoformat() if booking.deposit_due_date else "", "balance_due_date": booking.balance_due_date.isoformat() if booking.balance_due_date else "",
+        "booking_value": str(booking.booking_value), "pricing_confirmed": booking.pricing_confirmed, "payment_currency": booking.payment_currency or booking.photographer.default_currency, "marketplace_booking": hasattr(booking, "platform_booking"), "deposit_amount": str(booking.deposit_amount), "deposit_due_date": booking.deposit_due_date.isoformat() if booking.deposit_due_date else "", "balance_due_date": booking.balance_due_date.isoformat() if booking.balance_due_date else "",
         "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
         "all_day": False,
     }
@@ -3822,7 +3833,7 @@ def schedule(request):
             else "Payment due"
         ), "questionnaire_status": "Not tracked",
         "notes": session.notes,
-        "client_id": session.client_id, "booking_value": str(session.booking_value), "pricing_confirmed": session.pricing_confirmed, "deposit_amount": str(session.deposit_amount), "deposit_due_date": session.deposit_due_date.isoformat() if session.deposit_due_date else "", "balance_due_date": session.balance_due_date.isoformat() if session.balance_due_date else "",
+        "client_id": session.client_id, "booking_value": str(session.booking_value), "pricing_confirmed": session.pricing_confirmed, "payment_currency": session.payment_currency or session.photographer.default_currency, "marketplace_booking": hasattr(session, "platform_booking"), "deposit_amount": str(session.deposit_amount), "deposit_due_date": session.deposit_due_date.isoformat() if session.deposit_due_date else "", "balance_due_date": session.balance_due_date.isoformat() if session.balance_due_date else "",
         "member_ids": [membership.pk for membership in session.assigned_members.all()],
         "warnings": (
             (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])

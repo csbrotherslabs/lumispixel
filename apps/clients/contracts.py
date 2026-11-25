@@ -93,7 +93,7 @@ def merge_context(booking):
         "booking.date": formats.date_format(local_start, "DATE_FORMAT"),
         "booking.start_time": formats.time_format(local_start, "TIME_FORMAT"),
         "booking.location": booking.location,
-        "booking.value": (f"{booking.photographer.default_currency} {booking.booking_value:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
+        "booking.value": (f"{booking.payment_currency} {booking.booking_value:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
         "booking.payment_terms": payment_clause(booking),
         "booking.currency": booking.payment_currency,
         "booking.deposit_amount": str(booking.deposit_amount),

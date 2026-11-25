@@ -1010,30 +1010,17 @@
     }
   }
 
-  const saveValueButton = layer.querySelector('[data-save-booking-value]');
-  if (saveValueButton) saveValueButton.addEventListener('click', async function () {
-    if (!activeContractEvent || !editing) return;
-    if (!window.confirm('Save only the agreed booking value? Other unsaved changes will not be saved. Existing draft agreements must be reviewed or recreated.')) return;
-    const data = new FormData(form);
-    data.set('csrfmiddlewaretoken', form.elements.csrfmiddlewaretoken.value);
-    data.set('action', 'update_booking_value');
-    data.set('booking_id', activeContractEvent.id);
-    data.set('price', form.elements.price.value);
-    saveValueButton.disabled = true;
-    try {
-      const response = await fetch(form.getAttribute('action'), {method:'POST', body:data, credentials:'same-origin'});
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to save booking value.');
-      dirty = false;
-      window.location.assign(result.booking_url);
-    } catch (error) { window.alert(error.message); saveValueButton.disabled = false; }
-  });
-  function updatePaymentSummary() {
+    function updatePaymentSummary() {
     const total = Number(form.elements.price.value || 0);
     const raw = Number(form.elements.deposit_input.value || 0);
     const deposit = form.elements.deposit_required.checked ? (form.elements.deposit_type.value === 'percentage' ? Math.round(total * raw) / 100 : raw) : 0;
     const summary = layer.querySelector('[data-payment-summary]');
-    if (summary) summary.textContent = deposit > total ? 'Down payment cannot exceed agreed fee.' : 'Down payment: ' + deposit.toFixed(2) + ' · Remaining balance: ' + (total - deposit).toFixed(2);
+    const currency = form.elements.payment_currency.value || 'USD';
+    const format = value => new Intl.NumberFormat(undefined, {style:'currency', currency, currencyDisplay:'code'}).format(value);
+    layer.querySelectorAll('[data-deposit-field]').forEach(el => { el.hidden = !form.elements.deposit_required.checked; });
+    const label = layer.querySelector('[data-deposit-label]');
+    if (label) label.textContent = form.elements.deposit_type.value === 'percentage' ? 'Down payment (%)' : 'Down payment (' + currency + ')';
+    if (summary) summary.textContent = deposit > total ? 'Down payment cannot exceed agreed fee.' : 'Down payment: ' + format(deposit) + ' · Remaining balance: ' + format(total - deposit);
   }
   form.addEventListener('input', updatePaymentSummary);
   form.addEventListener('change', updatePaymentSummary);
@@ -1049,7 +1036,7 @@
     });
     const selectedType = form.querySelector('input[name="event_type"]:checked');
     renderEditContract();
-    if (saveValueButton) saveValueButton.hidden = !editing || type !== "booking";
+
     if (!editing && selectedType) title.textContent = 'Create ' + selectedType.nextElementSibling.textContent.trim();
     checkConflict();
   }
@@ -1105,6 +1092,7 @@
       setValue('client', event.client_id);
       setValue('booking_status', event.status_key);
       setValue('price', event.booking_value);
+      setValue('payment_currency', event.payment_currency || 'USD');
       form.elements.complimentary.checked = Boolean(event.pricing_confirmed && Number(event.booking_value) === 0);
       form.elements.deposit_required.checked = Number(event.deposit_amount) > 0;
       setValue('deposit_type', 'fixed');
@@ -1176,7 +1164,7 @@
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
-    if (!validate()) return;
+    if (!(activeContractEvent && activeContractEvent.marketplace_booking) && !validate()) return;
     const another = event.submitter && event.submitter.value === 'another';
     const type = currentType();
     form.elements.action.value = type === 'booking'
@@ -1194,7 +1182,7 @@
       // access can therefore resolve `form.action` to that input element rather
       // than to the form's URL, producing a request for "[object HTMLInputElement]".
       response = await fetch(form.getAttribute('action'), {
-        method: 'POST', body: new FormData(form),
+        method: 'POST', body: (() => { const data = new FormData(form); if (activeContractEvent && activeContractEvent.marketplace_booking) data.set('pricing_only','1'); return data; })(),
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
       const contentType = response.headers.get('content-type') || '';
