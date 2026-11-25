@@ -862,12 +862,6 @@
       event.kind !== 'vacation' && event.kind !== 'blocked' ? detail('Assigned to', event.photographer) : '', detail('Status', event.status)
     ]);
     layer.querySelector('[data-event-details]').innerHTML = details;
-    if (bookingOnly && event.contract_url) {
-      const panel = document.createElement('section');
-      panel.className = 'lpw-drawer-contract';
-      panel.innerHTML = '<h3><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Contracts</h3><div class="lpw-drawer-contract-card"><strong>' + escapeHtml(event.contract_title || 'No contract yet') + '</strong><span>' + escapeHtml(event.contract_status) + '</span><p>Photographer signature: ' + (event.photographer_signed ? 'Completed' : 'Pending') + '</p><p>Client signature: ' + (event.client_signed ? 'Completed' : 'Pending') + '</p><a class="lp-button lp-button--primary" href="' + escapeHtml(event.contract_action_url || event.contract_url) + '">' + escapeHtml(event.contract_action) + '</a><a class="lp-button lp-button--outline" href="' + escapeHtml(event.contract_url) + '">Manage all contracts</a></div>';
-      layer.querySelector('[data-event-details]').prepend(panel);
-    }
     const warnings = layer.querySelector('[data-event-warnings]');
     warnings.innerHTML = (event.warnings || []).length ? (event.warnings || []).map(function (warning) { return '<p><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>' + escapeHtml(warning) + '</span></p>'; }).join('') : (bookingOnly ? '<p class="is-ready"><i class="bi bi-check-circle" aria-hidden="true"></i><span>No active scheduling alerts</span></p>' : '');
     warnings.hidden = !bookingOnly && (!event.warnings || !event.warnings.length);
@@ -974,6 +968,37 @@
   let dirty = false;
   let opener = null;
   let editing = false;
+  let activeContractEvent = null;
+  const contractSection = layer.querySelector('[data-edit-contract-section]');
+  function renderEditContract() {
+    if (!contractSection) return;
+    const event = activeContractEvent;
+    contractSection.hidden = !editing || currentType() !== 'booking' || !event || !event.contract_url;
+    const card = contractSection.querySelector('[data-edit-contract-card]');
+    card.replaceChildren();
+    if (contractSection.hidden) return;
+    const box = document.createElement('div'); box.className = 'lpw-edit-contract-card';
+    const heading = document.createElement('strong'); heading.textContent = event.contract_title || 'No contract attached'; box.append(heading);
+    const status = document.createElement('span'); status.className = 'lpw-edit-contract-status'; status.textContent = event.contract_status; box.append(status);
+    if (event.contract_title) {
+      [['Photographer', event.photographer_signed], ['Client', event.client_signed]].forEach(function (entry) {
+        const row = document.createElement('div'); row.className = 'lpw-edit-signature-row';
+        const label = document.createElement('span'); label.textContent = entry[0] + ' signature';
+        const badge = document.createElement('strong'); badge.className = entry[1] ? 'is-complete' : 'is-pending'; badge.textContent = entry[1] ? 'Completed' : 'Pending'; row.append(label, badge); box.append(row);
+      });
+    }
+    function link(label, url, primary) {
+      if (!url) return;
+      const a = document.createElement('a'); a.href = url; a.textContent = label; a.className = 'lp-button lp-button--' + (primary ? 'primary' : 'outline');
+      a.addEventListener('click', function (e) { if (dirty) { if (!window.confirm('Discard unsaved booking changes and open the contract?')) { e.preventDefault(); return; } dirty = false; } }); box.append(a);
+    }
+    link(event.contract_action, event.contract_action_url || event.contract_url, true);
+    link('Customize contract', event.contract_customize_url, false);
+    if (event.contract_preview_url && event.contract_preview_url !== event.contract_action_url) link('Preview contract', event.contract_preview_url, false);
+    link('Manage all contracts', event.contract_url, false);
+    if (event.photographer_signed || event.client_signed) { const note = document.createElement('p'); note.textContent = 'Signed agreements are preserved. Material booking changes require a replacement agreement or amendment.'; box.append(note); }
+    card.append(box);
+  }
 
   if (!window.LumisScheduleEvents) {
     const dataNode = document.getElementById('schedule-event-data');
@@ -996,6 +1021,7 @@
       });
     });
     const selectedType = form.querySelector('input[name="event_type"]:checked');
+    renderEditContract();
     if (!editing && selectedType) title.textContent = 'Create ' + selectedType.nextElementSibling.textContent.trim();
     checkConflict();
   }
@@ -1035,6 +1061,7 @@
     opener = button;
     resetForm();
     editing = Boolean(event);
+    activeContractEvent = event || null;
     const radio = form.querySelector('input[name="event_type"][value="' + type + '"]');
     if (radio) radio.checked = true;
     if (event) {
@@ -1174,7 +1201,7 @@
   drawer.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') { event.preventDefault(); close(false); }
     if (event.key !== 'Tab') return;
-    const focusable = Array.from(drawer.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')).filter(function (el) { return !el.closest('[hidden]'); });
+    const focusable = Array.from(drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')).filter(function (el) { return !el.closest('[hidden]'); });
     const first = focusable[0]; const last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }

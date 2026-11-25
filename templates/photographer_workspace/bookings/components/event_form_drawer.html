@@ -42,11 +42,11 @@
             <label><span>Booking value</span><div class="lpw-money"><span>$</span><input type="number" name="price" min="0" step="0.01" placeholder="0.00"></div></label>
             <label><span>Status</span><select name="booking_status"><option value="tentative">Tentative</option><option value="confirmed">Confirmed</option></select></label>
             <label><span>Package</span><select name="package"><option value="">No package</option></select></label>
-            <label><span>Contract status</span><select name="contract_status"><option>Not sent</option></select></label>
             <label><span>Payment status</span><select name="payment_status"><option>Not invoiced</option></select></label>
           </div>
         </section>
 
+        <section class="lpw-event-form-section" data-edit-contract-section hidden aria-labelledby="edit-contract-heading"><h3 id="edit-contract-heading"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Contract &amp; Signatures</h3><p class="lpw-contract-help">Manage the agreement associated with this reservation.</p><div data-edit-contract-card></div></section>
         <section class="lpw-event-form-section" aria-labelledby="event-notes-section">
           <h3 id="event-notes-section">Notes</h3>
           <div class="lpw-event-form-grid"><label class="is-wide"><span>Notes</span><textarea name="notes" rows="2" placeholder="Client preferences, session details, or other useful notes…"></textarea></label></div>
