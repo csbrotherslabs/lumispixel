@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
 from .video_links import video_details
+from .experience import existing, parse_experience, visible
 
 PUBLISHED_KEY = "_published_website"
 
@@ -30,6 +31,8 @@ def publication_errors(profile, website):
         errors.append("Upload your own hero photograph.")
     if "services" in sections and not profile.specialties.exists():
         errors.append("Select at least one photography specialty before publishing Services.")
+    if "stats" in sections and not visible(existing(website)) and not content.get("experience_highlights"):
+        errors.append("Add at least one visible experience highlight or professional engagement.")
     if "portfolio" in sections:
         projects = list(website.projects.filter(is_featured=True))
         if not projects or any(not (p.title.strip() and p.description.strip() and p.cover_image) for p in projects):
@@ -66,6 +69,7 @@ def snapshot(profile, website):
         "specialties": list(profile.specialties.values_list("name", flat=True)),
         "biography": profile.biography,
         "phone": profile.phone_number,
+        "experience": existing(website),
         "notable_clients": (website.theme_content or {}).get("notable_clients", []),
         "projects": [{"title": p.title, "description": p.description,
                       "image": p.cover_image.name if p.cover_image else ""}
@@ -138,6 +142,11 @@ def studio_preview(request):
             data["notable_clients"] = client_rows(request, website, preview=True)
         except ValidationError:
             pass
+    if "stats" in data["sections"] and "experience_data" in request.POST:
+        try:
+            data["experience"] = parse_experience(request)
+        except ValidationError:
+            pass
     data["projects"] = []
     data["equipment"] = []
     projects = {p.display_order: p for p in website.projects.all()}
@@ -205,7 +214,9 @@ def render_website(request, website, data, draft_preview=False):
         supported.add("portfolio")
     if data["film"]:
         supported.add("films")
-    for key, field in (("stats", "experience_highlights"), ("team", "team_members")):
+    if visible(data.get("experience", {})) or content.get("experience_highlights"):
+        supported.add("stats")
+    for key, field in (("team", "team_members"),):
         if content.get(field):
             supported.add(key)
     demo = {}
