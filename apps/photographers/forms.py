@@ -223,7 +223,7 @@ FIELD_SECTION_MAP = {
     "featured_gallery_title": "portfolio", "featured_project_title": "portfolio",
     "featured_project_description": "portfolio", "project_section_heading": "portfolio",
     "find_photos_heading": "portfolio", "recent_events_heading": "portfolio", "featured_event_title": "portfolio",
-    "featured_event_description": "portfolio", "featured_video_url": "portfolio", "highlight_video": "portfolio",
+    "featured_event_description": "portfolio", "featured_video_url": "films", "highlight_video": "portfolio",
     "testimonial_quote": "reviews", "testimonial_name": "reviews",
     "booking_call_to_action": "contact", "consultation_call_to_action": "contact",
     "contact_call_to_action": "contact", "contact_statement": "contact",
@@ -261,6 +261,8 @@ def section_required_fields(theme, sections):
             defaults = set()
         result.update(specific | defaults)
     return result
+
+from .video_links import video_details
 
 LEGACY_SAMPLE_HERO = "499aa3683f4e40d796c7039a01486595.png"
 
@@ -357,8 +359,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                     self.add_error(name, "This field is required for the selected theme.")
         for name in ("hero_video", "featured_video_url", "highlight_video"):
             value = cleaned.get(name)
-            if value and not (value.startswith("https://") or value.startswith("http://")):
-                self.add_error(name, "Enter a valid video URL starting with http:// or https://.")
+            if value and not video_details(value):
+                self.add_error(name, "Enter a YouTube, Vimeo, or HTTPS MP4 video link.")
         if self.content_only:
             return cleaned
         sections = cleaned.get("website_sections") or (THEME_DEFINITIONS[theme]["sections"] if "website_sections" not in self.data else [])
