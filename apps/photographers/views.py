@@ -12,7 +12,7 @@ from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, Photo
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, resolved_section_keys, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
 from .publishing import PUBLISHED_KEY, snapshot, publication_errors
-from .forms import section_required_fields
+from .forms import section_required_fields, actual_hero_image
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
@@ -234,6 +234,7 @@ def website_content(request):
         selected_sections=selected_sections,
         builder_mode=builder_mode,
         website_studio=True,
+        studio_hero_image=actual_hero_image(website),
         studio_theme=THEME_DEFINITIONS[profile.website_theme],
     ))
 
