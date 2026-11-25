@@ -112,3 +112,7 @@
 @media(prefers-reduced-motion:reduce){#studio-form .lumis-content-section :is(input,textarea,select){transition:none}}
 
 #studio-form [data-team-editor]{container-type:inline-size;min-width:0}#studio-form [data-team-items]{display:grid;gap:12px;min-width:0}#studio-form .studio-team-photo{aspect-ratio:3/4;height:auto;max-height:220px}#studio-form .studio-team-photo img{width:100%;height:100%;object-fit:cover}#studio-form [data-team-add]{border:1px dashed #bbb;background:white;border-radius:8px;padding:12px;color:#a31818;font-size:13px;cursor:pointer}#studio-form [data-team-row] .studio-client-header strong{overflow-wrap:anywhere;min-width:0}#studio-form [data-team-row] .studio-client-fields textarea{width:100%;min-width:0}
+
+/* Team portraits must not inherit the short client-logo image bounds. */
+#studio-form [data-team-row] .studio-client-logo.studio-team-photo{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:3/4;height:auto;min-height:0;max-height:none;overflow:hidden;padding:0;box-sizing:border-box;background:#f8f8f8}
+#studio-form [data-team-row] .studio-team-photo img{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;object-position:center;margin:0;padding:0;border-radius:inherit}
