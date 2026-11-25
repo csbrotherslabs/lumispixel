@@ -57,6 +57,7 @@ def publication_errors(profile, website):
 
 def snapshot(profile, website):
     sections = list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
+    sections = [key for key in sections if key != "reviews"] + ["reviews"]
     theme = profile.website_theme
     config = THEME_FIELD_CONFIG[theme]
     allowed = set(config["required"] + config["optional"]) | section_required_fields(theme, sections) | {"availability_window_months", "availability_call_to_action", "services_intro"}
@@ -191,6 +192,8 @@ def studio_preview(request):
 
 def render_website(request, website, data, draft_preview=False):
     data = dict(data)
+    data["sections"] = [key for key in data["sections"] if key != "reviews"] + ["reviews"]
+    data["content"] = {key: value for key, value in data["content"].items() if key not in {"testimonial_quote", "testimonial_name"}}
     data["content"] = {**{key: "" for cfg in THEME_FIELD_CONFIG.values() for key in cfg["required"] + cfg["optional"]}, **data["content"]}
     def media_url(field, name):
         return field.storage.url(name) if name else ""
@@ -245,8 +248,7 @@ def render_website(request, website, data, draft_preview=False):
         supported.add("notable_clients")
     if data["equipment"]:
         supported.add("equipment")
-    if data["content"].get("testimonial_quote"):
-        supported.add("reviews")
+    supported.add("reviews")
     sections = [dict(key=key, **SECTION_LIBRARY[key]) for key in data["sections"] if key in supported or draft_preview]
     return render(request, "photographers/public_website.html", {
         "public_site": True, "draft_preview": draft_preview, "demo": demo, "site": data, "theme": THEME_DEFINITIONS[data["theme"]], "sections": sections,
