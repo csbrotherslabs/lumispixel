@@ -64,7 +64,7 @@ SECTION_LIBRARY = {
     },
 }
 
-REQUIRED_THEME_SECTIONS = ("hero", "contact")
+REQUIRED_THEME_SECTIONS = ("hero", "contact", "reviews")
 
 
 THEME_DEFINITIONS = {
@@ -143,6 +143,9 @@ THEME_DEFINITIONS = {
 }
 
 
+for definition in THEME_DEFINITIONS.values():
+    definition["sections"] = [key for key in definition["sections"] if key != "reviews"] + ["reviews"]
+
 DEMO_CONTENT = {
     "brand": "North & Pine Studio",
     "eyebrow": "Photography / Film / Direction",
@@ -215,7 +218,7 @@ def resolved_section_keys(theme_value, selected=None, requested_order=None):
     for key in requested_order or []:
         if key in chosen and key not in ordered:
             ordered.append(key)
-    return ordered + [key for key in chosen if key not in ordered]
+    return [key for key in ordered + [key for key in chosen if key not in ordered] if key != "reviews"] + ["reviews"]
 
 
 def section_options():
