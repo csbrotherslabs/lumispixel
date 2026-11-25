@@ -1,6 +1,7 @@
 {% extends "photographer_workspace/base.html" %}
 {% block workspace_content %}
 <div class="lp-workspace-page lpw-schedule-page lp-container lp-container--wide" data-calendar>
+  <div hidden data-schedule-csrf>{% csrf_token %}</div>
   <p id="schedule-move-help" class="sr-only">Drag this booking to a month date to reschedule. With keyboard focus, use Alt plus left or right to move one day, or Alt plus up or down to resize by 15 minutes.</p>
   <a class="sr-only" href="{% url 'photographer_workspace:dashboard' %}">Back to Dashboard</a>
   <header class="lp-workspace-hero lpw-schedule-header lp-page-header">

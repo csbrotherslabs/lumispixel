@@ -874,7 +874,7 @@
       const classes = 'lp-button lp-button--' + variant + ' lp-button--md' + (action.priority === 'primary' ? ' lp-button--full' : '');
       const menuRole = menuItem ? ' role="menuitem"' : '';
       if (action.type === 'edit' || action.type === 'reschedule') return '<button type="button" class="' + classes + '"' + menuRole + ' data-detail-' + action.type + '="' + escapeHtml(event.drawer_id) + '">' + icon + escapeHtml(action.label) + '</button>';
-      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.cookie.match(/(?:^|; )csrftoken=([^;]+)/) || [,''])[1]) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</button></form>';
+      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.querySelector('[data-schedule-csrf] input[name="csrfmiddlewaretoken"]')?.value || '')) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</button></form>';
       return '<a class="' + classes + '" href="' + escapeHtml(action.url) + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</a>';
     }
     const primaryActions = layer.querySelector('[data-event-primary-actions]');
@@ -1299,8 +1299,7 @@
   let pending = null; let opener = null;
 
   function csrf() {
-    const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : '';
+    return document.querySelector('[data-schedule-csrf] input[name="csrfmiddlewaretoken"]')?.value || '';
   }
   function request(url, body) {
     return fetch(url, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()}, body: JSON.stringify(body)})
