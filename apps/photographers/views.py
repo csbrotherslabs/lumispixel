@@ -319,7 +319,7 @@ def _posted_equipment_indices(request):
     indices = []
     for value in request.POST.get("equipment_indices", "").split(","):
         value = value.strip()
-        if value.isdigit() and int(value) not in indices:
+        if value.isdigit() and len(value) <= 5 and int(value) <= 32767 and int(value) not in indices:
             indices.append(int(value))
     return indices[:200]
 
@@ -352,6 +352,7 @@ def _published_equipment_image(website, name):
 
 def _save_equipment_drafts(request, website):
     existing = {item.display_order: item for item in website.equipment_items.all()}
+    saved_items = []
     for index in _posted_equipment_indices(request):
         item = existing.get(index)
         if request.POST.get(f"equipment_{index}_remove"):
@@ -373,8 +374,15 @@ def _save_equipment_drafts(request, website):
             item.image = image
         item.is_featured = True
         item.save()
+        saved_items.append(item)
         if image and old_image and old_image != item.image.name and not _published_equipment_image(website, old_image):
             item.image.storage.delete(old_image)
+
+    # Keep original indices for lookup until all submitted rows have been processed.
+    for position, item in enumerate(saved_items):
+        if item.display_order != position:
+            item.display_order = position
+            item.save(update_fields=["display_order", "updated_at"])
 
 
 def _save_project_drafts(request, website):
