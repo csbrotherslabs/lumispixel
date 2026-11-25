@@ -107,20 +107,27 @@
   }
   if (search) search.addEventListener("input", filterMergeFields);
   if (previewButton && previewDialog) {
+    const values = JSON.parse(document.getElementById("contract-preview-values").textContent);
+    let mode = "sample";
+    function renderPreview() {
+      const title = editor.querySelector("#id_title").value.trim() || "Untitled contract";
+      const resolve = text => mode === "fields" ? text : text.replace(/{{\s*([a-z][a-z0-9_.]*)\s*}}/g, (token, key) => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : token);
+      previewDialog.querySelector("[data-preview-title]").textContent = resolve(title);
+      previewDialog.querySelector("[data-preview-document-title]").textContent = resolve(title);
+      previewDialog.querySelector("[data-preview-brand]").textContent = mode === "sample" ? values["workspace.name"] : "{{ workspace.name }}";
+      previewDialog.querySelector("[data-preview-notice]").textContent = mode === "sample" ? "Preview only: actual workspace name with fictional client and booking details. No contract or signature is created." : "Original merge fields are preserved and replaced when a contract is generated.";
+      previewDialog.querySelector("[data-preview-content]").textContent = resolve(content.value) || "Add contract content to see its preview here.";
+      previewDialog.querySelectorAll("[data-preview-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.previewMode === mode)));
+    }
     previewButton.addEventListener("click", function () {
-      const title = editor.querySelector("#id_title");
-      const previewContent = previewDialog.querySelector("[data-preview-content]");
-      previewDialog.querySelector("[data-preview-title]").textContent = title.value.trim() || "Untitled contract";
-      if (content.value.trim()) {
-        previewContent.textContent = content.value;
-      } else {
-        const empty = document.createElement("p");
-        empty.className = "lp-contract-preview__empty";
-        empty.textContent = "Add contract content to see its preview here.";
-        previewContent.replaceChildren(empty);
-      }
+      mode = "sample";
+      renderPreview();
       previewDialog.showModal();
+      previewDialog.querySelector(".lp-preview-scroll").scrollTop = 0;
     });
+    previewDialog.querySelectorAll("[data-preview-mode]").forEach(button => button.addEventListener("click", () => { mode = button.dataset.previewMode; renderPreview(); }));
+    previewDialog.querySelector("[data-preview-done]").addEventListener("click", () => previewDialog.close());
+    previewDialog.addEventListener("close", () => previewButton.focus());
     previewDialog.querySelector("[data-preview-close]").addEventListener("click", function () { previewDialog.close(); });
     previewDialog.addEventListener("click", function (event) { if (event.target === previewDialog) previewDialog.close(); });
   }

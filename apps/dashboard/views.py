@@ -3590,6 +3590,15 @@ def contract_template_form(request, pk=None):
         "assignment_specialties": request.studio.specialties.values_list("name", flat=True),
         "merge_fields": MERGE_FIELDS.items(),
         "contract_starters": serialized_contract_starters() if template is None else {},
+        "preview_values": {
+            "workspace.name": request.studio.business_name or request.studio.display_name or request.studio.user.full_name or "Business name not configured",
+            "photographer.name": request.studio.business_name or request.studio.display_name or request.studio.user.full_name or "Photographer name not configured",
+            "client.first_name": "Jane", "client.last_name": "Example",
+            "client.full_name": "Jane Example", "client.email": "jane@example.com",
+            "booking.service": "Portrait photography", "booking.date": "December 12, 2026",
+            "booking.start_time": "2:00 PM", "booking.location": "Example studio",
+            "booking.value": "Not yet agreed",
+        },
     })
     return render(request, "photographer_workspace/contracts/template_form.html", context)
 
