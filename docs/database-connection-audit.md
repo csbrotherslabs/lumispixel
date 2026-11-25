@@ -44,3 +44,9 @@ Capture before startup, after web startup, after each worker startup, during rep
 
 ## Acceptance gates
 No reserved-slot errors during representative concurrency; no privacy or transaction regressions; acceptable p95 latency and pool queue time; sufficient admin headroom; documented direct migration path. Runtime tests, actual deployment inventory and provider configuration remain outstanding.
+
+## Worker lifecycle optimization
+Face and semantic indexing now release the main ORM connection immediately before file reading/inference, after the claim transaction exits. The helper skips caller-owned atomic blocks and disabled autocommit. Final authorization, claim checks, locks and vector writes are unchanged. Celery's normal Django task cleanup remains in place. Test with real asynchronous workers; eager tests inside transactions intentionally skip release.
+
+## Worker budget verification
+On the production host, inspect running processes with `ps -eo pid,ppid,comm | grep -E 'gunicorn|celery'` and inspect service definitions locally for worker/thread/concurrency counts (do not share secrets). Use distinct DB_APPLICATION_NAME values per service. Budget maximum web workers × threads plus all Celery execution slots that access the main database, other services and administrative headroom; include overlapping workers during restarts. Do not lower deployed concurrency blindly. For a local single GPU worker, start with concurrency 1 using the existing queue and pool arguments; verify throughput and queue delay before increasing. Production defaults remain unchanged.
