@@ -1,23 +1,11 @@
 {% extends "photographers/onboarding_base.html" %}{% load static %}
 {% block title %}Customize Your Website | Photographer Onboarding{% endblock %}
 {% block onboarding_content %}
-<div class="lumis-onboarding__intro text-center">
-  <span class="lumis-onboarding__eyebrow">Website content</span>
-  <h1 class="wptb-item--title" id="photographer-onboarding-content-title">Bring Your Website to Life</h1>
-  <p class="wptb-item--description mx-auto">Enter your own business information and upload your own photographs. Fields marked required must be completed before publishing.</p>
-</div>
-{% if builder_mode %}
-<section class="lumis-theme-config">
-  <h2>Website publication</h2>
-  {% if profile.gallery_website_url %}<p>Published · <a href="{{ profile.gallery_website_url }}" target="_blank" rel="noopener noreferrer">View live website</a></p>{% else %}<p>Draft — not publicly accessible.</p>{% endif %}
-  <p>Save your content below before publishing. Publishing makes your selected business content and contact phone public.</p>
-  <form method="post" action="{% url 'photographers:website-publish' %}">{% csrf_token %}
-    <button class="btn lumis-auth-primary" name="action" value="publish">{% if profile.gallery_website_url %}Publish updates{% else %}Publish website{% endif %}</button>
-    {% if profile.gallery_website_url %}<button class="btn lumis-auth-secondary" name="action" value="unpublish">Unpublish website</button>{% endif %}
-  </form>
-</section>
-{% endif %}
-<form class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
+<header class="studio-toolbar"><div><span class="studio-kicker">LumiPixel / Website Studio</span><h1 id="photographer-onboarding-content-title">Website Studio</h1><p>{{ studio_theme.name }} · {% if profile.gallery_website_url %}Published{% else %}Draft{% endif %}</p></div><div class="studio-actions">{% if not profile.onboarding_completed %}<button type="button" data-studio-rail>Setup steps</button>{% endif %}<button type="submit" form="studio-form" name="action" value="{% if builder_mode %}save_content{% else %}save_draft{% endif %}">Save draft</button><button type="button" data-studio-fullscreen>Preview</button><button class="studio-primary" type="submit" form="studio-form" name="action" value="{% if builder_mode %}studio_publish{% else %}finish_and_publish{% endif %}">{% if profile.gallery_website_url %}Publish updates{% else %}Publish website{% endif %}</button></div></header>
+<div class="studio-meta"><a href="{% if builder_mode %}{% url 'photographers:website-builder' %}{% else %}{% url 'photographers:onboarding-theme' %}{% endif %}">Change theme &amp; sections</a>{% if profile.gallery_website_url %}<a href="{{ profile.gallery_website_url }}" target="_blank" rel="noopener">View live website</a>{% if builder_mode %}<form method="post" action="{% url 'photographers:website-publish' %}">{% csrf_token %}<button name="action" value="unpublish">Unpublish</button></form>{% endif %}{% endif %}<small>Publishing makes your selected business information public.</small></div>
+<div class="studio-grid" data-studio data-theme="{{ studio_theme.slug }}">
+<aside class="studio-sections"><h2>Website sections</h2><p data-studio-progress>Complete your required content</p><progress max="{{ panels|length }}" value="0" data-studio-meter></progress><nav aria-label="Website sections">{% for panel in panels %}<button type="button" data-studio-section="{{ panel.key }}"><span>{{ panel.name }}</span><span data-studio-status aria-label="Incomplete">○</span></button>{% endfor %}</nav></aside>
+<form id="studio-form" class="wptb-form lumis-onboarding__form" method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
   <input type="hidden" name="website_theme" value="{{ profile.website_theme }}">
   {% for section in selected_sections %}<input type="hidden" name="website_sections" value="{{ section }}">{% endfor %}
@@ -27,7 +15,7 @@
     {% for panel in panels %}
     <section class="lumis-theme-config lumis-content-section" id="content-{{ panel.key }}">
       <div class="lumis-content-section__heading"><span>{{ forloop.counter|stringformat:"02d" }}</span><div><h2>{{ panel.name }}</h2><p>{{ panel.description }}</p></div></div>
-      {% if panel.fields %}<div class="lumis-theme-config-grid">{% for field in panel.fields %}<div class="lumis-theme-field {% if field.name == 'hero_image' %}lumis-theme-field--full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label|default:field.name|title }}{% if field.field.required or field.field.required_for_completion %} {% include "photographers/_required_marker.html" %}{% endif %}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}{% if field.name == 'hero_image' and website.hero_image %}<p><img src="{{ website.hero_image.url }}" alt="Current hero image" loading="lazy" style="max-width:180px"></p>{% endif %}</div>{% endfor %}</div>{% elif not panel.supports_equipment and not panel.supports_projects %}<p class="lumis-content-section__inherited"><i class="bi bi-check-circle"></i> This section uses your own saved business information.</p>{% endif %}
+      {% if panel.fields %}<div class="lumis-theme-config-grid">{% for field in panel.fields %}<div data-required="{% if field.field.required or field.field.required_for_completion %}true{% else %}false{% endif %}" class="lumis-theme-field {% if field.name == 'hero_image' %}lumis-theme-field--full{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label|default:field.name|title }}{% if field.field.required or field.field.required_for_completion %} {% include "photographers/_required_marker.html" %}{% endif %}</label>{{ field }}{% if field.help_text and field.name != "hero_image" %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}{% if field.name == 'hero_image' and website.hero_image %}<p><img src="{{ website.hero_image.url }}" alt="Current hero image" loading="lazy" class="studio-upload-preview"></p>{% endif %}</div>{% endfor %}</div>{% elif not panel.supports_equipment and not panel.supports_projects %}<p class="lumis-content-section__inherited"><i class="bi bi-check-circle"></i> This section uses your own saved business information.</p>{% endif %}
       {% if panel.supports_equipment %}
       <div class="lumis-equipment-editor" data-equipment-editor data-next-index="{{ next_equipment_index }}">
         <div class="lumis-equipment-editor__heading"><p>Upload clear equipment photos and describe the client benefit—not only the technical specification.</p><button class="btn lumis-equipment-editor__add" type="button" data-equipment-add><i class="bi bi-plus-lg"></i> Add Equipment</button></div>
@@ -49,5 +37,8 @@
     {% if not builder_mode %}<button class="btn lumis-auth-primary" type="submit" name="action" value="finish_and_publish">Finish &amp; Publish Website</button><p>Publishing makes your selected website content and contact phone public.</p>{% endif %}
   </div>
 </form>
+<aside class="studio-preview" data-studio-preview><header><div><h2>Your website preview</h2><small>Draft content · {{ studio_theme.name }}</small></div><div class="studio-device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></header><div class="studio-preview-stage"><iframe title="Draft website preview" sandbox="" data-studio-frame></iframe></div></aside>
+</div>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'js/photographer_equipment_editor.js' %}"></script>{% endblock %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/website_studio.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'js/photographer_equipment_editor.js' %}"></script><script src="{% static 'js/website_studio.js' %}"></script>{% endblock %}
