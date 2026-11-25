@@ -8,7 +8,8 @@
       <p class="lp-page-description">Booking for {{ booking.client }} · LP-{{ booking.pk|stringformat:'04d' }}</p>
     </div>
     <div class="lp-header-actions" role="group" aria-label="Booking actions">
-      <button class="lp-button lp-button--secondary lp-booking-edit-action" type="button" data-event-form-open="{{ booking.event_kind }}" data-event-edit="{{ booking_event_id }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</button>
+      {% if booking.platform_booking and booking.status == "tentative" %}{% if booking.platform_booking.origin != "photographer" and booking.platform_booking.acknowledged_at %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}">{% csrf_token %}<button class="lp-button lp-button--primary" name="action" value="confirm">Confirm booking</button></form>{% else %}<span>Awaiting client acknowledgment</span>{% endif %}{% endif %}
+      {% if not booking.platform_booking %}<button class="lp-button lp-button--secondary lp-booking-edit-action" type="button" data-event-form-open="{{ booking.event_kind }}" data-event-edit="{{ booking_event_id }}"><i class="bi bi-pencil" aria-hidden="true"></i>Edit or reschedule</button>{% endif %}
       {% if booking.status != 'cancelled' %}<form method="post" action="{% url 'photographer_workspace:booking_action' booking.pk %}" data-mutation-form data-confirm="Cancel this booking? This will remove it from the active schedule.">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="lp-button lp-button--destructive" type="submit"><i class="bi bi-x-circle" aria-hidden="true"></i>Cancel booking</button></form>{% endif %}
     </div>
   </header>

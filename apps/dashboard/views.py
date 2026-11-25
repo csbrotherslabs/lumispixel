@@ -3080,6 +3080,9 @@ def bookings_dashboard(request):
                     )
                     return JsonResponse({"ok": False, "errors": {"start_time": conflict_error}}, status=409)
                 if is_edit:
+                    session = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+                    if hasattr(session, "platform_booking"):
+                        return JsonResponse({"ok": False, "errors": {"booking_status": "Marketplace bookings cannot be edited here. Cancel and request a new booking if details change."}}, status=409)
                     before = {
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
@@ -3128,6 +3131,8 @@ def bookings_dashboard(request):
                 ),
                 pk=request.POST.get("session_id"),
             )
+            if hasattr(session, "platform_booking") and session.status != ClientSession.Status.CONFIRMED:
+                return HttpResponseBadRequest("Confirm the booking before completing it.")
             session.status = ClientSession.Status.COMPLETED
             session.save(update_fields=["status"])
             messages.success(request, f"{session.session_type} for {session.client} marked complete.")
@@ -3509,10 +3514,24 @@ def contract_send(request, pk):
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def contract_templates(request):
     if not request.studio_access.allows("settings"):
         raise PermissionDenied
+    specialties = list(request.studio.specialties.values_list("name", flat=True))
+    if request.method == "POST":
+        with transaction.atomic():
+            PhotographerProfile.objects.select_for_update().get(pk=request.studio.pk)
+            items = list(ContractTemplate.objects.select_for_update().filter(photographer=request.studio))
+            active = {str(item.pk): item for item in items if item.is_active}
+            selections = [(name, request.POST.get(f"specialty_{i}", "")) for i, name in enumerate(specialties)]
+            if any(value and value not in active for _, value in selections):
+                return HttpResponseBadRequest("Select an active contract from this workspace.")
+            for item in items:
+                item.default_specialties = [name for name, value in selections if value == str(item.pk)]
+                item.save(update_fields=["default_specialties"])
+        messages.success(request, "Default contracts saved.")
+        return redirect("photographer_workspace:contract_templates")
     templates = list(
         ContractTemplate.objects.filter(photographer=request.studio)
         .select_related("created_by")
@@ -3521,6 +3540,7 @@ def contract_templates(request):
     context = _dashboard_context(request, "settings", "Contract Templates")
     context.update({
         "templates": templates,
+        "specialty_defaults": [{"name": name, "index": i, "selected": next((item.pk for item in templates if item.is_active and name in item.default_specialties), None)} for i, name in enumerate(specialties)],
         "template_count": len(templates),
         "active_template_count": sum(item.is_active for item in templates),
         "archived_template_count": sum(not item.is_active for item in templates),
@@ -4015,6 +4035,8 @@ def reschedule_session(request, pk):
         if not locked_result["available"]:
             return JsonResponse(response | {"blocking": True, "error": "The slot became unavailable. Refresh and choose another time."}, status=409)
         before = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
+        if hasattr(locked, "platform_booking"):
+            return JsonResponse({"error": "Cancel and request a new marketplace booking to change the agreed time."}, status=409)
         locked.starts_at, locked.duration_minutes = starts_at, duration
         locked.save(update_fields=("starts_at", "duration_minutes", "updated_at"))
         after = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
@@ -4035,7 +4057,16 @@ def booking_action(request, pk):
     """Apply the state transitions supported by the schedule inspector."""
     session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
     action = request.POST.get("action")
-    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
+    if action == "confirm" and hasattr(session, "platform_booking"):
+        from apps.marketplace.booking_approval import confirm_booking
+        from django.core.exceptions import ValidationError
+        try:
+            confirm_booking(session, actor=request.user)
+            messages.success(request, "Booking confirmed.")
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+        return redirect("photographer_workspace:booking_detail", pk=session.pk)
+    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) and (not hasattr(session, "platform_booking") or session.status == ClientSession.Status.CONFIRMED):
         session.status = ClientSession.Status.COMPLETED
         session.save(update_fields=("status", "updated_at"))
         messages.success(request, f"{session.session_type} for {session.client} marked complete.")

@@ -177,6 +177,9 @@ def request_booking(request, slug):
                         transaction.set_rollback(True)
                         form.add_error(None, "Verification email could not be sent. Please try again later.")
                         return render(request, "marketplace/booking_request.html", context)
+            if direct:
+                from .booking_approval import notify_photographer
+                notify_photographer(session.pk, "A verified client booking is awaiting your approval.")
             request.session["booking_sent_" + slug] = True
             return redirect("public-photographer-booking", slug=slug)
     return render(request, "marketplace/booking_request.html", context)
@@ -210,6 +213,12 @@ def verify_booking(request, slug, token):
             booking.save(update_fields=["customer","acknowledged_at","verification_digest"])
             session.notes = session.notes.replace("Pending client verification", "Client verified and acknowledged", 1)
             session.save(update_fields=["notes"])
+            if booking.origin == "photographer":
+                from .booking_approval import confirm_booking
+                confirm_booking(session, actor=request.user, client_acknowledgment=True)
+            else:
+                from .booking_approval import notify_photographer
+                transaction.on_commit(lambda: notify_photographer(session.pk, "A verified client booking is awaiting your approval."))
             return render(request, "marketplace/booking_verify.html", {"success":True,"slug":slug})
     return render(request, "marketplace/booking_verify.html", {"booking":booking,"session":session,"slug":slug})
 
