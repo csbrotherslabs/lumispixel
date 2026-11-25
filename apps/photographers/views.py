@@ -257,7 +257,7 @@ def website_content(request):
             profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
             profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
             return redirect("photographer_workspace:dashboard")
-    panels = _section_content_panels(form, profile.website_theme, selected_sections)
+    panels = _section_content_panels(form, profile.website_theme, [key for key in selected_sections if key != "reviews"])
     equipment_slots = _equipment_slots(website)
     return render(request, "photographers/onboarding_website_content.html", _context(
         5,
@@ -277,7 +277,7 @@ def website_content(request):
         equipment_slots=equipment_slots,
         equipment_indices=",".join(str(slot["index"]) for slot in equipment_slots),
         next_equipment_index=_next_equipment_index(website),
-        selected_sections=selected_sections,
+        selected_sections=[key for key in selected_sections if key != "reviews"] + ["reviews"],
         builder_mode=builder_mode,
         website_studio=True,
         studio_hero_image=actual_hero_image(website),
