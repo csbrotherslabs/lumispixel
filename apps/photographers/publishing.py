@@ -7,17 +7,51 @@ from django.views.decorators.http import require_GET, require_POST
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, PhotographerWebsiteProfile
-from .forms import FIELD_SECTION_MAP, THEME_FIELD_CONFIG
+from .forms import FIELD_SECTION_MAP, THEME_FIELD_CONFIG, section_required_fields
+from django.core.validators import validate_email, URLValidator
+from django.core.exceptions import ValidationError
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
 PUBLISHED_KEY = "_published_website"
+
+
+def publication_errors(profile, website):
+    sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
+    content = website.theme_content or {}
+    errors = []
+    if not {"hero", "contact"}.issubset(sections):
+        errors.append("Hero and Contact sections are required.")
+    for key in sorted(section_required_fields(profile.website_theme, sections)):
+        if not str(content.get(key) or "").strip():
+            errors.append(f"Complete {key.replace('_', ' ')} before publishing.")
+    if not website.hero_image:
+        errors.append("Upload your own hero photograph.")
+    if "portfolio" in sections:
+        projects = list(website.projects.filter(is_featured=True))
+        if not projects or any(not (p.title.strip() and p.description.strip() and p.cover_image) for p in projects):
+            errors.append("Add at least one complete portfolio project with title, description and cover image.")
+    if "equipment" in sections:
+        items = list(website.equipment_items.filter(is_featured=True))
+        if not items or any(not (p.name.strip() and p.description.strip() and p.image) for p in items):
+            errors.append("Add at least one complete equipment item with name, benefit and image.")
+    if "contact" in sections:
+        try:
+            validate_email(content.get("contact_email") or "")
+        except ValidationError:
+            errors.append("Enter a valid public business email.")
+    if "films" in sections:
+        try:
+            URLValidator(schemes=["https", "http"])(content.get("featured_video_url") or "")
+        except ValidationError:
+            errors.append("Enter a valid film URL.")
+    return errors
 
 
 def snapshot(profile, website):
     sections = list(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
     theme = profile.website_theme
     config = THEME_FIELD_CONFIG[theme]
-    allowed = set(config["required"] + config["optional"]) | {"availability_window_months", "availability_call_to_action"}
+    allowed = set(config["required"] + config["optional"]) | section_required_fields(theme, sections) | {"availability_window_months", "availability_call_to_action"}
     content = {key: value for key, value in website.theme_content.items()
                if key in allowed and FIELD_SECTION_MAP.get(key) in sections}
     return {
@@ -51,6 +85,11 @@ def publish_website(request):
     if action == "unpublish":
         content.pop(PUBLISHED_KEY, None)
     elif action == "publish":
+        errors = publication_errors(website.photographer_profile, website)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return redirect("photographers:website-content")
         data = snapshot(website.photographer_profile, website)
         if not {"hero", "contact"}.issubset(data["sections"]):
             messages.error(request, "Save your website structure before publishing.")
@@ -110,6 +149,9 @@ def public_website(request, slug):
         supported.add("portfolio")
     if data["film_url"]:
         supported.add("films")
+    for key, field in (("stats", "experience_highlights"), ("team", "team_members")):
+        if content.get(field):
+            supported.add(key)
     demo = {}
     if "availability" in data["sections"]:
         from .website_content import public_availability
