@@ -136,6 +136,11 @@ def studio_preview(request):
     if "availability_window_months" in data["content"]:
         value = str(data["content"]["availability_window_months"])
         data["content"]["availability_window_months"] = int(value) if value in {"1", "2", "3", "6"} else 2
+    if "services" in data["sections"] and "studio_specialties" in request.POST:
+        from .forms import PhotographerSpecialtiesForm
+        specialties_form = PhotographerSpecialtiesForm(request.POST, instance=website.photographer_profile)
+        if specialties_form.is_valid():
+            data["specialties"] = [item.name for item in specialties_form.cleaned_data["specialties"]]
     if "notable_clients" in data["sections"] and "client_indices" in request.POST:
         from .notable_clients import client_rows
         try:
