@@ -12,6 +12,8 @@ from django.core.validators import validate_email, URLValidator
 from django.core.exceptions import ValidationError
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS
 
+from .video_links import video_details
+
 PUBLISHED_KEY = "_published_website"
 
 
@@ -40,10 +42,8 @@ def publication_errors(profile, website):
         except ValidationError:
             errors.append("Enter a valid public business email.")
     if "films" in sections:
-        try:
-            URLValidator(schemes=["https", "http"])(content.get("featured_video_url") or "")
-        except ValidationError:
-            errors.append("Enter a valid film URL.")
+        if not video_details(content.get("featured_video_url") or ""):
+            errors.append("Enter a valid YouTube, Vimeo, or HTTPS MP4 film URL.")
     return errors
 
 
@@ -184,6 +184,7 @@ def render_website(request, website, data, draft_preview=False):
             data["film_url"] = ""
     except ValueError:
         data["film_url"] = ""
+    data["film"] = video_details(data["film_url"])
     supported = {"hero", "contact"}
     if data["about"]:
         supported.add("about")
@@ -191,7 +192,7 @@ def render_website(request, website, data, draft_preview=False):
         supported.add("services")
     if data["projects"] or data["portfolio_description"]:
         supported.add("portfolio")
-    if data["film_url"]:
+    if data["film"]:
         supported.add("films")
     for key, field in (("stats", "experience_highlights"), ("team", "team_members")):
         if content.get(field):
