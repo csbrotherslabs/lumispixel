@@ -1,12 +1,22 @@
-Your contract is ready to review
+Your agreement is ready to sign
 
-Hello {{ contract.client.first_name|default:"there" }},
+Hi {{ contract.client.first_name|default:"there" }},
 
-{{ studio.business_name|default:studio.display_name }} has sent you “{{ contract.title }}”. Review the details and sign securely when you’re ready.
+{{ studio.business_name|default:studio.display_name }} has prepared your photography agreement. Please review the terms and sign electronically when you're ready.
 
-Review your contract securely:
+Your agreement: {{ contract.title }}
+Booking: LP-{{ contract.booking.pk|stringformat:"04d" }}
+Service: {{ contract.booking.session_type }}
+Session: {{ contract.booking.starts_at|date:"F j, Y, g:i A T" }}
+{% if contract.booking.location %}Location: {{ contract.booking.location }}
+{% endif %}Photographer signature: {% if contract.photographer_signature %}Signed{% else %}Pending{% endif %}
+Your signature: Awaiting signature
+
+Review & Sign Agreement:
 {{ review_url }}
 
-This link expires in 30 days. Please keep it private. If you did not expect this email or have questions, contact the studio.
+Review your agreement, confirm your consent and enter your electronic signature. Once signing is complete, you can access your signed copy for your records.
+
+This personal review link expires in 30 days. Please do not forward it. If you have questions or did not expect this email, contact your photographer before signing.
 
 Delivered securely with LumisPixel.

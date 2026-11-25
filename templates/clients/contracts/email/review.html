@@ -1,16 +1,24 @@
 {% extends "email/client_base.html" %}
-{% block email_title %}Review your contract: {{ contract.title }}{% endblock %}
-{% block preheader %}Your contract from {{ studio.business_name|default:studio.display_name }} is ready to review.{% endblock %}
-{% block category %}Contract review{% endblock %}
+{% block email_title %}Your agreement is ready to sign{% endblock %}
+{% block preheader %}Review {{ contract.title }} from {{ studio.business_name|default:studio.display_name }} and sign securely.{% endblock %}
+{% block category %}Photography agreement · Action required{% endblock %}
 {% block content %}
 <tr><td style="padding:32px 24px;word-wrap:break-word;">
-  <h1 style="margin:0 0 20px;color:#242323;font-size:26px;line-height:1.25;letter-spacing:-.5px;">Your contract is ready to review</h1>
-  <p style="margin:0 0 14px;color:#625b56;font-size:15px;line-height:1.7;">Hello {{ contract.client.first_name|default:"there" }},</p>
-  <p style="margin:0;color:#625b56;font-size:15px;line-height:1.7;"><strong style="color:#242323;">{{ studio.business_name|default:studio.display_name }}</strong> has sent you <strong style="color:#242323;">{{ contract.title }}</strong>. Review the details and sign securely when you’re ready.</p>
-  {% include "email/client_action.html" with action_url=review_url action_label="Review contract securely" %}
+  <p style="margin:0 0 12px;color:#b90006;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;">Your next step</p>
+  <h1 style="margin:0 0 20px;color:#242323;font-size:26px;line-height:1.25;letter-spacing:-.5px;">Your agreement is ready to sign</h1>
+  <p style="margin:0 0 14px;color:#625b56;font-size:15px;line-height:1.7;">Hi {{ contract.client.first_name|default:"there" }},</p>
+  <p style="margin:0;color:#625b56;font-size:15px;line-height:1.7;"><strong style="color:#242323;">{{ studio.business_name|default:studio.display_name }}</strong> has prepared your photography agreement. Please take a moment to review the terms and sign electronically when you're ready.</p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td style="padding:20px;background-color:#faf8f6;border:1px solid #e7e0da;border-radius:10px;">
+    <p style="margin:0 0 8px;color:#756d67;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Your agreement</p>
+    <p style="margin:0 0 16px;color:#242323;font-size:18px;font-weight:700;line-height:1.4;">{{ contract.title }}</p>
+    <p style="margin:0;color:#625b56;font-size:14px;line-height:1.8;"><strong>Booking:</strong> LP-{{ contract.booking.pk|stringformat:"04d" }}<br><strong>Service:</strong> {{ contract.booking.session_type }}<br><strong>Session:</strong> {{ contract.booking.starts_at|date:"F j, Y, g:i A T" }}{% if contract.booking.location %}<br><strong>Location:</strong> {{ contract.booking.location }}{% endif %}</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;border-top:1px solid #e7e0da;"><tr><td style="padding-top:14px;color:#625b56;font-size:13px;">Photographer signature</td><td align="right" style="padding-top:14px;font-size:13px;font-weight:700;{% if contract.photographer_signature %}color:#166534;{% else %}color:#756d67;{% endif %}">{% if contract.photographer_signature %}Signed{% else %}Pending{% endif %}</td></tr><tr><td style="padding-top:10px;color:#625b56;font-size:13px;">Your signature</td><td align="right" style="padding-top:10px;color:#854d0e;font-size:13px;font-weight:700;">Awaiting signature</td></tr></table>
+  </td></tr></table>
+  {% include "email/client_action.html" with action_url=review_url action_label="Review & Sign Agreement" %}
+  <p style="margin:0;color:#625b56;font-size:14px;line-height:1.7;">Review your agreement, confirm your consent and enter your electronic signature. Once signing is complete, you can access your signed copy for your records.</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td style="padding:16px;background-color:#faf8f6;border:1px solid #e7e0da;border-radius:10px;">
-    <p style="margin:0 0 6px;color:#242323;font-size:13px;font-weight:700;">A private link, just for you</p>
-    <p style="margin:0;color:#625b56;font-size:13px;line-height:1.7;">This link expires in 30 days. Please keep it private. If you did not expect this email or have questions, contact the studio.</p>
+    <p style="margin:0 0 6px;color:#242323;font-size:13px;font-weight:700;">Private and secure</p>
+    <p style="margin:0;color:#625b56;font-size:13px;line-height:1.7;">This personal review link expires in 30 days. Please do not forward it. If you have questions about your agreement or did not expect this email, contact your photographer before signing.</p>
   </td></tr></table>
   {% include "email/client_fallback_link.html" with action_url=review_url %}
 </td></tr>
