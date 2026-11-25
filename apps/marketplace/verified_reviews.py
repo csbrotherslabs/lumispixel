@@ -40,6 +40,12 @@ class BookingRequestForm(forms.Form):
         if verified_email:
             self.fields["email"].disabled = True
             self.initial["email"] = verified_email
+        placeholders = {"location": "Venue, address or city", "guests": "e.g. 50", "description": "Tell us about your vision, occasion and any special requests...", "first_name": "First name", "last_name": "Last name", "email": "name@example.com", "phone": "e.g. +1 555 123 4567"}
+        for name, placeholder in placeholders.items():
+            self.fields[name].widget.attrs["placeholder"] = placeholder
+        for name, autocomplete in {"first_name": "given-name", "last_name": "family-name", "email": "email", "phone": "tel"}.items():
+            self.fields[name].widget.attrs["autocomplete"] = autocomplete
+        self.fields["phone"].widget.attrs["inputmode"] = "tel"
         self.fields["session_type"].choices = [(name, name) for name in specialties] or [("Other photography","Other photography")]
 
     def clean(self):

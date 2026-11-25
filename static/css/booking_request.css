@@ -78,3 +78,24 @@
 .booking-shell .booking-step-count{margin-right:auto;align-self:center;font-size:13px;color:#6d6253}
 .booking-shell .booking-trust{display:flex;justify-content:center;flex-wrap:wrap;gap:18px 32px;margin:28px auto 0;font-size:13px;color:#6d6253}
 @media(max-width:767px){.page-booking .booking-shell{padding-top:100px;padding-bottom:32px}.booking-shell .booking-hero{margin-bottom:16px;padding:28px 16px}.booking-shell .booking-layout:not(.booking-layout--verify){grid-template-columns:minmax(0,1fr);gap:16px}.booking-shell .booking-cover,.booking-shell .booking-journey,.booking-shell .booking-no-payment{display:none}.booking-shell .booking-profile{padding:16px}.booking-shell .booking-identity h2{font-size:18px}.booking-shell .booking-services{gap:8px}.booking-shell .booking-service{flex-direction:column;justify-content:center;text-align:center;gap:6px;padding:12px 8px;min-height:90px}.booking-shell .booking-service .booking-selected{position:absolute;right:8px;top:8px}.booking-shell .booking-step-count{flex-basis:100%;text-align:center;margin:0}.booking-shell .booking-trust{gap:10px 16px}}
+
+/* Explicit field wrappers keep labels paired with controls, independent of theme form rules. */
+.booking-shell .fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px;align-items:start}
+.booking-shell .booking-field{display:flex;flex-direction:column;gap:7px;min-width:0;margin:0}
+.booking-shell .booking-field--location,.booking-shell .booking-field--email{grid-column:1/-1}
+.booking-shell .booking-field--description{margin-top:22px}
+.booking-shell .booking-field>label{display:block;width:auto;float:none;margin:0;font-size:13px;font-weight:650;line-height:1.5;text-transform:none;letter-spacing:0;color:#34312c}
+.booking-shell .booking-required{color:#987445}
+.booking-shell .booking-optional{font-size:11px;color:#77736c;font-weight:400;margin-left:4px}
+.booking-shell .booking-control{position:relative;display:block;min-width:0}
+.booking-shell .booking-control>i{position:absolute;left:15px;top:26px;transform:translateY(-50%);color:#8c785a;font-size:17px;pointer-events:none;z-index:1}
+.booking-shell .booking-control>i.booking-chevron{left:auto;right:15px;font-size:13px}
+.booking-shell .booking-control :is(input,select,textarea){display:block;width:100%;max-width:100%;margin:0;min-height:52px;padding:13px 14px 13px 43px;border:1px solid #ded9d0;border-radius:11px;background:#fcfbf9;color:#25221e;font:inherit;font-size:16px;line-height:1.5;box-shadow:none;transition:border-color .18s,box-shadow .18s,background .18s}
+.booking-shell .booking-control select{appearance:none;padding-right:36px}
+.booking-shell .booking-control textarea{min-height:140px;resize:vertical}
+.booking-shell .booking-control :is(input,textarea)::placeholder{color:#817c74;opacity:1}
+.booking-shell .booking-control :is(input,select,textarea):focus{outline:none;border-color:#a58650;background:#fff;box-shadow:0 0 0 3px #a5865026}
+.booking-shell .booking-control input:disabled{background:#f0eee9;color:#625e56;opacity:1}
+.booking-shell .booking-control [aria-invalid=true]{border-color:#b33c43}
+.booking-shell .booking-field .errorlist{margin:0;font-size:13px}
+@media(max-width:767px){.booking-shell .fields{grid-template-columns:minmax(0,1fr);gap:16px}.booking-shell .booking-field--description{margin-top:16px}.booking-shell .booking-control :is(input,select,textarea){font-size:16px}}
