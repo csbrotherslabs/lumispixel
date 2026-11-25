@@ -11,6 +11,7 @@ from apps.accounts.views import _authenticated_destination_url
 from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, resolved_section_keys, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
+from .publishing import PUBLISHED_KEY, snapshot
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
@@ -192,6 +193,9 @@ def website_content(request):
             if action == "save_draft":
                 messages.success(request, "Your website content draft has been saved.")
                 return redirect("photographers:setup-dashboard")
+            if action == "finish_and_publish":
+                website.theme_content = dict(website.theme_content or {}, **{PUBLISHED_KEY: snapshot(profile, website)})
+                website.save(update_fields=["theme_content", "updated_at"])
             profile.onboarding_completed = True
             profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
             profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
@@ -273,13 +277,19 @@ def _equipment_upload_error(request, website):
     return None
 
 
+def _published_equipment_image(website, name):
+    return any(item.get("image") == name for item in
+               (website.theme_content or {}).get(PUBLISHED_KEY, {}).get("equipment", []))
+
+
 def _save_equipment_drafts(request, website):
     existing = {item.display_order: item for item in website.equipment_items.all()}
     for index in _posted_equipment_indices(request):
         item = existing.get(index)
         if request.POST.get(f"equipment_{index}_remove"):
             if item:
-                item.image.delete(save=False)
+                if not _published_equipment_image(website, item.image.name):
+                    item.image.delete(save=False)
                 item.delete()
             continue
         name = request.POST.get(f"equipment_{index}_name", "").strip()
@@ -295,7 +305,7 @@ def _save_equipment_drafts(request, website):
             item.image = image
         item.is_featured = True
         item.save()
-        if image and old_image and old_image != item.image.name:
+        if image and old_image and old_image != item.image.name and not _published_equipment_image(website, old_image):
             item.image.storage.delete(old_image)
 
 
