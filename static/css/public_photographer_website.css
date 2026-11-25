@@ -11,3 +11,70 @@ html{scroll-behavior:smooth}.lumis-public-site{font-size:16px;line-height:1.65}.
 .lumis-verified-review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin:24px auto;max-width:1100px;text-align:left}.lumis-verified-review{border:1px solid currentColor;border-radius:12px;padding:20px;overflow-wrap:anywhere}.lumis-verified-review small{display:block;margin:8px 0}.lumis-review-pagination{display:flex;justify-content:center;gap:20px;align-items:center;margin:20px 0}.lumis-review-summary{font-size:1.2rem}
 
 .public-equipment-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:18px;padding-bottom:14px;overscroll-behavior-inline:contain}.public-equipment-carousel>article{flex:0 0 clamp(220px,32%,360px);min-width:0;scroll-snap-align:start}.public-equipment-carousel img{width:100%;aspect-ratio:4/3;object-fit:contain}.public-equipment-carousel:focus-visible{outline:2px solid currentColor;outline-offset:4px}@media(max-width:600px){.public-equipment-carousel>article{flex-basis:82%}}
+
+/* Panorama: explicit section palettes prevent application-level heading colors
+   from leaking into the customer-facing website. */
+.lumis-public-site.lumis-showcase--panorama {
+  --showcase-paper:#f5f2ec;--showcase-ink:#211e1a;
+  --panorama-muted:#625b51;--panorama-gold:#d7ad78;
+  --panorama-space:clamp(56px,7vw,112px);
+}
+.lumis-public-site.lumis-showcase--panorama main>section {scroll-margin-top:24px;overflow-wrap:anywhere}
+.lumis-public-site.lumis-showcase--panorama .showcase-portfolio,
+.lumis-public-site.lumis-showcase--panorama .showcase-about,
+.lumis-public-site.lumis-showcase--panorama .showcase-team,
+.lumis-public-site.lumis-showcase--panorama .showcase-notable-clients,
+.lumis-public-site.lumis-showcase--panorama .showcase-experience {
+  color:#211e1a;padding:var(--panorama-space) clamp(20px,6vw,96px);
+}
+.lumis-public-site.lumis-showcase--panorama .showcase-team {background:#e8e2d8}
+.lumis-public-site.lumis-showcase--panorama .showcase-notable-clients {background:#f5f2ec}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-portfolio,.showcase-about,.showcase-team,.showcase-notable-clients,.showcase-experience) :is(h2,h3,strong,a) {color:#211e1a}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-portfolio,.showcase-about,.showcase-team,.showcase-notable-clients,.showcase-experience) :is(p,small,.showcase-section-label) {color:#625b51}
+.lumis-public-site.lumis-showcase--panorama main>section h2 {font-size:clamp(34px,4.6vw,64px);line-height:1.08;letter-spacing:-.035em}
+.lumis-public-site.lumis-showcase--panorama .showcase-section-label {margin-bottom:16px;font-size:12px;letter-spacing:.14em}
+.lumis-public-site.lumis-showcase--panorama .public-project-grid {max-width:1380px;margin-inline:auto;gap:clamp(16px,2vw,28px)}
+.lumis-public-site.lumis-showcase--panorama .showcase-portfolio .public-project-grid article {background:#fff;border:1px solid #e5dfd5;border-radius:10px;overflow:hidden}
+.lumis-public-site.lumis-showcase--panorama .showcase-portfolio .public-project-grid img {aspect-ratio:4/3;object-fit:cover;object-position:center}
+.lumis-public-site.lumis-showcase--panorama .public-project-grid h3 {font-size:clamp(19px,2vw,27px);line-height:1.2}
+.lumis-public-site.lumis-showcase--panorama .public-project-grid p {font-size:15px;line-height:1.65}
+.lumis-public-site.lumis-showcase--panorama .showcase-contact {background:#d7ad78;color:#241c13;padding:var(--panorama-space) 7vw}
+.lumis-public-site.lumis-showcase--panorama .showcase-contact :is(h2,p,span) {color:#241c13}
+.lumis-public-site.lumis-showcase--panorama .showcase-contact a {background:#241c13;color:#fff;border:1px solid #241c13;border-radius:6px;padding:14px 24px;max-width:100%;font-size:16px;overflow-wrap:anywhere}
+.lumis-public-site.lumis-showcase--panorama .showcase-contact a:hover {background:#443323}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-services,.showcase-films,.showcase-equipment,.lumis-public-reviews) {background:#171614;color:#f8f4ed;padding:var(--panorama-space) clamp(20px,6vw,96px)}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-services,.showcase-films,.showcase-equipment,.lumis-public-reviews) :is(h2,h3,strong) {color:#f8f4ed}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-services,.showcase-films,.showcase-equipment,.lumis-public-reviews) :is(p,small,.showcase-section-label) {color:#d1c8bb}
+.lumis-public-site.lumis-showcase--panorama :is(.showcase-services,.showcase-equipment) h2 em {color:#d7ad78}
+.lumis-public-site.lumis-showcase--panorama .showcase-services__heading {margin-bottom:32px;gap:24px}
+.lumis-public-site.lumis-showcase--panorama .showcase-services__grid {display:flex;flex-wrap:wrap;border:0;gap:12px}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card {flex:1 1 calc(33.333% - 12px);min-width:0;min-height:148px;padding:22px;background:#23211e;border:1px solid #51483b;border-radius:8px;display:flex;align-items:center;gap:16px;transform:none}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card:hover {background:#2d2923;transform:none}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card__icon {flex:0 0 44px;width:44px;height:44px;color:#d7ad78;border-color:#8e7657}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card__copy {margin:0;min-width:0;padding-right:22px}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card h3 {margin:0;font-size:clamp(17px,1.7vw,24px)}
+.lumis-public-site.lumis-showcase--panorama .showcase-service-card__number {font-size:13px;right:12px;bottom:12px;color:#c3ad90;-webkit-text-stroke:0;letter-spacing:.04em}
+.lumis-public-site.lumis-showcase--panorama .showcase-films__heading {display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;margin-bottom:28px;gap:20px}
+.lumis-public-site.lumis-showcase--panorama .showcase-films__heading a {display:inline-flex;align-items:center;gap:12px;color:#211e1a;background:#d7ad78;border-radius:6px;padding:12px 20px;font-size:15px;font-weight:700}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-profiles {margin:32px auto 0;max-width:1380px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-portrait {border-radius:8px;aspect-ratio:4/5}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-portrait img {object-position:center 25%}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-profile h3 {font-size:clamp(20px,2vw,27px);margin:16px 0 5px}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-profile p {margin:6px 0 12px;font-size:15px}
+.lumis-public-site.lumis-showcase--panorama .showcase-team-role {color:#625b51}
+.lumis-public-site.lumis-showcase--panorama .showcase-client-grid {max-width:1100px;margin:auto;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.lumis-public-site.lumis-showcase--panorama .showcase-client-grid article {background:#fff;border:1px solid #e0d9ce;min-height:170px;padding:18px;align-content:center;gap:10px}
+.lumis-public-site.lumis-showcase--panorama .showcase-client-grid article>a {display:grid;width:100%;justify-items:center;gap:10px}
+.lumis-public-site.lumis-showcase--panorama .showcase-client-grid img {width:100%;max-width:220px;height:112px;padding:0;object-fit:contain}
+.lumis-public-site.lumis-showcase--panorama .showcase-client-grid span {font-size:15px;font-weight:600;color:#211e1a}
+.lumis-public-site.lumis-showcase--panorama .public-equipment-carousel {display:flex;gap:18px}
+.lumis-public-site.lumis-showcase--panorama .public-equipment-carousel article {background:#24211d;border:1px solid #51483b;border-radius:8px;overflow:hidden}
+.lumis-public-site.lumis-showcase--panorama .public-equipment-carousel img {object-fit:contain;background:#302b25}
+.lumis-public-site.lumis-showcase--panorama .lumis-review-empty,.lumis-public-site.lumis-showcase--panorama .lumis-verified-review {background:#24211d;border-color:#51483b}
+.lumis-public-site.lumis-showcase--panorama .lumis-review-empty>i,.lumis-public-site.lumis-showcase--panorama .lumis-review-summary strong {color:#d7ad78}
+.lumis-public-site.lumis-showcase--panorama .lumis-public-reviews a {color:#f1d3aa;text-decoration:underline;text-underline-offset:4px}
+.lumis-public-site.lumis-showcase--panorama a:focus-visible {outline:3px solid currentColor;outline-offset:5px}
+@media(max-width:900px){.lumis-public-site.lumis-showcase--panorama .showcase-service-card{flex-basis:calc(50% - 12px)}}
+@media(max-width:600px){.lumis-public-site.lumis-showcase--panorama .showcase-service-card{flex-basis:100%;min-height:96px;padding:16px}.lumis-public-site.lumis-showcase--panorama .showcase-team-profiles{grid-template-columns:1fr}.lumis-public-site.lumis-showcase--panorama .showcase-team-portrait{max-height:440px}.lumis-public-site.lumis-showcase--panorama .showcase-client-grid:not(.showcase-client-scroll){grid-template-columns:repeat(2,minmax(0,1fr))}.lumis-public-site.lumis-showcase--panorama .showcase-client-grid article{min-height:130px;padding:10px}.lumis-public-site.lumis-showcase--panorama .showcase-client-grid img{height:80px}.lumis-public-site.lumis-showcase--panorama .showcase-client-grid span{font-size:13px}.lumis-public-site.lumis-showcase--panorama .showcase-films__heading a{min-height:44px}}
+
+.lumis-public-reviews .lumis-review-star{display:block;font-size:38px;line-height:1;margin-bottom:12px;color:var(--showcase-accent)}
