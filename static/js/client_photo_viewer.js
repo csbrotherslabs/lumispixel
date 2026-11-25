@@ -59,7 +59,21 @@
           meta.className = 'lp-comment-meta';
           const nameLine = document.createElement('div');
           nameLine.className = 'lp-comment-name';
-          nameLine.append(author);
+          const website = row.dataset.photographer === 'true' && viewer.dataset.photographerWebsite;
+          function websiteLink(label) {
+            const link = document.createElement('a');
+            link.href = website;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'lp-photographer-link';
+            link.setAttribute('aria-label', 'Visit ' + label + ' website (opens in new tab)');
+            return link;
+          }
+          if (website) {
+            const nameLink = websiteLink(name);
+            nameLink.append(author);
+            nameLine.append(nameLink);
+          } else nameLine.append(author);
           if(row.dataset.photographer === 'true') {
             const tag = document.createElement('span');
             tag.className = 'lp-comment-role'; tag.textContent = 'Photographer';
@@ -81,7 +95,12 @@
           const deletion = row.querySelector('[data-client-comment-delete]');
           if(deletion) actions.append(deletion);
           content.append(meta, paragraph, actions);
-          row.replaceChildren(avatar,content);
+          if (website) {
+            const avatarLink = websiteLink(name);
+            avatarLink.classList.add('lp-comment-avatar-link');
+            avatarLink.append(avatar);
+            row.replaceChildren(avatarLink,content);
+          } else row.replaceChildren(avatar,content);
         }
       }
       const deleteControl = row.querySelector('[data-client-comment-delete]');
