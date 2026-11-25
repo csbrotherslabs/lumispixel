@@ -239,7 +239,7 @@ SECTION_REQUIRED_FIELDS = {
     "films": ("featured_video_url",),
     "reviews": ("testimonial_quote", "testimonial_name"),
     "stats": (),
-    "team": ("team_members",),
+    "team": (),
     "contact": ("booking_call_to_action", "contact_email"),
     "availability": ("availability_window_months", "availability_call_to_action"),
 }
