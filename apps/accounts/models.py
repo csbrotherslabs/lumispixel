@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -300,6 +301,19 @@ class PhotographerProfile(models.Model):
         if self.verification_status != self.VerificationStatus.APPROVED:
             return False
         return not self.verification_expires_at or self.verification_expires_at > timezone.now()
+
+    @property
+    def gallery_website_url(self):
+        """Only expose an explicitly configured public HTTP(S) website."""
+        if not self.public_profile_enabled or not self.website:
+            return ""
+        try:
+            url = urlsplit(self.website)
+            if url.scheme in ("http", "https") and url.hostname and not url.username and not url.password:
+                return self.website
+        except ValueError:
+            pass
+        return ""
 
     @property
     def can_publish_marketplace_listing(self):

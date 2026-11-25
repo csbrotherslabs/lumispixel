@@ -167,3 +167,12 @@
 .lp-viewer .lp-comment-composer[data-comment-form]{flex-wrap:wrap}
 .lp-viewer .lp-comment-composer [data-comment-status]{flex-basis:100%;margin:0;font-size:12px;color:#b91c32}
 .lp-viewer .lp-comment-composer [data-comment-status]:empty{display:none}
+
+/* Public photographer website attribution. */
+.lp-photographer-link{color:inherit;text-decoration:underline;text-underline-offset:3px;pointer-events:auto}
+.lp-photographer-link:hover{text-decoration-thickness:2px}
+.lp-photographer-link:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+.lp-photographer-footer{text-align:center;padding:24px 16px;font-size:13px}
+.lp-viewer .lp-comment-name .lp-photographer-link{color:#6d28d9}
+.lp-viewer .lp-comment-avatar-link{flex:none;text-decoration:none;align-self:flex-start}
+.cp-brand>.lp-photographer-link{display:flex;align-items:center;gap:10px}
