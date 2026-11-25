@@ -109,3 +109,36 @@
 .booking-shell .booking-acknowledge label{display:flex;align-items:flex-start;gap:10px;text-transform:none;line-height:1.5}
 .booking-shell .booking-acknowledge input{flex:0 0 18px;margin-top:3px}
 @media(max-width:767px){.booking-shell form[data-booking-form] .fields{grid-template-columns:minmax(0,1fr);gap:16px}}
+
+/* Booking review: editable summary panels, not a second form. */
+.booking-shell .booking-review{display:grid;gap:18px;margin:20px 0}
+.booking-shell .review-intro{color:#6d6253;font-size:14px}
+.booking-shell .review-panel{border:1px solid #e4ded4;border-radius:14px;overflow:hidden;margin:0;padding:0;background:#fff}
+.booking-shell .review-panel-head{position:static;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#faf8f4;border-bottom:1px solid #e4ded4}
+.booking-shell .review-panel-head h3,.booking-shell .review-next h3{font-size:15px;color:#25221e;margin:0;line-height:1.4}
+.booking-shell .review-panel-head i,.booking-shell .review-item>i,.booking-shell .review-verification i{color:#806032}
+.booking-shell .review-panel-head button{background:transparent;border:0;color:#806032;font-size:13px;padding:6px 8px;min-height:40px;white-space:nowrap}
+.booking-shell .review-panel-body{padding:16px}
+.booking-shell dl.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:0}
+.booking-shell dl.review-grid--single{grid-template-columns:minmax(0,1fr)}
+.booking-shell .review-item{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.booking-shell .review-item>i{font-size:18px;flex-shrink:0}
+.booking-shell .review-item>div{min-width:0}
+.booking-shell .review-item dt{font-size:12px;font-weight:400;color:#6d6253;margin:0 0 3px}
+.booking-shell .review-item dd{font-size:14px;font-weight:600;color:#25221e;margin:0;overflow-wrap:anywhere}
+.booking-shell .review-description{border-top:1px solid #e4ded4;margin-top:18px;padding-top:14px}
+.booking-shell .review-description h4{font-size:13px;margin:0 0 8px;color:#6d6253}
+.booking-shell .review-description p{background:#f8f7f4;border-radius:8px;padding:12px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.booking-shell .review-identity{display:flex;gap:12px;align-items:center;border-bottom:1px solid #e4ded4;padding-bottom:14px;margin-bottom:16px}
+.booking-shell .review-avatar{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:#eee5d6;color:#806032;font-weight:700}
+.booking-shell .review-identity strong,.booking-shell .review-identity small{display:block;overflow-wrap:anywhere}
+.booking-shell .review-identity small{color:#6d6253}
+.booking-shell .review-verification{font-size:13px;color:#806032;margin:16px 0 0}
+.booking-shell .review-next{background:#f8f6f1;border-radius:12px;padding:16px}
+.booking-shell .review-next ol{margin:10px 0 0;padding-left:20px;font-size:14px;color:#51452f}
+.booking-shell .review-next li+li{margin-top:8px}
+.booking-shell .booking-acknowledge{border:1px solid #ded9d0;border-radius:12px;padding:14px}
+.booking-shell .booking-acknowledge label{display:flex!important;align-items:flex-start;gap:10px;width:100%;margin:0;text-transform:none;font-size:14px;cursor:pointer}
+.booking-shell .booking-acknowledge input[type=checkbox]{position:static;appearance:auto;opacity:1;width:18px;height:18px;flex:0 0 18px;margin:3px 0 0}
+.booking-shell button[data-submit]:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:767px){.booking-shell dl.review-grid{grid-template-columns:minmax(0,1fr);gap:14px}.booking-shell .review-panel-body{padding:14px}.booking-shell .review-panel-head{padding:10px 14px}}
