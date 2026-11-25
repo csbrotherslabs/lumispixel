@@ -203,7 +203,7 @@ class PhotographerThemeForm(forms.ModelForm):
         widgets = {"website_theme": forms.RadioSelect(attrs={"class": "lumis-onboarding__theme-radio"})}
 
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
+MAX_IMAGE_SIZE = 50 * 1024 * 1024
 
 THEME_FIELD_CONFIG = {
     PhotographerProfile.WebsiteTheme.BASIC: {"required": [], "optional": []},
@@ -337,7 +337,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             if image.content_type not in IMAGE_TYPES:
                 raise forms.ValidationError("Upload a JPG, PNG, GIF, or WebP image.")
             if image.size > MAX_IMAGE_SIZE:
-                raise forms.ValidationError("Image uploads must be 5 MB or smaller.")
+                raise forms.ValidationError("Image uploads must be 50 MB or smaller.")
         return image
 
     def clean(self):
