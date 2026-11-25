@@ -15,7 +15,7 @@
 {% elif section.key == 'equipment' %}
 <section id="equipment" class="showcase-equipment"><div class="showcase-equipment__heading"><div><span class="showcase-section-label">Inside the kit</span><h2>Equipment &amp;<br><em>capabilities.</em></h2></div></div><div class="public-project-grid">{% for item in site.equipment %}<article>{% if item.image_url or draft_preview %}<img data-preview-image="equipment_{{ item.preview_index }}_image" src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy" {% if not item.image_url %}hidden{% endif %}>{% endif %}<div><h3>{{ item.name }}</h3><p>{{ item.description }}</p></div></article>{% endfor %}</div></section>
 {% elif section.key == 'reviews' %}
-<section id="reviews" class="public-testimonial"><span class="showcase-section-label">Client stories</span><blockquote>“{{ site.content.testimonial_quote }}”</blockquote>{% if site.content.testimonial_name %}<cite>{{ site.content.testimonial_name }}</cite>{% endif %}</section>
+<section id="reviews" class="public-testimonial lumis-public-reviews" aria-labelledby="public-reviews-title"><span class="showcase-section-label">Authentic client experiences</span><h2 id="public-reviews-title">Ratings &amp; Reviews</h2><div class="lumis-review-empty"><i class="bi bi-star" aria-hidden="true"></i><h3>No client reviews yet</h3><p>Client feedback collected through LumisPixel will appear here.</p><small><i class="bi bi-shield-check" aria-hidden="true"></i> Reviews powered by LumisPixel</small></div></section>
 {% elif section.key == 'availability' %}
 {% include "photographers/theme_previews/sections/availability.html" %}
 {% elif section.key == 'films' %}
