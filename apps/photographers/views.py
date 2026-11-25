@@ -11,7 +11,8 @@ from apps.accounts.views import _authenticated_destination_url
 from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, resolved_section_keys, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
-from .publishing import PUBLISHED_KEY, snapshot
+from .publishing import PUBLISHED_KEY, snapshot, publication_errors
+from .forms import section_required_fields
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
@@ -184,7 +185,8 @@ def website_content(request):
             form.add_error(None, equipment_error)
         else:
             profile, website = form.save_content()
-            _save_project_drafts(request, website)
+            if "portfolio" in selected_sections:
+                _save_project_drafts(request, website)
             if "equipment" in selected_sections:
                 _save_equipment_drafts(request, website)
             if builder_mode:
@@ -193,6 +195,12 @@ def website_content(request):
             if action == "save_draft":
                 messages.success(request, "Your website content draft has been saved.")
                 return redirect("photographers:setup-dashboard")
+            if action in {"finish_setup", "finish_and_publish"}:
+                errors = publication_errors(profile, website)
+                if errors:
+                    for error in errors:
+                        messages.error(request, error)
+                    return redirect("photographers:onboarding-website-content")
             if action == "finish_and_publish":
                 website.theme_content = dict(website.theme_content or {}, **{PUBLISHED_KEY: snapshot(profile, website)})
                 website.save(update_fields=["theme_content", "updated_at"])
@@ -208,7 +216,7 @@ def website_content(request):
         form=form,
         profile=profile,
         website=website,
-        projects=list(website.projects.all()[:3]),
+        projects=[{"index": i, "item": next((p for p in website.projects.all() if p.display_order == i), None)} for i in range(3)],
         panels=panels,
         equipment_slots=equipment_slots,
         equipment_indices=",".join(str(slot["index"]) for slot in equipment_slots),
@@ -220,6 +228,7 @@ def website_content(request):
 
 def _section_content_panels(form, theme, selected_sections):
     allowed = set(THEME_FIELD_CONFIG[theme]["required"] + THEME_FIELD_CONFIG[theme]["optional"])
+    allowed.update(section_required_fields(theme, selected_sections))
     allowed.update(("hero_image", "availability_window_months", "availability_call_to_action"))
     panels = []
     for section_key in selected_sections:
@@ -229,7 +238,7 @@ def _section_content_panels(form, theme, selected_sections):
             "name": SECTION_LIBRARY[section_key]["name"],
             "description": SECTION_LIBRARY[section_key]["description"],
             "fields": [form[name] for name in field_names],
-            "supports_projects": section_key == "portfolio" and theme == PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL,
+            "supports_projects": section_key == "portfolio",
             "supports_equipment": section_key == "equipment",
         })
     return panels
@@ -310,16 +319,17 @@ def _save_equipment_drafts(request, website):
 
 
 def _save_project_drafts(request, website):
-    if website.selected_theme != PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL:
-        return
-    website.projects.all().delete()
+    existing = {p.display_order: p for p in website.projects.all()}
     for index in range(3):
         title = request.POST.get(f"project_{index}_title", "").strip()
         description = request.POST.get(f"project_{index}_description", "").strip()
         image = request.FILES.get(f"project_{index}_cover_image")
         if not (title or description or image):
             continue
-        project = PhotographerWebsiteProject(photographer_website=website, title=title, description=description, display_order=index)
+        project = existing.get(index) or PhotographerWebsiteProject(photographer_website=website, display_order=index)
+        project.title = title
+        project.description = description
+        project.is_featured = True
         if image:
             project.cover_image = image
         project.save()
