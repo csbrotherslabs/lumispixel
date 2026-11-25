@@ -425,3 +425,7 @@ PhotographerWebsiteThemeForm.base_fields["contact_email"] = forms.EmailField(req
 for _name in ("experience_highlights", "team_members"):
     PhotographerWebsiteThemeForm.base_fields[_name].widget = forms.Textarea(attrs={"class": "form-control", "rows": 4})
 
+
+for _video_name in ("hero_video", "featured_video_url", "highlight_video"):
+    PhotographerWebsiteThemeForm.base_fields[_video_name].help_text = "Paste a YouTube, Vimeo, or HTTPS MP4 link. Video playback depends on the provider's sharing settings."
+    PhotographerWebsiteThemeForm.base_fields[_video_name].widget.attrs.update({"placeholder": "https://www.youtube.com/watch?v=...", "inputmode": "url"})
