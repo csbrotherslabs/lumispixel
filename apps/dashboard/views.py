@@ -4773,7 +4773,7 @@ def invoice_create(request):
     if request.method == "POST":
         try:
             invoice = save_invoice(request.studio, request.POST, send=request.POST.get("intent") == "send")
-            messages.success(request, f"{invoice.invoice_number} was {'sent' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
+            messages.success(request, f"{invoice.invoice_number} was {'issued and email queued' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
             return redirect("photographer_workspace:invoice_view", pk=invoice.pk)
         except ValidationError as exc:
             return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, errors=exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
@@ -4824,10 +4824,17 @@ def invoice_action(request, pk, action):
             if invoice.status not in {ClientInvoice.Status.DRAFT, ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.client.email:
                 messages.error(request, "This invoice cannot be sent in its current state, or the client has no email address.")
             else:
-                invoice.status, invoice.sent_at = ClientInvoice.Status.SENT if invoice.status == ClientInvoice.Status.DRAFT else invoice.status, timezone.now()
-                invoice.save(update_fields=["status", "sent_at"])
-                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action=action, description="Invoice emailed to client.")
-                messages.success(request, "Invoice sent.")
+                from .invoices import queue_invoice_email
+                try:
+                    delivery = queue_invoice_email(invoice, profile, purpose="issue" if invoice.status == ClientInvoice.Status.DRAFT else "resend")
+                except ValidationError as exc:
+                    messages.error(request, "; ".join(exc.messages))
+                else:
+                    if invoice.status == ClientInvoice.Status.DRAFT:
+                        invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
+                        invoice.save(update_fields=["status", "sent_at"])
+                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="email_queued", description=f"Invoice email outbox #{delivery.pk}: {delivery.get_status_display()}.")
+                    messages.success(request, f"Invoice email status: {delivery.get_status_display()}.")
         elif action == "void":
             if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID} or invoice.amount_paid > 0:
                 messages.error(request, "Paid, partially paid, or already void invoices cannot be voided.")

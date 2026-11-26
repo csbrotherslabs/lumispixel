@@ -99,8 +99,13 @@ def run_bulk_action(profile, values, action, note=""):
             setattr(record, field, f"{current}\n{text}".strip())
             record.save(update_fields=[field])
         elif action == "remind":
+            from .invoices import queue_invoice_email
+            invoice = ClientInvoice.objects.select_for_update().get(pk=invoice.pk, photographer=profile)
+            if "remind" not in available_actions([("invoice", invoice)]):
+                raise ValidationError("Invoice is no longer eligible for a reminder.")
+            delivery = queue_invoice_email(invoice, profile, purpose="reminder")
             InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="reminder",
-                                           description="Invoice reminder queued for delivery.")
+                                           description=f"Invoice reminder outbox #{delivery.pk}: {delivery.get_status_display()}.")
         elif action == "mark_sent":
             invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, now
             invoice.save(update_fields=["status", "sent_at"])

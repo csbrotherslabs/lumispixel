@@ -65,3 +65,10 @@ provider evidence; event counts use received_at instead. All-time exception back
 remains visible regardless of period. Evidence categories overlap; coverage is not a
 recipient-level delivery rate. No raw email bodies, addresses or provider IDs are shown.
 Rejected/duplicate webhook request telemetry and producer attribution remain future work.
+
+Invoice create/send/resend and bulk reminders now use the durable outbox. Invoice SENT
+and sent_at retain legacy business issuance semantics, not proof of transport acceptance.
+Issue is once per invoice; explicit resend/reminder are deduplicated per purpose per day.
+An earlier unresolved submission blocks a different send. Invoice email snapshots are
+rendered at enqueue; cancellation of already queued snapshots and complete producer
+inventory remain follow-up work. Existing invoice tests need regression verification.

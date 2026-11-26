@@ -2,9 +2,7 @@
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -73,33 +71,49 @@ def calculate_items(post):
     return rows
 
 
-def _send_invoice_email(invoice, profile):
-    """Deliver the persisted invoice snapshot without exposing workspace-only URLs."""
+def queue_invoice_email(invoice, profile, *, purpose="issue"):
+    """Persist a single intentional send per invoice/purpose/day (issue is once)."""
+    from apps.notifications.email_delivery import queue_transactional_email
+    from apps.notifications.models import EmailDelivery
+    if invoice.photographer_id != profile.pk or not invoice.client.email:
+        raise ValidationError("Invoice recipient is unavailable.")
+    if purpose not in {"issue", "resend", "reminder"}:
+        raise ValidationError("Invalid email purpose.")
+    prefix = f"invoice:{profile.pk}:{invoice.pk}:"
+    key = prefix + purpose
+    if purpose != "issue":
+        key += ":" + timezone.localdate().isoformat()
+    # Caller holds invoice lock (or has just created the invoice).
+    if EmailDelivery.objects.filter(event_key__startswith=prefix, status__in=[
+        "pending", "retry", "sending", "uncertain"
+    ]).exclude(event_key=key).exists():
+        raise ValidationError("An earlier invoice email is still pending or uncertain.")
+    existing = EmailDelivery.objects.filter(event_key=key).first()
+    if existing:
+        return existing
     studio_name = profile.business_name or profile.display_name or profile.user.full_name or profile.user.email
     context = {"invoice": invoice, "studio_name": studio_name}
-    message = EmailMultiAlternatives(
-        f"Invoice {invoice.invoice_number} from {studio_name}",
-        render_to_string("clients/invoices/email/invoice.txt", context),
-        settings.DEFAULT_FROM_EMAIL,
-        [invoice.client.email],
-    )
-    message.attach_alternative(render_to_string("clients/invoices/email/invoice.html", context), "text/html")
+    subject = f"Invoice {invoice.invoice_number} from {studio_name}"
+    if purpose == "reminder":
+        subject = "Payment reminder: " + subject
     try:
-        delivered = message.send(fail_silently=False)
-    except Exception as exc:
-        raise InvoiceDeliveryError({
-            "delivery_email": "We couldn't send this invoice email. No changes were saved. Please try again."
-        }) from exc
-    if delivered != 1:
-        raise InvoiceDeliveryError({
-            "delivery_email": "We couldn't send this invoice email. No changes were saved. Please try again."
-        })
+        delivery = queue_transactional_email(event_key=key, subject=subject,
+            plain_body=render_to_string("clients/invoices/email/invoice.txt", context),
+            html_body=render_to_string("clients/invoices/email/invoice.html", context),
+            recipients=[invoice.client.email])
+    except (ValueError, ValidationError) as exc:
+        raise InvoiceDeliveryError("Invoice email could not be queued.") from exc
+    if delivery is None:
+        raise InvoiceDeliveryError("Invoice email could not be queued.")
+    return delivery
 
 
 @transaction.atomic
 def save_invoice(profile, post, invoice=None, send=False):
-    if invoice and invoice.is_locked:
-        raise ValidationError("Paid and void invoices cannot be edited.")
+    if invoice:
+        invoice = ClientInvoice.objects.select_for_update().get(pk=invoice.pk, photographer=profile)
+    if invoice and invoice.status != ClientInvoice.Status.DRAFT:
+        raise ValidationError("Only draft invoices can be edited.")
     client_id = post.get("client")
     if client_id:
         client = Client.objects.for_photographer(profile).filter(pk=client_id).first()
@@ -159,9 +173,9 @@ def save_invoice(profile, post, invoice=None, send=False):
     if invoice.payment_schedule.exists() and sum((p.amount for p in invoice.payment_schedule.all()), ZERO) != total:
         raise ValidationError({"payment_schedule": "Scheduled payments must add up to the invoice total."})
     if send:
-        _send_invoice_email(invoice, profile)
+        queue_invoice_email(invoice, profile)
         invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
         invoice.save(update_fields=["status", "sent_at"])
-    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="sent" if send else "saved",
-                                   description="Invoice sent to client." if send else "Invoice saved as draft.")
+    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="email_queued" if send else "saved",
+                                   description="Invoice issued; email queued for delivery." if send else "Invoice saved as draft.")
     return invoice
