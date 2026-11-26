@@ -1,7 +1,7 @@
 from datetime import timedelta
 import hashlib
 import secrets
-from django.core.mail import send_mail
+from apps.notifications.email_delivery import queue_transactional_email
 from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.db.models import Q
@@ -167,15 +167,16 @@ def request_booking(request, slug):
                         email_context = {"client_name": data["first_name"], "studio_name": context["brand"],
                             "session": session, "verification_url": link,
                             "booking_timezone": context["booking_timezone"]}
-                        sent = send_mail("Acknowledge your LumisPixel booking request",
-                            render_to_string("marketplace/email/booking_acknowledgment.txt", email_context),
-                            None, [email], fail_silently=False,
-                            html_message=render_to_string("marketplace/email/booking_acknowledgment.html", email_context))
+                        sent = queue_transactional_email(event_key=f"booking.acknowledgment:{booking.pk}",
+                            subject="Acknowledge your LumisPixel booking request",
+                            plain_body=render_to_string("marketplace/email/booking_acknowledgment.txt", email_context),
+                            recipients=[email],
+                            html_body=render_to_string("marketplace/email/booking_acknowledgment.html", email_context))
                         if not sent:
                             raise RuntimeError("Email not sent")
                     except Exception:
                         transaction.set_rollback(True)
-                        form.add_error(None, "Verification email could not be sent. Please try again later.")
+                        form.add_error(None, "Verification email could not be queued. Please try again later.")
                         return render(request, "marketplace/booking_request.html", context)
             if direct:
                 from .booking_approval import notify_photographer

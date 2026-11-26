@@ -253,7 +253,7 @@ def _signup_view(request, form_class, template_name, account_type):
                 send_verification_email(request, user)
             except EmailDeliveryError:
                 _set_verification_delivery_status(request, "failed")
-                messages.warning(request, "We could not send the verification email right now. Please try again.")
+                messages.warning(request, "We could not queue the verification email right now. Please try again.")
             else:
                 _set_verification_delivery_status(request, "sent")
                 messages.success(request, "We sent a verification email. Please check your inbox to continue.")
@@ -334,7 +334,7 @@ def resend_verification(request):
                 send_verification_email(request, user)
             except EmailDeliveryError:
                 _set_verification_delivery_status(request, "failed")
-                messages.warning(request, "We could not send the verification email right now. Please try again.")
+                messages.warning(request, "We could not queue the verification email right now. Please try again.")
             else:
                 _set_verification_delivery_status(request, "sent")
                 cache.set(key, True, 60)

@@ -169,21 +169,16 @@ def send_verification_email(request, user):
     text_body = render_to_string("accounts/email/verify_email.txt", context)
     html_body = render_to_string("accounts/email/verify_email.html", context)
 
+    from hashlib import sha256
+    from apps.notifications.email_delivery import queue_transactional_email
+    from django.core.exceptions import ValidationError
     try:
-        with mail.get_connection(fail_silently=False) as connection:
-            message = mail.EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[user.email],
-                connection=connection,
-            )
-            message.attach_alternative(html_body, "text/html")
-            sent = message.send(fail_silently=False)
-    except (OSError, SMTPException) as exc:
-        raise EmailDeliveryError from exc
-
-    if sent != 1:
-        raise EmailDeliveryError("Verification email was not accepted by the configured email backend.")
+        delivery = queue_transactional_email(
+            event_key=f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}",
+            subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email])
+    except (ValueError, ValidationError) as exc:
+        raise EmailDeliveryError("Verification email could not be queued.") from exc
+    if not delivery:
+        raise EmailDeliveryError("Verification email could not be queued.")
 
     return True

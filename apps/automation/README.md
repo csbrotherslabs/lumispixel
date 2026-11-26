@@ -72,3 +72,10 @@ Issue is once per invoice; explicit resend/reminder are deduplicated per purpose
 An earlier unresolved submission blocks a different send. Invoice email snapshots are
 rendered at enqueue; cancellation of already queued snapshots and complete producer
 inventory remain follow-up work. Existing invoice tests need regression verification.
+
+Second migration batch: account verification, marketplace booking acknowledgment and
+support ticket emails use the outbox. Support recipients are submitted individually.
+Account verification deduplicates by generated link digest; booking by booking ID;
+support by ticket/comment or transition timestamp. Existing token validation is unchanged.
+Password reset, gallery and contract rotation, and employee invitations require a
+separate token lifecycle review before migration. Runtime tests remain outstanding.
