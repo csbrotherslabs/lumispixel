@@ -238,6 +238,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
+    "reconcile-transactional-email-outbox": {"task": "apps.notifications.tasks.reconcile_pending_transactional_emails", "schedule": 60.0},
     "reconcile-platform-automation-jobs": {"task": "apps.automation.tasks.reconcile_jobs", "schedule": 300.0},
     "scan-platform-automation-jobs": {"task": "apps.automation.tasks.scan_due_jobs", "schedule": 60.0},
     "reconcile-vector-purges": {"task": "apps.visual_search.tasks.reconcile_vector_purges", "schedule": 300.0},

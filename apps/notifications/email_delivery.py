@@ -114,12 +114,15 @@ def record_failure(delivery_id, exc):
     now = timezone.now()
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status == EmailDelivery.Status.SENT:
+        if delivery.status != EmailDelivery.Status.SENDING:
             return delivery
         terminal = kind == EmailDelivery.FailureKind.PERMANENT or delivery.attempt_count >= MAX_DELIVERY_ATTEMPTS
         delivery.failure_kind = kind
-        delivery.last_error = str(exc)[:2000]
-        if terminal:
+        delivery.last_error = type(exc).__name__[:2000]
+        if not isinstance(exc, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPResponseException)):
+            delivery.status = EmailDelivery.Status.UNCERTAIN
+            delivery.next_attempt_at = None
+        elif terminal:
             delivery.status = EmailDelivery.Status.DEAD
             delivery.dead_at = now
             delivery.next_attempt_at = None
@@ -133,28 +136,30 @@ def record_failure(delivery_id, exc):
 def deliver_email(delivery_id):
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status in (EmailDelivery.Status.SENT, EmailDelivery.Status.DEAD):
+        if delivery.status not in (EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY):
             return False
         if delivery.next_attempt_at and delivery.next_attempt_at > timezone.now():
             return False
+        delivery.status = EmailDelivery.Status.SENDING
         delivery.attempt_count += 1
         delivery.last_attempt_at = timezone.now()
         delivery.next_attempt_at = None
-        delivery.save(update_fields=("attempt_count", "last_attempt_at", "next_attempt_at"))
+        delivery.save(update_fields=("status", "attempt_count", "last_attempt_at", "next_attempt_at"))
 
-    recipients = normalize_recipients(delivery.recipients)
-    message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients))
-    if delivery.html_body:
-        message.attach_alternative(delivery.html_body, "text/html")
     try:
-        message.send(fail_silently=False)
+        recipients = normalize_recipients(delivery.recipients)
+        message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients))
+        if delivery.html_body:
+            message.attach_alternative(delivery.html_body, "text/html")
+        if message.send(fail_silently=False) != 1:
+            raise RuntimeError("Email acceptance not confirmed")
     except Exception as exc:
         record_failure(delivery_id, exc)
         raise
 
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status != EmailDelivery.Status.SENT:
+        if delivery.status in (EmailDelivery.Status.SENDING, EmailDelivery.Status.UNCERTAIN):
             delivery.status = EmailDelivery.Status.SENT
             delivery.sent_at = timezone.now()
             delivery.failure_kind = EmailDelivery.FailureKind.NONE

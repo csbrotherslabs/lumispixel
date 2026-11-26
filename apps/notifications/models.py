@@ -66,6 +66,8 @@ class EmailDelivery(models.Model):
         PENDING = "pending", "Pending"
         RETRY = "retry", "Retry scheduled"
         SENT = "sent", "Sent"
+        SENDING = "sending", "Sending"
+        UNCERTAIN = "uncertain", "Outcome uncertain"
         DEAD = "dead", "Dead letter"
         FAILED = "failed", "Failed"  # legacy terminal state
 

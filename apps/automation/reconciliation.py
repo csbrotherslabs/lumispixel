@@ -51,7 +51,14 @@ def reconcile():
     failed = jobs.filter(status=AutomationJob.Status.FAILED).count()
     overdue = active.filter(available_at__lt=timezone.now() - timedelta(minutes=15)).count()
     inconsistent = active.filter(attempts__gte=F("max_attempts")).count()
+    from apps.notifications.models import EmailDelivery
+    uncertain = EmailDelivery.objects.filter(status=EmailDelivery.Status.UNCERTAIN).count()
+    dead = EmailDelivery.objects.filter(status__in=[EmailDelivery.Status.DEAD, EmailDelivery.Status.FAILED]).count()
     checks = [
+        ("automation.email_uncertain", uncertain, "critical", "Email delivery outcome uncertain",
+         "Verify provider acceptance before any resend."),
+        ("automation.email_dead", dead, "critical", "Email deliveries exhausted or rejected",
+         "Investigate delivery failures before recovery."),
         ("automation.failed", failed, "critical", "Automation jobs exhausted retries",
          "Review failed jobs in the Automation Center."),
         ("automation.overdue", overdue, "warning", "Automation dispatch overdue",
@@ -62,4 +69,4 @@ def reconcile():
     for key, count, severity, title, detail in checks:
         sync_alert(key=key, count=count, severity=severity, title=title,
                    message=f"{count} affected jobs. {detail}")
-    return {"failed": failed, "overdue": overdue, "inconsistent": inconsistent}
+    return {"failed": failed, "overdue": overdue, "inconsistent": inconsistent, "email_uncertain": uncertain, "email_dead": dead}

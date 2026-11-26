@@ -32,3 +32,13 @@ the existing internal inbox on opening, reopening, or escalation. Healthy checks
 existing alerts. No financial or gallery domain records are repaired by this scanner.
 The 15-minute overdue threshold and five-minute cadence are initial operational defaults.
 A broker-wide outage prevents Celery-based monitoring; external uptime monitoring is needed.
+
+External delivery: reuse notifications.EmailDelivery as the email outbox. A committed
+SENDING claim excludes competing workers. Explicit SMTP rejection may be retried under
+the existing policy; ambiguous exceptions and stale claims become UNCERTAIN, never
+blindly retried. SENT means SMTP acceptance, not inbox delivery. Reconciliation scans
+pending emails every minute and alerts on uncertain/dead records. Provider verification
+and authorized resolution UI remain pending. SMTP cannot guarantee exactly-once delivery.
+Payment integrations must use provider idempotency keys and verified provider events;
+no payment adapter is introduced here. Existing direct-send paths still need migration.
+Deploy only after draining old email workers and applying the status migration.

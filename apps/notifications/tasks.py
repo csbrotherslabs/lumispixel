@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from celery import shared_task
 from django.utils import timezone
@@ -19,8 +20,8 @@ def deliver_transactional_email(self, delivery_id):
             # Keep the task boundary durable even when deliver_email is mocked or an
             # unexpected exception occurs before the delivery layer records failure.
             delivery = record_failure(delivery_id, exc)
-        if not delivery or delivery.status == EmailDelivery.Status.DEAD:
-            logger.error("Transactional email %s moved to dead letter: %s", delivery_id, exc)
+        if not delivery or delivery.status != EmailDelivery.Status.RETRY:
+            logger.error("Transactional email %s stopped automatic retries", delivery_id)
             return False
         countdown = max(1, int((delivery.next_attempt_at - timezone.now()).total_seconds())) if delivery.next_attempt_at else 60
         logger.warning("Transactional email %s transiently failed; retry in %ss", delivery_id, countdown)
@@ -30,6 +31,10 @@ def deliver_transactional_email(self, delivery_id):
 @shared_task
 def reconcile_pending_transactional_emails(limit=100):
     now = timezone.now()
+    from django.conf import settings
+    stale_before = now - timedelta(seconds=max(3600, settings.CELERY_TASK_TIME_LIMIT + 300))
+    EmailDelivery.objects.filter(status=EmailDelivery.Status.SENDING, last_attempt_at__lt=stale_before).update(
+        status=EmailDelivery.Status.UNCERTAIN, last_error="WorkerOutcomeUnknown", next_attempt_at=None)
     ids = list(
         EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
         .filter(next_attempt_at__isnull=True)
