@@ -42,3 +42,9 @@ and authorized resolution UI remain pending. SMTP cannot guarantee exactly-once 
 Payment integrations must use provider idempotency keys and verified provider events;
 no payment adapter is introduced here. Existing direct-send paths still need migration.
 Deploy only after draining old email workers and applying the status migration.
+
+Active superusers can record manually verified uncertain email outcomes in the Automation Center.
+Evidence is an operator-supplied provider reference, not automatic provider verification.
+Resolution is audited and never resends; confirmed non-acceptance remains terminal.
+Late worker completion cannot overwrite an operator resolution. Existing direct-send producers
+and provider correlation/verification still require integration.

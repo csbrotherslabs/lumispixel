@@ -159,7 +159,7 @@ def deliver_email(delivery_id):
 
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status in (EmailDelivery.Status.SENDING, EmailDelivery.Status.UNCERTAIN):
+        if delivery.status == EmailDelivery.Status.SENDING:
             delivery.status = EmailDelivery.Status.SENT
             delivery.sent_at = timezone.now()
             delivery.failure_kind = EmailDelivery.FailureKind.NONE
