@@ -20,3 +20,9 @@ def scan_due_jobs():
     for job_id in ids:
         execute_job.delay(job_id)
     return len(ids)
+
+
+@shared_task
+def reconcile_jobs():
+    from .reconciliation import reconcile
+    return reconcile()

@@ -1,0 +1,65 @@
+"""Reconcile durable job state into the existing internal alert system."""
+from datetime import timedelta
+
+from django.db import transaction
+from django.db.models import F
+from django.utils import timezone
+
+from apps.internal_ops.models import SystemAlert
+from apps.internal_ops.system_monitoring import _notify_alert
+from .models import AutomationJob
+
+
+@transaction.atomic
+def sync_alert(*, key, count, severity, title, message):
+    # get_or_create plus row lock serializes competing scans and notifications.
+    alert, created = SystemAlert.objects.select_for_update().get_or_create(
+        key=key, defaults={"component": "Automation", "severity": severity,
+                           "title": title, "message": message,
+                           "status": SystemAlert.Status.RESOLVED},
+    )
+    if not count:
+        if created:
+            alert.delete()
+        elif alert.status != SystemAlert.Status.RESOLVED:
+            alert.status = SystemAlert.Status.RESOLVED
+            alert.resolved_at = timezone.now()
+            alert.resolved_by = None
+            alert.save(update_fields=["status", "resolved_at", "resolved_by", "last_seen_at"])
+        return
+    notify = created or alert.status == SystemAlert.Status.RESOLVED or (
+        alert.severity != SystemAlert.Severity.CRITICAL and severity == SystemAlert.Severity.CRITICAL
+    )
+    if notify:
+        alert.status = SystemAlert.Status.OPEN
+        alert.acknowledged_at = None
+        alert.acknowledged_by = None
+    alert.severity = severity
+    alert.title = title
+    alert.message = message
+    alert.metadata = {"job_count": count}
+    alert.resolved_at = None
+    alert.resolved_by = None
+    alert.save()
+    if notify:
+        _notify_alert(alert, ["engineering"])
+
+
+def reconcile():
+    jobs = AutomationJob.objects.all()
+    active = jobs.filter(status__in=[AutomationJob.Status.PENDING, AutomationJob.Status.RETRY])
+    failed = jobs.filter(status=AutomationJob.Status.FAILED).count()
+    overdue = active.filter(available_at__lt=timezone.now() - timedelta(minutes=15)).count()
+    inconsistent = active.filter(attempts__gte=F("max_attempts")).count()
+    checks = [
+        ("automation.failed", failed, "critical", "Automation jobs exhausted retries",
+         "Review failed jobs in the Automation Center."),
+        ("automation.overdue", overdue, "warning", "Automation dispatch overdue",
+         "Jobs have been eligible for execution for more than 15 minutes. Check worker capacity and routing."),
+        ("automation.inconsistent", inconsistent, "critical", "Automation retry state inconsistent",
+         "Active jobs have exhausted their attempt allowance. Investigate before changing state."),
+    ]
+    for key, count, severity, title, detail in checks:
+        sync_alert(key=key, count=count, severity=severity, title=title,
+                   message=f"{count} affected jobs. {detail}")
+    return {"failed": failed, "overdue": overdue, "inconsistent": inconsistent}

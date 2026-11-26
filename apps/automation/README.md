@@ -24,3 +24,11 @@ Operational controls: /internal/automation/ is initially restricted to active su
 Failed jobs can be retried with a mandatory reason and an atomic InternalAuditEvent.
 Attempt numbers remain monotonic. Metrics are all-time job counts, not attempt success rates.
 Overdue means eligible for dispatch for more than 15 minutes. Alerts and drill-down remain pending.
+
+Reconciliation scans every five minutes on the default queue, independently of the dedicated
+execution queue. It also runs during manual System Monitor checks. Aggregate alerts use
+stable keys and notify engineering (and executive recipients for critical alerts) through
+the existing internal inbox on opening, reopening, or escalation. Healthy checks resolve
+existing alerts. No financial or gallery domain records are repaired by this scanner.
+The 15-minute overdue threshold and five-minute cadence are initial operational defaults.
+A broker-wide outage prevents Celery-based monitoring; external uptime monitoring is needed.

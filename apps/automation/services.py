@@ -29,6 +29,12 @@ def execute(job_id):
     job = AutomationJob.objects.select_for_update().get(pk=job_id)
     if job.status not in (AutomationJob.Status.PENDING, AutomationJob.Status.RETRY) or job.available_at > timezone.now():
         return job.status
+    if job.attempts >= job.max_attempts:
+        job.status = AutomationJob.Status.FAILED
+        job.error_code = "RetryBudgetExhausted"
+        job.finished_at = timezone.now()
+        job.save(update_fields=["status", "error_code", "finished_at"])
+        return job.status
     started = timezone.now()
     job.attempts += 1
     try:
