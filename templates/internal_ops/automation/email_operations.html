@@ -14,6 +14,7 @@
 <article><span>Provider failure evidence</span><strong>{{ metrics.provider_failure }}</strong><a href="?days={{ days }}&amp;status=provider_failure">View records</a></article>
 <article><span>Complaints</span><strong>{{ metrics.complaint }}</strong><a href="?days={{ days }}&amp;status=complaint">View records</a></article>
 <article><span>Pending / sending / retry</span><strong>{{ metrics.pending }} / {{ metrics.sending }} / {{ metrics.retry }}</strong></article>
+<article><span>Cancelled / expired</span><strong>{{ metrics.cancelled }} / {{ metrics.expired }}</strong></article>
 <article><span>Uncertain / terminal</span><strong>{{ metrics.uncertain }} / {{ metrics.dead }}</strong></article>
 </section>
 <p>Coverage is the share of queued records with at least one confirmed recipient delivery, not a recipient-level delivery rate. Missing webhook evidence is not proof of failure.</p>

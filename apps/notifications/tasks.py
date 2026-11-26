@@ -35,6 +35,9 @@ def reconcile_pending_transactional_emails(limit=100):
     stale_before = now - timedelta(seconds=max(3600, settings.CELERY_TASK_TIME_LIMIT + 300))
     EmailDelivery.objects.filter(status=EmailDelivery.Status.SENDING, last_attempt_at__lt=stale_before).update(
         status=EmailDelivery.Status.UNCERTAIN, last_error="WorkerOutcomeUnknown", next_attempt_at=None)
+    from .lifecycle import purge_sensitive_payloads
+    EmailDelivery.objects.filter(status__in=[EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY], expires_at__lte=now).update(status=EmailDelivery.Status.EXPIRED, last_error="ExpiredBeforeDispatch", next_attempt_at=None)
+    purge_sensitive_payloads()
     ids = list(
         EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
         .filter(next_attempt_at__isnull=True)

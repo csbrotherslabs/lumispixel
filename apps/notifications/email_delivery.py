@@ -85,7 +85,11 @@ def classify_delivery_exception(exc):
     return EmailDelivery.FailureKind.UNKNOWN
 
 
-def queue_transactional_email(*, event_key, subject, plain_body, html_body="", recipients=()):
+def queue_transactional_email(*, event_key, subject, plain_body, html_body="", recipients=(), expires_at=None, lifecycle_kind="", lifecycle_context=None, sensitive=False):
+    if sensitive and (not expires_at or not lifecycle_kind):
+        raise ValueError("Sensitive email requires expiry and lifecycle guard")
+    if expires_at and (timezone.is_naive(expires_at) or expires_at <= timezone.now()):
+        raise ValueError("Email expiry must be a future aware timestamp")
     recipients = normalize_recipients(recipients)
     if not recipients:
         return None
@@ -95,7 +99,7 @@ def queue_transactional_email(*, event_key, subject, plain_body, html_body="", r
     key = delivery_key(event_key=event_key, recipients=recipients)
     delivery, _ = EmailDelivery.objects.get_or_create(
         idempotency_key=key,
-        defaults={"event_key": event_key, "subject": subject, "plain_body": plain_body, "html_body": html_body, "recipients": list(recipients)},
+        defaults={"event_key": event_key, "subject": subject, "plain_body": plain_body, "html_body": html_body, "recipients": list(recipients), "expires_at": expires_at, "lifecycle_kind": lifecycle_kind, "lifecycle_context": lifecycle_context or {}, "sensitive": sensitive},
     )
 
     def dispatch():
@@ -139,6 +143,9 @@ def deliver_email(delivery_id):
         if delivery.status not in (EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY):
             return False
         if delivery.next_attempt_at and delivery.next_attempt_at > timezone.now():
+            return False
+        from .lifecycle import check_before_claim
+        if not check_before_claim(delivery, timezone.now()):
             return False
         delivery.status = EmailDelivery.Status.SENDING
         delivery.attempt_count += 1

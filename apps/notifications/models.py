@@ -68,6 +68,8 @@ class EmailDelivery(models.Model):
         SENT = "sent", "Sent"
         SENDING = "sending", "Sending"
         UNCERTAIN = "uncertain", "Outcome uncertain"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
         DEAD = "dead", "Dead letter"
         FAILED = "failed", "Failed"  # legacy terminal state
 
@@ -84,6 +86,11 @@ class EmailDelivery(models.Model):
     html_body = models.TextField(blank=True)
     recipients = models.JSONField(default=list)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    lifecycle_kind = models.CharField(max_length=64, blank=True, default="")
+    lifecycle_context = models.JSONField(default=dict, blank=True)
+    sensitive = models.BooleanField(default=False)
+    payload_purged_at = models.DateTimeField(null=True, blank=True)
     attempt_count = models.PositiveSmallIntegerField(default=0)
     failure_kind = models.CharField(max_length=12, choices=FailureKind.choices, blank=True, default="")
     last_error = models.TextField(blank=True)

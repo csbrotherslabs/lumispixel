@@ -170,12 +170,18 @@ def send_verification_email(request, user):
     html_body = render_to_string("accounts/email/verify_email.html", context)
 
     from hashlib import sha256
+    from datetime import timedelta
+    from django.utils.crypto import salted_hmac
+    from django.utils import timezone
+    state = salted_hmac("email-lifecycle-account", str(user.pk) + "|" + user.email + "|" + str(user.password) + "|" + str(getattr(user, "email_verified_at", ""))).hexdigest()
     from apps.notifications.email_delivery import queue_transactional_email
     from django.core.exceptions import ValidationError
     try:
         delivery = queue_transactional_email(
             event_key=f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}",
-            subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email])
+            subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email],
+            sensitive=True, expires_at=timezone.now()+timedelta(seconds=settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS),
+            lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})
     except (ValueError, ValidationError) as exc:
         raise EmailDeliveryError("Verification email could not be queued.") from exc
     if not delivery:

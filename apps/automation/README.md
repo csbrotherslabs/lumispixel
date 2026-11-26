@@ -79,3 +79,12 @@ Account verification deduplicates by generated link digest; booking by booking I
 support by ticket/comment or transition timestamp. Existing token validation is unchanged.
 Password reset, gallery and contract rotation, and employee invitations require a
 separate token lifecycle review before migration. Runtime tests remain outstanding.
+
+Secure email lifecycle foundation: optional expiry, explicit domain guard, queued-only
+cancellation, terminal sensitive body purge, dashboard cancellation/expiry counts.
+Account verification is the first guarded producer. Unknown guard kinds fail closed.
+Domain callers must authorize cancellation; external submissions cannot be recalled.
+Pre-claim checks do not eliminate the race with subsequent domain revocation; links
+must still be validated at redemption. Sensitive payloads remain plaintext until
+terminal purge; encryption, uncertain payload retention, supersession and gallery
+replacement activation are pending. Legacy queued emails are not retroactively guarded.

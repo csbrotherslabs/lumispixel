@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         count = 0
-        for delivery in EmailDelivery.objects.filter(pk__in=options["ids"], status=EmailDelivery.Status.DEAD):
+        for delivery in EmailDelivery.objects.filter(pk__in=options["ids"], status=EmailDelivery.Status.DEAD, sensitive=False, payload_purged_at__isnull=True):
             delivery.status = EmailDelivery.Status.PENDING
             delivery.attempt_count = 0
             delivery.failure_kind = EmailDelivery.FailureKind.NONE

@@ -8,7 +8,7 @@ from apps.notifications.models import BrevoEmailEvent, EmailDelivery
 
 PERIODS = (1, 7, 30, 90)
 FAILURE_EVENTS = ("hard_bounce", "soft_bounce", "blocked", "invalid_email", "error")
-FILTERS = ("all", "accepted", "delivered", "deferred", "provider_failure", "complaint", "pending", "sending", "retry", "uncertain", "dead")
+FILTERS = ("all", "accepted", "delivered", "deferred", "provider_failure", "complaint", "pending", "sending", "retry", "uncertain", "dead", "cancelled", "expired")
 
 
 def delivery_rows(days, now=None):
@@ -33,7 +33,7 @@ def filtered_rows(rows, status):
     }
     if status in predicates:
         return rows.filter(predicates[status])
-    if status in ("pending", "sending", "retry", "uncertain"):
+    if status in ("pending", "sending", "retry", "uncertain", "cancelled", "expired"):
         return rows.filter(status=status)
     return rows
 
@@ -42,6 +42,8 @@ def email_snapshot(days, now=None):
     now = now or timezone.now()
     rows = delivery_rows(days, now)
     counts = rows.aggregate(
+        cancelled=Count("pk", filter=Q(status="cancelled")),
+        expired=Count("pk", filter=Q(status="expired")),
         total=Count("pk"),
         accepted=Count("pk", filter=Q(status="sent")),
         delivered=Count("pk", filter=Q(has_delivery=True)),
