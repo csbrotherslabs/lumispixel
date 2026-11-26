@@ -19,3 +19,8 @@ Dedicated routing uses the existing CELERY_DEDICATED_QUEUES_ENABLED flag. When e
 provision a worker consuming automation before deployment; keep media/visual workers separate.
 When disabled jobs use the existing default queue. Verify migrations, PostgreSQL concurrency,
 broker recovery, and tenant-scoped handlers before enabling business producers.
+
+Operational controls: /internal/automation/ is initially restricted to active superusers.
+Failed jobs can be retried with a mandatory reason and an atomic InternalAuditEvent.
+Attempt numbers remain monotonic. Metrics are all-time job counts, not attempt success rates.
+Overdue means eligible for dispatch for more than 15 minutes. Alerts and drill-down remain pending.

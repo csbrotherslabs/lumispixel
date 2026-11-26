@@ -57,6 +57,6 @@ def dashboard(request):
         "department_cards": department_cards,
         "recent_activity": InternalAuditEvent.objects.select_related("actor__user")[:8],
         "activity_today": InternalAuditEvent.objects.filter(created_at__date=today).count(),
-        "modules": COMMAND_CENTER_MODULES,
+        "modules": COMMAND_CENTER_MODULES + ([{"name": "Automation Center", "icon": "bi-gear", "description": "Platform job monitoring and recovery.", "group": "Governance", "url_name": "internal_ops:automation_center"}] if request.user.is_superuser else []),
     }
     return render(request, "internal_ops/dashboard.html", context)
