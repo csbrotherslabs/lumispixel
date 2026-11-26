@@ -11,6 +11,8 @@ from django.utils import timezone
 
 from apps.clients.models import Client, ClientInvoice, ClientSession, InvoiceActivity, InvoiceLineItem, InvoicePaymentSchedule
 
+from apps.clients.payment_terms import SUPPORTED_CURRENCIES
+
 CENT = Decimal("0.01")
 ZERO = Decimal("0.00")
 
@@ -128,7 +130,10 @@ def save_invoice(profile, post, invoice=None, send=False):
     invoice = invoice or ClientInvoice(photographer=profile, invoice_number=next_invoice_number(profile))
     invoice.client, invoice.booking = client, booking
     invoice.issue_date, invoice.due_date, invoice.payment_terms = issue_date, due_date, terms
-    invoice.currency = post.get("currency", "USD") if post.get("currency") in {"USD", "CAD", "EUR", "GBP", "AUD"} else "USD"
+    currency = post.get("currency") or "USD"
+    if currency not in SUPPORTED_CURRENCIES:
+        raise ValidationError({"currency": "Select a supported currency."})
+    invoice.currency = currency
     invoice.subtotal, invoice.discount_total, invoice.tax_total, invoice.total = subtotal, discounts, taxes, total
     invoice.client_notes, invoice.internal_notes, invoice.terms = post.get("client_notes", ""), post.get("internal_notes", ""), post.get("terms", "")
     invoice.delivery_email, invoice.reminders_enabled = post.get("delivery_email") == "on", post.get("reminders_enabled") == "on"

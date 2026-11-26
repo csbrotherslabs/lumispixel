@@ -2,6 +2,9 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
 from django.core.exceptions import ValidationError
 
+SUPPORTED_CURRENCIES = frozenset({"USD", "CAD", "GBP", "EUR", "AUD", "NZD", "CHF", "GHS", "NGN", "ZAR", "INR", "AED"})
+
+
 def parse_payment_terms(data, currency):
     def amount(raw):
         value = Decimal(raw)
@@ -9,7 +12,7 @@ def parse_payment_terms(data, currency):
             raise ValueError
         return value
     currency = data.get("payment_currency") or currency
-    if currency not in {"USD", "CAD", "GBP", "EUR", "AUD", "NZD", "CHF", "GHS", "NGN", "ZAR", "INR", "AED"}:
+    if currency not in SUPPORTED_CURRENCIES:
         raise ValidationError("Select a supported currency.")
     try:
         total = amount(data.get("price", ""))
@@ -59,7 +62,7 @@ def payment_snapshot(booking):
             "deposit_due": str(booking.deposit_due_date or ""), "balance_due": str(booking.balance_due_date or "")}
 
 def validate_saved_payment_terms(booking):
-    if not booking.pricing_confirmed or not booking.payment_currency:
+    if not booking.pricing_confirmed or booking.payment_currency not in SUPPORTED_CURRENCIES:
         raise ValidationError("Save agreed pricing and payment terms before signing.")
     total, deposit = booking.booking_value, booking.deposit_amount
     if total < 0 or deposit < 0 or deposit > total or (deposit and not booking.deposit_due_date) or (total > deposit and not booking.balance_due_date):
