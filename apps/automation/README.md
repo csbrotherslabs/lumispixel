@@ -58,3 +58,10 @@ Bounce/deferred/complaint evidence is stored separately; no automatic resend. Un
 events are retained for investigation; delivery metrics and retention policy are pending.
 Do not subscribe to open/click tracking for this initial rollout. Configure TLS and
 request body limit at the reverse proxy; never log authorization headers.
+
+Email Operations (/internal/automation/email/operations/) is a superuser-only read-only
+report. Rolling 1/7/30/90-day outbox cohorts show current status and any-recipient
+provider evidence; event counts use received_at instead. All-time exception backlog
+remains visible regardless of period. Evidence categories overlap; coverage is not a
+recipient-level delivery rate. No raw email bodies, addresses or provider IDs are shown.
+Rejected/duplicate webhook request telemetry and producer attribution remain future work.

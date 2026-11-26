@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .automation_views import automation_center, automation_retry, email_exceptions, email_resolve
+from .automation_views import automation_center, automation_retry, email_exceptions, email_resolve, email_operations
 from .customer_views import customer_detail, customer_list
 from .employee_views import employee_create, employee_detail, employee_edit, employee_list, employee_resend_invitation
 from .governance_views import approval_create, approval_detail, approval_list, audit_event_detail, audit_export_csv, audit_trail
@@ -12,6 +12,7 @@ from .ticket_views import ticket_detail, ticket_list
 app_name = "internal_ops"
 
 urlpatterns = [
+    path('automation/email/operations/', email_operations, name='email_operations'),
     path('automation/email/', email_exceptions, name='email_exceptions'),
     path('automation/email/<int:delivery_id>/resolve/', email_resolve, name='email_resolve'),
     path("automation/", automation_center, name="automation_center"),

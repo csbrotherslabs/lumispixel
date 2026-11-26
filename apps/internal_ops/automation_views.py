@@ -70,3 +70,33 @@ def email_resolve(request, delivery_id):
     else:
         messages.success(request, "Verified outcome recorded. No email was sent.")
     return redirect("internal_ops:email_exceptions")
+
+
+@internal_employee_required
+@require_GET
+def email_operations(request):
+    if not request.user.is_superuser or not request.user.is_active:
+        raise PermissionDenied
+    from datetime import timedelta
+    from django.utils import timezone
+    from apps.automation.email_monitoring import PERIODS, FILTERS, delivery_rows, filtered_rows, email_snapshot
+    from apps.notifications.models import BrevoEmailEvent
+    try:
+        days = int(request.GET.get("days", 7))
+    except (TypeError, ValueError):
+        days = 7
+    if days not in PERIODS:
+        days = 7
+    status = request.GET.get("status", "all")
+    if status not in FILTERS:
+        status = "all"
+    now = timezone.now()
+    metrics, events, event_types, backlog = email_snapshot(days, now)
+    rows = filtered_rows(delivery_rows(days, now), status).order_by("-created_at", "-pk")
+    return render(request, "internal_ops/automation/email_operations.html", {
+        "employee": request.employee_profile, "is_internal_superuser": True,
+        "days": days, "periods": PERIODS, "selected_status": status, "filters": FILTERS,
+        "metrics": metrics, "events": events, "event_types": event_types, "backlog": backlog,
+        "deliveries": Paginator(rows, 50).get_page(request.GET.get("page")),
+        "recent_events": BrevoEmailEvent.objects.filter(received_at__gte=now-timedelta(days=days), received_at__lte=now).order_by("-received_at", "-pk")[:25],
+    })
