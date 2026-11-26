@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
-    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
+    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.automation.apps.AutomationConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
     "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
 # Semantic discovery is independently approved and always opt-in per gallery.
@@ -209,6 +209,7 @@ if not DEBUG:
 CELERY_DEDICATED_QUEUES_ENABLED = env_bool("CELERY_DEDICATED_QUEUES_ENABLED", False)
 CELERY_TASK_DEFAULT_QUEUE = "celery"
 CELERY_TASK_ROUTES = {
+    "apps.automation.tasks.*": {"queue": "automation"},
     "apps.galleries.tasks.generate_gallery_photo_derivatives": {"queue": "media"},
     "apps.galleries.tasks.generate_gallery_cover_derivatives": {"queue": "media"},
     "apps.visual_search.tasks.process_face_index_job": {"queue": "visual_index"},
@@ -236,6 +237,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
+    "scan-platform-automation-jobs": {"task": "apps.automation.tasks.scan_due_jobs", "schedule": 60.0},
     "reconcile-vector-purges": {"task": "apps.visual_search.tasks.reconcile_vector_purges", "schedule": 300.0},
     "reconcile-face-index": {"task": "apps.visual_search.tasks.reconcile_face_index", "schedule": 3600.0},
     "scan-inbox-notification-reminders": {"task": "apps.notifications.tasks.scan_notification_reminders", "schedule": 3600.0},
