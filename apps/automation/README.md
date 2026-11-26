@@ -48,3 +48,13 @@ Evidence is an operator-supplied provider reference, not automatic provider veri
 Resolution is audited and never resends; confirmed non-acceptance remains terminal.
 Late worker completion cannot overwrite an operator resolution. Existing direct-send producers
 and provider correlation/verification still require integration.
+
+Brevo callback: POST /api/webhooks/brevo/transactional/ with Authorization: Bearer
+matching BREVO_WEBHOOK_TOKEN. Empty configuration disables the receiver. SMTP messages
+carry X-Mailin-custom lp:<outbox key>; test actual Brevo echo before rollout. Events
+are deduplicated by message, recipient hash, event and timestamp (not webhook ID).
+Only request/delivered evidence for every expected recipient resolves uncertain acceptance.
+Bounce/deferred/complaint evidence is stored separately; no automatic resend. Unmatched
+events are retained for investigation; delivery metrics and retention policy are pending.
+Do not subscribe to open/click tracking for this initial rollout. Configure TLS and
+request body limit at the reverse proxy; never log authorization headers.

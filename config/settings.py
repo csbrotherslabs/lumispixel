@@ -179,6 +179,7 @@ SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(14 * 24 * 60
 SESSION_SAVE_EVERY_REQUEST = False
 LOGOUT_REDIRECT_URL = "core:index"
 
+BREVO_WEBHOOK_TOKEN = os.getenv("BREVO_WEBHOOK_TOKEN", "")
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "email-smtp.us-east-1.amazonaws.com")
 EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", "587"))

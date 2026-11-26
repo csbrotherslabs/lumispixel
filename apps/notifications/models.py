@@ -99,3 +99,14 @@ class EmailDelivery(models.Model):
             models.Index(fields=("status", "created_at"), name="email_delivery_queue"),
             models.Index(fields=("status", "next_attempt_at"), name="email_delivery_retry"),
         ]
+
+
+class BrevoEmailEvent(models.Model):
+    """Minimal provider evidence; no message body, subject, link or recipient plaintext."""
+    fingerprint = models.CharField(max_length=64, unique=True)
+    delivery = models.ForeignKey(EmailDelivery, null=True, on_delete=models.SET_NULL, related_name="brevo_events")
+    event = models.CharField(max_length=32, db_index=True)
+    provider_message_id = models.CharField(max_length=255)
+    recipient_hash = models.CharField(max_length=64)
+    occurred_at = models.PositiveBigIntegerField()
+    received_at = models.DateTimeField(auto_now_add=True)

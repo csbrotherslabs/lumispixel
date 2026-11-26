@@ -148,7 +148,7 @@ def deliver_email(delivery_id):
 
     try:
         recipients = normalize_recipients(delivery.recipients)
-        message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients))
+        message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients), headers={"X-Mailin-custom": f"lp:{delivery.idempotency_key}"})
         if delivery.html_body:
             message.attach_alternative(delivery.html_body, "text/html")
         if message.send(fail_silently=False) != 1:
