@@ -188,5 +188,12 @@ def check_before_claim(delivery, now):
 def purge_sensitive_payloads(limit=200):
     """Keep correlation and audit metadata; erase terminal sensitive message bodies."""
     now = timezone.now()
-    ids = list(EmailDelivery.objects.filter(models.Q(status__in=TERMINAL) | models.Q(status=EmailDelivery.Status.UNCERTAIN, expires_at__lte=now)), sensitive=True, payload_purged_at__isnull=True).order_by("pk").values_list("pk", flat=True)[:limit])
+    ids = list(
+        EmailDelivery.objects.filter(
+            models.Q(status__in=TERMINAL)
+            | models.Q(status=EmailDelivery.Status.UNCERTAIN, expires_at__lte=now),
+            sensitive=True,
+            payload_purged_at__isnull=True,
+        ).order_by("pk").values_list("pk", flat=True)[:limit]
+    )
     return EmailDelivery.objects.filter(models.Q(status__in=TERMINAL) | models.Q(status=EmailDelivery.Status.UNCERTAIN, expires_at__lte=now), pk__in=ids, sensitive=True, payload_purged_at__isnull=True).update(encrypted_payload='', plain_body="", html_body="", subject="[redacted]", lifecycle_context={}, payload_purged_at=now)
