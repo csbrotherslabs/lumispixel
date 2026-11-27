@@ -107,3 +107,11 @@ GETs and provider acceptance alone do not retire older links. Explicit manual li
 rotation remains unchanged. Public anonymous galleries retain overlapping links until
 expiry or explicit revocation. Superseded unsent tokens are not individually revoked;
 normal redemption permissions still apply. Contract replacement remains pending.
+
+Password recovery uses DurablePasswordResetForm with Django's existing user selection,
+token generator, confirmation view and rate limiter. Reset email links use PUBLIC_BASE_URL.
+Dispatch expiry derives from the original token timestamp and PASSWORD_RESET_TIMEOUT;
+state guard covers Django token mutable inputs. Supersession cancels queued messages,
+not already delivered Django tokens. Queue failures retain generic public response and
+log a sanitized error; no persistent failure row exists if enqueue itself fails.
+Django private token hash helper is a compatibility dependency. Tests not run.

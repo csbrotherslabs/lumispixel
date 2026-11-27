@@ -33,6 +33,16 @@ def eligible(delivery):
             and not GalleryPermission.objects.filter(gallery=gallery, view_gallery=False).exists()
             and [email.casefold() for email in delivery.recipients] == [invitation.email.casefold()]
         )
+    if delivery.lifecycle_kind == "account.password_reset":
+        from django.contrib.auth import get_user_model
+        from django.utils.crypto import constant_time_compare
+        from apps.accounts.recovery import password_reset_state
+        user = get_user_model().objects.filter(pk=delivery.lifecycle_context.get("user_id"), is_active=True).first()
+        if not user or not user.has_usable_password():
+            return False
+        email = getattr(user, user.get_email_field_name(), "")
+        return bool(email and [value.casefold() for value in delivery.recipients] == [email.casefold()]
+            and constant_time_compare(password_reset_state(user), delivery.lifecycle_context.get("state", "")))
     if delivery.lifecycle_kind == "account.verify":
         from django.contrib.auth import get_user_model
         user = get_user_model().objects.filter(pk=delivery.lifecycle_context.get("user_id"), is_active=True).first()
