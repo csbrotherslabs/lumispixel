@@ -90,6 +90,8 @@ class EmailDelivery(models.Model):
     lifecycle_kind = models.CharField(max_length=64, blank=True, default="")
     lifecycle_context = models.JSONField(default=dict, blank=True)
     sensitive = models.BooleanField(default=False)
+    encrypted_payload = models.TextField(blank=True, default='')
+    supersession_scope = models.CharField(max_length=64, blank=True, default='', db_index=True)
     payload_purged_at = models.DateTimeField(null=True, blank=True)
     attempt_count = models.PositiveSmallIntegerField(default=0)
     failure_kind = models.CharField(max_length=12, choices=FailureKind.choices, blank=True, default="")
@@ -117,3 +119,8 @@ class BrevoEmailEvent(models.Model):
     recipient_hash = models.CharField(max_length=64)
     occurred_at = models.PositiveBigIntegerField()
     received_at = models.DateTimeField(auto_now_add=True)
+
+
+class EmailSupersession(models.Model):
+    scope = models.CharField(max_length=64, primary_key=True)
+    current = models.ForeignKey(EmailDelivery, null=True, on_delete=models.SET_NULL)

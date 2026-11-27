@@ -276,3 +276,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# Comma-separated Fernet keys, newest first. No fallback to Django SECRET_KEY.
+EMAIL_PAYLOAD_KEYS = os.getenv('EMAIL_PAYLOAD_KEYS', '')

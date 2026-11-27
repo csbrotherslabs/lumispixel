@@ -4,7 +4,7 @@ from smtplib import SMTPException
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core import mail
+from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -30,7 +30,7 @@ class EmailDeliveryError(Exception):
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
-        return f"{user.pk}{user.password}{user.email_verified}{user.email_verified_at}{timestamp}"
+        return f"{user.pk}{user.password}{user.email}{user.email_verified}{user.email_verified_at}{timestamp}"
 
     def check_token(self, user, token):
         """Validate verification tokens with their own bounded lifetime.
@@ -181,8 +181,8 @@ def send_verification_email(request, user):
             event_key=f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}",
             subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email],
             sensitive=True, expires_at=timezone.now()+timedelta(seconds=settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS),
-            lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})
-    except (ValueError, ValidationError) as exc:
+            supersession_scope=f"account.verify:{user.pk}", lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})
+    except (ValueError, ValidationError, ImproperlyConfigured) as exc:
         raise EmailDeliveryError("Verification email could not be queued.") from exc
     if not delivery:
         raise EmailDeliveryError("Verification email could not be queued.")

@@ -88,3 +88,14 @@ Pre-claim checks do not eliminate the race with subsequent domain revocation; li
 must still be validated at redemption. Sensitive payloads remain plaintext until
 terminal purge; encryption, uncertain payload retention, supersession and gallery
 replacement activation are pending. Legacy queued emails are not retroactively guarded.
+
+Sensitive payload encryption: provision EMAIL_PAYLOAD_KEYS (comma-separated Fernet keys,
+newest first) in web and worker environments before enabling. Retain old keys until
+all corresponding ciphertext is purged; no automatic re-encryption yet. Recipient
+addresses and lifecycle metadata remain plaintext. Supersession is scoped by a
+server-generated domain identity; only newly created events advance the pointer.
+Already claimed messages cannot be recalled; supersession is not token revocation.
+Migration 0008 irreversibly redacts previously flagged sensitive payloads and cancels
+queued ones; drain workers first and arrange fresh links if needed. Existing unflagged
+legacy messages are not covered. Account verification tokens now bind email address,
+invalidating previously issued verification links. Tests not executed.

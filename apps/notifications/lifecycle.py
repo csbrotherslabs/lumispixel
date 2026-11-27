@@ -1,5 +1,5 @@
 """Lifecycle checks for queued email; never claim recall of an external submission."""
-from django.db import transaction
+from django.db import transaction, models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
@@ -17,9 +17,8 @@ def eligible(delivery):
     if delivery.lifecycle_kind == "account.verify":
         from django.contrib.auth import get_user_model
         user = get_user_model().objects.filter(pk=delivery.lifecycle_context.get("user_id"), is_active=True).first()
-        if not user:
+        if not user or user.email_verified:
             return False
-        from apps.accounts.services import email_verification_token
         # Token is in the existing payload, never duplicated in lifecycle metadata.
         from django.utils.crypto import salted_hmac
         state = salted_hmac("email-lifecycle-account", str(user.pk) + "|" + user.email + "|" + str(user.password) + "|" + str(getattr(user, "email_verified_at", ""))).hexdigest()
@@ -48,6 +47,10 @@ def check_before_claim(delivery, now):
     if delivery.expires_at and delivery.expires_at <= now:
         stop_locked(delivery, EmailDelivery.Status.EXPIRED, "ExpiredBeforeDispatch")
         return False
+    from .models import EmailSupersession
+    if delivery.supersession_scope and not EmailSupersession.objects.filter(scope=delivery.supersession_scope, current_id=delivery.pk).exists():
+        stop_locked(delivery, EmailDelivery.Status.CANCELLED, 'Superseded')
+        return False
     if delivery.payload_purged_at or not eligible(delivery):
         stop_locked(delivery, EmailDelivery.Status.CANCELLED, "NoLongerEligible")
         return False
@@ -57,7 +60,5 @@ def check_before_claim(delivery, now):
 def purge_sensitive_payloads(limit=200):
     """Keep correlation and audit metadata; erase terminal sensitive message bodies."""
     now = timezone.now()
-    ids = list(EmailDelivery.objects.filter(sensitive=True, payload_purged_at__isnull=True,
-        status__in=TERMINAL).order_by("pk").values_list("pk", flat=True)[:limit])
-    return EmailDelivery.objects.filter(pk__in=ids, sensitive=True, payload_purged_at__isnull=True,
-        status__in=TERMINAL).update(plain_body="", html_body="", subject="[redacted]", lifecycle_context={}, payload_purged_at=now)
+    ids = list(EmailDelivery.objects.filter(models.Q(status__in=TERMINAL) | models.Q(status=EmailDelivery.Status.UNCERTAIN, expires_at__lte=now)), sensitive=True, payload_purged_at__isnull=True).order_by("pk").values_list("pk", flat=True)[:limit])
+    return EmailDelivery.objects.filter(models.Q(status__in=TERMINAL) | models.Q(status=EmailDelivery.Status.UNCERTAIN, expires_at__lte=now), pk__in=ids, sensitive=True, payload_purged_at__isnull=True).update(encrypted_payload='', plain_body="", html_body="", subject="[redacted]", lifecycle_context={}, payload_purged_at=now)

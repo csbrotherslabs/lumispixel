@@ -85,7 +85,8 @@ def classify_delivery_exception(exc):
     return EmailDelivery.FailureKind.UNKNOWN
 
 
-def queue_transactional_email(*, event_key, subject, plain_body, html_body="", recipients=(), expires_at=None, lifecycle_kind="", lifecycle_context=None, sensitive=False):
+@transaction.atomic
+def queue_transactional_email(*, event_key, subject, plain_body, html_body="", recipients=(), expires_at=None, lifecycle_kind="", lifecycle_context=None, sensitive=False, supersession_scope=''):
     if sensitive and (not expires_at or not lifecycle_kind):
         raise ValueError("Sensitive email requires expiry and lifecycle guard")
     if expires_at and (timezone.is_naive(expires_at) or expires_at <= timezone.now()):
@@ -97,10 +98,24 @@ def queue_transactional_email(*, event_key, subject, plain_body, html_body="", r
     if "\r" in subject or "\n" in subject:
         raise ValueError("Invalid email subject")
     key = delivery_key(event_key=event_key, recipients=recipients)
-    delivery, _ = EmailDelivery.objects.get_or_create(
+    from .models import EmailSupersession
+    from .payload_crypto import encrypt_payload
+    scope = hashlib.sha256(supersession_scope.encode()).hexdigest() if supersession_scope else ''
+    pointer = None
+    if scope:
+        pointer, _ = EmailSupersession.objects.select_for_update().get_or_create(scope=scope)
+    encrypted = encrypt_payload(key, subject, plain_body, html_body) if sensitive else ''
+    delivery, created = EmailDelivery.objects.get_or_create(
         idempotency_key=key,
-        defaults={"event_key": event_key, "subject": subject, "plain_body": plain_body, "html_body": html_body, "recipients": list(recipients), "expires_at": expires_at, "lifecycle_kind": lifecycle_kind, "lifecycle_context": lifecycle_context or {}, "sensitive": sensitive},
+        defaults={"event_key": event_key, "subject": "[encrypted]" if sensitive else subject, "plain_body": "" if sensitive else plain_body, "html_body": "" if sensitive else html_body, "encrypted_payload": encrypted, "supersession_scope": scope, "recipients": list(recipients), "expires_at": expires_at, "lifecycle_kind": lifecycle_kind, "lifecycle_context": lifecycle_context or {}, "sensitive": sensitive},
     )
+
+    if delivery.supersession_scope != scope or delivery.sensitive != sensitive:
+        raise ValueError('Email event policy mismatch')
+    if pointer and created:
+        EmailDelivery.objects.filter(supersession_scope=scope, status__in=['pending', 'retry']).exclude(pk=delivery.pk).update(status='cancelled', last_error='Superseded', next_attempt_at=None)
+        pointer.current = delivery
+        pointer.save(update_fields=['current'])
 
     def dispatch():
         from .tasks import deliver_transactional_email
@@ -147,6 +162,16 @@ def deliver_email(delivery_id):
         from .lifecycle import check_before_claim
         if not check_before_claim(delivery, timezone.now()):
             return False
+        from .payload_crypto import decrypt_payload
+        try:
+            subject, plain_body, html_body = decrypt_payload(delivery)
+        except Exception:
+            delivery.status = EmailDelivery.Status.DEAD
+            delivery.last_error = 'PayloadDecryptionFailed'
+            delivery.dead_at = timezone.now()
+            delivery.next_attempt_at = None
+            delivery.save(update_fields=['status', 'last_error', 'dead_at', 'next_attempt_at'])
+            return False
         delivery.status = EmailDelivery.Status.SENDING
         delivery.attempt_count += 1
         delivery.last_attempt_at = timezone.now()
@@ -155,9 +180,9 @@ def deliver_email(delivery_id):
 
     try:
         recipients = normalize_recipients(delivery.recipients)
-        message = EmailMultiAlternatives(subject=delivery.subject, body=delivery.plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients), headers={"X-Mailin-custom": f"lp:{delivery.idempotency_key}"})
-        if delivery.html_body:
-            message.attach_alternative(delivery.html_body, "text/html")
+        message = EmailMultiAlternatives(subject=subject, body=plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients), headers={"X-Mailin-custom": f"lp:{delivery.idempotency_key}"})
+        if html_body:
+            message.attach_alternative(html_body, "text/html")
         if message.send(fail_silently=False) != 1:
             raise RuntimeError("Email acceptance not confirmed")
     except Exception as exc:
