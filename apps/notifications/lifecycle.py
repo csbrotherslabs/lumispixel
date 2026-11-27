@@ -14,6 +14,52 @@ def eligible(delivery):
     """Explicit allowlist of domain checks; unknown kinds fail closed."""
     if not delivery.lifecycle_kind:
         return not delivery.sensitive
+    if delivery.lifecycle_kind == "booking.notice":
+        from apps.clients.models import ClientSession
+        from apps.marketplace.models import PlatformBooking
+        context = delivery.lifecycle_context
+        booking = PlatformBooking.objects.select_related("session__client", "photographer__user").filter(
+            session_id=context.get("session_id"), photographer_id=context.get("studio_id")).first()
+        if not booking or not booking.photographer.user.can_login:
+            return False
+        session = booking.session
+        if session.photographer_id != booking.photographer_id or session.client.photographer_id != booking.photographer_id:
+            return False
+        expected = {"confirmed": ClientSession.Status.CONFIRMED, "awaiting": ClientSession.Status.TENTATIVE}.get(context.get("event"))
+        if not expected or session.status != expected or not booking.acknowledged_at:
+            return False
+        audience = context.get("audience")
+        if audience not in ("photographer", "client"):
+            return False
+        email = booking.photographer.user.email if audience == "photographer" else session.client.email
+        return bool(email and [r.casefold() for r in delivery.recipients] == [email.casefold()])
+    if delivery.lifecycle_kind in ("privacy.notice", "privacy.review"):
+        from apps.visual_search.models import ClientBiometricDeletionRequest, BiometricDeletionDiscoveryCandidate
+        from apps.galleries.models import Gallery
+        from django.contrib.auth import get_user_model
+        context = delivery.lifecycle_context
+        item = ClientBiometricDeletionRequest.objects.select_related("user").filter(pk=context.get("request_id")).first()
+        if not item:
+            return False
+        if delivery.lifecycle_kind == "privacy.notice":
+            event = context.get("event")
+            if event not in ("requested", "completed", "unverified"):
+                return False
+            if (event == "completed") != (item.status == ClientBiometricDeletionRequest.Status.COMPLETED):
+                return False
+            email = item.user.email
+        else:
+            if item.status == ClientBiometricDeletionRequest.Status.COMPLETED:
+                return False
+            owner = get_user_model().objects.filter(pk=context.get("owner_id"), is_active=True).first()
+            if not owner:
+                return False
+            linked = Gallery.objects.filter(photographer__user=owner, client__user_id=item.user_id).exists()
+            candidate = BiometricDeletionDiscoveryCandidate.objects.filter(request=item, gallery__photographer__user=owner, status__in=["pending", "unverified"]).exists()
+            if not (linked or candidate):
+                return False
+            email = owner.email
+        return bool(email and [r.casefold() for r in delivery.recipients] == [email.casefold()])
     if delivery.lifecycle_kind == "booking.acknowledgment":
         from apps.marketplace.models import PlatformBooking
         from apps.clients.models import ClientSession

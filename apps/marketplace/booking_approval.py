@@ -1,7 +1,8 @@
 """Approval transitions for public marketplace bookings."""
 import logging
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
+from apps.notifications.email_delivery import queue_transactional_email
+from apps.notifications.intents import require_email
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -13,15 +14,23 @@ logger = logging.getLogger(__name__)
 
 def notify_photographer(session_id, message):
     session = ClientSession.objects.select_related("photographer__user").get(pk=session_id)
-    deliver(session.photographer.user.email, "LumisPixel booking update", message, session)
+    event = "confirmed" if session.status == ClientSession.Status.CONFIRMED else "awaiting"
+    return deliver(session.photographer.user.email, "LumisPixel booking update", message, session, event=event, audience="photographer")
 
-def deliver(email, subject, message, session):
+def deliver(email, subject, message, session, *, event="confirmed", audience="client"):
+    key = f"booking.notice:{session.pk}:{event}:{audience}"
     try:
+        require_email(event_key=key, recipients=[email], kind="booking.notice")
         context = {"message": message, "session": session}
-        send_mail(subject, render_to_string("marketplace/email/booking_update.txt", context),
-                  None, [email], html_message=render_to_string("marketplace/email/booking_update.html", context))
+        return queue_transactional_email(event_key=key, subject=subject,
+            plain_body=render_to_string("marketplace/email/booking_update.txt", context),
+            html_body=render_to_string("marketplace/email/booking_update.html", context),
+            recipients=[email], lifecycle_kind="booking.notice",
+            lifecycle_context={"session_id": session.pk, "studio_id": session.photographer_id,
+                "event": event, "audience": audience})
     except Exception:
-        logger.exception("Booking notification failed for session %s", session.pk)
+        logger.error("Booking notification queue failed for session %s", session.pk)
+        return None
 
 @transaction.atomic
 def confirm_booking(session, *, actor, client_acknowledgment=False):

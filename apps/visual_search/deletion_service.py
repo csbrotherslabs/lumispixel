@@ -1,7 +1,7 @@
 """Durable deletion verification; never equate unverified identity with absence."""
 from django.db import transaction
-from django.conf import settings
-from django.core.mail import send_mail
+from apps.notifications.email_delivery import queue_transactional_email
+from apps.notifications.intents import require_email
 from apps.galleries.models import Gallery
 from django.utils import timezone
 
@@ -90,14 +90,12 @@ def send_deletion_notice(request_id, event):
             "completed": "Your reviewed biometric deletion request has been completed for the verified scope. Check your LumisPixel account for details.",
             "unverified": "A photographer could not verify your identity in a gallery. Your deletion request remains open.",
         }
-        send_mail(
-            "LumisPixel biometric privacy request",
-            messages[event],
-            settings.DEFAULT_FROM_EMAIL,
-            [item.user.email],
-            fail_silently=False,
-        )
-        return True
+        key = f"privacy.notice:{item.pk}:{event}"
+        require_email(event_key=key, recipients=[item.user.email], kind="privacy.notice")
+        return bool(queue_transactional_email(event_key=key,
+            subject="LumisPixel privacy request", plain_body=messages[event],
+            recipients=[item.user.email], lifecycle_kind="privacy.notice",
+            lifecycle_context={"request_id": item.pk, "event": event}))
     except Exception:
         logger.exception("Unable to deliver biometric deletion notice %s", request_id)
         return False
@@ -108,21 +106,20 @@ def notify_photographers_for_candidates(request_id, gallery_ids):
     import logging
     logger = logging.getLogger(__name__)
     try:
-        emails = list(Gallery.objects.filter(
-            pk__in=gallery_ids,
-        ).values_list("photographer__user__email", flat=True).distinct())
-        for email in emails:
+        owners = Gallery.objects.filter(pk__in=gallery_ids).values_list(
+            "photographer__user_id", "photographer__user__email").distinct()
+        for owner_id, email in owners:
             if not email:
                 continue
             try:
-                send_mail(
-                    "LumisPixel privacy review requested",
-                    "A biometric deletion review is awaiting your confirmation. Sign in to LumisPixel and open your photographer privacy review inbox. Do not forward private gallery information.",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=False,
-                )
+                key = f"privacy.review:{request_id}:{owner_id}"
+                require_email(event_key=key, recipients=[email], kind="privacy.review")
+                queue_transactional_email(event_key=key,
+                    subject="LumisPixel privacy review requested",
+                    plain_body="A privacy review is awaiting your confirmation. Sign in to LumisPixel and open your photographer privacy review inbox. Do not forward private gallery information.",
+                    recipients=[email], lifecycle_kind="privacy.review",
+                    lifecycle_context={"request_id": request_id, "owner_id": str(owner_id)})
             except Exception:
-                logger.exception("Photographer privacy notification failed for request %s", request_id)
+                logger.error("Photographer privacy notification queue failed for request %s", request_id)
     except Exception:
-        logger.exception("Could not dispatch photographer notifications for request %s", request_id)
+        logger.error("Could not queue photographer notifications for request %s", request_id)
