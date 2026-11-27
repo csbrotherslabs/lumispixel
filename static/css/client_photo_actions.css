@@ -72,3 +72,15 @@
   gap:3px!important;height:32px;min-height:32px;
  }
 }
+
+/* Dedicated search results retain the accessible target size at every viewport. */
+.lp-search-page [data-client-photo] .lp-photo-actions {
+ width:44px!important;max-width:44px;
+}
+.lp-search-page [data-client-photo] .lp-photo-actions .lp-photo-control {
+ box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;
+}
+.lp-search-page [data-client-photo] .lp-photo-actions .lp-photo-control__circle,
+.lp-search-page [data-client-photo] .lp-photo-actions .lp-photo-action__icon {
+ width:18px;height:18px;
+}
