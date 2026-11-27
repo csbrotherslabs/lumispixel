@@ -22,7 +22,8 @@ class DeliveryReliabilityTests(TestCase):
     def test_421_is_transient_and_schedules_retry(self):
         delivery = self.make_delivery("p2:421")
         delivery.attempt_count = 1
-        delivery.save(update_fields=("attempt_count",))
+        delivery.status = EmailDelivery.Status.SENDING
+        delivery.save(update_fields=("attempt_count", "status"))
         record_failure(delivery.pk, smtplib.SMTPResponseException(421, b"provider unavailable"))
         delivery.refresh_from_db()
         self.assertEqual(delivery.status, EmailDelivery.Status.RETRY)
@@ -31,6 +32,9 @@ class DeliveryReliabilityTests(TestCase):
 
     def test_550_is_permanent_and_dead_letters_immediately(self):
         delivery = self.make_delivery("p2:550")
+        delivery.status = EmailDelivery.Status.SENDING
+        delivery.attempt_count = 1
+        delivery.save(update_fields=("status", "attempt_count"))
         record_failure(delivery.pk, smtplib.SMTPResponseException(550, b"mailbox unavailable"))
         delivery.refresh_from_db()
         self.assertEqual(delivery.status, EmailDelivery.Status.DEAD)
@@ -40,10 +44,21 @@ class DeliveryReliabilityTests(TestCase):
     def test_retry_budget_exhaustion_dead_letters_poison_message(self):
         delivery = self.make_delivery("p2:poison")
         delivery.attempt_count = MAX_DELIVERY_ATTEMPTS
-        delivery.save(update_fields=("attempt_count",))
-        record_failure(delivery.pk, TimeoutError("provider timeout"))
+        delivery.status = EmailDelivery.Status.SENDING
+        delivery.save(update_fields=("attempt_count", "status"))
+        record_failure(delivery.pk, smtplib.SMTPDataError(451, b"temporary rejection"))
         delivery.refresh_from_db()
         self.assertEqual(delivery.status, EmailDelivery.Status.DEAD)
+
+    def test_timeout_at_budget_remains_uncertain(self):
+        delivery = self.make_delivery("p2:ambiguous")
+        delivery.status = EmailDelivery.Status.SENDING
+        delivery.attempt_count = MAX_DELIVERY_ATTEMPTS
+        delivery.save(update_fields=("status", "attempt_count"))
+        record_failure(delivery.pk, TimeoutError("provider timeout"))
+        delivery.refresh_from_db()
+        self.assertEqual(delivery.status, EmailDelivery.Status.UNCERTAIN)
+        self.assertIsNone(delivery.next_attempt_at)
 
     @patch("apps.notifications.email_delivery.EmailMultiAlternatives.send", return_value=1)
     def test_sent_delivery_is_not_sent_twice(self, send):

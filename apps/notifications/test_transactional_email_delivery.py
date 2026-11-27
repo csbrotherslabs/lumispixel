@@ -1,3 +1,4 @@
+import smtplib
 from unittest.mock import patch
 
 from django.test import TestCase, TransactionTestCase
@@ -59,12 +60,22 @@ class TransactionalEmailDeliveryTests(TransactionTestCase):
         self.assertEqual(self.delivery.status, EmailDelivery.Status.SENT)
         self.assertEqual(send.call_count, 1)
 
-    @patch("apps.notifications.email_delivery.EmailMultiAlternatives.send", side_effect=RuntimeError("smtp down"))
+    @patch("apps.notifications.email_delivery.EmailMultiAlternatives.send", side_effect=smtplib.SMTPDataError(451, b"temporary rejection"))
     def test_smtp_failure_is_scheduled_for_retry(self, send):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(smtplib.SMTPDataError):
             deliver_email(self.delivery.pk)
         self.delivery.refresh_from_db()
         self.assertEqual(self.delivery.status, EmailDelivery.Status.RETRY)
         self.assertEqual(self.delivery.attempt_count, 1)
         self.assertIsNotNone(self.delivery.next_attempt_at)
-        self.assertIn("smtp down", self.delivery.last_error)
+        self.assertEqual(self.delivery.last_error, "SMTPDataError")
+
+    @patch("apps.notifications.email_delivery.EmailMultiAlternatives.send", side_effect=RuntimeError("unknown transport outcome"))
+    def test_ambiguous_failure_is_not_replayed(self, send):
+        with self.assertRaises(RuntimeError):
+            deliver_email(self.delivery.pk)
+        self.delivery.refresh_from_db()
+        self.assertEqual(self.delivery.status, EmailDelivery.Status.UNCERTAIN)
+        self.assertIsNone(self.delivery.next_attempt_at)
+        self.assertFalse(deliver_email(self.delivery.pk))
+        self.assertEqual(send.call_count, 1)
