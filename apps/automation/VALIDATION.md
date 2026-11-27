@@ -27,3 +27,18 @@ coverage incomplete; webhook message-ID/header behavior unverified; legacy
 sensitive rows and retention policy unresolved; account token timeout alignment,
 gallery activation race, contract replacement overlap, multi-recipient delivery
 semantics, and historical migration compatibility need verification.
+
+## Local PostgreSQL
+
+Configure TEST_DB_HOST (loopback only), TEST_DB_PORT, TEST_DB_NAME,
+TEST_DB_USER and TEST_DB_PASSWORD in the local .env. The local role needs
+CREATEDB. Use config.settings_test explicitly for all automated Django tests:
+
+```sh
+python manage.py test apps.automation apps.notifications --settings=config.settings_test --noinput --verbosity=2
+```
+
+The test module overrides the default database, disables inherited Brevo API
+credentials and uses Django's in-memory email backend. Existing CI loopback
+PostgreSQL and explicit SQLite mode remain supported. Other external services
+still require isolation before running broader integration tests.

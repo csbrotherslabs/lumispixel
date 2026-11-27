@@ -1,5 +1,8 @@
 """Settings used by the automated Django test suite."""
 
+import os
+from django.core.exceptions import ImproperlyConfigured
+
 from .settings import *  # noqa: F403,F401
 
 # Tests render templates directly and do not run collectstatic. Using the
@@ -35,3 +38,37 @@ if env_bool("LUMISPIXEL_TEST_SQLITE", False):  # noqa: F405
             "TEST": {"NAME": ":memory:"},
         }
     }
+
+# Explicit local PostgreSQL configuration takes precedence over inherited URLs.
+# CI may retain its existing loopback service URL; never use a remote database.
+if not env_bool("LUMISPIXEL_TEST_SQLITE", False):
+    if os.getenv("TEST_DB_NAME") or not env_bool("CI", False):
+        host = os.getenv("TEST_DB_HOST", "127.0.0.1")
+        if host not in ("127.0.0.1", "localhost", "::1"):
+            raise ImproperlyConfigured("TEST_DB_HOST must be a loopback address.")
+        name = os.getenv("TEST_DB_NAME", "lumispixel_local")
+        user = os.getenv("TEST_DB_USER", "lumispixel_test")
+        password = os.getenv("TEST_DB_PASSWORD", "")
+        if not name or not user or not password:
+            raise ImproperlyConfigured("Configure TEST_DB_NAME, TEST_DB_USER and TEST_DB_PASSWORD for local PostgreSQL tests.")
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "HOST": host,
+                "PORT": os.getenv("TEST_DB_PORT", "5432"),
+                "NAME": name,
+                "USER": user,
+                "PASSWORD": password,
+                "CONN_MAX_AGE": None,
+                "CONN_HEALTH_CHECKS": True,
+                "TEST": {"NAME": "test_" + name},
+            }
+        }
+    else:
+        db = DATABASES["default"]
+        if db["ENGINE"] != "django.db.backends.postgresql" or db.get("HOST") not in ("127.0.0.1", "localhost", "::1"):
+            raise ImproperlyConfigured("CI PostgreSQL tests require a loopback database.")
+
+# Prevent inherited API credentials from sending real transactional emails.
+TRANSACTIONAL_EMAIL_TRANSPORT = "smtp"
+BREVO_API_KEY = ""
