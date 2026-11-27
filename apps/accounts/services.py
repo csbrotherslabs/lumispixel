@@ -180,7 +180,7 @@ def send_verification_email(request, user):
         delivery = queue_transactional_email(
             event_key=f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}",
             subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email],
-            sensitive=True, expires_at=timezone.now()+timedelta(seconds=settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS),
+            sensitive=True, expires_at=timezone.now()+timedelta(seconds=min(settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS, settings.PASSWORD_RESET_TIMEOUT)),
             supersession_scope=f"account.verify:{user.pk}", lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})
     except (ValueError, ValidationError, ImproperlyConfigured) as exc:
         raise EmailDeliveryError("Verification email could not be queued.") from exc

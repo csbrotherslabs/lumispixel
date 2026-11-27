@@ -160,3 +160,12 @@ checks invoice issue, contract review and signed copy missing outbox evidence af
 15-minute grace period, report-only. Configure EMAIL_RECONCILIATION_START to an aware
 ISO timestamp at actual cutover; disabled by default. Historical/manual sends may need
 review. Other domains, webhook/stale attempt finalization, retention and tests pending.
+
+Follow-up hardening: stale sending attempts close as uncertain atomically. Queued
+workflow dispatch is recovered periodically; legacy stale RUNNING executions are
+quarantined and alerted, not replayed. Booking acknowledgment now encrypted and
+eligibility-guarded. Missing-email checks add pending account verification, booking
+acknowledgment and studio invitations. Account check is prefix-based, not recipient
+or current-token proof. Verification dispatch lifetime capped by both Django timeouts.
+Remaining: provider attempt correlation, employee/gallery intent provenance, secure
+manual domain recovery, retention policy and runtime tests. No new migration.

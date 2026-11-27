@@ -245,6 +245,7 @@ CELERY_BEAT_SCHEDULE = {
     "reconcile-vector-purges": {"task": "apps.visual_search.tasks.reconcile_vector_purges", "schedule": 300.0},
     "reconcile-face-index": {"task": "apps.visual_search.tasks.reconcile_face_index", "schedule": 3600.0},
     "scan-inbox-notification-reminders": {"task": "apps.notifications.tasks.scan_notification_reminders", "schedule": 3600.0},
+    "reconcile-workflow-dispatch": {"task": "apps.workflows.tasks.reconcile_workflow_dispatch", "schedule": 300.0},
     "scan-scheduled-workflow-automations": {"task": "apps.workflows.tasks.scan_scheduled_automations", "schedule": 3600.0},
     "cleanup-stale-gallery-multipart-uploads": {"task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads", "schedule": 3600.0},
     "cleanup-gallery-storage-objects": {"task": "apps.galleries.tasks.cleanup_gallery_storage_objects", "schedule": 3600.0},

@@ -1,7 +1,7 @@
 from datetime import timedelta
 import hashlib
 import secrets
-from apps.notifications.email_delivery import queue_transactional_email
+from apps.notifications.email_delivery import queue_transactional_email, public_url
 from django.template.loader import render_to_string
 from django.core.cache import cache
 from django.db.models import Q
@@ -162,7 +162,7 @@ def request_booking(request, slug):
                     verification_digest="" if direct else digest(token),
                     verification_expires_at=None if direct else timezone.now()+timedelta(hours=48))
                 if not direct:
-                    link = request.build_absolute_uri(reverse("public-booking-verify", kwargs={"slug":slug,"token":token}))
+                    link = public_url(reverse("public-booking-verify", kwargs={"slug":slug,"token":token}))
                     try:
                         email_context = {"client_name": data["first_name"], "studio_name": context["brand"],
                             "session": session, "verification_url": link,
@@ -170,7 +170,9 @@ def request_booking(request, slug):
                         sent = queue_transactional_email(event_key=f"booking.acknowledgment:{booking.pk}",
                             subject="Acknowledge your LumisPixel booking request",
                             plain_body=render_to_string("marketplace/email/booking_acknowledgment.txt", email_context),
-                            recipients=[email],
+                            recipients=[email], sensitive=True, expires_at=booking.verification_expires_at,
+                            lifecycle_kind="booking.acknowledgment",
+                            lifecycle_context={"booking_id": booking.pk, "studio_id": photographer.pk, "digest": booking.verification_digest},
                             html_body=render_to_string("marketplace/email/booking_acknowledgment.html", email_context))
                         if not sent:
                             raise RuntimeError("Email not sent")

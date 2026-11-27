@@ -59,7 +59,10 @@ def reconcile():
     for item in missing:
         sync_alert(key='automation.missing_email.' + item['kind'], count=item['count'], severity='critical', title='Missing business email: ' + item['kind'], message=f"{item['count']} records lack expected outbox evidence. Review before any resend.")
     key_failures = EmailDelivery.objects.filter(status='retry', last_error='PayloadDecryptionFailed').count()
+    from apps.workflows.models import AutomationExecution
+    ambiguous = AutomationExecution.objects.filter(status="failed", error="LegacyExecutionOutcomeUnknown").count()
     checks = [
+        ("automation.workflow_ambiguous", ambiguous, "critical", "Legacy workflow outcome unknown", "Review business effects before any manual replay."),
         ('automation.email_key_failure', key_failures, 'critical', 'Email payload decryption blocked', 'Restore encryption keys before dispatch; do not regenerate secrets automatically.'),
         ("automation.email_uncertain", uncertain, "critical", "Email delivery outcome uncertain",
          "Verify provider acceptance before any resend."),

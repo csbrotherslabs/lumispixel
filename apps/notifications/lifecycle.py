@@ -14,6 +14,21 @@ def eligible(delivery):
     """Explicit allowlist of domain checks; unknown kinds fail closed."""
     if not delivery.lifecycle_kind:
         return not delivery.sensitive
+    if delivery.lifecycle_kind == "booking.acknowledgment":
+        from apps.marketplace.models import PlatformBooking
+        from apps.clients.models import ClientSession
+        context = delivery.lifecycle_context
+        booking = PlatformBooking.objects.select_related("session__client", "photographer__user").filter(
+            pk=context.get("booking_id"), photographer_id=context.get("studio_id"),
+            acknowledged_at__isnull=True, customer__isnull=True,
+            verification_expires_at__gt=timezone.now(), verification_digest=context.get("digest")).first()
+        return bool(booking and booking.photographer.user.can_login
+            and booking.session.status == ClientSession.Status.TENTATIVE
+            and booking.session.photographer_id == booking.photographer_id
+            and booking.session.client.photographer_id == booking.photographer_id
+            and not booking.session.client.user_id
+            and booking.session.client.email.casefold() == booking.client_email.casefold()
+            and [r.casefold() for r in delivery.recipients] == [booking.client_email.casefold()])
     if delivery.lifecycle_kind == "invoice.email":
         from apps.clients.models import ClientInvoice
         context = delivery.lifecycle_context

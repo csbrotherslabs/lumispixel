@@ -25,6 +25,8 @@ def execute_automation(execution_id):
             execution = AutomationExecution.objects.select_for_update().select_related("rule", "photographer").get(pk=execution_id)
             if execution.status in (AutomationExecution.Status.RUNNING, AutomationExecution.Status.SUCCEEDED, AutomationExecution.Status.SKIPPED):
                 return execution.status
+            if execution.error == "LegacyExecutionOutcomeUnknown":
+                return execution.status
             execution.started_at = timezone.now()
             execution.error = ""
             if not execution.rule.enabled or execution.rule.photographer_id != execution.photographer_id:
@@ -96,3 +98,28 @@ def scan_scheduled_automations():
             )
 
     return "scheduled automation scan complete"
+
+
+@shared_task
+def reconcile_workflow_dispatch(limit=100):
+    """Recover never-started queued work; quarantine legacy ambiguous RUNNING rows."""
+    from django.conf import settings
+    import logging
+    now = timezone.now()
+    stale = now - timedelta(seconds=max(3600, settings.CELERY_TASK_TIME_LIMIT + 300))
+    with transaction.atomic():
+        rows = list(AutomationExecution.objects.select_for_update(skip_locked=True).filter(
+            status=AutomationExecution.Status.RUNNING, started_at__lt=stale).order_by("pk")[:limit])
+        for row in rows:
+            row.status = AutomationExecution.Status.FAILED
+            row.error = "LegacyExecutionOutcomeUnknown"
+            row.finished_at = now
+            row.save(update_fields=["status", "error", "finished_at"])
+    ids = list(AutomationExecution.objects.filter(status=AutomationExecution.Status.QUEUED,
+        queued_at__lt=now-timedelta(minutes=5)).order_by("queued_at").values_list("pk", flat=True)[:limit])
+    for pk in ids:
+        try:
+            execute_automation.delay(pk)
+        except Exception:
+            logging.getLogger(__name__).error("Workflow dispatch failed for %s", pk)
+    return len(ids)
