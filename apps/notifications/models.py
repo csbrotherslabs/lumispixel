@@ -94,6 +94,7 @@ class EmailDelivery(models.Model):
     supersession_scope = models.CharField(max_length=64, blank=True, default='', db_index=True)
     payload_purged_at = models.DateTimeField(null=True, blank=True)
     attempt_count = models.PositiveSmallIntegerField(default=0)
+    attempt_limit = models.PositiveIntegerField(default=6)
     failure_kind = models.CharField(max_length=12, choices=FailureKind.choices, blank=True, default="")
     last_error = models.TextField(blank=True)
     last_attempt_at = models.DateTimeField(blank=True, null=True)
@@ -124,3 +125,23 @@ class BrevoEmailEvent(models.Model):
 class EmailSupersession(models.Model):
     scope = models.CharField(max_length=64, primary_key=True)
     current = models.ForeignKey(EmailDelivery, null=True, on_delete=models.SET_NULL)
+
+
+class EmailAttempt(models.Model):
+    delivery = models.ForeignKey(EmailDelivery, on_delete=models.PROTECT, related_name="attempt_history")
+    number = models.PositiveIntegerField()
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True)
+    outcome = models.CharField(max_length=32, default="sending")
+    error_code = models.CharField(max_length=128, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["delivery", "number"], name="unique_email_attempt_number")]
+
+
+class EmailRecoveryEvent(models.Model):
+    delivery = models.ForeignKey(EmailDelivery, on_delete=models.PROTECT)
+    actor_id = models.CharField(max_length=128)
+    reason = models.CharField(max_length=500)
+    previous_attempt_limit = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)

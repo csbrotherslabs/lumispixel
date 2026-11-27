@@ -279,3 +279,6 @@ if not DEBUG:
 
 # Comma-separated Fernet keys, newest first. No fallback to Django SECRET_KEY.
 EMAIL_PAYLOAD_KEYS = os.getenv('EMAIL_PAYLOAD_KEYS', '')
+
+# Enable business email reconciliation only after verified outbox cutover.
+EMAIL_RECONCILIATION_START = os.getenv("EMAIL_RECONCILIATION_START", "")

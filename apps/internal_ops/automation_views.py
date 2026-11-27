@@ -93,10 +93,12 @@ def email_operations(request):
     now = timezone.now()
     metrics, events, event_types, backlog = email_snapshot(days, now)
     rows = filtered_rows(delivery_rows(days, now), status).order_by("-created_at", "-pk")
+    from apps.notifications.business_reconciliation import snapshot as business_snapshot
     return render(request, "internal_ops/automation/email_operations.html", {
+        "business_missing": business_snapshot(),
         "employee": request.employee_profile, "is_internal_superuser": True,
         "days": days, "periods": PERIODS, "selected_status": status, "filters": FILTERS,
         "metrics": metrics, "events": events, "event_types": event_types, "backlog": backlog,
-        "deliveries": Paginator(rows, 50).get_page(request.GET.get("page")),
+        "deliveries": Paginator(rows.prefetch_related("attempt_history"), 50).get_page(request.GET.get("page")),
         "recent_events": BrevoEmailEvent.objects.filter(received_at__gte=now-timedelta(days=days), received_at__lte=now).order_by("-received_at", "-pk")[:25],
     })

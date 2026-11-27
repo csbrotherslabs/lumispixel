@@ -150,3 +150,13 @@ use individual envelopes and validate current expiration and invitation eligibil
 Existing RUNNING workflow rows require reconciliation; initial broker dispatch recovery
 and full workflow retry testing remain pending. Invoice preparation unchanged pending
 financial integrity milestone. No new migration. Tests not executed.
+
+Hardening: new SMTP attempts persist numbered history; legacy attempts not reconstructed.
+Audited CLI recovery requires active superuser ID and reason, preserves counts, adds one
+attempt allowance; OS operator identity is not independently authenticated. Sensitive and
+superseded dead letters excluded. Decryption errors defer 15 minutes and alert rather
+than immediately destroying ciphertext. Expiry still applies. Business reconciliation
+checks invoice issue, contract review and signed copy missing outbox evidence after a
+15-minute grace period, report-only. Configure EMAIL_RECONCILIATION_START to an aware
+ISO timestamp at actual cutover; disabled by default. Historical/manual sends may need
+review. Other domains, webhook/stale attempt finalization, retention and tests pending.

@@ -12,7 +12,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.html import escape
 
-from .models import EmailDelivery
+from .models import EmailDelivery, EmailAttempt
 
 logger = logging.getLogger(__name__)
 MAX_DELIVERY_ATTEMPTS = 6
@@ -135,7 +135,7 @@ def record_failure(delivery_id, exc):
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
         if delivery.status != EmailDelivery.Status.SENDING:
             return delivery
-        terminal = kind == EmailDelivery.FailureKind.PERMANENT or delivery.attempt_count >= MAX_DELIVERY_ATTEMPTS
+        terminal = kind == EmailDelivery.FailureKind.PERMANENT or delivery.attempt_count >= delivery.attempt_limit
         delivery.failure_kind = kind
         delivery.last_error = type(exc).__name__[:2000]
         if not isinstance(exc, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPResponseException)):
@@ -149,6 +149,7 @@ def record_failure(delivery_id, exc):
             delivery.status = EmailDelivery.Status.RETRY
             delivery.next_attempt_at = now + timedelta(seconds=retry_delay(delivery.attempt_count))
         delivery.save(update_fields=("failure_kind", "last_error", "status", "dead_at", "next_attempt_at"))
+        EmailAttempt.objects.filter(delivery=delivery, number=delivery.attempt_count, finished_at__isnull=True).update(finished_at=now, outcome=delivery.status, error_code=type(exc).__name__[:128])
         return delivery
 
 
@@ -166,17 +167,24 @@ def deliver_email(delivery_id):
         try:
             subject, plain_body, html_body = decrypt_payload(delivery)
         except Exception:
-            delivery.status = EmailDelivery.Status.DEAD
+            delivery.status = EmailDelivery.Status.RETRY
             delivery.last_error = 'PayloadDecryptionFailed'
-            delivery.dead_at = timezone.now()
-            delivery.next_attempt_at = None
+            delivery.dead_at = None
+            delivery.next_attempt_at = timezone.now() + timedelta(minutes=15)
             delivery.save(update_fields=['status', 'last_error', 'dead_at', 'next_attempt_at'])
+            return False
+        if delivery.attempt_count >= delivery.attempt_limit:
+            delivery.status = EmailDelivery.Status.DEAD
+            delivery.dead_at = timezone.now()
+            delivery.last_error = "AttemptLimitReached"
+            delivery.save(update_fields=["status", "dead_at", "last_error"])
             return False
         delivery.status = EmailDelivery.Status.SENDING
         delivery.attempt_count += 1
         delivery.last_attempt_at = timezone.now()
         delivery.next_attempt_at = None
         delivery.save(update_fields=("status", "attempt_count", "last_attempt_at", "next_attempt_at"))
+        EmailAttempt.objects.create(delivery=delivery, number=delivery.attempt_count, started_at=delivery.last_attempt_at)
 
     try:
         recipients = normalize_recipients(delivery.recipients)
@@ -198,4 +206,5 @@ def deliver_email(delivery_id):
             delivery.last_error = ""
             delivery.next_attempt_at = None
             delivery.save(update_fields=("status", "sent_at", "failure_kind", "last_error", "next_attempt_at"))
+            EmailAttempt.objects.filter(delivery=delivery, number=delivery.attempt_count, finished_at__isnull=True).update(finished_at=delivery.sent_at, outcome="sent")
     return True

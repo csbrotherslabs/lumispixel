@@ -54,7 +54,13 @@ def reconcile():
     from apps.notifications.models import EmailDelivery
     uncertain = EmailDelivery.objects.filter(status=EmailDelivery.Status.UNCERTAIN).count()
     dead = EmailDelivery.objects.filter(status__in=[EmailDelivery.Status.DEAD, EmailDelivery.Status.FAILED]).count()
+    from apps.notifications.business_reconciliation import snapshot
+    missing = snapshot()
+    for item in missing:
+        sync_alert(key='automation.missing_email.' + item['kind'], count=item['count'], severity='critical', title='Missing business email: ' + item['kind'], message=f"{item['count']} records lack expected outbox evidence. Review before any resend.")
+    key_failures = EmailDelivery.objects.filter(status='retry', last_error='PayloadDecryptionFailed').count()
     checks = [
+        ('automation.email_key_failure', key_failures, 'critical', 'Email payload decryption blocked', 'Restore encryption keys before dispatch; do not regenerate secrets automatically.'),
         ("automation.email_uncertain", uncertain, "critical", "Email delivery outcome uncertain",
          "Verify provider acceptance before any resend."),
         ("automation.email_dead", dead, "critical", "Email deliveries exhausted or rejected",
