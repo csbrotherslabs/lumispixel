@@ -72,3 +72,7 @@ if not env_bool("LUMISPIXEL_TEST_SQLITE", False):
 # Prevent inherited API credentials from sending real transactional emails.
 TRANSACTIONAL_EMAIL_TRANSPORT = "smtp"
 BREVO_API_KEY = ""
+
+# Ephemeral test-only encryption key; never depend on deployed secrets.
+from cryptography.fernet import Fernet
+EMAIL_PAYLOAD_KEYS = Fernet.generate_key().decode("ascii")
