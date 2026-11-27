@@ -4,7 +4,7 @@ from datetime import timedelta
 from celery import shared_task
 from django.utils import timezone
 
-from .email_delivery import deliver_email, record_failure
+from .email_delivery import deliver_email
 from .models import EmailDelivery
 
 logger = logging.getLogger(__name__)
@@ -16,10 +16,8 @@ def deliver_transactional_email(self, delivery_id):
         return deliver_email(delivery_id)
     except Exception as exc:
         delivery = EmailDelivery.objects.filter(pk=delivery_id).first()
-        if delivery and not delivery.last_error:
-            # Keep the task boundary durable even when deliver_email is mocked or an
-            # unexpected exception occurs before the delivery layer records failure.
-            delivery = record_failure(delivery_id, exc)
+        # Only the claiming worker may classify its own attempt. Unexpected
+        # interruptions are handled by the stale-claim reconciler.
         if not delivery or delivery.status != EmailDelivery.Status.RETRY:
             logger.error("Transactional email %s stopped automatic retries", delivery_id)
             return False
@@ -50,19 +48,12 @@ def reconcile_pending_transactional_emails(limit=100):
     purge_sensitive_payloads()
     from .retention import purge_old_terminal_payloads
     purge_old_terminal_payloads(limit=limit)
-    ids = list(
-        EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
-        .filter(next_attempt_at__isnull=True)
-        .order_by("created_at")
-        .values_list("pk", flat=True)[:limit]
-    )
-    remaining = max(0, limit - len(ids))
-    if remaining:
-        ids += list(
-            EmailDelivery.objects.filter(status=EmailDelivery.Status.RETRY, next_attempt_at__lte=now)
-            .order_by("next_attempt_at", "created_at")
-            .values_list("pk", flat=True)[:remaining]
-        )
+    from django.db.models import Q
+    from django.db.models.functions import Coalesce
+    ids = list(EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
+        .filter(Q(next_attempt_at__isnull=True) | Q(next_attempt_at__lte=now))
+        .annotate(eligible_at=Coalesce("next_attempt_at", "created_at"))
+        .order_by("eligible_at", "pk").values_list("pk", flat=True)[:limit])
     for delivery_id in dict.fromkeys(ids):
         try:
             deliver_transactional_email.delay(delivery_id)

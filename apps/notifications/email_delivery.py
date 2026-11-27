@@ -70,7 +70,7 @@ def delivery_key(*, event_key, recipients):
 
 
 def retry_delay(attempt_count):
-    return min(BASE_RETRY_SECONDS * (2 ** max(attempt_count - 1, 0)), MAX_RETRY_SECONDS)
+    return min(BASE_RETRY_SECONDS * (2 ** min(6, max(attempt_count - 1, 0))), MAX_RETRY_SECONDS)
 
 
 def classify_delivery_exception(exc):
@@ -141,12 +141,12 @@ def queue_transactional_email(*, event_key, subject, plain_body, html_body="", r
     return delivery
 
 
-def record_failure(delivery_id, exc):
+def record_failure(delivery_id, exc, *, attempt_number=None):
     kind = classify_delivery_exception(exc)
     now = timezone.now()
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status != EmailDelivery.Status.SENDING:
+        if delivery.status != EmailDelivery.Status.SENDING or (attempt_number is not None and delivery.attempt_count != attempt_number):
             return delivery
         terminal = kind == EmailDelivery.FailureKind.PERMANENT or delivery.attempt_count >= delivery.attempt_limit
         delivery.failure_kind = kind
@@ -220,7 +220,7 @@ def deliver_email(delivery_id):
             if message.send(fail_silently=False) != 1:
                 raise RuntimeError("Email acceptance not confirmed")
     except Exception as exc:
-        record_failure(delivery_id, exc)
+        record_failure(delivery_id, exc, attempt_number=attempt_number)
         raise
 
     with transaction.atomic():

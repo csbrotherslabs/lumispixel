@@ -18,7 +18,7 @@ def requeue_dead(*, delivery_id, user, reason):
         raise ValidationError("Delivery is not eligible for manual retry.")
     EmailRecoveryEvent.objects.create(delivery=row, actor_id=str(user.pk), reason=reason,
         previous_attempt_limit=row.attempt_limit)
-    row.attempt_limit = max(row.attempt_limit, row.attempt_count) + 1
+    row.attempt_limit = row.attempt_count + 1
     row.status = EmailDelivery.Status.PENDING
     row.next_attempt_at = None
     row.dead_at = None

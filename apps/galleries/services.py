@@ -1,9 +1,7 @@
 """Stable integration, delivery, and storage-accounting boundaries for galleries."""
 from dataclasses import dataclass
-from smtplib import SMTPException
 
 from django.conf import settings
-from django.core import mail
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.template.loader import render_to_string
