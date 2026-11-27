@@ -19,46 +19,28 @@ from .services import dispatch_event, run_execution
     max_retries=5,
 )
 def execute_automation(execution_id):
-    # Claim the execution under a row lock. This prevents two workers from
-    # concurrently performing the same side effect after Redis redelivery.
-    with transaction.atomic():
-        execution = (
-            AutomationExecution.objects.select_for_update()
-            .select_related("rule", "photographer")
-            .get(pk=execution_id)
-        )
-        if execution.status in {
-            AutomationExecution.Status.RUNNING,
-            AutomationExecution.Status.SUCCEEDED,
-            AutomationExecution.Status.SKIPPED,
-        }:
-            return execution.status
-
-        execution.status = AutomationExecution.Status.RUNNING
-        execution.started_at = timezone.now()
-        execution.finished_at = None
-        execution.error = ""
-        execution.save(
-            update_fields=["status", "started_at", "finished_at", "error"]
-        )
-
+    # Domain writes, outbox creation and completion commit atomically.
     try:
-        performed, message = run_execution(execution)
+        with transaction.atomic():
+            execution = AutomationExecution.objects.select_for_update().select_related("rule", "photographer").get(pk=execution_id)
+            if execution.status in (AutomationExecution.Status.RUNNING, AutomationExecution.Status.SUCCEEDED, AutomationExecution.Status.SKIPPED):
+                return execution.status
+            execution.started_at = timezone.now()
+            execution.error = ""
+            if not execution.rule.enabled or execution.rule.photographer_id != execution.photographer_id:
+                performed, message = False, "Workflow rule is disabled or unavailable."
+            else:
+                performed, message = run_execution(execution)
+            execution.status = AutomationExecution.Status.SUCCEEDED if performed else AutomationExecution.Status.SKIPPED
+            execution.message = message[:500]
+            execution.finished_at = timezone.now()
+            execution.save(update_fields=["status", "message", "started_at", "finished_at", "error"])
+            return execution.status
     except Exception as exc:
-        execution.status = AutomationExecution.Status.FAILED
-        # Keep persisted diagnostics safe; detailed exceptions remain in worker logs.
-        execution.error = exc.__class__.__name__[:4000]
-        execution.finished_at = timezone.now()
-        execution.save(update_fields=["status", "error", "finished_at"])
+        AutomationExecution.objects.filter(pk=execution_id).exclude(status__in=[
+            AutomationExecution.Status.SUCCEEDED, AutomationExecution.Status.SKIPPED]).update(
+            status=AutomationExecution.Status.FAILED, error=type(exc).__name__, finished_at=timezone.now())
         raise
-
-    execution.status = (
-        AutomationExecution.Status.SUCCEEDED if performed else AutomationExecution.Status.SKIPPED
-    )
-    execution.message = message[:500]
-    execution.finished_at = timezone.now()
-    execution.save(update_fields=["status", "message", "finished_at"])
-    return execution.status
 
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=300, retry_jitter=True, max_retries=5)

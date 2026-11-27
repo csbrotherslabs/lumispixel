@@ -100,7 +100,10 @@ def queue_invoice_email(invoice, profile, *, purpose="issue"):
         delivery = queue_transactional_email(event_key=key, subject=subject,
             plain_body=render_to_string("clients/invoices/email/invoice.txt", context),
             html_body=render_to_string("clients/invoices/email/invoice.html", context),
-            recipients=[invoice.client.email])
+            recipients=[invoice.client.email], lifecycle_kind="invoice.email",
+            lifecycle_context={"invoice_id": invoice.pk, "studio_id": profile.pk, "purpose": purpose,
+                "amount_paid": str(invoice.amount_paid), "total": str(invoice.total),
+                "currency": invoice.currency, "due_date": invoice.due_date.isoformat() if invoice.due_date else None})
     except (ValueError, ValidationError) as exc:
         raise InvoiceDeliveryError("Invoice email could not be queued.") from exc
     if delivery is None:

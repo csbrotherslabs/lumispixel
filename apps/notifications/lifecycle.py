@@ -14,6 +14,39 @@ def eligible(delivery):
     """Explicit allowlist of domain checks; unknown kinds fail closed."""
     if not delivery.lifecycle_kind:
         return not delivery.sensitive
+    if delivery.lifecycle_kind == "invoice.email":
+        from apps.clients.models import ClientInvoice
+        context = delivery.lifecycle_context
+        invoice = ClientInvoice.objects.select_related("client", "photographer__user").filter(
+            pk=context.get("invoice_id"), photographer_id=context.get("studio_id")).first()
+        return bool(invoice and invoice.photographer.user.can_login
+            and invoice.client.photographer_id == invoice.photographer_id
+            and invoice.status in (ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID)
+            and invoice.amount_paid < invoice.total
+            and (context.get("purpose") != "reminder" or invoice.reminders_enabled)
+            and str(invoice.amount_paid) == context.get("amount_paid")
+            and str(invoice.total) == context.get("total")
+            and invoice.currency == context.get("currency")
+            and (invoice.due_date.isoformat() if invoice.due_date else None) == context.get("due_date")
+            and [email.casefold() for email in delivery.recipients] == [invoice.client.email.casefold()])
+    if delivery.lifecycle_kind == "gallery.expiry":
+        from apps.galleries.models import GalleryInvitation, Gallery, GalleryPermission
+        from apps.workflows.models import AutomationExecution
+        context = delivery.lifecycle_context
+        invitation = GalleryInvitation.objects.select_related("gallery__photographer__user").filter(
+            pk=context.get("invitation_id"), gallery_id=context.get("gallery_id"),
+            gallery__photographer_id=context.get("studio_id"),
+            status__in=(GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE)).first()
+        if not invitation:
+            return False
+        gallery = invitation.gallery
+        return bool(gallery.photographer.user.can_login and not gallery.deleted_at and not gallery.archived_at
+            and gallery.status in (Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED)
+            and gallery.expires_at and gallery.expires_at > timezone.now()
+            and gallery.expires_at.isoformat() == context.get("expires_at")
+            and not GalleryPermission.objects.filter(gallery=gallery, view_gallery=False).exists()
+            and AutomationExecution.objects.filter(pk=context.get("execution_id"), photographer_id=gallery.photographer_id, rule__enabled=True).exists()
+            and [email.casefold() for email in delivery.recipients] == [invitation.email.casefold()])
     if delivery.lifecycle_kind == "studio.invite":
         from apps.dashboard.models import StudioMembership
         from apps.dashboard.team_invitations import INVITABLE_ROLES

@@ -140,3 +140,13 @@ invalidate both via membership status; explicit actions clear both digests. Lega
 SENT/RESENT audit labels denote issuance, not transport. Initial membership creation
 precedes queue transaction; failed enqueue leaves a recoverable pending membership.
 Migration dashboard 0008 required. Runtime and concurrency tests pending.
+
+Photographer workflow email actions use durable outbox. Workflow completion and domain
+writes commit atomically with queue records; success means queued, not delivered.
+Invoice reminders reuse daily invoice email dedupe and validate current balance, currency,
+due date, recipient and status before dispatch. Existing pre-migration invoice rows have
+no lifecycle guard. Gallery publication preserves existing tokens; expiration notices
+use individual envelopes and validate current expiration and invitation eligibility.
+Existing RUNNING workflow rows require reconciliation; initial broker dispatch recovery
+and full workflow retry testing remain pending. Invoice preparation unchanged pending
+financial integrity milestone. No new migration. Tests not executed.
