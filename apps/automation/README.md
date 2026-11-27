@@ -179,3 +179,16 @@ recorded reason. No automatic regeneration or resend. Optional terminal accepted
 payload purge via EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS (default 0); preserves recipient
 metadata, event keys, attempts and provider evidence. Legal retention, recipient
 anonymization, backups and domain-specific recovery remain pending. Tests not run.
+
+Domain intent integration: signed-copy obligation commits with signature before PDF
+creation; explicit gallery email actions register intent before queue, not manual link
+creation; employee send requests persist independent intent before rendering; account
+verification registers before rendering (outer transactions may still roll back).
+Employee request keys are unique per explicit request, not per password token.
+Missing intent recovery remains investigation/cancellation and authorized domain resend;
+no generic secret reconstruction. Failed gallery tokens are revoked; replacement sends
+create new intents and old missing obligations require reviewed cancellation. Static AST
+guard scans production Python in apps/config/scripts and allows only central adapter;
+CI workflow added, not run or required by branch protection yet. Existing violations
+may surface; dynamic imports, external HTTP mail APIs and other directories not covered.
+No new migration. Tests not run.

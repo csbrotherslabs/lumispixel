@@ -33,6 +33,9 @@ def _issue_and_email(request, invitation):
     if invitation.status == GalleryInvitation.Status.DISABLED or gallery.deleted_at or gallery.archived_at or gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
         raise GalleryInvitationDeliveryError("Gallery is not available for delivery")
     token_record, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
+    from apps.notifications.intents import require_email
+    require_email(event_key=f"gallery.invite:{invitation.pk}:{token_record.pk}",
+        recipients=[invitation.email], kind="gallery.invite")
     try:
         gallery_url = send_gallery_invitation_email(
             request,

@@ -159,6 +159,10 @@ def build_verification_url(request, user):
 
 def send_verification_email(request, user):
     verification_url = build_verification_url(request, user)
+    from hashlib import sha256
+    from apps.notifications.intents import require_email
+    event_key = f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}"
+    require_email(event_key=event_key, recipients=[user.email], kind="account.verify")
     context = {
         "user": user,
         "verification_url": verification_url,
@@ -178,7 +182,7 @@ def send_verification_email(request, user):
     from django.core.exceptions import ValidationError
     try:
         delivery = queue_transactional_email(
-            event_key=f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}",
+            event_key=event_key,
             subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email],
             sensitive=True, expires_at=timezone.now()+timedelta(seconds=min(settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS, settings.PASSWORD_RESET_TIMEOUT)),
             supersession_scope=f"account.verify:{user.pk}", lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})

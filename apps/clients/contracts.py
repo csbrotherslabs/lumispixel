@@ -373,6 +373,9 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
                     description="Booking automatically confirmed after both parties signed the agreement.",
                     metadata={"contract_id": contract.pk, "before": "tentative", "after": "confirmed"},
                 )
+        from apps.notifications.intents import require_email
+        require_email(event_key=f"contract.signed:{contract.pk}:{contract.review_token_digest}",
+            recipients=[contract.sent_to_email], kind="contract.signed")
     generate_signed_contract_pdf(contract.pk)
     return signature
 

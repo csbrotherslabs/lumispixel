@@ -107,12 +107,30 @@ def update_employee(*, employee, actor_user, actor_employee, first_name, last_na
         return locked
 
 
-@transaction.atomic
 def send_employee_invitation(request, employee, *, created_user=False):
+    """Persist the requested communication before attempting rendering/queueing."""
+    from apps.notifications.intents import require_email
+    with transaction.atomic():
+        employee = EmployeeProfile.objects.select_for_update().select_related("user").get(pk=employee.pk)
+        if not employee.can_access_internal or not employee.user.is_active:
+            raise EmployeeInvitationError("Only active, eligible employees can receive access invitations.")
+        event_key = f"employee.invite:{employee.pk}:{uuid4().hex}"
+        recipient = employee.user.email
+        require_email(event_key=event_key, recipients=[recipient], kind="employee.invite")
+    try:
+        return _queue_employee_invitation(request, employee, event_key=event_key, recipient=recipient)
+    except Exception as exc:
+        raise EmployeeInvitationError("Employee access was not changed, but the invitation could not be queued.") from exc
+
+
+@transaction.atomic
+def _queue_employee_invitation(request, employee, *, event_key, recipient):
     employee = EmployeeProfile.objects.select_for_update().select_related("user").get(pk=employee.pk)
     user = employee.user
     if not employee.can_access_internal or not user.is_active:
         raise EmployeeInvitationError("Only active, eligible employees can receive access invitations.")
+    if user.email.casefold() != recipient.casefold():
+        raise EmployeeInvitationError("Employee recipient changed; request a new invitation.")
     setup = not user.has_usable_password()
     deadline = timezone.now() + timedelta(hours=24)
     if setup:
@@ -127,9 +145,8 @@ def send_employee_invitation(request, employee, *, created_user=False):
     safe_name = escape(user.first_name or "there"); safe_title = escape(employee.title or "a LumisPixel employee"); safe_url = escape(action_url); safe_guidance = escape(guidance); safe_label = escape(action_label)
     html = f"<p>Hi {safe_name},</p><p>You've been added to <strong>LumisPixel Internal</strong> as {safe_title}.</p><p>{safe_guidance}</p><p><a href=\"{safe_url}\">{safe_label}</a></p><p>If you were not expecting this invitation, contact a LumisPixel administrator.</p>"
     try:
-        event = hashlib.sha256(token.encode()).hexdigest() if setup else uuid4().hex
         delivery = queue_transactional_email(
-            event_key=f"employee.invite:{employee.pk}:{event}",
+            event_key=event_key,
             subject=subject, plain_body=body, html_body=html, recipients=[user.email],
             sensitive=True, expires_at=deadline, lifecycle_kind="employee.invite",
             lifecycle_context={"employee_id": employee.pk, "user_id": str(user.pk),
