@@ -54,6 +54,24 @@ def eligible(delivery):
         if delivery.lifecycle_kind == "contract.review":
             return contract.status in (Contract.Status.SENT, Contract.Status.VIEWED) and not ContractSignature.objects.filter(contract=contract).exists()
         return contract.status == Contract.Status.SIGNED and ContractSignature.objects.filter(contract=contract, content_hash=digest).exists()
+    if delivery.lifecycle_kind == "employee.invite":
+        from apps.internal_ops.models import EmployeeProfile
+        from apps.accounts.recovery import password_reset_state
+        from django.utils.crypto import constant_time_compare
+        context = delivery.lifecycle_context
+        employee = EmployeeProfile.objects.select_related("user").filter(
+            pk=context.get("employee_id"), user_id=context.get("user_id")).first()
+        if not employee or not employee.can_access_internal or not employee.user.is_active:
+            return False
+        user = employee.user
+        return (
+            [email.casefold() for email in delivery.recipients] == [user.email.casefold()]
+            and context.get("setup") == (not user.has_usable_password())
+            and constant_time_compare(password_reset_state(user), context.get("state", ""))
+            and context.get("title") == employee.title
+            and context.get("role_id") == employee.role_id
+            and context.get("department_id") == employee.department_id
+        )
     if delivery.lifecycle_kind == "account.password_reset":
         from django.contrib.auth import get_user_model
         from django.utils.crypto import constant_time_compare

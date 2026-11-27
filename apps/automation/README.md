@@ -123,3 +123,12 @@ link and preserves the redeemed token for signed PDF access. GET does not retire
 Global revocation and recipient change deny both links. SENT denotes issuance, not transport.
 Signed-copy queue remains best effort after signature/PDF generation; reconciliation of
 missing copies is pending. Migration 0028 required. Runtime tests not executed.
+
+Employee access invitations use encrypted outbox, trusted origin, 24-hour dispatch
+window capped by Django password token timeout for setup, and employee-scoped
+supersession. Actual usable-password state selects setup vs login. Active internal
+access, recipient, password state, title, role and department checked before dispatch.
+Existing provisioning and redemption permissions unchanged; previously delivered setup
+links are not independently revoked on employee suspension. Login notices use unique
+request IDs, not cross-request deduplication. Provisioning precedes enqueue; failures
+before outbox creation still require operator resend. Tests written, not executed.
