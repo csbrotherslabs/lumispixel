@@ -37,6 +37,8 @@ class StudioMembership(models.Model):
     invitation_phone = models.CharField(max_length=30, blank=True)
     invitation_message = models.TextField(blank=True)
     invitation_token_digest = models.CharField(max_length=64, blank=True, editable=False)
+    previous_invitation_digest = models.CharField(max_length=64, blank=True, default="", editable=False, db_index=True)
+    previous_invitation_expires_at = models.DateTimeField(null=True, blank=True)
     invited_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="studio_invitations_sent")
     invitation_sent_at = models.DateTimeField(null=True, blank=True)

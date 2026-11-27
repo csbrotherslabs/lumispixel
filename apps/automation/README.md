@@ -132,3 +132,11 @@ Existing provisioning and redemption permissions unchanged; previously delivered
 links are not independently revoked on employee suspension. Login notices use unique
 request IDs, not cross-request deduplication. Provisioning precedes enqueue; failures
 before outbox creation still require operator resend. Tests written, not executed.
+
+Studio invitations: encrypted outbox, trusted origin, membership-scoped supersession,
+seven-day token lifetime, one-minute resend cooldown. Retain one previous valid token
+across resends; intermediate tokens may become invalid. Acceptance/decline/revocation
+invalidate both via membership status; explicit actions clear both digests. Legacy
+SENT/RESENT audit labels denote issuance, not transport. Initial membership creation
+precedes queue transaction; failed enqueue leaves a recoverable pending membership.
+Migration dashboard 0008 required. Runtime and concurrency tests pending.

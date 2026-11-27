@@ -5246,14 +5246,16 @@ def invite_member(request):
         specialty_names = [value.strip() for value in form.cleaned_data["specialties"].split(",") if value.strip()]
         if specialty_names:
             membership.specialties.set(profile.specialties.model.objects.filter(name__in=specialty_names))
-        token = issue_token(membership)
-        record(membership, request.user, StudioInvitationEvent.Action.SENT)
     try:
-        send_invitation(request, membership, token)
+        with transaction.atomic():
+            membership = StudioMembership.objects.select_for_update().get(pk=membership.pk, studio=profile, status=StudioMembership.Status.INVITED)
+            token = issue_token(membership)
+            send_invitation(request, membership, token)
+            record(membership, request.user, StudioInvitationEvent.Action.SENT)
     except RuntimeError:
         messages.error(request, "The invitation was saved, but could not be sent. You can resend it below.")
     else:
-        messages.success(request, f"Invitation sent to {membership.invitation_email}.")
+        messages.success(request, f"Invitation queued for {membership.invitation_email}.")
     return redirect("photographer_workspace:team_members")
 
 
@@ -5266,7 +5268,9 @@ def invitation_action(request, pk, action):
     if action == "revoke":
         membership.status = StudioMembership.Status.INACTIVE
         membership.invitation_token_digest = ""
-        membership.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+        membership.previous_invitation_digest = ""
+        membership.previous_invitation_expires_at = None
+        membership.save(update_fields=["status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
         record(membership, request.user, StudioInvitationEvent.Action.REVOKED)
         messages.success(request, "Invitation revoked.")
     elif action == "resend":
@@ -5274,14 +5278,15 @@ def invitation_action(request, pk, action):
                 timezone.now() - membership.invitation_sent_at < INVITATION_RESEND_COOLDOWN):
             messages.error(request, "Please wait one minute before resending this invitation.")
             return redirect("photographer_workspace:team_members")
-        token = issue_token(membership)
-        record(membership, request.user, StudioInvitationEvent.Action.RESENT)
         try:
-            send_invitation(request, membership, token)
+            from .invitation_delivery import rotate_invitation_after_delivery
+            with transaction.atomic():
+                rotate_invitation_after_delivery(request, membership)
+                record(membership, request.user, StudioInvitationEvent.Action.RESENT)
         except RuntimeError:
             messages.error(request, "The invitation could not be sent. Please try again.")
         else:
-            messages.success(request, "Invitation resent with a new secure link and expiration date.")
+            messages.success(request, "Replacement invitation queued.")
     else:
         return HttpResponse(status=404)
     return redirect("photographer_workspace:team_members")
@@ -5309,17 +5314,19 @@ def invitation_accept(request, token):
             if not current:
                 return render(request, "photographer_workspace/team/invitation_invalid.html", status=410)
             current.invitation_token_digest = ""
+            current.previous_invitation_digest = ""
+            current.previous_invitation_expires_at = None
             if choice == "accept":
                 duplicate = StudioMembership.objects.filter(studio=current.studio, user=request.user).exclude(pk=current.pk).exists()
                 if duplicate:
                     return render(request, "photographer_workspace/team/invitation_invalid.html", status=409)
                 current.user = request.user
                 current.status = StudioMembership.Status.ACTIVE
-                current.save(update_fields=["user", "status", "invitation_token_digest", "updated_at"])
+                current.save(update_fields=["user", "status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
                 record(current, request.user, StudioInvitationEvent.Action.ACCEPTED)
             else:
                 current.status = StudioMembership.Status.INACTIVE
-                current.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+                current.save(update_fields=["status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
                 record(current, request.user, StudioInvitationEvent.Action.DECLINED)
         return render(request, "photographer_workspace/team/invitation_result.html", {"accepted": choice == "accept", "membership": current})
     return render(request, "photographer_workspace/team/invitation_accept.html", {

@@ -14,6 +14,18 @@ def eligible(delivery):
     """Explicit allowlist of domain checks; unknown kinds fail closed."""
     if not delivery.lifecycle_kind:
         return not delivery.sensitive
+    if delivery.lifecycle_kind == "studio.invite":
+        from apps.dashboard.models import StudioMembership
+        from apps.dashboard.team_invitations import INVITABLE_ROLES
+        context = delivery.lifecycle_context
+        membership = StudioMembership.objects.select_related("studio__user").filter(
+            pk=context.get("membership_id"), studio_id=context.get("studio_id"),
+            status=StudioMembership.Status.INVITED, role__in=INVITABLE_ROLES).first()
+        return bool(membership and membership.studio.user.can_login
+            and membership.role == context.get("role")
+            and membership.invitation_token_digest == context.get("digest")
+            and membership.invitation_expires_at and membership.invitation_expires_at > timezone.now()
+            and [email.casefold() for email in delivery.recipients] == [membership.invitation_email.casefold()])
     if delivery.lifecycle_kind == "gallery.invite":
         from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission
         token = AccessToken.objects.select_related("invitation__gallery").filter(
