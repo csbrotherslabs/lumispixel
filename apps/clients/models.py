@@ -548,6 +548,8 @@ class Contract(PhotographerOwnedModel):
     review_token_digest = models.CharField(max_length=64, blank=True, editable=False, db_index=True)
     review_token_expires_at = models.DateTimeField(null=True, blank=True)
     review_token_revoked_at = models.DateTimeField(null=True, blank=True)
+    previous_review_digest = models.CharField(max_length=64, blank=True, default="", db_index=True, editable=False)
+    previous_review_expires_at = models.DateTimeField(null=True, blank=True)
     sent_to_email = models.EmailField(blank=True)
     send_count = models.PositiveIntegerField(default=0)
     last_sent_at = models.DateTimeField(null=True, blank=True)

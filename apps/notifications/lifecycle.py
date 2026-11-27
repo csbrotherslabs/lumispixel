@@ -33,6 +33,27 @@ def eligible(delivery):
             and not GalleryPermission.objects.filter(gallery=gallery, view_gallery=False).exists()
             and [email.casefold() for email in delivery.recipients] == [invitation.email.casefold()]
         )
+    if delivery.lifecycle_kind in ("contract.review", "contract.signed"):
+        from apps.clients.models import Contract, ContractPhotographerSignature, ContractSignature
+        from apps.clients.contracts import _content_hash
+        contract = Contract.objects.select_related("client", "booking", "photographer__user").filter(
+            pk=delivery.lifecycle_context.get("contract_id"), review_token_revoked_at__isnull=True).first()
+        if not contract or not contract.photographer.user.can_login or not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+            return False
+        if contract.review_token_digest != delivery.lifecycle_context.get("digest"):
+            return False
+        if not contract.sent_to_email or contract.sent_to_email.casefold() != contract.client.email.casefold():
+            return False
+        if [email.casefold() for email in delivery.recipients] != [contract.sent_to_email.casefold()]:
+            return False
+        if contract.booking.photographer_id != contract.photographer_id or contract.booking.client_id != contract.client_id:
+            return False
+        digest = _content_hash(contract.rendered_content)
+        if not ContractPhotographerSignature.objects.filter(contract=contract, content_hash=digest).exists():
+            return False
+        if delivery.lifecycle_kind == "contract.review":
+            return contract.status in (Contract.Status.SENT, Contract.Status.VIEWED) and not ContractSignature.objects.filter(contract=contract).exists()
+        return contract.status == Contract.Status.SIGNED and ContractSignature.objects.filter(contract=contract, content_hash=digest).exists()
     if delivery.lifecycle_kind == "account.password_reset":
         from django.contrib.auth import get_user_model
         from django.utils.crypto import constant_time_compare

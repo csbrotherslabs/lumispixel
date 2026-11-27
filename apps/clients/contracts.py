@@ -7,7 +7,8 @@ from datetime import timedelta
 from django.conf import settings
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
+from apps.notifications.email_delivery import public_url, queue_transactional_email
 from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
@@ -169,24 +170,33 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     if not contract.locked_at or not contract.rendered_content or signature.content_hash != _content_hash(contract.rendered_content):
         raise ValidationError("The signed document does not match the recorded signature. Prepare a replacement agreement.")
     raw_token = secrets.token_urlsafe(32)
-    review_url = build_absolute_uri(reverse("clients:contract-review", kwargs={"token": raw_token}))
+    review_url = public_url(reverse("clients:contract-review", kwargs={"token": raw_token}))
     rendered_content = contract_preview_content(contract)
     context = {"contract": contract, "review_url": review_url, "studio": contract.photographer}
-    message = EmailMultiAlternatives(
-        f"Review your contract: {contract.title}",
-        render_to_string("clients/contracts/email/review.txt", context),
-        settings.DEFAULT_FROM_EMAIL,
-        [recipient],
-    )
-    message.attach_alternative(render_to_string("clients/contracts/email/review.html", context), "text/html")
-    try:
-        delivered = message.send(fail_silently=False)
-    except Exception as exc:
-        raise ContractDeliveryError("Contract email delivery failed.") from exc
-    if delivered != 1:
-        raise ContractDeliveryError("Contract email delivery failed.")
-
     now = timezone.now()
+    digest = _token_digest(raw_token)
+    # Preserve one previously usable link across repeated replacements, only for the same recipient.
+    if contract.sent_to_email.casefold() != recipient.casefold() or contract.review_token_revoked_at:
+        contract.previous_review_digest = ""
+        contract.previous_review_expires_at = None
+    elif not contract.previous_review_expires_at or contract.previous_review_expires_at <= now:
+        contract.previous_review_digest = contract.review_token_digest
+        contract.previous_review_expires_at = contract.review_token_expires_at
+    try:
+        delivery = queue_transactional_email(
+            event_key=f"contract.review:{contract.pk}:{digest}",
+            subject=f"Review your contract: {contract.title}",
+            plain_body=render_to_string("clients/contracts/email/review.txt", context),
+            html_body=render_to_string("clients/contracts/email/review.html", context),
+            recipients=[recipient], sensitive=True, expires_at=now + REVIEW_LINK_LIFETIME,
+            lifecycle_kind="contract.review", lifecycle_context={"contract_id": contract.pk, "digest": digest},
+            supersession_scope=f"contract.review:{contract.pk}",
+        )
+        if not delivery:
+            raise ValueError("Missing recipient")
+    except Exception as exc:
+        raise ContractDeliveryError("Contract email could not be queued.") from exc
+
     was_sent = contract.send_count > 0
     contract.rendered_content = rendered_content
     contract.review_token_digest = _token_digest(raw_token)
@@ -202,13 +212,25 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     contract.save(update_fields=(
         "rendered_content", "review_token_digest", "review_token_expires_at", "review_token_revoked_at",
         "sent_to_email", "send_count", "last_sent_at", "sent_at", "locked_at", "status", "updated_at",
+        "previous_review_digest", "previous_review_expires_at",
     ))
     ContractEvent.objects.create(
         contract=contract, actor=actor,
         event_type=ContractEvent.EventType.RESENT if was_sent else ContractEvent.EventType.SENT,
-        metadata={"recipient": recipient, "contract_version": contract.version, "send_number": contract.send_count},
+        metadata={"recipient": recipient, "contract_version": contract.version, "send_number": contract.send_count, "delivery_id": delivery.pk, "delivery_state": "queued"},
     )
     return contract
+
+
+def _valid_review_token(contract, raw_token):
+    if not contract or contract.review_token_revoked_at or not contract.photographer.user.can_login:
+        return False
+    if not contract.sent_to_email or contract.sent_to_email.casefold() != contract.client.email.casefold():
+        return False
+    digest = _token_digest(raw_token)
+    expiry = contract.review_token_expires_at if digest == contract.review_token_digest else (
+        contract.previous_review_expires_at if digest == contract.previous_review_digest else None)
+    return bool(expiry and expiry > timezone.now())
 
 
 @transaction.atomic
@@ -218,8 +240,8 @@ def open_contract_review(raw_token):
         return None
     contract = Contract.objects.select_for_update().select_related(
         "client", "booking", "photographer", "photographer__user"
-    ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
-    if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+    ).filter(Q(review_token_digest=_token_digest(raw_token)) | Q(previous_review_digest=_token_digest(raw_token)), review_token_revoked_at__isnull=True).first()
+    if not _valid_review_token(contract, raw_token):
         return None
     if contract.status == Contract.Status.SIGNED:
         return contract
@@ -293,9 +315,9 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
     with transaction.atomic():
         contract = Contract.objects.select_for_update(of=("self",)).select_related(
             "client", "booking", "photographer", "photographer__user", "photographer_signature"
-        ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
+        ).filter(Q(review_token_digest=_token_digest(raw_token)) | Q(previous_review_digest=_token_digest(raw_token)), review_token_revoked_at__isnull=True).first()
         now = timezone.now()
-        if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:
+        if not _valid_review_token(contract, raw_token):
             raise ValidationError("This contract review link is invalid or has expired.")
         if contract.status == Contract.Status.SIGNED or ContractSignature.objects.filter(contract=contract).exists():
             raise ValidationError("This contract has already been signed.")
@@ -320,10 +342,16 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
         )
         signature.signed_snapshot = build_signed_snapshot(contract, signature)
         signature.save()
+        # Explicit signature, not a GET or mail scanner, retires alternate signing links.
+        if _token_digest(raw_token) == contract.previous_review_digest:
+            contract.review_token_digest = contract.previous_review_digest
+            contract.review_token_expires_at = contract.previous_review_expires_at
+        contract.previous_review_digest = ""
+        contract.previous_review_expires_at = None
         contract.signed_at = now
         contract.locked_at = contract.locked_at or now
         contract.status = Contract.Status.SIGNED
-        contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at"))
+        contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at", "review_token_digest", "review_token_expires_at", "previous_review_digest", "previous_review_expires_at"))
         ContractEvent.objects.create(
             contract=contract, event_type=ContractEvent.EventType.SIGNED,
             metadata={"contract_id": contract.pk, "contract_version": contract.version,
@@ -349,17 +377,30 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
     return signature
 
 
+@transaction.atomic
 def send_signed_contract_copy_link(*, contract, signed_pdf_url):
-    """Best-effort delivery of the existing private token URL, never a public storage URL."""
-    context = {"contract": contract, "signed_pdf_url": signed_pdf_url, "studio": contract.photographer}
-    message = EmailMultiAlternatives(
-        f"Your signed contract: {contract.title}",
-        render_to_string("clients/contracts/email/signed.txt", context),
-        settings.DEFAULT_FROM_EMAIL,
-        [contract.sent_to_email],
+    contract = Contract.objects.select_for_update().select_related("client", "photographer__user").get(pk=contract.pk)
+    if contract.status != Contract.Status.SIGNED or contract.review_token_revoked_at:
+        raise ValidationError("Signed agreement unavailable.")
+    if not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+        raise ValidationError("Signed agreement link expired.")
+    if contract.sent_to_email.casefold() != contract.client.email.casefold():
+        raise ValidationError("Contract recipient changed.")
+    from urllib.parse import urlsplit
+    from django.urls import resolve
+    match = resolve(urlsplit(signed_pdf_url).path)
+    token = match.kwargs.get("token", "")
+    if not token or _token_digest(token) != contract.review_token_digest:
+        raise ValidationError("Invalid signed agreement link.")
+    context = {"contract": contract, "signed_pdf_url": public_url(reverse("clients:signed-contract-pdf-download", args=[token])), "studio": contract.photographer}
+    return queue_transactional_email(
+        event_key=f"contract.signed:{contract.pk}:{contract.review_token_digest}",
+        subject=f"Your signed contract: {contract.title}",
+        plain_body=render_to_string("clients/contracts/email/signed.txt", context),
+        html_body=render_to_string("clients/contracts/email/signed.html", context),
+        recipients=[contract.sent_to_email], sensitive=True, expires_at=contract.review_token_expires_at,
+        lifecycle_kind="contract.signed", lifecycle_context={"contract_id": contract.pk, "digest": contract.review_token_digest},
     )
-    message.attach_alternative(render_to_string("clients/contracts/email/signed.html", context), "text/html")
-    return message.send(fail_silently=False)
 
 
 @transaction.atomic

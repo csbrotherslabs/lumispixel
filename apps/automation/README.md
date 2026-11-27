@@ -115,3 +115,11 @@ state guard covers Django token mutable inputs. Supersession cancels queued mess
 not already delivered Django tokens. Queue failures retain generic public response and
 log a sanitized error; no persistent failure row exists if enqueue itself fails.
 Django private token hash helper is a compatibility dependency. Tests not run.
+
+Contract review and signed-copy emails now use encrypted outbox and trusted origin.
+One previous review token is retained across replacement requests for the same recipient;
+intermediate replacements may become invalid. Explicit signing POST retires the alternate
+link and preserves the redeemed token for signed PDF access. GET does not retire links.
+Global revocation and recipient change deny both links. SENT denotes issuance, not transport.
+Signed-copy queue remains best effort after signature/PDF generation; reconciliation of
+missing copies is pending. Migration 0028 required. Runtime tests not executed.

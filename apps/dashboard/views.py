@@ -3594,7 +3594,7 @@ def contract_send(request, pk):
         for error in exc.messages:
             messages.error(request, error)
     except ContractDeliveryError:
-        messages.error(request, "The email could not be delivered. The contract was not marked as sent.")
+        messages.error(request, "The email could not be queued. Contract issuance was not updated.")
     else:
         messages.success(request, "Contract review link sent to the client.")
     return redirect("photographer_workspace:contract_preview", pk=contract.pk)
