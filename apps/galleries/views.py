@@ -309,6 +309,8 @@ def _record_client_access(request, token, invitation, gallery):
     if _is_gallery_owner(request, gallery):
         return  # An owner preview is not a client visit or invitation acceptance.
     now = timezone.now()
+    from .replacement_links import activate_replacement
+    activate_replacement(token=token, user=request.user)
     AccessToken.objects.filter(pk=token.pk).update(last_used_at=now)
     GalleryInvitation.objects.filter(pk=invitation.pk).update(
         last_access_at=now,

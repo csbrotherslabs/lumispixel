@@ -14,6 +14,25 @@ def eligible(delivery):
     """Explicit allowlist of domain checks; unknown kinds fail closed."""
     if not delivery.lifecycle_kind:
         return not delivery.sensitive
+    if delivery.lifecycle_kind == "gallery.invite":
+        from apps.galleries.models import AccessToken, Gallery, GalleryInvitation, GalleryPermission
+        token = AccessToken.objects.select_related("invitation__gallery").filter(
+            pk=delivery.lifecycle_context.get("token_id"),
+            invitation_id=delivery.lifecycle_context.get("invitation_id"),
+            revoked_at__isnull=True).first()
+        if not token:
+            return False
+        invitation, gallery = token.invitation, token.invitation.gallery
+        now = timezone.now()
+        return (
+            invitation.status in (GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE)
+            and not gallery.deleted_at and not gallery.archived_at
+            and gallery.status in (Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED)
+            and (not token.expires_at or token.expires_at > now)
+            and (not gallery.expires_at or gallery.expires_at > now)
+            and not GalleryPermission.objects.filter(gallery=gallery, view_gallery=False).exists()
+            and [email.casefold() for email in delivery.recipients] == [invitation.email.casefold()]
+        )
     if delivery.lifecycle_kind == "account.verify":
         from django.contrib.auth import get_user_model
         user = get_user_model().objects.filter(pk=delivery.lifecycle_context.get("user_id"), is_active=True).first()

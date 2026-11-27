@@ -99,3 +99,11 @@ Migration 0008 irreversibly redacts previously flagged sensitive payloads and ca
 queued ones; drain workers first and arrange fresh links if needed. Existing unflagged
 legacy messages are not covered. Account verification tokens now bind email address,
 invalidating previously issued verification links. Tests not executed.
+
+Gallery invitation replacement now queues encrypted email with a 24-hour dispatch
+window (or earlier gallery expiry). Existing valid tokens remain valid until the
+latest replacement is used by an authenticated, verified matching recipient; anonymous
+GETs and provider acceptance alone do not retire older links. Explicit manual link
+rotation remains unchanged. Public anonymous galleries retain overlapping links until
+expiry or explicit revocation. Superseded unsent tokens are not individually revoked;
+normal redemption permissions still apply. Contract replacement remains pending.
