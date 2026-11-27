@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.utils.html import escape
 
 from .models import EmailDelivery, EmailAttempt
+from . import brevo_transport
 
 logger = logging.getLogger(__name__)
 MAX_DELIVERY_ATTEMPTS = 6
@@ -73,6 +74,10 @@ def retry_delay(attempt_count):
 
 
 def classify_delivery_exception(exc):
+    if isinstance(exc, brevo_transport.ProviderRejected):
+        return EmailDelivery.FailureKind.PERMANENT
+    if isinstance(exc, (brevo_transport.ProviderThrottled, brevo_transport.ProviderConfigurationError)):
+        return EmailDelivery.FailureKind.TRANSIENT
     if isinstance(exc, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused)):
         return EmailDelivery.FailureKind.PERMANENT
     if isinstance(exc, smtplib.SMTPResponseException):
@@ -146,7 +151,7 @@ def record_failure(delivery_id, exc):
         terminal = kind == EmailDelivery.FailureKind.PERMANENT or delivery.attempt_count >= delivery.attempt_limit
         delivery.failure_kind = kind
         delivery.last_error = type(exc).__name__[:2000]
-        if not isinstance(exc, (smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPResponseException)):
+        if not isinstance(exc, (brevo_transport.ProviderRejected, brevo_transport.ProviderThrottled, brevo_transport.ProviderConfigurationError, smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPResponseException)):
             delivery.status = EmailDelivery.Status.UNCERTAIN
             delivery.next_attempt_at = None
         elif terminal:
@@ -155,7 +160,7 @@ def record_failure(delivery_id, exc):
             delivery.next_attempt_at = None
         else:
             delivery.status = EmailDelivery.Status.RETRY
-            delivery.next_attempt_at = now + timedelta(seconds=retry_delay(delivery.attempt_count))
+            delivery.next_attempt_at = now + timedelta(seconds=max(retry_delay(delivery.attempt_count), getattr(exc, 'seconds', 0)))
         delivery.save(update_fields=("failure_kind", "last_error", "status", "dead_at", "next_attempt_at"))
         EmailAttempt.objects.filter(delivery=delivery, number=delivery.attempt_count, finished_at__isnull=True).update(finished_at=now, outcome=delivery.status, error_code=type(exc).__name__[:128])
         return delivery
@@ -187,32 +192,46 @@ def deliver_email(delivery_id):
             delivery.last_error = "AttemptLimitReached"
             delivery.save(update_fields=["status", "dead_at", "last_error"])
             return False
+        transport = settings.TRANSACTIONAL_EMAIL_TRANSPORT
+        if transport not in ("smtp", "brevo") or (transport == "brevo" and not settings.BREVO_API_KEY):
+            delivery.status = EmailDelivery.Status.RETRY
+            delivery.last_error = "ProviderConfigurationError"
+            delivery.next_attempt_at = timezone.now() + timedelta(minutes=15)
+            delivery.save(update_fields=["status", "last_error", "next_attempt_at"])
+            return False
         delivery.status = EmailDelivery.Status.SENDING
         delivery.attempt_count += 1
         delivery.last_attempt_at = timezone.now()
         delivery.next_attempt_at = None
         delivery.save(update_fields=("status", "attempt_count", "last_attempt_at", "next_attempt_at"))
-        EmailAttempt.objects.create(delivery=delivery, number=delivery.attempt_count, started_at=delivery.last_attempt_at)
+        EmailAttempt.objects.create(delivery=delivery, number=delivery.attempt_count, started_at=delivery.last_attempt_at, transport=transport)
+        attempt_number = delivery.attempt_count
 
     try:
         recipients = normalize_recipients(delivery.recipients)
-        message = EmailMultiAlternatives(subject=subject, body=plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients), headers={"X-Mailin-custom": f"lp:{delivery.idempotency_key}"})
-        if html_body:
-            message.attach_alternative(html_body, "text/html")
-        if message.send(fail_silently=False) != 1:
-            raise RuntimeError("Email acceptance not confirmed")
+        provider_message_id = ""
+        if transport == "brevo":
+            provider_message_id = brevo_transport.submit(subject=subject, plain_body=plain_body, html_body=html_body,
+                recipients=recipients, correlation=f"lp:{delivery.idempotency_key}:{attempt_number}")
+        else:
+            message = EmailMultiAlternatives(subject=subject, body=plain_body, from_email=settings.DEFAULT_FROM_EMAIL, to=list(recipients), headers={"X-Mailin-custom": f"lp:{delivery.idempotency_key}"})
+            if html_body:
+                message.attach_alternative(html_body, "text/html")
+            if message.send(fail_silently=False) != 1:
+                raise RuntimeError("Email acceptance not confirmed")
     except Exception as exc:
         record_failure(delivery_id, exc)
         raise
 
     with transaction.atomic():
         delivery = EmailDelivery.objects.select_for_update().get(pk=delivery_id)
-        if delivery.status == EmailDelivery.Status.SENDING:
+        EmailAttempt.objects.filter(delivery=delivery, number=attempt_number, provider_message_id="").update(provider_message_id=provider_message_id)
+        if delivery.attempt_count == attempt_number and delivery.status in (EmailDelivery.Status.SENDING, EmailDelivery.Status.UNCERTAIN):
             delivery.status = EmailDelivery.Status.SENT
             delivery.sent_at = timezone.now()
             delivery.failure_kind = EmailDelivery.FailureKind.NONE
             delivery.last_error = ""
             delivery.next_attempt_at = None
             delivery.save(update_fields=("status", "sent_at", "failure_kind", "last_error", "next_attempt_at"))
-            EmailAttempt.objects.filter(delivery=delivery, number=delivery.attempt_count, finished_at__isnull=True).update(finished_at=delivery.sent_at, outcome="sent")
+            EmailAttempt.objects.filter(delivery=delivery, number=attempt_number).update(finished_at=delivery.sent_at, outcome="sent", error_code="")
     return True

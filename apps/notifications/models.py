@@ -133,6 +133,8 @@ class EmailAttempt(models.Model):
     started_at = models.DateTimeField()
     finished_at = models.DateTimeField(null=True)
     outcome = models.CharField(max_length=32, default="sending")
+    transport = models.CharField(max_length=16, default="smtp")
+    provider_message_id = models.CharField(max_length=255, blank=True, db_index=True)
     error_code = models.CharField(max_length=128, blank=True)
 
     class Meta:

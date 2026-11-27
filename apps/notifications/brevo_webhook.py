@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .models import BrevoEmailEvent, EmailDelivery
+from .models import BrevoEmailEvent, EmailDelivery, EmailAttempt
 
 EVENTS = {"request", "delivered", "deferred", "soft_bounce", "hard_bounce",
           "blocked", "invalid_email", "error", "spam", "unsubscribed"}
@@ -47,26 +47,52 @@ def parse_event(payload):
         stamp *= 1000
     recipient = recipient.strip().casefold()
     token = payload.get("X-Mailin-custom", "")
-    key = token[3:] if isinstance(token, str) and re.fullmatch(r"lp:[0-9a-f]{64}", token) else None
-    return event, recipient, message_id, stamp, key
+    match = re.fullmatch(r"lp:([0-9a-f]{64})(?::([1-9][0-9]{0,8}))?", token) if isinstance(token, str) else None
+    key = match.group(1) if match else None
+    number = int(match.group(2)) if match and match.group(2) else None
+    return event, recipient, message_id, stamp, key, number
 
 
 def persist_event(parsed):
-    event, recipient, message_id, stamp, key = parsed
+    event, recipient, message_id, stamp, key, number = parsed
     recipient_hash = digest(recipient)
     fingerprint = digest(json.dumps([event, recipient_hash, message_id, stamp], separators=(",", ":")))
     delivery = EmailDelivery.objects.select_for_update().filter(idempotency_key=key).first() if key else None
+    if not key:
+        matches = list(EmailAttempt.objects.filter(transport="brevo", provider_message_id=message_id).values_list("delivery_id", "number")[:2])
+        if len(matches) == 1:
+            delivery = EmailDelivery.objects.select_for_update().get(pk=matches[0][0])
+            number = matches[0][1]
     if delivery and recipient not in {r.strip().casefold() for r in delivery.recipients}:
         delivery = None
+    attempt = None
+    if delivery and number is not None:
+        attempt = EmailAttempt.objects.filter(delivery=delivery, number=number, transport="brevo").first()
+        if not attempt or (attempt.provider_message_id and attempt.provider_message_id != message_id):
+            delivery = None
+            attempt = None
     record, created = BrevoEmailEvent.objects.get_or_create(fingerprint=fingerprint, defaults={
         "delivery": delivery, "event": event, "provider_message_id": message_id,
         "recipient_hash": recipient_hash, "occurred_at": stamp,
     })
-    if not created or not delivery:
+    if not delivery:
+        return
+    if not created:
+        if record.delivery_id is None:
+            record.delivery = delivery
+            record.save(update_fields=["delivery"])
+        elif record.delivery_id != delivery.pk:
+            return
+    if attempt and event in ACCEPTED and not attempt.provider_message_id:
+        attempt.provider_message_id = message_id
+        attempt.save(update_fields=["provider_message_id"])
+    if number is not None and (not attempt or number != delivery.attempt_count):
+        return
+    if number is None and delivery.attempt_history.filter(transport="brevo").exists():
         return
     if event in ACCEPTED and delivery.status in (EmailDelivery.Status.SENDING, EmailDelivery.Status.UNCERTAIN):
         expected = {digest(r.strip().casefold()) for r in delivery.recipients}
-        accepted = set(delivery.brevo_events.filter(event__in=ACCEPTED).values_list("recipient_hash", flat=True))
+        accepted = set(delivery.brevo_events.filter(event__in=ACCEPTED, provider_message_id=message_id).values_list("recipient_hash", flat=True))
         if expected and expected <= accepted:
             delivery.status = EmailDelivery.Status.SENT
             delivery.sent_at = timezone.now()
@@ -74,6 +100,8 @@ def persist_event(parsed):
             delivery.last_error = ""
             delivery.failure_kind = ""
             delivery.save(update_fields=["status", "sent_at", "next_attempt_at", "last_error", "failure_kind"])
+            if attempt:
+                EmailAttempt.objects.filter(pk=attempt.pk).update(outcome="sent", finished_at=delivery.sent_at, error_code="")
 
 
 @csrf_exempt

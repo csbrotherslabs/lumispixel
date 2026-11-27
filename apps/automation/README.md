@@ -192,3 +192,16 @@ guard scans production Python in apps/config/scripts and allows only central ada
 CI workflow added, not run or required by branch protection yet. Existing violations
 may surface; dynamic imports, external HTTP mail APIs and other directories not covered.
 No new migration. Tests not run.
+
+Brevo API transport: TRANSACTIONAL_EMAIL_TRANSPORT=smtp (default) or brevo;
+BREVO_API_KEY required for brevo. Fixed HTTPS endpoint, no redirects or network
+retries, no SMTP fallback. API accepts HTML or plain body (HTML preferred).
+201 with messageId is acceptance, not delivery. 429 retries with bounded numeric
+Retry-After; definite validation rejects dead-letter; auth errors retry within
+attempt budget; timeout/5xx/malformed acceptance uncertain. Attempt number and
+provider message ID correlate webhooks, with recipient validation. Custom header
+and message-ID behavior require live verification, especially multi-recipient
+messages; unresolved evidence stays uncertain. Migration 0011 required. Mock tests
+written, not run. Sender must be authorized in Brevo. Never log or commit API key.
+Architecture guard does not yet detect arbitrary HTTP provider calls. Existing SMTP
+remains default, not disabled. No production configuration changed.
