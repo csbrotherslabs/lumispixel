@@ -50,9 +50,9 @@ class DurablePasswordResetForm(PasswordResetForm):
                 lifecycle_context={"user_id": str(user.pk), "state": password_reset_state(user)},
                 supersession_scope=f"account.password_reset:{user.pk}",
             )
-        except Exception:
+        except Exception as exc:
             # Match Django's non-enumerating response; never log tokens or addresses.
-            logger.error("Password reset email could not be queued")
+            logger.error("Password reset email could not be queued (%s)", type(exc).__name__)
 
 from django.core.cache import cache
 from django.http import HttpResponse

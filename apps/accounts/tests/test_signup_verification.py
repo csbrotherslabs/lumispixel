@@ -203,8 +203,10 @@ class EntrySignupVerificationTests(TestCase):
         self.assertTrue(messages)
         self.assertEqual(EmailDelivery.objects.count(), 1)
 
-        self.client.post(reverse("accounts:resend-verification"))
+        with patch.object(email_verification_token, "_now", return_value=email_verification_token._now() + timedelta(seconds=2)):
+            self.client.post(reverse("accounts:resend-verification"))
         self.assertEqual(EmailDelivery.objects.count(), 2)
+        self.assertEqual(EmailDelivery.objects.filter(status=EmailDelivery.Status.CANCELLED).count(), 1)
 
     def test_signup_email_delivery_failure_still_shows_pending_page(self):
         with patch("apps.accounts.views.send_verification_email", side_effect=EmailDeliveryError):

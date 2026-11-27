@@ -76,3 +76,6 @@ BREVO_API_KEY = ""
 # Ephemeral test-only encryption key; never depend on deployed secrets.
 from cryptography.fernet import Fernet
 EMAIL_PAYLOAD_KEYS = Fernet.generate_key().decode("ascii")
+
+# Recovery links require a trusted absolute origin, even when DEBUG is false.
+PUBLIC_BASE_URL = "https://lumispixel.example"
