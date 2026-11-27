@@ -48,6 +48,8 @@ def reconcile_pending_transactional_emails(limit=100):
     from .lifecycle import purge_sensitive_payloads
     EmailDelivery.objects.filter(status__in=[EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY], expires_at__lte=now).update(status=EmailDelivery.Status.EXPIRED, last_error="ExpiredBeforeDispatch", next_attempt_at=None)
     purge_sensitive_payloads()
+    from .retention import purge_old_terminal_payloads
+    purge_old_terminal_payloads(limit=limit)
     ids = list(
         EmailDelivery.objects.filter(status__in=(EmailDelivery.Status.PENDING, EmailDelivery.Status.RETRY))
         .filter(next_attempt_at__isnull=True)

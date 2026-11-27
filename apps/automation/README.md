@@ -169,3 +169,13 @@ acknowledgment and studio invitations. Account check is prefix-based, not recipi
 or current-token proof. Verification dispatch lifetime capped by both Django timeouts.
 Remaining: provider attempt correlation, employee/gallery intent provenance, secure
 manual domain recovery, retention policy and runtime tests. No new migration.
+
+Email intent registry (migration 0010): require_email can be called within a domain
+transaction before a later enqueue transaction; queue service links the same intent
+atomically. Queue-only callers cannot detect failures before queue invocation; domain
+producers must explicitly persist intent for that guarantee. Existing rows not backfilled.
+Missing intents alert after 15 minutes; authenticated superusers may cancel with a
+recorded reason. No automatic regeneration or resend. Optional terminal accepted
+payload purge via EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS (default 0); preserves recipient
+metadata, event keys, attempts and provider evidence. Legal retention, recipient
+anonymization, backups and domain-specific recovery remain pending. Tests not run.

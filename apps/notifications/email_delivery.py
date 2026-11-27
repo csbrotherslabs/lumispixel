@@ -97,7 +97,9 @@ def queue_transactional_email(*, event_key, subject, plain_body, html_body="", r
     # Prevent newline/header injection in fields that become RFC email headers.
     if "\r" in subject or "\n" in subject:
         raise ValueError("Invalid email subject")
-    key = delivery_key(event_key=event_key, recipients=recipients)
+    from .intents import require_email
+    intent = require_email(event_key=event_key, recipients=recipients, kind=lifecycle_kind)
+    key = intent.key
     from .models import EmailSupersession
     from .payload_crypto import encrypt_payload
     scope = hashlib.sha256(supersession_scope.encode()).hexdigest() if supersession_scope else ''
@@ -116,6 +118,12 @@ def queue_transactional_email(*, event_key, subject, plain_body, html_body="", r
         EmailDelivery.objects.filter(supersession_scope=scope, status__in=['pending', 'retry']).exclude(pk=delivery.pk).update(status='cancelled', last_error='Superseded', next_attempt_at=None)
         pointer.current = delivery
         pointer.save(update_fields=['current'])
+
+    if intent.delivery_id and intent.delivery_id != delivery.pk:
+        raise ValueError('Email intent delivery mismatch')
+    if not intent.delivery_id:
+        intent.delivery = delivery
+        intent.save(update_fields=['delivery'])
 
     def dispatch():
         from .tasks import deliver_transactional_email

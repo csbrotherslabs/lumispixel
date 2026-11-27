@@ -145,3 +145,15 @@ class EmailRecoveryEvent(models.Model):
     reason = models.CharField(max_length=500)
     previous_attempt_limit = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class EmailIntent(models.Model):
+    """Explicit communication obligation; never stores a message or raw token."""
+    key = models.CharField(max_length=64, unique=True)
+    event_key = models.CharField(max_length=255, db_index=True)
+    kind = models.CharField(max_length=64, blank=True)
+    delivery = models.OneToOneField(EmailDelivery, null=True, blank=True, on_delete=models.PROTECT, related_name="intent")
+    created_at = models.DateTimeField(auto_now_add=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.CharField(max_length=500, blank=True)
+    cancelled_by = models.CharField(max_length=128, blank=True)

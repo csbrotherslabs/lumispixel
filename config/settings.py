@@ -283,3 +283,6 @@ EMAIL_PAYLOAD_KEYS = os.getenv('EMAIL_PAYLOAD_KEYS', '')
 
 # Enable business email reconciliation only after verified outbox cutover.
 EMAIL_RECONCILIATION_START = os.getenv("EMAIL_RECONCILIATION_START", "")
+
+# Opt-in after legal/operational retention approval; zero disables general payload purge.
+EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS = int(os.getenv("EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS", "0"))

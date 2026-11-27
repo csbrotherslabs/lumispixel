@@ -18,6 +18,9 @@
 <article><span>Uncertain / terminal</span><strong>{{ metrics.uncertain }} / {{ metrics.dead }}</strong></article>
 </section>
 <p>Coverage is the share of queued records with at least one confirmed recipient delivery, not a recipient-level delivery rate. Missing webhook evidence is not proof of failure.</p>
+<h2>Required email intents</h2>
+<p>{{ missing_intent_count }} unresolved intents without a delivery record. Showing up to 25. Cancellation records an operator decision; it does not resend or revoke a domain credential.</p>
+{% for intent in missing_intents %}<article><strong>Intent #{{ intent.pk }} · {{ intent.kind|default:"Unclassified" }}</strong><p>{{ intent.created_at }}</p><form method="post" action="{% url 'internal_ops:email_intent_cancel' intent.pk %}">{% csrf_token %}<label>Cancellation reason <input name="reason" required maxlength="500"></label><button type="submit">Cancel obligation</button></form></article>{% empty %}<p>No overdue missing intents.</p>{% endfor %}
 <h2>Business email reconciliation</h2>
 <p>Missing expected outbox records, not proof of non-delivery. No automatic resend.</p>
 {% for item in business_missing %}<p>{{ item.kind }}: {{ item.count }} · Sample record IDs: {{ item.sample_ids|join:", " }}</p>{% empty %}<p>Reconciliation not configured.</p>{% endfor %}

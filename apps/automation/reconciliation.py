@@ -61,7 +61,9 @@ def reconcile():
     key_failures = EmailDelivery.objects.filter(status='retry', last_error='PayloadDecryptionFailed').count()
     from apps.workflows.models import AutomationExecution
     ambiguous = AutomationExecution.objects.filter(status="failed", error="LegacyExecutionOutcomeUnknown").count()
+    from apps.notifications.intents import missing_intents
     checks = [
+        ('automation.email_intent_missing', missing_intents().count(), 'critical', 'Required email intent has no delivery', 'Investigate business state; never automatically recreate a secure link.'),
         ("automation.workflow_ambiguous", ambiguous, "critical", "Legacy workflow outcome unknown", "Review business effects before any manual replay."),
         ('automation.email_key_failure', key_failures, 'critical', 'Email payload decryption blocked', 'Restore encryption keys before dispatch; do not regenerate secrets automatically.'),
         ("automation.email_uncertain", uncertain, "critical", "Email delivery outcome uncertain",
