@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 from django.core import mail
+from apps.notifications.models import EmailDelivery
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from .test_invitation_email import GalleryInvitationEmailTests
@@ -30,7 +31,7 @@ class DraftInviteeTests(TestCase):
         self.assertEqual(invite.email, 'client@example.com')
         self.assertEqual(invite.status, GalleryInvitation.Status.NOT_SENT)
         self.assertFalse(invite.access_tokens.exists())
-        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(EmailDelivery.objects.count(), 0)
         # Merely publishing never admits a saved client to account galleries.
         self.publish()
         user = SimpleNamespace(is_authenticated=True, email_verified=True, email=invite.email)
@@ -49,7 +50,7 @@ class DraftInviteeTests(TestCase):
         workspace = reverse('photographer_workspace:gallery_workspace', args=[self.gallery.pk])
         response = self.client.post(workspace, {'action':'publish_gallery'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(EmailDelivery.objects.count(), 0)
         self.assertFalse(AccessToken.objects.exists())
         response = self.client.get(workspace+'?tab=client-access')
         self.assertContains(response, 'Send invitations (1)')
@@ -60,7 +61,7 @@ class DraftInviteeTests(TestCase):
         invite = self.gallery.invitations.get()
         self.client.post(reverse('galleries:resend_client_gallery_invitation', args=[self.gallery.pk,invite.pk]))
         self.client.post(reverse('galleries:send_saved_gallery_invitations', args=[self.gallery.pk]))
-        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(EmailDelivery.objects.count(), 0)
         self.assertFalse(AccessToken.objects.exists())
 
     def test_explicit_bulk_send_skips_sent_and_is_idempotent(self):
@@ -68,7 +69,7 @@ class DraftInviteeTests(TestCase):
         GalleryInvitation.objects.create(gallery=self.gallery, client_name='Already sent',email='sent@example.com')
         url = reverse('galleries:send_saved_gallery_invitations',args=[self.gallery.pk])
         self.client.post(url); self.client.post(url)
-        self.assertEqual(len(mail.outbox),1)
+        self.assertEqual(EmailDelivery.objects.count(),1)
         invite=self.gallery.invitations.get(email='client@example.com')
         self.assertEqual(invite.status,GalleryInvitation.Status.PENDING)
         self.assertEqual(invite.access_tokens.filter(revoked_at__isnull=True).count(),1)
@@ -85,7 +86,7 @@ class DraftInviteeTests(TestCase):
         self.client.post(url)
         invite.refresh_from_db()
         self.assertEqual(invite.status,GalleryInvitation.Status.PENDING)
-        self.assertEqual(len(mail.outbox),1)
+        self.assertEqual(EmailDelivery.objects.count(),1)
 
     def test_invalid_email_is_not_saved(self):
         self.client.post(reverse('galleries:prepare_client_gallery_invitation',args=[self.gallery.pk]),
@@ -100,7 +101,7 @@ class DraftInviteeTests(TestCase):
         self.client.force_login(other)
         response=self.client.post(reverse('galleries:send_saved_gallery_invitations',args=[self.gallery.pk]))
         self.assertEqual(response.status_code,404)
-        self.assertEqual(len(mail.outbox),0)
+        self.assertEqual(EmailDelivery.objects.count(),0)
 
     def test_legacy_workspace_invite_and_resend_respect_draft(self):
         self.gallery.status=Gallery.Status.DRAFT;self.gallery.save(update_fields=['status'])
@@ -109,7 +110,7 @@ class DraftInviteeTests(TestCase):
         invite=self.gallery.invitations.get()
         self.client.post(workspace,{'action':'resend','invitation_id':invite.pk})
         self.assertEqual(invite.status,GalleryInvitation.Status.NOT_SENT)
-        self.assertEqual(len(mail.outbox),0)
+        self.assertEqual(EmailDelivery.objects.count(),0)
         self.assertFalse(AccessToken.objects.exists())
 
     def test_bulk_partial_failure_retries_only_unsent_clients(self):
@@ -123,11 +124,11 @@ class DraftInviteeTests(TestCase):
         url=reverse('galleries:send_saved_gallery_invitations',args=[self.gallery.pk])
         with patch('apps.galleries.invitation_views.send_gallery_invitation_email',side_effect=selective):
             self.client.post(url)
-        self.assertEqual(len(mail.outbox),1)
+        self.assertEqual(EmailDelivery.objects.count(),1)
         self.assertEqual(self.gallery.invitations.filter(status=GalleryInvitation.Status.NOT_SENT).count(),1)
         self.client.post(url)
-        self.assertEqual(len(mail.outbox),2)
-        self.assertEqual(mail.outbox[-1].to,['second@example.com'])
+        self.assertEqual(EmailDelivery.objects.count(),2)
+        self.assertEqual(EmailDelivery.objects.latest('pk').recipients,['second@example.com'])
 
     def test_bulk_send_is_post_only(self):
         response=self.client.get(reverse('galleries:send_saved_gallery_invitations',args=[self.gallery.pk]))

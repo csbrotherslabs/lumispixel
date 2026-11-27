@@ -34,8 +34,8 @@ class GalleryMediaDeliveryPerformanceTests(SimpleTestCase):
         with self.assertRaises(ValueError):
             signed_media_url("galleries/photo.jpg", variant="giant")
 
-    def test_variant_does_not_change_signed_origin_path(self):
+    def test_variant_is_bound_to_signature_without_changing_origin_path(self):
         preview = urlparse(signed_media_url("galleries/photo.jpg", now=100, variant="preview"))
         original = urlparse(signed_media_url("galleries/photo.jpg", now=100, variant="original"))
         self.assertEqual(preview.path, original.path)
-        self.assertEqual(parse_qs(preview.query)["signature"], parse_qs(original.query)["signature"])
+        self.assertNotEqual(parse_qs(preview.query)["signature"], parse_qs(original.query)["signature"])

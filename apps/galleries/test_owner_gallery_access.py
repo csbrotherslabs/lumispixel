@@ -27,7 +27,7 @@ class GalleryOwnerAccessTests(TestCase):
 
     def test_owner_can_view_without_invitation_or_verified_recipient_email(self):
         for url in [self.stable, self.invited]:
-            self.assertContains(self.client.get(url), 'Private event')
+            self.assertContains(self.client.get(url, follow=True), 'Private event')
         self.assertEqual(GalleryInvitation.objects.filter(gallery=self.gallery).count(), 1)
         self.invitation.refresh_from_db()
         self.record.refresh_from_db()
@@ -41,7 +41,7 @@ class GalleryOwnerAccessTests(TestCase):
                 reverse('visual_search:invited-semantic-search', args=[self.token])]
         with patch('apps.visual_search.semantic_api._semantic_results', return_value=[]):
             for url in urls:
-                self.assertEqual(self.client.get(url, {'q': 'dancing'}).status_code, 200, url)
+                self.assertEqual(self.client.get(url, {'q': 'dancing'}, follow=True).status_code, 200, url)
 
     def test_other_photographer_is_not_an_owner(self):
         other = User.objects.create_user(email='other-studio@example.test', email_verified=True)

@@ -321,6 +321,8 @@ class ClientOriginalDownloadPermissionTests(TestCase):
         self.assertContains(page, self.original_url)
         response = self.client.get(self.original_url)
         self.assertEqual(response.status_code, 200)
+        if response.streaming:
+            b"".join(response.streaming_content)
         self.assertIn("attachment;", response["Content-Disposition"])
 
     def test_original_permission_cannot_bypass_download_images_permission(self):
@@ -347,7 +349,10 @@ class ClientOriginalDownloadPermissionTests(TestCase):
     def test_original_download_is_recorded_as_an_original_download(self):
         self.permissions.download_originals = True
         self.permissions.save(update_fields=["download_originals", "updated_at"])
-        self.assertEqual(self.client.get(self.original_url).status_code, 200)
+        response = self.client.get(self.original_url)
+        self.assertEqual(response.status_code, 200)
+        if response.streaming:
+            b"".join(response.streaming_content)
         event = GalleryAnalyticsEvent.objects.filter(
             gallery=self.gallery,
             visitor_identifier=AccessToken.digest(self.raw_token),

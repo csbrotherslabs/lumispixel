@@ -20,7 +20,7 @@ class PrivateGalleryObjectStorage(S3Storage):
         parts = path.parts
         if len(parts) >= 4 and parts[0] == "galleries" and parts[3] != "originals":
             path = PurePosixPath(*parts[:3], "originals", *parts[3:])
-        return super().generate_filename(str(path))
+        return super().generate_filename(str(path)).replace('\\', '/')
 
 
 class PrivateGalleryB2Storage(PrivateGalleryObjectStorage):
