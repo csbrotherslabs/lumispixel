@@ -86,6 +86,7 @@
  :is(.sf-actions,.story-tools,.ms-tools,.cp-nav,.cp-browser-actions) .lp-download-full{display:none!important}
  :is(.sf-actions,.story-tools,.ms-tools,.cp-nav,.cp-browser-actions) .lp-download-short{display:inline!important}
  .sf-client-gallery .sf-photo-grid,.story-client .story-grid,.ms-client .ms-grid{--columns:var(--lp-mobile-columns,2)!important}
+ .ms-client .ms-grid{column-count:var(--lp-mobile-columns,2)}
  .cp-client .cp-photo-grid{grid-template-columns:repeat(var(--lp-mobile-columns,2),minmax(0,1fr))}
  .cp-stage .cp-nav nav,.cp-browser .cp-browser-actions{flex-wrap:nowrap;max-width:100%;overflow-x:auto;gap:6px}
  .cp-stage .cp-nav nav :is(button,a),.cp-browser .cp-browser-actions :is(button,a){min-height:40px;padding:8px 10px;white-space:nowrap;font-size:12px}
