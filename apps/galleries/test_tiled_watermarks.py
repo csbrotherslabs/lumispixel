@@ -196,7 +196,10 @@ class TiledWatermarkBrowserTests(SimpleTestCase):
                     selector.press('ArrowUp')
                     expect(selector).to_have_value('medium')
                     expect(dialog.locator('[data-viewer-download]')).to_have_text('Download Medium')
-                    self.assertLessEqual(dialog.locator('.lp-viewer__toolbar').evaluate('el => el.scrollWidth'), width)
+                    for toolbar_tag in ['header', 'footer']:
+                        toolbar = dialog.locator(f'{toolbar_tag}.lp-viewer__toolbar')
+                        expect(toolbar).to_have_count(1)
+                        self.assertLessEqual(toolbar.evaluate('el => el.scrollWidth'), width)
                     if width == 1440:
                         self.assertLessEqual(dialog.locator('[data-viewer-comments]').bounding_box()['height'], 34)
                         expect(dialog.locator('[data-viewer-comments] svg')).to_have_css('width', '14px')
