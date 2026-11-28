@@ -1,33 +1,38 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
-
-from django.test import SimpleTestCase
-
+from django.test import TestCase
+from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
+from apps.dashboard.models import StudioMembership
 from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-class InvitationActionScopingTests(SimpleTestCase):
-    @patch("apps.dashboard.invitation_actions.get_object_or_404")
-    @patch("apps.dashboard.invitation_actions.resend_studio_invitation")
-    @patch("apps.dashboard.invitation_actions.record")
-    def test_resend_lookup_is_studio_scoped(self, _record, _resend, get_mock):
-        membership = Mock(invitation_sent_at=None)
-        get_mock.return_value = membership
-        request = Mock()
-        studio = Mock()
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
-        resend_pending_invitation(request, studio, 42)
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
-        lookup = get_mock.call_args.kwargs
-        self.assertEqual(lookup["pk"], 42)
-        self.assertIs(lookup["studio"], studio)
+    def test_resend_lookup_is_studio_scoped(self):
+        other = PhotographerProfile.objects.create(user=User.objects.create_user(email="other@example.com"))
+        with self.assertRaises(Http404):
+            resend_pending_invitation(self.request, other, self.membership.pk)
 
-    @patch("apps.dashboard.invitation_actions.get_object_or_404")
-    @patch("apps.dashboard.invitation_actions.record")
-    def test_revoke_clears_credential(self, _record, get_mock):
-        membership = Mock()
-        get_mock.return_value = membership
-
-        revoke_pending_invitation(Mock(), Mock(), 7)
-
-        self.assertEqual(membership.invitation_token_digest, "")
-        membership.save.assert_called_once()
+    def test_revoke_clears_credential(self):
+        self.revoke()
+        self.membership.refresh_from_db()
+        self.assertEqual(self.membership.invitation_token_digest, "")
+        self.assertIsNone(find_valid_invitation(self.token))
