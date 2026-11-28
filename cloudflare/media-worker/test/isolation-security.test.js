@@ -45,3 +45,30 @@ test("cache hit and miss preserve response policy; origin is mocked", async () =
     const u=url();u.searchParams.set("variant","original");assert.equal((await worker.fetch(new Request(u),env)).status,403);
   } finally {globalThis.fetch=oldFetch;globalThis.caches=oldCaches;}
 });
+
+test("origin redirects are rejected without following or caching", async () => {
+  const oldFetch = globalThis.fetch, oldCaches = globalThis.caches;
+  let calls = 0, writes = 0;
+  globalThis.caches = {default: {match: async () => undefined, put: async () => { writes++; }}};
+  try {
+    for (const status of [301, 302, 303, 307, 308]) {
+      for (const method of ["GET", "HEAD"]) {
+        globalThis.fetch = async request => {
+          calls++;
+          assert.equal(request.redirect, "manual");
+          return new Response(null, {status, headers: {location: "https://untrusted.example/"}});
+        };
+        const before = calls;
+        const response = await worker.fetch(new Request(url(), {method}), env);
+        assert.equal(response.status, 502);
+        assert.equal(response.headers.get("location"), null);
+        assert.equal(response.headers.get("cache-control"), "no-store");
+        assert.equal(calls, before + 1);
+      }
+    }
+    assert.equal(writes, 0);
+  } finally {
+    globalThis.fetch = oldFetch;
+    globalThis.caches = oldCaches;
+  }
+});
