@@ -86,3 +86,10 @@ CELERY_BROKER_URL = "memory://"
 CELERY_RESULT_BACKEND = "cache+memory://"
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 VISUAL_SEARCH_DATABASE_URL = ""
+
+# Never allow inherited remote storage credentials in ordinary tests.
+B2_ACCESS_KEY_ID = B2_SECRET_ACCESS_KEY = B2_BUCKET_NAME = ""
+B2_SITE_ACCESS_KEY_ID = B2_SITE_SECRET_ACCESS_KEY = B2_SITE_BUCKET_NAME = ""
+B2_PRIVATE_UPLOAD_ACCESS_KEY_ID = B2_PRIVATE_UPLOAD_SECRET_ACCESS_KEY = B2_PRIVATE_UPLOAD_BUCKET_NAME = ""
+B2_ENDPOINT_URL = B2_REGION = ""
+MEDIA_SIGNING_SECRET = "test-only-gallery-signing-secret-not-for-deployment"
