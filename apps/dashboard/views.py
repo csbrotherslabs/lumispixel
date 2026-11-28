@@ -4851,7 +4851,7 @@ def invoice_action(request, pk, action):
             else:
                 try: amount = Decimal(request.POST.get("amount", "0")).quantize(Decimal("0.01"))
                 except Exception: amount = Decimal("0")
-                if amount <= 0 or amount > invoice.balance:
+                if not amount.is_finite() or amount <= 0 or amount > invoice.balance:
                     messages.error(request, "Payment must be greater than zero and no more than the balance.")
                 else:
                     InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=amount)
