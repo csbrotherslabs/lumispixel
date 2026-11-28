@@ -11,6 +11,8 @@ from apps.accounts.views import _authenticated_destination_url
 from .forms import FIELD_SECTION_MAP, PhotographerBusinessPreferencesForm, PhotographerOnboardingProfileForm, PhotographerSpecialtiesForm, PhotographerWebsiteThemeForm, THEME_FIELD_CONFIG, IMAGE_TYPES, MAX_IMAGE_SIZE
 from .themes import SECTION_LIBRARY, THEME_DEFINITIONS, resolved_section_keys, section_options, theme_by_slug, theme_options
 from .website_content import preview_content
+from .publishing import PUBLISHED_KEY, snapshot, publication_errors
+from .forms import section_required_fields, actual_hero_image
 
 THEME_OPTIONS = theme_options()
 PHOTOGRAPHER_TOTAL_STEPS = 5
@@ -156,6 +158,10 @@ def onboarding_theme(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def website_content(request):
+    from .notable_clients import client_rows, save_clients, existing_clients
+    from .experience import existing, parse_experience
+    from .team import existing_team, team_rows, save_team
+    from django.core.exceptions import ValidationError
     builder_mode = request.resolver_match.url_name == "website-content"
     if not request.user.has_photographer_profile:
         destination = "clients:setup-dashboard" if request.user.has_client_profile else _authenticated_destination_url(request, request.user)
@@ -174,29 +180,84 @@ def website_content(request):
         request.FILES or None,
         instance=profile,
         website_profile=website,
-        draft=action in {"save_draft", "save_content"},
+        draft=action in {"save_draft", "save_content", "studio_publish"},
         content_only=True,
+    )
+    specialties_form = PhotographerSpecialtiesForm(
+        request.POST if request.method == "POST" and "services" in selected_sections and "studio_specialties" in request.POST else None,
+        instance=profile,
     )
     if request.method == "POST" and form.is_valid():
         equipment_error = _equipment_upload_error(request, website) if "equipment" in selected_sections else None
-        if equipment_error:
-            form.add_error(None, equipment_error)
+        project_error = next((f"Project {index + 1} cover image must be 50 MB or smaller." for index in range(3) if request.FILES.get(f"project_{index}_cover_image") and request.FILES[f"project_{index}_cover_image"].size > MAX_IMAGE_SIZE), None) if "portfolio" in selected_sections else None
+        client_error = None
+        rows = None
+        if "notable_clients" in selected_sections and "client_indices" in request.POST:
+            try:
+                rows = client_rows(request, website)
+            except ValidationError as exc:
+                client_error = exc.messages[0]
+        team = None
+        if "team" in selected_sections and "team_indices" in request.POST:
+            try:
+                team = team_rows(request, website)
+            except ValidationError as exc:
+                client_error = exc.messages[0]
+        experience = None
+        if "stats" in selected_sections and "experience_data" in request.POST:
+            try:
+                experience = parse_experience(request)
+            except ValidationError as exc:
+                client_error = exc.messages[0]
+        if specialties_form.is_bound and not specialties_form.is_valid():
+            client_error = "Select valid photography specialties."
+        if equipment_error or project_error or client_error:
+            form.add_error(None, equipment_error or project_error or client_error)
         else:
             profile, website = form.save_content()
-            _save_project_drafts(request, website)
+            if specialties_form.is_bound:
+                profile.specialties.set(specialties_form.cleaned_data["specialties"])
+            if team is not None:
+                save_team(website, team)
+            if rows is not None:
+                save_clients(website, rows)
+            if experience is not None:
+                website.theme_content = dict(website.theme_content or {}, experience=experience)
+                website.save(update_fields=["theme_content", "updated_at"])
+            if "portfolio" in selected_sections:
+                _save_project_drafts(request, website)
             if "equipment" in selected_sections:
                 _save_equipment_drafts(request, website)
             if builder_mode:
+                if action == "studio_publish":
+                    errors = publication_errors(profile, website)
+                    if errors:
+                        for error in errors:
+                            messages.error(request, error)
+                    else:
+                        website.theme_content = dict(website.theme_content or {}, **{PUBLISHED_KEY: snapshot(profile, website)})
+                        website.save(update_fields=["theme_content", "updated_at"])
+                        messages.success(request, "Website published.")
+                    return redirect("photographers:website-content")
                 messages.success(request, "Your website content has been saved.")
                 return redirect("photographers:website-content")
             if action == "save_draft":
                 messages.success(request, "Your website content draft has been saved.")
                 return redirect("photographers:setup-dashboard")
+            if action in {"finish_setup", "finish_and_publish"}:
+                errors = publication_errors(profile, website)
+                if errors:
+                    for error in errors:
+                        messages.error(request, error)
+                    return redirect("photographers:onboarding-website-content")
+            if action == "finish_and_publish":
+                website.theme_content = dict(website.theme_content or {}, **{PUBLISHED_KEY: snapshot(profile, website)})
+                website.save(update_fields=["theme_content", "updated_at"])
             profile.onboarding_completed = True
             profile.onboarding_step = PHOTOGRAPHER_TOTAL_STEPS
             profile.save(update_fields=["onboarding_completed", "onboarding_step", "updated_at"])
             return redirect("photographer_workspace:dashboard")
-    panels = _section_content_panels(form, profile.website_theme, selected_sections)
+    panels = _section_content_panels(form, profile.website_theme, [key for key in selected_sections if key != "reviews"])
     equipment_slots = _equipment_slots(website)
     return render(request, "photographers/onboarding_website_content.html", _context(
         5,
@@ -204,19 +265,30 @@ def website_content(request):
         form=form,
         profile=profile,
         website=website,
-        projects=list(website.projects.all()[:3]),
+        projects=[{"index": i, "item": next((p for p in website.projects.all() if p.display_order == i), None)} for i in range(3)],
         panels=panels,
+        specialties_field=specialties_form["specialties"],
+        experience_data=existing(website),
+        legacy_team=(website.theme_content or {}).get("team_members", ""),
+        empty_team={"index": "__index__"},
+        team_profiles=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_team(website))],
+        empty_client={"index": "__index__"},
+        notable_clients=[dict(item, index=i, image_url=website.hero_image.storage.url(item["image"]) if item.get("image") else "") for i, item in enumerate(existing_clients(website))],
         equipment_slots=equipment_slots,
         equipment_indices=",".join(str(slot["index"]) for slot in equipment_slots),
         next_equipment_index=_next_equipment_index(website),
-        selected_sections=selected_sections,
+        selected_sections=[key for key in selected_sections if key != "reviews"] + ["reviews"],
         builder_mode=builder_mode,
+        website_studio=True,
+        studio_hero_image=actual_hero_image(website),
+        studio_theme=THEME_DEFINITIONS[profile.website_theme],
     ))
 
 
 def _section_content_panels(form, theme, selected_sections):
     allowed = set(THEME_FIELD_CONFIG[theme]["required"] + THEME_FIELD_CONFIG[theme]["optional"])
-    allowed.update(("hero_image", "availability_window_months", "availability_call_to_action"))
+    allowed.update(section_required_fields(theme, selected_sections))
+    allowed.update(("hero_image", "availability_window_months", "availability_call_to_action", "services_intro"))
     panels = []
     for section_key in selected_sections:
         field_names = [name for name in form.fields if name in allowed and FIELD_SECTION_MAP.get(name) == section_key]
@@ -225,7 +297,7 @@ def _section_content_panels(form, theme, selected_sections):
             "name": SECTION_LIBRARY[section_key]["name"],
             "description": SECTION_LIBRARY[section_key]["description"],
             "fields": [form[name] for name in field_names],
-            "supports_projects": section_key == "portfolio" and theme == PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL,
+            "supports_projects": section_key == "portfolio",
             "supports_equipment": section_key == "equipment",
         })
     return panels
@@ -247,7 +319,7 @@ def _posted_equipment_indices(request):
     indices = []
     for value in request.POST.get("equipment_indices", "").split(","):
         value = value.strip()
-        if value.isdigit() and int(value) not in indices:
+        if value.isdigit() and len(value) <= 5 and int(value) <= 32767 and int(value) not in indices:
             indices.append(int(value))
     return indices[:200]
 
@@ -269,17 +341,24 @@ def _equipment_upload_error(request, website):
         if image and image.content_type not in IMAGE_TYPES:
             return f"Equipment item {position} must use a JPG, PNG, GIF, or WebP image."
         if image and image.size > MAX_IMAGE_SIZE:
-            return f"Equipment item {position} must be 5 MB or smaller."
+            return f"Equipment item {position} must be 50 MB or smaller."
     return None
+
+
+def _published_equipment_image(website, name):
+    return any(item.get("image") == name for item in
+               (website.theme_content or {}).get(PUBLISHED_KEY, {}).get("equipment", []))
 
 
 def _save_equipment_drafts(request, website):
     existing = {item.display_order: item for item in website.equipment_items.all()}
+    saved_items = []
     for index in _posted_equipment_indices(request):
         item = existing.get(index)
         if request.POST.get(f"equipment_{index}_remove"):
             if item:
-                item.image.delete(save=False)
+                if not _published_equipment_image(website, item.image.name):
+                    item.image.delete(save=False)
                 item.delete()
             continue
         name = request.POST.get(f"equipment_{index}_name", "").strip()
@@ -295,21 +374,29 @@ def _save_equipment_drafts(request, website):
             item.image = image
         item.is_featured = True
         item.save()
-        if image and old_image and old_image != item.image.name:
+        saved_items.append(item)
+        if image and old_image and old_image != item.image.name and not _published_equipment_image(website, old_image):
             item.image.storage.delete(old_image)
+
+    # Keep original indices for lookup until all submitted rows have been processed.
+    for position, item in enumerate(saved_items):
+        if item.display_order != position:
+            item.display_order = position
+            item.save(update_fields=["display_order", "updated_at"])
 
 
 def _save_project_drafts(request, website):
-    if website.selected_theme != PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL:
-        return
-    website.projects.all().delete()
+    existing = {p.display_order: p for p in website.projects.all()}
     for index in range(3):
         title = request.POST.get(f"project_{index}_title", "").strip()
         description = request.POST.get(f"project_{index}_description", "").strip()
         image = request.FILES.get(f"project_{index}_cover_image")
         if not (title or description or image):
             continue
-        project = PhotographerWebsiteProject(photographer_website=website, title=title, description=description, display_order=index)
+        project = existing.get(index) or PhotographerWebsiteProject(photographer_website=website, display_order=index)
+        project.title = title
+        project.description = description
+        project.is_featured = True
         if image:
             project.cover_image = image
         project.save()
@@ -394,3 +481,4 @@ def skip_onboarding(request):
         return redirect("accounts:post-login-redirect")
     _photographer_profile(request.user)
     return redirect("photographers:setup-dashboard")
+

@@ -118,4 +118,4 @@ def client_gallery_download_all(request, token):
         actor=request.user,
         actor_type=GalleryActivity.ActorType.CLIENT,
     )
-    return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
+    return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip", content_type="application/zip")

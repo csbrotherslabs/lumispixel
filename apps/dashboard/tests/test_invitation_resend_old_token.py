@@ -1,17 +1,35 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
+from django.test import TestCase
+from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
+from apps.dashboard.models import StudioMembership
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
-from django.test import SimpleTestCase
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-from apps.dashboard.invitation_delivery import rotate_invitation_after_delivery
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
-class InvitationResendOldTokenTests(SimpleTestCase):
-    @patch("apps.dashboard.invitation_delivery.apply_token")
-    @patch("apps.dashboard.invitation_delivery.send_invitation")
-    def test_old_digest_is_not_replaced_until_new_link_is_delivered(self, send_mock, apply_mock):
-        membership = Mock(invitation_token_digest="old-digest")
-        observed = []
-        send_mock.side_effect = lambda *_args: observed.append(membership.invitation_token_digest)
-        rotate_invitation_after_delivery(Mock(), membership)
-        self.assertEqual(observed, ["old-digest"])
-        apply_mock.assert_called_once()
+    def test_repeated_queued_resends_preserve_original_link(self):
+        for _ in range(3):
+            self.resend()
+            self.membership.refresh_from_db()
+            self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+            self.membership.save(update_fields=["invitation_sent_at"])
+            self.assertIsNotNone(find_valid_invitation(self.token))

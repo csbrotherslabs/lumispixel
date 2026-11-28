@@ -82,14 +82,17 @@ def scoped_financial_records(profile, start, end, today=None):
     period_invoices = _dated(invoices, "created_at", start, end)
     payment_subquery = (InvoicePayment.objects.filter(invoice_id=OuterRef("pk"), photographer=profile, status=InvoicePayment.Status.COMPLETED)
                         .values("invoice_id").annotate(value=Sum("amount")).values("value"))
+    refund_subquery = (PaymentRefund.objects.filter(payment__invoice_id=OuterRef("pk"), photographer=profile, status=PaymentRefund.Status.COMPLETED)
+                       .values("payment__invoice_id").annotate(value=Sum("amount")).values("value"))
     credit_subquery = (InvoiceCredit.objects.filter(invoice_id=OuterRef("pk"), photographer=profile, status=InvoiceCredit.Status.APPLIED)
                        .values("invoice_id").annotate(value=Sum("amount")).values("value"))
     invoice_rows = period_invoices.annotate(
         payment_total=Coalesce(Subquery(payment_subquery, output_field=MONEY_FIELD), Value(ZERO), output_field=MONEY_FIELD),
+        refund_total=Coalesce(Subquery(refund_subquery, output_field=MONEY_FIELD), Value(ZERO), output_field=MONEY_FIELD),
         credit_total=Coalesce(Subquery(credit_subquery, output_field=MONEY_FIELD), Value(ZERO), output_field=MONEY_FIELD),
     ).annotate(
-        effective_paid=Greatest(F("amount_paid"), F("payment_total")),
-        balance=Greatest(Value(ZERO), F("total") - Greatest(F("amount_paid"), F("payment_total")) - F("credit_total")),
+        effective_paid=Greatest(F("amount_paid"), F("payment_total") - F("refund_total")),
+        balance=Greatest(Value(ZERO), F("total") - Greatest(F("amount_paid"), F("payment_total") - F("refund_total")) - F("credit_total")),
     )
     invoice_values = invoice_rows.aggregate(
         invoice_value=Coalesce(Sum("total"), Value(ZERO), output_field=MONEY_FIELD),

@@ -20,7 +20,7 @@
     {% endfor %}
   </fieldset>
   <section class="lumis-section-builder" aria-labelledby="section-builder-title">
-    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Availability remains private until you explicitly select it here.</p></div>
+    <div class="lumis-section-builder__heading"><div><span>Modular website</span><h2 id="section-builder-title">Choose and arrange sections</h2></div><p>Hero and Contact stay enabled. Ratings &amp; Reviews is required and always last. Availability remains private until you explicitly select it here.</p></div>
     {{ form.section_order }}
     {% if form.website_sections.errors %}<div class="lumis-onboarding__error" role="alert">{{ form.website_sections.errors|striptags }}</div>{% endif %}
     <div class="lumis-section-builder__list" data-section-list>
@@ -28,10 +28,10 @@
       <div class="lumis-section-builder__item" data-section-item="{{ section.key }}">
         <label for="section-{{ section.key }}">
           <span class="lumis-section-builder__media"><img src="{% static section.image %}" alt="{{ section.name }} section example" loading="lazy"></span>
-          <input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' %}data-required-section{% endif %}>
+          <input id="section-{{ section.key }}" type="checkbox" name="website_sections" value="{{ section.key }}" {% if section.key in selected_sections %}checked{% endif %} {% if section.key == 'hero' or section.key == 'contact' or section.key == 'reviews' %}data-required-section{% endif %} {% if section.key == 'reviews' %}checked disabled{% endif %}>
           <span class="lumis-section-builder__copy"><strong>{{ section.name }}{% if section.key == "hero" or section.key == "contact" %} {% include "photographers/_required_marker.html" %}{% endif %}</strong><small>{{ section.description }}</small></span>
         </label>
-        <span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>
+        {% if section.key == "reviews" %}<span><i class="bi bi-lock"></i> Required · Always last</span><input type="hidden" name="website_sections" value="reviews">{% else %}<span class="lumis-section-builder__move"><button type="button" data-move="up" aria-label="Move {{ section.name }} up"><i class="bi bi-arrow-up"></i></button><button type="button" data-move="down" aria-label="Move {{ section.name }} down"><i class="bi bi-arrow-down"></i></button></span>{% endif %}
       </div>
       {% endfor %}
     </div>
@@ -42,11 +42,11 @@
 (function(){
   var list=document.querySelector('[data-section-list]');var orderInput=document.querySelector('[data-section-order-input]');
   function applyInitialOrder(){var keys=(orderInput.value||'').split(',').filter(Boolean);keys.slice().reverse().forEach(function(key){var item=list.querySelector('[data-section-item="'+key+'"]');if(item)list.insertBefore(item,list.firstElementChild);});}
-  function writeOrder(){orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}
+  function writeOrder(){var reviews=list.querySelector('[data-section-item="reviews"]');if(reviews)list.appendChild(reviews);orderInput.value=Array.from(list.querySelectorAll('[data-section-item]')).filter(function(item){return item.querySelector('input').checked}).map(function(item){return item.dataset.sectionItem}).join(',');}
   function sync(resetSections){var checked=document.querySelector('input[name="website_theme"]:checked');if(resetSections&&checked){var defaults=(checked.dataset.defaultSections||'').split(',').filter(Boolean);list.querySelectorAll('input[type="checkbox"]').forEach(function(box){box.checked=defaults.includes(box.value)||box.hasAttribute('data-required-section')});writeOrder();}}
   document.querySelectorAll('input[name="website_theme"]').forEach(function(r){r.addEventListener('change',function(){sync(true)})});
   list.addEventListener('change',function(event){if(event.target.hasAttribute('data-required-section'))event.target.checked=true;writeOrder()});
-  list.addEventListener('click',function(event){var button=event.target.closest('[data-move]');if(!button)return;var item=button.closest('[data-section-item]');var sibling=button.dataset.move==='up'?item.previousElementSibling:item.nextElementSibling;if(!sibling)return;if(button.dataset.move==='up')list.insertBefore(item,sibling);else list.insertBefore(sibling,item);writeOrder()});
+  list.addEventListener('click',function(event){var button=event.target.closest('[data-move]');if(!button)return;var item=button.closest('[data-section-item]');var sibling=button.dataset.move==='up'?item.previousElementSibling:item.nextElementSibling;if(!sibling||item.dataset.sectionItem==='reviews'||sibling.dataset.sectionItem==='reviews')return;if(button.dataset.move==='up')list.insertBefore(item,sibling);else list.insertBefore(sibling,item);writeOrder()});
   applyInitialOrder();sync(false);writeOrder();
 })();
 </script>

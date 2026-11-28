@@ -8,7 +8,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
-from apps.clients.contracts import create_contract_from_template
+from apps.clients.contracts import create_contract_from_template, sign_contract_as_photographer
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.clients.models import (Client, ClientSession, Contract, ContractEvent,
                                  ContractPhotographerSignature, ContractSignature,
@@ -22,6 +24,7 @@ class ContractWorkflowTests(TestCase):
     def make_studio(self, email):
         user = User.objects.create_user(email=email, password="pass12345")
         user.account_status = User.AccountStatus.ACTIVE
+        user.email_verified = True
         user.primary_role = User.PrimaryRole.PHOTOGRAPHER
         user.save()
         studio = PhotographerProfile.objects.create(user=user, onboarding_completed=True)
@@ -29,6 +32,8 @@ class ContractWorkflowTests(TestCase):
         booking = ClientSession.objects.create(
             photographer=studio, client=client, session_type="Portrait",
             starts_at=timezone.now() + timezone.timedelta(days=5),
+            pricing_confirmed=True, booking_value=100, payment_currency="USD",
+            balance_due_date=timezone.localdate() + timezone.timedelta(days=5),
         )
         template = ContractTemplate.objects.create(
             photographer=studio, name="Portrait standard", title="Portrait Agreement",
@@ -97,7 +102,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Draft")
         self.assertContains(booking_page, "Current workflow")
         self.assertContains(booking_page, 'class="lp-booking-contract-row"')
-        self.assertContains(booking_page, "Sign &amp; Share")
+        self.assertContains(booking_page, "Review &amp; Sign Contract")
+        self.assertContains(booking_page, reverse("photographer_workspace:contract_preview", args=[contract.pk]))
 
         preview_page = self.client.get(
             reverse("photographer_workspace:contract_preview", args=[contract.pk])
@@ -256,11 +262,12 @@ class ContractWorkflowTests(TestCase):
         self.booking.location = "City Studio"
         self.booking.booking_value = "425.00"
         self.booking.save(update_fields=["location", "booking_value"])
-        content = "Hello {{ client.full_name }} at {{ booking.location }} — {{ unknown.value }}"
+        content = "Hello {{ client.full_name }} at {{ booking.location }} — {{ unknown.value }} — {{ booking.payment_terms }}"
         rendered = render_merge_fields(content, self.booking)
         self.assertIn("Maya Cole", rendered)
         self.assertIn("City Studio", rendered)
         self.assertIn("{{ unknown.value }}", rendered)
+        self.assertIn("USD 425.00", rendered)
 
     def test_template_crud_validation_archive_duplicate_and_tenant_isolation(self):
         self.client.force_login(self.owner)
@@ -331,7 +338,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, "Preview")
         self.assertContains(response, "data-template-preview", html=False)
         self.assertContains(response, "data-preview-dialog", html=False)
-        self.assertContains(response, "Add contract content to see its preview here.")
+        self.assertContains(response, "data-preview-content")
         self.assertContains(response, 'form="contract-template-form"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ client.full_name }}"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ booking.date }}"', html=False)
@@ -340,7 +347,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, 'data-merge-search-text="client.full_name Client full name"', html=False)
         self.assertNotContains(response, "Save Draft")
 
-    def test_every_contract_starter_has_editable_metadata_without_unreviewed_legal_text(self):
+    def test_every_contract_starter_has_editable_metadata_and_agreement_content(self):
         expected = {
             "wedding": ("Wedding Photography Agreement", "wedding"),
             "portrait": ("Portrait Photography Agreement", "portrait"),
@@ -349,6 +356,9 @@ class ContractWorkflowTests(TestCase):
             "real-estate": ("Real Estate Photography Agreement", "general"),
             "mini-session": ("Mini Session Agreement", "portrait"),
             "second-shooter": ("Second Shooter / Associate Photographer Agreement", "wedding"),
+            "fashion": ("Fashion Photography Agreement", "general"),
+            "product": ("Product Photography Agreement", "general"),
+            "general": ("General Photography Agreement", "general"),
         }
         definitions = serialized_contract_starters()
 
@@ -359,7 +369,11 @@ class ContractWorkflowTests(TestCase):
                 self.assertEqual(definitions[key]["name"], label)
                 self.assertEqual(definitions[key]["title"], label)
                 self.assertEqual(definitions[key]["category"], category)
-                self.assertEqual(definitions[key]["content"], "")
+                self.assertIn("{{ workspace.name }}", definitions[key]["content"])
+                self.assertIn("{{ client.full_name }}", definitions[key]["content"])
+                self.assertIn("Acceptance and signatures", definitions[key]["content"])
+                if key != "second-shooter":
+                    self.assertIn("{{ booking.payment_terms }}", definitions[key]["content"])
 
     def test_starter_selection_is_not_persisted_and_saved_template_belongs_to_workspace(self):
         self.client.force_login(self.owner)
@@ -409,10 +423,23 @@ class ContractWorkflowTests(TestCase):
         self.client.force_login(manager)
         self.assertEqual(self.client.get(reverse("photographer_workspace:contract_templates")).status_code, 403)
 
-    def _draft_with_email(self):
+    def _draft_with_email(self, *, signed=True):
         self.crm_client.email = "maya@example.com"
         self.crm_client.save(update_fields=["email"])
-        return create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+        contract = create_contract_from_template(booking=self.booking, template=self.template, actor=self.owner)
+        if signed:
+            sign_contract_as_photographer(contract=contract, actor=self.owner, signer_name="Morgan Studio",
+                                          signature_value="Morgan Studio", consent_accepted=True)
+            contract.refresh_from_db()
+        return contract
+
+    def _deliver_review(self, contract):
+        contract.refresh_from_db()
+        delivery = EmailDelivery.objects.get(lifecycle_kind="contract.review",
+            lifecycle_context__contract_id=contract.pk, lifecycle_context__digest=contract.review_token_digest)
+        self.assertTrue(delivery.sensitive)
+        self.assertTrue(delivery.encrypted_payload)
+        self.assertTrue(deliver_email(delivery.pk))
 
     def test_preview_renders_resolved_snapshot_safely(self):
         self.template.content = "Hello <strong>{{ client.full_name }}</strong> <script>alert(1)</script>"
@@ -439,6 +466,7 @@ class ContractWorkflowTests(TestCase):
         contract.refresh_from_db()
         self.assertEqual(contract.status, Contract.Status.SENT)
         self.assertEqual(contract.send_count, 1)
+        self._deliver_review(contract)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(len(contract.review_token_digest), 64)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
@@ -459,7 +487,11 @@ class ContractWorkflowTests(TestCase):
         self.assertEqual(Contract.objects.filter(pk=contract.pk).count(), 1)
         self.assertEqual(contract.send_count, 2)
         self.assertEqual(contract.events.filter(event_type=ContractEvent.EventType.RESENT).count(), 1)
-        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[token])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[token])).status_code, 200)
+        self._deliver_review(contract)
+        replacement = mail.outbox[-1].body.split("/client/contracts/review/")[1].split("/")[0]
+        self.assertNotEqual(token, replacement)
+        self.assertEqual(self.client.get(reverse("clients:contract-review", args=[replacement])).status_code, 200)
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_missing_and_invalid_email_are_not_sent(self):
@@ -480,6 +512,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.assertEqual(self.client.get(reverse("clients:contract-review", args=["invalid-token"])).status_code, 404)
         contract.review_token_expires_at = timezone.now() - timezone.timedelta(seconds=1)
@@ -501,14 +534,15 @@ class ContractWorkflowTests(TestCase):
         self.assertEqual(self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk])).status_code, 404)
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_email_failure_leaves_contract_draft_and_without_token(self):
+    def test_queue_failure_leaves_contract_ready_and_without_token(self):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
-        with patch("apps.clients.contracts.EmailMultiAlternatives.send", side_effect=OSError("mail down")):
+        with patch("apps.clients.contracts.queue_transactional_email", side_effect=OSError("mail down")):
             response = self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]), follow=True)
         contract.refresh_from_db()
-        self.assertContains(response, "was not marked as sent")
-        self.assertEqual(contract.status, Contract.Status.DRAFT)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(contract.status, Contract.Status.READY)
+        self.assertFalse(EmailDelivery.objects.filter(lifecycle_kind="contract.review").exists())
         self.assertEqual(contract.review_token_digest, "")
         self.assertEqual(contract.send_count, 0)
         self.assertFalse(contract.events.filter(event_type=ContractEvent.EventType.SENT).exists())
@@ -518,6 +552,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         url = reverse("clients:contract-review", args=[token])
@@ -543,6 +578,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         response = self.client.post(reverse("clients:contract-review", args=[token]), {
@@ -555,10 +591,12 @@ class ContractWorkflowTests(TestCase):
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_photographer_and_client_signatures_are_preserved_in_final_snapshot(self):
-        contract = self._draft_with_email()
+        contract = self._draft_with_email(signed=False)
         self.client.force_login(self.owner)
         preview_url = reverse("photographer_workspace:contract_preview", args=[contract.pk])
+        preview = self.client.get(preview_url)
         response = self.client.post(preview_url, {
+            "preview_hash": preview.context["preview_hash"],
             "signer_name": "Morgan Studio", "signature_value": "Morgan Studio",
             "consent_accepted": "on",
         }, REMOTE_ADDR="192.0.2.20", HTTP_USER_AGENT="Studio browser")
@@ -583,6 +621,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Share this contract with Maya Cole?")
 
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         self.client.post(reverse("clients:contract-review", args=[token]), {
@@ -599,6 +638,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         payload = {"signer_name": "Maya Cole", "signature_value": "Maya Cole", "consent_accepted": "on"}
@@ -612,6 +652,7 @@ class ContractWorkflowTests(TestCase):
         other = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[other.pk]))
+        self._deliver_review(other)
         other_token = mail.outbox[-1].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         with patch("apps.clients.contracts.ContractEvent.objects.create", side_effect=RuntimeError("audit failure")):
@@ -626,6 +667,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         self.client.post(reverse("clients:contract-review", args=[token]), {
@@ -679,6 +721,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         self.client.post(reverse("clients:contract-review", args=[token]), {
@@ -699,6 +742,8 @@ class ContractWorkflowTests(TestCase):
 
         client_view = self.client.get(reverse("clients:signed-contract-pdf", args=[token]))
         self.assertEqual(client_view.status_code, 200)
+        # Exhaust the test client iterator; it closes the response with DB cleanup disconnected.
+        self.assertEqual(b"".join(client_view.streaming_content), original_pdf)
         self.assertEqual(client_view["Cache-Control"], "private, no-store")
         self.assertEqual(self.client.get(reverse("clients:signed-contract-pdf", args=["guessed-key"])).status_code, 404)
 
@@ -718,6 +763,7 @@ class ContractWorkflowTests(TestCase):
             reverse("photographer_workspace:signed_contract_pdf_download", args=[contract.pk]),
         )
         self.assertEqual(workspace_download.status_code, 200)
+        self.assertEqual(b"".join(workspace_download.streaming_content), original_pdf)
         self.assertIn("attachment", workspace_download["Content-Disposition"])
         other_owner, _studio, _client, _booking, _template = self.make_studio("pdf-other@example.com")
         self.client.force_login(other_owner)
@@ -730,6 +776,7 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email()
         self.client.force_login(self.owner)
         self.client.post(reverse("photographer_workspace:contract_send", args=[contract.pk]))
+        self._deliver_review(contract)
         token = mail.outbox[0].body.split("/client/contracts/review/")[1].split("/")[0]
         self.client.logout()
         with patch("apps.clients.contract_pdfs.render_signed_contract_pdf", side_effect=RuntimeError("renderer down")):

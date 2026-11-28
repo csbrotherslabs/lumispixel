@@ -8,7 +8,17 @@ from apps.core.support_views import help_center, support_attachment_download, su
 from apps.dashboard.client_contracts import client_contracts
 from apps.dashboard.workspace_settings import workspace_settings
 
+from apps.photographers.publishing import public_website
+from apps.marketplace.verified_reviews import request_booking, submit_review, verify_booking
+
+from apps.notifications.brevo_webhook import brevo_transactional
+
 urlpatterns = [
+    path("api/webhooks/brevo/transactional/", brevo_transactional, name="brevo_transactional_webhook"),
+    path("p/<slug:slug>/book/verify/<str:token>/", verify_booking, name="public-booking-verify"),
+    path("p/<slug:slug>/book/", request_booking, name="public-photographer-booking"),
+    path("p/<slug:slug>/reviews/<int:booking_id>/", submit_review, name="public-photographer-review"),
+    path("p/<slug:slug>/", public_website, name="public-photographer-website"),
     path("health/live/", live, name="health_live"),
     path("health/ready/", ready, name="health_ready"),
     path("admin/", admin.site.urls),

@@ -11,8 +11,34 @@ function textResponse(message, status) {
 }
 
 function normalizePrefix(prefix) {
-  return String(prefix || "").replace(/^\/+/, "").replace(/\/+$/, "") + "/";
+  return /^(?:private)\/(?:dev|prod)\/$/.test(prefix) ? prefix : "";
 }
+
+function safeKey(key) {
+  return typeof key === "string" && !/[\\%?#\x00-\x1f\x7f]/.test(key) &&
+    key.split("/").every(p => p && p !== "." && p !== "..");
+}
+
+function validOrigin(env) {
+  const prefix = normalizePrefix(env.B2_ALLOWED_PREFIX);
+  if (!prefix) return false;
+  const environment = prefix.split("/")[1];
+  const bucket = "lumispixel-production-media";
+  return env.B2_BUCKET_NAME === bucket &&
+    /^[a-z0-9-]+$/.test(env.B2_REGION) &&
+    env.B2_ENDPOINT_URL === `https://s3.${env.B2_REGION}.backblazeb2.com`;
+}
+
+export function allowedGalleryKey(key, prefix) {
+  if (!normalizePrefix(prefix) || !safeKey(key) || !key.startsWith(prefix)) return false;
+  const p = key.slice(prefix.length).split("/");
+  if (p[0] !== "galleries" || !/^[0-9]+$/.test(p[2] || "") ||
+      !(p[1] === "covers-v2" || /^[0-9]+$/.test(p[1] || ""))) return false;
+  return (p.length === 5 && p[3] === "originals") ||
+    (p.length === 6 && p[3] === "variants" && ["thumbnail", "preview"].includes(p[4]) && p[5].endsWith(".webp")) ||
+    (p.length === 4 && p[1] !== "covers-v2" && !["originals", "variants"].includes(p[3]));
+}
+
 
 function base64Url(bytes) {
   let binary = "";
@@ -46,14 +72,17 @@ async function expectedSignature(secret, pathname, expires, variant) {
 }
 
 async function authorize(requestUrl, env) {
-  if (!env.MEDIA_SIGNING_SECRET) {
+  if (!env.MEDIA_SIGNING_SECRET || env.MEDIA_SIGNING_SECRET.length < 32) {
     return { ok: false, response: textResponse("Media signing is not configured", 500) };
   }
 
+  if (["expires", "signature", "variant"].some(k => requestUrl.searchParams.getAll(k).length !== 1)) {
+    return { ok: false, response: textResponse("Forbidden", 403) };
+  }
   const expiresRaw = requestUrl.searchParams.get("expires");
   const signature = requestUrl.searchParams.get("signature");
 
-  if (!expiresRaw || !signature || !/^\d+$/.test(expiresRaw)) {
+  if (!expiresRaw || !signature || !/^[1-9][0-9]*$/.test(expiresRaw) || !/^[A-Za-z0-9_-]{43}$/.test(signature)) {
     return { ok: false, response: textResponse("Forbidden", 403) };
   }
 
@@ -65,11 +94,11 @@ async function authorize(requestUrl, env) {
   }
 
   const maxTtl = Number(env.MEDIA_MAX_SIGNED_URL_TTL || 3600);
-  if (!Number.isFinite(maxTtl) || maxTtl <= 0 || expires - now > maxTtl) {
+  if (!Number.isSafeInteger(maxTtl) || maxTtl > 3600 || maxTtl <= 0 || expires - now > maxTtl) {
     return { ok: false, response: textResponse("Forbidden", 403) };
   }
 
-  const variant = requestUrl.searchParams.get("variant") || "original";
+  const variant = requestUrl.searchParams.get("variant");
   if (!["thumbnail", "preview", "original"].includes(variant)) {
     return { ok: false, response: textResponse("Invalid media variant", 400) };
   }
@@ -104,7 +133,7 @@ export default {
       return textResponse("Media origin is not configured", 500);
     }
 
-    if (!String(env.B2_ENDPOINT_URL).startsWith("https://")) {
+    if (!validOrigin(env)) {
       return textResponse("Media origin configuration is invalid", 500);
     }
 
@@ -115,19 +144,19 @@ export default {
     let objectKey;
 
     try {
-      objectKey = decodeURIComponent(requestUrl.pathname.replace(/^\/+/, ""));
+      objectKey = decodeURIComponent(requestUrl.pathname.slice(1));
     } catch {
       return textResponse("Invalid object path", 400);
     }
 
     const allowedPrefix = normalizePrefix(env.B2_ALLOWED_PREFIX);
 
-    if (!objectKey || !objectKey.startsWith(allowedPrefix)) {
+    if (!allowedGalleryKey(objectKey, allowedPrefix)) {
       return textResponse("Not found", 404);
     }
 
     // The requested variant is bound to the HMAC; changing it invalidates the URL.
-    const variant = requestUrl.searchParams.get("variant") || "original";
+    const variant = requestUrl.searchParams.get("variant");
     const imageOptions = {
       thumbnail: { width: 640, fit: "scale-down", quality: 82, format: "webp" },
       preview: { width: 2560, fit: "scale-down", quality: 85, format: "webp" },
@@ -140,7 +169,7 @@ export default {
     // Versioned key prevents existing path-only original caches from being
     // mistaken for resized previews after deployment.
     const cacheUrl = new URL(requestUrl.origin + requestUrl.pathname);
-    cacheUrl.searchParams.set("delivery", "v2");
+    cacheUrl.searchParams.set("delivery", "v3");
     cacheUrl.searchParams.set("variant", variant);
     const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
     const isRangeRequest = request.headers.has("range");
@@ -156,6 +185,7 @@ export default {
       if (cachedResponse) {
         const headers = new Headers(cachedResponse.headers);
         headers.set("x-lumispixel-cache", "HIT");
+        headers.set("cache-control", "private, no-store");
         return new Response(cachedResponse.body, {
           status: cachedResponse.status,
           statusText: cachedResponse.statusText,
@@ -181,6 +211,7 @@ export default {
       fetchKey = [...parts.slice(0, -1), variant, stem + ".webp"].join("/");
     }
 
+    if (!allowedGalleryKey(fetchKey, allowedPrefix)) return textResponse("Invalid media path", 400);
     const endpoint = String(env.B2_ENDPOINT_URL || "").replace(/\/+$/, "");
     const bucket = encodeURIComponent(env.B2_BUCKET_NAME);
     const encodedKey = fetchKey.split("/").map(encodeURIComponent).join("/");
@@ -193,43 +224,46 @@ export default {
       region: env.B2_REGION,
     });
 
+    let originResponse;
+    try {
     const originRequest = await aws.sign(originUrl, {
+      redirect: "manual",
       method: request.method,
       headers: isRangeRequest
         ? { range: request.headers.get("range") }
         : {},
     });
 
-    let originResponse;
-    try {
       originResponse = await fetch(originRequest);
     } catch (error) {
-      console.error("B2 transport failure", { key: fetchKey, error: String(error) });
+      console.warn("Media origin failure");
       return textResponse("Media origin unavailable", 502);
     }
 
+    if (originResponse.status >= 300 && originResponse.status < 400) {
+      console.warn("Media origin redirect rejected");
+      return textResponse("Media origin error", 502);
+    }
+
     if (originResponse.status === 404) {
-      console.warn("B2 object missing", { key: fetchKey, variant });
+      console.warn("Media origin failure");
       return textResponse("Media variant not ready", 404);
     }
     if (!originResponse.ok && originResponse.status !== 206) {
-      console.error("B2 origin rejected request", {
-        status: originResponse.status, key: fetchKey,
-        requestId: originResponse.headers.get("x-amz-request-id"),
-      });
+      console.warn("Media origin failure");
       return textResponse("Media origin error", 502);
     }
-    if (variant !== "original" && request.method === "GET") {
+    if (variant !== "original") {
       const contentType = (originResponse.headers.get("content-type") || "").toLowerCase();
-      if (!contentType.startsWith("image/webp")) {
-        console.error("Invalid derivative content type", { key: fetchKey, contentType });
+      if (contentType.split(";")[0].trim() !== "image/webp") {
+        console.warn("Media origin failure");
         return textResponse("Invalid media variant", 502);
       }
     }
 
     const headers = new Headers(originResponse.headers);
     headers.set("x-content-type-options", "nosniff");
-    headers.set("cache-control", "private, max-age=0, no-cache");
+    headers.set("cache-control", "private, no-store");
     headers.set("x-lumispixel-cache", isRangeRequest ? "BYPASS" : "MISS");
 
     const response = new Response(originResponse.body, {
@@ -245,7 +279,7 @@ export default {
       if (Number.isFinite(cacheTtl) && cacheTtl > 0) {
         const cacheResponse = new Response(response.clone().body, response);
         cacheResponse.headers.set("cache-control", `public, max-age=${Math.floor(cacheTtl)}`);
-        await cache.put(cacheKey, cacheResponse);
+        try { await cache.put(cacheKey, cacheResponse); } catch { console.warn("Media cache write failed"); }
       }
     }
 

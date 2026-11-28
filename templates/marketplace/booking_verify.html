@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Verify booking | LumisPixel{% endblock %}
+{% block body_class %}page-inner page-booking{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/booking_request.css' %}">{% endblock %}
+{% block content %}
+<div class="booking-shell">
+<div class="booking-topline"><a href="{% url 'public-photographer-website' slug=slug %}">← Photographer website</a><span><i class="bi bi-shield-check" aria-hidden="true"></i> Secure booking</span></div>
+<div class="booking-layout booking-layout--verify"><section class="booking-card">{% if success %}<h1>Booking acknowledged</h1><p>Your identity and request have been verified. Your photographer still needs to confirm the session.</p>{% else %}<h1>Review your booking request</h1><p>{{ booking.photographer }}</p><dl><dt>Service</dt><dd>{{ session.session_type }}</dd><dt>Date and time</dt><dd>{{ session.starts_at }}</dd><dt>Duration</dt><dd>{{ session.duration_minutes }} minutes</dd><dt>Location</dt><dd>{{ session.location }}</dd><dt>Details</dt><dd>{{ session.notes }}</dd></dl><form method="post">{% csrf_token %}<label><input type="checkbox" name="acknowledge" value="yes" required> I acknowledge these booking details. This is not a confirmed booking or payment.</label><button type="submit">Verify and acknowledge</button></form>{% endif %}<p><a href="{% url 'public-photographer-website' slug=slug %}">Return to photographer website</a></p></section></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script defer src="{% static 'js/booking_request.js' %}"></script>{% endblock %}

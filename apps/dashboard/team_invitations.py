@@ -6,7 +6,8 @@ from smtplib import SMTPException
 
 from django import forms
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from apps.notifications.email_delivery import public_url, queue_transactional_email
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -58,56 +59,50 @@ def prepare_token():
 
 
 def apply_token(membership, token_digest, sent_at, expires_at):
+    from apps.notifications.models import EmailDelivery
+    current_sent = bool(membership.pk and membership.invitation_token_digest) and EmailDelivery.objects.filter(
+        lifecycle_kind="studio.invite", lifecycle_context__membership_id=membership.pk,
+        lifecycle_context__digest=membership.invitation_token_digest,
+        status=EmailDelivery.Status.SENT,
+    ).exists()
+    if current_sent or not membership.previous_invitation_expires_at or membership.previous_invitation_expires_at <= sent_at:
+        membership.previous_invitation_digest = membership.invitation_token_digest
+        membership.previous_invitation_expires_at = membership.invitation_expires_at
     membership.invitation_token_digest = token_digest
     membership.invitation_sent_at = sent_at
     membership.invitation_expires_at = expires_at
     membership.status = StudioMembership.Status.INVITED
-    membership.save(update_fields=["invitation_token_digest", "invitation_sent_at", "invitation_expires_at", "status", "updated_at"])
+    membership.save(update_fields=["invitation_token_digest", "invitation_sent_at", "invitation_expires_at", "status", "updated_at", "previous_invitation_digest", "previous_invitation_expires_at"])
 
 
 def issue_token(membership):
-    membership._invitation_previous_state = {
-        "invitation_token_digest": membership.invitation_token_digest,
-        "invitation_sent_at": membership.invitation_sent_at,
-        "invitation_expires_at": membership.invitation_expires_at,
-        "status": membership.status,
-    }
-    token, token_digest, sent_at, expires_at = prepare_token()
-    apply_token(membership, token_digest, sent_at, expires_at)
+    token, digest, sent_at, expires_at = prepare_token()
+    apply_token(membership, digest, sent_at, expires_at)
     return token
 
 
-def _restore_previous_token_after_delivery_failure(membership):
-    previous = getattr(membership, "_invitation_previous_state", None)
-    if previous is None:
-        return
-    StudioMembership.objects.filter(pk=membership.pk).update(**previous)
-    for field, value in previous.items():
-        setattr(membership, field, value)
-    latest = membership.invitation_events.order_by("-occurred_at", "-pk").first()
-    if latest and latest.action in {StudioInvitationEvent.Action.SENT, StudioInvitationEvent.Action.RESENT}:
-        latest.delete()
-
-
 def send_invitation(request, membership, token):
-    path = reverse("photographer_workspace:invitation_accept", kwargs={"token": token})
-    context = {"membership": membership, "studio": membership.studio,
-               "role_summary": ROLE_SUMMARIES[membership.role],
-               "invitation_url": request.build_absolute_uri(path), "brand_name": "LumisPixel"}
-    subject = f"You're invited to join {membership.studio.display_name or 'a studio'} on LumisPixel"
-    text = render_to_string("photographer_workspace/team/email/invitation.txt", context)
-    html = render_to_string("photographer_workspace/team/email/invitation.html", context)
-    message = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL,
-                                     [membership.invitation_email])
-    message.attach_alternative(html, "text/html")
     try:
-        message.send(fail_silently=False)
-    except (OSError, SMTPException) as exc:
-        _restore_previous_token_after_delivery_failure(membership)
-        raise RuntimeError("Invitation delivery failed") from exc
-    finally:
-        if hasattr(membership, "_invitation_previous_state"):
-            del membership._invitation_previous_state
+        path = reverse("photographer_workspace:invitation_accept", kwargs={"token": token})
+        context = {"membership": membership, "studio": membership.studio,
+                   "role_summary": ROLE_SUMMARIES[membership.role],
+                   "invitation_url": public_url(path), "brand_name": "LumisPixel"}
+        delivery = queue_transactional_email(
+            event_key=f"studio.invite:{membership.pk}:{_digest(token)}",
+            subject=f"You're invited to join {membership.studio.display_name or 'a studio'} on LumisPixel",
+            plain_body=render_to_string("photographer_workspace/team/email/invitation.txt", context),
+            html_body=render_to_string("photographer_workspace/team/email/invitation.html", context),
+            recipients=[membership.invitation_email], sensitive=True,
+            expires_at=membership.invitation_expires_at, lifecycle_kind="studio.invite",
+            lifecycle_context={"membership_id": membership.pk, "studio_id": membership.studio_id,
+                "digest": _digest(token), "role": membership.role},
+            supersession_scope=f"studio.invite:{membership.pk}",
+        )
+        if not delivery:
+            raise ValueError("Missing recipient")
+        return delivery
+    except Exception as exc:
+        raise RuntimeError("Invitation could not be queued") from exc
 
 
 def find_valid_invitation(token, *, lock=False):
@@ -118,14 +113,12 @@ def find_valid_invitation(token, *, lock=False):
         # locking error. Django/PostgreSQL's OF clause preserves eager loading
         # while protecting the invitation row that acceptance mutates.
         queryset = queryset.select_for_update(of=("self",))
-    membership = queryset.filter(invitation_token_digest=_digest(token), status=StudioMembership.Status.INVITED).first()
-    if not membership or not membership.invitation_expires_at or membership.invitation_expires_at <= timezone.now():
-        if membership:
-            membership.status = StudioMembership.Status.EXPIRED
-            membership.invitation_token_digest = ""
-            membership.save(update_fields=["status", "invitation_token_digest", "updated_at"])
-        return None
-    return membership
+    digest = _digest(token)
+    now = timezone.now()
+    return queryset.filter(status=StudioMembership.Status.INVITED, role__in=INVITABLE_ROLES).filter(
+        Q(invitation_token_digest=digest, invitation_expires_at__gt=now) |
+        Q(previous_invitation_digest=digest, previous_invitation_expires_at__gt=now)
+    ).first()
 
 
 def record(membership, actor, action):

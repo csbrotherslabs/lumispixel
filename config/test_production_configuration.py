@@ -18,9 +18,14 @@ REDIS_TLS_URL = f"rediss://redis.example.com/0?{REDIS_TLS_QUERY}"
 
 class ProductionConfigurationContractTests(SimpleTestCase):
     def _check(self, overrides=None):
-        env = os.environ.copy()
+        # Keep OS essentials only; never inherit local application settings or credentials.
+        env = {key: value for key, value in os.environ.items()
+               if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "COMSPEC"}}
+        env["PYTHON_DOTENV_DISABLED"] = "1"
         env.update({
             "DJANGO_DEBUG": "0",
+            "DB_TRANSACTION_POOLING": "0",
+            "USER_UPLOAD_STORAGE_BACKEND": "local",
             "DJANGO_SECRET_KEY": "x" * 50,
             "DJANGO_ALLOWED_HOSTS": "lumispixel.com",
             "DJANGO_CSRF_TRUSTED_ORIGINS": "https://lumispixel.com",

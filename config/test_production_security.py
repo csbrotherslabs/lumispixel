@@ -50,9 +50,14 @@ class RepositorySecretHygieneTests(SimpleTestCase):
 
 class ProductionConfigurationTests(SimpleTestCase):
     def run_settings(self, **overrides):
-        env = os.environ.copy()
+        # Keep OS essentials only; never inherit local application settings or credentials.
+        env = {key: value for key, value in os.environ.items()
+               if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "COMSPEC"}}
+        env["PYTHON_DOTENV_DISABLED"] = "1"
         env.update({
             "DJANGO_DEBUG": "0",
+            "DB_TRANSACTION_POOLING": "0",
+            "USER_UPLOAD_STORAGE_BACKEND": "local",
             "DJANGO_SECRET_KEY": "production-test-secret-key-not-real-123456789",
             "DATABASE_URL": "postgresql://user:pass@localhost:5432/lumispixel",
             "GALLERY_STORAGE_BACKEND": "b2",

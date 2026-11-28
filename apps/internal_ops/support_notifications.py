@@ -1,7 +1,6 @@
 import logging
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 
 from apps.notifications.models import Notification
@@ -57,22 +56,20 @@ def _notify_internal(ticket, *, title, message, profiles=None):
         )
 
 
-def _send(subject, plain_body, html_body, recipients):
+def _send(subject, plain_body, html_body, recipients, *, event_key):
+    from apps.notifications.email_delivery import queue_transactional_email
+    from django.db import transaction
     recipients = [email for email in dict.fromkeys(recipients or []) if email]
     if not recipients:
         return False
     try:
-        message = EmailMultiAlternatives(
-            subject=subject,
-            body=plain_body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=recipients,
-        )
-        message.attach_alternative(html_body, "text/html")
-        message.send(fail_silently=False)
+        with transaction.atomic():
+            for recipient in recipients:
+                queue_transactional_email(event_key=event_key, subject=subject,
+                    plain_body=plain_body, html_body=html_body, recipients=[recipient])
         return True
     except Exception:
-        logger.exception("Support email delivery failed for subject %s", subject)
+        logger.error("Support email could not be queued")
         return False
 
 
@@ -122,6 +119,7 @@ def notify_ticket_created(ticket):
             _customer_ticket_url(ticket),
         ),
         [ticket.requester.email],
+        event_key=f'support.created.customer:{ticket.pk}',
     )
 
     support_profiles = _support_profiles(ticket)
@@ -143,6 +141,7 @@ def notify_ticket_created(ticket):
             ticket.description,
         ),
         [profile.user.email for profile in support_profiles if profile.user.email],
+        event_key=f'support.created.staff:{ticket.pk}',
     )
     _notify_internal(
         ticket,
@@ -171,6 +170,7 @@ def notify_customer_reply(ticket, comment):
             comment.body,
         ),
         [profile.user.email for profile in support_profiles if profile.user.email],
+        event_key=f'support.reply.customer:{comment.pk}',
     )
     _notify_internal(
         ticket,
@@ -198,6 +198,7 @@ def notify_staff_reply(ticket, comment):
             comment.body,
         ),
         [ticket.requester.email],
+        event_key=f'support.reply.staff:{comment.pk}',
     )
 
 
@@ -220,6 +221,7 @@ def notify_ticket_status_changed(ticket, old_status):
             _customer_ticket_url(ticket),
         ),
         [ticket.requester.email],
+        event_key=f'support.status:{ticket.pk}:{ticket.status}:{ticket.updated_at.isoformat()}',
     )
 
 
@@ -239,6 +241,7 @@ def notify_ticket_assigned(ticket, old_assignee_id):
             _internal_ticket_url(ticket),
         ),
         [ticket.assignee.user.email],
+        event_key=f'support.assigned:{ticket.pk}:{ticket.assignee_id}:{ticket.updated_at.isoformat()}',
     )
     _notify_internal(
         ticket,

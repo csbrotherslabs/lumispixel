@@ -184,4 +184,10 @@ def run_system_monitoring():
     else:
         _resolve_alert("platform.email_config")
 
+    from apps.automation.reconciliation import reconcile
+    for name, count in reconcile().items():
+        severity = "warning" if name == "overdue" else "critical"
+        results.append(_result(f"automation.{name}", "Automation", count == 0,
+                               f"Automation {name}", f"{count} affected jobs.",
+                               severity if count else "info", count))
     return results

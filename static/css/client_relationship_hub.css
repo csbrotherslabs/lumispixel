@@ -1,0 +1,42 @@
+.lp-client-record{--hub-border:#e3e4e8;--hub-muted:#687181;--hub-red:#d70006}
+.lp-client-record .lp-client-record-hero{background:linear-gradient(115deg,#171c27 45%,#381722);color:#fff;border:0;border-radius:20px;padding:32px;gap:24px;flex-wrap:wrap}
+.lp-client-record .lp-client-record-heading h1{color:#fff;font-size:var(--lp-type-page-title,28px);font-weight:700;line-height:var(--lp-leading-tight,1.2);letter-spacing:-.035em}
+.lp-client-record .lp-client-record-heading p,.lp-client-record .lp-client-record-heading li,.lp-client-record .lp-client-record-heading a{color:#e0e3ea}
+.lp-client-record .lp-client-record-eyebrow{color:#ff9bab}
+.lp-client-record .lp-client-record-avatar{background:#ffffff18;color:#fff;border:1px solid #ffffff40}
+.lp-client-record .lp-client-record-actions .lp-button--outline,.lp-client-record .lp-client-record-actions .lp-button--ghost{color:#fff;border-color:#ffffff50}
+.lp-client-record .lp-client-record-tabs{background:#fff;border:1px solid var(--hub-border);border-radius:12px;padding:6px;overflow-x:auto;white-space:nowrap;display:flex;gap:4px}
+.lp-client-record .lp-client-record-tabs a{padding:12px 16px;border-radius:8px;flex-shrink:0}
+.lp-client-record .lp-client-record-tabs a.is-active{background:#fff0f1;color:#b90010}
+.lp-client-record .lp-client-record-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:16px}
+.lp-client-record .lp-client-record-metrics article,.lp-client-record .lp-client-record-card{background:#fff;border:1px solid var(--hub-border);border-radius:16px;box-shadow:0 3px 14px #171c2705;min-width:0}
+.lp-client-record .lp-client-record-metrics article{padding:20px}
+.lp-client-record .lp-client-record-metrics article>i{display:grid;place-items:center;width:40px;height:40px;background:#fff0f1;color:var(--hub-red);border-radius:10px}
+.lp-client-record .lp-client-record-metrics article>strong{font-size:var(--lp-type-kpi,24px);font-weight:650;line-height:var(--lp-leading-tight,1.2);overflow-wrap:anywhere}
+.lp-client-record .lp-client-hub-quick{display:flex;align-items:center;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid var(--hub-border);border-radius:14px;padding:16px;margin:18px 0}
+.lp-client-record .lp-client-hub-quick>div{flex:1 1 180px}
+.lp-client-record .lp-client-hub-quick small{display:block;color:var(--hub-muted);margin-top:4px}
+.lp-client-record .lp-client-hub-quick>a{display:flex;align-items:center;gap:8px;padding:11px 14px;border:1px solid var(--hub-border);border-radius:9px;color:#252831;text-decoration:none;font-size:13px}
+.lp-client-record .lp-client-hub-quick>a:hover{border-color:var(--hub-red);color:var(--hub-red)}
+.lp-client-record .lp-client-record-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:20px}
+.lp-client-record .lp-client-record-main,.lp-client-record .lp-client-record-sidebar{min-width:0;display:flex;flex-direction:column;gap:20px}
+.lp-client-record .lp-client-record-card>header{padding:20px;border-bottom:1px solid var(--hub-border);gap:12px}
+.lp-client-record .lp-client-record-card>header h2{font-size:var(--lp-type-section-title,18px);font-weight:500;line-height:1.2;letter-spacing:normal}
+.lp-client-record .lp-client-record-card>header span{color:var(--hub-muted)}
+.lp-client-record .lp-client-record-task-form input,.lp-client-record .lp-client-record-task-form select,.lp-client-record .lp-client-record-note-form textarea{background:#fafbfc;border:1px solid #cdd2da;border-radius:9px;padding:12px;color:#252831;min-height:44px;width:100%;box-sizing:border-box}
+.lp-client-record .lp-client-record-task-form label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lp-client-record .lp-client-record-task-form input:focus,.lp-client-record .lp-client-record-task-form select:focus,.lp-client-record .lp-client-record-note-form textarea:focus{outline:2px solid #d70006;outline-offset:2px}
+.lp-client-record .lp-client-record-details dd,.lp-client-record .lp-client-record-timeline p,.lp-client-record .lp-client-record-note-list p{overflow-wrap:anywhere}
+.lp-client-record .lp-client-record-timeline-icon{background:#fff0f1;color:var(--hub-red)}
+@media(max-width:900px){.lp-client-record .lp-client-record-layout{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.lp-client-record .lp-client-record-hero{padding:20px}.lp-client-record .lp-client-record-actions{width:100%;flex-wrap:wrap}.lp-client-record .lp-client-hub-quick>a{flex:1 1 130px;justify-content:center}.lp-client-record .lp-client-record-card>header{padding:16px}.lp-client-record .lp-client-record-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lp-client-record .lp-client-record-metrics article{padding:12px}}
+
+/* Use the same typography tokens as the workspace booking summary cards. */
+.lp-client-record .lp-client-record-metrics article>span{font-size:var(--lp-type-body-small,13px);font-weight:500;line-height:var(--lp-leading-caption,1.4);letter-spacing:0;text-transform:none}
+.lp-client-record .lp-client-record-metrics article>small,.lp-client-record .lp-client-hub-quick small{font-size:var(--lp-type-caption,11px);font-weight:400;line-height:1.4}
+.lp-client-record .lp-client-record-card>header span{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--lp-color-brand,#d71920)}
+.lp-client-record .lp-client-record-card>header>a{font-size:12px;font-weight:700}
+.lp-client-record .lp-client-record-session h3,.lp-client-record .lp-client-record-timeline strong,.lp-client-record .lp-client-record-rows strong,.lp-client-record .lp-client-record-task-list strong{font-size:var(--lp-type-body-small,13px);font-weight:500;line-height:1.4}
+.lp-client-record .lp-client-record-details dd,.lp-client-record .lp-client-record-timeline p,.lp-client-record .lp-client-record-note-list p{font-size:var(--lp-type-body-small,13px);line-height:1.5}
+.lp-client-record .lp-client-record-details dt,.lp-client-record .lp-client-record-task-form label>span,.lp-client-record .lp-client-record-timeline time,.lp-client-record .lp-client-record-task-list small,.lp-client-record .lp-client-record-note-list time,.lp-client-record .lp-client-record-rows span,.lp-client-record .lp-client-record-session p{font-size:var(--lp-type-caption,11px);line-height:1.4}
+.lp-client-record .lp-client-record-task-form input,.lp-client-record .lp-client-record-task-form select,.lp-client-record .lp-client-record-note-form textarea{font-family:inherit;font-size:var(--lp-type-body-small,13px);line-height:1.5}

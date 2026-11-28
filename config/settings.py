@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "storages", "apps.core.apps.CoreConfig", "apps.accounts.apps.AccountsConfig", "apps.photographers.apps.PhotographersConfig", "apps.clients.apps.ClientsConfig",
     "apps.galleries.apps.GalleriesConfig", "apps.ai_engine.apps.AiEngineConfig", "apps.broker.apps.BrokerConfig", "apps.marketplace.apps.MarketplaceConfig",
-    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
+    "apps.billing.apps.BillingConfig", "apps.notifications.apps.NotificationsConfig", "apps.automation.apps.AutomationConfig", "apps.dashboard.apps.DashboardConfig", "apps.internal_ops.apps.InternalOpsConfig",
     "apps.workflows.apps.WorkflowsConfig", "apps.api.apps.ApiConfig", "apps.visual_search.apps.VisualSearchConfig",
 ]
 # Semantic discovery is independently approved and always opt-in per gallery.
@@ -56,8 +56,24 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIR
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+DB_TRANSACTION_POOLING = env_bool("DB_TRANSACTION_POOLING", False)
+if DB_TRANSACTION_POOLING:
+    if not DATABASE_URL or not os.getenv("DB_POOL_URL"):
+        raise RuntimeError("Transaction pooling requires DATABASE_URL and DB_POOL_URL.")
+    DATABASE_URL = os.environ["DB_POOL_URL"]
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "0" if DEBUG else "60")), conn_health_checks=True, ssl_require=env_bool("DB_SSL_REQUIRE", not DEBUG))}
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES["default"]["OPTIONS"].setdefault(
+            "application_name", os.getenv("DB_APPLICATION_NAME") or ("lumispixel-dev" if DEBUG else "lumispixel-prod")
+        )
+    if DB_TRANSACTION_POOLING:
+        db = DATABASES["default"]
+        if db["ENGINE"] != "django.db.backends.postgresql":
+            raise RuntimeError("Transaction pooling requires PostgreSQL.")
+        db["CONN_MAX_AGE"] = 0
+        db["DISABLE_SERVER_SIDE_CURSORS"] = True
+        db["OPTIONS"]["prepare_threshold"] = None
 elif DEBUG:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:
@@ -163,6 +179,7 @@ SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", str(14 * 24 * 60
 SESSION_SAVE_EVERY_REQUEST = False
 LOGOUT_REDIRECT_URL = "core:index"
 
+BREVO_WEBHOOK_TOKEN = os.getenv("BREVO_WEBHOOK_TOKEN", "")
 EMAIL_BACKEND = os.getenv("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "email-smtp.us-east-1.amazonaws.com")
 EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", "587"))
@@ -193,6 +210,8 @@ if not DEBUG:
 CELERY_DEDICATED_QUEUES_ENABLED = env_bool("CELERY_DEDICATED_QUEUES_ENABLED", False)
 CELERY_TASK_DEFAULT_QUEUE = "celery"
 CELERY_TASK_ROUTES = {
+    "apps.automation.tasks.reconcile_jobs": {"queue": "celery"},
+    "apps.automation.tasks.*": {"queue": "automation"},
     "apps.galleries.tasks.generate_gallery_photo_derivatives": {"queue": "media"},
     "apps.galleries.tasks.generate_gallery_cover_derivatives": {"queue": "media"},
     "apps.visual_search.tasks.process_face_index_job": {"queue": "visual_index"},
@@ -220,9 +239,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_BEAT_SCHEDULE = {
+    "reconcile-transactional-email-outbox": {"task": "apps.notifications.tasks.reconcile_pending_transactional_emails", "schedule": 60.0},
+    "reconcile-platform-automation-jobs": {"task": "apps.automation.tasks.reconcile_jobs", "schedule": 300.0},
+    "scan-platform-automation-jobs": {"task": "apps.automation.tasks.scan_due_jobs", "schedule": 60.0},
     "reconcile-vector-purges": {"task": "apps.visual_search.tasks.reconcile_vector_purges", "schedule": 300.0},
     "reconcile-face-index": {"task": "apps.visual_search.tasks.reconcile_face_index", "schedule": 3600.0},
     "scan-inbox-notification-reminders": {"task": "apps.notifications.tasks.scan_notification_reminders", "schedule": 3600.0},
+    "reconcile-workflow-dispatch": {"task": "apps.workflows.tasks.reconcile_workflow_dispatch", "schedule": 300.0},
     "scan-scheduled-workflow-automations": {"task": "apps.workflows.tasks.scan_scheduled_automations", "schedule": 3600.0},
     "cleanup-stale-gallery-multipart-uploads": {"task": "apps.galleries.tasks.cleanup_stale_gallery_multipart_uploads", "schedule": 3600.0},
     "cleanup-gallery-storage-objects": {"task": "apps.galleries.tasks.cleanup_gallery_storage_objects", "schedule": 3600.0},
@@ -254,3 +277,15 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
+
+# Comma-separated Fernet keys, newest first. No fallback to Django SECRET_KEY.
+EMAIL_PAYLOAD_KEYS = os.getenv('EMAIL_PAYLOAD_KEYS', '')
+
+# Enable business email reconciliation only after verified outbox cutover.
+EMAIL_RECONCILIATION_START = os.getenv("EMAIL_RECONCILIATION_START", "")
+
+# Opt-in after legal/operational retention approval; zero disables general payload purge.
+EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS = int(os.getenv("EMAIL_TERMINAL_PAYLOAD_RETENTION_DAYS", "0"))
+
+TRANSACTIONAL_EMAIL_TRANSPORT = os.getenv("TRANSACTIONAL_EMAIL_TRANSPORT", "smtp").strip().lower()
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")

@@ -1,3 +1,4 @@
+<style>.lpw-event-form-grid .lpw-pricing-toggle{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}.lpw-event-form-grid .lpw-pricing-toggle input{appearance:none;width:42px;height:24px;min-height:0;flex:0 0 42px;border:0;border-radius:20px;background:#a5a7ae;position:relative;cursor:pointer;padding:0}.lpw-pricing-toggle input:before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:transform .15s}.lpw-pricing-toggle input:checked{background:#d70006}.lpw-pricing-toggle input:checked:before{transform:translateX(18px)}.lpw-pricing-toggle input:focus-visible{outline:2px solid #d70006;outline-offset:3px}.lpw-event-form-grid [hidden]{display:none!important}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;grid-column:auto!important;min-width:0;gap:8px;padding:12px 0}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle>span{flex:1;min-width:0;margin:0;line-height:1.35}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle>input{margin:0!important;flex-shrink:0;align-self:center}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle>input:checked{background:#d70006}@media(max-width:480px){.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle{grid-column:1/-1!important}}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle{box-sizing:border-box;min-height:66px;padding:12px!important;border:1px solid #e3e0dc;border-radius:12px;background:#f5f4f2;cursor:pointer;transition:background .15s,border-color .15s;color:#444}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle:has(input:checked){background:#fff1f1;border-color:#edc5c5;color:#b50006}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle:has(input:checked)>span{color:#b50006}.lpw-event-form-drawer .lpw-event-form-grid label.lpw-pricing-toggle:focus-within{outline:2px solid #d70006;outline-offset:2px}</style>
 <div class="lpw-event-form-layer" data-event-form-layer hidden>
   <button class="lpw-event-form-scrim" type="button" data-event-form-close tabindex="-1" aria-label="Close event editor"></button>
   <aside class="lpw-event-form-drawer" data-event-form-drawer role="dialog" aria-modal="true" aria-labelledby="event-form-title" aria-describedby="event-form-description" tabindex="-1">
@@ -39,14 +40,22 @@
         <section class="lpw-event-form-section" data-type-fields="booking" aria-labelledby="booking-pricing-section">
           <h3 id="booking-pricing-section">Pricing &amp; Status</h3>
           <div class="lpw-event-form-grid">
-            <label><span>Booking value</span><div class="lpw-money"><span>$</span><input type="number" name="price" min="0" step="0.01" placeholder="0.00"></div></label>
+            <label><span>Agreed booking value</span><input type="number" name="price" min="0" step="0.01" placeholder="0.00"><small>Agreed fee, not the client's estimated budget.</small></label><label><span>Currency</span><select name="payment_currency"><option>USD</option><option>CAD</option><option>GBP</option><option>EUR</option><option>AUD</option><option>NZD</option><option>CHF</option><option>GHS</option><option>NGN</option><option>ZAR</option><option>INR</option><option>AED</option></select></label>
+            <label class="lpw-pricing-toggle"><span>Complimentary session</span><input type="checkbox" role="switch" name="complimentary"></label>
+            <label class="lpw-pricing-toggle"><span>Require a down payment</span><input type="checkbox" role="switch" name="deposit_required"></label>
+            <label data-deposit-field><span>Down payment type</span><select name="deposit_type"><option value="fixed">Fixed amount</option><option value="percentage">Percentage</option></select></label>
+            <label data-deposit-field><span data-deposit-label>Down payment amount</span><input type="number" name="deposit_input" min="0" step="0.01"></label>
+            <label data-deposit-field><span>Down payment due date</span><input type="date" name="deposit_due_date"></label>
+            <label><span>Remaining balance due date</span><input type="date" name="balance_due_date"></label>
+            <p class="is-wide" data-payment-summary aria-live="polite"></p>
+            
             <label><span>Status</span><select name="booking_status"><option value="tentative">Tentative</option><option value="confirmed">Confirmed</option></select></label>
             <label><span>Package</span><select name="package"><option value="">No package</option></select></label>
-            <label><span>Contract status</span><select name="contract_status"><option>Not sent</option></select></label>
             <label><span>Payment status</span><select name="payment_status"><option>Not invoiced</option></select></label>
           </div>
         </section>
 
+        <section class="lpw-event-form-section" data-edit-contract-section hidden aria-labelledby="edit-contract-heading"><h3 id="edit-contract-heading"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Contract &amp; Signatures</h3><p class="lpw-contract-help">Manage the agreement associated with this reservation.</p><div data-edit-contract-card></div></section>
         <section class="lpw-event-form-section" aria-labelledby="event-notes-section">
           <h3 id="event-notes-section">Notes</h3>
           <div class="lpw-event-form-grid"><label class="is-wide"><span>Notes</span><textarea name="notes" rows="2" placeholder="Client preferences, session details, or other useful notes…"></textarea></label></div>

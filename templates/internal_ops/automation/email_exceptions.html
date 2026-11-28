@@ -1,0 +1,22 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}Email Exceptions | LumisPixel Internal{% endblock %}
+{% block page_title %}Email Exceptions{% endblock %}
+{% block content %}
+<section class="li-page-head"><div><h1>Email delivery exceptions</h1><p>Verify acceptance in the provider logs before recording an outcome. Do not enter credentials or message content.</p><a href="{% url 'internal_ops:automation_center' %}">Automation Center</a></div></section>
+<section class="li-panel">
+{% for delivery in deliveries %}
+<article style="padding:16px;border-bottom:1px solid #ddd">
+<strong>Delivery #{{ delivery.pk }} · {{ delivery.get_status_display }}</strong>
+<p>Attempts {{ delivery.attempt_count }} · Last attempt {{ delivery.last_attempt_at }} · {{ delivery.last_error|truncatechars:100 }}</p>
+{% if delivery.status == 'uncertain' %}
+<form method="post" action="{% url 'internal_ops:email_resolve' delivery.pk %}">{% csrf_token %}
+<label for="outcome-{{ delivery.pk }}">Verified provider outcome</label>
+<select id="outcome-{{ delivery.pk }}" name="outcome" required><option value="">Choose outcome</option><option value="accepted">Accepted</option><option value="not_accepted">Not accepted</option></select>
+<label for="evidence-{{ delivery.pk }}">Provider evidence reference</label><input id="evidence-{{ delivery.pk }}" name="evidence" maxlength="500" required>
+<button type="submit">Record outcome (no resend)</button></form>
+{% endif %}
+</article>
+{% empty %}<p>No delivery exceptions.</p>{% endfor %}
+<nav>{% if deliveries.has_previous %}<a href="?page={{ deliveries.previous_page_number }}">Previous</a>{% endif %} Page {{ deliveries.number }} of {{ deliveries.paginator.num_pages }} {% if deliveries.has_next %}<a href="?page={{ deliveries.next_page_number }}">Next</a>{% endif %}</nav>
+</section>
+{% endblock %}

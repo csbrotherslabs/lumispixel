@@ -76,7 +76,7 @@
  .cp-browser .lp-mobile-grid button[aria-pressed=true]{background:#ffffff26;color:#fff}
  .sf-client-gallery .sf-actions,.story-client .story-tools,.ms-client .ms-tools{grid-column:1/-1;display:flex!important;flex-wrap:nowrap;gap:6px;width:100%;padding:0;border:0;border-radius:0;box-shadow:none;overflow-x:auto;background:transparent}
  .sf-client-gallery .sf-actions>.sf-density,.story-client .story-tools>label,.ms-client .ms-tools>.ms-toolbar-density{display:none!important}
- .sf-client-gallery .sf-actions>:is(button,a),.story-client .story-tools>:is(button,a),.ms-client .ms-tools>:is(button,a){flex:1 0 auto;display:inline-flex!important;align-items:center;justify-content:center;min-height:40px!important;height:40px;padding:0 8px!important;gap:5px;border:1px solid #d9dce2!important;border-radius:9px!important;box-shadow:none!important;font-size:12px;white-space:nowrap;width:auto}
+ .sf-client-gallery .sf-actions>:is(button,a),.story-client .story-tools>:is(button,a),.ms-client .ms-tools>:is(button,a){flex:1 0 auto;display:inline-flex!important;align-items:center;justify-content:center;min-height:44px!important;height:44px;padding:0 8px!important;gap:5px;border:1px solid #d9dce2!important;border-radius:9px!important;box-shadow:none!important;font-size:12px;white-space:nowrap;width:auto}
  .sf-client-gallery .sf-actions>a[href*="download"],.story-client .story-tools>a[href*="download"],.ms-client .ms-tools>a[href*="download"]{background:#202735;color:#fff;border-color:#202735!important}
  .sf-client-gallery .sf-actions>button[data-show-favorites],.story-client .story-tools>button[data-show-favorites],.ms-client .ms-tools>button[data-show-favorites]{order:0}
  .sf-client-gallery .sf-actions>button[data-client-qr-open],.story-client .story-tools>button[data-qr-open],.ms-client .ms-tools>button[data-qr-open]{order:1}
@@ -86,6 +86,7 @@
  :is(.sf-actions,.story-tools,.ms-tools,.cp-nav,.cp-browser-actions) .lp-download-full{display:none!important}
  :is(.sf-actions,.story-tools,.ms-tools,.cp-nav,.cp-browser-actions) .lp-download-short{display:inline!important}
  .sf-client-gallery .sf-photo-grid,.story-client .story-grid,.ms-client .ms-grid{--columns:var(--lp-mobile-columns,2)!important}
+ .ms-client .ms-grid{column-count:var(--lp-mobile-columns,2)}
  .cp-client .cp-photo-grid{grid-template-columns:repeat(var(--lp-mobile-columns,2),minmax(0,1fr))}
  .cp-stage .cp-nav nav,.cp-browser .cp-browser-actions{flex-wrap:nowrap;max-width:100%;overflow-x:auto;gap:6px}
  .cp-stage .cp-nav nav :is(button,a),.cp-browser .cp-browser-actions :is(button,a){min-height:40px;padding:8px 10px;white-space:nowrap;font-size:12px}

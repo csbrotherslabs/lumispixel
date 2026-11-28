@@ -1,0 +1,3 @@
+{{ message }}
+
+{{ session.session_type }} · {{ session.starts_at|date:"F j, Y" }} · {{ session.duration_minutes }} minutes

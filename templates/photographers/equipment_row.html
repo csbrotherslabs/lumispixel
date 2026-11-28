@@ -1,0 +1,16 @@
+<article class="studio-equipment-card" data-equipment-item data-equipment-index="{{ index }}" {% if item %}data-equipment-saved{% endif %}>
+  <header class="studio-equipment-header">
+    <div class="studio-equipment-title"><span data-equipment-number>Equipment</span><strong data-equipment-title>{{ item.name|default:"New equipment" }}</strong><small data-equipment-status>Incomplete</small></div>
+    <div class="studio-equipment-actions"><button type="button" data-equipment-up aria-label="Move equipment up">↑</button><button type="button" data-equipment-down aria-label="Move equipment down">↓</button><button type="button" data-equipment-toggle aria-expanded="true">Collapse</button></div>
+  </header>
+  <input type="hidden" name="equipment_{{ index }}_remove" value="" data-equipment-remove>
+  <div class="studio-equipment-body" data-equipment-body>
+    <div class="studio-equipment-media">
+      <div class="studio-equipment-photo" data-equipment-photo>{% if item.image %}<img src="{{ item.image.url }}" alt="Equipment photograph" loading="lazy">{% else %}<span data-equipment-placeholder><i class="bi bi-camera"></i> Upload equipment photograph</span>{% endif %}</div>
+      <label class="studio-equipment-upload"><span data-equipment-upload-label>{% if item.image %}Replace image{% else %}Choose image{% endif %}</span><input type="file" name="equipment_{{ index }}_image" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+      <button type="button" data-equipment-reset hidden>Undo image selection</button><small>JPG, PNG, WebP or GIF · Maximum 50 MB</small>
+    </div>
+    <div class="studio-equipment-fields"><label>Equipment name *<input type="text" class="form-control" name="equipment_{{ index }}_name" maxlength="120" placeholder="e.g. Canon EOS R5" value="{{ item.name|default:'' }}"></label><label>Client-friendly benefit *<textarea class="form-control" name="equipment_{{ index }}_description" rows="4" placeholder="e.g. Captures sharp, vibrant photographs even in challenging lighting conditions.">{{ item.description|default:'' }}</textarea></label><small>Focus on the experience and results, not just technical specifications.</small></div>
+  </div>
+  <footer class="studio-equipment-footer"><button type="button" data-equipment-remove-button><i class="bi bi-trash3"></i> Remove equipment</button></footer>
+</article>

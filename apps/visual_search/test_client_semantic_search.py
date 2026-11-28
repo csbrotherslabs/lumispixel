@@ -156,8 +156,8 @@ class ClientSemanticBrowserTests(SimpleTestCase):
             "semantic_search_available": True,
             "gallery": SimpleNamespace(public_id=uuid4()),
         })
-        css = (settings.BASE_DIR / "static/css/client_gallery_semantic_search.css").read_text()
-        js = (settings.BASE_DIR / "static/js/client_gallery_semantic_search.js").read_text()
+        css = (settings.BASE_DIR / "static/css/client_gallery_semantic_search.css").read_text(encoding="utf-8")
+        js = (settings.BASE_DIR / "static/js/client_gallery_semantic_search.js").read_text(encoding="utf-8")
         import re
         html = re.sub(r'<link[^>]+>', lambda _: '<style>' + css + '</style>', html)
         html = re.sub(r'<script[^>]+></script>', lambda _: '<script>' + js + '</script>', html)

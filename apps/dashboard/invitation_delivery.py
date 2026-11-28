@@ -1,16 +1,18 @@
-"""Delivery-safe helpers for rotating studio invitation credentials."""
+"""Atomically persist a replacement credential and its durable email."""
+from django.db import transaction
+from django.utils import timezone
+from .models import StudioMembership
+from .team_invitations import apply_token, prepare_token, send_invitation, INVITATION_RESEND_COOLDOWN
 
-from .team_invitations import apply_token, prepare_token, send_invitation
 
-
+@transaction.atomic
 def rotate_invitation_after_delivery(request, membership):
-    """Email a replacement invite before invalidating the current credential.
-
-    The membership's persisted digest and validity timestamps are unchanged if
-    email delivery raises. Once delivery succeeds, the newly delivered token is
-    made authoritative in one explicit persistence step.
-    """
-    raw_token, token_digest, sent_at, expires_at = prepare_token()
-    send_invitation(request, membership, raw_token)
-    apply_token(membership, token_digest, sent_at, expires_at)
-    return raw_token
+    current = StudioMembership.objects.select_for_update().get(pk=membership.pk, studio_id=membership.studio_id)
+    if current.status != StudioMembership.Status.INVITED:
+        raise RuntimeError("Invitation is no longer pending")
+    if current.invitation_sent_at and timezone.now() - current.invitation_sent_at < INVITATION_RESEND_COOLDOWN:
+        raise RuntimeError("Please wait before resending")
+    token, digest, sent_at, expires_at = prepare_token()
+    apply_token(current, digest, sent_at, expires_at)
+    send_invitation(request, current, token)
+    return token

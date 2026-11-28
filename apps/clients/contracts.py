@@ -3,11 +3,13 @@ import hashlib
 import re
 import secrets
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django import forms
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
+from apps.notifications.email_delivery import public_url, queue_transactional_email
 from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
@@ -15,7 +17,8 @@ from django.urls import reverse
 from django.utils import formats, timezone
 
 from .models import (Contract, ContractEvent, ContractPhotographerSignature,
-                     ContractSignature, ContractTemplate)
+                     ContractSignature, ContractTemplate, ClientSession, ClientActivity)
+from .payment_terms import payment_clause, validate_saved_payment_terms
 from .contract_pdfs import build_signed_snapshot, generate_signed_contract_pdf
 
 
@@ -28,7 +31,13 @@ MERGE_FIELDS = {
     "booking.date": "Booking date",
     "booking.start_time": "Booking start time",
     "booking.location": "Booking location",
-    "booking.value": "Booking value",
+    "booking.value": "Agreed booking value",
+    "booking.payment_terms": "Agreed payment schedule",
+    "booking.currency": "Currency",
+    "booking.deposit_amount": "Down payment",
+    "booking.deposit_due_date": "Down payment due date",
+    "booking.balance_due": "Remaining balance",
+    "booking.balance_due_date": "Balance due date",
     "workspace.name": "Workspace/business name",
     "photographer.name": "Photographer/studio name",
 }
@@ -77,6 +86,8 @@ def merge_context(booking):
     studio = booking.photographer
     owner = studio.user
     studio_name = studio.business_name or studio.display_name or owner.full_name or owner.email
+    total = Decimal(str(booking.booking_value))
+    deposit = Decimal(str(booking.deposit_amount))
     return {
         "client.first_name": booking.client.first_name,
         "client.last_name": booking.client.last_name,
@@ -86,7 +97,13 @@ def merge_context(booking):
         "booking.date": formats.date_format(local_start, "DATE_FORMAT"),
         "booking.start_time": formats.time_format(local_start, "TIME_FORMAT"),
         "booking.location": booking.location,
-        "booking.value": formats.number_format(booking.booking_value, decimal_pos=2),
+        "booking.value": (f"{booking.payment_currency} {total:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
+        "booking.payment_terms": payment_clause(booking),
+        "booking.currency": booking.payment_currency,
+        "booking.deposit_amount": str(booking.deposit_amount),
+        "booking.deposit_due_date": str(booking.deposit_due_date or ""),
+        "booking.balance_due": str(total - deposit),
+        "booking.balance_due_date": str(booking.balance_due_date or ""),
         "workspace.name": studio_name,
         "photographer.name": studio_name,
     }
@@ -100,7 +117,21 @@ def render_merge_fields(content, booking):
 
 def contract_preview_content(contract, content=None):
     """Render the contract snapshot with current persisted merge values."""
-    return render_merge_fields(contract.content if content is None else content, contract.booking)
+    if content is None and contract.locked_at and contract.rendered_content:
+        return contract.rendered_content
+    source = contract.content if content is None else content
+    # Upgrade the exact legacy starter paragraph, without rewriting custom legal terms.
+    legacy = "Service fee: {{ booking.value }}. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing."
+    source = (source or "").replace(legacy, "{{ booking.payment_terms }}")
+    source = re.sub(r"(?m)^Service fee: [^\n]*?\. The parties will confirm the deposit, payment schedule and applicable taxes in writing before signing\.", "{{ booking.payment_terms }}", source)
+    source = source.replace("The parties will confirm the service fee, deposit, payment schedule and applicable taxes in writing before signing.", "{{ booking.payment_terms }}")
+    has_payment_clause = any(match.group(1) == "booking.payment_terms" for match in MERGE_PATTERN.finditer(source))
+    body = render_merge_fields(source, contract.booking)
+    if not has_payment_clause:
+        body += "\n\nAgreed payment terms\n" + payment_clause(contract.booking)
+    if contract.booking.pricing_confirmed:
+        body += "\n\nThe agreed payment terms generated from the booking govern the service fee, down payment and payment deadlines and supersede any inconsistent amounts or payment dates elsewhere in this agreement."
+    return body
 
 
 def validate_contract_for_email(contract):
@@ -135,26 +166,40 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     contract = Contract.objects.select_for_update().select_related(
         "client", "booking", "photographer", "photographer__user"
     ).get(pk=contract.pk, photographer=contract.photographer)
+    if not ContractPhotographerSignature.objects.filter(contract=contract).exists():
+        raise ValidationError("The photographer must sign before sending.")
     recipient = validate_contract_for_email(contract)
+    signature = ContractPhotographerSignature.objects.get(contract=contract)
+    if not contract.locked_at or not contract.rendered_content or signature.content_hash != _content_hash(contract.rendered_content):
+        raise ValidationError("The signed document does not match the recorded signature. Prepare a replacement agreement.")
     raw_token = secrets.token_urlsafe(32)
-    review_url = build_absolute_uri(reverse("clients:contract-review", kwargs={"token": raw_token}))
+    review_url = public_url(reverse("clients:contract-review", kwargs={"token": raw_token}))
     rendered_content = contract_preview_content(contract)
     context = {"contract": contract, "review_url": review_url, "studio": contract.photographer}
-    message = EmailMultiAlternatives(
-        f"Review your contract: {contract.title}",
-        render_to_string("clients/contracts/email/review.txt", context),
-        settings.DEFAULT_FROM_EMAIL,
-        [recipient],
-    )
-    message.attach_alternative(render_to_string("clients/contracts/email/review.html", context), "text/html")
-    try:
-        delivered = message.send(fail_silently=False)
-    except Exception as exc:
-        raise ContractDeliveryError("Contract email delivery failed.") from exc
-    if delivered != 1:
-        raise ContractDeliveryError("Contract email delivery failed.")
-
     now = timezone.now()
+    digest = _token_digest(raw_token)
+    # Preserve one previously usable link across repeated replacements, only for the same recipient.
+    if contract.sent_to_email.casefold() != recipient.casefold() or contract.review_token_revoked_at:
+        contract.previous_review_digest = ""
+        contract.previous_review_expires_at = None
+    elif not contract.previous_review_expires_at or contract.previous_review_expires_at <= now:
+        contract.previous_review_digest = contract.review_token_digest
+        contract.previous_review_expires_at = contract.review_token_expires_at
+    try:
+        delivery = queue_transactional_email(
+            event_key=f"contract.review:{contract.pk}:{digest}",
+            subject=f"Review your contract: {contract.title}",
+            plain_body=render_to_string("clients/contracts/email/review.txt", context),
+            html_body=render_to_string("clients/contracts/email/review.html", context),
+            recipients=[recipient], sensitive=True, expires_at=now + REVIEW_LINK_LIFETIME,
+            lifecycle_kind="contract.review", lifecycle_context={"contract_id": contract.pk, "digest": digest},
+            supersession_scope=f"contract.review:{contract.pk}",
+        )
+        if not delivery:
+            raise ValueError("Missing recipient")
+    except Exception as exc:
+        raise ContractDeliveryError("Contract email could not be queued.") from exc
+
     was_sent = contract.send_count > 0
     contract.rendered_content = rendered_content
     contract.review_token_digest = _token_digest(raw_token)
@@ -170,13 +215,25 @@ def send_contract_for_review(*, contract, actor, build_absolute_uri):
     contract.save(update_fields=(
         "rendered_content", "review_token_digest", "review_token_expires_at", "review_token_revoked_at",
         "sent_to_email", "send_count", "last_sent_at", "sent_at", "locked_at", "status", "updated_at",
+        "previous_review_digest", "previous_review_expires_at",
     ))
     ContractEvent.objects.create(
         contract=contract, actor=actor,
         event_type=ContractEvent.EventType.RESENT if was_sent else ContractEvent.EventType.SENT,
-        metadata={"recipient": recipient, "contract_version": contract.version, "send_number": contract.send_count},
+        metadata={"recipient": recipient, "contract_version": contract.version, "send_number": contract.send_count, "delivery_id": delivery.pk, "delivery_state": "queued"},
     )
     return contract
+
+
+def _valid_review_token(contract, raw_token):
+    if not contract or contract.review_token_revoked_at or not contract.photographer.user.can_login:
+        return False
+    if not contract.sent_to_email or contract.sent_to_email.casefold() != contract.client.email.casefold():
+        return False
+    digest = _token_digest(raw_token)
+    expiry = contract.review_token_expires_at if digest == contract.review_token_digest else (
+        contract.previous_review_expires_at if digest == contract.previous_review_digest else None)
+    return bool(expiry and expiry > timezone.now())
 
 
 @transaction.atomic
@@ -186,8 +243,8 @@ def open_contract_review(raw_token):
         return None
     contract = Contract.objects.select_for_update().select_related(
         "client", "booking", "photographer", "photographer__user"
-    ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
-    if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+    ).filter(Q(review_token_digest=_token_digest(raw_token)) | Q(previous_review_digest=_token_digest(raw_token)), review_token_revoked_at__isnull=True).first()
+    if not _valid_review_token(contract, raw_token):
         return None
     if contract.status == Contract.Status.SIGNED:
         return contract
@@ -211,7 +268,7 @@ def _content_hash(content):
 
 @transaction.atomic
 def sign_contract_as_photographer(*, contract, actor, signer_name, signature_value,
-                                  consent_accepted, ip_address=None, user_agent=""):
+                                  consent_accepted, ip_address=None, user_agent="", expected_content_hash=None):
     """Countersign and lock the exact workspace-side contract snapshot."""
     contract = Contract.objects.select_for_update().select_related(
         "booking", "client", "photographer"
@@ -228,9 +285,12 @@ def sign_contract_as_photographer(*, contract, actor, signer_name, signature_val
         raise ValidationError({"signature_value": "Type your signature."})
     if consent_accepted is not True:
         raise ValidationError({"consent_accepted": "You must agree before signing."})
+    validate_saved_payment_terms(contract.booking)
     now = timezone.now()
     rendered_content = contract_preview_content(contract)
     digest = _content_hash(rendered_content)
+    if expected_content_hash is not None and expected_content_hash != digest:
+        raise ValidationError("The agreement changed since you opened it. Review the updated document before signing.")
     consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
     signature = ContractPhotographerSignature.objects.create(
         contract=contract, signer_name=signer_name, signature_value=signature_value,
@@ -258,9 +318,9 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
     with transaction.atomic():
         contract = Contract.objects.select_for_update(of=("self",)).select_related(
             "client", "booking", "photographer", "photographer__user", "photographer_signature"
-        ).filter(review_token_digest=_token_digest(raw_token), review_token_revoked_at__isnull=True).first()
+        ).filter(Q(review_token_digest=_token_digest(raw_token)) | Q(previous_review_digest=_token_digest(raw_token)), review_token_revoked_at__isnull=True).first()
         now = timezone.now()
-        if not contract or not contract.review_token_expires_at or contract.review_token_expires_at <= now:
+        if not _valid_review_token(contract, raw_token):
             raise ValidationError("This contract review link is invalid or has expired.")
         if contract.status == Contract.Status.SIGNED or ContractSignature.objects.filter(contract=contract).exists():
             raise ValidationError("This contract has already been signed.")
@@ -276,6 +336,13 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
             raise ValidationError({"consent_accepted": "You must agree before signing."})
         consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
         digest = _content_hash(contract.rendered_content)
+        if not ContractPhotographerSignature.objects.filter(
+            contract=contract, photographer_id=contract.photographer_id,
+            content_hash=digest, contract_version=contract.version, consent_accepted=True,
+        ).exists():
+            raise ValidationError("The photographer signature does not match this agreement.")
+        if contract.booking.photographer_id != contract.photographer_id or contract.booking.client_id != contract.client_id:
+            raise ValidationError("The agreement does not match its booking.")
         signature = ContractSignature(
             contract=contract, signer_name=signer_name, signature_value=signature_value,
             signature_type=ContractSignature.SignatureType.TYPED, consent_accepted=True,
@@ -285,31 +352,70 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
         )
         signature.signed_snapshot = build_signed_snapshot(contract, signature)
         signature.save()
+        # Explicit signature, not a GET or mail scanner, retires alternate signing links.
+        if _token_digest(raw_token) == contract.previous_review_digest:
+            contract.review_token_digest = contract.previous_review_digest
+            contract.review_token_expires_at = contract.previous_review_expires_at
+        contract.previous_review_digest = ""
+        contract.previous_review_expires_at = None
         contract.signed_at = now
         contract.locked_at = contract.locked_at or now
         contract.status = Contract.Status.SIGNED
-        contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at"))
+        contract.save(update_fields=("signed_at", "locked_at", "status", "updated_at", "review_token_digest", "review_token_expires_at", "previous_review_digest", "previous_review_expires_at"))
         ContractEvent.objects.create(
             contract=contract, event_type=ContractEvent.EventType.SIGNED,
             metadata={"contract_id": contract.pk, "contract_version": contract.version,
                       "signer": signer_name, "signed_at": now.isoformat(), "content_hash": digest,
                       "client_id": contract.client_id, "workspace_id": contract.photographer_id},
         )
+        # Confirm only active tentative reservations with both signatures.
+        # A conditional update prevents resurrecting cancelled/completed bookings.
+        if ContractPhotographerSignature.objects.filter(contract=contract, content_hash=digest).exists():
+            from apps.marketplace.models import PlatformBooking
+            unacknowledged = PlatformBooking.objects.filter(session_id=contract.booking_id, acknowledged_at__isnull=True).exists()
+            updated = 0 if unacknowledged else ClientSession.objects.filter(
+                pk=contract.booking_id, photographer_id=contract.photographer_id,
+                client_id=contract.client_id, status=ClientSession.Status.TENTATIVE,
+                event_kind=ClientSession.EventKind.BOOKING,
+            ).update(status=ClientSession.Status.CONFIRMED, confirmed_at=now, updated_at=now)
+            if updated:
+                ClientActivity.objects.create(
+                    photographer_id=contract.photographer_id, client_id=contract.client_id,
+                    booking_id=contract.booking_id, event_type=ClientActivity.EventType.BOOKING_UPDATED,
+                    description="Booking automatically confirmed after both parties signed the agreement.",
+                    metadata={"contract_id": contract.pk, "before": "tentative", "after": "confirmed"},
+                )
+        from apps.notifications.intents import require_email
+        require_email(event_key=f"contract.signed:{contract.pk}:{contract.review_token_digest}",
+            recipients=[contract.sent_to_email], kind="contract.signed")
     generate_signed_contract_pdf(contract.pk)
     return signature
 
 
+@transaction.atomic
 def send_signed_contract_copy_link(*, contract, signed_pdf_url):
-    """Best-effort delivery of the existing private token URL, never a public storage URL."""
-    context = {"contract": contract, "signed_pdf_url": signed_pdf_url, "studio": contract.photographer}
-    message = EmailMultiAlternatives(
-        f"Your signed contract: {contract.title}",
-        render_to_string("clients/contracts/email/signed.txt", context),
-        settings.DEFAULT_FROM_EMAIL,
-        [contract.sent_to_email],
+    contract = Contract.objects.select_for_update().select_related("client", "photographer__user").get(pk=contract.pk)
+    if contract.status != Contract.Status.SIGNED or contract.review_token_revoked_at:
+        raise ValidationError("Signed agreement unavailable.")
+    if not contract.review_token_expires_at or contract.review_token_expires_at <= timezone.now():
+        raise ValidationError("Signed agreement link expired.")
+    if contract.sent_to_email.casefold() != contract.client.email.casefold():
+        raise ValidationError("Contract recipient changed.")
+    from urllib.parse import urlsplit
+    from django.urls import resolve
+    match = resolve(urlsplit(signed_pdf_url).path)
+    token = match.kwargs.get("token", "")
+    if not token or _token_digest(token) != contract.review_token_digest:
+        raise ValidationError("Invalid signed agreement link.")
+    context = {"contract": contract, "signed_pdf_url": public_url(reverse("clients:signed-contract-pdf-download", args=[token])), "studio": contract.photographer}
+    return queue_transactional_email(
+        event_key=f"contract.signed:{contract.pk}:{contract.review_token_digest}",
+        subject=f"Your signed contract: {contract.title}",
+        plain_body=render_to_string("clients/contracts/email/signed.txt", context),
+        html_body=render_to_string("clients/contracts/email/signed.html", context),
+        recipients=[contract.sent_to_email], sensitive=True, expires_at=contract.review_token_expires_at,
+        lifecycle_kind="contract.signed", lifecycle_context={"contract_id": contract.pk, "digest": contract.review_token_digest},
     )
-    message.attach_alternative(render_to_string("clients/contracts/email/signed.html", context), "text/html")
-    return message.send(fail_silently=False)
 
 
 @transaction.atomic
@@ -333,7 +439,7 @@ def create_contract_from_template(*, booking, template, actor):
         client=booking.client,
         template=template,
         title=template.title,
-        content=render_merge_fields(template.content, booking),
+        content=template.content,
         version=template.version,
         status=Contract.Status.DRAFT,
         created_by=actor,

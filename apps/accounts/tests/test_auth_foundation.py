@@ -375,6 +375,12 @@ class PasswordResetTests(TestCase):
             {"email": "reset@example.com"},
         )
         self.assertRedirects(response, reverse("accounts:password-reset-done"))
+        from apps.notifications.models import EmailDelivery
+        from apps.notifications.email_delivery import deliver_email
+        row = EmailDelivery.objects.get(lifecycle_kind='account.password_reset')
+        self.assertEqual(row.recipients, ['reset@example.com'])
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         self.assertEqual(len(mail.outbox), 1)
         self.assertRegex(
             mail.outbox[0].body,
@@ -389,4 +395,6 @@ class PasswordResetTests(TestCase):
             {"email": "missing@example.com"},
         )
         self.assertRedirects(response, reverse("accounts:password-reset-done"))
+        from apps.notifications.models import EmailDelivery
+        self.assertFalse(EmailDelivery.objects.exists())
         self.assertEqual(len(mail.outbox), 0)

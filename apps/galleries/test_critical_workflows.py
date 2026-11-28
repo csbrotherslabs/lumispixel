@@ -147,6 +147,8 @@ class CriticalGalleryWorkflowTests(TestCase):
         # physical connection while TestCase still owns its outer transaction.
         download_response = self.client.get(download_url)
         self.assertEqual(download_response.status_code, 200)
+        if download_response.streaming:
+            b''.join(download_response.streaming_content)
 
         self.gallery.refresh_from_db()
         self.assertEqual(self.gallery.favorite_count, 1)

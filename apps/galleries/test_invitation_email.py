@@ -2,6 +2,8 @@ import re
 from unittest.mock import patch
 
 from django.core import mail
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -49,6 +51,9 @@ class GalleryInvitationEmailTests(TestCase):
         invitation = GalleryInvitation.objects.get(gallery=self.gallery, email="samuel@example.com")
         self.assertEqual(invitation.client_name, "Samuel Golomeke")
         self.assertEqual(AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).count(), 1)
+        row = EmailDelivery.objects.get(lifecycle_kind='gallery.invite')
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["samuel@example.com"])
         self.assertIn("Coastal Wedding", mail.outbox[0].subject)
@@ -60,7 +65,7 @@ class GalleryInvitationEmailTests(TestCase):
         self.assertIsNotNone(match)
         self.assertTrue(AccessToken.objects.filter(token_hash=AccessToken.digest(match.group(1))).exists())
 
-    def test_resend_emails_fresh_token_and_revokes_previous_link(self):
+    def test_resend_preserves_previous_link_until_verified_replacement_use(self):
         invitation = GalleryInvitation.objects.create(
             gallery=self.gallery,
             client_name="Samuel Golomeke",
@@ -75,11 +80,25 @@ class GalleryInvitationEmailTests(TestCase):
         self.assertEqual(response.status_code, 302)
         old_token.refresh_from_db()
         invitation.refresh_from_db()
-        self.assertIsNotNone(old_token.revoked_at)
+        self.assertIsNone(old_token.revoked_at)
         self.assertEqual(invitation.status, GalleryInvitation.Status.PENDING)
         self.assertIsNotNone(invitation.resent_at)
-        self.assertEqual(AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).count(), 1)
+        self.assertEqual(AccessToken.objects.filter(invitation=invitation, revoked_at__isnull=True).count(), 2)
+        delivery = EmailDelivery.objects.get(lifecycle_kind="gallery.invite")
+        self.assertTrue(delivery.sensitive)
+        self.assertTrue(delivery.encrypted_payload)
+        self.assertEqual(delivery.recipients, [invitation.email])
+        self.assertTrue(deliver_email(delivery.pk))
         self.assertEqual(len(mail.outbox), 1)
+        old_token.refresh_from_db()
+        self.assertIsNone(old_token.revoked_at)
+        recipient = User.objects.create_user(email=invitation.email, email_verified=True, account_status=User.AccountStatus.ACTIVE)
+        self.client.force_login(recipient)
+        match = re.search(r'https://lumispixel\.com/galleries/access/([^/]+)/', mail.outbox[0].alternatives[0][0])
+        self.assertIsNotNone(match)
+        self.assertEqual(self.client.get(reverse('galleries:client_gallery_access', args=[match.group(1)])).status_code, 200)
+        old_token.refresh_from_db()
+        self.assertIsNotNone(old_token.revoked_at)
 
     def test_email_failure_keeps_previous_secure_link_valid(self):
         invitation = GalleryInvitation.objects.create(
@@ -115,6 +134,7 @@ class GalleryInvitationEmailTests(TestCase):
         invitation = GalleryInvitation.objects.get(gallery=self.gallery)
         self.assertEqual(invitation.status, GalleryInvitation.Status.NOT_SENT)
         self.assertFalse(invitation.access_tokens.exists())
+        self.assertFalse(EmailDelivery.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
 
     def test_other_photographer_cannot_send_gallery_invitation(self):
@@ -134,4 +154,5 @@ class GalleryInvitationEmailTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(EmailDelivery.objects.exists())
         self.assertEqual(len(mail.outbox), 0)

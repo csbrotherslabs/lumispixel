@@ -65,8 +65,8 @@ class InvoiceDeliveryRegressionTests(TestCase):
         self.assertIsNone(invoice.sent_at)
         self.assertFalse(InvoiceActivity.objects.filter(action="sent").exists())
 
-    def test_zero_delivery_result_rolls_back_new_invoice(self):
-        with patch("apps.dashboard.invoices.EmailMultiAlternatives.send", return_value=0):
+    def test_missing_outbox_result_rolls_back_new_invoice(self):
+        with patch("apps.notifications.email_delivery.queue_transactional_email", return_value=None):
             response = self.client.post(
                 reverse("photographer_workspace:invoice_create"),
                 self.payload(intent="send"),
@@ -75,4 +75,5 @@ class InvoiceDeliveryRegressionTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(ClientInvoice.objects.exists())
         self.assertFalse(InvoiceActivity.objects.exists())
-        self.assertContains(response, "We couldn&#x27;t send this invoice email", status_code=400)
+        from apps.notifications.models import EmailDelivery
+        self.assertFalse(EmailDelivery.objects.filter(lifecycle_kind="invoice.email").exists())

@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .models import GalleryMultipartUpload
 from .multipart_uploads import abort as abort_multipart
+from .object_keys import validate_gallery_object_key
 from .storage_cleanup import process_storage_deletions
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ def cleanup_stale_multipart_uploads(*, now=None):
     failed = 0
     for session in stale.iterator():
         try:
+            validate_gallery_object_key(session.object_key)
             abort_multipart(key=session.object_key, upload_id=session.upload_id)
         except Exception:
             failed += 1

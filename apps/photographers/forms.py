@@ -203,12 +203,12 @@ class PhotographerThemeForm(forms.ModelForm):
         widgets = {"website_theme": forms.RadioSelect(attrs={"class": "lumis-onboarding__theme-radio"})}
 
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
+MAX_IMAGE_SIZE = 50 * 1024 * 1024
 
 THEME_FIELD_CONFIG = {
     PhotographerProfile.WebsiteTheme.BASIC: {"required": [], "optional": []},
-    PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": ["testimonial_quote", "testimonial_name"]},
-    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "services_intro", "consultation_call_to_action"], "optional": ["client_list", "featured_project_title", "featured_project_description"]},
+    PhotographerProfile.WebsiteTheme.ELEGANT: {"required": ["hero_heading", "hero_subheading", "about_heading", "about_text", "featured_gallery_title", "booking_call_to_action"], "optional": []},
+    PhotographerProfile.WebsiteTheme.MODERN_STUDIO: {"required": ["hero_heading", "studio_intro", "consultation_call_to_action"], "optional": ["services_intro", "featured_project_title", "featured_project_description"]},
     PhotographerProfile.WebsiteTheme.CINEMATIC: {"required": ["hero_media_type", "hero_heading", "hero_subheading", "story_heading", "story_text", "contact_call_to_action"], "optional": ["hero_video", "featured_video_url"]},
     PhotographerProfile.WebsiteTheme.PORTFOLIO_EDITORIAL: {"required": ["editorial_heading", "artist_statement", "project_section_heading", "contact_statement"], "optional": []},
     PhotographerProfile.WebsiteTheme.SPORTS_EVENTS: {"required": ["hero_heading", "hero_subheading", "find_photos_heading", "recent_events_heading", "booking_call_to_action"], "optional": ["highlight_video", "featured_event_title", "featured_event_description"]},
@@ -223,12 +223,58 @@ FIELD_SECTION_MAP = {
     "featured_gallery_title": "portfolio", "featured_project_title": "portfolio",
     "featured_project_description": "portfolio", "project_section_heading": "portfolio",
     "find_photos_heading": "portfolio", "recent_events_heading": "portfolio", "featured_event_title": "portfolio",
-    "featured_event_description": "portfolio", "featured_video_url": "portfolio", "highlight_video": "portfolio",
+    "featured_event_description": "portfolio", "featured_video_url": "films", "highlight_video": "portfolio",
     "testimonial_quote": "reviews", "testimonial_name": "reviews",
     "booking_call_to_action": "contact", "consultation_call_to_action": "contact",
     "contact_call_to_action": "contact", "contact_statement": "contact",
     "availability_window_months": "availability", "availability_call_to_action": "availability",
 }
+
+# Every enabled section has real content requirements, regardless of theme.
+SECTION_REQUIRED_FIELDS = {
+    "hero": ("hero_heading", "hero_subheading"),
+    "about": ("about_heading", "about_text"),
+    "services": (),
+    "portfolio": ("featured_gallery_title",),
+    "films": ("featured_video_url",),
+    "reviews": (),
+    "stats": (),
+    "team": (),
+    "contact": ("booking_call_to_action", "contact_email"),
+    "availability": ("availability_window_months", "availability_call_to_action"),
+}
+FIELD_SECTION_MAP.update({"experience_highlights": "stats", "team_members": "team", "contact_email": "contact"})
+# Prefer the selected theme's own equivalent fields over generic alternatives.
+def section_required_fields(theme, sections):
+    config = THEME_FIELD_CONFIG[theme]
+    required = set(config["required"])
+    result = set()
+    for section in sections:
+        specific = {name for name in required if FIELD_SECTION_MAP.get(name) == section}
+        defaults = set(SECTION_REQUIRED_FIELDS.get(section, ()))
+        if section == "hero":
+            specific.discard("hero_media_type")
+            defaults = {"hero_subheading"} if specific & {"hero_heading", "editorial_heading"} else defaults
+        elif section == "contact":
+            defaults = {"contact_email"} if specific else defaults
+        elif specific and section in {"about", "portfolio", "services"}:
+            defaults = set()
+        result.update(specific | defaults)
+    return result
+
+from .video_links import video_details
+
+LEGACY_SAMPLE_HERO = "499aa3683f4e40d796c7039a01486595.png"
+
+
+def is_sample_hero(image):
+    return str(image or "").rsplit("/", 1)[-1] == LEGACY_SAMPLE_HERO
+
+
+def actual_hero_image(website):
+    image = website.hero_image if website else None
+    return image if image and not is_sample_hero(image) else None
+
 
 class PhotographerWebsiteThemeForm(forms.ModelForm):
     action = forms.CharField(required=False)
@@ -239,7 +285,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
     )
     section_order = forms.CharField(required=False, widget=forms.HiddenInput(attrs={"data-section-order-input": ""}))
     hero_image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={"class":"form-control","accept":"image/jpeg,image/png,image/webp,image/gif"}))
-    field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]})
+    field_names = sorted({f for cfg in THEME_FIELD_CONFIG.values() for f in cfg["required"] + cfg["optional"]} | {f for fields in SECTION_REQUIRED_FIELDS.values() for f in fields} - {"availability_window_months", "availability_call_to_action"})
     hero_media_type = forms.ChoiceField(choices=(("image","Image"),("video","Video")), required=False, widget=forms.Select(attrs={"class":"form-control"}))
     availability_window_months = forms.TypedChoiceField(
         choices=((1, "1 month"), (2, "2 months"), (3, "3 months"), (6, "6 months")),
@@ -266,7 +312,10 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         self.content_only = content_only
         super().__init__(*args, **kwargs)
         theme = self.data.get("website_theme") if self.is_bound else self.instance.website_theme
-        required_content = THEME_FIELD_CONFIG.get(theme, {}).get("required", [])
+        sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
+        required_content = section_required_fields(theme, sections) if theme in THEME_FIELD_CONFIG else set()
+        if content_only:
+            self.fields["hero_image"].required_for_completion = True
         for name in required_content:
             self.fields[name].required_for_completion = True
         content = (website_profile.theme_content if website_profile else {}) or {}
@@ -276,11 +325,11 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
                     self.fields[name].initial = content[name]
             for name in self.field_names:
                 self.fields[name].initial = content.get(name, "")
-            if website_profile and website_profile.hero_image:
+            if actual_hero_image(website_profile):
                 self.fields["hero_image"].help_text = f"Current image: {website_profile.hero_image.name}"
             existing_sections = list(website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if website_profile else []
             theme = self.instance.website_theme or PhotographerProfile.WebsiteTheme.BASIC
-            selected_sections = existing_sections or THEME_DEFINITIONS[theme]["sections"]
+            selected_sections = [key for key in (existing_sections or THEME_DEFINITIONS[theme]["sections"]) if key != "reviews"] + ["reviews"]
             self.fields["website_sections"].initial = selected_sections
             self.fields["section_order"].initial = ",".join(selected_sections)
 
@@ -290,7 +339,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
             if image.content_type not in IMAGE_TYPES:
                 raise forms.ValidationError("Upload a JPG, PNG, GIF, or WebP image.")
             if image.size > MAX_IMAGE_SIZE:
-                raise forms.ValidationError("Image uploads must be 5 MB or smaller.")
+                raise forms.ValidationError("Image uploads must be 50 MB or smaller.")
         return image
 
     def clean(self):
@@ -299,19 +348,23 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         if theme not in THEME_FIELD_CONFIG:
             return cleaned
         selected_sections = set(self.website_profile.sections.filter(is_enabled=True).values_list("section_type", flat=True)) if self.website_profile else set()
-        required = [name for name in THEME_FIELD_CONFIG[theme]["required"] if not self.content_only or FIELD_SECTION_MAP.get(name) in selected_sections]
+        required = section_required_fields(theme, selected_sections) if self.content_only else []
+        if self.content_only and theme != self.instance.website_theme:
+            self.add_error("website_theme", "Save your selected theme in the structure editor first.")
         if not self.draft:
+            if self.content_only and not (cleaned.get("hero_image") or actual_hero_image(self.website_profile)):
+                self.add_error("hero_image", "Upload your own hero photograph.")
             for name in required:
                 if not str(cleaned.get(name) or "").strip():
                     self.add_error(name, "This field is required for the selected theme.")
         for name in ("hero_video", "featured_video_url", "highlight_video"):
             value = cleaned.get(name)
-            if value and not (value.startswith("https://") or value.startswith("http://")):
-                self.add_error(name, "Enter a valid video URL starting with http:// or https://.")
+            if value and not video_details(value):
+                self.add_error(name, "Enter a YouTube, Vimeo, or HTTPS MP4 video link.")
         if self.content_only:
             return cleaned
         sections = cleaned.get("website_sections") or (THEME_DEFINITIONS[theme]["sections"] if "website_sections" not in self.data else [])
-        cleaned["website_sections"] = sections
+        cleaned["website_sections"] = [key for key in sections if key != "reviews"] + ["reviews"]
         for required_section in ("hero", "contact"):
             if required_section not in sections:
                 self.add_error("website_sections", f"{SECTION_LIBRARY[required_section]['name']} is required for every photographer website.")
@@ -329,7 +382,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         website, _ = PhotographerWebsiteProfile.objects.get_or_create(photographer_profile=profile)
         selected_sections = set(website.sections.filter(is_enabled=True).values_list("section_type", flat=True))
         allowed = set(THEME_FIELD_CONFIG[profile.website_theme]["required"] + THEME_FIELD_CONFIG[profile.website_theme]["optional"])
-        allowed.update(("availability_window_months", "availability_call_to_action"))
+        allowed.update(section_required_fields(profile.website_theme, selected_sections))
+        allowed.update(("availability_window_months", "availability_call_to_action", "services_intro"))
         allowed = {name for name in allowed if FIELD_SECTION_MAP.get(name) in selected_sections}
         content = dict(website.theme_content or {})
         for name in allowed:
@@ -337,6 +391,8 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
         website.theme_content = content
         if self.cleaned_data.get("hero_image"):
             website.hero_image = self.cleaned_data["hero_image"]
+        elif is_sample_hero(website.hero_image):
+            website.hero_image = ""
         profile.save()
         website.save()
         return profile, website
@@ -349,7 +405,7 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
     def _save_sections(self, website, theme):
         selected = list(self.cleaned_data.get("website_sections") or THEME_DEFINITIONS[theme]["sections"])
         requested_order = [key for key in (self.cleaned_data.get("section_order") or "").split(",") if key in selected]
-        order = requested_order + [key for key in selected if key not in requested_order]
+        order = [key for key in requested_order + [key for key in selected if key not in requested_order] if key != "reviews"] + ["reviews"]
         existing = {section.section_type: section for section in website.sections.all()}
         for index, section_type in enumerate(order):
             section = existing.get(section_type) or PhotographerWebsiteSection(photographer_website=website, section_type=section_type)
@@ -361,7 +417,16 @@ class PhotographerWebsiteThemeForm(forms.ModelForm):
 
 
 for _theme_field_name in PhotographerWebsiteThemeForm.field_names:
-    if _theme_field_name == "hero_media_type":
+    if _theme_field_name in {"hero_media_type", "availability_window_months", "availability_call_to_action"}:
         continue
     _widget = forms.Textarea(attrs={"class":"form-control","rows":3}) if any(part in _theme_field_name for part in ("text", "intro", "statement", "description", "list")) else forms.TextInput(attrs={"class":"form-control"})
     PhotographerWebsiteThemeForm.base_fields[_theme_field_name] = forms.CharField(required=False, widget=_widget)
+PhotographerWebsiteThemeForm.base_fields["contact_email"] = forms.EmailField(required=False, widget=forms.EmailInput(attrs={"class": "form-control"}))
+for _name in ("experience_highlights", "team_members"):
+    if _name in PhotographerWebsiteThemeForm.base_fields:
+        PhotographerWebsiteThemeForm.base_fields[_name].widget = forms.Textarea(attrs={"class": "form-control", "rows": 4})
+
+
+for _video_name in ("hero_video", "featured_video_url", "highlight_video"):
+    PhotographerWebsiteThemeForm.base_fields[_video_name].help_text = "Paste a YouTube, Vimeo, or HTTPS MP4 link. Video playback depends on the provider's sharing settings."
+    PhotographerWebsiteThemeForm.base_fields[_video_name].widget.attrs.update({"placeholder": "https://www.youtube.com/watch?v=...", "inputmode": "url"})

@@ -67,7 +67,7 @@
             <small>This template is available when creating contracts.</small>
             {% if form.is_active.errors %}<div class="field-error" id="{{ form.is_active.id_for_label }}-error" role="alert">{{ form.is_active.errors|striptags }}</div>{% endif %}
           </div>
-          {{ form.description.as_hidden }}
+          <div class="lp-contract-template-field"><label for="assign-specialty">Assign as default (optional)</label><select id="assign-specialty" name="assign_specialty"><option value="">Do not change assignments</option>{% for specialty in assignment_specialties %}<option value="{{ specialty }}">{{ specialty }}</option>{% endfor %}</select><small>Replaces the existing default for the selected specialty if this template is active.</small></div>{{ form.description.as_hidden }}
         </div>
       </section>
 
@@ -128,9 +128,13 @@
   </form>
   <dialog class="lp-contract-preview" data-preview-dialog aria-labelledby="template-preview-title">
     <header><div><span>Contract preview</span><h2 id="template-preview-title" data-preview-title>Untitled contract</h2></div><button type="button" data-preview-close aria-label="Close preview"><i class="bi bi-x-lg" aria-hidden="true"></i></button></header>
-    <div data-preview-content><p class="lp-contract-preview__empty">Add contract content to see its preview here.</p></div>
+    <div class="lp-preview-controls"><div role="group" aria-label="Preview mode"><button type="button" data-preview-mode="sample" aria-pressed="true">Sample preview</button><button type="button" data-preview-mode="fields" aria-pressed="false">Merge fields</button></div><p data-preview-notice></p></div>
+    <div class="lp-preview-scroll"><article class="lp-preview-paper"><div class="lp-preview-brand" data-preview-brand></div><h3 data-preview-document-title></h3><div data-preview-content></div><div class="lp-preview-signatures"><div>Photographer signature<br><strong>Unsigned</strong></div><div>Client signature<br><strong>Unsigned</strong></div></div></article></div>
+    <footer class="lp-preview-footer"><button type="button" class="lp-button lp-button--primary lp-button--md" data-preview-done>Continue editing</button></footer>
   </dialog>
 </div>
 {% if not template_object %}{{ contract_starters|json_script:"contract-starter-definitions" }}{% endif %}
+{{ preview_values|json_script:"contract-preview-values" }}
+<link rel="stylesheet" href="{% static 'css/contract_template_preview.css' %}">
 <script src="{% static 'js/contract_template_editor.js' %}"></script>
 {% endblock %}

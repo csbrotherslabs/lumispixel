@@ -1,0 +1,4 @@
+{% extends "email/client_base.html" %}
+{% block email_title %}Booking update{% endblock %}
+{% block category %}Booking update{% endblock %}
+{% block content %}<tr><td style="padding:32px 24px"><h1>Your booking update</h1><p>{{ message }}</p><p>{{ session.session_type }} · {{ session.starts_at|date:"F j, Y" }} · {{ session.duration_minutes }} minutes</p></td></tr>{% endblock %}

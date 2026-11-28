@@ -1,0 +1,17 @@
+<section class="lp-booking-detail-card lp-hub-panel">
+{% if booking_tab == "payments" %}
+<header><h2>Payments &amp; Invoices</h2><p>Invoices explicitly linked to this reservation.</p><a class="lp-button lp-button--primary" href="{% url 'photographer_workspace:invoice_create' %}">Create Invoice</a></header>
+<div class="lp-hub-note"><strong>Agreed payment schedule</strong><p>{{ booking_payment_terms|linebreaksbr }}</p></div>
+{% for total in payment_totals %}<div class="lp-hub-readiness"><div><small>Issued total ({{ total.currency }})</small><strong>{{ total.total }}</strong></div><div><small>Paid</small><strong>{{ total.paid }}</strong></div><div><small>Outstanding</small><strong>{{ total.balance }}</strong></div></div>{% empty %}<p class="lp-hub-note">No issued invoices yet. Draft and void invoices are excluded from totals.</p>{% endfor %}
+{% for invoice in booking_invoices %}<div class="lp-hub-record"><div><a href="{% url 'photographer_workspace:invoice_view' invoice.pk %}"><strong>{{ invoice.invoice_number|default:"Draft invoice" }}</strong></a><small>{{ invoice.get_status_display }} · Due {{ invoice.due_date|default:"Not set" }}</small></div><strong>{{ invoice.currency }} {{ invoice.total }}</strong></div>{% empty %}<p class="lp-hub-note">No invoices linked. Select this reservation when creating an invoice.</p>{% endfor %}
+{% elif booking_tab == "galleries" %}
+<header><h2>Client galleries</h2><p>Galleries belonging to this client. They are not necessarily associated with this specific session.</p><a class="lp-button lp-button--primary" href="{% url 'photographer_workspace:create_gallery' %}">Create Gallery</a></header>
+{% for gallery in related_client_galleries %}<div class="lp-hub-record"><div><a href="{% url 'photographer_workspace:gallery_workspace' gallery.pk %}"><strong>{{ gallery.name }}</strong></a><small>{{ gallery.get_status_display }}</small></div></div>{% empty %}<p class="lp-hub-note">No galleries for this client yet.</p>{% endfor %}
+{% elif booking_tab == "questionnaires" %}
+<header><h2>Questionnaires</h2><p>Client preparation and preferences</p></header><p class="lp-hub-note">Questionnaire creation and delivery are not available yet.</p>
+{% elif booking_tab == "tasks" %}
+<header><h2>Tasks &amp; Notes</h2><p>Internal booking preparation</p></header><div class="lp-hub-note">{{ booking.notes|default:"No booking notes yet."|linebreaksbr }}</div>{% if not booking.platform_booking %}<button type="button" class="lp-button lp-button--secondary" data-event-form-open="{{ booking.event_kind }}" data-event-edit="{{ booking_event_id }}">Edit booking notes</button>{% endif %}<p class="lp-hub-note">Tasks are currently managed at the client level.</p><a href="{% url 'photographer_workspace:client_detail' booking.client.pk %}">Open client workspace</a>
+{% elif booking_tab == "activity" %}
+<header><h2>Booking activity</h2><p>Recent booking and contract events</p></header><ol class="lp-booking-timeline">{% for event in hub_activity %}<li><span aria-hidden="true"></span><div><strong>{{ event.label }}</strong><p>{{ event.description }}</p><time datetime="{{ event.date|date:'c' }}">{{ event.date|date:"M j, Y, g:i A" }}</time></div></li>{% empty %}<li>No activity recorded yet.</li>{% endfor %}</ol>
+{% endif %}
+</section>

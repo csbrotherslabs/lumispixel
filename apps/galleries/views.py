@@ -206,10 +206,10 @@ def stable_gallery_access(request, public_id, search_results=False):
     if gallery.expires_at and gallery.expires_at <= now:
         # Automatic lock makes gallery expiration an access-control boundary.
         # Without it, the date remains informational/scheduling metadata.
-        if permissions.automatic_gallery_lock and not _is_gallery_owner(request, gallery):
+        if permissions.automatic_gallery_lock:
             raise Http404
     settings = GallerySettings.objects.filter(gallery=gallery).first() or GallerySettings(gallery=gallery, gallery_url=gallery.slug)
-    if not permissions.view_gallery and not _is_gallery_owner(request, gallery):
+    if not permissions.view_gallery:
         raise Http404
     if not _is_gallery_owner(request, gallery) and request.user.is_authenticated and getattr(request.user, "email_verified", False) and request.user.email:
         invitation = GalleryInvitation.objects.filter(gallery=gallery, email__iexact=request.user.email, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).first()
@@ -309,8 +309,10 @@ def _record_client_access(request, token, invitation, gallery):
     if _is_gallery_owner(request, gallery):
         return  # An owner preview is not a client visit or invitation acceptance.
     now = timezone.now()
+    from .replacement_links import activate_replacement
+    activate_replacement(token=token, user=request.user)
     AccessToken.objects.filter(pk=token.pk).update(last_used_at=now)
-    GalleryInvitation.objects.filter(pk=invitation.pk).update(
+    GalleryInvitation.objects.filter(pk=invitation.pk, status__in=[GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE]).update(
         last_access_at=now,
         status=GalleryInvitation.Status.ACTIVE,
     )
@@ -335,6 +337,8 @@ def _record_client_access(request, token, invitation, gallery):
 def client_gallery_access(request, token, search_results=False):
     token_record, invitation, gallery, permissions, settings = _client_gallery_access(token, request)
     if _is_gallery_owner(request, gallery):
+        if search_results:
+            return redirect(reverse("galleries:public_semantic_results", args=[gallery.public_id]) + "?" + urlencode({"q": request.GET.get("q", "")}))
         return redirect("galleries:stable_gallery_access", public_id=gallery.public_id)
     if request.GET.get("thumbnail_refresh") == "1":
         return _client_thumbnail_refresh(request, gallery)
@@ -838,7 +842,7 @@ def client_gallery_download_all(request, token):
     ])
     log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.GALLERY_DOWNLOADED,
                          actor=request.user, actor_type=GalleryActivity.ActorType.CLIENT)
-    return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip")
+    return FileResponse(archive, as_attachment=True, filename=f"{gallery.slug}-gallery.zip", content_type="application/zip")
 
 
 @require_GET

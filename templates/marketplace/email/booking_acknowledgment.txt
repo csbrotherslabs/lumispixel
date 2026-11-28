@@ -1,0 +1,17 @@
+Hi {{ client_name|default:"there" }},
+
+A photography booking request with {{ studio_name }} has been submitted using your email address.
+
+Service: {{ session.session_type }}
+Requested date: {{ session.starts_at|date:"l, F j, Y" }}
+Requested time: {{ session.starts_at|date:"g:i A" }} ({{ booking_timezone }})
+Duration: {{ session.duration_minutes }} minutes
+
+Review and acknowledge your booking:
+{{ verification_url }}
+
+This private link expires in 48 hours. Please do not forward it. If you did not request this service, ignore this email.
+
+Acknowledgment is not a confirmed booking or payment. No payment is required at this stage.
+
+LumisPixel · Your moments, beautifully delivered

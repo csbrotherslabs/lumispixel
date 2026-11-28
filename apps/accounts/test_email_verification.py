@@ -10,6 +10,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .services import email_verification_token
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 
 User = get_user_model()
 
@@ -87,6 +89,7 @@ class EmailVerificationLifecycleTests(TestCase):
     def test_resend_requires_pending_session_and_does_not_accept_email_input(self):
         response = self.client.post(reverse("accounts:resend-verification"), {"email": self.user.email})
         self.assertEqual(response.status_code, 302)
+        self.assertFalse(EmailDelivery.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
 
     def test_resend_is_throttled_and_only_sends_once_per_window(self):
@@ -94,6 +97,11 @@ class EmailVerificationLifecycleTests(TestCase):
         url = reverse("accounts:resend-verification")
         self.client.post(url)
         self.client.post(url)
+        row = EmailDelivery.objects.get(lifecycle_kind='account.verify')
+        self.assertTrue(row.sensitive)
+        self.assertTrue(row.encrypted_payload)
+        self.assertEqual(row.recipients, [self.user.email])
+        self.assertTrue(deliver_email(row.pk))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.user.email])
 
@@ -102,6 +110,7 @@ class EmailVerificationLifecycleTests(TestCase):
         self._remember_pending()
         response = self.client.post(reverse("accounts:resend-verification"))
         self.assertEqual(response.status_code, 302)
+        self.assertFalse(EmailDelivery.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
 
     def test_pending_page_without_session_does_not_disclose_account(self):

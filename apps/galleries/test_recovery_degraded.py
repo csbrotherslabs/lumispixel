@@ -21,7 +21,7 @@ class RecoveryAndDegradedBehaviorTests(TestCase):
         delete_object.side_effect = [RuntimeError("outage"), None]
         deletion = GalleryStorageDeletion.objects.create(
             storage_backend=GalleryStorageDeletion.Backend.B2,
-            object_key="private/test/recovery.jpg",
+            object_key="private/dev/galleries/1/2/recovery.jpg",
             photographer_id=self.studio.pk,
             gallery_id=self.gallery.pk,
         )
@@ -43,7 +43,7 @@ class RecoveryAndDegradedBehaviorTests(TestCase):
     def test_exhausted_storage_delete_is_quarantined_for_reconciliation(self, delete_object):
         deletion = GalleryStorageDeletion.objects.create(
             storage_backend=GalleryStorageDeletion.Backend.B2,
-            object_key="private/test/poison.jpg",
+            object_key="private/dev/galleries/1/2/poison.jpg",
         )
         process_storage_deletions()
         process_storage_deletions()
@@ -60,7 +60,7 @@ class RecoveryAndDegradedBehaviorTests(TestCase):
         session = GalleryMultipartUpload.objects.create(
             gallery=self.gallery,
             photographer=self.studio,
-            object_key="private/test/stale.jpg",
+            object_key="private/dev/galleries/1/2/stale.jpg",
             upload_id="upload-1",
             original_name="stale.jpg",
             content_type="image/jpeg",
@@ -72,6 +72,7 @@ class RecoveryAndDegradedBehaviorTests(TestCase):
 
         result = cleanup_stale_multipart_uploads()
         session.refresh_from_db()
+        abort.assert_called_once_with(key=session.object_key, upload_id=session.upload_id)
         self.assertEqual(result["failed"], 1)
         self.assertIsNone(session.aborted_at)
         self.assertIsNone(session.completed_at)

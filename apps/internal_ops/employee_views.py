@@ -86,7 +86,7 @@ def employee_create(request):
             except EmployeeInvitationError as exc:
                 messages.warning(request, str(exc))
             else:
-                messages.success(request, f"{target.user.display_name} was added and notified.")
+                messages.success(request, f"{target.user.display_name} was added and the invitation was queued.")
             return redirect("internal_ops:employee_detail", employee_id=target.employee_id)
     context = _base_context(request)
     context["form"] = form
@@ -127,19 +127,19 @@ def employee_resend_invitation(request, employee_id):
         return HttpResponseForbidden("You do not have permission to manage LumisPixel employees.")
     target = get_object_or_404(EmployeeProfile.objects.select_related("user"), employee_id=employee_id)
     try:
-        send_employee_invitation(request, target, created_user=not target.user.has_usable_password())
+        delivery = send_employee_invitation(request, target, created_user=not target.user.has_usable_password())
     except EmployeeInvitationError as exc:
         messages.warning(request, str(exc))
     else:
         record_audit(
             actor=actor,
             category=InternalAuditEvent.Category.EMPLOYEE,
-            action="employee.invitation.sent",
+            action="employee.invitation.queued",
             target_type="employee_profile",
             target_id=target.employee_id,
-            summary=f"Sent employee access email to {target.user.display_name}",
-            reason="Employee access invitation resent",
-            metadata={"actor_user_id": str(request.user.pk), "superuser": request.user.is_superuser},
+            summary=f"Queued employee access email to {target.user.display_name}",
+            reason="Employee access invitation requested again",
+            metadata={"actor_user_id": str(request.user.pk), "superuser": request.user.is_superuser, "delivery_id": delivery.pk, "delivery_status": delivery.status},
         )
-        messages.success(request, "Employee access email sent.")
+        messages.success(request, "Employee access email queued.")
     return redirect("internal_ops:employee_detail", employee_id=target.employee_id)

@@ -1,5 +1,6 @@
 """Isolated PostgreSQL pgvector persistence; never queries the experimental tables."""
 
+import os
 from contextlib import contextmanager
 from django.conf import settings
 
@@ -9,7 +10,9 @@ def vector_connection():
     if not settings.VISUAL_SEARCH_DATABASE_URL:
         raise RuntimeError("VISUAL_SEARCH_DATABASE_URL is required for face indexing")
     import psycopg
-    with psycopg.connect(settings.VISUAL_SEARCH_DATABASE_URL, connect_timeout=10) as conn:
+    with psycopg.connect(settings.VISUAL_SEARCH_DATABASE_URL, connect_timeout=10,
+                         application_name=os.getenv("VISUAL_SEARCH_DB_APPLICATION_NAME") or
+                         ("lumispixel-dev-vector" if settings.DEBUG else "lumispixel-prod-vector")) as conn:
         yield conn
 
 

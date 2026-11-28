@@ -78,6 +78,16 @@
       </section>
     </form>
 
+    <section class="lps-panel" aria-labelledby="contract-settings-title">
+      <div class="lps-panel-head">
+        <div><span class="lps-eyebrow">Bookings &amp; agreements</span><h2 id="contract-settings-title">Contract Templates</h2><p>Create reusable agreements, customize starter templates, and assign default contracts to your photography specialties.</p></div>
+        <a class="lp-button lp-button--primary lp-button--md" href="{% url 'photographer_workspace:contract_templates' %}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Manage contract templates</a>
+      </div>
+      <div class="lps-destination-grid">
+        <a href="{% url 'photographer_workspace:contract_templates' %}"><span><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span><div><strong>Template library &amp; specialty defaults</strong><p>Configure automatic unsigned contract drafts for confirmed bookings and generate missing drafts for existing bookings.</p></div><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+      </div>
+    </section>
+
     <section class="lps-panel lps-website" aria-labelledby="website-settings-title">
       <div class="lps-panel-head"><div><span class="lps-eyebrow">Brand &amp; website</span><h2 id="website-settings-title">Website Design</h2><p>Preview any design before switching. A design is changed only when you explicitly choose Use design.</p></div><a class="lp-button lp-button--secondary lp-button--md" href="{{ website_content_url }}"><i class="bi bi-pencil-square" aria-hidden="true"></i>Edit website content</a></div>
       {% if current_theme %}<div class="lps-current-theme"><span class="lps-current-icon"><i class="bi bi-window" aria-hidden="true"></i></span><div><small>Current design</small><strong>{{ current_theme.name }}</strong><p>{{ current_theme.description }}</p></div><div class="lps-current-actions"><a class="lp-button lp-button--outline lp-button--sm" href="{{ current_theme.preview_url }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i>Preview current website</a><a class="lp-text-action" href="{{ website_builder_url }}">Open full website builder <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>{% endif %}

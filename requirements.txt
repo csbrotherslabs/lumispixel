@@ -12,3 +12,5 @@ gunicorn
 whitenoise
 
 playwright
+
+cryptography>=44

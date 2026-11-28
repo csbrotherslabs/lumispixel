@@ -47,3 +47,6 @@
 }
 
 /* Photo controls use the shared client_photo_actions.css component. */
+
+/* Preserve accessible hit targets on dedicated search result cards. */
+.sf-photo__actions [data-favorite-form] button, .sf-photo__actions [data-comment-toggle], .sf-photo__actions a[data-photo-download], .sf-photo__actions [data-full-view] { min-width:44px; min-height:44px; }

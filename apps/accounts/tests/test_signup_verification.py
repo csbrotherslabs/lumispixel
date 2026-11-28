@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.messages import get_messages
@@ -9,6 +10,8 @@ from django.utils.http import urlsafe_base64_encode
 
 from apps.accounts.models import ClientProfile, PhotographerProfile, User
 from apps.accounts.services import EmailDeliveryError, email_verification_token
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 
 
 VALID = {
@@ -66,6 +69,7 @@ class EntrySignupVerificationTests(TestCase):
         self.assertTrue(response.wsgi_request.user.is_authenticated)
         self.assertTrue(response.wsgi_request.user.has_client_profile)
 
+    @override_settings(PUBLIC_BASE_URL='')
     def test_client_signup_creates_pending_client_and_sends_email(self):
         response = self.client.post(reverse("accounts:client-signup") + "?intent=find_photos", VALID)
         self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
@@ -76,7 +80,10 @@ class EntrySignupVerificationTests(TestCase):
         self.assertIsNotNone(user.terms_accepted_at)
         self.assertIsNotNone(user.privacy_policy_accepted_at)
         self.assertTrue(ClientProfile.objects.filter(user=user).exists())
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 0)
+        row = EmailDelivery.objects.get(lifecycle_kind='account.verify')
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         html_body = mail.outbox[0].alternatives[0][0]
         self.assertIn("http://testserver/accounts/verify-email/", html_body)
 
@@ -84,6 +91,9 @@ class EntrySignupVerificationTests(TestCase):
     def test_verification_email_buttons_use_public_lumispixel_origin(self):
         self.client.post(reverse("accounts:client-signup"), VALID | {"email": "public-link@example.com"})
 
+        row = EmailDelivery.objects.get(lifecycle_kind='account.verify')
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         html_body = mail.outbox[0].alternatives[0][0]
         self.assertIn('href="https://lumispixel.com/"', html_body)
         self.assertIn('href="https://lumispixel.com/accounts/verify-email/', html_body)
@@ -171,16 +181,18 @@ class EntrySignupVerificationTests(TestCase):
 
     def test_resend_post_only_cooldown_and_verified_skip(self):
         self.client.post(reverse("accounts:client-signup"), VALID | {"email": "resend@example.com"})
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(EmailDelivery.objects.count(), 1)
         self.assertEqual(self.client.get(reverse("accounts:resend-verification")).status_code, 405)
+        with patch.object(email_verification_token, '_now', return_value=email_verification_token._now() + timedelta(seconds=2)):
+            self.client.post(reverse("accounts:resend-verification"))
+        self.assertEqual(EmailDelivery.objects.count(), 2)
         self.client.post(reverse("accounts:resend-verification"))
-        self.assertEqual(len(mail.outbox), 2)
-        self.client.post(reverse("accounts:resend-verification"))
-        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(EmailDelivery.objects.count(), 2)
+        self.assertEqual(EmailDelivery.objects.filter(status=EmailDelivery.Status.CANCELLED).count(), 1)
         user = User.objects.get(email="resend@example.com")
         user.mark_email_verified()
         self.client.post(reverse("accounts:resend-verification"))
-        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(EmailDelivery.objects.count(), 2)
 
     def test_resend_email_delivery_failure_does_not_error_or_start_cooldown(self):
         self.client.post(reverse("accounts:client-signup"), VALID | {"email": "resendfailure@example.com"})
@@ -189,9 +201,12 @@ class EntrySignupVerificationTests(TestCase):
         self.assertRedirects(response, reverse("accounts:verification-pending"), fetch_redirect_response=False)
         messages = [message.message for message in get_messages(response.wsgi_request)]
         self.assertTrue(messages)
+        self.assertEqual(EmailDelivery.objects.count(), 1)
 
-        self.client.post(reverse("accounts:resend-verification"))
-        self.assertEqual(len(mail.outbox), 2)
+        with patch.object(email_verification_token, "_now", return_value=email_verification_token._now() + timedelta(seconds=2)):
+            self.client.post(reverse("accounts:resend-verification"))
+        self.assertEqual(EmailDelivery.objects.count(), 2)
+        self.assertEqual(EmailDelivery.objects.filter(status=EmailDelivery.Status.CANCELLED).count(), 1)
 
     def test_signup_email_delivery_failure_still_shows_pending_page(self):
         with patch("apps.accounts.views.send_verification_email", side_effect=EmailDeliveryError):

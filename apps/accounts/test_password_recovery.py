@@ -7,6 +7,9 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
+
 User = get_user_model()
 
 
@@ -31,6 +34,10 @@ class PasswordRecoverySecurityTests(TestCase):
         self.assertEqual(existing.status_code, 302)
         self.assertEqual(missing.status_code, 302)
         self.assertEqual(existing.url, missing.url)
+        row = EmailDelivery.objects.get(lifecycle_kind='account.password_reset')
+        self.assertEqual(row.recipients, [self.user.email])
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         self.assertEqual(len(mail.outbox), 1)
 
     def test_reset_requests_are_rate_limited(self):
@@ -89,6 +96,10 @@ class PasswordRecoverySecurityTests(TestCase):
         self.user.save(update_fields=["required_password_reset"])
         response = self.client.post(reverse("accounts:password-reset"), {"email": self.user.email})
         self.assertEqual(response.status_code, 302)
+        row = EmailDelivery.objects.get(lifecycle_kind='account.password_reset')
+        self.assertEqual(row.recipients, [self.user.email])
+        self.assertTrue(row.encrypted_payload)
+        self.assertTrue(deliver_email(row.pk))
         self.assertEqual(len(mail.outbox), 1)
 
 

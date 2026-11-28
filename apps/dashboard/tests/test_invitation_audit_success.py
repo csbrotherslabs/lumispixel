@@ -1,18 +1,32 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
+from django.test import TestCase
+from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
+from apps.dashboard.models import StudioMembership
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
-from django.test import SimpleTestCase
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-from apps.dashboard.invitation_actions import resend_pending_invitation
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
-class InvitationAuditSuccessTests(SimpleTestCase):
-    @patch("apps.dashboard.invitation_actions.get_object_or_404")
-    @patch("apps.dashboard.invitation_actions.resend_studio_invitation")
-    @patch("apps.dashboard.invitation_actions.record")
-    def test_successful_resend_records_event_after_delivery(self, record_mock, resend_mock, get_mock):
-        membership = Mock(invitation_sent_at=None)
-        get_mock.return_value = membership
-        request = Mock()
-        resend_pending_invitation(request, Mock(), 5)
-        resend_mock.assert_called_once()
-        record_mock.assert_called_once_with(membership, request.user, "resent")
+    def test_successful_resend_records_queue_event(self):
+        self.resend()
+        self.assertTrue(self.membership.invitation_events.filter(action="resent", actor=self.owner).exists())
+        self.assertTrue(EmailDelivery.objects.filter(lifecycle_kind="studio.invite", status="pending", lifecycle_context__membership_id=self.membership.pk).exists())

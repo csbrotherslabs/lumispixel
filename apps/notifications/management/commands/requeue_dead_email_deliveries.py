@@ -1,29 +1,23 @@
-from django.core.management.base import BaseCommand
-
-from apps.notifications.models import EmailDelivery
-from apps.notifications.tasks import deliver_transactional_email
-
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand, CommandError
+from django.core.exceptions import ValidationError
+from apps.notifications.recovery import requeue_dead
 
 class Command(BaseCommand):
-    help = "Explicitly requeue dead-letter transactional emails after an operator has resolved the cause."
-
+    help = "Audited requeue of eligible non-sensitive dead letters; scanner dispatches them."
     def add_arguments(self, parser):
         parser.add_argument("--id", type=int, action="append", dest="ids", required=True)
+        parser.add_argument("--actor-id", required=True)
+        parser.add_argument("--reason", required=True)
 
     def handle(self, *args, **options):
-        count = 0
-        for delivery in EmailDelivery.objects.filter(pk__in=options["ids"], status=EmailDelivery.Status.DEAD):
-            delivery.status = EmailDelivery.Status.PENDING
-            delivery.attempt_count = 0
-            delivery.failure_kind = EmailDelivery.FailureKind.NONE
-            delivery.last_error = ""
-            delivery.dead_at = None
-            delivery.next_attempt_at = None
-            delivery.save(update_fields=("status", "attempt_count", "failure_kind", "last_error", "dead_at", "next_attempt_at"))
+        user = get_user_model().objects.filter(pk=options["actor_id"], is_active=True, is_superuser=True).first()
+        if not user:
+            raise CommandError("Active superuser required.")
+        for pk in options["ids"]:
             try:
-                deliver_transactional_email.delay(delivery.pk)
-            except Exception:
-                # Durable pending state remains recoverable if the broker is still down.
-                pass
-            count += 1
-        self.stdout.write(self.style.SUCCESS(f"Requeued {count} dead-letter email delivery(s)."))
+                requeue_dead(delivery_id=pk, user=user, reason=options["reason"])
+            except ValidationError as exc:
+                self.stderr.write(f"Delivery {pk}: {exc.messages[0]}")
+            else:
+                self.stdout.write(f"Delivery {pk} queued for recovery.")

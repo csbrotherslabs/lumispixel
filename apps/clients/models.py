@@ -435,6 +435,11 @@ class ClientSession(PhotographerOwnedModel):
     location = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.TENTATIVE)
     booking_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    pricing_confirmed = models.BooleanField(default=False)
+    payment_currency = models.CharField(max_length=3, blank=True)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deposit_due_date = models.DateField(null=True, blank=True)
+    balance_due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     # Reporting uses the business event date, not the row creation date.  Keeping
     # this separate also means a tentative request confirmed later lands in the
@@ -483,6 +488,7 @@ class ContractTemplate(PhotographerOwnedModel):
     description = models.TextField(blank=True)
     title = models.CharField(max_length=200)
     content = models.TextField()
+    default_specialties = models.JSONField(default=list, blank=True)
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.GENERAL)
     is_active = models.BooleanField(default=True)
     version = models.PositiveIntegerField(default=1)
@@ -542,6 +548,8 @@ class Contract(PhotographerOwnedModel):
     review_token_digest = models.CharField(max_length=64, blank=True, editable=False, db_index=True)
     review_token_expires_at = models.DateTimeField(null=True, blank=True)
     review_token_revoked_at = models.DateTimeField(null=True, blank=True)
+    previous_review_digest = models.CharField(max_length=64, blank=True, default="", db_index=True, editable=False)
+    previous_review_expires_at = models.DateTimeField(null=True, blank=True)
     sent_to_email = models.EmailField(blank=True)
     send_count = models.PositiveIntegerField(default=0)
     last_sent_at = models.DateTimeField(null=True, blank=True)

@@ -28,11 +28,14 @@ def _owned_gallery(request, gallery_id):
 
 
 def _issue_and_email(request, invitation):
-    """Issue a replacement token without invalidating the current link unless delivery succeeds."""
+    """Queue a replacement while preserving existing valid links."""
     gallery = invitation.gallery
-    if gallery.deleted_at or gallery.archived_at or gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
+    if invitation.status == GalleryInvitation.Status.DISABLED or gallery.deleted_at or gallery.archived_at or gallery.status not in {Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED}:
         raise GalleryInvitationDeliveryError("Gallery is not available for delivery")
     token_record, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
+    from apps.notifications.intents import require_email
+    require_email(event_key=f"gallery.invite:{invitation.pk}:{token_record.pk}",
+        recipients=[invitation.email], kind="gallery.invite")
     try:
         gallery_url = send_gallery_invitation_email(
             request,
@@ -44,9 +47,7 @@ def _issue_and_email(request, invitation):
         token_record.save(update_fields=["revoked_at"])
         raise
 
-    invitation.access_tokens.filter(revoked_at__isnull=True).exclude(pk=token_record.pk).update(
-        revoked_at=timezone.now()
-    )
+    # Previous valid links remain usable until verified client activation or explicit revocation.
     return token_record, gallery_url
 
 
@@ -92,7 +93,7 @@ def prepare_client_gallery_invitation(request, gallery_id):
         )
         return redirect(redirect_url)
 
-    invitation.status = GalleryInvitation.Status.PENDING
+    invitation.status = GalleryInvitation.Status.ACTIVE if invitation.status == GalleryInvitation.Status.ACTIVE else GalleryInvitation.Status.PENDING
     invitation.save(update_fields=["status"])
     if not created:
         invitation.resent_at = timezone.now()
@@ -100,12 +101,12 @@ def prepare_client_gallery_invitation(request, gallery_id):
     log_gallery_activity(
         gallery=gallery,
         event_type=GalleryActivity.EventType.CLIENT_INVITED,
-        description=f"A secure gallery invitation was emailed to {name}.",
+        description=f"A secure gallery invitation was queued for {name}.",
         actor=request.user,
         related_object=invitation,
         metadata={"client": name, "delivery": "email"},
     )
-    messages.success(request, f"Gallery invitation sent to {email}.")
+    messages.success(request, f"Gallery invitation queued for {email}.")
     return redirect(redirect_url)
 
 
@@ -131,18 +132,18 @@ def resend_client_gallery_invitation(request, gallery_id, invitation_id):
         messages.error(request, "The email could not be sent. Saved invitees remain unsent; existing secure links remain valid.")
         return redirect(redirect_url)
 
-    invitation.status = GalleryInvitation.Status.PENDING
+    invitation.status = GalleryInvitation.Status.ACTIVE if invitation.status == GalleryInvitation.Status.ACTIVE else GalleryInvitation.Status.PENDING
     invitation.resent_at = timezone.now()
     invitation.save(update_fields=["status", "resent_at"])
     log_gallery_activity(
         gallery=gallery,
         event_type=GalleryActivity.EventType.CLIENT_INVITED,
-        description=f"A fresh secure gallery invitation was emailed to {invitation.client_name}.",
+        description=f"A fresh secure gallery invitation was queued for {invitation.client_name}.",
         actor=request.user,
         related_object=invitation,
         metadata={"client": invitation.client_name, "delivery": "email", "resent": True},
     )
-    messages.success(request, f"Gallery invitation {'sent' if first_send else 'resent'} to {invitation.email}.")
+    messages.success(request, f"Gallery invitation queued for {invitation.email}.")
     return redirect(redirect_url)
 
 
@@ -161,15 +162,15 @@ def send_saved_gallery_invitations(request, gallery_id):
         except GalleryInvitationDeliveryError:
             failed += 1
             continue
-        invitation.status = GalleryInvitation.Status.PENDING
+        invitation.status = GalleryInvitation.Status.ACTIVE if invitation.status == GalleryInvitation.Status.ACTIVE else GalleryInvitation.Status.PENDING
         invitation.save(update_fields=["status"])
         log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.CLIENT_INVITED,
-            description=f"A secure gallery invitation was emailed to {invitation.client_name}.",
+            description=f"A secure gallery invitation was queued for {invitation.client_name}.",
             actor=request.user, related_object=invitation,
             metadata={"client": invitation.client_name, "delivery": "email"})
         sent += 1
     if sent:
-        messages.success(request, f"Sent {sent} gallery invitation(s).")
+        messages.success(request, f"Queued {sent} gallery invitation(s).")
     if failed:
         messages.error(request, f"{failed} invitation(s) could not be sent. They remain saved for retry.")
     if not sent and not failed:

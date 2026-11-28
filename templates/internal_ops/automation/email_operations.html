@@ -1,0 +1,38 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}Email Operations | LumisPixel Internal{% endblock %}
+{% block page_title %}Email Operations{% endblock %}
+{% block content %}
+<section class="li-page-head"><div><span class="li-kicker">Automation Center / Communications</span><h1>Email Operations</h1><p>Monitor outbox submissions, provider evidence and operational exceptions.</p><a href="{% url 'internal_ops:automation_center' %}">Automation Center</a> · <a href="{% url 'internal_ops:email_exceptions' %}">Resolve exceptions</a></div></section>
+<form method="get"><label for="days">Reporting period</label> <select name="days" id="days">{% for period in periods %}<option value="{{ period }}" {% if days == period %}selected{% endif %}>Last {{ period }} day{{ period|pluralize }}</option>{% endfor %}</select> <button type="submit">Apply</button></form>
+<h2>Outbox cohort</h2><p>Records created in the selected period, with current status and all recorded provider evidence. One record may have multiple recipients. Evidence categories overlap.</p>
+<section class="li-metric-grid">
+<article><span>Queued records</span><strong>{{ metrics.total }}</strong></article>
+<article><span>Acceptance recorded</span><strong>{{ metrics.accepted }}</strong><a href="?days={{ days }}&amp;status=accepted">View records</a></article>
+<article><span>Any recipient delivered</span><strong>{{ metrics.delivered }}</strong><a href="?days={{ days }}&amp;status=delivered">View records</a></article>
+<article><span>Delivery evidence coverage</span><strong>{% if metrics.delivery_evidence_rate != None %}{{ metrics.delivery_evidence_rate }}%{% else %}—{% endif %}</strong></article>
+<article><span>Deferred evidence</span><strong>{{ metrics.deferred }}</strong><a href="?days={{ days }}&amp;status=deferred">View records</a></article>
+<article><span>Provider failure evidence</span><strong>{{ metrics.provider_failure }}</strong><a href="?days={{ days }}&amp;status=provider_failure">View records</a></article>
+<article><span>Complaints</span><strong>{{ metrics.complaint }}</strong><a href="?days={{ days }}&amp;status=complaint">View records</a></article>
+<article><span>Pending / sending / retry</span><strong>{{ metrics.pending }} / {{ metrics.sending }} / {{ metrics.retry }}</strong></article>
+<article><span>Cancelled / expired</span><strong>{{ metrics.cancelled }} / {{ metrics.expired }}</strong></article>
+<article><span>Uncertain / terminal</span><strong>{{ metrics.uncertain }} / {{ metrics.dead }}</strong></article>
+</section>
+<p>Coverage is the share of queued records with at least one confirmed recipient delivery, not a recipient-level delivery rate. Missing webhook evidence is not proof of failure.</p>
+<h2>Required email intents</h2>
+<p>{{ missing_intent_count }} unresolved intents without a delivery record. Showing up to 25. Cancellation records an operator decision; it does not resend or revoke a domain credential.</p>
+{% for intent in missing_intents %}<article><strong>Intent #{{ intent.pk }} · {{ intent.kind|default:"Unclassified" }}</strong><p>{{ intent.created_at }}</p><form method="post" action="{% url 'internal_ops:email_intent_cancel' intent.pk %}">{% csrf_token %}<label>Cancellation reason <input name="reason" required maxlength="500"></label><button type="submit">Cancel obligation</button></form></article>{% empty %}<p>No overdue missing intents.</p>{% endfor %}
+<h2>Business email reconciliation</h2>
+<p>Missing expected outbox records, not proof of non-delivery. No automatic resend.</p>
+{% for item in business_missing %}<p>{{ item.kind }}: {{ item.count }} · Sample record IDs: {{ item.sample_ids|join:", " }}</p>{% empty %}<p>Reconciliation not configured.</p>{% endfor %}
+<h2>Current exception backlog (all time)</h2>
+<section class="li-metric-grid"><article><span>Uncertain</span><strong>{{ backlog.uncertain }}</strong></article><article><span>Terminal failures</span><strong>{{ backlog.dead }}</strong></article><article><span>Overdue queued records</span><strong>{{ backlog.overdue }}</strong></article></section>
+<section class="li-panel" style="margin-top:22px"><div class="li-panel__head"><h2>Provider events received in period</h2></div><p>{{ events.total }} unique stored events · {{ events.unmatched }} unmatched</p>
+{% for item in event_types %}<p>{{ item.event|title }}: {{ item.total }}</p>{% empty %}<p>No provider evidence received.</p>{% endfor %}
+<p>Rejected requests and duplicate webhook attempts are not stored by the receiver and are not counted here.</p>
+<h3>Recent provider evidence</h3>
+{% for event in recent_events %}<p>{{ event.received_at }} · {{ event.event }} · {% if event.delivery_id %}Delivery #{{ event.delivery_id }}{% else %}Unmatched{% endif %}</p>{% empty %}<p>No recent events.</p>{% endfor %}</section>
+<section class="li-panel" style="margin-top:22px"><div class="li-panel__head"><h2>Delivery records</h2></div>
+<form method="get"><input type="hidden" name="days" value="{{ days }}"><label for="status">Filter</label><select id="status" name="status">{% for status in filters %}<option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status|title }}</option>{% endfor %}</select><button type="submit">Filter</button></form>
+{% for delivery in deliveries %}<article style="padding:16px;border-bottom:1px solid #ddd"><strong>Delivery #{{ delivery.pk }} · {{ delivery.get_status_display }}</strong><p>Created {{ delivery.created_at }} · Attempts {{ delivery.attempt_count }} · Accepted {{ delivery.sent_at|default:"—" }}</p><p>Provider evidence: {% if delivery.has_delivery %}Delivered · {% endif %}{% if delivery.has_deferred %}Deferred · {% endif %}{% if delivery.has_failure %}Failure · {% endif %}{% if delivery.has_complaint %}Complaint · {% endif %}{% if not delivery.has_delivery and not delivery.has_deferred and not delivery.has_failure and not delivery.has_complaint %}No listed outcome evidence{% endif %}</p><details><summary>Attempt history</summary>{% for attempt in delivery.attempt_history.all %}<p>#{{ attempt.number }} · {{ attempt.started_at }} · {{ attempt.outcome }} · {{ attempt.error_code }}</p>{% empty %}<p>No recorded attempts (historical attempts are not reconstructed).</p>{% endfor %}</details></article>{% empty %}<p>No matching deliveries.</p>{% endfor %}
+<nav>{% if deliveries.has_previous %}<a href="?days={{ days }}&amp;status={{ selected_status|urlencode }}&amp;page={{ deliveries.previous_page_number }}">Previous</a>{% endif %} Page {{ deliveries.number }} of {{ deliveries.paginator.num_pages }} {% if deliveries.has_next %}<a href="?days={{ days }}&amp;status={{ selected_status|urlencode }}&amp;page={{ deliveries.next_page_number }}">Next</a>{% endif %}</nav></section>
+{% endblock %}

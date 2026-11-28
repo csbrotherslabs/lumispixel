@@ -1,0 +1,23 @@
+{% extends "internal_ops/base.html" %}
+{% block title %}Automation Center | LumisPixel Internal{% endblock %}
+{% block page_title %}Automation Center{% endblock %}
+{% block content %}
+<section class="li-page-head"><div><span class="li-kicker">Platform operations</span><h1>Automation Center</h1><p>Monitor durable platform jobs and recover failed executions.</p></div></section>
+<p><a href="{% url 'internal_ops:email_operations' %}">Email Operations</a> · <a href="{% url 'internal_ops:email_exceptions' %}">Review email delivery exceptions</a></p>
+<section class="li-metric-grid">
+{% for key,value in metrics.items %}<article><span>{{ key|title }}</span><strong>{{ value }}</strong></article>{% endfor %}
+</section>
+<section class="li-panel" style="margin-top:22px"><div class="li-panel__head"><h2>Financial automation</h2></div><p>All-time counts and current outstanding invoices. Sent means transport accepted, not confirmed inbox delivery.</p><div class="li-metric-grid">{% for label,value in financial_metrics.items %}<article><span>{{ label|title }}</span><strong>{{ value }}</strong></article>{% endfor %}</div></section>
+<section class="li-panel" style="margin-top:22px">
+<div class="li-panel__head"><h2>Execution records</h2></div>
+<form method="get"><label for="status">Status</label><select id="status" name="status"><option value="">All</option>{% for value,label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button type="submit">Filter</button></form>
+{% for job in jobs %}
+<article style="padding:16px;border-bottom:1px solid #ddd">
+<strong>{{ job.kind }} · #{{ job.pk }}</strong><p>{{ job.get_status_display }} · Workspace {{ job.photographer_id }} · Attempts {{ job.attempts }}/{{ job.max_attempts }}</p>
+<p>Created {{ job.created_at }} · Next eligible {{ job.available_at }} · {{ job.error_code }}</p>
+{% if job.status == 'failed' %}<form method="post" action="{% url 'internal_ops:automation_retry' job.pk %}">{% csrf_token %}<label for="reason-{{ job.pk }}">Recovery reason</label><input id="reason-{{ job.pk }}" name="reason" required maxlength="500"><button type="submit">Retry failed job</button></form>{% endif %}
+</article>
+{% empty %}<p>No matching platform jobs.</p>{% endfor %}
+<nav aria-label="Execution pages">{% if jobs.has_previous %}<a href="?status={{ selected_status|urlencode }}&page={{ jobs.previous_page_number }}">Previous</a>{% endif %} Page {{ jobs.number }} of {{ jobs.paginator.num_pages }} {% if jobs.has_next %}<a href="?status={{ selected_status|urlencode }}&page={{ jobs.next_page_number }}">Next</a>{% endif %}</nav>
+</section>
+{% endblock %}

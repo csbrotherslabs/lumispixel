@@ -1,9 +1,7 @@
 """Stable integration, delivery, and storage-accounting boundaries for galleries."""
 from dataclasses import dataclass
-from smtplib import SMTPException
 
 from django.conf import settings
-from django.core import mail
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.template.loader import render_to_string
@@ -86,21 +84,27 @@ def send_gallery_invitation_email(request, *, invitation, raw_token):
     text_body = render_to_string("galleries/email/client_gallery_invitation.txt", context)
     html_body = render_to_string("galleries/email/client_gallery_invitation.html", context)
 
+    from datetime import timedelta
+    from django.utils import timezone
+    from django.core.exceptions import ImproperlyConfigured
+    from apps.notifications.email_delivery import queue_transactional_email
+    from .models import AccessToken
+
+    token = AccessToken.objects.get(invitation=invitation, token_hash=AccessToken.digest(raw_token))
+    deadline = timezone.now() + timedelta(hours=24)
+    if token.expires_at:
+        deadline = min(deadline, token.expires_at)
     try:
-        with mail.get_connection(fail_silently=False) as connection:
-            message = mail.EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[invitation.email],
-                connection=connection,
-            )
-            message.attach_alternative(html_body, "text/html")
-            sent = message.send(fail_silently=False)
-    except (OSError, SMTPException) as exc:
-        raise GalleryInvitationDeliveryError from exc
-
-    if sent != 1:
-        raise GalleryInvitationDeliveryError("Gallery invitation email was not accepted by the configured email backend.")
-
+        delivery = queue_transactional_email(
+            event_key=f"gallery.invite:{invitation.pk}:{token.pk}",
+            subject=subject, plain_body=text_body, html_body=html_body,
+            recipients=[invitation.email], sensitive=True, expires_at=deadline,
+            lifecycle_kind="gallery.invite",
+            lifecycle_context={"token_id": token.pk, "invitation_id": invitation.pk},
+            supersession_scope=f"gallery.invite:{invitation.pk}",
+        )
+        if not delivery:
+            raise ValueError("Missing recipient")
+    except (ValueError, ValidationError, ImproperlyConfigured) as exc:
+        raise GalleryInvitationDeliveryError("Gallery invitation could not be queued.") from exc
     return gallery_url

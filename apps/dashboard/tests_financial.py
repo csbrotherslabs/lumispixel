@@ -106,8 +106,8 @@ class FinancialDatabaseSelectorTests(TestCase):
         self.assertEqual(values["refunds"], Decimal("25.00"))
         self.assertEqual(values["net_revenue"], Decimal("175.00"))
         self.assertEqual(values["credits"], Decimal("50.00"))
-        self.assertEqual(values["outstanding"], Decimal("250.00"))
-        self.assertEqual(values["overdue"], Decimal("250.00"))
+        self.assertEqual(values["outstanding"], Decimal("275.00"))
+        self.assertEqual(values["overdue"], Decimal("275.00"))
         self.assertEqual(values["booking_value"], Decimal("900.00"))
 
     def test_status_date_and_studio_isolation_exclude_invalid_records(self):

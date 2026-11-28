@@ -1,3 +1,5 @@
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
@@ -122,6 +124,10 @@ class InvoiceWorkspaceTests(TestCase):
         invoice = ClientInvoice.objects.get()
         self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
         self.assertIsNotNone(invoice.sent_at)
+        delivery = EmailDelivery.objects.get(lifecycle_kind="invoice.email")
+        self.assertEqual(delivery.status, EmailDelivery.Status.PENDING)
+        self.assertEqual(delivery.recipients, [self.client_record.email])
+        self.assertTrue(deliver_email(delivery.pk))
         self.assertEqual(len(mail.outbox), 1)
 
         message = mail.outbox[0]
@@ -137,15 +143,15 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertIn("USD 284.63", html)
         self.assertNotIn("/workspace/", message.body)
         self.assertNotIn("/workspace/", html)
-        self.assertEqual(InvoiceActivity.objects.get().action, "sent")
+        self.assertEqual(InvoiceActivity.objects.get().action, "email_queued")
 
-    def test_delivery_failure_rolls_back_invoice_changes_and_sent_activity(self):
+    def test_queue_failure_rolls_back_invoice_changes_and_sent_activity(self):
         self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())
         invoice = ClientInvoice.objects.get()
         original_total = invoice.total
         original_activity_count = InvoiceActivity.objects.count()
 
-        with patch("apps.dashboard.invoices.EmailMultiAlternatives.send", side_effect=RuntimeError("smtp unavailable")):
+        with patch("apps.notifications.email_delivery.queue_transactional_email", side_effect=ValueError("queue unavailable")):
             response = self.client.post(
                 reverse("photographer_workspace:invoice_edit", args=[invoice.pk]),
                 self.payload(
@@ -163,7 +169,7 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertEqual(invoice.client_notes, "")
         self.assertEqual(InvoiceActivity.objects.count(), original_activity_count)
         self.assertFalse(InvoiceActivity.objects.filter(action="sent").exists())
-        self.assertContains(response, "We couldn&#x27;t send this invoice email", status_code=400)
+        self.assertFalse(EmailDelivery.objects.filter(lifecycle_kind="invoice.email").exists())
 
     def test_invalid_item_is_rejected_without_partial_invoice(self):
         response = self.client.post(
@@ -180,7 +186,7 @@ class InvoiceWorkspaceTests(TestCase):
         )
         invoice = ClientInvoice.objects.get()
         self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
-        self.assertEqual(InvoiceActivity.objects.get().action, "sent")
+        self.assertEqual(InvoiceActivity.objects.get().action, "email_queued")
 
         self.client.post(
             reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"]),
@@ -281,3 +287,27 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, overdue.invoice_number)
         self.assertNotContains(response, "INV-FUTURE")
         self.assertNotContains(response, "PRIVATE-INVOICE")
+
+    def test_payment_submission_replay_does_not_double_record(self):
+        self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(intent="send"))
+        invoice = ClientInvoice.objects.get()
+        url = reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"])
+        payload = {"amount": "50.00", "submission_key": "invoice-payment-replay"}
+        self.client.post(url, payload)
+        self.client.post(url, payload)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.amount_paid, Decimal("50.00"))
+        self.assertEqual(InvoicePayment.objects.filter(invoice=invoice).count(), 1)
+
+    def test_nonfinite_payment_and_line_item_are_rejected(self):
+        response = self.client.post(reverse("photographer_workspace:invoice_create"),
+                                    self.payload(**{"item_quantity[]": ["NaN", "1"]}))
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(ClientInvoice.objects.exists())
+        self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(intent="send"))
+        invoice = ClientInvoice.objects.get()
+        self.client.post(reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"]),
+                         {"amount": "NaN"})
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.amount_paid, Decimal("0.00"))
+        self.assertFalse(InvoicePayment.objects.exists())

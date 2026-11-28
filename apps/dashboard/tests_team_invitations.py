@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import PhotographerProfile, User
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 from apps.dashboard.models import StudioInvitationEvent, StudioMembership, StudioMembershipEvent
 
 
@@ -22,6 +24,13 @@ class TeamInvitationTests(TestCase):
                         "role": "photographer", "primary_location": "Downtown", "phone": "+1 555 123 4567",
                         "specialties": "Portraits", "message": "Welcome aboard"}
 
+    def _deliver_invitation(self, invitation):
+        delivery = EmailDelivery.objects.get(lifecycle_kind="studio.invite",
+            lifecycle_context__membership_id=invitation.pk,
+            lifecycle_context__digest=invitation.invitation_token_digest)
+        self.assertTrue(delivery.sensitive)
+        self.assertTrue(deliver_email(delivery.pk))
+
     def test_send_normalizes_email_limits_role_and_records_audit(self):
         response = self.client.post(self.invite_url, self.payload)
         self.assertRedirects(response, reverse("photographer_workspace:team_members"))
@@ -31,6 +40,7 @@ class TeamInvitationTests(TestCase):
         self.assertTrue(invitation.invitation_token_digest)
         self.assertGreater(invitation.invitation_expires_at, invitation.invitation_sent_at)
         self.assertEqual(invitation.invitation_events.get().action, StudioInvitationEvent.Action.SENT)
+        self._deliver_invitation(invitation)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Northlight Studio", mail.outbox[0].subject)
         self.assertFalse(StudioMembership.objects.filter(role="owner").exists())
@@ -121,6 +131,7 @@ class TeamInvitationTests(TestCase):
     def test_accept_requires_matching_authenticated_email_and_token_is_single_use(self):
         self.client.post(self.invite_url, self.payload)
         invitation = StudioMembership.objects.get()
+        self._deliver_invitation(invitation)
         token = mail.outbox[0].body.split("/team/invitations/accept/")[1].split("/")[0]
         accept_url = reverse("photographer_workspace:invitation_accept", args=[token])
         self.client.logout()
@@ -153,3 +164,17 @@ class TeamInvitationTests(TestCase):
         self.client.post(self.invite_url, self.payload | {"email": external.email})
         self.assertTrue(StudioMembership.objects.filter(invitation_email=external.email,
                                                         status=StudioMembership.Status.INVITED).exists())
+
+    def test_unverified_invitee_cannot_accept(self):
+        self.client.post(self.invite_url, self.payload)
+        invitation = StudioMembership.objects.get()
+        self._deliver_invitation(invitation)
+        token = mail.outbox[0].body.split("/team/invitations/accept/")[1].split("/")[0]
+        invitee = User.objects.create_user(email="avery@example.com", password="password123",
+                                           account_status=User.AccountStatus.ACTIVE, email_verified=False)
+        self.client.force_login(invitee)
+        self.assertEqual(self.client.post(reverse("photographer_workspace:invitation_accept", args=[token]),
+                                          {"decision": "accept"}).status_code, 403)
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, StudioMembership.Status.INVITED)
+        self.assertIsNone(invitation.user_id)

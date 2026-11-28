@@ -69,6 +69,8 @@ from apps.dashboard.invoices import next_invoice_number, save_invoice
 from apps.dashboard.contracts import ContractCreateForm, ContractCustomizeForm, ContractTemplateForm
 from apps.dashboard.contract_starters import serialized_contract_starters
 from apps.clients.contracts import MERGE_FIELDS
+from apps.clients.payment_terms import parse_payment_terms, payment_clause, payment_snapshot, validate_saved_payment_terms
+from apps.clients.contracts import _content_hash
 from apps.clients.contract_pdfs import generate_signed_contract_pdf
 from apps.dashboard.analytics_overview import analytics_overview as build_analytics_overview
 from apps.dashboard.scheduling import availability_for, parse_local_datetime, studio_timezone
@@ -2843,6 +2845,26 @@ def bookings_dashboard(request):
     """Render the tenant-scoped booking operations overview."""
     profile = request.studio
     if request.method == "POST":
+        if request.POST.get("action") == "edit_booking" and request.POST.get("pricing_only") == "1":
+            if not request.studio_access.allows("schedule") or not request.studio_access.allows("financials"):
+                raise PermissionDenied
+            try:
+                terms = parse_payment_terms(request.POST, profile.default_currency)
+            except ValidationError as exc:
+                return JsonResponse({"ok": False, "error": exc.messages[0]}, status=400)
+            with transaction.atomic():
+                session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access).select_for_update(), pk=request.POST.get("booking_id"))
+                if not hasattr(session, "platform_booking"):
+                    return JsonResponse({"ok": False, "error": "Invalid pricing-only request."}, status=400)
+                if session.status == ClientSession.Status.CANCELLED or session.contracts.exclude(status=Contract.Status.VOIDED).exclude(status=Contract.Status.DRAFT).exists():
+                    return JsonResponse({"ok": False, "error": "Discard any unsent signed agreement or arrange an amendment before changing pricing."}, status=409)
+                for field, value in terms.items():
+                    setattr(session, field, value)
+                session.save(update_fields=[*terms, "updated_at"])
+                ClientActivity.objects.create(photographer=profile, actor=request.user, client=session.client, booking=session, event_type=ClientActivity.EventType.BOOKING_UPDATED, description="Agreed payment terms updated.")
+            session.refresh_from_db()
+            return JsonResponse({"ok": True, "payment_terms": payment_snapshot(session), "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk])})
+
         if request.POST.get("action") in {"create_mini", "edit_mini"}:
             if not request.studio_access.allows("schedule"):
                 raise PermissionDenied
@@ -3003,6 +3025,16 @@ def bookings_dashboard(request):
             if is_edit:
                 editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
                 session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
+            terms = {}
+            financial_fields = {"price", "payment_currency", "complimentary", "deposit_required",
+                                "deposit_input", "deposit_type", "deposit_due_date", "balance_due_date"}
+            if not is_consultation and financial_fields.intersection(request.POST):
+                if not request.studio_access.allows("financials"):
+                    raise PermissionDenied
+                try:
+                    terms = parse_payment_terms(request.POST, profile.default_currency)
+                except ValidationError as exc:
+                    return JsonResponse({"ok": False, "error": exc.messages[0]}, status=400)
             errors = {}
             client = scope_assigned(Client.objects.all(), request.studio_access).filter(
                 pk=request.POST.get("contact") if is_consultation else request.POST.get("client")
@@ -3061,6 +3093,8 @@ def bookings_dashboard(request):
                              if is_consultation else request.POST.get("location", "").strip()), "status": status,
                 "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
             }
+            values.pop("booking_value", None)
+            values.update(terms)
             with transaction.atomic():
                 # Serialize scheduling writes per studio. This closes the usual
                 # empty-slot check/create race where there is no booking row to lock.
@@ -3080,6 +3114,13 @@ def bookings_dashboard(request):
                     )
                     return JsonResponse({"ok": False, "errors": {"start_time": conflict_error}}, status=409)
                 if is_edit:
+                    session = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
+                    if hasattr(session, "platform_booking"):
+                        return JsonResponse({"ok": False, "errors": {"booking_status": "Marketplace bookings cannot be edited here. Cancel and request a new booking if details change."}}, status=409)
+                    if session.pricing_confirmed and "booking_value" in values and values["booking_value"] != session.booking_value:
+                        return JsonResponse({"ok": False, "error": "Use Save Pricing & Payment Terms to change the agreed fee."}, status=409)
+                    if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "event_kind", *terms.keys())):
+                        return JsonResponse({"ok": False, "error": "This booking has a signed or issued agreement. Material changes require a replacement agreement or amendment."}, status=409)
                     before = {
                         "client_id": session.client_id, "session_type": session.session_type,
                         "starts_at": session.starts_at.isoformat(), "duration_minutes": session.duration_minutes,
@@ -3117,8 +3158,10 @@ def bookings_dashboard(request):
                                     if is_consultation else ClientActivity.EventType.BOOKING_CREATED),
                         description=f"{session.session_type} was created.",
                     )
+            session.refresh_from_db()
             return JsonResponse({
                 "ok": True,
+                "payment_terms": payment_snapshot(session) if not is_consultation else None,
                 "booking_url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
             }, status=200 if is_edit else 201)
         if request.POST.get("action") == "mark_complete":
@@ -3128,6 +3171,8 @@ def bookings_dashboard(request):
                 ),
                 pk=request.POST.get("session_id"),
             )
+            if hasattr(session, "platform_booking") and session.status != ClientSession.Status.CONFIRMED:
+                return HttpResponseBadRequest("Confirm the booking before completing it.")
             session.status = ClientSession.Status.COMPLETED
             session.save(update_fields=["status"])
             messages.success(request, f"{session.session_type} for {session.client} marked complete.")
@@ -3230,6 +3275,18 @@ def bookings_dashboard(request):
     return render(request, "photographer_workspace/bookings/dashboard.html", context)
 
 
+def _booking_contract_summary(session):
+    items = [item for item in session.contracts.all() if item.status != Contract.Status.VOIDED]
+    item = items[0] if items else None
+    url = reverse("photographer_workspace:booking_detail", args=[session.pk]) + "?tab=contract#contract"
+    if not item:
+        return {"contract_status": "No contract", "contract_title": "", "contract_url": url, "contract_action": "Create Contract", "contract_action_url": reverse("photographer_workspace:contract_create", args=[session.pk]), "photographer_signed": False, "client_signed": False}
+    signed = item.status == Contract.Status.SIGNED
+    photographer_signed = hasattr(item, "photographer_signature")
+    label = "View signed contract" if signed else "Re-send Contract" if item.status in (Contract.Status.SENT, Contract.Status.VIEWED) else "Send to Client" if photographer_signed else "Review & Sign Contract"
+    return {"contract_status": item.get_status_display(), "contract_title": item.title, "contract_url": url, "contract_action": label, "contract_action_url": reverse("photographer_workspace:signed_contract_pdf" if signed and getattr(getattr(item, "signed_document", None), "status", None) == "ready" else "photographer_workspace:contract_preview", args=[item.pk]), "contract_customize_url": reverse("photographer_workspace:contract_customize", args=[item.pk]) if item.status == Contract.Status.DRAFT else "", "contract_preview_url": reverse("photographer_workspace:contract_preview", args=[item.pk]), "photographer_signed": photographer_signed, "client_signed": signed}
+
+
 @photographer_workspace_required
 @require_http_methods(["GET", "POST"])
 def booking_detail(request, pk):
@@ -3245,7 +3302,12 @@ def booking_detail(request, pk):
         return HttpResponseBadRequest("Unsupported booking action.")
 
     tab = request.GET.get("tab", "overview")
-    if tab not in {"overview", "contract"}:
+    can_view_financials = request.studio_access.allows("financials")
+    booking_tabs = [("overview", "Overview"), ("contract", "Contracts")]
+    if can_view_financials:
+        booking_tabs.append(("payments", "Payments"))
+    booking_tabs.extend([("galleries", "Galleries"), ("questionnaires", "Questionnaires"), ("tasks", "Tasks & Notes"), ("activity", "Activity")])
+    if tab not in dict(booking_tabs):
         tab = "overview"
     local_start = timezone.localtime(booking.starts_at, studio_timezone(profile))
     local_end = local_start + timedelta(minutes=booking.duration_minutes)
@@ -3253,6 +3315,7 @@ def booking_detail(request, pk):
     booking_schedule_event = {
         "id": booking.pk,
         "drawer_id": booking_event_id,
+        **_booking_contract_summary(booking),
         "starts_at": local_start,
         "ends_at": local_end,
         "name": str(booking.client),
@@ -3261,7 +3324,7 @@ def booking_detail(request, pk):
         "notes": booking.notes,
         "client_id": booking.client_id,
         "status_key": booking.status,
-        "booking_value": str(booking.booking_value),
+        "booking_value": str(booking.booking_value), "pricing_confirmed": booking.pricing_confirmed, "payment_currency": booking.payment_currency or booking.photographer.default_currency, "marketplace_booking": hasattr(booking, "platform_booking"), "deposit_amount": str(booking.deposit_amount), "deposit_due_date": booking.deposit_due_date.isoformat() if booking.deposit_due_date else "", "balance_due_date": booking.balance_due_date.isoformat() if booking.balance_due_date else "",
         "member_ids": list(booking.assigned_members.values_list("pk", flat=True)),
         "all_day": False,
     }
@@ -3280,24 +3343,29 @@ def booking_detail(request, pk):
     }
     for contract in contracts:
         contract.status_variant = contract_status_variants[contract.status]
-    current_contract = contracts[0] if contracts else None
+    current_contract = next((item for item in contracts if item.status != Contract.Status.VOIDED), None)
     contract_progress_steps = []
     if current_contract and current_contract.status != Contract.Status.VOIDED:
-        progress_rank = {
-            Contract.Status.DRAFT: 0,
-            Contract.Status.READY: 0,
-            Contract.Status.SENT: 1,
-            Contract.Status.VIEWED: 2,
-            Contract.Status.SIGNED: 3,
-        }[current_contract.status]
+        completed = [True, hasattr(current_contract, "photographer_signature"), bool(current_contract.sent_at), current_contract.status in (Contract.Status.VIEWED, Contract.Status.SIGNED), current_contract.status == Contract.Status.SIGNED]
+        next_step = next((index for index, done in enumerate(completed) if not done), None)
         contract_progress_steps = [
-            {
-                "label": label,
-                "complete": index < progress_rank or current_contract.status == Contract.Status.SIGNED,
-                "current": index == progress_rank and current_contract.status != Contract.Status.SIGNED,
-            }
-            for index, label in enumerate(("Draft", "Sent", "Viewed", "Signed"))
+            {"label": label, "complete": completed[index], "current": index == next_step}
+            for index, label in enumerate(("Draft created", "Photographer signed", "Sent to client", "Client viewed", "Client signed"))
         ]
+    invoices = list(ClientInvoice.objects.for_photographer(profile).filter(booking=booking)) if can_view_financials else []
+    currency_totals = {}
+    for invoice in invoices:
+        if invoice.status in (ClientInvoice.Status.DRAFT, ClientInvoice.Status.VOID):
+            continue
+        totals = currency_totals.setdefault(invoice.currency, [Decimal("0"), Decimal("0"), Decimal("0")])
+        totals[0] += invoice.total
+        totals[1] += invoice.amount_paid
+        totals[2] += invoice.balance
+    payment_totals = [{"currency": currency, "total": format_currency(values[0], currency), "paid": format_currency(values[1], currency), "balance": format_currency(values[2], currency)} for currency, values in sorted(currency_totals.items())]
+    galleries = scope_assigned(Gallery.objects.all(), request.studio_access).filter(client=booking.client, deleted_at__isnull=True)
+    activity = [{"label": event.get_event_type_display(), "description": event.description, "date": event.occurred_at} for event in booking.activities.all()[:50]]
+    activity += [{"label": event.get_event_type_display(), "description": event.contract.title, "date": event.occurred_at} for event in ContractEvent.objects.filter(contract__in=contracts).select_related("contract")[:50]]
+    activity.sort(key=lambda event: event["date"], reverse=True)
     context = _dashboard_context(request, "bookings", f"Booking LP-{booking.pk:04d}")
     context.update({
         "booking": booking,
@@ -3335,7 +3403,9 @@ def booking_detail(request, pk):
             ClientSession.Status.COMPLETED: "This photography session has been completed.",
             ClientSession.Status.CANCELLED: "This booking has been cancelled.",
         }[booking.status],
-        "booking_tab": tab,
+        "booking_payment_terms": payment_clause(booking) if can_view_financials else "", "booking_tab": tab, "booking_tabs": booking_tabs, "can_view_financials": can_view_financials,
+        "booking_invoices": invoices, "payment_totals": payment_totals, "related_client_galleries": galleries,
+        "hub_activity": activity[:50],
         "booking_activity": booking.activities.select_related("actor").all()[:20],
         "contracts": contracts,
         "current_contract": current_contract,
@@ -3448,7 +3518,7 @@ def signed_contract_pdf_retry(request, pk):
         messages.success(request, "The signed PDF is ready.")
     else:
         messages.error(request, "The signed PDF could not be generated. You can retry safely.")
-    return redirect("photographer_workspace:contract_detail", pk=contract.pk)
+    return redirect("photographer_workspace:contract_preview", pk=contract.pk)
 
 
 @photographer_workspace_required
@@ -3462,6 +3532,7 @@ def contract_preview(request, pk):
                 contract=contract, actor=request.user,
                 ip_address=request.META.get("REMOTE_ADDR") or None,
                 user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                expected_content_hash=request.POST.get("preview_hash", ""),
                 **signature_form.cleaned_data,
             )
         except ValidationError as exc:
@@ -3479,8 +3550,15 @@ def contract_preview(request, pk):
         send_errors = []
     except ValidationError as exc:
         send_errors = exc.messages
+    rendered = contract_preview_content(contract)
+    payment_errors = []
+    if not contract.locked_at:
+        try:
+            validate_saved_payment_terms(contract.booking)
+        except ValidationError as exc:
+            payment_errors = exc.messages
     context = _dashboard_context(request, "bookings", f"Preview {contract.title}")
-    context.update({"contract": contract, "rendered_content": contract_preview_content(contract),
+    context.update({"contract": contract, "rendered_content": rendered, "preview_hash": _content_hash(rendered), "payment_errors": payment_errors, "payment_summary": payment_snapshot(contract.booking) if not contract.locked_at else None,
                     "send_errors": send_errors, "signature_form": signature_form,
                     "signature_consent_text": DEFAULT_SIGNATURE_CONSENT,
                     "contract_status_variant": {
@@ -3489,6 +3567,23 @@ def contract_preview(request, pk):
                         Contract.Status.SIGNED: "success", Contract.Status.VOIDED: "danger",
                     }[contract.status]})
     return render(request, "photographer_workspace/contracts/preview.html", context)
+
+
+@photographer_workspace_required
+@require_POST
+def contract_discard(request, pk):
+    accessible = scope_assigned(ClientSession.objects.all(), request.studio_access)
+    with transaction.atomic():
+        contract = get_object_or_404(Contract.objects.select_for_update().filter(photographer=request.studio, booking__in=accessible), pk=pk)
+        booking_id = contract.booking_id
+        if contract.status not in (Contract.Status.DRAFT, Contract.Status.READY) or contract.send_count or contract.sent_at or contract.last_sent_at or contract.viewed_at or contract.signed_at:
+            messages.error(request, "Only unsent agreements can be discarded.")
+        else:
+            contract.status = Contract.Status.VOIDED
+            contract.review_token_revoked_at = timezone.now()
+            contract.save(update_fields=["status", "review_token_revoked_at", "updated_at"])
+            messages.success(request, "Unsent agreement discarded. Its audit history is preserved.")
+    return redirect(reverse("photographer_workspace:booking_detail", args=[booking_id]) + "?tab=contract")
 
 
 @photographer_workspace_required
@@ -3502,17 +3597,36 @@ def contract_send(request, pk):
         for error in exc.messages:
             messages.error(request, error)
     except ContractDeliveryError:
-        messages.error(request, "The email could not be delivered. The contract was not marked as sent.")
+        messages.error(request, "The email could not be queued. Contract issuance was not updated.")
     else:
         messages.success(request, "Contract review link sent to the client.")
     return redirect("photographer_workspace:contract_preview", pk=contract.pk)
 
 
 @photographer_workspace_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def contract_templates(request):
     if not request.studio_access.allows("settings"):
         raise PermissionDenied
+    specialties = list(request.studio.specialties.values_list("name", flat=True))
+    if request.method == "POST":
+        if request.POST.get("action") == "generate_missing":
+            from apps.marketplace.booking_approval import generate_missing_drafts
+            count = generate_missing_drafts(request.studio, request.user)
+            messages.success(request, f"{count} missing contract draft(s) generated.")
+            return redirect("photographer_workspace:contract_templates")
+        with transaction.atomic():
+            PhotographerProfile.objects.select_for_update().get(pk=request.studio.pk)
+            items = list(ContractTemplate.objects.select_for_update().filter(photographer=request.studio))
+            active = {str(item.pk): item for item in items if item.is_active}
+            selections = [(name, request.POST.get(f"specialty_{i}", "")) for i, name in enumerate(specialties)]
+            if any(value and value not in active for _, value in selections):
+                return HttpResponseBadRequest("Select an active contract from this workspace.")
+            for item in items:
+                item.default_specialties = [name for name, value in selections if value == str(item.pk)]
+                item.save(update_fields=["default_specialties"])
+        messages.success(request, "Default contracts saved.")
+        return redirect("photographer_workspace:contract_templates")
     templates = list(
         ContractTemplate.objects.filter(photographer=request.studio)
         .select_related("created_by")
@@ -3521,6 +3635,8 @@ def contract_templates(request):
     context = _dashboard_context(request, "settings", "Contract Templates")
     context.update({
         "templates": templates,
+        "starter_library": list(serialized_contract_starters().values()),
+        "specialty_defaults": [{"name": name, "index": i, "selected": next((item.pk for item in templates if item.is_active and name in item.default_specialties), None)} for i, name in enumerate(specialties)],
         "template_count": len(templates),
         "active_template_count": sum(item.is_active for item in templates),
         "archived_template_count": sum(not item.is_active for item in templates),
@@ -3535,7 +3651,9 @@ def contract_template_form(request, pk=None):
     if not request.studio_access.allows("settings"):
         raise PermissionDenied
     template = get_object_or_404(ContractTemplate, photographer=request.studio, pk=pk) if pk else None
-    form = ContractTemplateForm(request.POST or None, instance=template)
+    starter = serialized_contract_starters().get(request.GET.get("starter", "")) if template is None else None
+    initial = {**{key: starter[key] for key in ("name", "category", "title", "content")}, "start_from": starter["key"]} if starter else None
+    form = ContractTemplateForm(request.POST or None, instance=template, initial=initial)
     if request.method == "POST" and form.is_valid():
         item = form.save(commit=False)
         item.photographer = request.studio
@@ -3543,15 +3661,34 @@ def contract_template_form(request, pk=None):
         if template and form.has_changed():
             item.version += 1
         item.full_clean()
-        item.save()
+        with transaction.atomic():
+            PhotographerProfile.objects.select_for_update().get(pk=request.studio.pk)
+            assigned = request.POST.get("assign_specialty", "")
+            if assigned and item.is_active and assigned in request.studio.specialties.values_list("name", flat=True):
+                for other in ContractTemplate.objects.select_for_update().filter(photographer=request.studio).exclude(pk=item.pk):
+                    if assigned in other.default_specialties:
+                        other.default_specialties = [name for name in other.default_specialties if name != assigned]
+                        other.save(update_fields=["default_specialties"])
+                item.default_specialties = list(set(item.default_specialties + [assigned]))
+            item.save()
         messages.success(request, "Contract template saved.")
         return redirect("photographer_workspace:contract_templates")
     context = _dashboard_context(request, "settings", "Edit Contract Template" if template else "Create Contract Template")
     context.update({
         "form": form,
         "template_object": template,
+        "assignment_specialties": request.studio.specialties.values_list("name", flat=True),
         "merge_fields": MERGE_FIELDS.items(),
         "contract_starters": serialized_contract_starters() if template is None else {},
+        "preview_values": {
+            "workspace.name": request.studio.business_name or request.studio.display_name or request.studio.user.full_name or "Business name not configured",
+            "photographer.name": request.studio.business_name or request.studio.display_name or request.studio.user.full_name or "Photographer name not configured",
+            "client.first_name": "Jane", "client.last_name": "Example",
+            "client.full_name": "Jane Example", "client.email": "jane@example.com",
+            "booking.service": "Portrait photography", "booking.date": "December 12, 2026",
+            "booking.start_time": "2:00 PM", "booking.location": "Example studio",
+            "booking.value": "Not yet agreed",
+        },
     })
     return render(request, "photographer_workspace/contracts/template_form.html", context)
 
@@ -3568,6 +3705,7 @@ def contract_template_action(request, pk):
         source.name = f"{source.name} (copy)"
         source.created_by = request.user
         source.version = 1
+        source.default_specialties = []
         source.save()
         messages.success(request, "Contract template duplicated.")
     elif action == "toggle_active":
@@ -3683,8 +3821,9 @@ def schedule(request):
     all_profile_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
     session_types = list(all_profile_sessions.exclude(session_type="").values_list("session_type", flat=True).distinct().order_by("session_type"))
     locations = list(all_profile_sessions.exclude(location="").values_list("location", flat=True).distinct().order_by("location"))
-    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user").order_by("starts_at"))
+    sessions = list(sessions_queryset.select_related("client").prefetch_related("invoices", "assigned_members__user", "contracts__photographer_signature").order_by("starts_at"))
     owner = request.user.full_name or "Studio photographer"
+
     events = [{
         "id": session.pk,
         "starts_at": timezone.localtime(session.starts_at),
@@ -3702,14 +3841,14 @@ def schedule(request):
         "all_day": False, "url": reverse("photographer_workspace:booking_detail", args=[session.pk]),
         "contact": " · ".join(value for value in (session.client.email, session.client.phone) if value) or "No contact information",
         "contact_email": session.client.email, "contact_phone": session.client.phone,
-        "package": "Not assigned", "contract_status": "Not tracked",
+        "package": "Not assigned", **_booking_contract_summary(session),
         "payment_status": (
             "Not invoiced" if not session.invoices.all()
             else "Paid" if all(invoice.status in (ClientInvoice.Status.PAID, ClientInvoice.Status.VOID) for invoice in session.invoices.all())
             else "Payment due"
         ), "questionnaire_status": "Not tracked",
         "notes": session.notes,
-        "client_id": session.client_id, "booking_value": str(session.booking_value),
+        "client_id": session.client_id, "booking_value": str(session.booking_value), "pricing_confirmed": session.pricing_confirmed, "payment_currency": session.payment_currency or session.photographer.default_currency, "marketplace_booking": hasattr(session, "platform_booking"), "deposit_amount": str(session.deposit_amount), "deposit_due_date": session.deposit_due_date.isoformat() if session.deposit_due_date else "", "balance_due_date": session.balance_due_date.isoformat() if session.balance_due_date else "",
         "member_ids": [membership.pk for membership in session.assigned_members.all()],
         "warnings": (
             (["Session is tentative"] if session.status == ClientSession.Status.TENTATIVE else [])
@@ -4015,6 +4154,8 @@ def reschedule_session(request, pk):
         if not locked_result["available"]:
             return JsonResponse(response | {"blocking": True, "error": "The slot became unavailable. Refresh and choose another time."}, status=409)
         before = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
+        if hasattr(locked, "platform_booking"):
+            return JsonResponse({"error": "Cancel and request a new marketplace booking to change the agreed time."}, status=409)
         locked.starts_at, locked.duration_minutes = starts_at, duration
         locked.save(update_fields=("starts_at", "duration_minutes", "updated_at"))
         after = {"starts_at": locked.starts_at.isoformat(), "duration_minutes": locked.duration_minutes}
@@ -4035,7 +4176,16 @@ def booking_action(request, pk):
     """Apply the state transitions supported by the schedule inspector."""
     session = get_object_or_404(scope_assigned(ClientSession.objects.all(), request.studio_access), pk=pk)
     action = request.POST.get("action")
-    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED):
+    if action == "confirm" and hasattr(session, "platform_booking"):
+        from apps.marketplace.booking_approval import confirm_booking
+        from django.core.exceptions import ValidationError
+        try:
+            confirm_booking(session, actor=request.user)
+            messages.success(request, "Booking confirmed.")
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+        return redirect("photographer_workspace:booking_detail", pk=session.pk)
+    if action == "mark_complete" and session.status in (ClientSession.Status.TENTATIVE, ClientSession.Status.CONFIRMED) and (not hasattr(session, "platform_booking") or session.status == ClientSession.Status.CONFIRMED):
         session.status = ClientSession.Status.COMPLETED
         session.save(update_fields=("status", "updated_at"))
         messages.success(request, f"{session.session_type} for {session.client} marked complete.")
@@ -4626,7 +4776,7 @@ def invoice_create(request):
     if request.method == "POST":
         try:
             invoice = save_invoice(request.studio, request.POST, send=request.POST.get("intent") == "send")
-            messages.success(request, f"{invoice.invoice_number} was {'sent' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
+            messages.success(request, f"{invoice.invoice_number} was {'issued and email queued' if invoice.status == ClientInvoice.Status.SENT else 'saved as a draft'}.")
             return redirect("photographer_workspace:invoice_view", pk=invoice.pk)
         except ValidationError as exc:
             return render(request, "photographer_workspace/invoices/form.html", _invoice_context(request, errors=exc.message_dict if hasattr(exc, "message_dict") else {"__all__": exc.messages}), status=400)
@@ -4654,7 +4804,10 @@ def invoice_edit(request, pk):
 @require_GET
 def invoice_view(request, pk):
     invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.studio).select_related("client", "booking").prefetch_related("line_items", "payment_schedule", "activity"), pk=pk)
-    return render(request, "photographer_workspace/invoices/detail.html", _invoice_context(request, invoice))
+    from uuid import uuid4
+    context = _invoice_context(request, invoice)
+    context["payment_submission_key"] = uuid4().hex
+    return render(request, "photographer_workspace/invoices/detail.html", context)
 
 
 @photographer_workspace_required
@@ -4662,6 +4815,7 @@ def invoice_view(request, pk):
 def invoice_action(request, pk, action):
     profile = request.studio
     with transaction.atomic():
+        type(profile).objects.select_for_update().get(pk=profile.pk)
         invoice = get_object_or_404(ClientInvoice.objects.select_for_update().filter(photographer=profile), pk=pk)
         if action == "duplicate":
             source = ClientInvoice.objects.prefetch_related("line_items", "payment_schedule").get(pk=invoice.pk)
@@ -4677,10 +4831,17 @@ def invoice_action(request, pk, action):
             if invoice.status not in {ClientInvoice.Status.DRAFT, ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.client.email:
                 messages.error(request, "This invoice cannot be sent in its current state, or the client has no email address.")
             else:
-                invoice.status, invoice.sent_at = ClientInvoice.Status.SENT if invoice.status == ClientInvoice.Status.DRAFT else invoice.status, timezone.now()
-                invoice.save(update_fields=["status", "sent_at"])
-                InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action=action, description="Invoice emailed to client.")
-                messages.success(request, "Invoice sent.")
+                from .invoices import queue_invoice_email
+                try:
+                    delivery = queue_invoice_email(invoice, profile, purpose="issue" if invoice.status == ClientInvoice.Status.DRAFT else "resend")
+                except ValidationError as exc:
+                    messages.error(request, "; ".join(exc.messages))
+                else:
+                    if invoice.status == ClientInvoice.Status.DRAFT:
+                        invoice.status, invoice.sent_at = ClientInvoice.Status.SENT, timezone.now()
+                        invoice.save(update_fields=["status", "sent_at"])
+                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="email_queued", description=f"Invoice email outbox #{delivery.pk}: {delivery.get_status_display()}.")
+                    messages.success(request, f"Invoice email status: {delivery.get_status_display()}.")
         elif action == "void":
             if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID} or invoice.amount_paid > 0:
                 messages.error(request, "Paid, partially paid, or already void invoices cannot be voided.")
@@ -4689,19 +4850,16 @@ def invoice_action(request, pk, action):
                 InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="voided", description="Invoice voided.")
                 messages.success(request, "Invoice voided.")
         elif action == "payment":
-            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID, ClientInvoice.Status.DRAFT}:
-                messages.error(request, "A payment cannot be recorded for this invoice.")
+            try:
+                payment, duplicate = record_payment(profile, {
+                    "client": invoice.client_id, "invoice": invoice.pk,
+                    "amount": request.POST.get("amount"), "method": InvoicePayment.Method.OTHER,
+                    "submission_key": request.POST.get("submission_key", ""),
+                })
+            except ValidationError as exc:
+                messages.error(request, "; ".join(exc.messages))
             else:
-                try: amount = Decimal(request.POST.get("amount", "0")).quantize(Decimal("0.01"))
-                except Exception: amount = Decimal("0")
-                if amount <= 0 or amount > invoice.balance:
-                    messages.error(request, "Payment must be greater than zero and no more than the balance.")
-                else:
-                    InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=amount)
-                    invoice.amount_paid += amount; invoice.status = ClientInvoice.Status.PAID if invoice.amount_paid == invoice.total else ClientInvoice.Status.PARTIALLY_PAID
-                    invoice.save(update_fields=["amount_paid", "status"])
-                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment", description=f"Payment of {amount} recorded.")
-                    messages.success(request, "Payment recorded.")
+                messages.success(request, "Payment already recorded." if duplicate else "Payment recorded.")
     return redirect("photographer_workspace:invoice_view", pk=pk)
 
 
@@ -5092,27 +5250,32 @@ def invite_member(request):
         specialty_names = [value.strip() for value in form.cleaned_data["specialties"].split(",") if value.strip()]
         if specialty_names:
             membership.specialties.set(profile.specialties.model.objects.filter(name__in=specialty_names))
-        token = issue_token(membership)
-        record(membership, request.user, StudioInvitationEvent.Action.SENT)
     try:
-        send_invitation(request, membership, token)
+        with transaction.atomic():
+            membership = StudioMembership.objects.select_for_update().get(pk=membership.pk, studio=profile, status=StudioMembership.Status.INVITED)
+            token = issue_token(membership)
+            send_invitation(request, membership, token)
+            record(membership, request.user, StudioInvitationEvent.Action.SENT)
     except RuntimeError:
         messages.error(request, "The invitation was saved, but could not be sent. You can resend it below.")
     else:
-        messages.success(request, f"Invitation sent to {membership.invitation_email}.")
+        messages.success(request, f"Invitation queued for {membership.invitation_email}.")
     return redirect("photographer_workspace:team_members")
 
 
 @photographer_workspace_required
 @require_POST
+@transaction.atomic
 def invitation_action(request, pk, action):
     profile = authorized_studio(request.user)
-    membership = get_object_or_404(StudioMembership, pk=pk, studio=profile,
+    membership = get_object_or_404(StudioMembership.objects.select_for_update(), pk=pk, studio=profile,
                                    status=StudioMembership.Status.INVITED)
     if action == "revoke":
         membership.status = StudioMembership.Status.INACTIVE
         membership.invitation_token_digest = ""
-        membership.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+        membership.previous_invitation_digest = ""
+        membership.previous_invitation_expires_at = None
+        membership.save(update_fields=["status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
         record(membership, request.user, StudioInvitationEvent.Action.REVOKED)
         messages.success(request, "Invitation revoked.")
     elif action == "resend":
@@ -5120,14 +5283,15 @@ def invitation_action(request, pk, action):
                 timezone.now() - membership.invitation_sent_at < INVITATION_RESEND_COOLDOWN):
             messages.error(request, "Please wait one minute before resending this invitation.")
             return redirect("photographer_workspace:team_members")
-        token = issue_token(membership)
-        record(membership, request.user, StudioInvitationEvent.Action.RESENT)
         try:
-            send_invitation(request, membership, token)
+            from .invitation_delivery import rotate_invitation_after_delivery
+            with transaction.atomic():
+                rotate_invitation_after_delivery(request, membership)
+                record(membership, request.user, StudioInvitationEvent.Action.RESENT)
         except RuntimeError:
             messages.error(request, "The invitation could not be sent. Please try again.")
         else:
-            messages.success(request, "Invitation resent with a new secure link and expiration date.")
+            messages.success(request, "Replacement invitation queued.")
     else:
         return HttpResponse(status=404)
     return redirect("photographer_workspace:team_members")
@@ -5147,6 +5311,8 @@ def invitation_accept(request, token):
         })
     email_matches = User.objects.normalize_email(request.user.email).lower() == invited_email
     if request.method == "POST" and email_matches:
+        if not request.user.email_verified or not request.user.can_login:
+            return HttpResponse(status=403)
         choice = request.POST.get("decision")
         if choice not in {"accept", "decline"}:
             return HttpResponse(status=400)
@@ -5154,18 +5320,22 @@ def invitation_accept(request, token):
             current = find_valid_invitation(token, lock=True)
             if not current:
                 return render(request, "photographer_workspace/team/invitation_invalid.html", status=410)
+            if User.objects.normalize_email(current.invitation_email).lower() != User.objects.normalize_email(request.user.email).lower():
+                return HttpResponse(status=403)
             current.invitation_token_digest = ""
+            current.previous_invitation_digest = ""
+            current.previous_invitation_expires_at = None
             if choice == "accept":
                 duplicate = StudioMembership.objects.filter(studio=current.studio, user=request.user).exclude(pk=current.pk).exists()
                 if duplicate:
                     return render(request, "photographer_workspace/team/invitation_invalid.html", status=409)
                 current.user = request.user
                 current.status = StudioMembership.Status.ACTIVE
-                current.save(update_fields=["user", "status", "invitation_token_digest", "updated_at"])
+                current.save(update_fields=["user", "status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
                 record(current, request.user, StudioInvitationEvent.Action.ACCEPTED)
             else:
                 current.status = StudioMembership.Status.INACTIVE
-                current.save(update_fields=["status", "invitation_token_digest", "updated_at"])
+                current.save(update_fields=["status", "invitation_token_digest", "previous_invitation_digest", "previous_invitation_expires_at", "updated_at"])
                 record(current, request.user, StudioInvitationEvent.Action.DECLINED)
         return render(request, "photographer_workspace/team/invitation_result.html", {"accepted": choice == "accept", "membership": current})
     return render(request, "photographer_workspace/team/invitation_accept.html", {

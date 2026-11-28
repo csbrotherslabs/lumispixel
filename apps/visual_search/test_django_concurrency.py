@@ -37,6 +37,8 @@ class DjangoModelConcurrencyTests(TransactionTestCase):
     def setUp(self):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL row locks required")
+        # Synthetic photos must not dispatch unrelated media work to a live broker.
+        self.enterContext(patch("apps.galleries.tasks.generate_gallery_photo_derivatives.delay"))
         Plan.objects.get_or_create(code="free", defaults={"name": "Free", "is_active": True})
         user = get_user_model().objects.create(email=f"race-{uuid4().hex}@example.test")
         photographer = PhotographerProfile.objects.create(user=user, slug=f"race-{uuid4().hex}")

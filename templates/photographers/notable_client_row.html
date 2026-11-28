@@ -1,0 +1,15 @@
+<div class="studio-client-card" data-client-row data-index="{{ item.index }}">
+  <div class="studio-client-header"><strong data-client-title>Client</strong><div class="studio-client-actions"><button type="button" data-client-up aria-label="Move client up" title="Move up">↑</button><button type="button" data-client-down aria-label="Move client down" title="Move down">↓</button><button type="button" data-client-remove aria-label="Remove client" title="Remove client"><i class="bi bi-trash3" aria-hidden="true"></i> Remove</button></div></div>
+  <input type="hidden" name="client_{{ item.index }}_id" value="{{ item.id|default:'' }}">
+  <div class="studio-client-body">
+    <div class="studio-client-media">
+      <div class="studio-client-logo">{% if item.image_url %}<img src="{{ item.image_url }}" alt="Current client logo">{% else %}<span><i class="bi bi-image" aria-hidden="true"></i> Logo preview</span>{% endif %}</div>
+      <label class="studio-client-upload">Logo (optional)<input type="file" name="client_{{ item.index }}_image" accept="image/png,image/jpeg,image/webp"></label>
+      <label class="studio-client-clear"><input type="checkbox" name="client_{{ item.index }}_clear" value="1"> Remove logo</label>
+    </div>
+    <div class="studio-client-fields">
+      <label>Client name <span aria-hidden="true">*</span><input class="form-control" name="client_{{ item.index }}_name" maxlength="120" placeholder="e.g. North &amp; Pine" value="{{ item.name|default:'' }}"></label>
+      <label>Website (optional)<input class="form-control" type="url" name="client_{{ item.index }}_url" maxlength="500" placeholder="https://example.com" value="{{ item.url|default:'' }}"></label>
+    </div>
+  </div>
+</div>

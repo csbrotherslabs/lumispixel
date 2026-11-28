@@ -195,4 +195,4 @@ class WorkflowAutomationTests(TestCase):
         performed, message = run_execution(execution)
 
         self.assertFalse(performed)
-        self.assertIn("disabled", message.lower())
+        self.assertIn("no longer eligible", message.lower())

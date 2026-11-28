@@ -8,7 +8,7 @@ from apps.galleries.storage_cleanup import enqueue_storage_deletions, process_st
 
 @override_settings(GALLERY_STORAGE_BACKEND="b2")
 class GalleryStorageDeletionTests(TestCase):
-    def item(self, key="private/test/photo.jpg"):
+    def item(self, key="private/dev/galleries/10/20/photo.jpg"):
         return {
             "storage_backend": "b2",
             "object_key": key,
@@ -26,7 +26,7 @@ class GalleryStorageDeletionTests(TestCase):
         enqueue_storage_deletions([self.item()])
         result = process_storage_deletions()
         record = GalleryStorageDeletion.objects.get()
-        delete.assert_called_once_with(key="private/test/photo.jpg")
+        delete.assert_called_once_with(key="private/dev/galleries/10/20/photo.jpg")
         self.assertIsNotNone(record.completed_at)
         self.assertEqual(record.attempts, 1)
         self.assertEqual(result, {"completed": 1, "failed": 0, "exhausted": 0})

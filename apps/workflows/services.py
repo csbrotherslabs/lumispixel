@@ -1,16 +1,16 @@
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from apps.notifications.email_delivery import queue_transactional_email
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.clients.contracts import send_contract_for_review
 from apps.clients.models import ClientInvoice, ClientTask, Contract, InvoiceActivity, InvoiceLineItem
-from apps.dashboard.invoices import next_invoice_number
+from apps.dashboard.invoices import next_invoice_number, queue_invoice_email
 from apps.galleries.activity import log_gallery_activity
 from apps.galleries.models import AccessToken, Gallery, GalleryActivity, GalleryInvitation
-from apps.galleries.services import GalleryInvitationDeliveryError, send_gallery_invitation_email
+from apps.galleries.services import send_gallery_invitation_email
 
 from .models import AutomationExecution, AutomationRule
 
@@ -147,7 +147,7 @@ def _send_contract(execution, booking):
         actor=execution.photographer.user,
         build_absolute_uri=lambda path: _public_uri(path),
     )
-    return True, f"Contract {contract.pk} sent to the client."
+    return True, f"Contract {contract.pk} queued for the client."
 
 
 def _prepare_invoice(execution, contract):
@@ -189,33 +189,19 @@ def _prepare_invoice(execution, contract):
     return True, f"Draft invoice {invoice.invoice_number} prepared."
 
 
+@transaction.atomic
 def _send_invoice_reminder(execution, invoice):
-    if not invoice.reminders_enabled:
-        return False, "Invoice reminders are disabled for this invoice."
-    if invoice.status not in {ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID} or not invoice.sent_at:
-        return False, "Invoice has not been sent to the client yet."
-    if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID}:
-        return False, "Invoice is already closed."
-    if not invoice.client.email:
-        return False, "Client has no email address."
-    studio = execution.photographer.business_name or execution.photographer.display_name or execution.photographer.user.email
-    balance = invoice.total - invoice.amount_paid
-    message = EmailMultiAlternatives(
-        f"Reminder: invoice {invoice.invoice_number} is due {invoice.due_date:%b %d, %Y}",
-        f"Hi {invoice.client.first_name},\n\nThis is a reminder that invoice {invoice.invoice_number} from {studio} has a remaining balance of ${balance:.2f} and is due {invoice.due_date:%b %d, %Y}.\n\nThank you.",
-        settings.DEFAULT_FROM_EMAIL,
-        [invoice.client.email],
-    )
-    delivered = message.send(fail_silently=False)
-    if delivered != 1:
-        raise RuntimeError("Invoice reminder was not accepted by the email backend.")
-    InvoiceActivity.objects.create(
-        photographer=execution.photographer,
-        invoice=invoice,
-        action="reminder_sent",
-        description="Invoice reminder sent by automation.",
-    )
-    return True, f"Invoice reminder sent to {invoice.client.email}."
+    invoice = ClientInvoice.objects.select_for_update().get(pk=invoice.pk, photographer=execution.photographer)
+    if (not invoice.reminders_enabled or not invoice.sent_at or not invoice.due_date
+            or invoice.status not in (ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID)
+            or invoice.amount_paid >= invoice.total or not invoice.client.email):
+        return False, "Invoice is no longer eligible for reminders."
+    if execution.context.get("due_date") != invoice.due_date.isoformat():
+        return False, "Invoice due date changed."
+    delivery = queue_invoice_email(invoice, execution.photographer, purpose="reminder")
+    InvoiceActivity.objects.create(photographer=execution.photographer, invoice=invoice,
+        action="reminder_queued", description=f"Automation requested invoice reminder (delivery {delivery.pk}).")
+    return True, f"Invoice reminder recorded; delivery {delivery.pk} ({delivery.status})."
 
 
 def _create_gallery_task(execution, booking):
@@ -230,58 +216,61 @@ def _create_gallery_task(execution, booking):
     return (True, f"Gallery task {task.pk} created.") if created else (False, "Gallery task already exists.")
 
 
+def _eligible_gallery(gallery):
+    return (gallery.status in (Gallery.Status.PUBLISHED, Gallery.Status.DELIVERED)
+        and not gallery.deleted_at and not gallery.archived_at
+        and (not gallery.expires_at or gallery.expires_at > timezone.now()))
+
+
+@transaction.atomic
 def _notify_gallery_client(execution, gallery):
-    invitations = list(
-        GalleryInvitation.objects.filter(gallery=gallery)
-        .exclude(status=GalleryInvitation.Status.DISABLED)
-        .exclude(email="")
-    )
-    if not invitations:
-        return False, "No active gallery invitation is available to notify."
-    sent = 0
+    gallery = Gallery.objects.select_for_update().get(pk=gallery.pk, photographer=execution.photographer)
+    if not _eligible_gallery(gallery):
+        return False, "Gallery is no longer available."
+    invitations = GalleryInvitation.objects.select_for_update().filter(gallery=gallery,
+        status__in=(GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE)).exclude(email="")
+    count = 0
     for invitation in invitations:
+        # The workflow execution and outbox records commit together.
         token_record, raw_token = AccessToken.issue(invitation, expires_at=gallery.expires_at)
-        try:
-            send_gallery_invitation_email(_BackgroundRequest(), invitation=invitation, raw_token=raw_token)
-        except GalleryInvitationDeliveryError:
-            token_record.revoked_at = timezone.now()
-            token_record.save(update_fields=["revoked_at"])
-            raise
-        invitation.access_tokens.filter(revoked_at__isnull=True).exclude(pk=token_record.pk).update(revoked_at=timezone.now())
-        invitation.status = GalleryInvitation.Status.PENDING
+        send_gallery_invitation_email(_BackgroundRequest(), invitation=invitation, raw_token=raw_token)
         invitation.resent_at = timezone.now()
-        invitation.save(update_fields=["status", "resent_at"])
-        log_gallery_activity(
-            gallery=gallery,
-            event_type=GalleryActivity.EventType.CLIENT_INVITED,
-            description=f"Gallery publication automation emailed {invitation.client_name}.",
-            actor=execution.photographer.user,
-            related_object=invitation,
-            metadata={"delivery": "email", "automation": True},
-        )
-        sent += 1
-    return True, f"Secure gallery invitation sent to {sent} recipient(s)."
+        invitation.save(update_fields=["resent_at"])
+        log_gallery_activity(gallery=gallery, event_type=GalleryActivity.EventType.CLIENT_INVITED,
+            description="Gallery publication automation queued an invitation.",
+            actor=execution.photographer.user, related_object=invitation,
+            metadata={"delivery": "queued", "automation": True, "execution_id": execution.pk})
+        count += 1
+    return bool(count), f"Secure gallery invitations queued for {count} recipient(s)."
 
 
+@transaction.atomic
 def _send_gallery_expiration_reminder(execution, gallery):
-    recipients = sorted(set(
-        GalleryInvitation.objects.filter(gallery=gallery)
-        .exclude(status=GalleryInvitation.Status.DISABLED)
-        .exclude(email="")
-        .values_list("email", flat=True)
-    ))
-    if not recipients:
-        return False, "No active invitation recipients are available."
+    gallery = Gallery.objects.select_for_update().get(pk=gallery.pk, photographer=execution.photographer)
+    if not _eligible_gallery(gallery) or not gallery.expires_at:
+        return False, "Gallery is no longer eligible for expiration reminders."
+    if execution.context.get("expiration_date") != timezone.localtime(gallery.expires_at).date().isoformat():
+        return False, "Gallery expiration date changed."
     studio = execution.photographer.business_name or execution.photographer.display_name or execution.photographer.user.email
-    delivered = EmailMultiAlternatives(
-        f"Your {gallery.name} gallery expires soon",
-        f"Your gallery from {studio} is scheduled to expire on {gallery.expires_at:%b %d, %Y}. Please download or save anything you need before then.",
-        settings.DEFAULT_FROM_EMAIL,
-        recipients,
-    ).send(fail_silently=False)
-    if delivered != 1:
-        raise RuntimeError("Gallery expiration reminder was not accepted by the email backend.")
-    return True, f"Gallery expiration reminder sent to {len(recipients)} recipient(s)."
+    count = 0
+    seen = set()
+    for invitation in GalleryInvitation.objects.select_for_update().filter(gallery=gallery,
+            status__in=(GalleryInvitation.Status.PENDING, GalleryInvitation.Status.ACTIVE)).exclude(email="").order_by("pk"):
+        address = invitation.email.strip().casefold()
+        if address in seen:
+            continue
+        seen.add(address)
+        delivery = queue_transactional_email(
+            event_key=f"workflow.gallery.expiry:{execution.pk}:{invitation.pk}",
+            subject=f"Your {gallery.name} gallery expires soon",
+            plain_body=f"Your gallery from {studio} is scheduled to expire on {gallery.expires_at:%b %d, %Y}. Please download or save anything you need before then.",
+            recipients=[invitation.email], expires_at=gallery.expires_at,
+            lifecycle_kind="gallery.expiry", lifecycle_context={"gallery_id": gallery.pk,
+                "studio_id": gallery.photographer_id, "invitation_id": invitation.pk,
+                "expires_at": gallery.expires_at.isoformat(), "execution_id": execution.pk})
+        if delivery:
+            count += 1
+    return bool(count), f"Gallery expiration reminders recorded for {count} recipient(s)."
 
 
 def run_execution(execution):

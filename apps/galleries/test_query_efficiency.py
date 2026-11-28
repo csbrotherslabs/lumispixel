@@ -16,7 +16,7 @@ class ClientGalleryQueryEfficiencyTests(TestCase):
             GalleryPhoto(
                 gallery=self.gallery,
                 photographer=self.studio,
-                file=f"galleries/query/{index}.jpg",
+                file=f"galleries/{self.studio.pk}/{self.gallery.pk}/originals/{index}.jpg",
                 original_name=f"{index}.jpg",
                 file_size=100,
                 status=GalleryPhoto.Status.COMPLETED,

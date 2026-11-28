@@ -1,42 +1,42 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
-
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.utils import timezone
-
-from apps.dashboard.invitation_delivery import rotate_invitation_after_delivery
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
 from apps.dashboard.models import StudioMembership
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
-
-class InvitationDeliveryRegressionTests(SimpleTestCase):
+class InvitationRegressionTests(TestCase):
     def setUp(self):
-        self.membership = StudioMembership(
-            invitation_token_digest="existing-digest",
-            invitation_sent_at=timezone.now(),
-            invitation_expires_at=timezone.now() + timezone.timedelta(days=2),
-            status=StudioMembership.Status.INVITED,
-        )
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-    @patch("apps.dashboard.invitation_delivery.apply_token")
-    @patch("apps.dashboard.invitation_delivery.send_invitation", side_effect=RuntimeError("mail unavailable"))
-    def test_failed_delivery_keeps_existing_credential_authoritative(self, _send, apply_mock):
-        before = (
-            self.membership.invitation_token_digest,
-            self.membership.invitation_sent_at,
-            self.membership.invitation_expires_at,
-        )
-        with self.assertRaises(RuntimeError):
-            rotate_invitation_after_delivery(Mock(), self.membership)
-        apply_mock.assert_not_called()
-        self.assertEqual(before, (
-            self.membership.invitation_token_digest,
-            self.membership.invitation_sent_at,
-            self.membership.invitation_expires_at,
-        ))
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
-    @patch("apps.dashboard.invitation_delivery.apply_token")
-    @patch("apps.dashboard.invitation_delivery.send_invitation")
-    def test_success_applies_token_only_after_delivery(self, send_mock, apply_mock):
-        request = Mock()
-        raw_token = rotate_invitation_after_delivery(request, self.membership)
-        send_mock.assert_called_once_with(request, self.membership, raw_token)
-        apply_mock.assert_called_once()
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
+
+    def test_failed_queue_keeps_existing_credential_authoritative(self):
+        before = self.membership.invitation_token_digest
+        with patch("apps.dashboard.team_invitations.queue_transactional_email", side_effect=RuntimeError("queue unavailable")):
+            with self.assertRaises(RuntimeError):
+                self.resend()
+        self.membership.refresh_from_db()
+        self.assertEqual(self.membership.invitation_token_digest, before)
+        self.assertIsNotNone(find_valid_invitation(self.token))
+
+    def test_success_persists_replacement_and_preserves_old_link(self):
+        self.resend()
+        self.membership.refresh_from_db()
+        self.assertNotEqual(self.membership.invitation_token_digest, self.membership.previous_invitation_digest)
+        self.assertIsNotNone(find_valid_invitation(self.token))

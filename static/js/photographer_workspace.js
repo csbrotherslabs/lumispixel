@@ -874,7 +874,7 @@
       const classes = 'lp-button lp-button--' + variant + ' lp-button--md' + (action.priority === 'primary' ? ' lp-button--full' : '');
       const menuRole = menuItem ? ' role="menuitem"' : '';
       if (action.type === 'edit' || action.type === 'reschedule') return '<button type="button" class="' + classes + '"' + menuRole + ' data-detail-' + action.type + '="' + escapeHtml(event.drawer_id) + '">' + icon + escapeHtml(action.label) + '</button>';
-      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.cookie.match(/(?:^|; )csrftoken=([^;]+)/) || [,''])[1]) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</button></form>';
+      if (action.type === 'post') return '<form method="post" action="' + escapeHtml(action.url) + '"' + (action.priority === 'destructive' ? ' data-confirm-cancel' : '') + '><input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml((document.querySelector('[data-schedule-csrf] input[name="csrfmiddlewaretoken"]')?.value || '')) + '"><input type="hidden" name="action" value="' + escapeHtml(action.value) + '"><button type="submit" class="' + classes + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</button></form>';
       return '<a class="' + classes + '" href="' + escapeHtml(action.url) + '"' + menuRole + '>' + icon + escapeHtml(action.label) + '</a>';
     }
     const primaryActions = layer.querySelector('[data-event-primary-actions]');
@@ -968,6 +968,37 @@
   let dirty = false;
   let opener = null;
   let editing = false;
+  let activeContractEvent = null;
+  const contractSection = layer.querySelector('[data-edit-contract-section]');
+  function renderEditContract() {
+    if (!contractSection) return;
+    const event = activeContractEvent;
+    contractSection.hidden = !editing || currentType() !== 'booking' || !event || !event.contract_url;
+    const card = contractSection.querySelector('[data-edit-contract-card]');
+    card.replaceChildren();
+    if (contractSection.hidden) return;
+    const box = document.createElement('div'); box.className = 'lpw-edit-contract-card';
+    const heading = document.createElement('strong'); heading.textContent = event.contract_title || 'No contract attached'; box.append(heading);
+    const status = document.createElement('span'); status.className = 'lpw-edit-contract-status'; status.textContent = event.contract_status; box.append(status);
+    if (event.contract_title) {
+      [['Photographer', event.photographer_signed], ['Client', event.client_signed]].forEach(function (entry) {
+        const row = document.createElement('div'); row.className = 'lpw-edit-signature-row';
+        const label = document.createElement('span'); label.textContent = entry[0] + ' signature';
+        const badge = document.createElement('strong'); badge.className = entry[1] ? 'is-complete' : 'is-pending'; badge.textContent = entry[1] ? 'Completed' : 'Pending'; row.append(label, badge); box.append(row);
+      });
+    }
+    function link(label, url, primary) {
+      if (!url) return;
+      const a = document.createElement('a'); a.href = url; a.textContent = label; a.className = 'lp-button lp-button--' + (primary ? 'primary' : 'outline');
+      a.addEventListener('click', function (e) { if (dirty) { if (!window.confirm('Discard unsaved booking changes and open the contract?')) { e.preventDefault(); return; } dirty = false; } }); box.append(a);
+    }
+    link(event.contract_action, event.contract_action_url || event.contract_url, true);
+    link('Customize contract', event.contract_customize_url, false);
+    if (event.contract_preview_url && event.contract_preview_url !== event.contract_action_url) link('Preview contract', event.contract_preview_url, false);
+    link('Manage all contracts', event.contract_url, false);
+    if (event.photographer_signed || event.client_signed) { const note = document.createElement('p'); note.textContent = 'Signed agreements are preserved. Material booking changes require a replacement agreement or amendment.'; box.append(note); }
+    card.append(box);
+  }
 
   if (!window.LumisScheduleEvents) {
     const dataNode = document.getElementById('schedule-event-data');
@@ -979,6 +1010,20 @@
     }
   }
 
+    function updatePaymentSummary() {
+    const total = Number(form.elements.price.value || 0);
+    const raw = Number(form.elements.deposit_input.value || 0);
+    const deposit = form.elements.deposit_required.checked ? (form.elements.deposit_type.value === 'percentage' ? Math.round(total * raw) / 100 : raw) : 0;
+    const summary = layer.querySelector('[data-payment-summary]');
+    const currency = form.elements.payment_currency.value || 'USD';
+    const format = value => new Intl.NumberFormat(undefined, {style:'currency', currency, currencyDisplay:'code'}).format(value);
+    layer.querySelectorAll('[data-deposit-field]').forEach(el => { el.hidden = !form.elements.deposit_required.checked; });
+    const label = layer.querySelector('[data-deposit-label]');
+    if (label) label.textContent = form.elements.deposit_type.value === 'percentage' ? 'Down payment (%)' : 'Down payment (' + currency + ')';
+    if (summary) summary.textContent = deposit > total ? 'Down payment cannot exceed agreed fee.' : 'Down payment: ' + format(deposit) + ' · Remaining balance: ' + format(total - deposit);
+  }
+  form.addEventListener('input', updatePaymentSummary);
+  form.addEventListener('change', updatePaymentSummary);
   function currentType() { return form.elements.event_type.value; }
   function syncType() {
     const type = currentType();
@@ -990,6 +1035,8 @@
       });
     });
     const selectedType = form.querySelector('input[name="event_type"]:checked');
+    renderEditContract();
+
     if (!editing && selectedType) title.textContent = 'Create ' + selectedType.nextElementSibling.textContent.trim();
     checkConflict();
   }
@@ -1029,6 +1076,7 @@
     opener = button;
     resetForm();
     editing = Boolean(event);
+    activeContractEvent = event || null;
     const radio = form.querySelector('input[name="event_type"][value="' + type + '"]');
     if (radio) radio.checked = true;
     if (event) {
@@ -1044,6 +1092,13 @@
       setValue('client', event.client_id);
       setValue('booking_status', event.status_key);
       setValue('price', event.booking_value);
+      setValue('payment_currency', event.payment_currency || 'USD');
+      form.elements.complimentary.checked = Boolean(event.pricing_confirmed && Number(event.booking_value) === 0);
+      form.elements.deposit_required.checked = Number(event.deposit_amount) > 0;
+      setValue('deposit_type', 'fixed');
+      setValue('deposit_input', event.deposit_amount);
+      setValue('deposit_due_date', event.deposit_due_date);
+      setValue('balance_due_date', event.balance_due_date);
       Array.from(form.elements.team.options).forEach(function (option) {
         option.selected = (event.member_ids || []).includes(Number(option.value));
       });
@@ -1070,7 +1125,7 @@
       setValue('constraint_id', '');
       setValue('mini_id', '');
     }
-    syncType(); syncAllDay();
+    syncType(); syncAllDay(); updatePaymentSummary();
     layer.hidden = false;
     window.requestAnimationFrame(function () { layer.classList.add('is-open'); });
     document.body.classList.add('lpw-drawer-open');
@@ -1109,7 +1164,7 @@
   form.addEventListener('change', function (event) { dirty = true; if (event.target.name === 'event_type') syncType(); if (event.target.name === 'all_day') syncAllDay(); checkConflict(); });
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
-    if (!validate()) return;
+    if (!(activeContractEvent && activeContractEvent.marketplace_booking) && !validate()) return;
     const another = event.submitter && event.submitter.value === 'another';
     const type = currentType();
     form.elements.action.value = type === 'booking'
@@ -1127,7 +1182,7 @@
       // access can therefore resolve `form.action` to that input element rather
       // than to the form's URL, producing a request for "[object HTMLInputElement]".
       response = await fetch(form.getAttribute('action'), {
-        method: 'POST', body: new FormData(form),
+        method: 'POST', body: (() => { const data = new FormData(form); if (activeContractEvent && activeContractEvent.marketplace_booking) data.set('pricing_only','1'); return data; })(),
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
       const contentType = response.headers.get('content-type') || '';
@@ -1168,7 +1223,7 @@
   drawer.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') { event.preventDefault(); close(false); }
     if (event.key !== 'Tab') return;
-    const focusable = Array.from(drawer.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')).filter(function (el) { return !el.closest('[hidden]'); });
+    const focusable = Array.from(drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')).filter(function (el) { return !el.closest('[hidden]'); });
     const first = focusable[0]; const last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
@@ -1299,8 +1354,7 @@
   let pending = null; let opener = null;
 
   function csrf() {
-    const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : '';
+    return document.querySelector('[data-schedule-csrf] input[name="csrfmiddlewaretoken"]')?.value || '';
   }
   function request(url, body) {
     return fetch(url, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()}, body: JSON.stringify(body)})

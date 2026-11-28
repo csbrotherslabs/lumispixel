@@ -17,7 +17,7 @@ def money(value, field="amount"):
         result = Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
     except (InvalidOperation, TypeError, ValueError):
         raise ValidationError({field: "Enter a valid monetary amount."})
-    if result <= ZERO:
+    if not result.is_finite() or result <= ZERO:
         raise ValidationError({field: "Amount must be greater than zero."})
     return result
 
@@ -36,8 +36,12 @@ def _duplicate(model, profile, key):
 def record_payment(profile, data):
     """Record a complete payment and update its invoice under row locks."""
     key = str(data.get("submission_key", "")).strip()
+    # Serialize submission identities across all invoices in this studio.
+    type(profile).objects.select_for_update().get(pk=profile.pk)
     duplicate = _duplicate(InvoicePayment, profile, key)
     if duplicate:
+        if str(duplicate.invoice_id) != str(data.get("invoice")) or duplicate.amount != money(data.get("amount")):
+            raise ValidationError("Submission key already belongs to a different transaction.")
         return duplicate, True
     client = Client.objects.for_photographer(profile).filter(pk=data.get("client")).first()
     if not client:
@@ -64,6 +68,8 @@ def record_payment(profile, data):
     invoice.save(update_fields=["amount_paid", "status"])
     InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment_received",
                                    description=f"Payment PAY-{payment.pk:06d} of {amount} recorded.")
+    from .financial_automation import queue_receipt
+    queue_receipt(payment)
     return payment, False
 
 
@@ -71,8 +77,12 @@ def record_payment(profile, data):
 def issue_refund(profile, data):
     """Refund no more than the locked payment's unrefunded completed value."""
     key = str(data.get("submission_key", "")).strip()
+    # Serialize submission identities across all invoices in this studio.
+    type(profile).objects.select_for_update().get(pk=profile.pk)
     duplicate = _duplicate(PaymentRefund, profile, key)
     if duplicate:
+        if str(duplicate.payment_id) != str(data.get("payment")) or duplicate.amount != money(data.get("amount")):
+            raise ValidationError("Submission key already belongs to a different refund.")
         return duplicate, True
     payment = (InvoicePayment.objects.select_for_update().for_photographer(profile)
                .select_related("invoice").filter(pk=data.get("payment"), status=InvoicePayment.Status.COMPLETED).first())
@@ -88,7 +98,9 @@ def issue_refund(profile, data):
     refund = PaymentRefund.objects.create(photographer=profile, payment=payment, amount=amount, reason=reason,
         internal_note=str(data.get("internal_note", "")).strip(), submission_key=key)
     invoice = ClientInvoice.objects.select_for_update().get(pk=payment.invoice_id)
-    invoice.amount_paid = max(ZERO, invoice.amount_paid - amount)
+    if amount > invoice.amount_paid:
+        raise ValidationError("Refund exceeds recorded invoice payments; reconcile the ledger first.")
+    invoice.amount_paid -= amount
     invoice.status = _invoice_status(invoice)
     invoice.save(update_fields=["amount_paid", "status"])
     # Keep the original cash receipt completed: reporting subtracts this refund
@@ -102,6 +114,8 @@ def issue_refund(profile, data):
 def add_credit(profile, data):
     """Issue client credit, retaining original and spendable values."""
     key = str(data.get("submission_key", "")).strip()
+    # Serialize submission identities across all invoices in this studio.
+    type(profile).objects.select_for_update().get(pk=profile.pk)
     duplicate = _duplicate(InvoiceCredit, profile, key)
     if duplicate:
         return duplicate, True

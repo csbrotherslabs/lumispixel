@@ -4,7 +4,7 @@ from smtplib import SMTPException
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core import mail
+from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -30,7 +30,7 @@ class EmailDeliveryError(Exception):
 
 class EmailVerificationTokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
-        return f"{user.pk}{user.password}{user.email_verified}{user.email_verified_at}{timestamp}"
+        return f"{user.pk}{user.password}{user.email}{user.email_verified}{user.email_verified_at}{timestamp}"
 
     def check_token(self, user, token):
         """Validate verification tokens with their own bounded lifetime.
@@ -159,6 +159,10 @@ def build_verification_url(request, user):
 
 def send_verification_email(request, user):
     verification_url = build_verification_url(request, user)
+    from hashlib import sha256
+    from apps.notifications.intents import require_email
+    event_key = f"account.verify:{user.pk}:{sha256(verification_url.encode()).hexdigest()}"
+    require_email(event_key=event_key, recipients=[user.email], kind="account.verify")
     context = {
         "user": user,
         "verification_url": verification_url,
@@ -169,21 +173,22 @@ def send_verification_email(request, user):
     text_body = render_to_string("accounts/email/verify_email.txt", context)
     html_body = render_to_string("accounts/email/verify_email.html", context)
 
+    from hashlib import sha256
+    from datetime import timedelta
+    from django.utils.crypto import salted_hmac
+    from django.utils import timezone
+    state = salted_hmac("email-lifecycle-account", str(user.pk) + "|" + user.email + "|" + str(user.password) + "|" + str(getattr(user, "email_verified_at", ""))).hexdigest()
+    from apps.notifications.email_delivery import queue_transactional_email
+    from django.core.exceptions import ValidationError
     try:
-        with mail.get_connection(fail_silently=False) as connection:
-            message = mail.EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[user.email],
-                connection=connection,
-            )
-            message.attach_alternative(html_body, "text/html")
-            sent = message.send(fail_silently=False)
-    except (OSError, SMTPException) as exc:
-        raise EmailDeliveryError from exc
-
-    if sent != 1:
-        raise EmailDeliveryError("Verification email was not accepted by the configured email backend.")
+        delivery = queue_transactional_email(
+            event_key=event_key,
+            subject=subject, plain_body=text_body, html_body=html_body, recipients=[user.email],
+            sensitive=True, expires_at=timezone.now()+timedelta(seconds=min(settings.EMAIL_VERIFICATION_TIMEOUT_SECONDS, settings.PASSWORD_RESET_TIMEOUT)),
+            supersession_scope=f"account.verify:{user.pk}", lifecycle_kind="account.verify", lifecycle_context={"user_id": str(user.pk), "state": state})
+    except (ValueError, ValidationError, ImproperlyConfigured) as exc:
+        raise EmailDeliveryError("Verification email could not be queued.") from exc
+    if not delivery:
+        raise EmailDeliveryError("Verification email could not be queued.")
 
     return True
