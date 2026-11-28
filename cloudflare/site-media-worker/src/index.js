@@ -116,7 +116,7 @@ export default {
     let originResponse;
     try {
     const originRequest = await aws.sign(originUrl, {
-      redirect: "error",
+      redirect: "manual",
       method: request.method,
       headers: request.headers.has("range")
         ? { range: request.headers.get("range") }
@@ -127,6 +127,11 @@ export default {
     } catch (error) {
       console.warn("Media origin failure");
       return textResponse("Media origin unavailable", 502);
+    }
+
+    if (originResponse.status >= 300 && originResponse.status < 400) {
+      console.warn("Media origin redirect rejected");
+      return textResponse("Media origin error", 502);
     }
 
     if (originResponse.status === 404) {
