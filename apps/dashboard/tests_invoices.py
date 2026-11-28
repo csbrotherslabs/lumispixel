@@ -1,3 +1,5 @@
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
@@ -122,6 +124,10 @@ class InvoiceWorkspaceTests(TestCase):
         invoice = ClientInvoice.objects.get()
         self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
         self.assertIsNotNone(invoice.sent_at)
+        delivery = EmailDelivery.objects.get(lifecycle_kind="invoice.email")
+        self.assertEqual(delivery.status, EmailDelivery.Status.PENDING)
+        self.assertEqual(delivery.recipients, [self.client_record.email])
+        self.assertTrue(deliver_email(delivery.pk))
         self.assertEqual(len(mail.outbox), 1)
 
         message = mail.outbox[0]
@@ -137,7 +143,7 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertIn("USD 284.63", html)
         self.assertNotIn("/workspace/", message.body)
         self.assertNotIn("/workspace/", html)
-        self.assertEqual(InvoiceActivity.objects.get().action, "sent")
+        self.assertEqual(InvoiceActivity.objects.get().action, "email_queued")
 
     def test_delivery_failure_rolls_back_invoice_changes_and_sent_activity(self):
         self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())
@@ -180,7 +186,7 @@ class InvoiceWorkspaceTests(TestCase):
         )
         invoice = ClientInvoice.objects.get()
         self.assertEqual(invoice.status, ClientInvoice.Status.SENT)
-        self.assertEqual(InvoiceActivity.objects.get().action, "sent")
+        self.assertEqual(InvoiceActivity.objects.get().action, "email_queued")
 
         self.client.post(
             reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"]),
