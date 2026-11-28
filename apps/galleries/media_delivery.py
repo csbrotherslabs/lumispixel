@@ -8,11 +8,11 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 
-def _media_path(file_name):
-    name = str(file_name or "").replace("\\", "/").lstrip("/")
-    if not name:
-        raise ValueError("A gallery media file name is required.")
+from .object_keys import validate_relative_gallery_name
 
+
+def _media_path(file_name):
+    name = validate_relative_gallery_name(str(file_name or ""))
     environment = settings.GALLERY_STORAGE_ENVIRONMENT
     relative = f"private/{environment}/{name}"
     return "/" + "/".join(quote(part, safe="") for part in relative.split("/"))
