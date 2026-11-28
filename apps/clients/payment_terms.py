@@ -41,8 +41,8 @@ def payment_clause(booking):
     if not booking.pricing_confirmed:
         return "Payment terms have not yet been confirmed. This draft is not ready for signature."
     currency = booking.payment_currency
-    total = booking.booking_value
-    deposit = booking.deposit_amount
+    total = Decimal(str(booking.booking_value))
+    deposit = Decimal(str(booking.deposit_amount))
     def money(value):
         return f"{currency} {value:,.2f}"
     if total == 0:
@@ -56,15 +56,22 @@ def payment_clause(booking):
     return f"{opening} {advance} The remaining balance of {money(total-deposit)} is payable on or before {booking.balance_due_date:%B %d, %Y}."
 
 def payment_snapshot(booking):
+    total = Decimal(str(booking.booking_value))
+    deposit = Decimal(str(booking.deposit_amount))
     return {"pricing_confirmed": booking.pricing_confirmed, "currency": booking.payment_currency,
-            "total": str(booking.booking_value), "deposit": str(booking.deposit_amount),
-            "balance": str(booking.booking_value - booking.deposit_amount),
+            "total": format(total, ".2f"), "deposit": format(deposit, ".2f"),
+            "balance": format(total - deposit, ".2f"),
             "deposit_due": str(booking.deposit_due_date or ""), "balance_due": str(booking.balance_due_date or "")}
 
 def validate_saved_payment_terms(booking):
     if not booking.pricing_confirmed or booking.payment_currency not in SUPPORTED_CURRENCIES:
         raise ValidationError("Save agreed pricing and payment terms before signing.")
-    total, deposit = booking.booking_value, booking.deposit_amount
+    try:
+        total, deposit = Decimal(str(booking.booking_value)), Decimal(str(booking.deposit_amount))
+    except (ArithmeticError, ValueError, TypeError):
+        raise ValidationError("The saved payment schedule is incomplete or invalid.")
+    if not total.is_finite() or not deposit.is_finite():
+        raise ValidationError("The saved payment schedule is incomplete or invalid.")
     if total < 0 or deposit < 0 or deposit > total or (deposit and not booking.deposit_due_date) or (total > deposit and not booking.balance_due_date):
         raise ValidationError("The saved payment schedule is incomplete or invalid.")
     if booking.deposit_due_date and booking.balance_due_date and booking.deposit_due_date > booking.balance_due_date:
