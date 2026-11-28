@@ -117,6 +117,7 @@ def queue_invoice_email(invoice, profile, *, purpose="issue"):
 
 @transaction.atomic
 def save_invoice(profile, post, invoice=None, send=False):
+    type(profile).objects.select_for_update().get(pk=profile.pk)
     if invoice:
         invoice = ClientInvoice.objects.select_for_update().get(pk=invoice.pk, photographer=profile)
     if invoice and invoice.status != ClientInvoice.Status.DRAFT:
@@ -132,7 +133,7 @@ def save_invoice(profile, post, invoice=None, send=False):
         raise ValidationError({"client": "Select a client or provide a new client's name and email."})
     booking = None
     if post.get("booking"):
-        booking = ClientSession.objects.for_photographer(profile).filter(pk=post["booking"], client=client).first()
+        booking = ClientSession.objects.select_for_update().for_photographer(profile).filter(pk=post["booking"], client=client).first()
         if not booking:
             raise ValidationError({"booking": "Select a booking belonging to this client."})
     items = calculate_items(post)
@@ -154,6 +155,13 @@ def save_invoice(profile, post, invoice=None, send=False):
     currency = post.get("currency") or "USD"
     if currency not in SUPPORTED_CURRENCIES:
         raise ValidationError({"currency": "Select a supported currency."})
+    if booking:
+        if not booking.pricing_confirmed or booking.payment_currency != currency:
+            raise ValidationError({"booking": "Confirm booking pricing and use its agreed currency."})
+        from django.db.models import Sum
+        billed = ClientInvoice.objects.filter(booking=booking, photographer=profile).exclude(status=ClientInvoice.Status.VOID).exclude(pk=invoice.pk).aggregate(value=Sum("total"))["value"] or ZERO
+        if billed + total > booking.booking_value:
+            raise ValidationError({"booking": "Combined invoices cannot exceed the agreed booking value."})
     invoice.currency = currency
     invoice.subtotal, invoice.discount_total, invoice.tax_total, invoice.total = subtotal, discounts, taxes, total
     invoice.client_notes, invoice.internal_notes, invoice.terms = post.get("client_notes", ""), post.get("internal_notes", ""), post.get("terms", "")
