@@ -60,7 +60,7 @@ def prepare_token():
 
 def apply_token(membership, token_digest, sent_at, expires_at):
     from apps.notifications.models import EmailDelivery
-    current_sent = EmailDelivery.objects.filter(
+    current_sent = bool(membership.pk and membership.invitation_token_digest) and EmailDelivery.objects.filter(
         lifecycle_kind="studio.invite", lifecycle_context__membership_id=membership.pk,
         lifecycle_context__digest=membership.invitation_token_digest,
         status=EmailDelivery.Status.SENT,
