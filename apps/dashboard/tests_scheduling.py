@@ -34,6 +34,7 @@ class SchedulingIntegrationTests(TestCase):
             "session_type": "Portrait", "start_date": "2026-08-12",
             "start_time": start, "end_date": "2026-08-12", "end_time": end,
             "location": "Studio A", "booking_status": "confirmed", "price": "100",
+            "balance_due_date": "2026-08-12",
         }
         payload.update(values)
         return payload
