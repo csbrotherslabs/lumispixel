@@ -68,6 +68,8 @@ def record_payment(profile, data):
     invoice.save(update_fields=["amount_paid", "status"])
     InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment_received",
                                    description=f"Payment PAY-{payment.pk:06d} of {amount} recorded.")
+    from .financial_automation import queue_receipt
+    queue_receipt(payment)
     return payment, False
 
 
