@@ -271,7 +271,7 @@ class BookingOperationsAuditTests(TestCase):
             "client": assigned_client.pk, "title": "Morgan brand portraits",
             "session_type": "Brand portrait", "start_date": "2026-08-12",
             "start_time": "14:00", "end_date": "2026-08-12", "end_time": "15:30",
-            "location": "North Studio", "booking_status": "confirmed", "price": "475.00",
+            "location": "North Studio", "booking_status": "confirmed",
             "notes": "Two wardrobe changes.",
         }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
@@ -279,7 +279,8 @@ class BookingOperationsAuditTests(TestCase):
         booking = ClientSession.objects.get(photographer=self.studio, client=assigned_client)
         self.assertEqual(list(booking.assigned_members.all()), [member])
         self.assertEqual(booking.duration_minutes, 90)
-        self.assertEqual(booking.booking_value, 475)
+        self.assertEqual(booking.booking_value, 0)
+        self.assertFalse(booking.pricing_confirmed)
         self.assertEqual(booking.activities.filter(
             event_type=ClientActivity.EventType.BOOKING_CREATED,
         ).count(), 1)
