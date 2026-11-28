@@ -11,15 +11,16 @@ def validate_relative_gallery_name(name):
     parts = name.split("/")
     if any(p in ("", ".", "..") for p in parts):
         raise SuspiciousFileOperation("Invalid gallery object path.")
-    if len(parts) < 5 or parts[0] != "galleries":
+    if len(parts) < 4 or parts[0] != "galleries":
         raise SuspiciousFileOperation("Invalid gallery namespace.")
-    if not all(p.isascii() and p.isdecimal() for p in parts[1:3]):
+    if not (parts[2].isascii() and parts[2].isdecimal() and
+            (parts[1] == "covers-v2" or (parts[1].isascii() and parts[1].isdecimal()))):
         raise SuspiciousFileOperation("Invalid gallery identity.")
     if not (
         (len(parts) == 5 and parts[3] == "originals")
         or (len(parts) == 6 and parts[3] == "variants"
             and parts[4] in ("thumbnail", "preview") and parts[5].endswith(".webp"))
-        or (len(parts) == 5 and parts[3] not in ("originals", "variants"))
+        or (len(parts) == 4 and parts[1] != "covers-v2" and parts[3] not in ("originals", "variants"))
     ):
         raise SuspiciousFileOperation("Invalid gallery object layout.")
     return name
