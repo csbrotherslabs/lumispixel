@@ -4804,7 +4804,10 @@ def invoice_edit(request, pk):
 @require_GET
 def invoice_view(request, pk):
     invoice = get_object_or_404(ClientInvoice.objects.for_photographer(request.studio).select_related("client", "booking").prefetch_related("line_items", "payment_schedule", "activity"), pk=pk)
-    return render(request, "photographer_workspace/invoices/detail.html", _invoice_context(request, invoice))
+    from uuid import uuid4
+    context = _invoice_context(request, invoice)
+    context["payment_submission_key"] = uuid4().hex
+    return render(request, "photographer_workspace/invoices/detail.html", context)
 
 
 @photographer_workspace_required
