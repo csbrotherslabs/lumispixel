@@ -287,3 +287,27 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertContains(response, overdue.invoice_number)
         self.assertNotContains(response, "INV-FUTURE")
         self.assertNotContains(response, "PRIVATE-INVOICE")
+
+    def test_payment_submission_replay_does_not_double_record(self):
+        self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(intent="send"))
+        invoice = ClientInvoice.objects.get()
+        url = reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"])
+        payload = {"amount": "50.00", "submission_key": "invoice-payment-replay"}
+        self.client.post(url, payload)
+        self.client.post(url, payload)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.amount_paid, Decimal("50.00"))
+        self.assertEqual(InvoicePayment.objects.filter(invoice=invoice).count(), 1)
+
+    def test_nonfinite_payment_and_line_item_are_rejected(self):
+        response = self.client.post(reverse("photographer_workspace:invoice_create"),
+                                    self.payload(**{"item_quantity[]": ["NaN", "1"]}))
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(ClientInvoice.objects.exists())
+        self.client.post(reverse("photographer_workspace:invoice_create"), self.payload(intent="send"))
+        invoice = ClientInvoice.objects.get()
+        self.client.post(reverse("photographer_workspace:invoice_action", args=[invoice.pk, "payment"]),
+                         {"amount": "NaN"})
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.amount_paid, Decimal("0.00"))
+        self.assertFalse(InvoicePayment.objects.exists())
