@@ -59,7 +59,13 @@ def prepare_token():
 
 
 def apply_token(membership, token_digest, sent_at, expires_at):
-    if not membership.previous_invitation_expires_at or membership.previous_invitation_expires_at <= sent_at:
+    from apps.notifications.models import EmailDelivery
+    current_sent = EmailDelivery.objects.filter(
+        lifecycle_kind="studio.invite", lifecycle_context__membership_id=membership.pk,
+        lifecycle_context__digest=membership.invitation_token_digest,
+        status=EmailDelivery.Status.SENT,
+    ).exists()
+    if current_sent or not membership.previous_invitation_expires_at or membership.previous_invitation_expires_at <= sent_at:
         membership.previous_invitation_digest = membership.invitation_token_digest
         membership.previous_invitation_expires_at = membership.invitation_expires_at
     membership.invitation_token_digest = token_digest
