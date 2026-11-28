@@ -741,10 +741,9 @@ class ContractWorkflowTests(TestCase):
         self.assertIn(b"Maya Cole", original_pdf)
 
         client_view = self.client.get(reverse("clients:signed-contract-pdf", args=[token]))
-        self.addCleanup(client_view.close)
         self.assertEqual(client_view.status_code, 200)
+        # Exhaust the test client iterator; it closes the response with DB cleanup disconnected.
         self.assertEqual(b"".join(client_view.streaming_content), original_pdf)
-        client_view.close()
         self.assertEqual(client_view["Cache-Control"], "private, no-store")
         self.assertEqual(self.client.get(reverse("clients:signed-contract-pdf", args=["guessed-key"])).status_code, 404)
 
@@ -763,10 +762,8 @@ class ContractWorkflowTests(TestCase):
         workspace_download = self.client.get(
             reverse("photographer_workspace:signed_contract_pdf_download", args=[contract.pk]),
         )
-        self.addCleanup(workspace_download.close)
         self.assertEqual(workspace_download.status_code, 200)
         self.assertEqual(b"".join(workspace_download.streaming_content), original_pdf)
-        workspace_download.close()
         self.assertIn("attachment", workspace_download["Content-Disposition"])
         other_owner, _studio, _client, _booking, _template = self.make_studio("pdf-other@example.com")
         self.client.force_login(other_owner)
