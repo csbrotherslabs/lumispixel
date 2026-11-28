@@ -2930,8 +2930,6 @@ def bookings_dashboard(request):
                           "service": request.POST.get("mini_package", "").strip(),
                           "notes": request.POST.get("notes", "").strip()}
                 if mini:
-                    if session.pricing_confirmed and values["booking_value"] != session.booking_value:
-                        return JsonResponse({"ok": False, "error": "Use Save Pricing & Payment Terms to change the agreed fee."}, status=409)
                     for field, value in values.items():
                         setattr(mini, field, value)
                     mini.save()
@@ -3116,6 +3114,8 @@ def bookings_dashboard(request):
                     session = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
                     if hasattr(session, "platform_booking"):
                         return JsonResponse({"ok": False, "errors": {"booking_status": "Marketplace bookings cannot be edited here. Cancel and request a new booking if details change."}}, status=409)
+                    if session.pricing_confirmed and values["booking_value"] != session.booking_value:
+                        return JsonResponse({"ok": False, "error": "Use Save Pricing & Payment Terms to change the agreed fee."}, status=409)
                     if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "booking_value", "event_kind", *terms.keys())):
                         return JsonResponse({"ok": False, "error": "This booking has a signed or issued agreement. Material changes require a replacement agreement or amendment."}, status=409)
                     before = {
