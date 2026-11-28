@@ -3026,7 +3026,9 @@ def bookings_dashboard(request):
                 editable_sessions = scope_assigned(ClientSession.objects.all(), request.studio_access)
                 session = get_object_or_404(editable_sessions, pk=request.POST.get("booking_id"))
             terms = {}
-            if not is_consultation:
+            financial_fields = {"price", "payment_currency", "complimentary", "deposit_required",
+                                "deposit_input", "deposit_type", "deposit_due_date", "balance_due_date"}
+            if not is_consultation and financial_fields.intersection(request.POST):
                 if not request.studio_access.allows("financials"):
                     raise PermissionDenied
                 try:
@@ -3091,6 +3093,7 @@ def bookings_dashboard(request):
                              if is_consultation else request.POST.get("location", "").strip()), "status": status,
                 "booking_value": booking_value, "notes": request.POST.get("notes", "").strip(),
             }
+            values.pop("booking_value", None)
             values.update(terms)
             with transaction.atomic():
                 # Serialize scheduling writes per studio. This closes the usual
@@ -3114,9 +3117,9 @@ def bookings_dashboard(request):
                     session = ClientSession.objects.select_for_update().get(pk=session.pk, photographer=profile)
                     if hasattr(session, "platform_booking"):
                         return JsonResponse({"ok": False, "errors": {"booking_status": "Marketplace bookings cannot be edited here. Cancel and request a new booking if details change."}}, status=409)
-                    if session.pricing_confirmed and values["booking_value"] != session.booking_value:
+                    if session.pricing_confirmed and "booking_value" in values and values["booking_value"] != session.booking_value:
                         return JsonResponse({"ok": False, "error": "Use Save Pricing & Payment Terms to change the agreed fee."}, status=409)
-                    if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "booking_value", "event_kind", *terms.keys())):
+                    if session.contracts.filter(status__in=[Contract.Status.READY, Contract.Status.SENT, Contract.Status.VIEWED, Contract.Status.SIGNED]).exists() and any(getattr(session, field) != values[field] for field in ("client", "session_type", "starts_at", "duration_minutes", "location", "event_kind", *terms.keys())):
                         return JsonResponse({"ok": False, "error": "This booking has a signed or issued agreement. Material changes require a replacement agreement or amendment."}, status=409)
                     before = {
                         "client_id": session.client_id, "session_type": session.session_type,
