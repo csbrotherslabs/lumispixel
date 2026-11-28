@@ -1,4 +1,3 @@
-from smtplib import SMTPException
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -22,7 +21,7 @@ class InvitationResendDeliveryFailureTests(TestCase):
         old_expiry = membership.invitation_expires_at
         self.client.force_login(owner)
 
-        with patch("apps.dashboard.team_invitations.EmailMultiAlternatives.send", side_effect=SMTPException("mail unavailable")):
+        with patch("apps.dashboard.team_invitations.queue_transactional_email", side_effect=RuntimeError("queue unavailable")):
             response = self.client.post(reverse("photographer_workspace:invitation_action", args=[membership.pk, "resend"]))
 
         self.assertEqual(response.status_code, 302)
