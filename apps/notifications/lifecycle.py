@@ -1,4 +1,5 @@
 """Lifecycle checks for queued email; never claim recall of an external submission."""
+from decimal import Decimal, InvalidOperation
 from django.db import transaction, models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -80,13 +81,18 @@ def eligible(delivery):
         context = delivery.lifecycle_context
         invoice = ClientInvoice.objects.select_related("client", "photographer__user").filter(
             pk=context.get("invoice_id"), photographer_id=context.get("studio_id")).first()
+        try:
+            expected_paid = Decimal(context["amount_paid"])
+            expected_total = Decimal(context["total"])
+        except (KeyError, TypeError, ValueError, InvalidOperation):
+            return False
         return bool(invoice and invoice.photographer.user.can_login
             and invoice.client.photographer_id == invoice.photographer_id
             and invoice.status in (ClientInvoice.Status.SENT, ClientInvoice.Status.PARTIALLY_PAID)
             and invoice.amount_paid < invoice.total
             and (context.get("purpose") != "reminder" or invoice.reminders_enabled)
-            and str(invoice.amount_paid) == context.get("amount_paid")
-            and str(invoice.total) == context.get("total")
+            and invoice.amount_paid == expected_paid
+            and invoice.total == expected_total
             and invoice.currency == context.get("currency")
             and (invoice.due_date.isoformat() if invoice.due_date else None) == context.get("due_date")
             and [email.casefold() for email in delivery.recipients] == [invoice.client.email.casefold()])
