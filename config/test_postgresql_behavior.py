@@ -49,9 +49,10 @@ class PostgreSQLBehaviorTests(TransactionTestCase):
             locked = Gallery.objects.select_for_update().get(pk=self.gallery.pk)
             self.assertEqual(locked.pk, self.gallery.pk)
 
-    def test_database_reports_postgresql_16(self):
+    def test_database_reports_supported_postgresql_version(self):
         with connection.cursor() as cursor:
             cursor.execute("SHOW server_version_num")
             version = int(cursor.fetchone()[0])
-        self.assertGreaterEqual(version, 160000)
-        self.assertLess(version, 170000)
+        # Production uses PostgreSQL 18; newer local versions may exercise
+        # these contracts but do not replace production-version validation.
+        self.assertGreaterEqual(version, 180000, "Expected PostgreSQL 18 or newer.")
