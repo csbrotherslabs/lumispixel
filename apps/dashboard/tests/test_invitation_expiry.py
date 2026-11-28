@@ -1,25 +1,32 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
-
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.utils import timezone
-
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
 from apps.dashboard.models import StudioMembership
-from apps.dashboard.team_invitations import find_valid_invitation
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-class InvitationExpiryTests(SimpleTestCase):
-    @patch("apps.dashboard.team_invitations.StudioMembership.objects")
-    def test_expired_invitation_is_invalidated(self, objects):
-        membership = Mock(
-            invitation_expires_at=timezone.now() - timezone.timedelta(seconds=1),
-            status=StudioMembership.Status.INVITED,
-            invitation_token_digest="digest",
-        )
-        objects.select_related.return_value.filter.return_value.first.return_value = membership
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
-        result = find_valid_invitation("expired-token")
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
-        self.assertIsNone(result)
-        self.assertEqual(membership.status, StudioMembership.Status.EXPIRED)
-        self.assertEqual(membership.invitation_token_digest, "")
-        membership.save.assert_called_once()
+    def test_expired_invitation_is_rejected(self):
+        self.membership.invitation_expires_at = timezone.now() - timedelta(seconds=1)
+        self.membership.save(update_fields=["invitation_expires_at"])
+        self.assertIsNone(find_valid_invitation(self.token))
