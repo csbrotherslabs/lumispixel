@@ -4812,6 +4812,7 @@ def invoice_view(request, pk):
 def invoice_action(request, pk, action):
     profile = request.studio
     with transaction.atomic():
+        type(profile).objects.select_for_update().get(pk=profile.pk)
         invoice = get_object_or_404(ClientInvoice.objects.select_for_update().filter(photographer=profile), pk=pk)
         if action == "duplicate":
             source = ClientInvoice.objects.prefetch_related("line_items", "payment_schedule").get(pk=invoice.pk)
@@ -4846,19 +4847,16 @@ def invoice_action(request, pk, action):
                 InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="voided", description="Invoice voided.")
                 messages.success(request, "Invoice voided.")
         elif action == "payment":
-            if invoice.status in {ClientInvoice.Status.PAID, ClientInvoice.Status.VOID, ClientInvoice.Status.DRAFT}:
-                messages.error(request, "A payment cannot be recorded for this invoice.")
+            try:
+                payment, duplicate = record_payment(profile, {
+                    "client": invoice.client_id, "invoice": invoice.pk,
+                    "amount": request.POST.get("amount"), "method": InvoicePayment.Method.OTHER,
+                    "submission_key": request.POST.get("submission_key", ""),
+                })
+            except ValidationError as exc:
+                messages.error(request, "; ".join(exc.messages))
             else:
-                try: amount = Decimal(request.POST.get("amount", "0")).quantize(Decimal("0.01"))
-                except Exception: amount = Decimal("0")
-                if not amount.is_finite() or amount <= 0 or amount > invoice.balance:
-                    messages.error(request, "Payment must be greater than zero and no more than the balance.")
-                else:
-                    InvoicePayment.objects.create(photographer=profile, invoice=invoice, amount=amount)
-                    invoice.amount_paid += amount; invoice.status = ClientInvoice.Status.PAID if invoice.amount_paid == invoice.total else ClientInvoice.Status.PARTIALLY_PAID
-                    invoice.save(update_fields=["amount_paid", "status"])
-                    InvoiceActivity.objects.create(photographer=profile, invoice=invoice, action="payment", description=f"Payment of {amount} recorded.")
-                    messages.success(request, "Payment recorded.")
+                messages.success(request, "Payment already recorded." if duplicate else "Payment recorded.")
     return redirect("photographer_workspace:invoice_view", pk=pk)
 
 
