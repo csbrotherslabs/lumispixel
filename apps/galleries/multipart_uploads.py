@@ -7,6 +7,9 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 
+from .object_keys import validate_gallery_object_key
+
+
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -48,6 +51,7 @@ def multipart_object_key(*, photographer_id, gallery_id, original_name, content_
 
 
 def initiate(*, key, content_type):
+    key = validate_gallery_object_key(key)
     return _client().create_multipart_upload(
         Bucket=settings.B2_BUCKET_NAME,
         Key=key,
@@ -56,6 +60,7 @@ def initiate(*, key, content_type):
 
 
 def sign_part(*, key, upload_id, part_number):
+    key = validate_gallery_object_key(key)
     return _client().generate_presigned_url(
         "upload_part",
         Params={
@@ -70,6 +75,7 @@ def sign_part(*, key, upload_id, part_number):
 
 
 def list_parts(*, key, upload_id):
+    key = validate_gallery_object_key(key)
     parts = []
     marker = None
     while True:
@@ -95,6 +101,7 @@ def get_object_stream(*, key):
     larger uploads spill to disk instead of materializing the whole object in
     process memory.
     """
+    key = validate_gallery_object_key(key)
     body = _client().get_object(Bucket=settings.B2_BUCKET_NAME, Key=key)["Body"]
     stream = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
     try:
@@ -122,10 +129,12 @@ def get_object_bytes(*, key):
 
 
 def delete_object(*, key):
+    key = validate_gallery_object_key(key)
     return _client().delete_object(Bucket=settings.B2_BUCKET_NAME, Key=key)
 
 
 def complete(*, key, upload_id, parts):
+    key = validate_gallery_object_key(key)
     return _client().complete_multipart_upload(
         Bucket=settings.B2_BUCKET_NAME,
         Key=key,
@@ -135,6 +144,7 @@ def complete(*, key, upload_id, parts):
 
 
 def abort(*, key, upload_id):
+    key = validate_gallery_object_key(key)
     return _client().abort_multipart_upload(
         Bucket=settings.B2_BUCKET_NAME,
         Key=key,
