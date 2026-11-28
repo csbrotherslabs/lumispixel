@@ -5264,9 +5264,10 @@ def invite_member(request):
 
 @photographer_workspace_required
 @require_POST
+@transaction.atomic
 def invitation_action(request, pk, action):
     profile = authorized_studio(request.user)
-    membership = get_object_or_404(StudioMembership, pk=pk, studio=profile,
+    membership = get_object_or_404(StudioMembership.objects.select_for_update(), pk=pk, studio=profile,
                                    status=StudioMembership.Status.INVITED)
     if action == "revoke":
         membership.status = StudioMembership.Status.INACTIVE
@@ -5309,6 +5310,8 @@ def invitation_accept(request, token):
         })
     email_matches = User.objects.normalize_email(request.user.email).lower() == invited_email
     if request.method == "POST" and email_matches:
+        if not request.user.email_verified or not request.user.can_login:
+            return HttpResponse(status=403)
         choice = request.POST.get("decision")
         if choice not in {"accept", "decline"}:
             return HttpResponse(status=400)
@@ -5316,6 +5319,8 @@ def invitation_accept(request, token):
             current = find_valid_invitation(token, lock=True)
             if not current:
                 return render(request, "photographer_workspace/team/invitation_invalid.html", status=410)
+            if User.objects.normalize_email(current.invitation_email).lower() != User.objects.normalize_email(request.user.email).lower():
+                return HttpResponse(status=403)
             current.invitation_token_digest = ""
             current.previous_invitation_digest = ""
             current.previous_invitation_expires_at = None
