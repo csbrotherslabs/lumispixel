@@ -33,7 +33,7 @@ class CsrfStateChangingEndpointTests(TestCase):
         )
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery, photographer=self.studio,
-            file="galleries/csrf/photo.jpg", original_name="photo.jpg",
+            file=f"galleries/{self.studio.pk}/{self.gallery.pk}/originals/photo.jpg", original_name="photo.jpg",
             file_size=10, status=GalleryPhoto.Status.COMPLETED,
         )
         self.invitation = GalleryInvitation.objects.create(
