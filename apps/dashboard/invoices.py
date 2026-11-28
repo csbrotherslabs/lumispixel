@@ -21,8 +21,11 @@ class InvoiceDeliveryError(ValidationError):
 
 def money(value, field):
     try:
-        return Decimal(value or "0").quantize(CENT, rounding=ROUND_HALF_UP)
-    except (InvalidOperation, TypeError):
+        amount = Decimal(str(value or "0")).quantize(CENT, rounding=ROUND_HALF_UP)
+        if not amount.is_finite():
+            raise InvalidOperation
+        return amount
+    except (InvalidOperation, TypeError, ValueError):
         raise ValidationError({field: "Enter a valid monetary amount."})
 
 
@@ -32,7 +35,8 @@ def next_invoice_number(profile):
     prefix = f"INV-{year}-"
     invoices = ClientInvoice.objects.filter(photographer=profile, invoice_number__startswith=prefix)
     if transaction.get_connection().in_atomic_block:
-        invoices = invoices.select_for_update()
+        # Lock a stable parent even when no invoices exist yet.
+        type(profile).objects.select_for_update().get(pk=profile.pk)
     last = invoices.order_by("-invoice_number").values_list("invoice_number", flat=True).first()
     sequence = int(last.rsplit("-", 1)[-1]) + 1 if last else 1
     return f"{prefix}{sequence:04d}"
@@ -172,6 +176,8 @@ def save_invoice(profile, post, invoice=None, send=False):
             scheduled_date = timezone.datetime.strptime(row["due_date"], "%Y-%m-%d").date()
         except ValueError:
             raise ValidationError({"payment_schedule": "Every payment needs a valid due date."})
+        if amount <= ZERO or scheduled_date < issue_date:
+            raise ValidationError({"payment_schedule": "Payments must be positive and due on or after issuance."})
         InvoicePaymentSchedule.objects.create(invoice=invoice, label=row["label"] or f"Payment {i + 1}", amount=amount, due_date=scheduled_date, position=i)
     if invoice.payment_schedule.exists() and sum((p.amount for p in invoice.payment_schedule.all()), ZERO) != total:
         raise ValidationError({"payment_schedule": "Scheduled payments must add up to the invoice total."})
