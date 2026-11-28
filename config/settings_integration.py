@@ -1,5 +1,6 @@
 """Opt-in local infrastructure integration settings; never use in production."""
 import os
+from pathlib import Path
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from .settings_test import *  # noqa: F403,F401
@@ -26,4 +27,6 @@ except (ValueError, TypeError, UnicodeError) as exc:
 # Real-photo tests explicitly override the vector URL inside their test case.
 # Use a file sink to inspect synthetic messages across processes.
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
-EMAIL_FILE_PATH = BASE_DIR / ".integration-email"
+INTEGRATION_DATA_ROOT = Path.home() / "LumisPixelTestData" / "integration"
+MEDIA_ROOT = INTEGRATION_DATA_ROOT / "media"
+EMAIL_FILE_PATH = INTEGRATION_DATA_ROOT / "email"
