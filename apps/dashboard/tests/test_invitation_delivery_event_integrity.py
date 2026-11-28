@@ -1,17 +1,33 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
+from django.test import TestCase
+from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
+from apps.dashboard.models import StudioMembership
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
-from django.test import SimpleTestCase
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
-from apps.dashboard.invitation_actions import resend_pending_invitation
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
-class InvitationDeliveryEventIntegrityTests(SimpleTestCase):
-    @patch("apps.dashboard.invitation_actions.get_object_or_404")
-    @patch("apps.dashboard.invitation_actions.resend_studio_invitation", side_effect=RuntimeError("mail unavailable"))
-    @patch("apps.dashboard.invitation_actions.record")
-    def test_resend_failure_does_not_record_success_event(self, record_mock, _resend, get_mock):
-        membership = Mock(invitation_sent_at=None)
-        get_mock.return_value = membership
-        with self.assertRaises(RuntimeError):
-            resend_pending_invitation(Mock(), Mock(), 42)
-        record_mock.assert_not_called()
+    def test_resend_failure_does_not_record_success_event(self):
+        with patch("apps.dashboard.team_invitations.queue_transactional_email", side_effect=RuntimeError("queue unavailable")):
+            with self.assertRaises(RuntimeError):
+                self.resend()
+        self.assertFalse(self.membership.invitation_events.filter(action="resent").exists())
