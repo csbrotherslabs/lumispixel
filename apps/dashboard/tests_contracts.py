@@ -102,7 +102,8 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(booking_page, "Draft")
         self.assertContains(booking_page, "Current workflow")
         self.assertContains(booking_page, 'class="lp-booking-contract-row"')
-        self.assertContains(booking_page, "Sign &amp; Share")
+        self.assertContains(booking_page, "Review &amp; Sign Contract")
+        self.assertContains(booking_page, reverse("photographer_workspace:contract_preview", args=[contract.pk]))
 
         preview_page = self.client.get(
             reverse("photographer_workspace:contract_preview", args=[contract.pk])
@@ -261,11 +262,12 @@ class ContractWorkflowTests(TestCase):
         self.booking.location = "City Studio"
         self.booking.booking_value = "425.00"
         self.booking.save(update_fields=["location", "booking_value"])
-        content = "Hello {{ client.full_name }} at {{ booking.location }} — {{ unknown.value }}"
+        content = "Hello {{ client.full_name }} at {{ booking.location }} — {{ unknown.value }} — {{ booking.payment_terms }}"
         rendered = render_merge_fields(content, self.booking)
         self.assertIn("Maya Cole", rendered)
         self.assertIn("City Studio", rendered)
         self.assertIn("{{ unknown.value }}", rendered)
+        self.assertIn("USD 425.00", rendered)
 
     def test_template_crud_validation_archive_duplicate_and_tenant_isolation(self):
         self.client.force_login(self.owner)
@@ -336,7 +338,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, "Preview")
         self.assertContains(response, "data-template-preview", html=False)
         self.assertContains(response, "data-preview-dialog", html=False)
-        self.assertContains(response, "Add contract content to see its preview here.")
+        self.assertContains(response, "data-preview-content")
         self.assertContains(response, 'form="contract-template-form"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ client.full_name }}"', html=False)
         self.assertContains(response, 'data-merge-insert="{{ booking.date }}"', html=False)
@@ -345,7 +347,7 @@ class ContractWorkflowTests(TestCase):
         self.assertContains(response, 'data-merge-search-text="client.full_name Client full name"', html=False)
         self.assertNotContains(response, "Save Draft")
 
-    def test_every_contract_starter_has_editable_metadata_without_unreviewed_legal_text(self):
+    def test_every_contract_starter_has_editable_metadata_and_agreement_content(self):
         expected = {
             "wedding": ("Wedding Photography Agreement", "wedding"),
             "portrait": ("Portrait Photography Agreement", "portrait"),
@@ -354,6 +356,9 @@ class ContractWorkflowTests(TestCase):
             "real-estate": ("Real Estate Photography Agreement", "general"),
             "mini-session": ("Mini Session Agreement", "portrait"),
             "second-shooter": ("Second Shooter / Associate Photographer Agreement", "wedding"),
+            "fashion": ("Fashion Photography Agreement", "general"),
+            "product": ("Product Photography Agreement", "general"),
+            "general": ("General Photography Agreement", "general"),
         }
         definitions = serialized_contract_starters()
 
@@ -364,7 +369,11 @@ class ContractWorkflowTests(TestCase):
                 self.assertEqual(definitions[key]["name"], label)
                 self.assertEqual(definitions[key]["title"], label)
                 self.assertEqual(definitions[key]["category"], category)
-                self.assertEqual(definitions[key]["content"], "")
+                self.assertIn("{{ workspace.name }}", definitions[key]["content"])
+                self.assertIn("{{ client.full_name }}", definitions[key]["content"])
+                self.assertIn("Acceptance and signatures", definitions[key]["content"])
+                if key != "second-shooter":
+                    self.assertIn("{{ booking.payment_terms }}", definitions[key]["content"])
 
     def test_starter_selection_is_not_persisted_and_saved_template_belongs_to_workspace(self):
         self.client.force_login(self.owner)
@@ -585,7 +594,9 @@ class ContractWorkflowTests(TestCase):
         contract = self._draft_with_email(signed=False)
         self.client.force_login(self.owner)
         preview_url = reverse("photographer_workspace:contract_preview", args=[contract.pk])
+        preview = self.client.get(preview_url)
         response = self.client.post(preview_url, {
+            "preview_hash": preview.context["preview_hash"],
             "signer_name": "Morgan Studio", "signature_value": "Morgan Studio",
             "consent_accepted": "on",
         }, REMOTE_ADDR="192.0.2.20", HTTP_USER_AGENT="Studio browser")
@@ -730,7 +741,10 @@ class ContractWorkflowTests(TestCase):
         self.assertIn(b"Maya Cole", original_pdf)
 
         client_view = self.client.get(reverse("clients:signed-contract-pdf", args=[token]))
+        self.addCleanup(client_view.close)
         self.assertEqual(client_view.status_code, 200)
+        self.assertEqual(b"".join(client_view.streaming_content), original_pdf)
+        client_view.close()
         self.assertEqual(client_view["Cache-Control"], "private, no-store")
         self.assertEqual(self.client.get(reverse("clients:signed-contract-pdf", args=["guessed-key"])).status_code, 404)
 
@@ -749,7 +763,10 @@ class ContractWorkflowTests(TestCase):
         workspace_download = self.client.get(
             reverse("photographer_workspace:signed_contract_pdf_download", args=[contract.pk]),
         )
+        self.addCleanup(workspace_download.close)
         self.assertEqual(workspace_download.status_code, 200)
+        self.assertEqual(b"".join(workspace_download.streaming_content), original_pdf)
+        workspace_download.close()
         self.assertIn("attachment", workspace_download["Content-Disposition"])
         other_owner, _studio, _client, _booking, _template = self.make_studio("pdf-other@example.com")
         self.client.force_login(other_owner)
