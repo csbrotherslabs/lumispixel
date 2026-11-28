@@ -7,6 +7,7 @@
 <section class="li-metric-grid">
 {% for key,value in metrics.items %}<article><span>{{ key|title }}</span><strong>{{ value }}</strong></article>{% endfor %}
 </section>
+<section class="li-panel" style="margin-top:22px"><div class="li-panel__head"><h2>Financial automation</h2></div><p>All-time counts and current outstanding invoices. Sent means transport accepted, not confirmed inbox delivery.</p><div class="li-metric-grid">{% for label,value in financial_metrics.items %}<article><span>{{ label|title }}</span><strong>{{ value }}</strong></article>{% endfor %}</div></section>
 <section class="li-panel" style="margin-top:22px">
 <div class="li-panel__head"><h2>Execution records</h2></div>
 <form method="get"><label for="status">Status</label><select id="status" name="status"><option value="">All</option>{% for value,label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button type="submit">Filter</button></form>
