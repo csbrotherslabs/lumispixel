@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .models import GalleryStorageDeletion
-from .object_keys import validate_gallery_object_key
+from .object_keys import validate_gallery_object_key, validate_relative_gallery_name
 from .multipart_uploads import delete_object as delete_b2_object
 
 logger = logging.getLogger(__name__)
@@ -15,13 +15,18 @@ def enqueue_storage_deletions(items):
     rows = []
     seen = set()
     for item in items:
-        key = (item["storage_backend"], item["object_key"])
+        object_key = item["object_key"]
+        if object_key and item["storage_backend"] == GalleryStorageDeletion.Backend.B2:
+            if not object_key.startswith("private/"):
+                object_key = f"private/{settings.GALLERY_STORAGE_ENVIRONMENT}/{validate_relative_gallery_name(object_key)}"
+            validate_gallery_object_key(object_key)
+        key = (item["storage_backend"], object_key)
         if not item["object_key"] or key in seen:
             continue
         seen.add(key)
         rows.append(GalleryStorageDeletion(
             storage_backend=item["storage_backend"],
-            object_key=item["object_key"],
+            object_key=object_key,
             photographer_id=item.get("photographer_id"),
             gallery_id=item.get("gallery_id"),
         ))
