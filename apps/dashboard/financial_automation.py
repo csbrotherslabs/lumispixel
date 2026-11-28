@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
+from django.utils.html import format_html
 
 from apps.clients.models import ClientInvoice, ClientSession, InvoicePayment
 from apps.notifications.email_delivery import queue_transactional_email
@@ -19,6 +20,7 @@ def queue_receipt(payment):
         event_key=f"payment.receipt:{payment.pk}",
         subject=f"Payment receipt for {invoice.invoice_number}",
         plain_body=f"Payment received: {invoice.currency} {payment.amount:.2f}. Invoice: {invoice.invoice_number}. Receipt reference: PAY-{payment.pk:06d}.",
+        html_body=str(format_html("<h1>Payment received</h1><p>Invoice: {}</p><p>Amount: {} {}</p><p>Receipt: PAY-{}</p><p>Thank you for your payment.</p>", invoice.invoice_number, invoice.currency, format(payment.amount, ".2f"), str(payment.pk).zfill(6))),
         recipients=[invoice.client.email],
         lifecycle_kind="payment.receipt",
         lifecycle_context={"payment_id": payment.pk, "studio_id": payment.photographer_id},
@@ -58,6 +60,7 @@ def queue_booking_reminder(booking_id, day):
     return bool(queue_transactional_email(
         event_key=key, subject="Booking payment reminder",
         plain_body=f"Booking #{booking.pk} ({timezone.localdate(booking.starts_at)}): outstanding agreed balance {booking.payment_currency} {outstanding_booking(booking):.2f}. Please review your booking payments.",
+        html_body=str(format_html("<h1>Outstanding booking payment</h1><p>Booking #{} · {}</p><p>Outstanding balance: {} {}</p><p>Please review your booking payments.</p>", booking.pk, timezone.localdate(booking.starts_at), booking.payment_currency, format(outstanding_booking(booking), ".2f"))),
         recipients=[booking.photographer.user.email], lifecycle_kind="booking.balance",
         lifecycle_context={"booking_id": booking.pk, "studio_id": booking.photographer_id,
                            "day": day.isoformat(), "starts_at": booking.starts_at.isoformat(),
