@@ -15,13 +15,14 @@ from .decorators import internal_employee_required
 def automation_center(request):
     if not request.user.is_superuser or not request.user.is_active:
         raise PermissionDenied
+    from apps.dashboard.financial_automation import financial_metrics
     jobs = AutomationJob.objects.order_by("-created_at", "-pk")
     status = request.GET.get("status", "")
     if status in AutomationJob.Status.values:
         jobs = jobs.filter(status=status)
     return render(request, "internal_ops/automation/center.html", {
         "employee": request.employee_profile, "is_internal_superuser": True,
-        "metrics": snapshot(), "jobs": Paginator(jobs, 50).get_page(request.GET.get("page")),
+        "financial_metrics": financial_metrics(), "metrics": snapshot(), "jobs": Paginator(jobs, 50).get_page(request.GET.get("page")),
         "statuses": AutomationJob.Status.choices, "selected_status": status,
     })
 
