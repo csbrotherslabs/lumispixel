@@ -79,3 +79,10 @@ EMAIL_PAYLOAD_KEYS = Fernet.generate_key().decode("ascii")
 
 # Recovery links require a trusted absolute origin, even when DEBUG is false.
 PUBLIC_BASE_URL = "https://lumispixel.example"
+
+# Ordinary tests must not inherit external infrastructure.
+USER_UPLOAD_STORAGE_BACKEND = "local"
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+VISUAL_SEARCH_DATABASE_URL = ""
