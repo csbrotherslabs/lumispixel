@@ -1,4 +1,3 @@
-from smtplib import SMTPException
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -15,7 +14,7 @@ class InvitationInitialDeliveryFailureTests(TestCase):
         self.client.force_login(owner)
         payload = {"first_name": "Invite", "last_name": "Person", "email": "new-invitee@example.com", "role": StudioMembership.Role.PHOTOGRAPHER, "primary_location": "Studio", "phone": "", "specialties": "", "message": ""}
 
-        with patch("apps.dashboard.team_invitations.EmailMultiAlternatives.send", side_effect=SMTPException("mail unavailable")):
+        with patch("apps.dashboard.team_invitations.queue_transactional_email", side_effect=RuntimeError("queue unavailable")):
             response = self.client.post(reverse("photographer_workspace:invite_member"), payload)
 
         self.assertEqual(response.status_code, 302)
