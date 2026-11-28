@@ -20,7 +20,7 @@ class StaleMultipartUploadCleanupTests(TestCase):
         upload = GalleryMultipartUpload.objects.create(
             gallery=self.gallery,
             photographer=self.photographer,
-            object_key=f"private/test/galleries/{self.photographer.pk}/{self.gallery.pk}/originals/{GalleryMultipartUpload._meta.pk.default()}.jpg",
+            object_key=f"private/dev/galleries/{self.photographer.pk}/{self.gallery.pk}/originals/{GalleryMultipartUpload._meta.pk.default()}.jpg",
             upload_id="b2-upload-id",
             original_name="photo.jpg",
             content_type="image/jpeg",
@@ -63,5 +63,6 @@ class StaleMultipartUploadCleanupTests(TestCase):
         upload = self.session()
         result = cleanup_stale_multipart_uploads()
         upload.refresh_from_db()
+        abort.assert_called_once_with(key=upload.object_key, upload_id=upload.upload_id)
         self.assertIsNone(upload.aborted_at)
         self.assertEqual(result, {"aborted": 0, "failed": 1})
