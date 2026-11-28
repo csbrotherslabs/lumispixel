@@ -4,6 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .models import GalleryStorageDeletion
+from .object_keys import validate_gallery_object_key
 from .multipart_uploads import delete_object as delete_b2_object
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ def process_storage_deletions(*, limit=200, max_attempts=None):
     for deletion in pending:
         try:
             if deletion.storage_backend == GalleryStorageDeletion.Backend.B2:
+                validate_gallery_object_key(deletion.object_key)
                 delete_b2_object(key=deletion.object_key)
             else:
                 from django.core.files.storage import default_storage
