@@ -21,7 +21,7 @@ const env = {
   MEDIA_MAX_SIGNED_URL_TTL: "3600",
   B2_ACCESS_KEY_ID: "test-key",
   B2_SECRET_ACCESS_KEY: "test-secret",
-  B2_BUCKET_NAME: "test-bucket",
+  B2_BUCKET_NAME: "lumispixel-production-media",
   B2_REGION: "us-east-005",
   B2_ENDPOINT_URL: "https://s3.us-east-005.backblazeb2.com",
   B2_ALLOWED_PREFIX: "private/dev/",
