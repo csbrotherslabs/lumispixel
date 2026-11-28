@@ -6,6 +6,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import ClientProfile
+from apps.notifications.models import EmailDelivery
+from apps.notifications.email_delivery import deliver_email
 
 from .models import Department, EmployeeProfile, InternalRole, SupportTicket
 
@@ -47,6 +49,15 @@ class SupportNotificationTests(TestCase):
         )
         ClientProfile.objects.create(user=self.customer, display_name="Jordan Lee")
 
+    def _deliver_support(self, expected):
+        rows = list(EmailDelivery.objects.filter(event_key__startswith="support."))
+        self.assertEqual(len(rows), expected)
+        for row in rows:
+            self.assertEqual(row.status, EmailDelivery.Status.PENDING)
+            self.assertTrue(deliver_email(row.pk))
+            row.refresh_from_db()
+            self.assertEqual(row.status, EmailDelivery.Status.SENT)
+
     def _ticket(self, **kwargs):
         defaults = {
             "requester": self.customer,
@@ -72,6 +83,7 @@ class SupportNotificationTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         ticket = SupportTicket.objects.get(requester=self.customer)
+        self._deliver_support(2)
         self.assertEqual(len(mail.outbox), 2)
         recipients = {address for message in mail.outbox for address in message.to}
         self.assertIn(self.customer.email, recipients)
@@ -87,6 +99,7 @@ class SupportNotificationTests(TestCase):
             {"body": "I tried the suggested step and still need help."},
         )
         self.assertEqual(response.status_code, 302)
+        self._deliver_support(1)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.staff_user.email])
         self.assertIn("Customer replied", mail.outbox[0].subject)
@@ -100,6 +113,7 @@ class SupportNotificationTests(TestCase):
             {"action": "reply", "body": "We have a fix ready. Please try again."},
         )
         self.assertEqual(response.status_code, 302)
+        self._deliver_support(1)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.customer.email])
         self.assertIn("LumisPixel Support replied", mail.outbox[0].subject)
@@ -113,6 +127,7 @@ class SupportNotificationTests(TestCase):
             {"action": "note", "body": "Private investigation details."},
         )
         self.assertEqual(response.status_code, 302)
+        self._deliver_support(0)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_status_change_and_assignment_send_targeted_emails(self):
@@ -131,12 +146,13 @@ class SupportNotificationTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
+        self._deliver_support(2)
         self.assertEqual(len(mail.outbox), 2)
         recipients = [message.to for message in mail.outbox]
         self.assertIn([self.customer.email], recipients)
         self.assertIn([self.staff_user.email], recipients)
 
-    @patch("apps.internal_ops.support_notifications.EmailMultiAlternatives.send", side_effect=RuntimeError("mail unavailable"))
+    @patch("apps.notifications.email_delivery.queue_transactional_email", side_effect=RuntimeError("mail unavailable"))
     def test_email_failure_does_not_block_ticket_creation(self, _send):
         self.client.force_login(self.customer)
         response = self.client.post(
@@ -155,3 +171,4 @@ class SupportNotificationTests(TestCase):
                 subject="Mail outage should not block support",
             ).exists()
         )
+        self.assertFalse(EmailDelivery.objects.filter(event_key__startswith="support.").exists())
