@@ -3,6 +3,7 @@ import hashlib
 import re
 import secrets
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django import forms
@@ -85,6 +86,8 @@ def merge_context(booking):
     studio = booking.photographer
     owner = studio.user
     studio_name = studio.business_name or studio.display_name or owner.full_name or owner.email
+    total = Decimal(str(booking.booking_value))
+    deposit = Decimal(str(booking.deposit_amount))
     return {
         "client.first_name": booking.client.first_name,
         "client.last_name": booking.client.last_name,
@@ -94,12 +97,12 @@ def merge_context(booking):
         "booking.date": formats.date_format(local_start, "DATE_FORMAT"),
         "booking.start_time": formats.time_format(local_start, "TIME_FORMAT"),
         "booking.location": booking.location,
-        "booking.value": (f"{booking.payment_currency} {booking.booking_value:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
+        "booking.value": (f"{booking.payment_currency} {total:,.2f}" if booking.pricing_confirmed else "Not yet agreed"),
         "booking.payment_terms": payment_clause(booking),
         "booking.currency": booking.payment_currency,
         "booking.deposit_amount": str(booking.deposit_amount),
         "booking.deposit_due_date": str(booking.deposit_due_date or ""),
-        "booking.balance_due": str(booking.booking_value - booking.deposit_amount),
+        "booking.balance_due": str(total - deposit),
         "booking.balance_due_date": str(booking.balance_due_date or ""),
         "workspace.name": studio_name,
         "photographer.name": studio_name,
