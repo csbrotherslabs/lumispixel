@@ -1,19 +1,34 @@
+from datetime import timedelta
 from unittest.mock import Mock, patch
-
-from django.core.exceptions import PermissionDenied
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.utils import timezone
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from apps.accounts.models import User, PhotographerProfile
+from apps.dashboard.models import StudioMembership
+from apps.dashboard.invitation_actions import resend_pending_invitation, revoke_pending_invitation
+from apps.dashboard.team_invitations import issue_token, find_valid_invitation
+from apps.notifications.models import EmailDelivery
 
-from apps.dashboard.invitation_actions import resend_pending_invitation
+class InvitationRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="password123", email_verified=True)
+        self.studio = PhotographerProfile.objects.create(user=self.owner)
+        self.membership = StudioMembership.objects.create(studio=self.studio, invitation_email="invitee@example.com", role="photographer", status="invited")
+        self.token = issue_token(self.membership)
+        self.request = Mock(user=self.owner)
+        self.membership.invitation_sent_at = timezone.now() - timedelta(minutes=2)
+        self.membership.save(update_fields=["invitation_sent_at"])
 
+    def resend(self):
+        return resend_pending_invitation(self.request, self.studio, self.membership.pk)
 
-class InvitationResendCooldownTests(SimpleTestCase):
-    @patch("apps.dashboard.invitation_actions.get_object_or_404")
-    @patch("apps.dashboard.invitation_actions.resend_studio_invitation")
-    def test_immediate_resend_is_rejected(self, resend_mock, get_mock):
-        get_mock.return_value = Mock(invitation_sent_at=timezone.now())
+    def revoke(self):
+        return revoke_pending_invitation(self.request, self.studio, self.membership.pk)
 
+    def test_immediate_resend_is_rejected(self):
+        self.membership.invitation_sent_at = timezone.now()
+        self.membership.save(update_fields=["invitation_sent_at"])
         with self.assertRaises(PermissionDenied):
-            resend_pending_invitation(Mock(), Mock(), 3)
-
-        resend_mock.assert_not_called()
+            self.resend()
+        self.assertFalse(self.membership.invitation_events.filter(action="resent").exists())
