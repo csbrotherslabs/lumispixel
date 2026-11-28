@@ -59,3 +59,30 @@ class GalleryStorageIsolationTests(SimpleTestCase):
                 signed_media_url(name)
         self.assertIn("/private/dev/galleries/1/2/originals/photo.jpg?",
                       signed_media_url("galleries/1/2/originals/photo.jpg"))
+
+    def test_legacy_and_cover_paths(self):
+        for name in ("galleries/1/2/legacy.jpg",
+                     "galleries/covers-v2/2/variants/preview/cover.webp"):
+            self.assertEqual(validate_gallery_object_key("private/dev/" + name),
+                             "private/dev/" + name)
+            self.assertIn("/private/dev/" + name + "?", signed_media_url(name))
+
+    def test_cleanup_blocks_foreign_keys(self):
+        from types import SimpleNamespace
+        from . import storage_cleanup, tasks
+        key = "private/prod/galleries/1/2/originals/photo.jpg"
+        deletion = SimpleNamespace(storage_backend="b2", object_key=key,
+                                   attempts=0, save=lambda **kwargs: None)
+        with patch.object(storage_cleanup.GalleryStorageDeletion, "objects") as manager, \
+                patch.object(storage_cleanup, "delete_b2_object") as delete:
+            manager.filter.return_value.order_by.return_value.__getitem__.return_value = [deletion]
+            manager.filter.return_value.count.return_value = 0
+            self.assertEqual(storage_cleanup.process_storage_deletions()["failed"], 1)
+            delete.assert_not_called()
+        session = SimpleNamespace(pk=1, object_key=key, upload_id="test")
+        with patch.object(tasks.GalleryMultipartUpload, "objects") as manager, \
+                patch.object(tasks, "abort_multipart") as abort:
+            manager.filter.return_value.order_by.return_value.iterator.return_value = iter([session])
+            self.assertEqual(tasks.cleanup_stale_multipart_uploads(),
+                             {"aborted": 0, "failed": 1})
+            abort.assert_not_called()
