@@ -25,4 +25,7 @@ def scan_due_jobs():
 @shared_task
 def reconcile_jobs():
     from .reconciliation import reconcile
-    return reconcile()
+    from apps.dashboard.financial_automation import scan_booking_reminders
+    result = reconcile()
+    result['booking_reminders_queued'] = scan_booking_reminders()
+    return result
