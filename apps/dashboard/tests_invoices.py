@@ -145,13 +145,13 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertNotIn("/workspace/", html)
         self.assertEqual(InvoiceActivity.objects.get().action, "email_queued")
 
-    def test_delivery_failure_rolls_back_invoice_changes_and_sent_activity(self):
+    def test_queue_failure_rolls_back_invoice_changes_and_sent_activity(self):
         self.client.post(reverse("photographer_workspace:invoice_create"), self.payload())
         invoice = ClientInvoice.objects.get()
         original_total = invoice.total
         original_activity_count = InvoiceActivity.objects.count()
 
-        with patch("apps.dashboard.invoices.EmailMultiAlternatives.send", side_effect=RuntimeError("smtp unavailable")):
+        with patch("apps.notifications.email_delivery.queue_transactional_email", side_effect=ValueError("queue unavailable")):
             response = self.client.post(
                 reverse("photographer_workspace:invoice_edit", args=[invoice.pk]),
                 self.payload(
@@ -169,7 +169,7 @@ class InvoiceWorkspaceTests(TestCase):
         self.assertEqual(invoice.client_notes, "")
         self.assertEqual(InvoiceActivity.objects.count(), original_activity_count)
         self.assertFalse(InvoiceActivity.objects.filter(action="sent").exists())
-        self.assertContains(response, "We couldn&#x27;t send this invoice email", status_code=400)
+        self.assertFalse(EmailDelivery.objects.filter(lifecycle_kind="invoice.email").exists())
 
     def test_invalid_item_is_rejected_without_partial_invoice(self):
         response = self.client.post(
