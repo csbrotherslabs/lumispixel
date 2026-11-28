@@ -76,6 +76,27 @@ def eligible(delivery):
             and not booking.session.client.user_id
             and booking.session.client.email.casefold() == booking.client_email.casefold()
             and [r.casefold() for r in delivery.recipients] == [booking.client_email.casefold()])
+    if delivery.lifecycle_kind == "payment.receipt":
+        from apps.clients.models import InvoicePayment
+        context = delivery.lifecycle_context
+        payment = InvoicePayment.objects.select_related("invoice__client", "photographer__user").filter(
+            pk=context.get("payment_id"), photographer_id=context.get("studio_id"), status="completed").first()
+        return bool(payment and payment.photographer.user.can_login
+            and payment.invoice.photographer_id == payment.photographer_id
+            and payment.invoice.client.photographer_id == payment.photographer_id
+            and [r.casefold() for r in delivery.recipients] == [payment.invoice.client.email.casefold()])
+    if delivery.lifecycle_kind == "booking.balance":
+        from apps.clients.models import ClientSession
+        from apps.dashboard.financial_automation import reminder_eligible, outstanding_booking
+        context = delivery.lifecycle_context
+        booking = ClientSession.objects.select_related("photographer__user", "client").filter(
+            pk=context.get("booking_id"), photographer_id=context.get("studio_id")).first()
+        return bool(booking and context.get("day") == timezone.localdate().isoformat()
+            and reminder_eligible(booking, timezone.localdate())
+            and booking.starts_at.isoformat() == context.get("starts_at")
+            and booking.payment_currency == context.get("currency")
+            and str(outstanding_booking(booking)) == context.get("balance")
+            and [r.casefold() for r in delivery.recipients] == [booking.photographer.user.email.casefold()])
     if delivery.lifecycle_kind == "invoice.email":
         from apps.clients.models import ClientInvoice
         context = delivery.lifecycle_context
