@@ -18,7 +18,7 @@ class BulkGalleryDeletionStorageTests(TestCase):
         self.photo = GalleryPhoto.objects.create(
             gallery=self.gallery,
             photographer=self.photographer,
-            file="galleries/1/1/originals/photo.jpg",
+            file=f"galleries/{self.photographer.pk}/{self.gallery.pk}/originals/photo.jpg",
             original_name="photo.jpg",
             file_size=100,
             status=GalleryPhoto.Status.COMPLETED,
@@ -28,7 +28,7 @@ class BulkGalleryDeletionStorageTests(TestCase):
     @patch("apps.dashboard.views.process_storage_deletions")
     def test_bulk_gallery_delete_persists_cleanup_before_database_delete(self, process):
         gallery_id = self.gallery.pk
-        object_key = self.photo.file.name
+        object_key = "private/dev/" + self.photo.file.name
 
         response = self.client.post(
             reverse("photographer_workspace:gallery_actions"),
@@ -47,7 +47,7 @@ class BulkGalleryDeletionStorageTests(TestCase):
     @patch("apps.galleries.storage_cleanup.delete_b2_object", side_effect=RuntimeError("B2 unavailable"))
     def test_failed_b2_delete_survives_gallery_database_delete_for_retry(self, delete_b2):
         gallery_id = self.gallery.pk
-        object_key = self.photo.file.name
+        object_key = "private/dev/" + self.photo.file.name
 
         response = self.client.post(
             reverse("photographer_workspace:gallery_actions"),
