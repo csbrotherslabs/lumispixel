@@ -336,6 +336,13 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
             raise ValidationError({"consent_accepted": "You must agree before signing."})
         consent_text = getattr(settings, "CONTRACT_SIGNATURE_CONSENT_TEXT", DEFAULT_SIGNATURE_CONSENT)
         digest = _content_hash(contract.rendered_content)
+        if not ContractPhotographerSignature.objects.filter(
+            contract=contract, photographer_id=contract.photographer_id,
+            content_hash=digest, contract_version=contract.version, consent_accepted=True,
+        ).exists():
+            raise ValidationError("The photographer signature does not match this agreement.")
+        if contract.booking.photographer_id != contract.photographer_id or contract.booking.client_id != contract.client_id:
+            raise ValidationError("The agreement does not match its booking.")
         signature = ContractSignature(
             contract=contract, signer_name=signer_name, signature_value=signature_value,
             signature_type=ContractSignature.SignatureType.TYPED, consent_accepted=True,
@@ -364,7 +371,9 @@ def sign_contract(*, raw_token, signer_name, signature_value, consent_accepted, 
         # Confirm only active tentative reservations with both signatures.
         # A conditional update prevents resurrecting cancelled/completed bookings.
         if ContractPhotographerSignature.objects.filter(contract=contract, content_hash=digest).exists():
-            updated = ClientSession.objects.filter(
+            from apps.marketplace.models import PlatformBooking
+            unacknowledged = PlatformBooking.objects.filter(session_id=contract.booking_id, acknowledged_at__isnull=True).exists()
+            updated = 0 if unacknowledged else ClientSession.objects.filter(
                 pk=contract.booking_id, photographer_id=contract.photographer_id,
                 client_id=contract.client_id, status=ClientSession.Status.TENTATIVE,
                 event_kind=ClientSession.EventKind.BOOKING,
